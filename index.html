@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>עוזר אישי – רשימת קניות</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>🛒 רשימת הקניות שלי</h1>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <main>
+    <!-- הוספת פריט -->
+    <form id="addForm" class="card add-form" autocomplete="off">
+      <input id="addInput" type="text" placeholder="הוסף פריט… (אפשר כמה, מופרדים בפסיק)" aria-label="פריט חדש">
+      <select id="addCategory" aria-label="קטגוריה">
+        <option value="">קטגוריה אוטומטית</option>
+      </select>
+      <button type="submit" class="btn primary">הוסף</button>
+      <div id="addHint" class="hint" role="status" aria-live="polite"></div>
+    </form>
+
+    <!-- התראת כפילויות -->
+    <div id="dupBanner" class="card banner" hidden></div>
+
+    <!-- חיפוש מתכון -->
+    <form id="recipeForm" class="card recipe-form" autocomplete="off">
+      <input id="recipeInput" type="text" placeholder="חפש מתכון… (למשל: עוף, פסטה, chicken curry)" aria-label="חיפוש מתכון">
+      <button type="submit" class="btn accent">🍳 חפש מתכון</button>
+    </form>
+
+    <!-- סרגל פעולות -->
+    <div class="toolbar">
+      <label class="toggle"><input type="checkbox" id="hideChecked"> הסתר פריטים שסומנו</label>
+      <button id="clearChecked" class="btn ghost">🗑 מחק מסומנים</button>
+      <button id="shareList" class="btn ghost">📤 שתף</button>
+      <button id="resetList" class="btn ghost">↺ איפוס לרשימה המקורית</button>
+    </div>
+
+    <!-- הרשימה -->
+    <section id="list" aria-label="רשימת קניות"></section>
+  </main>
+
+  <!-- חלון מתכון שקוף (glass) -->
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <button class="modal-close" data-close aria-label="סגור">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

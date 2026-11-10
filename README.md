@@ -1,44 +1,55 @@
-# Helper – עוזר אישי: רשימת קניות חכמה 🛒
+# Helper – העוזר המשפחתי 🤝
 
-אפליקציית ווב קלה (HTML/CSS/JS בלבד, בלי שרת ובלי התקנות) שעובדת במחשב ובנייד, וניתן להתקין אותה למסך הבית כאפליקציה (PWA).
+A personal assistant for family and friends, running on Cloudflare (Pages + Functions + D1), with Google sign-in.
 
-## יכולות
-- **סימון / הוספה / מחיקה / עריכה** – לחיצה על פריט מסמנת אותו; ✎ או לחיצה כפולה לעריכה; ✕ למחיקה (עם "בטל"); כפתורי +/− לכמות.
-- **קטגוריות** – ירקות ופירות, עשבי תיבול, מוצרי חלב, בשר ועוף, שימורים ורטבים, מוצרי יסוד, קפה ותה, ניקיון, טיפוח ועוד. סיווג אוטומטי לפי מילות מפתח (עברית ואנגלית), ואפשר לשנות קטגוריה לכל פריט.
-- **זיהוי כפילויות** – מזהה גם וריאציות כתיב (עגבניה / עגבנייה / עגבניות). ברשימה המקורית "חסה" מופיעה פעמיים – יוצג באנר עם כפתור מיזוג. הוספת פריט קיים מגדילה כמות במקום ליצור כפילות.
-- **מתכונים** – חיפוש במאגר [TheMealDB](https://www.themealdb.com) (חינמי, באנגלית; חיפוש בעברית מתורגם אוטומטית למילים נפוצות כמו עוף, פסטה, מרק). המתכון מוצג בחלון פופ-אפ שקוף (glassmorphism) עם תמונה, מצרכים מתורגמים לעברית, הוראות, וידאו וקישור לתרגום. מצרכים שכבר ברשימה מסומנים ולא נבחרים מראש; לחיצה אחת מוסיפה את הנבחרים לרשימה בקטגוריה הנכונה. יש גם קישור לחיפוש מתכונים בעברית בגוגל.
-- **שיתוף** – שליחת הרשימה (רק מה שלא נקנה) בוואטסאפ/הודעה, מסודרת לפי קטגוריות.
-- **שמירה מקומית ועבודה אופליין** – הנתונים נשמרים בדפדפן; הרשימה עובדת גם בלי אינטרנט בסופר.
-
-## הפעלה
-- מקומית: לפתוח את `index.html` בדפדפן, או `python3 -m http.server` ולגלוש ל-`http://localhost:8000`.
-- בנייד: להפעיל GitHub Pages (Settings → Pages → Deploy from branch), לפתוח את הכתובת בטלפון ו"הוסף למסך הבית".
-
-## מבנה
-| קובץ | תפקיד |
+| App | What it does |
 |---|---|
-| `index.html` | מבנה הממשק |
-| `style.css` | עיצוב, כולל מצב כהה וחלון זכוכית שקוף |
-| `data.js` | קטגוריות, מילות מפתח, הרשימה ההתחלתית ומילוני תרגום |
-| `app.js` | הלוגיקה: רשימה, כפילויות, מתכונים |
-| `manifest.json`, `sw.js`, `icon.svg` | התקנה כאפליקציה ועבודה אופליין |
+| 🛒 **Groceries & recipes** (`/groceries/`) | Shared shopping list per household (syncs between phones, works offline in the store), auto categories, duplicate detection and merge, web recipe search in a glass popup, a **family recipe book** (save, edit, import from any recipe site, add ingredients to the list). |
+| 📰 **News** (`/news/`) | Inoreader-style reader: Israeli and international feeds in folders, unread/starred, an embedded reader view (clean article text inside the app) or the original site embedded, AI summary in Hebrew, add any site by its address. |
+| 📬 **Mail organizer** (`/mail/`) | Describe in plain Hebrew what to tidy in Gmail. Claude proposes a plan, shows counts and sample emails, and runs nothing until approved. **Never deletes**: "delete" means a review label + archive. Every change is recorded and can be undone. |
+| 💻 **Computer** (`/pc/`) | Hebrew guide for organizing files on a laptop with the Claude desktop app, with standing instructions to back up first and never delete. |
+| 👨‍👩‍👧 **Family admin** (`/admin/`) | Owner invites members and assigns households (who shares a list and recipe book). |
 
----
+## Architecture
 
-## אפליקציה במובייל או להמשיך בצ'אט? – המלצה
+```
+public/            static frontend (vanilla JS, RTL Hebrew, PWA)
+functions/api/     one Pages Function: router for /api/*
+server/            backend modules (TypeScript)
+  core.ts          sessions, Google OAuth, encrypted Gmail tokens
+  ai.ts            Claude (Opus 5.5) for judgment-heavy work, Gemini for cheap tasks; each falls back to the other
+  kitchen.ts       groceries sync + recipe book + recipe import (JSON-LD, AI fallback)
+  news.ts          feeds, RSS/Atom parsing, edge cache, reader view, summaries
+  mail.ts          Gmail planning, preview, step-by-step apply, undo
+schema.sql         D1 tables
+```
 
-| | צ'אט (Claude) | אפליקציה אישית (PWA – מה שנבנה כאן) |
-|---|---|---|
-| סימון בזמן קנייה בסופר | מסורבל – צריך לכתוב "סמן חלב" | לחיצה אחת, גם בלי קליטה |
-| מהירות פתיחה | צריך לפתוח שיחה ולגלול | אייקון במסך הבית |
-| זיכרון בין שיחות | לא אמין – שיחה חדשה לא בהכרח זוכרת את הרשימה | הרשימה נשמרת במכשיר |
-| שיתוף עם בן/בת זוג | העתק-הדבק | כפתור שיתוף (וסנכרון בעתיד) |
-| "חשיבה" – תכנון ארוחות, תחליפים, תפריט שבועי, מתכון לפי מה שיש במקרר | מצוין | מוגבל למאגר המתכונים |
-| עלות פיתוח ותחזוקה | אפס | נמוכה – כבר קיימת, קבצים סטטיים |
+## Setup (one time)
 
-**ההמלצה: שילוב.** השתמש באפליקציה (PWA) כ"רשימה החיה" – היא כבר בנויה, נכנסת למסך הבית ועובדת אופליין בסופר. השתמש בצ'אט כ"מוח" – לתכנון תפריט, מתכונים בעברית ורעיונות – והדבק את המצרכים שהוא מציע בשדה ההוספה (אפשר כמה פריטים מופרדים בפסיק; כפילויות יזוהו אוטומטית).
+1. **Google sign-in** – in [Google Cloud Console](https://console.cloud.google.com/): create a project → *APIs & Services* → enable **Gmail API** → *OAuth consent screen* (External; add the family's emails as test users, or publish the app) → *Credentials* → *OAuth client ID* (Web application) with redirect URI `https://<your-domain>/api/auth/callback`. Note the client ID and secret.
+   - Gmail's `gmail.modify` scope is a restricted scope. While the app is in *Testing*, Google expires refresh tokens after 7 days, so Mom would need to reconnect weekly. Publishing it (unverified, under 100 users) avoids that; Google shows an "unverified app" warning once.
+2. **Cloudflare** – create the D1 database and the Pages project:
+   ```bash
+   npx wrangler d1 create helper-db          # put the id into wrangler.toml
+   npm run db:remote
+   npx wrangler pages project create helper
+   ```
+3. **Settings** – in `wrangler.toml` set `OWNER_EMAIL` (your Gmail) and `GOOGLE_CLIENT_ID`. Secrets:
+   ```bash
+   npx wrangler pages secret put GOOGLE_CLIENT_SECRET --project-name helper
+   npx wrangler pages secret put ANTHROPIC_API_KEY   --project-name helper
+   npx wrangler pages secret put GEMINI_API_KEY      --project-name helper
+   openssl rand -base64 32 | npx wrangler pages secret put TOKEN_KEY --project-name helper
+   ```
+4. **Deploy** – `npm run deploy`, then add a custom domain (for example `helper.<your-domain>`) under the Pages project's *Custom domains*.
+5. Sign in as the owner, open **ניהול משפחה** and invite everyone.
 
-**לא הייתי מפתח עכשיו אפליקציה נייטיב (App Store / Google Play)** – זה הרבה עבודה ועלויות בלי יתרון אמיתי לשימוש אישי. שווה לשקול שדרוג רק אם תרצה:
-1. **סנכרון בין מכשירים / שיתוף חי עם בני הבית** – הוספת backend קטן (למשל Firebase / Supabase).
-2. **מתכונים בעברית ותכנון חכם בתוך האפליקציה** – חיבור ל-API של מודל שפה (דורש מפתח API ושרת קטן כדי לא לחשוף אותו).
-3. **התראות / תזכורות לפי מיקום** – רק אז אפליקציה נייטיב מתחילה להצדיק את עצמה.
+## Local development
+
+```bash
+npm install
+cp .dev.vars.example .dev.vars   # DEV_MODE=1 enables /api/auth/dev?email=... sign-in
+npm run db:local
+npm run dev                      # http://localhost:8788
+npm run typecheck
+```

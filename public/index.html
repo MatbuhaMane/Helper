@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>העוזר המשפחתי</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icon.svg">
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>
+    .hero { text-align: center; padding: 48px 16px 8px; }
+    .hero h1 { font-size: 1.8rem; margin: 0 0 6px; }
+    .hero p { color: var(--muted); margin: 0; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 24px; }
+    .tile { display: grid; gap: 6px; align-content: start; text-decoration: none; color: var(--text); background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 18px 16px; min-height: 140px; transition: transform .15s; }
+    .tile:hover { transform: translateY(-2px); }
+    .tile .ic { font-size: 2.1rem; }
+    .tile b { font-size: 1.05rem; }
+    .tile small { color: var(--muted); }
+    .login { max-width: 420px; margin: 24px auto; padding: 24px; text-align: center; }
+    .gbtn { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 12px 22px; font-weight: 600; }
+    .gbtn svg { width: 20px; height: 20px; }
+    #hello { margin: 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>🤝 העוזר המשפחתי</h1>
+      <p id="hello">עוזר אישי לכל המשפחה והחברים</p>
+    </section>
+    <div id="root"></div>
+  </main>
+  <script src="/assets/common.js"></script>
+  <script>
+  (async () => {
+    const { el } = H;
+    const root = document.getElementById('root');
+    const qs = new URLSearchParams(location.search);
+    const r = await H.me();
+
+    if (!r.user) {
+      const next = qs.get('next') || '/';
+      const err = qs.get('error');
+      root.append(el('div', { class: 'card login' },
+        el('p', {}, 'כדי להשתמש בעוזר צריך להתחבר עם חשבון Google.'),
+        err === 'not_invited'
+          ? el('p', { class: 'notice warn' }, `החשבון ${qs.get('email') || ''} עוד לא הוזמן. בקש ממנהל המשפחה להוסיף אותך.`)
+          : null,
+        el('a', { class: 'gbtn', href: '/api/auth/login?next=' + encodeURIComponent(next) },
+          el('span', { html: '<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.9 6.2C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.8l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>' }),
+          'התחברות עם Google')));
+      return;
+    }
+
+    const u = r.user;
+    document.getElementById('hello').textContent = `שלום ${(u.name || u.email).split(' ')[0]} 👋`;
+    const apps = [
+      { href: '/groceries/', ic: '🛒', name: 'קניות ומתכונים', sub: 'רשימה משותפת וספר מתכונים' },
+      { href: '/news/', ic: '📰', name: 'חדשות', sub: 'כל האתרים במקום אחד' },
+      { href: '/mail/', ic: '📬', name: 'סידור המייל', sub: 'מסבירים במילים – העוזר מסדר' },
+      { href: '/pc/', ic: '💻', name: 'סידור המחשב', sub: 'קבצים ותיקיות, עם גיבוי' },
+    ];
+    if (u.role === 'owner') apps.push({ href: '/admin/', ic: '👨‍👩‍👧', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר' });
+    root.append(el('nav', { class: 'tiles' }, apps.map((a) =>
+      el('a', { class: 'tile', href: a.href }, el('span', { class: 'ic' }, a.ic), el('b', {}, a.name), el('small', {}, a.sub)))));
+    root.append(el('p', { class: 'muted', style: 'text-align:center;margin-top:28px' },
+      el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות')));
+  })();
+  </script>
+</body>
+</html>

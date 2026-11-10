@@ -1,0 +1,55 @@
+body.news { overflow: hidden; }
+.shell { display: grid; grid-template-columns: 250px minmax(300px, 420px) 1fr; height: calc(100dvh - 58px); }
+.side { overflow-y: auto; padding: 10px 8px 40px; border-inline-end: 1px solid var(--line); background: var(--glass); }
+.side h3 { font-size: .78rem; color: var(--muted); margin: 14px 10px 4px; display: flex; justify-content: space-between; }
+.side button.src { display: flex; width: 100%; align-items: center; gap: 8px; font: inherit; font-size: .92rem; text-align: start; background: none; border: 0; color: var(--text); padding: 7px 10px; border-radius: 8px; cursor: pointer; }
+.side button.src:hover { background: var(--line); }
+.side button.src[aria-current="true"] { background: rgba(15,118,110,.14); color: var(--primary); font-weight: 600; }
+.side .n { margin-inline-start: auto; font-size: .75rem; color: var(--muted); }
+.side .fav { width: 16px; height: 16px; border-radius: 3px; flex: none; }
+.side .err { color: var(--accent); font-size: .75rem; }
+.side .addsrc { margin: 16px 10px; width: calc(100% - 20px); }
+
+.listpane { display: flex; flex-direction: column; min-width: 0; border-inline-end: 1px solid var(--line); background: var(--card); }
+.listbar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.listbar .toggle { font-size: .8rem; margin: 0 6px; }
+.items { overflow-y: auto; flex: 1; }
+.it { display: grid; grid-template-columns: 1fr 72px; gap: 10px; width: 100%; text-align: start; font: inherit; color: var(--text); background: none; border: 0; border-bottom: 1px solid var(--line); padding: 10px 12px; cursor: pointer; }
+.it:hover { background: var(--bg); }
+.it[aria-current="true"] { background: rgba(15,118,110,.1); box-shadow: inset -3px 0 0 var(--primary); }
+.it .t { font-weight: 700; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.it.read .t { font-weight: 400; color: var(--muted); }
+.it .meta { font-size: .75rem; color: var(--muted); margin-top: 4px; display: flex; gap: 6px; }
+.it .thumb { width: 72px; height: 54px; border-radius: 8px; background: var(--bg) center/cover no-repeat; }
+.it .star { color: #f59e0b; }
+.items.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; padding: 10px; align-content: start; }
+.items.cards .it { grid-template-columns: 1fr; border: 1px solid var(--line); border-radius: 12px; padding: 0; overflow: hidden; }
+.items.cards .it .thumb { width: 100%; height: 110px; border-radius: 0; order: -1; }
+.items.cards .it > div:first-child { padding: 8px 10px 10px; }
+.more { padding: 16px; text-align: center; color: var(--muted); }
+
+.reader { overflow-y: auto; padding: 24px clamp(16px, 4vw, 56px) 80px; }
+.reader-empty { color: var(--muted); text-align: center; margin-top: 20vh; line-height: 2; }
+.reader .rbar { position: sticky; top: -24px; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 0; margin-top: -10px; background: var(--bg); }
+.reader h2 { font-size: 1.6rem; line-height: 1.3; margin: 10px 0 6px; }
+.reader .byline { color: var(--muted); font-size: .9rem; margin-bottom: 18px; }
+.reader .content { font-size: 1.08rem; line-height: 1.75; max-width: 72ch; }
+.reader .content img { max-width: 100%; height: auto; border-radius: 10px; }
+.reader .content a { word-break: break-word; }
+.reader .summary { max-width: 72ch; margin: 0 0 18px; }
+.reader .summary ul { margin: 6px 0 0; padding-inline-start: 20px; }
+.reader iframe { width: 100%; height: calc(100dvh - 160px); border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+.back-mobile { display: none; }
+
+@media (max-width: 1000px) {
+  .shell { grid-template-columns: 220px 1fr; }
+  .reader { position: fixed; inset: 58px 0 0 0; background: var(--bg); z-index: 8; display: none; }
+  .reader.open { display: block; }
+  .back-mobile { display: inline-flex; }
+}
+@media (max-width: 700px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { position: fixed; inset: 58px 0 0 25%; z-index: 9; background: var(--card); box-shadow: var(--shadow); transform: translateX(110%); transition: transform .2s; }
+  .side.open { transform: none; }
+}
+@media (min-width: 701px) { #menuBtn { display: none; } }

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>סידור המייל</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>
+    main { font-size: 1.05rem; }
+    .chat { display: grid; gap: 10px; margin: 14px 0; }
+    .bubble { padding: 12px 14px; border-radius: 16px; max-width: 92%; line-height: 1.55; white-space: pre-wrap; }
+    .bubble.me { background: var(--primary); color: var(--primary-ink); justify-self: start; border-bottom-right-radius: 4px; }
+    .bubble.ai { background: var(--card); box-shadow: var(--shadow); justify-self: end; border-bottom-left-radius: 4px; }
+    .ask { display: grid; gap: 8px; padding: 12px; }
+    .ask textarea { font-size: 1.05rem; }
+    .ideas { display: flex; flex-wrap: wrap; gap: 6px; }
+    .op { padding: 12px 14px; margin: 10px 0; border: 1px solid var(--line); border-radius: 14px; background: var(--card); }
+    .op label.head { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+    .op input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--primary); flex: none; margin-top: 2px; }
+    .op .count { font-weight: 400; color: var(--muted); font-size: .9rem; }
+    .op ul { margin: 8px 0 0; padding-inline-start: 32px; font-size: .88rem; color: var(--muted); }
+    .op li { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .op details { margin-top: 6px; font-size: .8rem; color: var(--muted); padding-inline-start: 32px; }
+    .op code { direction: ltr; unicode-bidi: embed; }
+    .progress { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 10px 0; }
+    .progress > i { display: block; height: 100%; width: 0; background: var(--primary); transition: width .3s; }
+    .hist li { margin-bottom: 10px; }
+    .big { font-size: 1.05rem; padding: 12px 18px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div id="root"></div>
+  </main>
+  <script src="/assets/common.js"></script>
+  <script src="mail.js"></script>
+</body>
+</html>

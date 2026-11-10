@@ -6,6 +6,7 @@ import * as daemon from '../../server/daemon';
 import * as kitchen from '../../server/kitchen';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
+import { ensureSchema } from '../../server/schema';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -106,11 +107,12 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil })
     if (!m) continue;
     const params = Object.fromEntries(keys.map((k, i) => [k, m[i + 1]]));
     try {
+      await ensureSchema(env);
       const user = await loadUser(env, request);
       return await h({ req: request, env, url, params, user, waitUntil });
     } catch (err) {
       if (err instanceof HttpError) return json({ error: err.message }, err.status);
-      console.error(err);
+      console.error('API error', url.pathname, err instanceof Error ? err.stack || err.message : err);
       return json({ error: 'server_error' }, 500);
     }
   }

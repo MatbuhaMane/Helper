@@ -5,6 +5,12 @@ compatibility_flags = ["nodejs_compat"]
 # Keep variables set in the dashboard (OWNER_EMAIL lives there, not in this public repo).
 keep_vars = true
 
+# schema.sql is bundled as text so the Worker can create its tables on first run.
+[[rules]]
+type = "Text"
+globs = ["**/*.sql"]
+fallthrough = true
+
 [assets]
 directory = "public"
 binding = "ASSETS"

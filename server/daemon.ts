@@ -99,7 +99,7 @@ const tool = (name: string, description: string, properties: Record<string, unkn
 const str = (description: string) => ({ type: 'string', description });
 
 const TOOLS: BetaToolUnion[] = [
-  { type: 'web_search_20260209', name: 'web_search', max_uses: 5, user_location: { type: 'approximate', country: 'IL', timezone: 'Asia/Jerusalem' } } as BetaToolUnion,
+  { type: 'web_search_20260209', name: 'web_search', max_uses: 5, user_location: { type: 'approximate', timezone: 'Asia/Jerusalem' } } as BetaToolUnion,
   { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 4 } as BetaToolUnion,
   tool('shapeshift', 'Change into an animal (real or mythical). The picture of the new shape appears in the app.', {
     animal_en: str('The animal in English, singular, specific, e.g. "red fox", "snowy owl", "golden retriever", "dragon"'),

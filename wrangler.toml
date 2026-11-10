@@ -17,6 +17,6 @@ bucket_name = "helper-media"
 
 [vars]
 OWNER_EMAIL = ""
-GOOGLE_CLIENT_ID = ""
+GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleusercontent.com"
 GEMINI_MODEL = "gemini-2.5-flash"
 GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"

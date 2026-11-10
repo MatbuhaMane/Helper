@@ -5,7 +5,7 @@ export interface Env {
   OWNER_EMAIL: string;          // the first owner; signs in without an invitation
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
-  TOKEN_KEY: string;            // base64 of 32 random bytes; encrypts Gmail refresh tokens
+  TOKEN_KEY?: string;           // optional base64 of 32 random bytes; encrypts Gmail refresh tokens (else derived)
   ANTHROPIC_API_KEY?: string;
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
@@ -246,9 +246,17 @@ function b64urlDecode(s: string): string {
 }
 
 async function aesKey(env: Env): Promise<CryptoKey> {
-  if (!env.TOKEN_KEY) throw new HttpError(500, 'TOKEN_KEY is not configured');
-  const raw = Uint8Array.from(atob(env.TOKEN_KEY), (c) => c.charCodeAt(0));
-  return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  // TOKEN_KEY (base64, 32 bytes) if set; otherwise a key derived from GOOGLE_CLIENT_SECRET, so setup needs one secret fewer.
+  // (Rotating the Google client secret then just means everyone reconnects Gmail once.)
+  if (env.TOKEN_KEY) {
+    const raw = Uint8Array.from(atob(env.TOKEN_KEY), (c) => c.charCodeAt(0));
+    return crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+  }
+  if (!env.GOOGLE_CLIENT_SECRET) throw new HttpError(500, 'GOOGLE_CLIENT_SECRET is not configured');
+  const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.GOOGLE_CLIENT_SECRET), 'HKDF', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'HKDF', hash: 'SHA-256', salt: new TextEncoder().encode('helper-gmail-tokens'), info: new TextEncoder().encode('aes-gcm-256') },
+    base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
 async function encrypt(env: Env, plain: string): Promise<string> {

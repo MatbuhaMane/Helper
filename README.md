@@ -35,7 +35,7 @@ The app runs as one Cloudflare **Worker** with static assets (`wrangler.toml`), 
 3. **Deploy** – Workers & Pages → Create → Import a repository → `MatbuhaMane/Helper`, deploy command `npx wrangler deploy`. Every push to `main` redeploys.
 4. **Settings** (the Worker → Settings → Variables and Secrets):
    - Variable `OWNER_EMAIL` – the family manager's Gmail (kept out of this public repo; `keep_vars` preserves it across deploys).
-   - Secrets `GOOGLE_CLIENT_SECRET`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, and `TOKEN_KEY` (32 random bytes, base64: `openssl rand -base64 32`).
+   - Secrets `GOOGLE_CLIENT_SECRET`, `ANTHROPIC_API_KEY`, and `GEMINI_API_KEY`. Optional `TOKEN_KEY` (32 random bytes, base64) for encrypting Gmail tokens; without it a key is derived from the Google secret.
 5. Add a custom domain if you like (for example `helper.<your-domain>`), sign in as the owner, open **ניהול משפחה** and invite everyone.
 
 ## Local development

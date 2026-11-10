@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "helper-db"
-database_id = "REPLACE_WITH_D1_ID"
+database_id = "502f1564-bcd1-4730-ac65-c5de19d3c824"
 
 # Non-secret settings. Secrets (GOOGLE_CLIENT_SECRET, ANTHROPIC_API_KEY,
 # GEMINI_API_KEY, TOKEN_KEY) are set with `wrangler pages secret put`.

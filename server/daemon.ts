@@ -304,7 +304,10 @@ export async function chat(ctx: Ctx) {
     } catch (err) {
       if (err instanceof Anthropic.AuthenticationError) throw new HttpError(503, 'claude_key_invalid');
       if (err instanceof Anthropic.RateLimitError) throw new HttpError(429, 'ai_busy');
-      if (err instanceof Anthropic.APIError) throw new HttpError(502, `claude_error_${err.status}`);
+      if (err instanceof Anthropic.APIError) {
+        console.error('Claude API error', err.status, err.message);
+        throw new HttpError(502, `claude_error_${err.status}: ${String(err.message).slice(0, 300)}`);
+      }
       throw err;
     }
     messages.push({ role: 'assistant', content: res.content as BetaContentBlock[] as any });

@@ -52,7 +52,10 @@ async function claudeJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Pro
     if (err instanceof HttpError) throw err;
     if (err instanceof Anthropic.AuthenticationError) throw new HttpError(503, 'claude_key_invalid');
     if (err instanceof Anthropic.RateLimitError) throw new HttpError(429, 'ai_busy');
-    if (err instanceof Anthropic.APIError) throw new HttpError(502, `claude_error_${err.status}`);
+    if (err instanceof Anthropic.APIError) {
+        console.error('Claude API error', err.status, err.message);
+        throw new HttpError(502, `claude_error_${err.status}: ${String(err.message).slice(0, 300)}`);
+      }
     throw err;
   }
 }

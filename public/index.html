@@ -3,37 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#efeee6">
   <title>העוזר המשפחתי</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.svg">
   <link rel="stylesheet" href="/assets/base.css">
   <style>
-    .hero { text-align: center; padding: 48px 16px 8px; }
-    .hero h1 { font-size: 1.8rem; margin: 0 0 6px; }
-    .hero p { color: var(--muted); margin: 0; }
-    .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 24px; }
-    .tile { display: grid; gap: 6px; align-content: start; text-decoration: none; color: var(--text); background: var(--card); border-radius: 18px; box-shadow: var(--shadow); padding: 18px 16px; min-height: 140px; transition: transform .15s; }
-    .tile:hover { transform: translateY(-2px); }
-    .tile .ic { font-size: 2.1rem; }
-    .tile b { font-size: 1.05rem; }
-    .tile small { color: var(--muted); }
-    .login { max-width: 420px; margin: 24px auto; padding: 24px; text-align: center; }
-    .gbtn { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 12px 22px; font-weight: 600; }
+    .home { display: grid; gap: 28px; padding-block: 28px 40px; }
+    @media (min-width: 900px) { .home { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 48px; align-items: start; padding-block: 44px 56px; } }
+    .greet h1 { font-size: clamp(1.9rem, 1.2rem + 2.2vw, 2.8rem); line-height: 1.1; margin: 0 0 6px; }
+    .greet p { margin: 0; color: var(--muted); font-size: 1.1rem; }
+    .companion { display: grid; gap: 18px; justify-items: center; }
+    @media (min-width: 900px) { .companion { justify-items: stretch; } .companion .dm-hero { margin-inline: auto; } }
+    .apps h2 { font-size: .95rem; color: var(--muted); font-weight: 500; margin: 0 0 10px; }
+    .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    @media (min-width: 900px) { .tiles { grid-template-columns: 1fr; gap: 0; border-block-start: 1px solid var(--line); } }
+    .tile { display: grid; grid-template-columns: auto 1fr; column-gap: 14px; align-items: center; text-decoration: none; color: var(--text);
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-block-size: 92px; transition: border-color var(--dur-quick) var(--ease-river); }
+    .tile:hover { border-color: var(--primary); }
+    .tile .ic { grid-row: span 2; inline-size: 44px; block-size: 44px; display: grid; place-items: center; border-radius: 50%; background: color-mix(in srgb, var(--olive) 26%, var(--card)); color: var(--vine); }
+    .tile .ic .icon { inline-size: 22px; block-size: 22px; }
+    .tile b { font-weight: 500; font-size: 1.05rem; }
+    .tile small { color: var(--muted); font-size: .88rem; line-height: 1.4; }
+    @media (max-width: 899px) { .tile { grid-template-columns: 1fr; row-gap: 8px; align-content: start; } .tile .ic { grid-row: auto; } }
+    @media (min-width: 900px) {
+      .tile { background: none; border: 0; border-block-end: 1px solid var(--line); border-radius: 0; padding: 16px 4px; min-block-size: 0; }
+      .tile b { background-image: linear-gradient(var(--primary), var(--primary)); background-repeat: no-repeat; background-position: var(--end) 100%; background-size: 0% 2px; transition: background-size var(--dur-draw) var(--ease-river); }
+      .tile:hover b { background-position: var(--start) 100%; background-size: 100% 2px; color: var(--primary); }
+    }
+    .login { max-width: 460px; margin: 10vh auto; padding: 32px 28px; text-align: center; }
+    .login h1 { font-size: 2rem; margin: 0 0 8px; }
+    .login p { color: var(--muted); }
+    .gbtn { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; background: var(--card); color: var(--text); border: 1px solid var(--line-strong); border-radius: 999px; padding: 12px 22px; font-weight: 500; margin-top: 10px; }
+    .gbtn:hover { border-color: var(--primary); }
     .gbtn svg { width: 20px; height: 20px; }
-    #hello { margin: 0; }
+    .out { text-align: center; margin-top: 8px; }
   </style>
 </head>
 <body data-daemon="hero">
-  <main>
-    <section class="hero">
-      <h1>העוזר המשפחתי</h1>
-      <p id="hello">עוזר אישי לכל המשפחה והחברים</p>
-      <div id="daemonHome" style="margin-top:26px"></div>
-    </section>
-    <div id="root"></div>
-  </main>
+  <main class="wide" id="root"></main>
   <script src="/assets/common.js"></script>
   <script>
   (async () => {
@@ -41,35 +50,39 @@
     const root = document.getElementById('root');
     const qs = new URLSearchParams(location.search);
     const r = await H.me();
+    H.header('');
 
     if (!r.user) {
       const next = qs.get('next') || '/';
       const err = qs.get('error');
       root.append(el('div', { class: 'card login' },
-        el('p', {}, 'כדי להשתמש בעוזר צריך להתחבר עם חשבון Google.'),
-        err === 'not_invited'
-          ? el('p', { class: 'notice warn' }, `החשבון ${qs.get('email') || ''} עוד לא הוזמן. בקש ממנהל המשפחה להוסיף אותך.`)
-          : null,
+        el('h1', {}, 'העוזר המשפחתי'),
+        el('p', {}, 'רשימת קניות משותפת, מתכונים, חדשות וסידור המייל – לכל המשפחה.'),
+        err === 'not_invited' ? el('p', { class: 'notice warn' }, `החשבון ${qs.get('email') || ''} עוד לא הוזמן. בקשו ממנהל המשפחה להוסיף אתכם.`) : null,
         el('a', { class: 'gbtn', href: '/api/auth/login?next=' + encodeURIComponent(next) },
           el('span', { html: '<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.9 6.2C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.8c4.3-4 6.9-9.9 6.9-17.2z"/><path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.8-3-.8-4.6s.3-3.2.8-4.6l-7.9-6.2C.9 16.6 0 20.2 0 24s.9 7.4 2.6 10.8l7.9-6.2z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.8c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.1-13.5-9.9l-7.9 6.2C6.6 42.6 14.6 48 24 48z"/></svg>' }),
-          'התחברות עם Google')));
+          'התחברות עם Google'),
+        r.dev ? el('p', {}, el('a', { href: '/api/auth/dev?email=' + encodeURIComponent(r.devEmail) + '&name=Mishael&next=/' }, 'כניסת תצוגה מקדימה (פיתוח)')) : null));
       return;
     }
 
     const u = r.user;
-    H.loadDaemon().then((d) => d.mount(document.getElementById('daemonHome')));
-    document.getElementById('hello').textContent = `שלום ${(u.name || u.email).split(' ')[0]} 👋`;
+    const first = (u.name || u.email).split(' ')[0];
+    const companion = el('section', { class: 'companion', 'aria-label': 'הדימון שלך' });
     const apps = [
-      { href: '/groceries/', ic: '🛒', name: 'קניות ומתכונים', sub: 'רשימה משותפת וספר מתכונים' },
-      { href: '/news/', ic: '📰', name: 'חדשות', sub: 'כל האתרים במקום אחד' },
-      { href: '/mail/', ic: '📬', name: 'סידור המייל', sub: 'מסבירים במילים – העוזר מסדר' },
-      { href: '/pc/', ic: '💻', name: 'סידור המחשב', sub: 'קבצים ותיקיות, עם גיבוי' },
+      { href: '/groceries/', ic: 'cart', name: 'קניות ומתכונים', sub: 'רשימה משותפת לבית וספר מתכונים' },
+      { href: '/news/', ic: 'news', name: 'חדשות', sub: 'כל האתרים, מישראל ומהעולם, במקום אחד' },
+      { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'מסבירים במילים, מאשרים, וזה מסתדר' },
+      { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'קבצים ותיקיות, תמיד עם גיבוי' },
     ];
-    if (u.role === 'owner') apps.push({ href: '/admin/', ic: '👨‍👩‍👧', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר' });
-    root.append(el('nav', { class: 'tiles' }, apps.map((a) =>
-      el('a', { class: 'tile', href: a.href }, el('span', { class: 'ic' }, a.ic), el('b', {}, a.name), el('small', {}, a.sub)))));
-    root.append(el('p', { class: 'muted', style: 'text-align:center;margin-top:28px' },
-      el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות')));
+    if (u.role === 'owner') apps.push({ href: '/admin/', ic: 'family', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר' });
+    root.append(el('div', { class: 'home' },
+      el('div', {}, el('div', { class: 'greet' }, el('h1', {}, `שלום ${first}`), el('p', {}, 'במה נתחיל היום?')), el('div', { style: 'height:22px' }), companion),
+      el('section', { class: 'apps', 'aria-label': 'האפליקציות' }, el('h2', {}, 'האפליקציות'),
+        el('nav', { class: 'tiles' }, apps.map((a) => el('a', { class: 'tile', href: a.href, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name },
+          el('span', { class: 'ic' }, H.icon(a.ic)), el('b', {}, a.name), el('small', {}, a.sub)))),
+        el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות')))));
+    H.loadDaemon().then((d) => d.mount(companion));
   })();
   </script>
 </body>

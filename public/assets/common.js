@@ -81,12 +81,54 @@
     return r;
   }
 
-  function header(title, icon, extra) {
-    const bar = el('header', { class: 'topbar' },
-      el('h1', {}, el('a', { class: 'home', href: '/', title: 'לדף הבית', 'aria-label': 'לדף הבית' }, '🏠'), `${icon} ${title}`),
-      el('div', { class: 'row' }, extra || null, el('button', { class: 'userchip', id: 'userchip', onclick: userMenu }, '…')));
+  /* Line icons (one stroke weight, like the ShemRivers drawings). */
+  const ICONS = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
+    cart: '<path d="M3 4h2l2.2 11h10.6L20 7H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
+    news: '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M7 8.5h10M7 12h10M7 15.5h6"/>',
+    mail: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m3.5 6 8.5 7 8.5-7"/>',
+    pc: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
+    family: '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20c.6-3.6 2.8-5.5 5.5-5.5s4.9 1.9 5.5 5.5"/><path d="M14 15.3c.9-.5 1.9-.8 3-.8 2.3 0 4 1.6 4.5 5.5"/>',
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+  };
+  // SVG needs its namespace, so it's parsed from markup rather than built with createElement.
+  const icon = (name, cls = 'icon') => {
+    const t = document.createElement('template');
+    t.innerHTML = `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+    return t.content.firstChild;
+  };
+  const NAV = [
+    { href: '/', label: 'בית', icon: 'home' },
+    { href: '/groceries/', label: 'קניות', icon: 'cart' },
+    { href: '/news/', label: 'חדשות', icon: 'news' },
+    { href: '/mail/', label: 'מייל', icon: 'mail' },
+    { href: '/pc/', label: 'מחשב', icon: 'pc' },
+  ];
+  const BRAND = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#c2b04e"/><path d="M7 20c3-1.5 5.5-1.5 9 0s6 1.5 9 0" fill="none" stroke="#55622f" stroke-width="2.2" stroke-linecap="round"/><path d="M9 14.5c2.4-1.2 4.4-1.2 7 0s4.6 1.2 7 0" fill="none" stroke="#2e2a1e" stroke-width="1.8" stroke-linecap="round" opacity=".55"/></svg>';
+
+  /** The app shell: a top bar on every page (brand, navigation on PC, the user), and a tab bar at the bottom on phones. */
+  function header(title) {
+    const here = location.pathname.replace(/index\.html$/, '');
+    const current = (href) => (href === '/' ? here === '/' : here.startsWith(href));
+    const bar = el('header', { class: 'appbar' },
+      el('a', { class: 'brand', href: '/', 'aria-label': 'העוזר המשפחתי, לדף הבית' }, el('span', { html: BRAND }), el('span', { class: 'brand-text' }, 'העוזר המשפחתי')),
+      title ? el('h1', { class: 'page-title' }, title) : null,
+      el('nav', { class: 'topnav', 'aria-label': 'ניווט ראשי', hidden: true }, NAV.map((n) =>
+        el('a', { class: 'ink-nav', href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'nav-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, n.label))),
+      el('span', { class: 'spacer' }),
+      el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, hidden: true }, '…'));
+    const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) =>
+      el('a', { href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'tab-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, icon(n.icon), el('span', {}, n.label))));
     document.body.prepend(bar);
-    me().then((r) => { if (r.user) document.getElementById('userchip').textContent = (r.user.name || r.user.email).split(' ')[0] + ' ▾'; });
+    document.body.append(tabs);
+    me().then((r) => {
+      if (!r.user) return;
+      bar.querySelector('.topnav').hidden = false;
+      tabs.hidden = false;
+      const chip = document.getElementById('userchip');
+      chip.hidden = false;
+      chip.textContent = (r.user.name || r.user.email).split(' ')[0];
+    });
     return bar;
   }
 
@@ -152,5 +194,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, modal, closeModal, timeAgo, loadDaemon };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon };
 })();

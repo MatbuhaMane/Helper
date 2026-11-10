@@ -41,7 +41,7 @@
     root.append(
       el('div', { class: 'notice', style: 'margin-top:14px' }, '🛡 העוזר אף פעם לא מוחק מיילים, ושום דבר לא משתנה בלי האישור שלך. כל שינוי אפשר לבטל.'),
       chat,
-      el('div', { class: 'card ask' }, input,
+      el('div', { class: 'card ask', 'data-guide': 'mail-request', 'data-guide-label': 'כאן כותבים מה לסדר במייל' }, input,
         el('div', { class: 'ideas' }, IDEAS.map((t) => el('button', { class: 'chip', onclick: () => { input.value = t; input.focus(); } }, t))),
         el('div', { class: 'row' }, send, el('span', { class: 'spacer' }),
           el('button', { class: 'btn ghost small', onclick: showHistory }, '🕘 שינויים קודמים וביטול'),

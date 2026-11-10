@@ -22,7 +22,7 @@ route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
 route('POST', '/api/auth/logout', logout);
 route('GET', '/api/me', (ctx) => {
-  if (!ctx.user) return json({ user: null });
+  if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
   return json({ user: ctx.user, ai: aiStatus(ctx.env) });
 });
 

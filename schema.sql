@@ -115,3 +115,10 @@ CREATE TABLE IF NOT EXISTS image_quota (
   count INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (email, day)
 );
+
+-- The companion's current 3D body (the parameters Claude chose for the animal)
+CREATE TABLE IF NOT EXISTS daemon_forms (
+  email      TEXT PRIMARY KEY,
+  params     TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);

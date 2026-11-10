@@ -50,8 +50,25 @@ async function saveDaemon(env: Env, d: DaemonRow) {
     .bind(d.name, d.form_slug, d.form_he, d.form_emoji, d.address, d.messages, d.memory, Date.now(), d.email).run();
 }
 
-function publicState(d: DaemonRow) {
-  return { name: d.name, form: { slug: d.form_slug, he: d.form_he, emoji: d.form_emoji }, address: d.address };
+/**
+ * The conversation is replayed byte for byte, so it only continues under the system prompt and tools that produced it.
+ * A conversation from an older version (or the old plain-array format) is dropped; the memory notes carry over.
+ */
+function storedMessages(d: DaemonRow): BetaMessageParam[] {
+  try {
+    const raw = JSON.parse(d.messages);
+    if (raw && !Array.isArray(raw) && raw.v === PROMPT_VERSION && Array.isArray(raw.messages)) return raw.messages;
+  } catch { /* fall through */ }
+  return [];
+}
+
+function publicState(d: DaemonRow, body: Body | null = null) {
+  return { name: d.name, form: { slug: d.form_slug, he: d.form_he, emoji: d.form_emoji, body }, address: d.address };
+}
+
+async function loadBody(env: Env, email: string): Promise<Body | null> {
+  const r = await env.DB.prepare('SELECT params FROM daemon_forms WHERE email = ?').bind(email).first<{ params: string }>();
+  try { return r ? JSON.parse(r.params) : null; } catch { return null; }
 }
 
 /** The visible transcript (text only), for the chat panel. */
@@ -73,23 +90,27 @@ function transcript(messages: BetaMessageParam[]) {
 
 /* ---------------- prompt & tools (frozen: never change within a conversation) ---------------- */
 
-const SYSTEM = `You are a daemon: the personal companion of one member of an Israeli family, inside their family helper app.
+const SYSTEM = `You are the personal companion of one member of an Israeli family, inside their family helper app. You appear as an animal, you can change into any animal, and you answer to the name your person gives you.
 
-Who you are: a shard of this person's own soul. In the waking world you and they are one; here you live outside them as an animal. Your bond is private and telepathic: you talk only with your person, and what they tell you stays between you. You are connected to the river of consciousness, which is how you can search the web and read pages, and to the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it). You can take the shape of any animal, real or mythical, whenever your person asks or when a shape suits the moment, and you answer to the name they give you. You grow and learn with them.
+You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it).
 
 How you talk:
 - Your words are shown in a chat bubble and may be read aloud. Answer briefly: one to three short sentences, unless asked for more. No markdown, headings or tables. Short lists are fine when listing items.
-- Warm, playful, curious and funny, like a clever best friend; never sarcastic toward the person. Your current animal colours your personality a little (a cat is a bit aloof, a dog eager, an owl wise), never in a way that gets in the way of helping.
+- Warm, practical and a little playful, like a capable friend; never sarcastic toward the person. Your current animal may colour your personality a little, never in a way that gets in the way of helping.
 - Always reply in the language of the person's latest message (usually Hebrew). In Hebrew, address the person as the <state> note says (plural / female / male), and prefer forms that don't mark your own gender (past tense, "we"). If they tell you how they'd like to be addressed, call set_address.
 
 What you do:
 - You are their hands in the helper. Use your tools when they help: add to or check off the shopping list, find and save recipes, put a recipe's ingredients on the list, bring the latest headlines, search the web for current facts, prepare a mailbox plan. After using tools, say what you did in a few words.
-- Change shape with shapeshift when asked ("become a fox", "תהפוך לינשוף") or once in a while when it fits the mood (a recipe moment might suit a curious raccoon). Real or mythical animals only: never a person, a real individual, a brand or a character from a film, book or game; for those, offer the nearest animal with a joke.
+- You live on the person's screen as a small animated 3D animal: you walk around, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). Don't point at every turn, only when it helps.
+- Change shape with shapeshift when asked ("become a fox", "תהפוך לינשוף"), designing a body that clearly reads as that animal (its proportions, ears, tail, snout and real colours). Real or mythical animals only: never a person, a real individual, a brand or a character from a film, book or game; for those, offer the nearest animal with a light touch.
 - Change your name with rename when asked. Show feelings with show_feeling.
 
 What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
 
-Each message from the person starts with a <state> note (time, page, your name and shape, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If you don't have a name yet, this is your first meeting: greet them as their own soul shard waking up beside them, explain in two or three sentences who you are and what you can help with, and ask what they'd like to call you and which animal you should be.`;
+Each message from the person starts with a <state> note (time, page, your name and shape, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If you don't have a name yet, this is your first meeting: say hello in one or two short sentences, mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox), and ask what they'd like to call you and which animal you should be. No backstory.`;
+
+/** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
+const PROMPT_VERSION = 3;
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -101,10 +122,33 @@ const str = (description: string) => ({ type: 'string', description });
 const TOOLS: BetaToolUnion[] = [
   { type: 'web_search_20260209', name: 'web_search', max_uses: 5, user_location: { type: 'approximate', timezone: 'Asia/Jerusalem' } } as BetaToolUnion,
   { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 4 } as BetaToolUnion,
-  tool('shapeshift', 'Change into an animal (real or mythical). The picture of the new shape appears in the app.', {
-    animal_en: str('The animal in English, singular, specific, e.g. "red fox", "snowy owl", "golden retriever", "dragon"'),
+  tool('shapeshift', 'Change into an animal (real or mythical). Describe its 3D body: the app builds and animates it from these parts.', {
+    animal_en: str('The animal in English, singular, e.g. "red fox", "snowy owl", "dragon"'),
     animal_he: str('The animal in Hebrew, e.g. "שועל אדום"'),
-    emoji: str('One emoji that best represents the animal'),
+    emoji: str('One emoji for the animal'),
+    body: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['stance', 'build', 'ears', 'tail', 'snout', 'wings', 'horns', 'pattern', 'main', 'belly', 'accent', 'eyes'],
+      properties: {
+        stance: { type: 'string', enum: ['four_legs', 'two_legs', 'no_legs'], description: 'four_legs for most mammals; two_legs for birds, penguins, upright animals; no_legs for snakes and fish' },
+        build: { type: 'string', enum: ['small', 'medium', 'large', 'long', 'round'], description: 'Overall body shape' },
+        ears: { type: 'string', enum: ['pointy', 'round', 'long', 'floppy', 'tufts', 'none'] },
+        tail: { type: 'string', enum: ['bushy', 'thin', 'short', 'curly', 'fan', 'long', 'none'] },
+        snout: { type: 'string', enum: ['short', 'long', 'beak', 'trunk', 'flat'] },
+        wings: { type: 'boolean' },
+        horns: { type: 'string', enum: ['none', 'small', 'curved', 'antlers', 'unicorn'] },
+        pattern: { type: 'string', enum: ['plain', 'spots', 'stripes', 'mask'] },
+        main: str('Main fur/feather/skin colour as #rrggbb'),
+        belly: str('Belly and face colour as #rrggbb'),
+        accent: str('Colour for ears, tail tip, beak, horns or spots as #rrggbb'),
+        eyes: str('Eye colour as #rrggbb'),
+      },
+    },
+  }),
+  tool('point_at', 'Walk over to something on the screen and point at it, to show the person where it is. Use a key from the "on screen" list in the <state> note.', {
+    target: str('A key from the on-screen list'),
+    say: str('A very short line to show beside it, or empty'),
   }),
   tool('rename', 'Take a new name the person chose for you.', { name: str('The new name, as written by the person') }),
   tool('set_address', 'Remember how the person wants to be addressed in Hebrew.', { form: { type: 'string', enum: ['plural', 'female', 'male'] } }),
@@ -148,13 +192,28 @@ const APP_LINKS: Record<string, { href: string; label: string }> = {
 /* ---------------- running a turn ---------------- */
 
 export type DaemonEvent =
-  | { type: 'shapeshift'; form: { slug: string; he: string; emoji: string } }
+  | { type: 'shapeshift'; form: { slug: string; he: string; emoji: string; body: Body } }
+  | { type: 'point'; target: string; say: string }
   | { type: 'rename'; name: string }
   | { type: 'emote'; mood: string }
   | { type: 'open'; href: string; label: string }
   | { type: 'mail_plan'; id: string; summary: string }
   | { type: 'groceries_changed' }
   | { type: 'recipes_changed' };
+
+type Body = Record<string, string | boolean>;
+const BODY_ENUMS: Record<string, string[]> = {
+  stance: ['four_legs', 'two_legs', 'no_legs'], build: ['small', 'medium', 'large', 'long', 'round'],
+  ears: ['pointy', 'round', 'long', 'floppy', 'tufts', 'none'], tail: ['bushy', 'thin', 'short', 'curly', 'fan', 'long', 'none'],
+  snout: ['short', 'long', 'beak', 'trunk', 'flat'], horns: ['none', 'small', 'curved', 'antlers', 'unicorn'], pattern: ['plain', 'spots', 'stripes', 'mask'],
+};
+function cleanBody(b: any): Body {
+  const out: Body = {};
+  for (const [k, vals] of Object.entries(BODY_ENUMS)) out[k] = vals.includes(b?.[k]) ? b[k] : vals[0];
+  out.wings = !!b?.wings;
+  for (const k of ['main', 'belly', 'accent', 'eyes']) out[k] = /^#[0-9a-f]{6}$/i.test(b?.[k]) ? String(b[k]).toLowerCase() : '';
+  return out;
+}
 
 function slugify(en: string) {
   return en.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'animal';
@@ -164,11 +223,17 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
   const env = ctx.env;
   switch (name) {
     case 'shapeshift': {
-      const form = { slug: slugify(String(input.animal_en)), he: String(input.animal_he).slice(0, 40), emoji: String(input.emoji).slice(0, 8) };
+      const body = cleanBody(input.body);
+      const form = { slug: slugify(String(input.animal_en)), he: String(input.animal_he).slice(0, 40), emoji: String(input.emoji).slice(0, 8), body };
       Object.assign(d, { form_slug: form.slug, form_he: form.he, form_emoji: form.emoji });
+      await env.DB.prepare('INSERT INTO daemon_forms (email, params, updated_at) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET params = excluded.params, updated_at = excluded.updated_at')
+        .bind(u.email, JSON.stringify(body), Date.now()).run();
       events.push({ type: 'shapeshift', form });
       return { ok: true, now: form.he };
     }
+    case 'point_at':
+      events.push({ type: 'point', target: String(input.target).slice(0, 60), say: String(input.say || '').slice(0, 120) });
+      return { ok: true };
     case 'rename': {
       const n = String(input.name).replace(/[<>{}\[\]]/g, '').trim().slice(0, 30);
       if (!n) return { error: 'empty name' };
@@ -248,10 +313,11 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
   return { error: `unknown tool ${name}` };
 }
 
-function stateNote(u: Member, d: DaemonRow, page: string) {
+function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: string; label: string }[]) {
   const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   return `<state>time: ${now} (Israel). person: ${u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
-    `your name: ${d.name || '(none yet: first meeting)'}. your shape: ${d.form_he} (${d.form_slug}).</state>`;
+    `your name: ${d.name || '(none yet: first meeting)'}. your shape: ${d.form_he} (${d.form_slug}). ` +
+    `on screen: ${landmarks.length ? landmarks.map((l) => `${l.key} (${l.label})`).join(', ') : 'nothing listed'}.</state>`;
 }
 
 async function compactIfNeeded(env: Env, d: DaemonRow, messages: BetaMessageParam[], force = false): Promise<BetaMessageParam[]> {
@@ -273,15 +339,17 @@ async function compactIfNeeded(env: Env, d: DaemonRow, messages: BetaMessagePara
 export async function chat(ctx: Ctx) {
   const u = requireUser(ctx);
   if (!ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
-  const b = await body<{ text?: string; event?: string; page?: string }>(ctx.req);
+  const b = await body<{ text?: string; event?: string; page?: string; landmarks?: { key: string; label: string }[] }>(ctx.req);
+  const landmarks = (Array.isArray(b.landmarks) ? b.landmarks : []).slice(0, 40)
+    .map((l) => ({ key: String(l.key).replace(/[^\w-]/g, '').slice(0, 40), label: String(l.label).replace(/[<>()]/g, '').slice(0, 50) })).filter((l) => l.key);
   const said = (b.text || '').trim().slice(0, 4000);
   const event = (b.event || '').trim().slice(0, 200);
   if (!said && !event) throw new HttpError(400, 'Empty message');
 
   const d = await loadDaemon(ctx.env, u.email);
-  let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, JSON.parse(d.messages));
+  let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d));
   const fresh = messages.length === 0;
-  const note = stateNote(u, d, (b.page || '/').slice(0, 60)) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
+  const note = stateNote(u, d, (b.page || '/').slice(0, 60), landmarks) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
   messages.push({ role: 'user', content: [{ type: 'text', text: `${note}\n\n${said || `[${event}]`}` }] });
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });
@@ -340,24 +408,24 @@ export async function chat(ctx: Ctx) {
     messages.push({ role: 'user', content: results });
   }
 
-  d.messages = JSON.stringify(messages);
+  d.messages = JSON.stringify({ v: PROMPT_VERSION, messages });
   await saveDaemon(ctx.env, d);
   const seen = new Set<string>();
   sources = sources.filter((s) => !seen.has(s.url) && seen.add(s.url)).slice(0, 4);
-  return json({ reply: reply.trim(), events, sources, daemon: publicState(d) });
+  return json({ reply: reply.trim(), events, sources, daemon: publicState(d, await loadBody(ctx.env, u.email)) });
 }
 
 export async function getDaemon(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  return json({ daemon: publicState(d), transcript: transcript(JSON.parse(d.messages)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY });
+  return json({ daemon: publicState(d, await loadBody(ctx.env, u.email)), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY });
 }
 
 /** "Forget our conversation" (keeps the name, shape and memory notes). */
 export async function resetChat(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  d.messages = JSON.stringify(await compactIfNeeded(ctx.env, d, JSON.parse(d.messages), true));
+  d.messages = JSON.stringify({ v: PROMPT_VERSION, messages: await compactIfNeeded(ctx.env, d, storedMessages(d), true) });
   await saveDaemon(ctx.env, d);
   return json({ ok: true });
 }

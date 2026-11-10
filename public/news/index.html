@@ -12,7 +12,7 @@
 </head>
 <body class="news">
   <div class="shell">
-    <aside id="side" class="side" aria-label="מקורות"></aside>
+    <aside id="side" class="side" aria-label="מקורות" data-guide="sources" data-guide-label="מקורות החדשות"></aside>
     <section class="listpane" aria-label="כתבות">
       <div class="listbar">
         <button id="menuBtn" class="mini" aria-label="מקורות">☰</button>
@@ -23,10 +23,10 @@
         <button id="markAll" class="mini" title="סמן הכל כנקרא" aria-label="סמן הכל כנקרא">✓✓</button>
         <button id="refresh" class="mini" title="רענון" aria-label="רענון">⟳</button>
       </div>
-      <div id="items" class="items"></div>
+      <div id="items" class="items" data-guide="articles" data-guide-label="רשימת הכתבות"></div>
     </section>
-    <article id="reader" class="reader" aria-live="polite">
-      <div class="reader-empty">בחרו כתבה כדי לקרוא אותה כאן 📰<br><small>מקשים: j/k – הבא/הקודם, s – שמור, o – פתח באתר</small></div>
+    <article id="reader" class="reader" aria-live="polite" data-guide="reader" data-guide-label="הכתבה הפתוחה">
+      <div class="reader-empty">בחרו כתבה כדי לקרוא אותה כאן<br><small>מקשים: j/k – הבא/הקודם, s – שמור, o – פתח באתר</small></div>
     </article>
   </div>
   <script src="/assets/common.js"></script>

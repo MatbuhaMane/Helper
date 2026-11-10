@@ -1,123 +1,573 @@
-/* The daemon companion (after the daemon of Bayt al-Hikma): a shard of your soul that lives beside you as an animal.
- * It floats on every page (or sits large on the home page), talks with you, speaks aloud, listens,
- * changes into any animal and runs the helper's apps for you through Claude. */
+/* The companion: a small animated 3D animal that lives on the screen, Clippy-style.
+ * It walks around the page, looks at the cursor, points at things, can be dragged, falls asleep when left alone,
+ * talks from a speech balloon, and rebuilds itself into any animal Claude describes (ears, tail, snout, colours...).
+ * The conversation logic is the same as before: it runs the helper's apps for you through Claude. */
 (() => {
   'use strict';
   const { el, api, toast } = H;
+  const THREE_URL = '/vendor/three.module.min.js'; // three@0.160.0, served with the app
   const PREFS = 'helper.daemon.prefs';
   let prefs = { speak: true };
   try { prefs = { ...prefs, ...JSON.parse(localStorage.getItem(PREFS) || '{}') }; } catch (_) { /* ignore */ }
   const savePrefs = () => { try { localStorage.setItem(PREFS, JSON.stringify(prefs)); } catch (_) { /* ignore */ } };
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  let state = null;       // { daemon, transcript, ai, images }
-  let root, panel, log, input, statusEl, nameEl, formEl, micBtn, spkBtn, portrait;
+  let state = null; // { daemon, transcript, ai }
   let busy = false;
 
-  /* ---------- the body ---------- */
-  function build(hero) {
-    portrait = el('img', { class: 'dm-portrait gone', alt: '', decoding: 'async' });
-    const canvas = el('canvas', { class: 'dm-embers' });
-    root = el('div', { class: 'dm is-spark ' + (hero ? 'dm-hero' : 'dm-float') },
-      el('button', { class: 'dm-btn', 'aria-label': 'הדימון שלך', onclick: () => togglePanel() },
-        canvas, el('div', { class: 'dm-aura' }),
-        el('div', { class: 'dm-body' }, el('div', { class: 'dm-face' }, portrait,
-          el('div', { class: 'dm-spark' }, el('div', { class: 'dm-eyes' }, el('i', { class: 'dm-eye' }), el('i', { class: 'dm-eye' }))),
-          el('span', { class: 'dm-emoji' })))),
-      el('span', { class: 'dm-badge' }, '1'),
-      hero ? el('span', { class: 'dm-label' }) : null);
-    embers(canvas);
-    blinkLoop();
-    // Look toward the pointer, like the game's daemon looks where you look.
-    window.addEventListener('pointermove', (e) => {
-      const r = root.getBoundingClientRect();
-      const dx = (e.clientX - (r.left + r.width / 2)) / innerWidth;
-      const dy = (e.clientY - (r.top + r.height / 2)) / innerHeight;
-      root.style.setProperty('--ry', `${(dx * 22).toFixed(1)}deg`);
-      root.style.setProperty('--rx', `${(-dy * 16).toFixed(1)}deg`);
-      root.querySelector('.dm-eyes').style.transform = `translate(${dx * 14}%, ${dy * 14 - 6}%)`;
-    }, { passive: true });
-    return root;
+  /* ===================== bodies ===================== */
+  const DEFAULT = { stance: 'four_legs', build: 'round', ears: 'round', tail: 'short', snout: 'short', wings: false, horns: 'none', pattern: 'plain', main: '#c2b04e', belly: '#f4ecd0', accent: '#55622f', eyes: '#2e2a1e' };
+  // For shapes saved before bodies existed (or if a body is missing), a few common animals.
+  const PRESETS = {
+    'red-fox': { stance: 'four_legs', build: 'medium', ears: 'pointy', tail: 'bushy', snout: 'long', pattern: 'plain', main: '#d9692b', belly: '#fbf3e6', accent: '#2b1d14', eyes: '#3b2310' },
+    fox: 'red-fox',
+    cat: { stance: 'four_legs', build: 'small', ears: 'pointy', tail: 'long', snout: 'short', pattern: 'stripes', main: '#9a8f86', belly: '#efe8de', accent: '#4a423c', eyes: '#7a9a3a' },
+    dog: { stance: 'four_legs', build: 'medium', ears: 'floppy', tail: 'thin', snout: 'long', pattern: 'plain', main: '#c99a5b', belly: '#f3e6cf', accent: '#6b4a2a', eyes: '#3a2410' },
+    ox: { stance: 'four_legs', build: 'large', ears: 'round', tail: 'thin', snout: 'flat', horns: 'curved', pattern: 'plain', main: '#6b4a33', belly: '#a47c5c', accent: '#e8dcc0', eyes: '#1e140c' },
+    owl: { stance: 'two_legs', build: 'round', ears: 'tufts', tail: 'fan', snout: 'beak', wings: true, pattern: 'spots', main: '#8a6a4a', belly: '#e9dcc4', accent: '#e0a83a', eyes: '#f0b020' },
+    rabbit: { stance: 'four_legs', build: 'small', ears: 'long', tail: 'short', snout: 'short', pattern: 'plain', main: '#d9d2c8', belly: '#fbf8f3', accent: '#e8a5a5', eyes: '#3a2818' },
+    penguin: { stance: 'two_legs', build: 'round', ears: 'none', tail: 'short', snout: 'beak', wings: true, pattern: 'plain', main: '#262a30', belly: '#f7f6f0', accent: '#f0a030', eyes: '#111111' },
+    dragon: { stance: 'four_legs', build: 'long', ears: 'pointy', tail: 'long', snout: 'long', wings: true, horns: 'small', pattern: 'spots', main: '#3f7a4a', belly: '#c8d98a', accent: '#c2b04e', eyes: '#e0a020' },
+    lion: { stance: 'four_legs', build: 'large', ears: 'round', tail: 'thin', snout: 'short', pattern: 'mask', main: '#d9a55a', belly: '#f3e2bf', accent: '#8a4a1c', eyes: '#7a4a10' },
+  };
+  function bodyFor(form) {
+    let b = form?.body;
+    if (!b || !b.main) {
+      let p = PRESETS[form?.slug] || PRESETS[(form?.slug || '').split('-').pop()];
+      if (typeof p === 'string') p = PRESETS[p];
+      b = { ...(p || {}), ...(b || {}) };
+    }
+    const out = { ...DEFAULT, ...Object.fromEntries(Object.entries(b).filter(([, v]) => v !== '' && v != null)) };
+    return out;
   }
 
-  function blinkLoop() {
-    setTimeout(() => { root.classList.add('blink'); setTimeout(() => root.classList.remove('blink'), 130); blinkLoop(); }, 2200 + Math.random() * 3800);
+  /* ===================== 3D ===================== */
+  let THREE, renderer, scene, camera, rig, parts = {}, mats = {};
+  let canvasBox, balloon, sleepBadge;
+
+  async function initThree() {
+    THREE = await import(THREE_URL);
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
+    camera.position.set(0, 1.25, 6.2);
+    camera.lookAt(0, 0.95, 0);
+    scene.add(new THREE.HemisphereLight(0xfff6e2, 0x8a7a55, 1.25));
+    const key = new THREE.DirectionalLight(0xffffff, 1.6);
+    key.position.set(-2.5, 4, 4);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0xdceaf1, 0.9);
+    rim.position.set(3, 2, -3);
+    scene.add(rim);
+    // Soft contact shadow under the feet.
+    const sh = document.createElement('canvas');
+    sh.width = sh.height = 64;
+    const g = sh.getContext('2d');
+    const grad = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+    grad.addColorStop(0, 'rgba(46,42,30,0.45)');
+    grad.addColorStop(1, 'rgba(46,42,30,0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 64, 64);
+    const shadow = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.1), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(sh), transparent: true, depthWrite: false }));
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.position.y = 0.01;
+    scene.add(shadow);
+    parts.shadow = shadow;
   }
 
-  /** Embers shed by the daemon (and a burst when it changes shape). */
-  let burst = 0;
-  function embers(canvas) {
-    const ctx = canvas.getContext('2d');
-    const parts = [];
-    let last = performance.now();
-    const frame = (t) => {
-      const dt = Math.min(0.05, (t - last) / 1000);
-      last = t;
-      const w = canvas.width = canvas.clientWidth * devicePixelRatio;
-      const h = canvas.height = canvas.clientHeight * devicePixelRatio;
-      ctx.clearRect(0, 0, w, h);
-      const rate = 3 + burst * 80 + Number(getComputedStyle(root).getPropertyValue('--voice') || 0) * 10;
-      burst = Math.max(0, burst - dt * 1.4);
-      for (let i = 0; i < rate * dt * 2; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = (0.2 + Math.random() * 0.06) * w * (burst > 0.05 ? 0.6 : 1);
-        const sp = burst > 0.05 ? 40 + Math.random() * 120 : 6 + Math.random() * 14;
-        parts.push({ x: w / 2 + Math.cos(a) * r, y: h / 2 + Math.sin(a) * r, vx: Math.cos(a) * sp * (burst > 0.05 ? 1 : 0.2), vy: -sp - Math.random() * 10, life: 1.2 + Math.random() * 1.4, age: 0, s: (0.8 + Math.random() * 1.6) * devicePixelRatio });
+  const mat = (color, opts = {}) => new THREE.MeshPhysicalMaterial({ color, roughness: 0.62, sheen: 0.6, sheenRoughness: 0.5, sheenColor: new THREE.Color(color).lerp(new THREE.Color('#ffffff'), 0.5), ...opts });
+  const sphere = (r, m, seg = 28) => new THREE.Mesh(new THREE.SphereGeometry(r, seg, Math.round(seg * 0.75)), m);
+  const pivot = (x = 0, y = 0, z = 0) => { const g = new THREE.Group(); g.position.set(x, y, z); return g; };
+
+  /** Build the animal from its parts. Everything hangs off `rig` (feet at y=0, facing +z, the camera). */
+  function build(b) {
+    if (rig) { scene.remove(rig); rig.traverse((o) => { o.geometry?.dispose(); }); }
+    parts = { shadow: parts.shadow };
+    rig = new THREE.Group();
+    scene.add(rig);
+    mats = { main: mat(b.main), belly: mat(b.belly), accent: mat(b.accent), dark: mat('#1c1812', { roughness: 0.35, sheen: 0 }), eye: new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.15, clearcoat: 1 }), iris: new THREE.MeshPhysicalMaterial({ color: b.eyes, roughness: 0.2, clearcoat: 1 }), glint: new THREE.MeshBasicMaterial({ color: '#ffffff' }), horn: mat('#efe6cf', { sheen: 0 }), blush: new THREE.MeshBasicMaterial({ color: '#f2a6a0', transparent: true, opacity: 0.45 }) };
+
+    const biped = b.stance === 'two_legs';
+    const legless = b.stance === 'no_legs';
+    const S = { small: 0.82, medium: 1, large: 1.14, long: 1, round: 0.95 }[b.build] || 1;
+    const long = b.build === 'long' ? 1.3 : 1;
+    const round = b.build === 'round' ? 1.15 : 1;
+    const legH = legless ? 0 : biped ? 0.22 : 0.42 * S;
+
+    const body = pivot(0, legH + 0.42 * S, 0);
+    rig.add(body);
+    parts.body = body;
+    const torso = sphere(0.5, mats.main, 36);
+    if (biped) torso.scale.set(0.95 * round, 1.12, 0.9 * round);
+    else if (legless) torso.scale.set(0.8, 0.55, 1.7);
+    else torso.scale.set(0.95 * round, 0.82 * round, 1.12 * long);
+    torso.scale.multiplyScalar(S);
+    body.add(torso);
+    const belly = sphere(0.42, mats.belly, 28);
+    belly.scale.copy(torso.scale).multiply(new THREE.Vector3(0.82, 0.8, 0.5));
+    belly.position.set(0, biped ? -0.06 : -0.12 * S, (biped ? 0.24 : 0.3 * long) * S);
+    body.add(belly);
+    addPattern(b, body, torso.scale, S, biped);
+
+    // Head: above the torso for bipeds, in front and up for quadrupeds.
+    const head = pivot(0, biped ? 0.62 * S : 0.38 * S, biped ? 0.06 : 0.5 * S * long);
+    body.add(head);
+    parts.head = head;
+    const skull = sphere(0.4 * S, mats.main, 36);
+    skull.scale.set(1, 0.94, 0.96);
+    head.add(skull);
+    const face = sphere(0.33 * S, mats.belly, 28);
+    face.scale.set(1, 0.85, 0.6);
+    face.position.set(0, -0.06 * S, 0.17 * S);
+    head.add(face);
+    if (b.pattern === 'mask') { const m = sphere(0.3 * S, mats.accent, 24); m.scale.set(1.25, 0.5, 0.5); m.position.set(0, 0.05 * S, 0.2 * S); head.add(m); }
+    if (b.pattern === 'mask' && b.build === 'large') { // a mane
+      const mane = sphere(0.56 * S, mats.accent, 28); mane.scale.set(1, 1, 0.7); mane.position.z = -0.08 * S; head.add(mane);
+    }
+
+    // Eyes (with a glint each: what makes them look alive).
+    parts.eyes = [];
+    for (const sx of [-1, 1]) {
+      const eye = pivot(sx * 0.15 * S, 0.06 * S, 0.3 * S);
+      const white = sphere(0.085 * S, mats.eye, 20);
+      const iris = sphere(0.058 * S, mats.iris, 18); iris.position.z = 0.04 * S;
+      const pupil = sphere(0.032 * S, mats.dark, 14); pupil.position.z = 0.072 * S;
+      const glint = sphere(0.013 * S, mats.glint, 8); glint.position.set(-0.02 * S, 0.025 * S, 0.095 * S);
+      eye.add(white, iris, pupil, glint);
+      head.add(eye);
+      parts.eyes.push(eye);
+      const blush = sphere(0.05 * S, mats.blush, 12); blush.scale.set(1.3, 0.6, 0.4); blush.position.set(sx * 0.24 * S, -0.1 * S, 0.27 * S); head.add(blush);
+    }
+
+    // Snout, nose and mouth.
+    const snout = pivot(0, -0.1 * S, 0.3 * S);
+    head.add(snout);
+    parts.mouth = null;
+    if (b.snout === 'beak') {
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.075 * S, 0.2 * S, 18), mats.accent);
+      beak.rotation.x = Math.PI / 2; beak.position.z = 0.08 * S; snout.add(beak);
+      parts.mouth = beak;
+    } else if (b.snout === 'trunk') {
+      const segs = []; let parent = snout;
+      for (let i = 0; i < 5; i++) {
+        const seg = pivot(0, i ? -0.09 * S : 0, i ? 0.02 * S : 0.06 * S);
+        seg.add(sphere((0.085 - i * 0.01) * S, mats.main, 16));
+        parent.add(seg); parent = seg; segs.push(seg);
       }
-      for (let i = parts.length - 1; i >= 0; i--) {
-        const p = parts[i];
-        p.age += dt;
-        if (p.age > p.life) { parts.splice(i, 1); continue; }
-        p.x += p.vx * dt * devicePixelRatio; p.y += p.vy * dt * devicePixelRatio; p.vy *= 0.99;
-        const k = 1 - p.age / p.life;
-        ctx.fillStyle = root.classList.contains('mood-love') ? `rgba(255,150,180,${k})` : `rgba(255,${190 + 40 * k | 0},120,${k})`;
-        ctx.beginPath(); ctx.arc(p.x, p.y, p.s * k + 0.3, 0, 7); ctx.fill();
+      parts.trunk = segs;
+    } else {
+      const len = { short: 0.7, long: 1.35, flat: 0.55 }[b.snout] || 1;
+      const muzzle = sphere(0.16 * S, mats.belly, 20);
+      muzzle.scale.set(b.snout === 'flat' ? 1.5 : 1.15, 0.8, len);
+      muzzle.position.z = 0.06 * S * len;
+      snout.add(muzzle);
+      const nose = sphere(0.05 * S, mats.dark, 14); nose.scale.set(1.3, 0.85, 0.8);
+      nose.position.set(0, 0.05 * S, 0.06 * S + 0.15 * S * len); snout.add(nose);
+      const mouth = sphere(0.04 * S, mats.dark, 12); mouth.scale.set(1.4, 0.25, 0.5);
+      mouth.position.set(0, -0.07 * S, 0.04 * S + 0.13 * S * len); snout.add(mouth);
+      parts.mouth = mouth;
+    }
+
+    // Ears.
+    parts.ears = [];
+    for (const sx of [-1, 1]) {
+      const ear = pivot(sx * 0.24 * S, 0.3 * S, -0.02 * S);
+      let m;
+      if (b.ears === 'pointy') { m = new THREE.Mesh(new THREE.ConeGeometry(0.12 * S, 0.3 * S, 18), mats.main); m.position.y = 0.12 * S; const inner = new THREE.Mesh(new THREE.ConeGeometry(0.07 * S, 0.2 * S, 14), mats.accent); inner.position.set(0, 0.1 * S, 0.04 * S); ear.add(inner); ear.rotation.z = -sx * 0.32; }
+      else if (b.ears === 'round') { m = sphere(0.12 * S, mats.main, 18); m.scale.set(1, 1, 0.45); m.position.y = 0.05 * S; ear.rotation.z = -sx * 0.5; }
+      else if (b.ears === 'long') { m = new THREE.Mesh(new THREE.CapsuleGeometry(0.07 * S, 0.42 * S, 6, 14), mats.main); m.scale.z = 0.5; m.position.y = 0.27 * S; const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.04 * S, 0.34 * S, 6, 12), mats.accent); inner.position.set(0, 0.27 * S, 0.03 * S); inner.scale.z = 0.4; ear.add(inner); ear.rotation.z = -sx * 0.18; }
+      else if (b.ears === 'floppy') { m = sphere(0.13 * S, mats.accent, 18); m.scale.set(0.6, 1.5, 0.35); m.position.set(sx * 0.06 * S, -0.16 * S, 0); ear.position.y = 0.16 * S; ear.position.x = sx * 0.33 * S; }
+      else if (b.ears === 'tufts') { m = new THREE.Mesh(new THREE.ConeGeometry(0.06 * S, 0.22 * S, 12), mats.main); m.position.y = 0.08 * S; ear.rotation.z = -sx * 0.6; }
+      if (m) { ear.add(m); head.add(ear); parts.ears.push(ear); }
+    }
+
+    // Horns.
+    if (b.horns !== 'none') {
+      for (const sx of b.horns === 'unicorn' ? [0] : [-1, 1]) {
+        const h = pivot(sx * 0.17 * S, 0.33 * S, 0.05 * S);
+        if (b.horns === 'antlers') {
+          for (let i = 0; i < 3; i++) { const t = new THREE.Mesh(new THREE.CylinderGeometry(0.015 * S, 0.025 * S, 0.24 * S, 8), mats.horn); t.position.set(sx * 0.05 * i * S, 0.1 * S + i * 0.08 * S, 0); t.rotation.z = -sx * (0.3 + i * 0.35); h.add(t); }
+        } else {
+          const len = b.horns === 'unicorn' ? 0.4 : b.horns === 'curved' ? 0.26 : 0.14;
+          const t = new THREE.Mesh(new THREE.ConeGeometry(0.05 * S, len * S, 14), mats.horn);
+          t.position.y = len * S / 2; h.add(t);
+          h.rotation.z = b.horns === 'curved' ? -sx * 1.1 : -sx * 0.25;
+          if (b.horns === 'unicorn') h.rotation.x = 0.35;
+        }
+        head.add(h);
       }
-      requestAnimationFrame(frame);
-    };
+    }
+
+    // Legs (pivot at the hip so they can swing).
+    parts.legs = [];
+    if (!legless) {
+      const spots = biped ? [[-0.16, 0], [0.16, 0]] : [[-0.25, 0.32 * long], [0.25, 0.32 * long], [-0.25, -0.3 * long], [0.25, -0.3 * long]];
+      for (const [x, z] of spots) {
+        const hip = pivot(x * S, legH + 0.08 * S, z * S);
+        const leg = new THREE.Mesh(new THREE.CapsuleGeometry((biped ? 0.07 : 0.1) * S, Math.max(0.05, legH - 0.1 * S), 6, 14), biped ? mats.accent : mats.main);
+        leg.position.y = -legH / 2;
+        const paw = sphere((biped ? 0.09 : 0.11) * S, biped ? mats.accent : mats.belly, 16);
+        paw.scale.set(1, 0.6, 1.25); paw.position.set(0, -legH + 0.03, 0.03 * S);
+        hip.add(leg, paw);
+        rig.add(hip);
+        parts.legs.push(hip);
+      }
+    }
+
+    // Tail: a chain of beads that can wag.
+    parts.tail = [];
+    if (b.tail !== 'none') {
+      const spec = { bushy: [7, 0.15, 1.05], thin: [8, 0.045, 0.85], short: [2, 0.1, 1], curly: [8, 0.05, 0.9], fan: [1, 0.1, 1], long: [10, 0.06, 0.92] }[b.tail];
+      let parent = pivot(0, biped ? -0.32 * S : 0.02, (biped ? -0.36 : -0.52 * long) * S);
+      body.add(parent);
+      if (b.tail === 'fan') {
+        for (let i = -2; i <= 2; i++) { const f = sphere(0.12 * S, i % 2 ? mats.main : mats.accent, 14); f.scale.set(0.4, 1.6, 0.25); f.position.set(i * 0.08 * S, 0.08 * S, -0.06 * S); f.rotation.z = -i * 0.3; parent.add(f); }
+        parts.tail.push(parent);
+      } else {
+        const [n, r0, decay] = spec;
+        let r = r0 * S;
+        for (let i = 0; i < n; i++) {
+          const seg = pivot(0, i ? r * 0.6 : 0, i ? -r * 0.9 : 0);
+          seg.rotation.x = b.tail === 'curly' ? -0.42 : b.tail === 'bushy' ? -0.28 : -0.2;
+          seg.add(sphere(r, i === n - 1 && b.tail !== 'short' ? mats.accent : mats.main, 14));
+          parent.add(seg); parent = seg; parts.tail.push(seg);
+          r *= decay;
+        }
+      }
+    }
+
+    // Wings.
+    parts.wings = [];
+    if (b.wings) {
+      for (const sx of [-1, 1]) {
+        const w = pivot(sx * 0.4 * S, 0.12 * S, -0.05 * S);
+        const m = sphere(0.3 * S, mats.accent, 20); m.scale.set(0.35, 0.9, 0.7); m.position.set(sx * 0.12 * S, 0.05 * S, -0.04 * S);
+        w.add(m); body.add(w); parts.wings.push(w);
+      }
+    }
+    parts.biped = biped;
+    parts.height = legH + 0.42 * S + (biped ? 1.05 : 0.8) * S;
+  }
+
+  function addPattern(b, body, scale, S, biped) {
+    if (b.pattern === 'spots') {
+      const pts = [[0.3, 0.25, 0.1], [-0.25, 0.3, -0.15], [0.05, 0.4, -0.35], [-0.35, 0.05, 0.2], [0.38, 0.0, -0.3]];
+      for (const [x, y, z] of pts) { const s = sphere(0.07 * S, mats.accent, 12); s.position.set(x * scale.x, y * scale.y * (biped ? 1 : 0.9), z * scale.z); s.scale.set(1, 1, 0.4); s.lookAt(0, 0, 0); body.add(s); }
+    } else if (b.pattern === 'stripes') {
+      for (let i = -2; i <= 2; i++) {
+        const t = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.025, 8, 40, Math.PI * 0.9), mats.accent);
+        t.scale.copy(scale).multiplyScalar(1.01); t.rotation.set(0, Math.PI / 2, Math.PI * 0.05); t.position.z = i * 0.15 * scale.z; t.rotation.z = Math.PI * 0.05;
+        body.add(t);
+      }
+    }
+  }
+
+  /* ===================== motion & behaviour ===================== */
+  const W = () => innerWidth, Hh = () => innerHeight;
+  const box = { w: 190, h: 190 };
+  let pos = { x: 0, y: 0 };            // the feet, in viewport pixels
+  let target = null;                    // { x, y, then }
+  let facing = 0, faceTarget = 0;
+  let mood = null, moodUntil = 0, hop = 0;
+  let pointing = null;                  // { x, y, until }
+  let morph = 0, morphBody = null;      // 1 -> 0 while turning into a new animal
+  let dragging = null;
+  let lastActivity = performance.now();
+  let asleep = false;
+  let voice = 0, voiceT = 0;
+  const mouse = { x: innerWidth / 2, y: innerHeight / 2 };
+
+  function bottomLimit() { return Hh() - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0) - 12; }
+  function clampPos(p) {
+    return { x: Math.min(W() - box.w * 0.35, Math.max(box.w * 0.35, p.x)), y: Math.min(bottomLimit(), Math.max(box.h * 0.75, p.y)) };
+  }
+  function homeSpot() {
+    try { const s = JSON.parse(localStorage.getItem('helper.daemon.pos') || 'null'); if (s) return clampPos({ x: s.x * W(), y: s.y * Hh() }); } catch (_) { /* ignore */ }
+    const rtlEnd = 24 + box.w * 0.45; // bottom, end side (left in RTL)
+    return clampPos({ x: rtlEnd, y: bottomLimit() });
+  }
+  function rememberSpot() { try { localStorage.setItem('helper.daemon.pos', JSON.stringify({ x: pos.x / W(), y: pos.y / Hh() })); } catch (_) { /* ignore */ } }
+
+  function walkTo(x, y, then) { wake(); target = { ...clampPos({ x, y }), then }; }
+
+  /** Walk beside an element and point at it. */
+  async function showElement(elmt, say) {
+    if (!elmt) return false;
+    elmt.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+    await new Promise((r) => setTimeout(r, reduced ? 50 : 450));
+    const r = elmt.getBoundingClientRect();
+    const roomLeft = r.left, roomRight = W() - r.right;
+    const side = roomLeft > roomRight ? -1 : 1;
+    const x = side < 0 ? r.left - box.w * 0.32 : r.right + box.w * 0.32;
+    const fits = side < 0 ? roomLeft > box.w * 0.5 : roomRight > box.w * 0.5;
+    const tx = fits ? x : r.left + r.width / 2;
+    const ty = fits ? Math.min(bottomLimit(), r.bottom + 10) : Math.min(bottomLimit(), r.bottom + box.h * 0.85);
+    walkTo(tx, ty, () => {
+      pointing = { x: r.left + r.width / 2, y: r.top + r.height / 2, until: performance.now() + 2600 };
+      elmt.classList.add('dm-spot');
+      setTimeout(() => elmt.classList.remove('dm-spot'), 2600);
+      if (say) speakBalloon(say, true);
+    });
+    return true;
+  }
+
+  function landmarks() {
+    const out = [];
+    document.querySelectorAll('[data-guide]').forEach((n) => {
+      const rect = n.getBoundingClientRect();
+      if (rect.width && n.offsetParent !== null) out.push({ key: n.dataset.guide, label: n.dataset.guideLabel || n.getAttribute('aria-label') || n.textContent.trim().slice(0, 40) });
+    });
+    return out;
+  }
+
+  function wake() { lastActivity = performance.now(); if (asleep) { asleep = false; sleepBadge.hidden = true; } }
+
+  function setMood(m, secs = 2.2) { mood = m; moodUntil = performance.now() + secs * 1000; if (m === 'happy') hop = 1; }
+
+  let last = performance.now();
+  let nextWander = performance.now() + 25000;
+  let nextBlink = 0, blinkUntil = 0;
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    const t = now / 1000;
+    if (!rig) { requestAnimationFrame(frame); return; }
+
+    // --- where to be ---
+    let moving = false;
+    if (dragging) {
+      pos = clampPos({ x: dragging.x, y: dragging.y + box.h * 0.6 });
+    } else if (target) {
+      const dx = target.x - pos.x, dy = target.y - pos.y;
+      const dist = Math.hypot(dx, dy);
+      const speed = (parts.wings.length ? 340 : 260) * (reduced ? 4 : 1);
+      if (dist < 4) {
+        pos = { x: target.x, y: target.y };
+        const then = target.then; target = null; rememberSpot();
+        then?.();
+      } else {
+        const step = Math.min(dist, speed * dt);
+        pos.x += (dx / dist) * step; pos.y += (dy / dist) * step;
+        moving = true;
+        if (Math.abs(dx) > 6) faceTarget = dx > 0 ? 1.05 : -1.05;
+      }
+    }
+    if (!moving && !dragging) faceTarget = pointing ? (pointing.x > pos.x ? 0.6 : -0.6) : 0;
+    facing += (faceTarget - facing) * Math.min(1, dt * 7);
+    canvasBox.style.transform = `translate(${Math.round(pos.x - box.w / 2)}px, ${Math.round(pos.y - box.h)}px)`;
+    if (balloon && !balloon.hidden) placeBalloon();
+
+    // --- idle life: wander now and then, sleep when left alone ---
+    if (!busy && !target && !dragging && balloon.hidden && now > nextWander && !asleep) {
+      nextWander = now + 30000 + Math.random() * 30000;
+      if (Math.random() < 0.6) {
+        const nx = pos.x + (Math.random() - 0.5) * Math.min(420, W() * 0.5);
+        walkTo(nx, bottomLimit());
+      }
+    }
+    if (!asleep && !busy && balloon.hidden && now - lastActivity > 120000) { asleep = true; sleepBadge.hidden = false; }
+
+    // --- the body ---
+    const T = reduced ? 0 : t;
+    rig.rotation.y = facing;
+    const breath = Math.sin(T * 2.1) * 0.018;
+    parts.body.scale.set(1 - breath * 0.4, 1 + breath, 1 - breath * 0.4);
+    let lift = 0;
+    if (hop > 0) { hop = Math.max(0, hop - dt * 1.6); lift = Math.abs(Math.sin(hop * Math.PI * 2)) * 0.35; }
+    if (parts.wings.length && (moving || dragging)) lift += 0.25 + Math.sin(T * 6) * 0.05;
+    const bob = moving ? Math.abs(Math.sin(T * 10)) * 0.06 : 0;
+    rig.position.y = lift + bob;
+    parts.shadow.scale.setScalar(1 - Math.min(0.5, lift));
+    parts.shadow.position.x = 0;
+
+    // Legs: walk cycle, dangle while dragged, tucked while asleep.
+    parts.legs.forEach((leg, i) => {
+      const phase = (i % 2 === (i < 2 ? 0 : 1) ? 0 : Math.PI);
+      leg.rotation.x = dragging ? Math.sin(T * 14 + i) * 0.5 : moving ? Math.sin(T * 10 + phase) * 0.55 : asleep ? 0.9 * (i < 2 ? -1 : 1) * 0.3 : 0;
+    });
+    // Pointing: the front leg (or wing) on the target's side lifts toward it.
+    if (pointing && now < pointing.until) {
+      const right = pointing.x > pos.x;
+      const limb = parts.biped ? parts.wings[right ? 1 : 0] : parts.legs[right ? 1 : 0];
+      if (limb) { limb.rotation.x = -1.35; limb.rotation.z = right ? -0.35 : 0.35; }
+    } else if (pointing) { parts.legs.forEach((l) => { l.rotation.z = 0; }); parts.wings.forEach((w) => { w.rotation.z = 0; }); pointing = null; }
+
+    // Head: look at the cursor (or at what it's pointing at); droop when asleep; tilt when curious.
+    const look = pointing || mouse;
+    const rect = { x: pos.x, y: pos.y - box.h * 0.62 };
+    const yaw = Math.max(-0.7, Math.min(0.7, (look.x - rect.x) / 500)) - facing * 0.6;
+    const pitch = Math.max(-0.4, Math.min(0.35, (look.y - rect.y) / 600));
+    const h = parts.head;
+    h.rotation.y += ((asleep ? 0 : yaw) - h.rotation.y) * Math.min(1, dt * 6);
+    h.rotation.x += ((asleep ? 0.45 : pitch) - h.rotation.x) * Math.min(1, dt * 6);
+    h.rotation.z += (((mood === 'curious' ? 0.35 : 0) + (dragging ? Math.sin(T * 8) * 0.15 : 0)) - h.rotation.z) * Math.min(1, dt * 5);
+
+    // Eyes blink (closed while asleep).
+    if (now > nextBlink) { blinkUntil = now + 130; nextBlink = now + 2200 + Math.random() * 3800; }
+    const closed = asleep || now < blinkUntil || mood === 'happy';
+    parts.eyes.forEach((e) => { e.scale.y += ((closed ? (mood === 'happy' && !asleep ? 0.35 : 0.08) : 1) - e.scale.y) * Math.min(1, dt * 25); });
+
+    // Tail wag, ears twitch, wings flap, trunk sway.
+    const wag = mood === 'happy' ? 14 : asleep ? 1 : 4;
+    const amp = mood === 'happy' ? 0.5 : asleep ? 0.05 : 0.22;
+    parts.tail.forEach((s, i) => { s.rotation.y = Math.sin(T * wag - i * 0.5) * amp; });
+    parts.ears.forEach((e, i) => { e.rotation.x = Math.sin(T * 3 + i * 2) * 0.04 + (mood === 'worried' ? 0.5 : 0); });
+    parts.wings.forEach((w, i) => { w.rotation.z = (pointing ? w.rotation.z : 0) + (i ? -1 : 1) * (moving || dragging || lift > 0.1 ? Math.sin(T * 18) * 0.7 : Math.sin(T * 2) * 0.06); });
+    (parts.trunk || []).forEach((s, i) => { s.rotation.x = Math.sin(T * 1.6 - i * 0.6) * 0.18 + 0.15; });
+
+    // Moods.
+    if (mood && now > moodUntil) mood = null;
+    if (mood === 'worried') rig.position.x = Math.sin(T * 60) * 0.02; else rig.position.x = 0;
+    const puff = mood === 'proud' ? 1.1 : mood === 'love' ? 1.05 : 1;
+    rig.scale.setScalar(rig.scale.x + (puff - rig.scale.x) * Math.min(1, dt * 6));
+
+    // Speaking: the mouth opens with the voice.
+    if (now > voiceT) voice *= 0.85;
+    if (parts.mouth) parts.mouth.scale.y = (parts.mouth.geometry.type === 'ConeGeometry' ? 1 : 0.25) + voice * 0.9;
+
+    // Shapeshift: spin into a burst of sparks, rebuild, grow back.
+    if (morph > 0) {
+      morph = Math.max(0, morph - dt * 1.4);
+      const k = morph;
+      if (morphBody && k < 0.5) { build(morphBody); morphBody = null; burst(); }
+      const s = k > 0.5 ? (k - 0.5) * 2 : 1 - k * 2;  // 1 -> 0 -> 1
+      rig.scale.setScalar(Math.max(0.01, k > 0.5 ? s : 1 - Math.pow(1 - (1 - k * 2), 3) * 0 + (1 - k * 2) * 1.08 - Math.max(0, (1 - k * 2) - 0.92)));
+      rig.rotation.y = facing + k * Math.PI * 4;
+    }
+    tickSparks(dt);
+    renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
 
-  /* ---------- shapes ---------- */
-  let shownSlug = null;
-  function setForm(form, animate) {
-    root.classList.toggle('has-form', form.slug !== 'spark');
-    root.querySelector('.dm-emoji').textContent = form.slug === 'spark' ? '' : form.emoji;
-    updateLabels();
-    if (form.slug === shownSlug) return;
-    shownSlug = form.slug;
-    // Fold back into the spark...
-    portrait.classList.add('gone');
-    root.classList.add('is-spark');
-    if (animate) burst = 1;
-    if (form.slug === 'spark' || !state?.images) return;
-    // ...and grow into the new animal once its picture is ready (the first time a shape is painted it takes a few seconds).
-    root.classList.add('thinking');
-    if (animate) setStatus(`מתגלגל ל${form.he}…`);
-    const img = new Image();
-    img.onload = () => {
-      if (shownSlug !== form.slug) return;
-      portrait.src = img.src;
-      root.classList.remove('thinking');
-      burst = Math.max(burst, 0.8);
-      setTimeout(() => { portrait.classList.remove('gone'); root.classList.remove('is-spark'); }, animate ? 250 : 0);
-      if (animate) setStatus('');
-    };
-    img.onerror = () => {
-      root.classList.remove('thinking');
-      if (animate) setStatus(`לא הצלחתי לצייר את עצמי כ${form.he}, אז בינתיים אני ניצוץ ${form.emoji}`);
-    };
-    img.src = `/api/daemon/form/${encodeURIComponent(form.slug)}`;
+  // Sparks for the shapeshift (small glowing beads that fly out and fade).
+  let sparks = [];
+  function burst() {
+    for (let i = 0; i < 28; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), new THREE.MeshBasicMaterial({ color: i % 3 ? '#ffd27a' : '#c2b04e', transparent: true }));
+      m.position.set(0, 0.8, 0);
+      const a = Math.random() * Math.PI * 2, e = Math.random() * 1.2 - 0.2;
+      m.userData.v = new THREE.Vector3(Math.cos(a) * Math.cos(e), Math.sin(e) + 0.6, Math.sin(a) * Math.cos(e)).multiplyScalar(2 + Math.random() * 2);
+      m.userData.life = 0.7 + Math.random() * 0.5;
+      scene.add(m); sparks.push(m);
+    }
+  }
+  function tickSparks(dt) {
+    sparks = sparks.filter((m) => {
+      m.userData.life -= dt;
+      if (m.userData.life <= 0) { scene.remove(m); m.geometry.dispose(); return false; }
+      m.position.addScaledVector(m.userData.v, dt); m.userData.v.y -= dt * 3;
+      m.material.opacity = Math.min(1, m.userData.life * 2);
+      return true;
+    });
   }
 
-  let moodTimer;
-  function emote(mood) {
-    root.className = root.className.replace(/\bmood-\w+/g, '').trim();
-    root.classList.add('mood-' + mood);
-    clearTimeout(moodTimer);
-    moodTimer = setTimeout(() => root.classList.remove('mood-' + mood), 2400);
+  function shapeshift(form, animate) {
+    const b = bodyFor(form);
+    if (!animate || reduced) { build(b); return; }
+    morphBody = b; morph = 1; setMood('happy', 1.5);
   }
 
-  /* ---------- voice ---------- */
+  /* ===================== speech balloon & chat ===================== */
+  let log, input, micBtn, spkBtn, nameEl, balloonText, balloonActs, panel;
+
+  function buildUI() {
+    canvasBox = el('div', { class: 'dm-stage', role: 'button', tabindex: '0', 'aria-label': 'העוזר שלך – לחצו כדי לדבר' });
+    canvasBox.append(renderer.domElement);
+    sleepBadge = el('span', { class: 'dm-zz', hidden: true, 'aria-hidden': 'true' }, 'z', el('b', {}, 'z'), el('i', {}, 'z'));
+    canvasBox.append(sleepBadge);
+    renderer.setSize(box.w, box.h);
+    camera.aspect = 1; camera.updateProjectionMatrix();
+
+    balloonText = el('div', { class: 'dm-say', dir: 'auto' });
+    balloonActs = el('div', { class: 'acts' });
+    input = el('input', { type: 'text', placeholder: 'מה תרצו לעשות?', 'aria-label': 'הודעה לעוזר' });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) send(input.value); if (e.key === 'Escape') closeBalloon(); });
+    micBtn = el('button', { class: 'mini', title: 'דיבור', 'aria-label': 'דיבור', onclick: toggleMic }, svg('mic'));
+    spkBtn = el('button', { class: 'mini', title: 'הקראה בקול', 'aria-label': 'הקראה בקול', 'aria-pressed': String(prefs.speak), onclick: () => { prefs.speak = !prefs.speak; savePrefs(); spkBtn.setAttribute('aria-pressed', String(prefs.speak)); spkBtn.replaceChildren(svg(prefs.speak ? 'speaker' : 'mute')); if (!prefs.speak) speechSynthesis?.cancel(); } }, svg(prefs.speak ? 'speaker' : 'mute'));
+    nameEl = el('b');
+    balloon = el('div', { class: 'dm-balloon', hidden: true, role: 'dialog', 'aria-label': 'שיחה עם העוזר' },
+      el('div', { class: 'dm-bhead' }, nameEl, el('span', { class: 'spacer' }),
+        el('button', { class: 'mini', title: 'כל השיחה', 'aria-label': 'כל השיחה', onclick: () => togglePanel() }, svg('list')),
+        el('button', { class: 'mini', title: 'סגירה', 'aria-label': 'סגירה', onclick: closeBalloon }, svg('x'))),
+      balloonText, balloonActs,
+      el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
+    document.body.append(canvasBox, balloon);
+
+    // Click to talk; drag to move.
+    canvasBox.addEventListener('pointerdown', (e) => {
+      wake();
+      const start = { x: e.clientX, y: e.clientY };
+      let moved = false;
+      canvasBox.setPointerCapture(e.pointerId);
+      const onMove = (ev) => {
+        if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 6) { moved = true; target = null; dragging = { x: ev.clientX, y: ev.clientY }; setMood('worried', 0.4); }
+        if (moved) dragging = { x: ev.clientX, y: ev.clientY };
+      };
+      const onUp = () => {
+        canvasBox.removeEventListener('pointermove', onMove);
+        canvasBox.removeEventListener('pointerup', onUp);
+        if (moved) { dragging = null; hop = 0.5; rememberSpot(); }
+        else openBalloon();
+      };
+      canvasBox.addEventListener('pointermove', onMove);
+      canvasBox.addEventListener('pointerup', onUp);
+    });
+    canvasBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBalloon(); } });
+    window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
+    window.addEventListener('resize', () => { pos = clampPos(pos); });
+  }
+
+  function svg(name) {
+    const P = {
+      mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+      speaker: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+      mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/>',
+      list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+      x: '<path d="M6 6l12 12M18 6 6 18"/>',
+      reset: '<path d="M4 4v6h6"/><path d="M5 15a8 8 0 1 0 2-8.5L4 10"/>',
+    };
+    const t = document.createElement('template');
+    t.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${P[name]}</svg>`;
+    return t.content.firstChild;
+  }
+
+  function placeBalloon() {
+    const bw = Math.min(360, W() - 24);
+    balloon.style.width = bw + 'px';
+    const bh = balloon.offsetHeight;
+    let left = pos.x - bw / 2;
+    let top = pos.y - box.h * 0.95 - bh;
+    balloon.classList.toggle('below', top < 70);
+    if (top < 70) top = pos.y + 6;
+    left = Math.max(12, Math.min(W() - bw - 12, left));
+    top = Math.max(12, Math.min(Hh() - bh - 12, top));
+    balloon.style.left = Math.round(left) + 'px';
+    balloon.style.top = Math.round(top) + 'px';
+    balloon.style.setProperty('--tail', `${Math.max(16, Math.min(bw - 16, pos.x - left))}px`);
+  }
+
+  function openBalloon() {
+    wake();
+    balloon.hidden = false;
+    canvasBox.classList.remove('unread');
+    if (!balloonText.textContent) balloonText.textContent = state?.daemon?.name ? `כן? במה אפשר לעזור?` : 'היי! איך תרצו לקרוא לי?';
+    placeBalloon();
+    setTimeout(() => input.focus(), 30);
+  }
+  function closeBalloon() { balloon.hidden = true; }
+
+  function speakBalloon(text, keepActs) {
+    balloonText.textContent = text;
+    if (!keepActs) balloonActs.replaceChildren();
+    if (balloon.hidden) { balloon.hidden = false; }
+    placeBalloon();
+  }
+
   function speak(text) {
     if (!prefs.speak || !('speechSynthesis' in window) || !text) return;
     const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/https?:\/\/\S+/g, '');
@@ -128,12 +578,8 @@
     const v = voices.find((x) => x.lang.startsWith(hebrew ? 'he' : 'en') && /natural|online|google/i.test(x.name)) || voices.find((x) => x.lang.startsWith(hebrew ? 'he' : 'en'));
     if (v) u.voice = v;
     u.rate = 1.02;
-    // The light pulses with its voice: a beat on every word.
-    let decay;
-    const beat = () => { root.style.setProperty('--voice', '1'); clearTimeout(decay); decay = setTimeout(() => root.style.setProperty('--voice', '0.35'), 120); };
-    u.onboundary = beat;
-    u.onstart = beat;
-    u.onend = u.onerror = () => { clearTimeout(decay); root.style.setProperty('--voice', '0'); };
+    const beat = () => { voice = 1; voiceT = performance.now() + 110; };
+    u.onboundary = beat; u.onstart = beat;
     speechSynthesis.cancel();
     speechSynthesis.speak(u);
   }
@@ -151,117 +597,115 @@
     rec.onerror = () => { micBtn.classList.remove('on'); rec = null; };
     speechSynthesis?.cancel();
     micBtn.classList.add('on');
+    setMood('curious', 3);
     rec.start();
   }
 
-  /* ---------- chat ---------- */
+  /* The full conversation: a drawer (or inline on the home page). */
   function buildPanel(inline) {
-    nameEl = el('b');
-    formEl = el('small');
-    statusEl = el('div', { class: 'dm-status', 'aria-live': 'polite' });
     log = el('div', { class: 'dm-log' });
-    input = el('input', { type: 'text', placeholder: 'דברו איתי… (למשל: "תהפוך לינשוף" או "מה חסר לנו לשקשוקה?")', 'aria-label': 'הודעה לדימון' });
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) send(input.value); });
-    micBtn = el('button', { class: 'mini', title: 'דיבור', 'aria-label': 'דיבור', onclick: toggleMic }, '🎙');
-    spkBtn = el('button', { class: 'mini', title: 'הקראה בקול', 'aria-label': 'הקראה בקול', onclick: () => { prefs.speak = !prefs.speak; savePrefs(); spkBtn.textContent = prefs.speak ? '🔊' : '🔇'; if (!prefs.speak) speechSynthesis?.cancel(); } }, prefs.speak ? '🔊' : '🔇');
-    panel = el('section', { class: 'dm-panel' + (inline ? ' inline' : ''), hidden: !inline, 'aria-label': 'שיחה עם הדימון' },
-      el('div', { class: 'dm-head' }, el('div', {}, nameEl, ' ', formEl), el('span', { class: 'spacer' }), spkBtn,
-        el('button', { class: 'mini', title: 'להתחיל שיחה חדשה', 'aria-label': 'שיחה חדשה', onclick: async () => {
-          if (!confirm('להתחיל שיחה חדשה? הדימון יזכור את הדברים החשובים.')) return;
+    panel = el('section', { class: 'dm-panel' + (inline ? ' inline' : ''), hidden: !inline, 'aria-label': 'השיחה' },
+      el('div', { class: 'dm-head' }, el('b', {}, 'השיחה'), el('span', { class: 'spacer' }),
+        el('button', { class: 'mini', title: 'שיחה חדשה', 'aria-label': 'שיחה חדשה', onclick: async () => {
+          if (!confirm('להתחיל שיחה חדשה? העוזר יזכור את הדברים החשובים.')) return;
           await api('/api/daemon/reset', { method: 'POST' });
           log.textContent = '';
-          toast('שיחה חדשה ✨');
-        } }, '↺'),
-        inline ? null : el('button', { class: 'mini', 'aria-label': 'סגירה', onclick: () => togglePanel(false) }, '✕')),
-      log, statusEl, el('div', { class: 'dm-input' }, input, micBtn, el('button', { class: 'btn primary', onclick: () => send(input.value) }, 'שלח')));
+          toast('שיחה חדשה');
+        } }, svg('reset')),
+        inline ? null : el('button', { class: 'mini', 'aria-label': 'סגירה', onclick: () => togglePanel(false) }, svg('x'))),
+      log);
     return panel;
+  }
+  function togglePanel(open) {
+    if (panel.classList.contains('inline')) { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    panel.hidden = !(open ?? panel.hidden);
+    if (!panel.hidden) log.scrollTop = log.scrollHeight;
+  }
+  function addMsg(who, text, extra = {}) {
+    const m = el('div', { class: 'dm-msg ' + who, dir: 'auto' }, text);
+    if (extra.sources?.length) m.append(...extra.sources.map((s) => el('a', { class: 'src', href: s.url, target: '_blank', rel: 'noopener' }, s.title || new URL(s.url).hostname)));
+    if (extra.actions?.length) m.append(el('div', { class: 'acts' }, extra.actions.map((a) => a.cloneNode(true))));
+    log.append(m);
+    log.scrollTop = log.scrollHeight;
   }
 
   function updateLabels() {
     const d = state?.daemon;
     if (!d) return;
-    if (nameEl) nameEl.textContent = d.name || 'הדימון שלך';
-    if (formEl) formEl.textContent = `${d.form.emoji} ${d.form.he}`;
-    const label = root?.querySelector('.dm-label');
-    if (label) label.textContent = d.name ? `${d.name} · ${d.form.he}` : 'הדימון שלך';
-  }
-
-  function setStatus(t) { if (statusEl) statusEl.textContent = t || ''; }
-
-  function addMsg(who, text, extra = {}) {
-    const m = el('div', { class: 'dm-msg ' + who, dir: 'auto' }, text);
-    if (extra.sources?.length) m.append(...extra.sources.map((s) => el('a', { class: 'src', href: s.url, target: '_blank', rel: 'noopener' }, '🔗 ' + (s.title || new URL(s.url).hostname))));
-    if (extra.actions?.length) m.append(el('div', { class: 'acts' }, extra.actions));
-    log.append(m);
-    log.scrollTop = log.scrollHeight;
-    return m;
-  }
-
-  function togglePanel(open) {
-    if (panel.classList.contains('inline')) { input.focus(); return; }
-    const show = open ?? panel.hidden;
-    panel.hidden = !show;
-    root.classList.remove('unread');
-    if (show) { input.focus(); log.scrollTop = log.scrollHeight; }
+    nameEl.textContent = d.name ? `${d.name} · ${d.form.he}` : 'העוזר שלך';
+    canvasBox.setAttribute('aria-label', `${d.name || 'העוזר שלך'} – לחצו כדי לדבר`);
   }
 
   async function send(text, event) {
     text = (text || '').trim();
     if ((!text && !event) || busy) return;
-    if (!state?.ai) { addMsg('daemon', 'עוד לא חיברו לי מוח (מפתח API של Claude). כשמנהל המשפחה יוסיף אותו – נדבר 🙂'); return; }
+    if (!state?.ai) { speakBalloon('עוד לא חיברו לי מוח (מפתח API של Claude).'); return; }
     busy = true;
+    wake();
     input.value = '';
     if (text) addMsg('me', text);
-    root.classList.add('thinking');
-    setStatus('חושב…');
+    speakBalloon('…');
+    canvasBox.classList.add('thinking');
+    setMood('curious', 30);
     try {
-      const r = await api('/api/daemon/chat', { body: { text, event, page: location.pathname + location.hash } });
+      const r = await api('/api/daemon/chat', { body: { text, event, page: location.pathname + location.hash, landmarks: landmarks() } });
       state.daemon = r.daemon;
+      mood = null;
       const actions = [];
+      let pointAt = null;
       for (const ev of r.events) {
-        if (ev.type === 'shapeshift') setForm(ev.form, true);
-        if (ev.type === 'emote') emote(ev.mood);
-        if (ev.type === 'open') actions.push(el('a', { class: 'btn ghost small', href: ev.href }, ev.label));
-        if (ev.type === 'mail_plan') actions.push(el('a', { class: 'btn primary small', href: `/mail/#plan=${ev.id}` }, '📬 לבדיקה ולאישור'));
+        if (ev.type === 'shapeshift') shapeshift(ev.form, true);
+        if (ev.type === 'emote') setMood(ev.mood);
+        if (ev.type === 'point') pointAt = ev;
+        if (ev.type === 'open') actions.push(el('a', { class: 'btn ghost small', href: ev.href }, ev.label.replace(/^\S+\s/, '')));
+        if (ev.type === 'mail_plan') actions.push(el('a', { class: 'btn primary small', href: `/mail/#plan=${ev.id}` }, 'לבדיקה ולאישור'));
         if (ev.type === 'groceries_changed') window.dispatchEvent(new Event('helper:groceries-changed'));
         if (ev.type === 'recipes_changed') window.dispatchEvent(new Event('helper:recipes-changed'));
       }
       updateLabels();
-      if (!r.events.some((e) => e.type === 'shapeshift')) root.classList.remove('thinking');
-      if (r.reply) {
-        addMsg('daemon', r.reply, { sources: r.sources, actions });
-        speak(r.reply);
-        if (panel.hidden) root.classList.add('unread');
+      const reply = r.reply || (pointAt?.say) || 'בוצע.';
+      balloonActs.replaceChildren(...actions);
+      speakBalloon(reply, true);
+      addMsg('daemon', reply, { sources: r.sources, actions });
+      speak(reply);
+      if (pointAt) {
+        const target = document.querySelector(`[data-guide="${CSS.escape(pointAt.target)}"]`);
+        setTimeout(() => showElement(target, null), 500);
+      } else if (r.events.some((e) => e.type === 'groceries_changed')) {
+        setTimeout(() => showElement(document.querySelector('[data-guide="list"]'), null), 500);
       }
-      setStatus(root.classList.contains('thinking') ? statusEl.textContent : '');
     } catch (e) {
-      root.classList.remove('thinking');
-      setStatus('');
-      addMsg('daemon', '😕 ' + e.message);
+      mood = null;
+      speakBalloon('אוי, משהו השתבש: ' + e.message);
+      setMood('worried');
     } finally {
       busy = false;
+      canvasBox.classList.remove('thinking');
     }
   }
 
-  /* ---------- mounting ---------- */
-  async function mount(heroContainer) {
+  /* ===================== mounting ===================== */
+  async function mount(container) {
     const r = await H.me();
     if (!r.user) return;
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
-    const hero = !!heroContainer;
-    const body = build(hero);
-    const chat = buildPanel(hero);
-    if (hero) heroContainer.append(body, chat);
-    else document.body.append(body, chat);
+    try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; }
+    if (innerWidth < 600) { box.w = 150; box.h = 150; }
+    buildUI();
+    const p = buildPanel(!!container);
+    (container || document.body).append(p);
     for (const m of state.transcript) addMsg(m.who, m.text);
-    setForm(state.daemon.form, false);
+    build(bodyFor(state.daemon.form));
     updateLabels();
-    if (!state.daemon.name && !state.transcript.length) {
-      // First meeting: the spark wakes up beside them on the home page; elsewhere it just waits with a badge.
-      if (hero) setTimeout(() => send('', 'first meeting: the person just opened the helper and sees you for the first time'), 600);
-      else root.classList.add('unread');
-    }
+    // Enter from the edge of the screen.
+    const home = homeSpot();
+    pos = { x: reduced ? home.x : -box.w, y: home.y };
+    walkTo(home.x, home.y, () => {
+      if (!state.daemon.name && !state.transcript.length && container) send('', 'first meeting: the person just opened the helper and sees you for the first time');
+      else if (!state.transcript.length) canvasBox.classList.add('unread');
+    });
+    requestAnimationFrame(frame);
   }
 
-  H.daemon = { mount };
+  H.daemon = { mount, showElement };
 })();

@@ -13,6 +13,7 @@
     "@anthropic-ai/sdk": "^1.8.0",
     "@mozilla/readability": "^0.6.0",
     "linkedom": "^0.18.15",
+    "three": "^0.160.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

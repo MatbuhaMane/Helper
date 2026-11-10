@@ -13,9 +13,6 @@
 .item.flash { background: rgba(45, 212, 191, .25); }
 .qty { display: inline-flex; align-items: center; gap: 2px; }
 .qty b { min-width: 1.4em; text-align: center; font-size: .9rem; }
-.mini { font: inherit; cursor: pointer; border: 0; background: transparent; color: var(--muted); width: 30px; height: 30px; border-radius: 8px; flex: none; }
-.mini:hover { background: var(--line); color: var(--text); }
-.mini.danger:hover { color: var(--danger); }
 .cat-select { padding: 4px 6px; font-size: .8rem; max-width: 120px; background: transparent; }
 .tag { font-size: .72rem; color: var(--muted); background: var(--bg); border-radius: 999px; padding: 1px 8px; }
 .tag.ok { color: var(--ok); }

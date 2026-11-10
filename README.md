@@ -1,6 +1,6 @@
 # Helper – העוזר המשפחתי 🤝
 
-A personal assistant for family and friends, running on Cloudflare (Pages + Functions + D1), with Google sign-in.
+A personal assistant for family and friends, running on Cloudflare (Workers + D1 + R2), with Google sign-in, and a daemon companion (after Bayt al-Hikma) that shifts between animals and works the apps for you through Claude.
 
 | App | What it does |
 |---|---|
@@ -14,7 +14,8 @@ A personal assistant for family and friends, running on Cloudflare (Pages + Func
 
 ```
 public/            static frontend (vanilla JS, RTL Hebrew, PWA)
-functions/api/     one Pages Function: router for /api/*
+src/worker.ts      Worker entry: /api/* to the router, everything else from public/
+functions/api/     the /api/* router
 server/            backend modules (TypeScript)
   core.ts          sessions, Google OAuth, encrypted Gmail tokens
   ai.ts            Claude (Opus 5.5) for judgment-heavy work, Gemini for cheap tasks; each falls back to the other
@@ -26,23 +27,16 @@ schema.sql         D1 tables
 
 ## Setup (one time)
 
-1. **Google sign-in** – in [Google Cloud Console](https://console.cloud.google.com/): create a project → *APIs & Services* → enable **Gmail API** → *OAuth consent screen* (External; add the family's emails as test users, or publish the app) → *Credentials* → *OAuth client ID* (Web application) with redirect URI `https://<your-domain>/api/auth/callback`. Note the client ID and secret.
-   - Gmail's `gmail.modify` scope is a restricted scope. While the app is in *Testing*, Google expires refresh tokens after 7 days, so Mom would need to reconnect weekly. Publishing it (unverified, under 100 users) avoids that; Google shows an "unverified app" warning once.
-2. **Cloudflare** – create the D1 database and the Pages project:
-   ```bash
-   npx wrangler d1 create helper-db          # put the id into wrangler.toml
-   npm run db:remote
-   npx wrangler pages project create helper
-   ```
-3. **Settings** – in `wrangler.toml` set `OWNER_EMAIL` (your Gmail) and `GOOGLE_CLIENT_ID`. Secrets:
-   ```bash
-   npx wrangler pages secret put GOOGLE_CLIENT_SECRET --project-name helper
-   npx wrangler pages secret put ANTHROPIC_API_KEY   --project-name helper
-   npx wrangler pages secret put GEMINI_API_KEY      --project-name helper
-   openssl rand -base64 32 | npx wrangler pages secret put TOKEN_KEY --project-name helper
-   ```
-4. **Deploy** – `npm run deploy`, then add a custom domain (for example `helper.<your-domain>`) under the Pages project's *Custom domains*.
-5. Sign in as the owner, open **ניהול משפחה** and invite everyone.
+The app runs as one Cloudflare **Worker** with static assets (`wrangler.toml`), deployed from GitHub with Workers Builds.
+
+1. **Google sign-in** – Google Cloud project with the **Gmail API** enabled, an OAuth consent screen (External, family as test users or published) and a *Web application* OAuth client whose redirect URI is `https://<your-domain>/api/auth/callback`. The client ID goes in `wrangler.toml`; the secret goes in Cloudflare.
+   - `gmail.modify` is a restricted scope: while the app is in *Testing*, Google expires refresh tokens after 7 days. Publishing it (unverified, under 100 users) avoids that.
+2. **Cloudflare resources** – a D1 database `helper-db` (its id in `wrangler.toml`; run `schema.sql` in its console) and an R2 bucket `helper-media` for the daemon's pictures.
+3. **Deploy** – Workers & Pages → Create → Import a repository → `MatbuhaMane/Helper`, deploy command `npx wrangler deploy`. Every push to `main` redeploys.
+4. **Settings** (the Worker → Settings → Variables and Secrets):
+   - Variable `OWNER_EMAIL` – the family manager's Gmail (kept out of this public repo; `keep_vars` preserves it across deploys).
+   - Secrets `GOOGLE_CLIENT_SECRET`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, and `TOKEN_KEY` (32 random bytes, base64: `openssl rand -base64 32`).
+5. Add a custom domain if you like (for example `helper.<your-domain>`), sign in as the owner, open **ניהול משפחה** and invite everyone.
 
 ## Local development
 

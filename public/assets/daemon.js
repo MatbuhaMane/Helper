@@ -257,9 +257,9 @@
     setForm(state.daemon.form, false);
     updateLabels();
     if (!state.daemon.name && !state.transcript.length) {
-      // First meeting: the spark wakes up beside them.
-      if (!hero) togglePanel(true);
-      setTimeout(() => send('', 'first meeting: the person just opened the helper and sees you for the first time'), 600);
+      // First meeting: the spark wakes up beside them on the home page; elsewhere it just waits with a badge.
+      if (hero) setTimeout(() => send('', 'first meeting: the person just opened the helper and sees you for the first time'), 600);
+      else root.classList.add('unread');
     }
   }
 

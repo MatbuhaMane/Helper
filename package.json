@@ -3,11 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev public --d1 DB --local --port 8788",
+    "dev": "wrangler dev --port 8788",
     "db:local": "wrangler d1 execute helper-db --local --file schema.sql",
     "db:remote": "wrangler d1 execute helper-db --remote --file schema.sql",
     "typecheck": "tsc --noEmit",
-    "deploy": "wrangler pages deploy public --project-name helper"
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",

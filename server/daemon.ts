@@ -397,11 +397,20 @@ export async function formImage(ctx: Ctx) {
       generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } },
     }),
   });
-  if (!res.ok) throw new HttpError(502, `image_error_${res.status}`);
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    console.error('Gemini image error', res.status, detail.slice(0, 500));
+    // Don't count a failed attempt against the daily limit.
+    await ctx.env.DB.prepare('UPDATE image_quota SET count = MAX(0, count - 1) WHERE email = ? AND day = ?').bind(u.email, day).run();
+    throw new HttpError(502, `image_error_${res.status}: ${detail.replace(/\s+/g, ' ').slice(0, 300)}`);
+  }
   const data = (await res.json()) as any;
   const part = data?.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.data || p.inline_data?.data);
   const inline = part?.inlineData || part?.inline_data;
-  if (!inline) throw new HttpError(502, 'image_empty');
+  if (!inline) {
+    const why = data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || 'no image returned';
+    throw new HttpError(502, `image_empty: ${why}`);
+  }
   const bytes = Uint8Array.from(atob(inline.data), (c) => c.charCodeAt(0));
   const type = inline.mimeType || inline.mime_type || 'image/png';
   if (ctx.env.MEDIA) await ctx.env.MEDIA.put(key, bytes, { httpMetadata: { contentType: type } });

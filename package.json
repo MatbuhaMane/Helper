@@ -1,0 +1,23 @@
+{
+  "name": "helper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8788",
+    "db:local": "wrangler d1 execute helper-db --local --file schema.sql",
+    "db:remote": "wrangler d1 execute helper-db --remote --file schema.sql",
+    "typecheck": "tsc --noEmit",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@mozilla/readability": "^0.6.0",
+    "linkedom": "^0.18.15",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261110.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.160.0"
+  }
+}

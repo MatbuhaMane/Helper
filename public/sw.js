@@ -1,6 +1,6 @@
-/* Service worker: מאפשר עבודה אופליין ברשימה (המתכונים דורשים אינטרנט) */
-const CACHE = 'helper-v1';
-const ASSETS = ['./', 'index.html', 'style.css', 'data.js', 'app.js', 'manifest.json', 'icon.svg'];
+/* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls always go to the network. */
+const CACHE = 'helper-v2';
+const ASSETS = ['/', '/assets/base.css', '/assets/common.js', '/groceries/', '/groceries/style.css', '/groceries/data.js', '/groceries/app.js', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -10,8 +10,7 @@ self.addEventListener('activate', (e) => {
 });
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin) return; // API מתכונים — תמיד מהרשת
-  // network-first לקבצי האפליקציה, עם נפילה למטמון כשאין רשת
+  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res; })

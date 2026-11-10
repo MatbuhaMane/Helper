@@ -1,0 +1,28 @@
+name = "helper"
+main = "src/worker.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+# Keep variables set in the dashboard (OWNER_EMAIL lives there, not in this public repo).
+keep_vars = true
+
+[assets]
+directory = "public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "helper-db"
+database_id = "502f1564-bcd1-4730-ac65-c5de19d3c824"
+
+# Non-secret settings. Secrets (GOOGLE_CLIENT_SECRET, ANTHROPIC_API_KEY,
+# GEMINI_API_KEY, TOKEN_KEY) are set with `wrangler secret put` or in the dashboard (Settings -> Variables and Secrets).
+# Daemon form pictures (create with: npx wrangler r2 bucket create helper-media)
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "helper-media"
+
+[vars]
+GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleusercontent.com"
+GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"

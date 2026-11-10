@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f766e">
+  <title>סידור המחשב</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>
+    main { font-size: 1.05rem; line-height: 1.65; }
+    .step { padding: 16px 18px; }
+    .step h2 { font-size: 1.1rem; margin: 0 0 6px; }
+    pre { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 14px; font: inherit; font-size: .95rem; }
+    .num { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: var(--primary-ink); font-weight: 700; margin-inline-end: 6px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="notice" style="margin-top:14px">
+      💻 את סידור הקבצים והתיקיות במחשב עושה אפליקציית <b>Claude</b> למחשב. היא רואה רק את התיקיות שנותנים לה, מראה מה היא מתכוונת לעשות ומבקשת אישור.
+      ההוראות למטה מוודאות שלפני כל סידור נעשה גיבוי, ושאף קובץ לא נמחק.
+    </div>
+
+    <section class="card step">
+      <h2><span class="num">1</span>גיבוי של כל המחשב (פעם אחת, לפני הכל)</h2>
+      <p>בווינדוס: <b>הגדרות ← מערכת ← אחסון ← אפשרויות אחסון מתקדמות ← אפשרויות גיבוי</b>, או לחבר דיסק חיצוני ולהפעיל את <b>היסטוריית קבצים</b>. אפשרות נוספת: לסמן את התיקיות "מסמכים", "תמונות" ו"שולחן עבודה" לגיבוי ב-OneDrive.</p>
+      <p class="muted">כך, גם אם משהו ישתבש, אפשר להחזיר כל קובץ.</p>
+    </section>
+
+    <section class="card step">
+      <h2><span class="num">2</span>התקנת אפליקציית Claude למחשב</h2>
+      <p>להוריד מ-<a href="https://claude.ai/download" target="_blank" rel="noopener">claude.ai/download</a>, להתקין ולהתחבר עם החשבון שלך.
+        בתוך האפליקציה לבחור את מצב העבודה עם קבצים במחשב, ולתת לו גישה <b>רק</b> לתיקייה שרוצים לסדר (למשל "מסמכים").</p>
+    </section>
+
+    <section class="card step">
+      <h2><span class="num">3</span>להדביק את ההוראות הקבועות</h2>
+      <p>ליצור פרויקט חדש בשם "סידור המחשב", ובהוראות של הפרויקט להדביק את הטקסט הזה:</p>
+      <pre id="rules">אני לא מבינה הרבה במחשבים, אז דבר איתי בעברית פשוטה.
+
+כללים שחייבים תמיד לשמור:
+1. לפני כל שינוי: צור עותק גיבוי מלא של התיקייה שאנחנו מסדרים, בתיקייה חדשה בשם "גיבוי לפני סידור – [תאריך ושעה]" באותו כונן (או בכונן החיצוני אם הוא מחובר). בדוק שמספר הקבצים בגיבוי זהה למקור, וספר לי שהגיבוי מוכן.
+2. אף פעם אל תמחק קבצים או תיקיות, ואל תרוקן את סל המחזור. אם משהו נראה מיותר – העבר אותו לתיקייה בשם "לבדיקה לפני מחיקה" ואני אחליט.
+3. לפני שאתה מזיז או משנה שם של משהו, הראה לי רשימה ברורה: מה יזוז, מאיפה ולאן. חכה לאישור שלי במילים "מאשרת".
+4. אל תשנה תוכן של קבצים, ואל תיגע בתיקיות של תוכנות או של Windows.
+5. שמור קובץ בשם "יומן סידור.txt" שבו כתוב כל מה שהזזת: מאיפה ולאן, כדי שנוכל להחזיר הכל.
+6. אם אתה לא בטוח – תשאל אותי.</pre>
+      <button class="btn primary" id="copy">📋 העתקת ההוראות</button>
+    </section>
+
+    <section class="card step">
+      <h2><span class="num">4</span>לבקש במילים פשוטות</h2>
+      <ul>
+        <li>"תסדר לי את התמונות בתיקיות לפי שנה וחודש"</li>
+        <li>"תאסוף את כל הקבלות והחשבוניות לתיקייה אחת לפי שנה"</li>
+        <li>"תמצא קבצים כפולים ותעביר את העותקים לבדיקה"</li>
+        <li>"מה תופס הכי הרבה מקום בתיקיית ההורדות?"</li>
+        <li>"תחזיר הכל כמו שהיה לפי היומן"</li>
+      </ul>
+    </section>
+  </main>
+  <script src="/assets/common.js"></script>
+  <script>
+    H.header('סידור המחשב', '💻');
+    H.requireLogin();
+    document.getElementById('copy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(document.getElementById('rules').textContent); H.toast('ההוראות הועתקו ✓'); }
+      catch (_) { H.toast('סמני את הטקסט והעתיקי ידנית'); }
+    });
+  </script>
+</body>
+</html>

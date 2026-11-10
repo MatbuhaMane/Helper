@@ -34,7 +34,7 @@ export async function aiJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): 
 }
 
 async function claudeJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Promise<z.infer<T>> {
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1 });
+  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, maxRetries: 1, ...(env.DEV_MODE === '1' && env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) });
   try {
     const res = await client.beta.messages.parse({
       model: 'claude-opus-5-5',
@@ -59,7 +59,7 @@ async function claudeJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Pro
 
 async function geminiJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Promise<z.infer<T>> {
   const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const res = await fetch(`${(env.DEV_MODE === '1' && env.GEMINI_BASE_URL) || 'https://generativelanguage.googleapis.com'}/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY! },
     body: JSON.stringify({

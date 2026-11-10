@@ -94,6 +94,8 @@
   }
 
   window.addEventListener('online', () => { flush(); pull(); });
+  window.addEventListener('helper:groceries-changed', () => pull());
+  window.addEventListener('helper:recipes-changed', () => { book = null; if (!$('#viewBook').hidden) loadBook(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { flush(); pull(); } });
   setInterval(() => { if (!document.hidden) { flush(); pull(); } }, 10000);
 

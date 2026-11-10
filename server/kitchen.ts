@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { aiJson } from './ai';
-import { Ctx, HttpError, body, json, requireUser, uid } from './core';
+import { Ctx, Env, HttpError, body, json, requireUser, uid } from './core';
 import { fetchPage, readable } from './web';
 
 /* ---------------- groceries ---------------- */
@@ -25,8 +25,8 @@ function toItem(r: ItemRow) {
   return { id: r.id, name: r.name, cat: r.cat, checked: !!r.checked, qty: r.qty, from: r.src || undefined, updatedAt: r.updated_at, deleted: !!r.deleted };
 }
 
-async function seedIfNew(ctx: Ctx, household: string) {
-  const db = ctx.env.DB;
+async function seedIfNew(env: Env, household: string) {
+  const db = env.DB;
   const h = await db.prepare('SELECT seeded FROM households WHERE id = ?').bind(household).first<{ seeded: number }>();
   if (h) return;
   await db.prepare('INSERT OR IGNORE INTO households (id, seeded) VALUES (?, 1)').bind(household).run();
@@ -38,7 +38,7 @@ async function seedIfNew(ctx: Ctx, household: string) {
 
 export async function listGroceries(ctx: Ctx) {
   const u = requireUser(ctx);
-  await seedIfNew(ctx, u.household);
+  await seedIfNew(ctx.env, u.household);
   const since = Number(ctx.url.searchParams.get('since') || 0);
   const { results } = await ctx.env.DB.prepare(
     'SELECT id, name, cat, checked, qty, src, updated_at, deleted FROM grocery_items WHERE household = ? AND updated_at > ? ORDER BY updated_at',
@@ -211,4 +211,93 @@ function clean(s: string): string {
 function splitIngredient(s: string) {
   const m = s.match(/^([\d½¼¾⅓⅔.,/\s-]+(?:כוסות|כוס|כפות|כף|כפיות|כפית|גרם|ג'|ק"ג|קילו|מ"ל|ליטר|יחידות|יחידה|חבילה|חבילות|שיני|שן|קורט|קופסה|קופסת|פחית|cups?|tbsp|tsp|g|kg|ml|l|oz|lb)?\.?)\s+(.+)$/i);
   return m ? { measure: m[1].trim(), name: m[2].trim() } : { measure: '', name: s };
+}
+
+/* ---------------- helpers for the daemon ---------------- */
+
+export const GROCERY_CATEGORIES = ['veg', 'herbs', 'dairy', 'meat', 'pantry', 'dry', 'drinks', 'bakery', 'frozen', 'clean', 'care', 'other'] as const;
+
+/** Same normalization as the app's duplicate detection (spelling variants, plurals, final letters). */
+export function normalizeName(str: string): string {
+  return str.toLowerCase()
+    .replace(/[\u0591-\u05C7]/g, '')
+    .replace(/["'`׳״.,;:!?()\[\]{}\-_/\\+*]/g, ' ')
+    .replace(/יי/g, 'י').replace(/וו/g, 'ו')
+    .replace(/ך/g, 'כ').replace(/ם/g, 'מ').replace(/ן/g, 'נ').replace(/ף/g, 'פ').replace(/ץ/g, 'צ')
+    .split(/\s+/).filter(Boolean)
+    .map((w) => {
+      if (w.length > 3) w = w.replace(/(ימ|ות)$/, '');
+      if (w.length > 3) w = w.replace(/ה$/, '');
+      if (/^[a-z]+$/.test(w) && w.length > 3) w = w.replace(/(es|s)$/, '');
+      return w;
+    }).join(' ').trim();
+}
+
+export async function currentGroceries(env: Env, household: string) {
+  await seedIfNew(env, household);
+  const { results } = await env.DB.prepare(
+    'SELECT id, name, cat, checked, qty, src, updated_at, deleted FROM grocery_items WHERE household = ? AND deleted = 0',
+  ).bind(household).all<ItemRow>();
+  return results.map(toItem);
+}
+
+/** Add items (or bump/uncheck an existing one, like the app does). Returns what happened to each. */
+export async function addGroceries(env: Env, household: string, email: string, items: { name: string; category: string }[], from?: string) {
+  const existing = await currentGroceries(env, household);
+  const byKey = new Map(existing.map((i) => [normalizeName(i.name), i]));
+  const out: { name: string; result: 'added' | 'already_on_list' | 'back_on_list' }[] = [];
+  let t = Date.now();
+  const stmts = [];
+  for (const it of items.slice(0, 60)) {
+    const name = it.name.trim().slice(0, 200);
+    if (!name) continue;
+    const key = normalizeName(name);
+    const dup = byKey.get(key);
+    if (dup) {
+      if (dup.checked) {
+        stmts.push(env.DB.prepare('UPDATE grocery_items SET checked = 0, updated_at = ?, updated_by = ? WHERE household = ? AND id = ?').bind(t++, email, household, dup.id));
+        dup.checked = false;
+        out.push({ name: dup.name, result: 'back_on_list' });
+      } else out.push({ name: dup.name, result: 'already_on_list' });
+      continue;
+    }
+    const cat = (GROCERY_CATEGORIES as readonly string[]).includes(it.category) ? it.category : 'other';
+    const id = uid();
+    stmts.push(env.DB.prepare('INSERT INTO grocery_items (household, id, name, cat, checked, qty, src, updated_at, updated_by, deleted) VALUES (?, ?, ?, ?, 0, 1, ?, ?, ?, 0)')
+      .bind(household, id, name, cat, from || null, t++, email));
+    byKey.set(key, { id, name, cat, checked: false, qty: 1, from, updatedAt: t, deleted: false } as any);
+    out.push({ name, result: 'added' });
+  }
+  if (stmts.length) await env.DB.batch(stmts);
+  return out;
+}
+
+export async function checkGroceries(env: Env, household: string, email: string, names: string[], checked: boolean) {
+  const existing = await currentGroceries(env, household);
+  const keys = new Set(names.map(normalizeName));
+  const hit = existing.filter((i) => keys.has(normalizeName(i.name)));
+  let t = Date.now();
+  if (hit.length) {
+    await env.DB.batch(hit.map((i) => env.DB.prepare('UPDATE grocery_items SET checked = ?, updated_at = ?, updated_by = ? WHERE household = ? AND id = ?')
+      .bind(checked ? 1 : 0, t++, email, household, i.id)));
+  }
+  const found = new Set(hit.map((i) => normalizeName(i.name)));
+  return { changed: hit.map((i) => i.name), not_found: names.filter((n) => !found.has(normalizeName(n))) };
+}
+
+export async function findRecipes(env: Env, household: string, query: string) {
+  const { results } = await env.DB.prepare('SELECT * FROM recipes WHERE household = ? ORDER BY updated_at DESC LIMIT 300').bind(household).all();
+  const q = query.trim().toLowerCase();
+  return results.map(rowToRecipe).filter((r) => !q || [r.title, r.notes, ...(r.tags || []), ...r.ingredients.map((i: any) => i.name)].join(' ').toLowerCase().includes(q));
+}
+
+export async function insertRecipe(env: Env, household: string, email: string, r: Recipe) {
+  const id = uid();
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO recipes (household, id, title, image, source_url, ingredients, steps, notes, tags, created_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(household, id, r.title, r.image || null, r.source_url || null, JSON.stringify(r.ingredients), JSON.stringify(r.steps),
+    r.notes || null, JSON.stringify(r.tags || []), email, now, now).run();
+  return id;
 }

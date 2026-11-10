@@ -96,3 +96,22 @@ CREATE TABLE IF NOT EXISTS mail_changes (
   message_ids TEXT NOT NULL,   -- JSON array of the messages actually changed
   PRIMARY KEY (plan_id, op_index, batch)
 );
+
+-- The daemon: each member's companion (name, current animal, append-only conversation, memory notes)
+CREATE TABLE IF NOT EXISTS daemons (
+  email      TEXT PRIMARY KEY,
+  name       TEXT,
+  form_slug  TEXT NOT NULL,
+  form_he    TEXT NOT NULL,
+  form_emoji TEXT NOT NULL,
+  address    TEXT NOT NULL DEFAULT 'plural',
+  messages   TEXT NOT NULL DEFAULT '[]',
+  memory     TEXT,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS image_quota (
+  email TEXT NOT NULL,
+  day   TEXT NOT NULL,
+  count INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, day)
+);

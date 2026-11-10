@@ -25,11 +25,12 @@
     #hello { margin: 0; }
   </style>
 </head>
-<body>
+<body data-daemon="hero">
   <main>
     <section class="hero">
-      <h1>🤝 העוזר המשפחתי</h1>
+      <h1>העוזר המשפחתי</h1>
       <p id="hello">עוזר אישי לכל המשפחה והחברים</p>
+      <div id="daemonHome" style="margin-top:26px"></div>
     </section>
     <div id="root"></div>
   </main>
@@ -56,6 +57,7 @@
     }
 
     const u = r.user;
+    H.loadDaemon().then((d) => d.mount(document.getElementById('daemonHome')));
     document.getElementById('hello').textContent = `שלום ${(u.name || u.email).split(' ')[0]} 👋`;
     const apps = [
       { href: '/groceries/', ic: '🛒', name: 'קניות ומתכונים', sub: 'רשימה משותפת וספר מתכונים' },

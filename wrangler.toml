@@ -10,7 +10,13 @@ database_id = "REPLACE_WITH_D1_ID"
 
 # Non-secret settings. Secrets (GOOGLE_CLIENT_SECRET, ANTHROPIC_API_KEY,
 # GEMINI_API_KEY, TOKEN_KEY) are set with `wrangler pages secret put`.
+# Daemon form pictures (create with: npx wrangler r2 bucket create helper-media)
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "helper-media"
+
 [vars]
 OWNER_EMAIL = ""
 GOOGLE_CLIENT_ID = ""
 GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image"

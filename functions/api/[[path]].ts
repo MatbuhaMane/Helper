@@ -2,6 +2,7 @@
 
 import { aiStatus } from '../../server/ai';
 import { Ctx, Env, HttpError, body, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
+import * as daemon from '../../server/daemon';
 import * as kitchen from '../../server/kitchen';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
@@ -55,6 +56,12 @@ route('DELETE', '/api/members/:email', async (ctx) => {
   return json({ ok: true });
 });
 
+/* daemon */
+route('GET', '/api/daemon', daemon.getDaemon);
+route('POST', '/api/daemon/chat', daemon.chat);
+route('POST', '/api/daemon/reset', daemon.resetChat);
+route('GET', '/api/daemon/form/:slug', daemon.formImage);
+
 /* groceries & recipes */
 route('GET', '/api/groceries', kitchen.listGroceries);
 route('POST', '/api/groceries/ops', kitchen.applyGroceryOps);
@@ -80,6 +87,7 @@ route('GET', '/api/mail/status', mail.mailStatus);
 route('POST', '/api/mail/disconnect', mail.disconnect);
 route('GET', '/api/mail/overview', mail.overview);
 route('POST', '/api/mail/plan', mail.plan);
+route('GET', '/api/mail/plans/:id', mail.getPlan);
 route('POST', '/api/mail/plans/:id/step', mail.applyStep);
 route('POST', '/api/mail/plans/:id/undo', mail.undo);
 route('POST', '/api/mail/plans/:id/cancel', mail.cancelPlan);

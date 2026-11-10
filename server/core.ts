@@ -9,7 +9,11 @@ export interface Env {
   ANTHROPIC_API_KEY?: string;
   GEMINI_API_KEY?: string;
   GEMINI_MODEL?: string;
-  DEV_MODE?: string;            // "1" only for local development: enables /api/auth/dev
+  GEMINI_IMAGE_MODEL?: string;
+  MEDIA?: R2Bucket;            // daemon form pictures (optional; falls back to the edge cache)
+  DEV_MODE?: string;            // "1" only for local development: enables /api/auth/dev and the mock URLs below
+  ANTHROPIC_BASE_URL?: string;  // dev/test only: point the Claude client at a mock
+  GEMINI_BASE_URL?: string;     // dev/test only
 }
 
 export interface Member {

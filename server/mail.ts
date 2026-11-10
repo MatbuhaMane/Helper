@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import { aiJson } from './ai';
-import { Ctx, HttpError, body, googleAccessToken, json, requireUser, uid } from './core';
+import { Ctx, Env, HttpError, body, googleAccessToken, json, requireUser, uid } from './core';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 export const REVIEW_LABEL = 'Helper/לבדיקה לפני מחיקה';
@@ -163,17 +163,15 @@ Rules:
 - If the request is ambiguous or risky, return no operations and ask one short clarifying question in "reply".
 - "reply" and every "title" must be in warm, simple Hebrew, without technical terms.`;
 
-export async function plan(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const { request, history } = await body<{ request: string; history?: { role: 'user' | 'assistant'; text: string }[] }>(ctx.req);
-  if (!request?.trim()) throw new HttpError(400, 'Empty request');
-  const token = await googleAccessToken(ctx.env, u.email);
+/** Build and preview a plan (nothing changes in Gmail). Used by the mail app and by the daemon. */
+export async function buildPlan(env: Env, email: string, request: string, history: { role: 'user' | 'assistant'; text: string }[] = []) {
+  const token = await googleAccessToken(env, email);
   const ov = await overviewData(token);
 
-  const convo = (history || []).slice(-10).map((h) => `${h.role === 'user' ? 'היא' : 'אתה'}: ${h.text}`).join('\n');
+  const convo = history.slice(-10).map((h) => `${h.role === 'user' ? 'היא' : 'אתה'}: ${h.text}`).join('\n');
   const prompt = `Mailbox overview (JSON):\n${JSON.stringify(ov)}\n\n` +
     (convo ? `Conversation so far:\n${convo}\n\n` : '') + `Her new request:\n${request}`;
-  const result = await aiJson(ctx.env, { prefer: 'claude', effort: 'high', system: SYSTEM, prompt, schema: PlanSchema });
+  const result = await aiJson(env, { prefer: 'claude', effort: 'high', system: SYSTEM, prompt, schema: PlanSchema });
 
   // Preview each operation: how many emails would actually change, plus a few examples.
   const labels = await labelMap(token);
@@ -192,9 +190,23 @@ export async function plan(ctx: Ctx) {
     });
   }
   const id = uid();
-  await ctx.env.DB.prepare('INSERT INTO mail_plans (id, email, request, plan, status, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-    .bind(id, u.email, request, JSON.stringify({ reply: result.reply, operations: previews }), 'proposed', Date.now()).run();
-  return json({ id, reply: result.reply, operations: previews });
+  await env.DB.prepare('INSERT INTO mail_plans (id, email, request, plan, status, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, email, request, JSON.stringify({ reply: result.reply, operations: previews }), 'proposed', Date.now()).run();
+  return { id, reply: result.reply, operations: previews };
+}
+
+export async function plan(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const { request, history } = await body<{ request: string; history?: { role: 'user' | 'assistant'; text: string }[] }>(ctx.req);
+  if (!request?.trim()) throw new HttpError(400, 'Empty request');
+  return json(await buildPlan(ctx.env, u.email, request, history || []));
+}
+
+/** A plan made elsewhere (e.g. by the daemon), so the mail app can show it for approval. */
+export async function getPlan(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const p = await loadPlan(ctx, u.email);
+  return json({ id: p.id, request: p.request, status: p.status, ...p.plan });
 }
 
 type Op = { action: (typeof ACTIONS)[number]; label: string; query: string };

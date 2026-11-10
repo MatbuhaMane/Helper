@@ -134,5 +134,23 @@
 
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
 
-  window.H = { api, el, toast, me, requireLogin, header, modal, closeModal, timeAgo };
+  /** Load the daemon companion. Every page gets the floating one; the home page mounts it large (data-daemon="hero"). */
+  let daemonLoad;
+  function loadDaemon() {
+    daemonLoad = daemonLoad || new Promise((resolve) => {
+      document.head.append(el('link', { rel: 'stylesheet', href: '/assets/daemon.css' }));
+      const s = el('script', { src: '/assets/daemon.js' });
+      s.onload = () => resolve(H.daemon);
+      document.head.append(s);
+    });
+    return daemonLoad;
+  }
+  function autoDaemon() {
+    if (document.body.dataset.daemon === 'hero' || document.body.dataset.daemon === 'off') return;
+    me().then((r) => { if (r.user && !r.offline) loadDaemon().then((d) => d.mount()); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
+  else setTimeout(autoDaemon);
+
+  window.H = { api, el, toast, me, requireLogin, header, modal, closeModal, timeAgo, loadDaemon };
 })();

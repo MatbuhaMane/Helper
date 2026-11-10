@@ -53,6 +53,17 @@
           } }, 'ניתוק'))));
     bubble('ai', 'שלום! אני כאן כדי לעשות סדר בתיבת הדואר. ספרי לי מה מפריע לך או מה תרצי לסדר, ואני אראה לך בדיוק מה אני מציע לפני שאני נוגע במשהו.');
     input.focus();
+    // A plan the daemon prepared: show it here for approval.
+    const fromDaemon = /plan=([\w-]+)/.exec(location.hash)?.[1];
+    if (fromDaemon) {
+      api('/api/mail/plans/' + fromDaemon).then((p) => {
+        if (p.status !== 'proposed') return;
+        bubble('me', p.request);
+        bubble('ai', p.reply);
+        chat.append(planCard(p));
+        history.push({ role: 'user', text: p.request }, { role: 'assistant', text: p.reply });
+      }).catch(() => {});
+    }
 
     async function ask(text) {
       text = text.trim();

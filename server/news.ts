@@ -91,13 +91,13 @@ export async function deleteFeed(ctx: Ctx) {
 
 /* ---------------- items ---------------- */
 
-export async function listItems(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const folder = ctx.url.searchParams.get('folder');
-  const feedId = ctx.url.searchParams.get('feed');
-  let { results: feeds } = await ctx.env.DB.prepare('SELECT id, url, title, folder FROM feeds WHERE email = ?').bind(u.email).all<any>();
-  if (feedId) feeds = feeds.filter((f) => f.id === feedId);
-  else if (folder) feeds = feeds.filter((f) => f.folder === folder);
+export async function collectItems(ctx: Ctx, email: string, filter: { folder?: string | null; feedId?: string | null }) {
+  let { results: feeds } = await ctx.env.DB.prepare('SELECT id, url, title, folder FROM feeds WHERE email = ?').bind(email).all<any>();
+  if (!feeds.length) {
+    feeds = DEFAULT_FEEDS.map((f, i) => ({ ...f, id: 'default' + i }));
+  }
+  if (filter.feedId) feeds = feeds.filter((f) => f.id === filter.feedId);
+  else if (filter.folder) feeds = feeds.filter((f) => f.folder === filter.folder);
   feeds = feeds.slice(0, MAX_FEEDS_PER_REFRESH);
 
   const errors: string[] = [];
@@ -118,7 +118,7 @@ export async function listItems(ctx: Ctx) {
       const chunk = ids.slice(i, i + 90);
       const { results } = await ctx.env.DB.prepare(
         `SELECT item_id, read, starred FROM news_state WHERE email = ? AND item_id IN (${chunk.map(() => '?').join(',')})`,
-      ).bind(u.email, ...chunk).all<any>();
+      ).bind(email, ...chunk).all<any>();
       for (const r of results) state.set(r.item_id, r);
     }
   }
@@ -127,7 +127,13 @@ export async function listItems(ctx: Ctx) {
     it.read = !!s?.read;
     it.starred = !!s?.starred;
   }
-  return json({ items, errors });
+  return { items, errors, folders: [...new Set(feeds.map((f) => f.folder))] };
+}
+
+export async function listItems(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const r = await collectItems(ctx, u.email, { folder: ctx.url.searchParams.get('folder'), feedId: ctx.url.searchParams.get('feed') });
+  return json({ items: r.items, errors: r.errors });
 }
 
 async function cachedFeed(ctx: Ctx, f: { id: string; url: string; title: string }): Promise<NewsItem[]> {

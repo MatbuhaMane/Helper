@@ -673,7 +673,7 @@
   function recipeParts(url, recipe) {
     const subs = chosenSubs.get(url) || new Map();
     chosenSubs.set(url, subs);
-    const status = el('div', { class: 'r-status' }, RecipeFix.kosherChip('checking'));
+    const status = el('div', {}, RecipeFix.statusRows({ kosherOrig: 'checking' }));
     const ketoSlot = el('div');
     const ingSlot = el('div');
     let result = null;
@@ -683,12 +683,12 @@
       // The chips: a warning about the original recipe, and stamps for the version on screen.
       const orig = result ? RecipeFix.kosherStatus(result, new Map()) : 'checking';
       const now = result ? RecipeFix.kosherStatus(result, subs) : 'checking';
-      status.replaceChildren(...[
-        orig !== 'ok' ? RecipeFix.kosherChip(orig, () => openFix('kosher')) : null,
-        result && now === 'ok' ? RecipeFix.kosherChip('ok', () => openFix('kosher')) : null,
-        result && orig !== 'ok' && now === 'ok' ? el('small', { class: 'r-chip-note' }, 'בגרסה עם התחליפים') : null,
-        RecipeFix.ketoChip(eff, () => result && openFix('keto')),
-      ].filter(Boolean));
+      const ketoSubbed = (result?.keto || []).some((x) => subs.get(x.index));
+      status.replaceChildren(RecipeFix.statusRows({
+        kosherOrig: orig, kosherNow: result ? now : null, keto: eff,
+        subbed: { kosher: orig !== 'ok' && now === 'ok', keto: ketoSubbed },
+        onFix: (focus) => result && openFix(focus),
+      }));
       ketoSlot.replaceChildren(...[Keto.recipePanel(eff)].filter(Boolean));
       const kosherAt = new Map((result?.kosher || []).map((x) => [x.index, x]));
       const ketoAt = new Map(Keto.enabled ? (result?.keto || []).map((x) => [x.index, x]) : []);
@@ -705,7 +705,7 @@
       // Every non-kosher ingredient starts out replaced by its first kosher substitute (the family can choose another, or keep it).
       for (const x of res.kosher) if (!subs.has(x.index)) subs.set(x.index, x.subs[0]);
       draw();
-    }).catch(() => { status.replaceChildren(...[RecipeFix.ketoChip(effective(recipe, subs), () => {})].filter(Boolean)); });
+    }).catch(() => { status.replaceChildren(RecipeFix.statusRows({ kosherOrig: 'error', keto: effective(recipe, subs), onFix: () => {} })); });
     return { status, ketoSlot, ingSlot };
   }
 
@@ -926,7 +926,7 @@
     } }, '🗑 מחיקה');
 
     // Kashrut and keto: a problem ingredient is struck in pencil with substitutes to choose under it; the chips sit under the title.
-    const bstatus = el('div', { class: 'r-status' });
+    const bstatus = el('div');
     const ketoSlot = el('div');
     let checkTimer = null, lastResult = null, lastNames = null;
     const rowsNow = () => [...ingList.children];
@@ -938,7 +938,7 @@
       if (names === lastNames) return;
       lastNames = names;
       if (!rec.ingredients.some((i) => i.name)) { bstatus.replaceChildren(); ketoSlot.replaceChildren(); return; }
-      bstatus.replaceChildren(RecipeFix.kosherChip('checking'));
+      bstatus.replaceChildren(RecipeFix.statusRows({ kosherOrig: 'checking' }));
       let res;
       try { res = await RecipeFix.check(rec); } catch (_) { bstatus.replaceChildren(); return; }
       if (lastNames !== names) return; // changed again meanwhile
@@ -954,7 +954,8 @@
       };
       res.kosher.forEach((x) => mark(x, 'kosher'));
       if (Keto.enabled) res.keto.forEach((x) => mark(x, 'keto'));
-      bstatus.replaceChildren(...[RecipeFix.kosherChip(RecipeFix.kosherStatus(res, new Map()), () => openBookFix('kosher')), RecipeFix.ketoChip(rec, () => openBookFix('keto'))].filter(Boolean));
+      const st = RecipeFix.kosherStatus(res, new Map());
+      bstatus.replaceChildren(RecipeFix.statusRows({ kosherOrig: st, kosherNow: st, keto: rec, onFix: openBookFix }));
       ketoSlot.replaceChildren(...[Keto.recipePanel(rec)].filter(Boolean));
     }
     const openBookFix = (focus) => lastResult && RecipeFix.openFix({

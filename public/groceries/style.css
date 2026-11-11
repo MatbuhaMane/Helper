@@ -376,3 +376,20 @@ select.sub-select { font: inherit; font-size: .9rem; padding: 4px 8px; max-inlin
 .ingredients .ing-name { flex: 1 1 0; min-inline-size: 0; }
 .ingredients label { flex-wrap: nowrap; }
 .ingredients .measure { flex: none; }
+
+/* warnings on one row, the stamps on a row of their own under it */
+.r-status { display: grid; gap: 8px; margin: 6px 0 10px; min-block-size: 0; }
+.r-warns, .r-stamps { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.r-warns:empty, .r-stamps:empty { display: none; }
+.r-stamps { gap: 6px 18px; padding-block: 2px; }
+.stamp.with-caption { inline-size: 92px; block-size: 97px; }
+.stamp-caption { font-family: Rubik, sans-serif; letter-spacing: .2px; }
+.stamp-kosher { transform: rotate(-6deg); }
+.stamp-keto { transform: rotate(5deg); }
+@media (max-width: 520px) { .stamp.with-caption { inline-size: 86px; block-size: 90px; } }
+
+/* both stamps get the same ring size, whether or not one has a caption under it; their tops line up */
+.r-stamps { align-items: flex-start; }
+.r-stamps .stamp { inline-size: 92px; block-size: 74px; }
+.r-stamps .stamp.with-caption { inline-size: 92px; block-size: 97px; }
+@media (max-width: 520px) { .r-stamps .stamp { inline-size: 86px; block-size: 69px; } .r-stamps .stamp.with-caption { inline-size: 86px; block-size: 90px; } }

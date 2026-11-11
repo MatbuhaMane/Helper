@@ -343,9 +343,17 @@
         const body = el('p', { class: 'rs-wit-t', lang: w.lang, dir: isHe || w.lang === 'syc' ? 'rtl' : 'ltr' });
         let differs = false;
         if (isHe) {
-          const marks = diffWords(mt, text.split(/\s+/).filter(Boolean));
+          // a word wholly inside [brackets] was filled in by the editors (the scroll is damaged there): faint, and never "different"
+          let open = false;
+          const toks = text.split(/\s+/).filter(Boolean).map((t) => {
+            const startsIn = open;
+            for (const ch of t) { if (ch === '[') open = true; else if (ch === ']') open = false; }
+            return { t, recon: (startsIn || t.startsWith('[')) && (open || t.endsWith(']')) && !/^[^[]*\][^\]]+$/.test(t) };
+          });
+          const marks = diffWords(mt, toks.map((x) => x.t));
+          marks.forEach((m, i) => { if (toks[i].recon) m[1] = false; });
           differs = marks.some((m) => m[1]);
-          marks.forEach(([wd, d], i) => { body.append(d ? el('mark', {}, wd) : wd, i < marks.length - 1 ? ' ' : ''); });
+          marks.forEach(([wd, d], i) => { body.append(d ? el('mark', {}, wd) : toks[i].recon ? el('span', { class: 'rs-recon', title: 'השלמת העורכים' }, wd) : wd, i < marks.length - 1 ? ' ' : ''); });
         } else body.textContent = text.normalize('NFC');   // the Greek comes with its accents as separate marks
         return el('div', { class: 'rs-wit-row' + (differs ? ' diff' : '') },
           el('div', { class: 'rs-wit-h' }, el('b', {}, w.name), sub ? el('span', { class: 'muted', dir: 'ltr' }, sub) : '',

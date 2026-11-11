@@ -1,7 +1,7 @@
 /* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls go to the network,
    except the sources of the study room: Sefaria's texts (through /api/sefaria/), the concordance and the textual witnesses
    are kept on the device in a cache of their own that a new version of the app does not clear – once read, always there. */
-const CACHE = 'helper-v24';
+const CACHE = 'helper-v26';
 const SOURCES = 'helper-sources-v1';
 const isSource = (p) => p.startsWith('/api/sefaria/') || p.startsWith('/concordance/') || p.startsWith('/witnesses/');
 const ASSETS = ['/', '/assets/base.css', '/assets/common.js', '/assets/sheet.css', '/assets/sheet.js', '/groceries/', '/groceries/style.css', '/groceries/data.js', '/groceries/foods.js', '/groceries/keto.js', '/groceries/fix.js', '/groceries/app.js', '/manifest.json', '/icon.svg', '/assets/tent.webp', '/assets/ibn-ezra-face.webp', '/assets/stump-guitar.webp', '/assets/campfire-strip.webp', '/assets/sun-core.webp', '/assets/moon.webp', '/assets/launcher.js', '/assets/launcher.css', '/food/', '/food/diet/', '/food/fridge/', '/tools/notes/', '/parasha/', '/tools/calc/', '/assets/capture.js', '/food/diet/hakpada/', '/tools/', '/assets/music.js', '/assets/music.css'];

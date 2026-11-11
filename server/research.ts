@@ -299,7 +299,11 @@ export async function search(ctx: Ctx) {
       if (tanakhText && s.lang === 'he' && s.version && !BIBLICAL.has(s.version)) continue;
       const snip = String((h.highlight?.[field] || h.highlight?.naive_lemmatizer || h.highlight?.exact || [''])[0]).replace(/<(?!\/?b>)[^>]*>/g, '');
       const book = String(s.path || '').split('/').pop() || s.ref.replace(/ [\d:ab.-]+$/, '');
-      byRef.set(s.ref + '|' + s.lang, { ref: s.ref, heRef: s.heRef || s.ref, book, lang: s.lang || 'he', snip });
+      // the language by the letters themselves: Sefaria files some translations (German, English…) under Hebrew
+      const plainSnip = snip.replace(/<[^>]+>/g, '');
+      const realLang = /[\u0590-\u05FF]/.test(plainSnip) ? 'he' : /[A-Za-z\u00C0-\u024F\u0370-\u03FF\u0400-\u04FF]/.test(plainSnip) ? 'en' : (s.lang || 'he');
+      if (lang !== 'all' && realLang !== lang) continue;
+      byRef.set(s.ref + '|' + s.lang, { ref: s.ref, heRef: s.heRef || s.ref, book, lang: realLang, snip });
     }
     all = [...byRef.values()];
     const out = JSON.stringify({ all, capped });

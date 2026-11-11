@@ -244,6 +244,9 @@
     speaker: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6"/>',
     device: '<rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 18h2"/>',
     search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
+    lyrics: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+    mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    queue: '<path d="M4 6h11M4 11h11M4 16h7"/><path d="M17 18.5V10l4-1"/><circle cx="15.5" cy="18.5" r="1.8"/>',
   };
   const ic = (n) => el('span', { class: 'mu-ic', 'aria-hidden': 'true', html: `<svg viewBox="0 0 24 24">${ICON[n]}</svg>` });
   const btn = (name, label, onclick, cls = '') => el('button', { class: 'mu-btn ' + cls, type: 'button', title: label, 'aria-label': label, onclick }, ic(name));
@@ -273,7 +276,8 @@
     const bar = el('span', { class: 'mu-bar' }, el('i'));
     const node = el('div', { class: 'mu-unit ' + kind },
       art, el('span', { class: 'mu-text', role: 'button', tabindex: '0', title: 'לפתוח את הנגן', onclick: () => openPanel(), onkeydown: (e) => { if (e.key === 'Enter') openPanel(); } }, title, artist),
-      el('span', { class: 'mu-ctls', dir: 'ltr' }, btn('prev', 'הקודם', () => E.prev()), play, btn('next', 'הבא', () => E.next())), bar);
+      el('span', { class: 'mu-ctls', dir: 'ltr' }, btn('prev', 'הקודם', () => E.prev()), play, btn('next', 'הבא', () => E.next())),
+      btn('queue', 'רשימת השמע', () => openPanel('queue'), 'qbtn'), btn('lyrics', 'מילים לשיר', () => lyricsNow(), 'lybtn'), bar);
     painters.push((st) => {
       const has = !!st.title;
       node.classList.toggle('empty', !has);
@@ -294,8 +298,8 @@
     const appbar = document.querySelector('.appbar'), tabbar = document.querySelector('.tabbar');
     if (!appbar) return false;
     // PC: a pill in the top bar
-    menuSpot = el('div', { class: 'mu-menu', 'data-guide': 'music', 'data-guide-label': 'נגן המוזיקה' }, unit('pill'),
-      btn('float', 'לשחרר את הנגן מהתפריט', () => setMode('float'), 'undock'));
+    // (a floating copy opens from the record by the stump on the home page, or by dragging the cover out of here)
+    menuSpot = el('div', { class: 'mu-menu', 'data-guide': 'music', 'data-guide-label': 'נגן המוזיקה' }, unit('pill'));
     const anchor = appbar.querySelector('.theme-switch') || appbar.querySelector('.userchip');
     appbar.insertBefore(menuSpot, anchor);
     dragOut(menuSpot.querySelector('.mu-art'));
@@ -303,7 +307,7 @@
     if (tabbar) {
       const rec = el('button', { class: 'mu-tab', type: 'button', 'aria-label': 'מוזיקה', onclick: () => openPanel() }, el('span', { class: 'mu-disc' }, ic('note')), el('span', {}, 'מוזיקה'));
       tabbar.append(rec);
-      strip = el('div', { class: 'mu-strip' }, unit('strip'), btn('float', 'לשחרר את הנגן', () => setMode('float'), 'undock'));
+      strip = el('div', { class: 'mu-strip' }, unit('strip'));
       tabbar.prepend(strip);
       dragOut(strip.querySelector('.mu-art'));
       painters.push((st) => { rec.classList.toggle('playing', st.playing); strip.hidden = !st.title || P.mode !== 'menu'; document.body.classList.toggle('mu-strip-on', !strip.hidden); });
@@ -416,7 +420,7 @@
     edge.hidden = P.mode !== 'edge';
     if (P.mode === 'edge') placeEdge();
     if (!float.hidden && restore) requestAnimationFrame(restoreSpot);
-    if (menuSpot) menuSpot.hidden = P.mode !== 'menu';
+    if (menuSpot) menuSpot.hidden = false;   // the menu keeps its own copy; a floating one is extra
     paint(E.st);
   }
   function setMode(m) {
@@ -451,6 +455,7 @@
     const play = btn('play', 'נגן', () => E.toggle(), 'main big');
     const vol = el('input', { type: 'range', min: 0, max: 100, value: 70, 'aria-label': 'עוצמת קול', class: 'mu-vol' });
     const devBtn = el('button', { class: 'btn ghost small mu-devbtn', type: 'button', onclick: () => showDevices() }, ic('device'), el('span', {}, 'מכשיר'));
+    const lyBtn = el('button', { class: 'btn ghost small mu-devbtn mu-lyrics', type: 'button', onclick: () => lyricsNow() }, ic('lyrics'), el('span', {}, 'מילים'));
     let seeking = false;
     seek.addEventListener('input', () => { seeking = true; });
     seek.addEventListener('change', () => { seeking = false; E.seek((seek.value / 1000) * E.st.duration); });
@@ -459,17 +464,16 @@
     const tabs = el('div', { class: 'mu-tabs', role: 'tablist' });
     const body = el('div', { class: 'mu-body' });
     const mkTab = (id, label) => el('button', { class: 'mu-tabbtn', role: 'tab', type: 'button', 'data-tab': id, onclick: () => showTab(id) }, label);
-    tabs.append(mkTab('spotify', 'ספוטיפיי'), mkTab('youtube', 'יוטיוב'), mkTab('recent', 'אחרונים'));
+    tabs.append(mkTab('queue', 'רשימת השמע'), mkTab('spotify', 'ספוטיפיי'), mkTab('youtube', 'יוטיוב'), mkTab('recent', 'אחרונים'));
 
     panel = el('section', { class: 'mu-panel', hidden: true, role: 'dialog', 'aria-label': 'נגן המוזיקה' },
       el('div', { class: 'mu-phead' }, el('b', {}, 'מוזיקה'), el('span', { class: 'spacer' }),
-        btn(P.mode === 'menu' ? 'float' : 'dock', 'לשחרר מהתפריט / להחזיר', () => setMode(P.mode === 'menu' ? 'float' : 'menu')),
         btn('x', 'סגירה', () => closePanel())),
       el('div', { class: 'mu-now' }, art,
         el('div', { class: 'mu-nowtext' }, title, artist,
           el('div', { class: 'mu-time', dir: 'ltr' }, tNow, seek, tDur),
           el('div', { class: 'mu-ctl', dir: 'ltr' }, btn('prev', 'הקודם', () => E.prev()), play, btn('next', 'הבא', () => E.next())),
-          el('div', { class: 'mu-volrow' }, ic('speaker'), vol, devBtn))),
+          el('div', { class: 'mu-volrow' }, ic('speaker'), vol, devBtn, lyBtn))),
       tabs, body);
     document.body.append(panel);
     panel.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePanel(); });
@@ -486,6 +490,7 @@
       tNow.textContent = fmt(now(st)); tDur.textContent = fmt(st.duration);
       if (document.activeElement !== vol) vol.value = st.volume;
       devBtn.hidden = st.source !== 'spotify' || !st.spotify.connected;
+      lyBtn.hidden = !st.title;
     });
 
     function showTab(id) {
@@ -494,6 +499,7 @@
       if (id === 'spotify') spotifyTab(body);
       if (id === 'youtube') youtubeTab(body);
       if (id === 'recent') recentTab(body);
+      if (id === 'queue') queueTab(body);
     }
     panel.showTab = showTab;
   }
@@ -507,8 +513,37 @@
       try { await run(q, out); } catch (e) { out.replaceChildren(el('p', { class: 'muted' }, 'החיפוש לא הצליח: ' + e.message)); }
     };
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
-    return { node: el('div', { class: 'mu-search' }, el('div', { class: 'mu-sbox' }, ic('search'), input, el('button', { class: 'btn primary small', type: 'button', onclick: go }, 'חיפוש')), out), input, out };
+    return { node: el('div', { class: 'mu-search' }, el('div', { class: 'mu-sbox' }, ic('search'), input, voiceSearch(input, go), el('button', { class: 'btn primary small', type: 'button', onclick: go }, 'חיפוש')), out), input, out };
   }
+  /* Voice search: say the song or the artist and it searches (the player's own microphone, apart from Ibn Ezra's).
+     The words appear in the box while you speak; when you stop, the search runs. */
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let listening = null;
+  function voiceSearch(input, go) {
+    if (!Recognition) return null;
+    const mic = el('button', { class: 'mu-btn mu-mic', type: 'button', title: 'חיפוש קולי', 'aria-label': 'חיפוש קולי', 'aria-pressed': 'false' }, ic('mic'));
+    mic.addEventListener('click', () => {
+      if (listening) { listening.stop(); return; }
+      const rec = new Recognition();
+      rec.lang = 'he-IL';            // Hebrew, and it also catches most English names of songs and artists
+      rec.interimResults = true;
+      rec.maxAlternatives = 1;
+      const before = input.value;
+      rec.onresult = (e) => { input.value = [...e.results].map((r) => r[0].transcript).join(''); };
+      rec.onerror = (e) => { if (e.error === 'not-allowed') toast('צריך לאשר לדפדפן גישה למיקרופון'); else if (e.error === 'no-speech') toast('לא שמעתי כלום, נסו שוב'); };
+      rec.onend = () => {
+        listening = null; mic.classList.remove('on'); mic.setAttribute('aria-pressed', 'false');
+        if (input.value.trim() && input.value !== before) go();
+      };
+      listening = rec;
+      mic.classList.add('on'); mic.setAttribute('aria-pressed', 'true');
+      input.value = ''; input.placeholder = 'מקשיב…';
+      setTimeout(() => { input.placeholder = input.getAttribute('aria-label'); }, 6000);
+      try { rec.start(); } catch (_) { listening = null; mic.classList.remove('on'); }
+    });
+    return mic;
+  }
+
   const row = (item, sub, onplay, extra) => el('button', { class: 'mu-row', type: 'button', onclick: onplay },
     el('span', { class: 'mu-rowart', style: item.art ? `background-image:url("${item.art}")` : '' }),
     el('span', { class: 'mu-rowtext' }, el('b', { dir: 'auto' }, item.title), el('small', { dir: 'auto' }, sub)), extra || null);
@@ -558,6 +593,31 @@
     if (matchMedia('(pointer: coarse)').matches) body.append(el('p', { class: 'mu-foot muted' }, 'בטלפון יוטיוב עוצר כשיוצאים מהאפליקציה (זה הכלל של יוטיוב). למוזיקה ברקע – ספוטיפיי.'));
   }
 
+  /** What plays now and what comes next: YouTube's list from the search, or Spotify's own queue. */
+  async function queueTab(body) {
+    const st = E.st;
+    if (st.source === 'youtube' && st.yt.queue.length) {
+      body.append(el('div', { class: 'mu-results' }, st.yt.queue.map((v, i) => {
+        const r = row(v, i === st.yt.index ? 'מתנגן עכשיו' : v.channel, () => E.playYT(v, st.yt.queue));
+        if (i === st.yt.index) r.classList.add('now');
+        return r;
+      })));
+      return;
+    }
+    if (!st.spotify.connected) { body.append(el('p', { class: 'muted' }, 'עוד אין רשימה. בחרו שיר ביוטיוב, או חברו את ספוטיפיי.')); return; }
+    const out = el('div', { class: 'mu-results' }, el('p', { class: 'muted mu-wait' }, 'טוען את רשימת השמע…'));
+    body.append(out);
+    try {
+      const q = await api('/api/music/spotify/queue', { noRedirect: true });
+      const rows = [];
+      if (q.now) { const r = row(q.now, 'מתנגן עכשיו · ' + q.now.artist, () => {}); r.classList.add('now'); rows.push(el('h3', {}, 'עכשיו'), r); }
+      if (q.next.length) rows.push(el('h3', {}, 'הבא בתור'), ...q.next.map((t) => row(t, t.artist, () => E.playSpotify(t))));
+      out.replaceChildren(...(rows.length ? rows : [el('p', { class: 'muted' }, 'הרשימה ריקה. בחרו פלייליסט בלשונית ספוטיפיי.')]));
+    } catch (e) {
+      out.replaceChildren(el('p', { class: 'muted' }, /no_active_device|409/.test(e.message) ? 'ספוטיפיי לא מנגן כרגע באף מכשיר.' : 'לא הצלחתי לטעון את רשימת השמע.'));
+    }
+  }
+
   function recentTab(body) {
     const list = P.recent || [];
     if (!list.length) { body.append(el('p', { class: 'muted' }, 'מה שתשמעו יופיע כאן.')); return; }
@@ -594,6 +654,80 @@
     E.poll();
   }
   function closePanel() { if (panel) panel.hidden = true; }
+
+  /* ---- the songbook in a window over any screen, and the lyrics of what's playing ---- */
+  let songwin = null, songFollow = false;
+  /** The songbook (or one of its songs) in a window you can move by its top bar; on a phone, a sheet from below. */
+  function songbook(src = '/songs/?embed=1', title = 'שירון') {
+    if (!songwin) {
+      const name = el('b', {}, title);
+      const full = el('a', { class: 'btn ghost small', href: '/songs/' }, 'לעמוד המלא');
+      const head = el('header', {}, name, el('span', { class: 'spacer' }), full,
+        el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'סגירה', onclick: () => { songwin.hidden = true; songFollow = false; } }, '✕'));
+      const frame = el('iframe', { title: 'השירון' });
+      songwin = el('section', { class: 'songwin', role: 'dialog', 'aria-label': 'השירון' }, head, frame);
+      songwin.parts = { name, full, frame };
+      document.body.append(songwin);
+      head.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('a, button') || innerWidth < 600) return;
+        const r = songwin.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+        head.setPointerCapture(e.pointerId);
+        const mv = (ev) => {
+          songwin.style.insetInlineStart = 'auto';
+          songwin.style.left = Math.max(0, Math.min(innerWidth - r.width, ev.clientX - dx)) + 'px';
+          songwin.style.top = Math.max(0, Math.min(innerHeight - 60, ev.clientY - dy)) + 'px';
+        };
+        const up = () => { head.removeEventListener('pointermove', mv); head.removeEventListener('pointerup', up); };
+        head.addEventListener('pointermove', mv); head.addEventListener('pointerup', up);
+      });
+    }
+    const { name, full, frame } = songwin.parts;
+    name.textContent = title;
+    full.href = src.replace(/([?&])embed=1&?/, '$1').replace(/[?&]$/, '') || '/songs/';
+    if (frame.getAttribute('src') !== src) frame.src = src;
+    songwin.hidden = false;
+    return songwin;
+  }
+  const lookups = new Map();
+  function lookup(st) {
+    const key = st.title + '|' + st.artist;
+    if (!lookups.has(key)) lookups.set(key, api(`/api/songs/lookup?title=${encodeURIComponent(st.title)}&artist=${encodeURIComponent(st.artist || '')}`, { noRedirect: true }).catch(() => null));
+    return lookups.get(key);
+  }
+  const songSrc = (hit) => `/songs/?embed=1&open=${encodeURIComponent(hit.url)}&title=${encodeURIComponent(hit.title)}&artist=${encodeURIComponent(hit.artist)}`;
+  /** The words of the song playing now, in the songbook window (and the window follows the next songs while it's open). */
+  async function lyricsNow() {
+    const st = E.st;
+    if (!st.title) { toast('שום שיר לא מתנגן כרגע'); return; }
+    closePanel();
+    songbook('about:blank', 'מחפש את המילים…');
+    const r = await lookup(st);
+    const hit = r && (r.lyrics || r.chords);
+    songFollow = true;
+    if (hit) songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title);
+    else {
+      songbook(`/songs/?embed=1&q=${encodeURIComponent(((r && r.title) || st.title) + ' ' + ((r && r.artist) || ''))}`, 'שירון');
+      toast(r ? 'לא מצאתי את המילים המדויקות, הנה חיפוש בשירון' : 'השירון לא ענה כרגע, נסו שוב');
+    }
+  }
+  // a new song: the open window turns to its words; otherwise a small offer (only for songs the songbook knows)
+  let lastSong = null, songTimer = 0;
+  painters.push((st) => {
+    const key = st.title ? st.title + '|' + st.artist : '';
+    if (key === lastSong) return;
+    const first = lastSong === null;
+    lastSong = key;
+    clearTimeout(songTimer);
+    if (!key || first || document.body.classList.contains('mu-shelled')) return;   // (not for the song already playing when the page opened)
+    songTimer = setTimeout(async () => {
+      if (document.visibilityState !== 'visible' || !E.st.playing) return;
+      const r = await lookup(E.st);
+      const hit = r && (r.lyrics || r.chords);
+      if (!hit || lastSong !== key) return;
+      if (songwin && !songwin.hidden && songFollow) songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title);
+      else toast(`המילים של "${hit.title}" בשירון`, 'להציג', () => { songFollow = true; songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title); });
+    }, 2500);
+  });
 
   /* ---- keeping the music on between screens (the engine's page only) ---- */
   function shellLinks() {
@@ -648,6 +782,7 @@
       if (m === 'connected') E.status().then(() => openPanel('spotify'));
     }
   }
-  H.music = { open: openPanel, engine: E };
+  // float(): a floating copy of the player (the record by the stump opens it), open where it last floated
+  H.music = { open: openPanel, engine: E, songbook, lyrics: lyricsNow, float: () => { P.mode = 'float'; P.folded = false; save(); paintModes(); } };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(start)); else setTimeout(start);
 })();

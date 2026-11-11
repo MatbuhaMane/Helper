@@ -6,6 +6,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap');
 
 :root {
+  --icon-ink: #2e2a1e;   /* the line of the pastel icons: dark ink in both themes, so the pastel fill keeps its colour at night too */
   --chalk: #efeee6;
   --chalk-raised: #f7f6f0;
   --ink: #2e2a1e;
@@ -46,38 +47,40 @@
   --end: 0%;
   color-scheme: light;
 }
+/* Night: a deep, desaturated navy (dark and low in light), warm off-white text (no pure white: less blue light, less glare),
+   contrast about 11:1 rather than the full white-on-black that tires the eyes at night. */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #1d1a12;
-    --card: #27231a;
-    --text: #efeee6;
-    --muted: #b8b19c;
-    --line: #3a3527;
-    --line-strong: #4b4533;
-    --primary: #a3b26a;
-    --primary-ink: #1d1a12;
-    --danger: #e08a74;
-    --ok: #a3b26a;
-    --glass: rgba(39, 35, 26, 0.86);
-    --glass-border: rgba(239, 238, 230, 0.10);
+    --bg: #111a2c;
+    --card: #18233a;
+    --text: #e7e1d3;
+    --muted: #a9afbd;
+    --line: #25314a;
+    --line-strong: #34415e;
+    --primary: #a8c28c;
+    --primary-ink: #111a2c;
+    --danger: #e79a85;
+    --ok: #a8c28c;
+    --glass: rgba(24, 35, 58, 0.86);
+    --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
-    --tint: #2f3d44;
+    --tint: #22344f;
     color-scheme: dark;
   } }
 :root[data-theme="dark"] {
-    --bg: #1d1a12;
-    --card: #27231a;
-    --text: #efeee6;
-    --muted: #b8b19c;
-    --line: #3a3527;
-    --line-strong: #4b4533;
-    --primary: #a3b26a;
-    --primary-ink: #1d1a12;
-    --danger: #e08a74;
-    --ok: #a3b26a;
-    --glass: rgba(39, 35, 26, 0.86);
-    --glass-border: rgba(239, 238, 230, 0.10);
+    --bg: #111a2c;
+    --card: #18233a;
+    --text: #e7e1d3;
+    --muted: #a9afbd;
+    --line: #25314a;
+    --line-strong: #34415e;
+    --primary: #a8c28c;
+    --primary-ink: #111a2c;
+    --danger: #e79a85;
+    --ok: #a8c28c;
+    --glass: rgba(24, 35, 58, 0.86);
+    --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
-    --tint: #2f3d44;
+    --tint: #22344f;
     color-scheme: dark;
   }
 @media (max-width: 899px) { :root { --tabbar-h: 64px; --appbar-h: 54px; } }
@@ -284,3 +287,13 @@ textarea { width: 100%; resize: vertical; }
 .mini { font: inherit; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--muted); inline-size: 34px; block-size: 34px; border-radius: var(--radius-sm); flex: none; display: inline-grid; place-items: center; transition: border-color var(--dur-quick), color var(--dur-quick); }
 .mini:hover { border-color: var(--line-strong); color: var(--text); }
 .mini.danger:hover { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
+
+/* a page shown inside another page's window (?embed=1): no bars of its own */
+html.embedded .appbar, html.embedded .tabbar { display: none !important; }
+html.embedded body { padding-block-end: 0; }
+
+/* "שמירה כפתק" by a text selection (assets/capture.js) */
+.cap-btn { position: fixed; z-index: 60; inset-block-start: 0; left: 0; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--glass-border); font: inherit; font-size: .9rem; font-weight: 500;
+  background: var(--text); color: var(--bg); box-shadow: var(--lift); cursor: pointer; animation: cap-in .18s ease-out; }
+.cap-btn[hidden] { display: none; }
+@keyframes cap-in { from { opacity: 0; transform: translateY(4px); } }

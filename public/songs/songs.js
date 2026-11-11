@@ -404,6 +404,10 @@
     if (query.length >= 2 && tab !== 'zemirot' && tab !== 'mine') search(query); else render();
   });
   render();
+  // opened with a song (the music player's "lyrics" button): ?open=<its page>&title=&artist=, or ?q=<what to search>
+  const qs = new URLSearchParams(location.search);
+  if (qs.get('open')) openRemote({ url: qs.get('open'), title: qs.get('title') || '', artist: qs.get('artist') || '' });
+  else if (qs.get('q')) { $('#q').value = qs.get('q'); query = qs.get('q').trim(); if (query.length >= 2) search(query); }
   await Promise.all([loadZemirot().catch(() => null), loadMine().catch(() => [])]);
   render();
 })();

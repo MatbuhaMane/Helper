@@ -66,6 +66,70 @@ export async function search(ctx: Ctx) {
   }
 }
 
+/* ---------------- the lyrics of what's playing (the music player asks) ---------------- */
+
+/** A track's name as players give it, made into a song name: no "(Live)", "- Remastered", "| Official Video", "feat. …";
+    a YouTube title "Artist - Song" split into its two halves. */
+export function cleanTrack(title: string, artist: string) {
+  let t = String(title || ''), a = String(artist || '');
+  t = t.replace(/[([{【].*?[)\]}】]/g, ' ').replace(/\s[-–|•]\s*(\d{4}\s*)?(remaster(ed)?|live|official|video|audio|lyrics?|clip|extended|radio edit|original mix|remix|edit|version|mix|קליפ|הופעה|גרסה|מתוך|רמיקס).*$/i, ' ')
+    .replace(/\b(feat|ft|featuring)\.?\s.*$/i, ' ').replace(/[|•].*$/, ' ').replace(/\s+/g, ' ').trim();
+  // a YouTube channel is not an artist ("ShlomoArtziOfficial", "… - Topic", "…VEVO"): then the title says who sings it
+  const channel = !a || /official|topic|vevo|records|music$/i.test(a) || (/^[A-Za-z0-9]+$/.test(a) && /[א-ת]/.test(t));
+  a = a.replace(/\s*-\s*Topic$/i, '').replace(/VEVO$/i, '').replace(/official$/i, '').trim();
+  const split = /^(.+?)\s+[-–]\s+(.+)$/.exec(t);
+  if (split && channel) { a = split[1].trim(); t = split[2].trim(); }
+  a = a.split(/,|&| ו(?=\S)/)[0].trim();
+  return { title: t, artist: a };
+}
+const nrm = (s: string) => s.replace(/[֑-ׇ]/g, '').replace(/['"`׳״.,!?\-–_()]/g, ' ').toLowerCase().replace(/\s+/g, ' ').trim();
+function best(hits: Hit[], title: string, artist: string): Hit | null {
+  const T = nrm(title), A = nrm(artist);
+  let top: Hit | null = null, topScore = 0;
+  for (const h of hits) {
+    const ht = nrm(h.title), ha = nrm(h.artist);
+    // the song's name has to match; the singer only decides between versions
+    let sc = ht === T ? 3 : (ht.includes(T) || T.includes(ht)) && Math.min(ht.length, T.length) >= 2 ? 2 : 0;
+    if (!sc) continue;
+    if (A && ha && (ha.includes(A) || A.includes(ha))) sc += 2;
+    if (sc > topScore) { top = h; topScore = sc; }
+  }
+  return topScore >= 2 ? top : null;
+}
+
+/** GET /api/songs/lookup?title=…&artist=… : the best lyrics (Shironet) and chords (Tab4u) for a playing track. */
+export async function lookup(ctx: Ctx) {
+  requireUser(ctx);
+  useMock(ctx);
+  const { title, artist } = cleanTrack(ctx.url.searchParams.get('title') || '', ctx.url.searchParams.get('artist') || '');
+  if (title.length < 2) return json({ title, artist, lyrics: null, chords: null });
+  const q = encodeURIComponent((title + ' ' + artist).trim().slice(0, 80)).replace(/%20/g, '+');
+  const [ly, ch] = await Promise.all([
+    fetchHtml(`https://shironet.mako.co.il/search?q=${q}`).then(shironet).catch((): Hit[] => []),
+    fetchHtml(`https://www.tab4u.com/resultsSimple?tab=songs&q=${q}`).then(tab4u).catch((): Hit[] => []),
+  ]);
+  // only the title, when title + artist found nothing (the artist's name is often written differently)
+  let lyHits = ly, chHits = ch;
+  if (!best(lyHits, title, artist)) lyHits = lyHits.concat(await fetchHtml(`https://shironet.mako.co.il/search?q=${encodeURIComponent(title).replace(/%20/g, '+')}`).then(shironet).catch((): Hit[] => []));
+  if (!best(chHits, title, artist)) chHits = chHits.concat(await fetchHtml(`https://www.tab4u.com/resultsSimple?tab=songs&q=${encodeURIComponent(title).replace(/%20/g, '+')}`).then(tab4u).catch((): Hit[] => []));
+  let lyrics = best(lyHits, title, artist), chords = best(chHits, title, artist);
+  // the singer decides which song it is (many songs share a name):
+  // – the other site found it by this singer, and this site has the same singer too → that version;
+  // – the other site found it by this singer, and this site only has someone else's song by that name → none (it's another song);
+  // – neither site knows the singer by this name (a cover, or a name in another script) → keep what matched the title.
+  const like = (h: Hit | null, who: string) => !!h && !!who && (nrm(h.artist).includes(nrm(who)) || nrm(who).includes(nrm(h.artist)));
+  const fix = (mine: Hit | null, hits: Hit[], other: Hit | null) => {
+    if (!mine || like(mine, artist) || !other || !like(other, artist)) return mine;
+    const same = best(hits, title, other.artist);
+    return like(same, other.artist) ? same : null;
+  };
+  const ly2 = fix(lyrics, lyHits, chords), ch2 = fix(chords, chHits, lyrics);
+  lyrics = ly2; chords = ch2;
+  // a singer written differently (Spotify's "Shlomo Artzi"): when the two sites agree on someone, take that singer's versions
+  if (lyrics && chords && !like(lyrics, artist) && !like(chords, artist) && !like(lyrics, chords.artist)) lyrics = best(lyHits, title, chords.artist) || lyrics;
+  return json({ title, artist, lyrics, chords }, 200, { 'cache-control': 'private, max-age=600' });
+}
+
 /* ---------------- reading a song in the app ---------------- */
 
 const lines = (h: string) => h.replace(/<br\s*\/?>/gi, '\n').split('\n').map((l) => decode(l)).join('\n').replace(/\n{3,}/g, '\n\n').trim();

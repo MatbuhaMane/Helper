@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#efeee6">
+  <title>כלים</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/launcher.css">
+</head>
+<body>
+  <main class="wide"></main>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/launcher.js"></script>
+  <script>
+  // Tools: the helpers that sort things out, and the ones still to come.
+  // Each one is drawn by its name (an envelope for mail, a screen for the computer…), large and flat with a pastel fill, like אוכל.
+  H.folder({ title: 'כלים', sub: 'עוזרים קטנים לסדר בבית', look: 'flat', apps: [
+    { href: '/mail/', ic: 'mail', name: 'סידור המייל', tint: '#ffd1de', c1: '#ff9ab8', c2: '#c9466e' },
+    { href: '/pc/', ic: 'pc', name: 'סידור המחשב', tint: '#cfe7ff', c1: '#8cc4f5', c2: '#3f7fc0' },
+    { href: '/tools/notes/', ic: 'note', name: 'פתקים', tint: '#fff0b3', c1: '#ffd65c', c2: '#c99a1a' },
+    { href: '/tools/calc/', ic: 'calc', name: 'מחשבון', tint: '#d4f2dc', c1: '#86d9a0', c2: '#2f8f55' },
+    { href: '/parasha/', ic: 'torah', name: 'פרשת השבוע', tint: '#f4d9c4', c1: '#e0a77f', c2: '#8a4b2a' },
+    { href: '/tools/calendar/', ic: 'calendar', name: 'לוח שנה', tint: '#ffd6e0', c1: '#ff9fb8', c2: '#c4476a' },
+    { href: '/tools/tasks/', ic: 'tasks', name: 'ניהול משימות', tint: '#e3d9ff', c1: '#b9a3ff', c2: '#6b4fd1', soon: true },
+    { href: '/tools/weather/', ic: 'weather', name: 'מזג אוויר', tint: '#ffe0cc', c1: '#ffb68a', c2: '#d9692f', soon: true },
+  ] });
+  </script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+/* The fridge */
+.fr { max-inline-size: 820px; margin: 0 auto; padding-block: 14px 40px; display: grid; gap: 12px; }
+.folder-back { color: var(--muted); text-decoration: none; font-size: .95rem; }
+.folder-back:hover { color: var(--primary); }
+.fr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.fr-head h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); }
+.fr-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.fr-fridges { display: flex; gap: 8px; overflow-x: auto; padding-block: 2px 6px; scrollbar-width: thin; }
+.fr-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: var(--card); color: var(--text); font: inherit; cursor: pointer; transition: border-color .2s, background .2s; }
+.fr-chip b { font-weight: 500; }
+.fr-chip small { min-inline-size: 22px; padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--text) 9%, transparent); font-size: .78rem; text-align: center; }
+.fr-chip[aria-selected="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--card)); box-shadow: inset 0 0 0 1px var(--primary); }
+.fr-chip.add { color: var(--muted); border-style: dashed; }
+.fr-chip .warn { position: absolute; inset-block-start: 3px; inset-inline-end: 6px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: #e0803a; }
+.fr-add { display: flex; gap: 8px; align-items: center; padding: 8px; flex-wrap: wrap; }
+.fr-add input[type="text"] { flex: 1 1 180px; min-inline-size: 0; padding: 10px 12px; font: inherit; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg); color: var(--text); }
+.fr-qty-in { inline-size: 64px; padding: 9px 8px; font: inherit; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg); color: var(--text); }
+.fr-exp-lab { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; }
+.fr-exp-in { padding: 8px; font: inherit; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--bg); color: var(--text); }
+.fr-soon { padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, #e0803a 14%, var(--card)); border: 1px solid color-mix(in srgb, #e0803a 40%, transparent); font-size: .95rem; }
+.fr-shelf { display: grid; gap: 4px; }
+.fr-shelf h3 { display: flex; align-items: center; gap: 8px; margin: 10px 4px 2px; font-size: 1rem; }
+.fr-shelf h3 small { color: var(--muted); font-weight: 400; }
+.fr-shelf ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fr-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; align-items: center; gap: 8px; padding: 8px 10px 8px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+.fr-name { display: flex; align-items: center; gap: 8px; min-inline-size: 0; flex-wrap: wrap; }
+.fr-name b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.fr-exp { font-size: .75rem; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, transparent); color: var(--muted); white-space: nowrap; }
+.fr-exp.soon { background: color-mix(in srgb, #e0803a 22%, transparent); color: #b85a12; }
+.fr-exp.gone { background: color-mix(in srgb, var(--danger) 22%, transparent); color: var(--danger); }
+:root[data-theme="dark"] .fr-exp.soon { color: #f0a868; }
+.fr-step { display: inline-flex; align-items: center; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; }
+.fr-step button { inline-size: 32px; block-size: 30px; border: 0; background: none; color: var(--text); font: inherit; font-size: 1.1rem; cursor: pointer; }
+.fr-step button:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.fr-step span { min-inline-size: 22px; text-align: center; font-variant-numeric: tabular-nums; }
+.fr-out { white-space: nowrap; }
+.fr-x { inline-size: 30px; block-size: 30px; border-radius: 50%; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.fr-x:hover { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+@media (max-width: 520px) { .fr-item { grid-template-columns: minmax(0, 1fr) auto auto; } .fr-x { display: none; } }
+.fr-empty { text-align: center; padding: 30px 10px; }
+.fr-empty p { margin: 4px 0; }
+.fr-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 10px 14px; }
+.fr-pick { font: inherit; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; }
+.fr-pick[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--card)); }
+.fr-modal-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-block-start: 10px; }
+.fr-cook { display: grid; gap: 8px; margin-block: 10px; max-block-size: 55vh; overflow-y: auto; }
+.fr-recipe { display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: start; }
+.fr-recipe .img { inline-size: 56px; block-size: 56px; border-radius: 12px; background: var(--line) center / cover no-repeat; display: grid; place-items: center; font-size: 1.4rem; }
+.fr-recipe b { display: block; }
+.fr-recipe small { display: block; color: var(--muted); font-size: .82rem; }
+.fr-recipe small.ok { color: var(--primary); }
+.fr-recipe .btn { margin-block-start: 4px; }
+
+/* my fridge */
+.fr-views { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); justify-self: start; }
+.fr-views button { font: inherit; padding: 6px 14px; border: 0; border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+.fr-views button[aria-selected="true"] { background: var(--card); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+.fr-mine-tag { margin-inline-start: 10px; font-size: .9rem; font-weight: 500; color: var(--primary); vertical-align: middle; }
+.fr-chip em { font-style: normal; font-size: .72rem; color: var(--primary); }
+.fr-mine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 700px) { .fr-mine-grid { grid-template-columns: 1fr; } }
+.fr-panel { padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.fr-panel h3 { margin: 0; font-size: 1.02rem; }
+.fr-panel p { margin: 0; font-size: .92rem; }
+.fr-group { display: grid; gap: 6px; }
+.fr-group > small { color: var(--muted); font-size: .82rem; }
+.fr-group > small.gone { color: var(--danger); }
+.fr-group .btn { justify-self: start; }
+.fr-recs { display: flex; flex-wrap: wrap; gap: 6px; }
+.fr-rec { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; padding-inline-start: 10px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); border: 1px solid var(--line); }
+.fr-rec b { font-weight: 500; }
+.fr-rec small { color: var(--muted); font-size: .76rem; }
+.fr-rec small.ok { color: var(--primary); }
+.fr-rec button { font: inherit; font-size: .78rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; }
+.fr-rec button:hover { border-color: var(--primary); color: var(--primary); }
+.fr-rec.soon { border-color: color-mix(in srgb, #e0803a 45%, transparent); background: color-mix(in srgb, #e0803a 12%, transparent); }
+.fr-rec.gone { border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.fr-rec.listed { opacity: .7; }
+.fr-tip { color: var(--muted); font-size: .82rem !important; }
+.fr-choose { padding: 18px; display: grid; gap: 10px; }
+.fr-choose h3, .fr-choose p { margin: 0; }
+.fr-date { inline-size: 30px; block-size: 30px; border-radius: 50%; border: 0; background: none; cursor: pointer; font-size: .95rem; opacity: .7; }
+.fr-date:hover { opacity: 1; background: color-mix(in srgb, var(--text) 8%, transparent); }
+.fr-item { grid-template-columns: minmax(0, 1fr) auto auto auto auto; }
+@media (max-width: 520px) { .fr-item { grid-template-columns: minmax(0, 1fr) auto auto auto; } }
+.fr-fridges[hidden], .fr-add[hidden], .fr-list[hidden] { display: none; }
+/* in "my fridge" the expiry panel already says what to eat first */
+.fr.mine-view .fr-soon { display: none; }

@@ -279,14 +279,65 @@
     const gltf = figureScenes[name];
     if (!gltf) return;
     const model = gltf.scene;
-    model.scale.setScalar(2.35);
     rig.add(model);
     model.traverse((o) => {
-      if (o.isMesh) { o.frustumCulled = false; if (o.material) { o.material.roughness = 0.6; o.material.metalness = 0; } }
+      if (o.isMesh) { o.frustumCulled = false; if (o.material) { o.material.roughness = 0.6; o.material.metalness = 0; o.material.side = THREE.DoubleSide; } }
       if (o.isBone && ['root', 'body', 'head'].includes(o.name)) { parts[o.name] = o; o.userData.rest = o.quaternion.clone(); }
+      if (o.isBone && /Head$/.test(o.name)) parts.mxHead = o;
+      if (o.isBone && /Hips$/.test(o.name)) parts.mxHips = o;
     });
+    if (gltf.animations?.length) {
+      // a fully animated figure: fit it to 2.35 units, feet on the floor, then drive it with its clips
+      model.scale.setScalar(1);
+      model.position.set(0, 0, 0);
+      model.updateMatrixWorld(true);
+      const bb = new THREE.Box3().setFromObject(model);
+      const k = 2.35 / Math.max(0.001, bb.max.y - bb.min.y);
+      model.scale.setScalar(k);
+      model.position.set(-(bb.min.x + bb.max.x) / 2 * k, -bb.min.y * k, -(bb.min.z + bb.max.z) / 2 * k);
+      parts.mixer = new THREE.AnimationMixer(model);
+      parts.clips = Object.fromEntries(gltf.animations.map((c) => [c.name, c]));
+      parts.actions = {};
+      parts.base = null;
+      parts.oneShot = null;
+      parts.mixer.addEventListener('finished', (e) => { if (parts.oneShot && e.action === parts.oneShot) { parts.oneShot = null; play(parts.base || 'idle', true); } });
+      play('idle', true);
+    } else {
+      model.scale.setScalar(2.35);
+    }
     parts.height = 2.35;
     renderer.toneMappingExposure = 1.45;
+  }
+
+  /* Clips: a looping base (idle, walk, think, sleep...) and one-shots on top (wave, bow, point, shrug...).
+     Every change crossfades over a quarter of a second. */
+  function play(name, loop = false, fade = 0.25) {
+    const P = parts;
+    if (!P?.mixer || !P.clips[name]) return false;
+    let a = P.actions[name];
+    if (!a) { a = P.mixer.clipAction(P.clips[name]); P.actions[name] = a; }
+    const prev = P.oneShot || (P.base && P.actions[P.base]);
+    if (loop) {
+      P.base = name;
+      if (P.oneShot) return true;            // the base resumes when the one-shot finishes
+      if (prev === a && a.isRunning()) return true;
+      a.reset().setLoop(THREE.LoopRepeat, Infinity).setEffectiveWeight(1).fadeIn(fade).play();
+    } else {
+      P.oneShot = a;
+      a.reset().setLoop(THREE.LoopOnce, 1).setEffectiveWeight(1).fadeIn(fade).play();
+      a.clampWhenFinished = false;
+    }
+    if (prev && prev !== a) prev.fadeOut(fade);
+    return true;
+  }
+  /** Use a clip if this figure has it (animated figures); otherwise nothing happens. */
+  function act(name) { return play(name, false); }
+  function baseFor() {
+    if (asleep) return 'sleep';
+    if (dragging) return 'yell';
+    if (target) return parts.walkStyle || 'walk';
+    if (busy) return parts.thinkStyle || 'think';
+    return 'idle';
   }
 
   function addPattern(b, body, scale, S, biped) {
@@ -328,7 +379,11 @@
   }
   function rememberSpot() { try { localStorage.setItem('helper.daemon.pos', JSON.stringify({ x: pos.x / W(), y: pos.y / Hh() })); } catch (_) { /* ignore */ } }
 
-  function walkTo(x, y, then) { wake(); target = { ...clampPos({ x, y }), then }; }
+  function walkTo(x, y, then) {
+    wake();
+    target = { ...clampPos({ x, y }), then };
+    if (parts) parts.walkStyle = mood === 'worried' ? 'limp' : Math.random() < 0.2 ? 'texting_walk' : 'walk';
+  }
 
   /** Walk beside an element and point at it. */
   async function showElement(elmt, say) {
@@ -344,6 +399,7 @@
     const ty = fits ? Math.min(bottomLimit(), r.bottom + 10) : Math.min(bottomLimit(), r.bottom + box.h * 0.85);
     walkTo(tx, ty, () => {
       pointing = { x: r.left + r.width / 2, y: r.top + r.height / 2, until: performance.now() + 2600 };
+      act(r.top > pos.y - 10 ? 'point_low' : 'point');   // kneel only for things below his feet
       elmt.classList.add('dm-spot');
       setTimeout(() => elmt.classList.remove('dm-spot'), 2600);
       if (say) speakBalloon(say, true);
@@ -362,7 +418,15 @@
 
   function wake() { lastActivity = performance.now(); if (asleep) { asleep = false; sleepBadge.hidden = true; } }
 
-  function setMood(m, secs = 2.2) { mood = m; moodUntil = performance.now() + secs * 1000; if (m === 'happy') hop = 1; }
+  function setMood(m, secs = 2.2) {
+    mood = m; moodUntil = performance.now() + secs * 1000;
+    if (parts?.mixer) {
+      if (m === 'happy' || m === 'proud' || m === 'love') act('happy');
+      else if (m === 'worried') act('shrug');
+      return;
+    }
+    if (m === 'happy') hop = 1;
+  }
 
   let last = performance.now();
   let nextWander = performance.now() + 25000;
@@ -498,6 +562,7 @@
   function animateFigure(T, dt, now, moving) {
     const P = parts;
     if (now > voiceT) voice *= 0.85;
+    if (P.mixer) return animateClips(T, dt, now, moving);
     // impulses into the head spring
     if (moving !== wasMoving) { bob.vx += moving ? -2.2 : 2.6; wasMoving = moving; }
     if (moving) bob.vz += Math.sin(T * 9) * 0.9 * dt * 60 * 0.05;
@@ -531,6 +596,37 @@
     setRot(P.root, 0, 0, waddle);
     rig.position.y = lift + (moving ? Math.abs(Math.sin(T * 9)) * 0.05 : 0);
     parts.shadow.scale.setScalar(1 - Math.min(0.5, lift));
+  }
+
+  /* The animated figure: clips do the body, and on top of them the head keeps a bobblehead's spring and looks at
+     the cursor (applied after the mixer, as an offset on the head bone). */
+  function animateClips(T, dt, now, moving) {
+    const P = parts;
+    const want = baseFor();
+    if (want !== P.base) play(want, true);
+    P.mixer.update(dt);
+    if (moving !== wasMoving) { bob.vx += moving ? -1.6 : 2.0; wasMoving = moving; }
+    if (voice > 0.9) bob.vx += 0.25;
+    if (hop > 0) { hop = Math.max(0, hop - dt * 1.6); }
+    const k = 70, c = 6;
+    bob.vx += (-k * bob.x - c * bob.vx) * dt; bob.x += bob.vx * dt;
+    bob.vz += (-k * bob.z - c * bob.vz) * dt; bob.z += bob.vz * dt;
+    bob.x = Math.max(-0.4, Math.min(0.4, bob.x)); bob.z = Math.max(-0.4, Math.min(0.4, bob.z));
+    const busyClip = P.oneShot && !['wave', 'shrug', 'happy'].includes(P.oneShot.getClip().name);
+    const look = pointing && now < pointing.until ? pointing : mouse;
+    const headY = pos.y - box.h * 0.75;
+    const free = asleep || busyClip ? 0 : 1;      // clips that move the head on their own keep it
+    const yaw = Math.max(-0.6, Math.min(0.6, (look.x - pos.x) / 450)) - facing * 0.6;
+    const pitch = Math.max(-0.3, Math.min(0.25, (look.y - headY) / 650));
+    _e.y += (yaw * free - _e.y) * Math.min(1, dt * 5);
+    _e.x += (pitch * free - _e.x) * Math.min(1, dt * 5);
+    if (P.mxHead) {
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(_e.x + bob.x * 0.6, _e.y, bob.z * 0.6, 'YXZ'));
+      P.mxHead.quaternion.multiply(q);
+    }
+    if (pointing && now >= pointing.until) pointing = null;
+    rig.position.y = 0;
+    parts.shadow.scale.setScalar(1);
   }
 
   // Sparks for the shapeshift (small glowing beads that fly out and fade).
@@ -643,8 +739,10 @@
     balloon.style.setProperty('--tail', `${Math.max(16, Math.min(bw - 16, pos.x - left))}px`);
   }
 
+  let greeted = false;
   function openBalloon() {
     wake();
+    if (!greeted) { greeted = true; act('wave'); }
     balloon.hidden = false;
     canvasBox.classList.remove('unread');
     if (!balloonText.textContent) balloonText.textContent = state?.daemon?.name ? `כן? במה אפשר לעזור?` : 'היי! איך תרצו לקרוא לי?';
@@ -734,6 +832,7 @@
     if (!state?.ai) { speakBalloon('עוד לא חיברו לי מוח (מפתח API של Claude).'); return; }
     busy = true;
     wake();
+    if (parts) parts.thinkStyle = Math.random() < 0.35 ? 'phone' : 'think';
     input.value = '';
     if (text) addMsg('me', text);
     speakBalloon('…');
@@ -760,6 +859,13 @@
       speakBalloon(reply, true);
       addMsg('daemon', reply, { sources: r.sources, actions });
       speak(reply);
+      if (parts?.mixer && !r.events.some((e) => e.type === 'point')) {
+        if (/והמשכיל יבין|סוד/.test(reply)) act('secret');
+        else if (/(^|\s)(ראפ|rap)|שיר(ה)?\b/i.test(text + ' ' + reply) && /שיר|ראפ|rap|song/i.test(text)) act('rap');
+        else if (/מזל|כוכב|נולדתי/.test(reply)) act('shrug');
+        else if (event && /first meeting/.test(event)) act('bow');
+        else act(Math.random() < 0.5 ? 'talk' : 'talk2');
+      }
       if (pointAt) {
         const target = document.querySelector(`[data-guide="${CSS.escape(pointAt.target)}"]`);
         setTimeout(() => showElement(target, null), 500);

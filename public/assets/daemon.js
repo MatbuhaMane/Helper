@@ -351,7 +351,7 @@
   function act(name) { return play(name, false); }
   function baseFor() {
     if (asleep) return 'sleep';
-    if (dragging) return 'yell';
+    if (dragging) return parts.clips?.fall ? 'fall' : 'yell';
     if (target) return parts.walkStyle || 'walk';
     if (busy) return parts.thinkStyle || 'think';
     return 'idle';
@@ -646,9 +646,17 @@
       P.mxHead.quaternion.multiply(q);
     }
     if (pointing && now >= pointing.until) pointing = null;
-    rig.position.y = 0;
+    // Falling (being dragged) is a skydiver's pose, face to the floor: tip him up so his face looks out of the screen.
+    const fallW = P.actions.fall ? P.actions.fall.getEffectiveWeight() : 0;
+    fallTilt += ((P.base === 'fall' ? 1 : 0) * fallW - fallTilt) * Math.min(1, dt * 8);
+    rig.rotation.x = -Math.PI / 2 * fallTilt;
+    rig.position.y = FALL_LIFT * fallTilt;
+    rig.position.z = FALL_BACK * fallTilt;
+    parts.shadow.visible = fallTilt < 0.5;
     parts.shadow.scale.setScalar(1);
   }
+  let fallTilt = 0;
+  const FALL_LIFT = 0.9, FALL_BACK = 0;
 
   // Sparks for the shapeshift (small glowing beads that fly out and fade).
   let sparks = [];
@@ -860,7 +868,7 @@
     canvasBox.classList.add('thinking');
     setMood('curious', 30);
     try {
-      const r = await api('/api/daemon/chat', { body: { text, event, page: location.pathname + location.hash, landmarks: landmarks() } });
+      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks() } });
       state.daemon = r.daemon;
       mood = null;
       const actions = [];
@@ -904,7 +912,9 @@
   }
 
   /* ===================== mounting ===================== */
-  async function mount(container) {
+  let overlay = false;
+  async function mount(container, opts = {}) {
+    overlay = !!opts.overlay;
     const r = await H.me();
     if (!r.user) return;
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }

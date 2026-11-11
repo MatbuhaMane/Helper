@@ -28,6 +28,7 @@ CLIPS = {
     # the owner likes the anachronisms: a medieval sage on a phone is part of the comedy
     'phone': 'Talking On A Cell Phone', 'texting_walk': 'Walking While Texting', 'rap': 'Rapping',
     'yell': 'Yelling', 'limp': 'Injured Walking', 'point_low': 'Kneeling Pointing',
+    'fall': 'Falling',     # flailing while being dragged across the screen
 }
 TEX = 4096
 
@@ -188,7 +189,7 @@ if __name__ == '__main__':
             continue
         act.name = app_name
         act.use_fake_user = True
-        if app_name.startswith('walk') or app_name in ('texting_walk', 'limp'):
+        if app_name.startswith('walk') or app_name in ('texting_walk', 'limp', 'fall'):
             in_place(act)
         actions[app_name] = act
     # one NLA track per clip, so the glTF exporter writes each as its own animation

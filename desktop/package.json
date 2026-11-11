@@ -1,0 +1,24 @@
+{
+  "name": "family-helper-desktop",
+  "productName": "Family Helper",
+  "version": "0.1.0",
+  "description": "The family helper's companion on the whole desktop",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis --publish never"
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8"
+  },
+  "build": {
+    "appId": "com.familyhelper.desktop",
+    "productName": "Family Helper",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "build/tray.png"],
+    "win": { "target": ["nsis"], "icon": "build/icon.png" },
+    "nsis": { "oneClick": true, "perMachine": false, "runAfterFinish": true, "shortcutName": "Family Helper" }
+  }
+}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>העוזר – שולחן העבודה</title>
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>
+    /* The desktop program shows this page in a transparent window over the whole screen: only the companion. */
+    html, body { background: transparent !important; }
+    body { min-block-size: 100vh; overflow: hidden; padding: 0; }
+    :root { --tabbar-h: 0px !important; --appbar-h: 0px !important; }
+    .signin { position: fixed; inset-block-end: 24px; inset-inline-end: 24px; background: var(--card); border: 1px solid var(--line-strong);
+      border-radius: 10px; padding: 14px 16px; box-shadow: var(--lift); max-inline-size: 300px; font-size: .95rem; }
+  </style>
+</head>
+<body data-daemon="off">
+  <script src="/assets/common.js"></script>
+  <script>
+  (async () => {
+    const desk = window.helperDesktop;   // provided by the desktop program (preload); absent in a normal browser
+    const r = await H.me();
+    if (!r.user) {
+      const box = H.el('div', { class: 'signin' }, 'צריך להתחבר פעם אחת: לחצו על סמל העוזר ליד השעון ← "התחברות".');
+      document.body.append(box);
+      desk?.setInteractive(true);
+      return;
+    }
+    const d = await H.loadDaemon();
+    await d.mount(null, { overlay: true });
+    // Clicks pass through the window to the desktop, except over the companion, its balloon and its panel.
+    let interactive = null;
+    const set = (on) => { if (on !== interactive) { interactive = on; desk?.setInteractive(on); } };
+    window.addEventListener('mousemove', (e) => {
+      const t = document.elementFromPoint(e.clientX, e.clientY);
+      set(!!t?.closest('.dm-stage, .dm-balloon, .dm-panel:not([hidden]), .toast'));
+    }, { passive: true });
+    set(false);
+  })();
+  </script>
+</body>
+</html>

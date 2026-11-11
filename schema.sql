@@ -122,3 +122,10 @@ CREATE TABLE IF NOT EXISTS daemon_forms (
   params     TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+-- Signing in the desktop program through the normal browser (Google refuses embedded sign-in)
+CREATE TABLE IF NOT EXISTS desktop_codes (
+  code       TEXT PRIMARY KEY,
+  sid        TEXT,
+  created_at INTEGER NOT NULL
+);

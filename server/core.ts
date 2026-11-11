@@ -273,3 +273,38 @@ async function decrypt(env: Env, enc: string): Promise<string> {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, await aesKey(env), all.slice(12));
   return new TextDecoder().decode(pt);
 }
+
+
+/* ---------------- desktop program sign-in (through the browser) ---------------- */
+// 1. the program asks for a code; 2. it opens the browser at /api/auth/desktop/approve?code=…, where the person
+// (signed in as usual) approves; 3. the program polls and receives a session for itself.
+
+export async function desktopStart(ctx: Ctx): Promise<Response> {
+  const code = uid() + uid();
+  await ctx.env.DB.prepare('INSERT INTO desktop_codes (code, sid, created_at) VALUES (?, NULL, ?)').bind(code, Date.now()).run();
+  return json({ code, approve: `${ctx.url.origin}/api/auth/desktop/approve?code=${code}` });
+}
+
+export async function desktopApprove(ctx: Ctx): Promise<Response> {
+  const code = ctx.url.searchParams.get('code') || '';
+  if (!ctx.user) return redirect('/?next=' + encodeURIComponent(`/api/auth/desktop/approve?code=${code}`));
+  const row = await ctx.env.DB.prepare('SELECT created_at, sid FROM desktop_codes WHERE code = ?').bind(code).first<{ created_at: number; sid: string | null }>();
+  if (!row || Date.now() - row.created_at > 10 * 60_000) {
+    return new Response('<meta charset="utf-8"><body dir="rtl" style="font-family:system-ui;padding:40px">הקוד פג תוקף. נסו להתחבר שוב מהתוכנה.</body>', { status: 410, headers: { 'content-type': 'text/html; charset=utf-8' } });
+  }
+  const id = uid() + uid();
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare('INSERT INTO sessions (id, email, expires_at) VALUES (?, ?, ?)').bind(id, ctx.user.email, Date.now() + SESSION_DAYS * 86400_000),
+    ctx.env.DB.prepare('UPDATE desktop_codes SET sid = ? WHERE code = ?').bind(id, code),
+  ]);
+  return new Response('<meta charset="utf-8"><body dir="rtl" style="font-family:system-ui;padding:40px;background:#efeee6;color:#2e2a1e"><h2>מחובר ✓</h2><p>אפשר לסגור את החלון ולחזור לתוכנה. העוזר כבר בדרך לשולחן העבודה.</p></body>', { headers: { 'content-type': 'text/html; charset=utf-8' } });
+}
+
+export async function desktopPoll(ctx: Ctx): Promise<Response> {
+  const code = ctx.url.searchParams.get('code') || '';
+  const row = await ctx.env.DB.prepare('SELECT sid, created_at FROM desktop_codes WHERE code = ?').bind(code).first<{ sid: string | null; created_at: number }>();
+  if (!row || Date.now() - row.created_at > 10 * 60_000) return json({ error: 'expired' }, 410);
+  if (!row.sid) return json({ waiting: true });
+  await ctx.env.DB.prepare('DELETE FROM desktop_codes WHERE code = ?').bind(code).run();   // one use only
+  return json({ sid: row.sid, maxAge: SESSION_DAYS * 86400 });
+}

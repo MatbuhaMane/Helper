@@ -1,7 +1,7 @@
 // Single entry point for /api/*: a tiny router over the server modules.
 
 import { aiStatus } from '../../server/ai';
-import { Ctx, Env, HttpError, body, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
+import { Ctx, Env, HttpError, body, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
 import * as daemon from '../../server/daemon';
 import * as kitchen from '../../server/kitchen';
 import * as mail from '../../server/mail';
@@ -21,6 +21,9 @@ route('GET', '/api/auth/login', googleLogin);
 route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
 route('POST', '/api/auth/logout', logout);
+route('POST', '/api/auth/desktop/start', desktopStart);
+route('GET', '/api/auth/desktop/approve', desktopApprove);
+route('GET', '/api/auth/desktop/poll', desktopPoll);
 route('GET', '/api/me', (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
   return json({ user: ctx.user, ai: aiStatus(ctx.env) });

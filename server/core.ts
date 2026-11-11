@@ -14,6 +14,7 @@ export interface Env {
   DEV_MODE?: string;            // "1" only for local development: enables /api/auth/dev and the mock URLs below
   ANTHROPIC_BASE_URL?: string;  // dev/test only: point the Claude client at a mock
   GEMINI_BASE_URL?: string;     // dev/test only
+  SONGS_MOCK_URL?: string;      // dev/test only
   GEMINI_TTS_MODEL?: string;    // optional: the speech model (default gemini-2.5-flash-preview-tts)
 }
 

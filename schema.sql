@@ -142,3 +142,18 @@ CREATE TABLE IF NOT EXISTS tts_quota (
   chars INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (email, day)
 );
+
+-- the songbook: saved links (Shironet, Tab4u…) and the family's own chord sheets
+CREATE TABLE IF NOT EXISTS songs (
+  id TEXT PRIMARY KEY,
+  household TEXT NOT NULL,
+  title TEXT NOT NULL,
+  artist TEXT,
+  kind TEXT NOT NULL,
+  body TEXT,
+  url TEXT,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS songs_household ON songs (household, updated_at);

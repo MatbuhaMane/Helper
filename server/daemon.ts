@@ -114,7 +114,7 @@ What you never do: act behind their back on anything important. You cannot send,
 Each message from the person starts with a <state> note (time, page, the name they call you, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or ראב"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 6;
+const PROMPT_VERSION = 7;
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -157,13 +157,14 @@ const TOOLS: BetaToolUnion[] = [
   tool('propose_mail_plan', "Prepare a plan for tidying the person's Gmail from their request. Nothing changes: the plan opens in the mail screen, where they review the counts and examples and approve it themselves.", {
     request: str('What they want, in their own words'),
   }),
-  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['groceries', 'recipes', 'news', 'mail', 'computer', 'home'] } }),
+  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['groceries', 'recipes', 'news', 'songs', 'mail', 'computer', 'home'] } }),
 ];
 
 const APP_LINKS: Record<string, { href: string; label: string }> = {
   groceries: { href: '/groceries/', label: '🛒 לרשימת הקניות' },
   recipes: { href: '/groceries/#book', label: '📖 לספר המתכונים' },
   news: { href: '/news/', label: '📰 לחדשות' },
+  songs: { href: '/songs/', label: '🎵 לשירון' },
   mail: { href: '/mail/', label: '📬 לסידור המייל' },
   computer: { href: '/pc/', label: '💻 לסידור המחשב' },
   home: { href: '/', label: '🏠 לדף הבית' },

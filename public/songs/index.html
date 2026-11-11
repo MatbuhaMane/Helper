@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#55622f">
+  <title>שירון</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="songs.css">
+</head>
+<body class="songs">
+  <main class="songs-main">
+    <form id="searchForm" class="sbar" role="search" data-guide="song-search" data-guide-label="חיפוש שירים">
+      <input id="q" type="search" placeholder="חפשו שיר, זמר או שורה מהשיר…" aria-label="חיפוש שירים" autocomplete="off">
+      <button class="btn primary" type="submit">חיפוש</button>
+    </form>
+    <nav id="tabs" class="stabs" aria-label="מדורים"></nav>
+    <div id="content" class="cards-wrap" aria-live="polite"></div>
+  </main>
+  <section id="reader" class="sreader" hidden aria-label="השיר" data-guide="song-reader" data-guide-label="השיר הפתוח"></section>
+  <script src="/assets/common.js"></script>
+  <script src="chords.js"></script>
+  <script src="songs.js"></script>
+</body>
+</html>

@@ -89,6 +89,7 @@
     mail: '<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="m3.5 6 8.5 7 8.5-7"/>',
     pc: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8 20h8M12 16v4"/>',
     family: '<circle cx="8" cy="8" r="3"/><circle cx="17" cy="9.5" r="2.4"/><path d="M2.5 20c.6-3.6 2.8-5.5 5.5-5.5s4.9 1.9 5.5 5.5"/><path d="M14 15.3c.9-.5 1.9-.8 3-.8 2.3 0 4 1.6 4.5 5.5"/>',
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
     book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
   };
   // SVG needs its namespace, so it's parsed from markup rather than built with createElement.
@@ -101,6 +102,7 @@
     { href: '/', label: 'בית', icon: 'home' },
     { href: '/groceries/', label: 'קניות', icon: 'cart' },
     { href: '/news/', label: 'חדשות', icon: 'news' },
+    { href: '/songs/', label: 'שירון', icon: 'music' },
     { href: '/mail/', label: 'מייל', icon: 'mail' },
     { href: '/pc/', label: 'מחשב', icon: 'pc' },
   ];

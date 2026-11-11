@@ -6,6 +6,7 @@ import * as daemon from '../../server/daemon';
 import * as kitchen from '../../server/kitchen';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
+import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
 
@@ -66,6 +67,15 @@ route('GET', '/api/daemon', daemon.getDaemon);
 route('POST', '/api/daemon/chat', daemon.chat);
 route('POST', '/api/daemon/reset', daemon.resetChat);
 route('GET', '/api/daemon/form/:slug', daemon.formImage);
+
+/* songbook */
+route('GET', '/api/songs/search', songs.search);
+route('GET', '/api/songs/page', songs.page);
+route('GET', '/api/songs/health', songs.health);
+route('GET', '/api/songs', songs.list);
+route('POST', '/api/songs', songs.save);
+route('PUT', '/api/songs/:id', songs.save);
+route('DELETE', '/api/songs/:id', songs.remove);
 
 /* his voice */
 route('GET', '/api/voice/voices', voice.listVoices);

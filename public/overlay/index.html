@@ -33,7 +33,8 @@
     const set = (on) => { if (on !== interactive) { interactive = on; desk?.setInteractive(on); } };
     window.addEventListener('mousemove', (e) => {
       const t = document.elementFromPoint(e.clientX, e.clientY);
-      set(!!t?.closest('.dm-stage, .dm-balloon, .dm-panel:not([hidden]), .toast'));
+      // while he is held, the window keeps the mouse (or the release would be lost and he'd stay stuck)
+      set(!!(H.daemon?.holding || t?.closest('.dm-stage, .dm-balloon, .dm-panel:not([hidden]), .toast')));
     }, { passive: true });
     set(false);
   })();

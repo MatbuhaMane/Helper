@@ -576,6 +576,8 @@
     }
     if (!moving && !dragging) faceTarget = pointing ? (pointing.x > pos.x ? 0.6 : -0.6) : 0;
     facing += (faceTarget - facing) * Math.min(1, dt * 7);
+    if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) pos = homeSpot();
+    if (!rag && !dragging && !fly && (pos.x < -box.w || pos.x > W() + box.w || pos.y < 0 || pos.y > Hh() + box.h)) pos = clampPos(pos);
     tickSwing(dt);
     const pv = pivotY();
     canvasBox.style.transformOrigin = `${box.w / 2}px ${pv}px`;
@@ -832,6 +834,9 @@
   function stepRag(dt) {
     const R = rag, P = R.p, floor = bottomLimit(), right = W();
     rag.t += dt;
+    // safety net: if the physics ever breaks (or he is lost off screen for long), he simply comes back home
+    const bad = Object.values(P).some((q) => !Number.isFinite(q.x) || !Number.isFinite(q.y));
+    if (bad || (R.state !== 'held' && R.t > 12)) { rag = null; dragging = null; pos = homeSpot(); rememberSpot(); return; }
     if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / (R.gentle ? 0.35 : 0.7)); if (R.blend === 0) endRag(); return; }
     const sub = 3, h = dt / sub, g = 2600;
     for (let s_ = 0; s_ < sub; s_++) {
@@ -1006,9 +1011,15 @@
         }
         if (moved) dragging = { x: ev.clientX, y: ev.clientY };
       };
-      const onUp = () => {
+      let done = false;
+      const onUp = (ev) => {
+        if (done) return;
+        done = true;
         canvasBox.removeEventListener('pointermove', onMove);
         canvasBox.removeEventListener('pointerup', onUp);
+        canvasBox.removeEventListener('pointercancel', onUp);
+        canvasBox.removeEventListener('lostpointercapture', onUp);
+        if (ev?.type !== 'pointerup' && !moved) return;   // a cancelled tap is not a click
         if (moved && rag) { dragging = null; releaseRag(); }
         else if (moved) {
           dragging = null;
@@ -1022,6 +1033,9 @@
       };
       canvasBox.addEventListener('pointermove', onMove);
       canvasBox.addEventListener('pointerup', onUp);
+      // a touch the system takes over (an edge swipe, a scroll), or a mouse that slips away, still lets him go
+      canvasBox.addEventListener('pointercancel', onUp);
+      canvasBox.addEventListener('lostpointercapture', onUp);
     });
     canvasBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBalloon(); } });
     window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; lastMouseMove = performance.now(); if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
@@ -1328,5 +1342,5 @@
     requestAnimationFrame(frame);
   }
 
-  H.daemon = { mount, showElement, get _parts() { return parts; }, get _rag() { return rag && { state: rag.state, pin: rag.pin, t: rag.t, still: rag.still }; }, _play: (n) => play(n, true) };
+  H.daemon = { mount, showElement, get holding() { return !!dragging; }, get _parts() { return parts; }, get _rag() { return rag && { state: rag.state, pin: rag.pin, t: rag.t, still: rag.still }; }, _play: (n) => play(n, true) };
 })();

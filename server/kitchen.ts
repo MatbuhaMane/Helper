@@ -94,14 +94,18 @@ const RecipeInput = z.object({
   steps: z.array(z.string().max(4000)).max(100),
   notes: z.string().max(4000).optional().nullable(),
   tags: z.array(z.string().max(40)).max(20).optional(),
+  subtitle: z.string().max(300).optional().nullable(),
+  meta: z.record(z.string(), z.any()).optional().nullable(),
 });
-type Recipe = z.infer<typeof RecipeInput>;
+export type Recipe = z.infer<typeof RecipeInput>;
 
 function rowToRecipe(r: any) {
+  let meta = null;
+  try { meta = r.meta ? JSON.parse(r.meta) : null; } catch { /* ignore */ }
   return {
-    id: r.id, title: r.title, image: r.image, source_url: r.source_url, notes: r.notes,
+    id: r.id, title: r.title, subtitle: r.subtitle || null, meta, image: r.image, source_url: r.source_url, notes: r.notes,
     ingredients: JSON.parse(r.ingredients), steps: JSON.parse(r.steps), tags: JSON.parse(r.tags || '[]'),
-    created_by: r.created_by, created_at: r.created_at,
+    created_by: r.created_by, created_at: r.created_at, updated_at: r.updated_at,
   };
 }
 
@@ -120,13 +124,14 @@ export async function saveRecipe(ctx: Ctx) {
   const id = ctx.params.id || uid();
   const now = Date.now();
   await ctx.env.DB.prepare(
-    `INSERT INTO recipes (household, id, title, image, source_url, ingredients, steps, notes, tags, created_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON CONFLICT(household, id) DO UPDATE SET title = excluded.title, image = excluded.image, source_url = excluded.source_url,
-       ingredients = excluded.ingredients, steps = excluded.steps, notes = excluded.notes, tags = excluded.tags, updated_at = excluded.updated_at`,
-  ).bind(u.household, id, r.title, r.image || null, r.source_url || null, JSON.stringify(r.ingredients), JSON.stringify(r.steps),
-    r.notes || null, JSON.stringify(r.tags || []), u.email, now, now).run();
-  return json({ id });
+    `INSERT INTO recipes (household, id, title, subtitle, meta, image, source_url, ingredients, steps, notes, tags, created_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(household, id) DO UPDATE SET title = excluded.title, subtitle = excluded.subtitle, meta = excluded.meta, image = excluded.image,
+       source_url = excluded.source_url, ingredients = excluded.ingredients, steps = excluded.steps, notes = excluded.notes, tags = excluded.tags,
+       updated_at = excluded.updated_at`,
+  ).bind(u.household, id, r.title, r.subtitle || null, r.meta ? JSON.stringify(r.meta) : null, r.image || null, r.source_url || null,
+    JSON.stringify(r.ingredients), JSON.stringify(r.steps), r.notes || null, JSON.stringify(r.tags || []), u.email, now, now).run();
+  return json({ id, updated_at: now });
 }
 
 export async function deleteRecipe(ctx: Ctx) {
@@ -163,7 +168,7 @@ export async function importRecipe(ctx: Ctx) {
   return json({ recipe, method: 'ai' });
 }
 
-function recipeFromJsonLd(html: string, url: string): Recipe | null {
+export function recipeFromJsonLd(html: string, url: string): Recipe | null {
   const blocks = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
   for (const b of blocks) {
     let data: any;
@@ -295,9 +300,9 @@ export async function insertRecipe(env: Env, household: string, email: string, r
   const id = uid();
   const now = Date.now();
   await env.DB.prepare(
-    `INSERT INTO recipes (household, id, title, image, source_url, ingredients, steps, notes, tags, created_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(household, id, r.title, r.image || null, r.source_url || null, JSON.stringify(r.ingredients), JSON.stringify(r.steps),
-    r.notes || null, JSON.stringify(r.tags || []), email, now, now).run();
+    `INSERT INTO recipes (household, id, title, subtitle, meta, image, source_url, ingredients, steps, notes, tags, created_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(household, id, r.title, r.subtitle || null, r.meta ? JSON.stringify(r.meta) : null, r.image || null, r.source_url || null,
+    JSON.stringify(r.ingredients), JSON.stringify(r.steps), r.notes || null, JSON.stringify(r.tags || []), email, now, now).run();
   return id;
 }

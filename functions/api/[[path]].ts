@@ -3,7 +3,9 @@
 import { aiStatus } from '../../server/ai';
 import { Ctx, Env, HttpError, body, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
 import * as daemon from '../../server/daemon';
+import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
+import * as world from '../../server/worldrecipes';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
 import * as songs from '../../server/songs';
@@ -92,6 +94,20 @@ route('POST', '/api/recipes', kitchen.saveRecipe);
 route('PUT', '/api/recipes/:id', kitchen.saveRecipe);
 route('DELETE', '/api/recipes/:id', kitchen.deleteRecipe);
 route('POST', '/api/recipes/import', kitchen.importRecipe);
+route('GET', '/api/recipes/world', world.search);
+route('POST', '/api/recipes/world/open', world.open);
+
+/* ketosis */
+route('GET', '/api/keto', keto.getState);
+route('PUT', '/api/keto/settings', keto.putSettings);
+route('POST', '/api/keto/meals', keto.saveMeal);
+route('PUT', '/api/keto/meals/:id', keto.saveMeal);
+route('DELETE', '/api/keto/meals/:id', keto.deleteMeal);
+route('PUT', '/api/keto/weights', keto.putWeight);
+route('DELETE', '/api/keto/weights/:day', keto.deleteWeight);
+route('GET', '/api/keto/foods', keto.listFoods);
+route('POST', '/api/keto/foods/estimate', keto.estimateFoods);
+route('PUT', '/api/keto/foods', keto.putFood);
 
 /* news */
 route('GET', '/api/news/feeds', news.listFeeds);

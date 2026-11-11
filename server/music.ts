@@ -11,7 +11,9 @@
 import { Ctx, HttpError, body, decrypt, encrypt, json, requireUser } from './core';
 import { geminiGrounded, jsonIn } from './ai';
 
+// streaming + user-read-email/private: the helper itself can be a Spotify player (the Web Playback SDK, on a computer)
 const SCOPES = [
+  'streaming', 'user-read-email', 'user-read-private',
   'user-read-playback-state', 'user-modify-playback-state', 'user-read-currently-playing',
   'playlist-read-private', 'playlist-read-collaborative', 'user-library-read', 'user-read-recently-played',
 ].join(' ');
@@ -40,8 +42,8 @@ function back(ctx: Ctx, status: string, next = '/'): Response {
 /** Whether this person is connected, and whether the helper is set up for Spotify at all. */
 export async function status(ctx: Ctx) {
   const u = requireUser(ctx);
-  const row = await ctx.env.DB.prepare('SELECT refresh FROM music_tokens WHERE email = ? AND provider = ?').bind(u.email, 'spotify').first<{ refresh: string | null }>();
-  return json({ spotify: { configured: !!ctx.env.SPOTIFY_CLIENT_ID, connected: !!row?.refresh }, youtube: { search: ctx.env.YOUTUBE_API_KEY ? 'api' : ctx.env.GEMINI_API_KEY ? 'ai' : 'none' } });
+  const row = await ctx.env.DB.prepare('SELECT refresh, scope FROM music_tokens WHERE email = ? AND provider = ?').bind(u.email, 'spotify').first<{ refresh: string | null; scope: string | null }>();
+  return json({ spotify: { configured: !!ctx.env.SPOTIFY_CLIENT_ID, connected: !!row?.refresh, stream: /streaming/.test(row?.scope || '') }, youtube: { search: ctx.env.YOUTUBE_API_KEY ? 'api' : ctx.env.GEMINI_API_KEY ? 'ai' : 'none' } });
 }
 
 /** Step 1 of connecting: off to Spotify's own sign-in and consent page. */
@@ -79,10 +81,15 @@ export async function callback(ctx: Ctx) {
     body: new URLSearchParams({ grant_type: 'authorization_code', code: ctx.url.searchParams.get('code') || '', redirect_uri: redirectUri(ctx), client_id: ctx.env.SPOTIFY_CLIENT_ID!, code_verifier: row.pkce }),
   });
   if (!res.ok) { console.error('Spotify token', res.status, (await res.text()).slice(0, 300)); return back(ctx, 'failed', next); }
-  const t = (await res.json()) as { access_token: string; refresh_token: string; expires_in: number };
-  await ctx.env.DB.prepare('UPDATE music_tokens SET refresh = ?, access = ?, expires_at = ?, pkce = NULL, state = NULL, updated_at = ? WHERE email = ? AND provider = ?')
-    .bind(await encrypt(ctx.env, t.refresh_token), t.access_token, Date.now() + (t.expires_in - 60) * 1000, Date.now(), u.email, 'spotify').run();
+  const t = (await res.json()) as { access_token: string; refresh_token: string; expires_in: number; scope?: string };
+  await ctx.env.DB.prepare('UPDATE music_tokens SET refresh = ?, access = ?, expires_at = ?, scope = ?, pkce = NULL, state = NULL, updated_at = ? WHERE email = ? AND provider = ?')
+    .bind(await encrypt(ctx.env, t.refresh_token), t.access_token, Date.now() + (t.expires_in - 60) * 1000, t.scope || '', Date.now(), u.email, 'spotify').run();
   return back(ctx, 'connected', next);
+}
+
+/** A short-lived access token for the player in this browser (Spotify's Web Playback SDK asks for one). */
+export async function playerToken(ctx: Ctx) {
+  return json({ token: await token(ctx) }, 200, { 'cache-control': 'no-store' });
 }
 
 export async function disconnect(ctx: Ctx) {

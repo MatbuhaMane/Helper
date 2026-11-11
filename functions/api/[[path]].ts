@@ -155,6 +155,7 @@ route('GET', '/api/music/spotify/login', music.login);
 route('GET', '/api/music/spotify/callback', music.callback);
 route('POST', '/api/music/spotify/disconnect', music.disconnect);
 route('GET', '/api/music/spotify/state', music.state);
+route('GET', '/api/music/spotify/token', music.playerToken);
 route('GET', '/api/music/spotify/devices', music.devices);
 route('POST', '/api/music/spotify/cmd', music.command);
 route('GET', '/api/music/spotify/search', music.search);

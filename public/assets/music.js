@@ -30,11 +30,45 @@
     async function status() {
       try {
         const s = await api('/api/music/status', { noRedirect: true });
-        st.spotify.configured = s.spotify.configured; st.spotify.connected = s.spotify.connected; st.ytSearch = s.youtube.search;
+        st.spotify.configured = s.spotify.configured; st.spotify.connected = s.spotify.connected; st.spotify.stream = s.spotify.stream; st.ytSearch = s.youtube.search;
       } catch (_) { /* offline */ }
       emit();
-      if (st.spotify.connected) poll();
+      if (st.spotify.connected) { poll(); if (st.spotify.stream && canHost) loadSdk(); }
     }
+
+    /* ---- Spotify played right here (a computer's browser becomes a Spotify device, "העוזר המשפחתי") ----
+       Phones keep the remote way: Spotify's own app plays in the background, a browser tab doesn't. */
+    const canHost = !matchMedia('(pointer: coarse)').matches && !/Electron/.test(navigator.userAgent);
+    let sdk = null, sdkLoad = null;
+    st.here = '';
+    function loadSdk() {
+      sdkLoad ||= new Promise((resolve) => {
+        window.onSpotifyWebPlaybackSDKReady = () => {
+          sdk = new Spotify.Player({
+            name: 'העוזר המשפחתי',
+            getOAuthToken: (cb) => api('/api/music/spotify/token', { noRedirect: true }).then((r) => cb(r.token)).catch(() => {}),
+            volume: (st.volume || 70) / 100,
+          });
+          sdk.addListener('ready', ({ device_id }) => { st.here = device_id; emit(); resolve(sdk); });
+          sdk.addListener('not_ready', () => { st.here = ''; emit(); });
+          sdk.addListener('player_state_changed', (s) => {
+            if (!s) return;
+            // playing here: the state comes straight from the player, no need to wait for the next poll
+            const t = s.track_window?.current_track;
+            st.source = 'spotify'; st.playing = !s.paused; st.progress = s.position; st.at = Date.now(); st.duration = s.duration;
+            if (t) { st.title = t.name; st.artist = (t.artists || []).map((a) => a.name).join(', '); st.art = t.album?.images?.[0]?.url || ''; st.uri = t.uri; }
+            st.device = { id: st.here, name: 'העוזר המשפחתי', type: 'Computer' };
+            emit();
+          });
+          for (const ev of ['initialization_error', 'authentication_error', 'account_error']) sdk.addListener(ev, ({ message }) => { console.warn('Spotify player', ev, message); st.here = ''; emit(); resolve(null); });
+          sdk.connect();
+        };
+        document.head.append(el('script', { src: 'https://sdk.scdn.co/spotify-player.js' }));
+      });
+      return sdkLoad;
+    }
+    /** The browser lets sound start only from a tap or a click: the first one unlocks the player here. */
+    function unlock() { try { sdk?.activateElement?.(); } catch (_) { /* ignore */ } }
 
     /* ---- Spotify, as a remote ---- */
     async function poll() {
@@ -66,9 +100,14 @@
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') poll(); });
 
     async function spCmd(action, extra = {}) {
+      if (action !== 'pause') unlock();
       try {
         await api('/api/music/spotify/cmd', { body: { action, ...extra }, noRedirect: true });
       } catch (e) {
+        if (/no_active_device/.test(e.message) && st.here && action !== 'pause' && !extra.device) {
+          // nothing plays anywhere, and this computer is a player: play right here (it's where the person pressed)
+          return spCmd(action === 'play' || action === 'next' || action === 'prev' ? 'play' : action, { ...extra, device: st.here });
+        }
         if (/no_active_device/.test(e.message)) {
           // No Spotify playing anywhere: ask where to play (never wake a TV or a speaker on our own), or to open the Spotify app.
           const d = await api('/api/music/spotify/devices', { noRedirect: true }).catch(() => ({ devices: [] }));
@@ -179,7 +218,7 @@
       navigator.mediaSession.setActionHandler('previoustrack', prev);
     }
     status();
-    return { st, on: (f) => { listeners.add(f); f(st); }, off: (f) => listeners.delete(f), status, poll, spCmd, playYT, closeYT, playSpotify, next, prev, toggle, seek, volume,
+    return { unlock, st, on: (f) => { listeners.add(f); f(st); }, off: (f) => listeners.delete(f), status, poll, spCmd, playYT, closeYT, playSpotify, next, prev, toggle, seek, volume,
       setSource: (s) => { st.source = s; P.source = s; save(); if (s === 'spotify') poll(); emit(); } };
   }
 
@@ -482,6 +521,11 @@
         el('a', { class: 'btn primary', href: '/api/music/spotify/login?next=' + encodeURIComponent(location.pathname) }, 'חיבור לספוטיפיי')));
       return;
     }
+    if (!s.stream && !matchMedia('(pointer: coarse)').matches) {
+      body.append(el('div', { class: 'mu-note' }, el('b', {}, 'לנגן ישירות כאן, בלי לפתוח את ספוטיפיי?'),
+        el('p', {}, 'חברו מחדש פעם אחת ואשרו את ההרשאה החדשה: העוזר יהפוך בעצמו לנגן ספוטיפיי במחשב הזה.'),
+        el('a', { class: 'btn primary small', href: '/api/music/spotify/login?next=' + encodeURIComponent(location.pathname) }, 'חיבור מחדש')));
+    }
     const sb = searchBox('שיר, אמן או פלייליסט בספוטיפיי', async (q, out) => {
       const r = await api('/api/music/spotify/search?q=' + encodeURIComponent(q), { noRedirect: true });
       out.replaceChildren(
@@ -515,7 +559,9 @@
   async function showDevices(pending) {
     const r = await api('/api/music/spotify/devices', { noRedirect: true }).catch(() => ({ devices: [] }));
     if (!r.devices.length) return showNoDevice();
-    const list = el('div', { class: 'mu-results' }, r.devices.map((d) => row({ title: d.name }, d.active ? 'מתנגן כאן עכשיו' : typeLabel(d.type), async () => {
+    // this computer first (when it is a player), then everything else
+    r.devices.sort((a, b) => (b.id === E.st.here) - (a.id === E.st.here));
+    const list = el('div', { class: 'mu-results' }, r.devices.map((d) => row({ title: d.id === E.st.here ? 'כאן, במחשב הזה' : d.name }, d.active ? 'מתנגן עכשיו' : d.id === E.st.here ? 'העוזר מנגן בעצמו' : typeLabel(d.type), async () => {
       H.closeModal();
       const ok = pending ? await E.spCmd(pending.action, { ...pending.extra, device: d.id }) : await E.spCmd('transfer', { device: d.id });
       E.st.pending = null;
@@ -544,7 +590,8 @@
   function shellLinks() {
     if (parentEngine) return;
     document.addEventListener('click', (e) => {
-      if (!E.st.yt.id || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const playingHere = E.st.here && E.st.device?.id === E.st.here && E.st.playing;
+      if (!(E.st.yt.id || playingHere) || e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = e.target.closest?.('a[href]');
       if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
       const u = new URL(a.href, location.href);

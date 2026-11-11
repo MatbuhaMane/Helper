@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lib import *  # noqa: E402,F401,F403
 from sdf import Field, hair_grooves  # noqa: E402
 
-CARICATURE = 1.12
+CARICATURE = 1.08   # subtle (owner: 'very subtly, slight caricature')
 HEAD_LO, HEAD_HI = (-0.56, -0.74, -1.35), (0.56, 0.56, 0.62)
 RES = 260
 
@@ -27,19 +27,20 @@ def build_head(res=RES):
         F.add(F.ellipsoid((s * 0.22, -0.26, 0.0), (0.095, 0.085, 0.07)), 0.05)                   # high cheekbones
         F.cut(F.ellipsoid((s * 0.2, -0.33, -0.12), (0.07, 0.04, 0.08)), 0.05)                    # hollow cheeks
     F.add(F.ellipsoid((0, -0.3, -0.44), (0.1, 0.08, 0.075)), 0.06)                                # chin
-    F.add(F.capsule((-0.21, -0.335, 0.12), (0.21, -0.335, 0.12), 0.045), 0.06)                    # brow ridge
+    F.add(F.capsule((-0.21, -0.33, 0.15), (0.21, -0.33, 0.15), 0.045), 0.06)                      # brow ridge
     F.add(F.ellipsoid((0, -0.36, 0.08), (0.055, 0.05, 0.06)), 0.04)
     for s in (1, -1):
-        F.cut(F.ellipsoid((s * 0.13, -0.37, 0.04), (0.085, 0.07, 0.058)), 0.035)                  # deep-set eyes
-        F.add(F.ellipsoid((s * 0.13, -0.345, 0.088), (0.08, 0.06, 0.028), rot=(0, s * 8, 0)), 0.015)   # upper lid
-        F.add(F.ellipsoid((s * 0.13, -0.34, -0.012), (0.07, 0.055, 0.022)), 0.015)                  # lower lid
-        F.cut(F.sphere((s * 0.13, -0.322, 0.038), 0.074), 0.004)
-        # a smile in the eyes: lifted lower lids, crow's feet
-        F.wrinkle((s * 0.21, -0.33, 0.05), (s * 0.27, -0.29, 0.01), 0.006, 0.006)
-        F.wrinkle((s * 0.21, -0.335, 0.025), (s * 0.27, -0.3, 0.035), 0.005, 0.006)
+        F.cut(F.ellipsoid((s * 0.135, -0.37, 0.045), (0.085, 0.06, 0.06)), 0.03)                   # shallow sockets
+        F.add(F.ellipsoid((s * 0.135, -0.335, 0.098), (0.088, 0.06, 0.028), rot=(0, s * 6, 0)), 0.015)   # upper lid fold
+        F.add(F.ellipsoid((s * 0.135, -0.335, -0.018), (0.072, 0.05, 0.018)), 0.015)              # lower lid
+        F.cut(F.sphere((s * 0.135, -0.31, 0.045), 0.074), 0.004)                                  # open eyes
+        F.add(F.ellipsoid((s * 0.15, -0.33, -0.05), (0.06, 0.045, 0.022)), 0.03)                  # under-eye bags
+        F.wrinkle((s * 0.22, -0.33, 0.06), (s * 0.28, -0.29, 0.02), 0.006, 0.006)                # crow's feet
+        F.wrinkle((s * 0.22, -0.335, 0.03), (s * 0.28, -0.3, 0.04), 0.005, 0.006)
+        F.wrinkle((s * 0.08, -0.4, 0.17), (s * 0.03, -0.41, 0.2), 0.004, 0.006)                  # a frown line between the brows
     # Nose: long, gently aquiline (a bump on the bridge)
     F.add(F.capsule((0, -0.38, 0.06), (0, -0.37 - 0.16 * N, -0.12 * N), 0.03, 0.042), 0.04)
-    F.add(F.ellipsoid((0, -0.45, -0.02), (0.035, 0.03, 0.04)), 0.03)                              # the aquiline bump
+    F.add(F.capsule((0, -0.4, 0.07), (0, -0.46, -0.06), 0.034, 0.036), 0.03)                       # a strong straight bridge
     F.add(F.sphere((0, -0.38 - 0.16 * N, -0.14 * N), 0.05 * N), 0.035)
     for s in (1, -1):
         F.add(F.ellipsoid((s * 0.05, -0.42 - 0.07 * N, -0.17 * N), (0.04, 0.048, 0.034)), 0.03)
@@ -47,7 +48,10 @@ def build_head(res=RES):
     # Mouth: a wry half-smile (one corner higher)
     F.add(F.ellipsoid((0, -0.395, -0.27), (0.095, 0.05, 0.03)), 0.03)
     F.add(F.ellipsoid((0, -0.385, -0.318), (0.083, 0.048, 0.028)), 0.03)
-    F.cut(F.ellipsoid((0.0, -0.445, -0.29), (0.092, 0.05, 0.0065), rot=(0, -6, 0)), 0.008)
+    F.cut(F.capsule((-0.085, -0.425, -0.265), (0, -0.45, -0.29), 0.0065), 0.008)     # a soft smile
+    F.cut(F.capsule((0, -0.45, -0.29), (0.085, -0.425, -0.265), 0.0065), 0.008)
+    for s in (1, -1):
+        F.add(F.ellipsoid((s * 0.1, -0.395, -0.25), (0.035, 0.03, 0.03)), 0.03)                     # smile cheeks
     for i, z in enumerate((0.26, 0.31)):
         F.wrinkle((-0.16, -0.37 + i * 0.012, z), (0.16, -0.37 + i * 0.012, z), 0.004, 0.008)
     for s in (1, -1):
@@ -58,23 +62,26 @@ def build_head(res=RES):
     return F
 
 
-def build_turban(res=170):
-    """Wrapped cloth: overlapping tilted bands around a soft crown, with a tail tucked at the side."""
-    F = Field((-0.62, -0.62, 0.0), (0.62, 0.62, 0.78), res)
-    F.add(F.ellipsoid((0, 0.04, 0.42), (0.39, 0.45, 0.28)), 0.05)                                  # crown
-    for i in range(7):
-        a = i * 26
-        tilt = 14 if i % 2 else -12
-        z = 0.2 + i * 0.045
-        r = 0.44 - abs(i - 2.5) * 0.025
-        # a band = a flattened torus approximated by a capsule ring (many short capsules)
-        segs = 26
+def build_turban(res=200):
+    """A large wrapped turban: diagonal folds crossing at the front, and a long cloth hanging down beside the face."""
+    F = Field((-0.66, -0.66, -1.0), (0.66, 0.66, 0.85), res)
+    F.add(F.ellipsoid((0, 0.03, 0.5), (0.42, 0.47, 0.3)), 0.05)                                       # crown
+    for i in range(8):
+        tilt = (18 if i % 2 else -18) + (i - 4) * 2
+        z = 0.29 + i * 0.05
+        r = 0.44 - abs(i - 3) * 0.03
+        segs = 30
+        def pt(t):
+            x, y = r * math.cos(t), (r + 0.03) * math.sin(t) + 0.03
+            return (x, y, z + math.sin(math.radians(tilt)) * x * 0.9)
         for k in range(segs):
             t0, t1 = 2 * math.pi * k / segs, 2 * math.pi * (k + 1) / segs
-            def pt(t):
-                x, y = r * math.cos(t + math.radians(a)), (r + 0.04) * math.sin(t + math.radians(a)) + 0.04
-                return (x, y, z + math.sin(t) * math.radians(tilt) * 0.3)
-            F.add(F.capsule(pt(t0), pt(t1), 0.055), 0.04)
+            F.add(F.capsule(pt(t0), pt(t1), 0.05), 0.035)
+    # the hanging cloth: from the turban's side, past the ear, down over the shoulder (figure's right = -X)
+    F.add(F.ellipsoid((-0.39, -0.02, 0.05), (0.07, 0.2, 0.24), rot=(0, 8, 0)), 0.08)
+    F.add(F.ellipsoid((-0.42, 0.0, -0.4), (0.06, 0.2, 0.32), rot=(0, 4, 0)), 0.12)
+    F.add(F.ellipsoid((-0.45, 0.04, -0.78), (0.055, 0.19, 0.2)), 0.12)
+    F.cut(F.ellipsoid((0, -0.15, -0.15), (0.33, 0.4, 0.6)), 0.03)                                     # keep the face free
     F.noise(0.003, 40, seed=3)
     return F
 
@@ -90,33 +97,36 @@ def build_beard(head):
     F.keep((F.Y - 0.08).astype(np.float32), 0.05)                  # not around the back of the neck
     F.keep((-(F.Z + 0.52)).astype(np.float32), 0.06)               # not down the neck: the long beard hangs free
     F.cut(F.ellipsoid((0, -0.53, -0.12), (0.1, 0.17, 0.12)), 0.02)                # the nose
-    F.cut(F.ellipsoid((0, -0.445, -0.3), (0.06, 0.1, 0.024)), 0.012)              # the lips show
-    F.add(F.ellipsoid((0, -0.34, -0.55), (0.22, 0.16, 0.18)), 0.12)                 # under the chin
-    F.add(F.capsule((0, -0.37, -0.6), (0, -0.33, -1.18), 0.17, 0.045), 0.15)        # the long beard
-    F.add(F.ellipsoid((0, -0.36, -0.86), (0.16, 0.11, 0.2)), 0.12)
+    F.cut(F.ellipsoid((0, -0.45, -0.31), (0.05, 0.08, 0.016)), 0.012)              # the lower lip shows
+    F.add(F.ellipsoid((0, -0.35, -0.56), (0.25, 0.17, 0.2)), 0.12)                  # under the chin
+    F.add(F.ellipsoid((0, -0.37, -0.72), (0.21, 0.14, 0.17)), 0.12)                  # a full, rounded beard to the chest
+    F.add(F.sphere((0, -0.39, -0.84), 0.1), 0.1)
     for s in (1, -1):                                                              # moustache, drooping
         F.add(F.capsule((s * 0.02, -0.455, -0.225), (s * 0.1, -0.44, -0.275), 0.028, 0.026), 0.03)
         F.add(F.capsule((s * 0.1, -0.44, -0.275), (s * 0.13, -0.41, -0.36), 0.026, 0.03), 0.04)
-    hair_grooves(F, amp=0.006, freq=120, flow='down', wave=0.05)
-    F.noise(0.0018, 60, seed=5)
+    hair_grooves(F, amp=0.003, freq=110, flow='down', wave=0.12)
+    F.noise(0.011, 34, seed=5)     # curls: soft lumps all over the beard
+    F.noise(0.003, 75, seed=9)
     return F
 
 
 def build_brows(res=120):
-    F = Field((-0.3, -0.48, 0.05), (0.3, -0.25, 0.22), res)
+    F = Field((-0.3, -0.48, 0.08), (0.3, -0.25, 0.25), res)
     for s in (1, -1):
-        F.add(F.capsule((s * 0.05, -0.375, 0.135), (s * 0.24, -0.33, 0.125), 0.024, 0.016), 0.02)  # bushy brows
+        # arched brows: up from the nose, peaking above the outer iris, down at the temple
+        F.add(F.capsule((s * 0.05, -0.375, 0.16), (s * 0.15, -0.37, 0.19), 0.02, 0.018), 0.02)
+        F.add(F.capsule((s * 0.15, -0.37, 0.19), (s * 0.245, -0.33, 0.155), 0.018, 0.012), 0.02)
     hair_grooves(F, amp=0.0025, freq=260, flow='side', wave=0.01)
     return F
 
 
 def head_parts():
     F = build_head()
-    skin = skin_mat('skin_ie', base='#c9a18a', flush='#bf8a78', sss=0.25)     # a weathered Mediterranean complexion
+    skin = skin_mat('skin_ie', base='#c29e86', flush='#b88a76', sss=0.15)     # a weathered Mediterranean complexion
     head = F.mesh('head_sculpt', skin)
     parts = [head]
     for s, name in ((1, 'eyeL'), (-1, 'eyeR')):
-        parts += eye(name, (s * 0.13, -0.3, 0.035), 0.067, iris='#4a3420', look=(s * -0.04, -1, 0.03))
+        parts += eye(name, (s * 0.135, -0.282, 0.045), 0.068, iris='#7d8070', look=(-0.1, -1, 0.08))
     T = build_turban()
     cloth = cloth_mat('turban', '#ece2cc', rough=0.85, sheen=0.5, weave=0.15)
     turban = T.mesh('turban', cloth, smooth_iter=4)
@@ -157,5 +167,6 @@ if __name__ == '__main__':
     for o in bpy.data.objects:
         if o.name == 'floor':
             o.location.z = -1.4
-    render(f'{out}/figures/renders/ibnezra_head.png', view='3q', target_z=-0.3, dist=5.6, res=900, samples=96)
+    render(f'{out}/figures/renders/ibnezra_head.png', view='3q', target_z=-0.25, dist=5.8, res=900, samples=96)
+    render(f'{out}/figures/renders/ibnezra_head_front.png', view='front', target_z=-0.25, dist=5.8, res=900, samples=96)
     print('done')

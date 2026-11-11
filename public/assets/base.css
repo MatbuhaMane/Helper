@@ -46,8 +46,24 @@
   --end: 0%;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #1d1a12;
+    --card: #27231a;
+    --text: #efeee6;
+    --muted: #b8b19c;
+    --line: #3a3527;
+    --line-strong: #4b4533;
+    --primary: #a3b26a;
+    --primary-ink: #1d1a12;
+    --danger: #e08a74;
+    --ok: #a3b26a;
+    --glass: rgba(39, 35, 26, 0.86);
+    --glass-border: rgba(239, 238, 230, 0.10);
+    --lift: 0 10px 30px rgba(0, 0, 0, .45);
+    --tint: #2f3d44;
+    color-scheme: dark;
+  } }
+:root[data-theme="dark"] {
     --bg: #1d1a12;
     --card: #27231a;
     --text: #efeee6;
@@ -64,7 +80,6 @@
     --tint: #2f3d44;
     color-scheme: dark;
   }
-}
 @media (max-width: 899px) { :root { --tabbar-h: 64px; --appbar-h: 54px; } }
 
 * { box-sizing: border-box; }
@@ -114,6 +129,20 @@ main.wide { max-width: 1200px; }
 .appbar .spacer { flex: 1; }
 .userchip { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: .9rem; color: var(--text); background: none; border: 1px solid var(--line-strong); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
 .userchip:hover { border-color: var(--primary); color: var(--primary); }
+/* Light / dark switch: a little pill, the sun on one side and the moon on the other, a knob that slides between them. */
+.theme-switch { position: relative; inline-size: 58px; block-size: 30px; flex-shrink: 0; border-radius: 999px; border: 1px solid var(--line-strong); padding: 0; cursor: pointer;
+  background: linear-gradient(90deg, #f6d37a, #f2b36b); display: flex; align-items: center; justify-content: space-between; padding-inline: 7px; transition: background .4s var(--ease-river); }
+.theme-switch[aria-checked="true"] { background: linear-gradient(90deg, #2a3358, #151a33); }
+.theme-switch svg { inline-size: 15px; block-size: 15px; fill: none; stroke-width: 2; stroke-linecap: round; position: relative; z-index: 1; }
+.theme-switch .sun { stroke: #8a4b0a; fill: #ffe9a8; }
+.theme-switch .moon { stroke: #e9e4c8; fill: #e9e4c8; opacity: .5; }
+.theme-switch[aria-checked="true"] .moon { opacity: 1; }
+.theme-switch[aria-checked="true"] .sun { opacity: .45; }
+.theme-switch .knob { position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 22px; block-size: 22px; border-radius: 50%; background: #fffaf0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: inset-inline-start .4s var(--ease-river), background .4s; }
+.theme-switch[aria-checked="true"] .knob { inset-inline-start: calc(100% - 25px); background: #c9cde0; }
+.theme-switch:hover { border-color: var(--primary); }
+html.theme-fade, html.theme-fade * { transition: background-color .45s ease, color .45s ease, border-color .45s ease !important; }
 
 .tabbar { display: none; }
 @media (max-width: 899px) {

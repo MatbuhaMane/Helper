@@ -41,7 +41,8 @@
 
 /* ================= ערכי תזונה: צבעים ================= */
 :root { --m-fat: #c2b04e; --m-protein: #9c7a55; --m-carbs: #5f8fa8; --m-fiber: #7f9a4a; --bad: #9a3b2a; }
-@media (prefers-color-scheme: dark) { :root { --m-fat: #d6c565; --m-protein: #c09a72; --m-carbs: #84b0c8; --m-fiber: #a3b26a; --bad: #e08a74; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --m-fat: #d6c565; --m-protein: #c09a72; --m-carbs: #84b0c8; --m-fiber: #a3b26a; --bad: #e08a74; } }
+:root[data-theme="dark"] { --m-fat: #d6c565; --m-protein: #c09a72; --m-carbs: #84b0c8; --m-fiber: #a3b26a; --bad: #e08a74; }
 .m-fat { fill: var(--m-fat); background: var(--m-fat); }
 .m-protein { fill: var(--m-protein); background: var(--m-protein); }
 .m-carbs { fill: var(--m-carbs); background: var(--m-carbs); }
@@ -309,7 +310,8 @@ textarea.r-title-input:focus, textarea.r-sub-input:focus { box-shadow: none; bor
 .stamp-kosher { color: #2e5a87; transform: rotate(-9deg); }
 .stamp-keto { color: #7d6d1c; transform: rotate(7deg); }
 .stamp-btn:hover .stamp { transform: rotate(0) scale(1.04); }
-@media (prefers-color-scheme: dark) { .stamp-kosher { color: #8fb4dc; } .stamp-keto { color: #d6c565; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .stamp-kosher { color: #8fb4dc; } :root:not([data-theme="light"]) .stamp-keto { color: #d6c565; } }
+:root[data-theme="dark"] .stamp-kosher { color: #8fb4dc; } :root[data-theme="dark"] .stamp-keto { color: #d6c565; }
 .stamp-btn { animation: stamp-in 520ms var(--ease-river) both; }
 @keyframes stamp-in { from { opacity: 0; transform: scale(1.35); } to { opacity: 1; transform: none; } }
 
@@ -317,7 +319,8 @@ textarea.r-title-input:focus, textarea.r-sub-input:focus { box-shadow: none; bor
 s.pencil { text-decoration: none; position: relative; color: var(--muted); white-space: normal; }
 s.pencil::after { content: ''; position: absolute; inset-inline: -2px; inset-block-start: 52%; block-size: 6px; transform: translateY(-50%) rotate(-1.2deg); pointer-events: none;
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 6' preserveAspectRatio='none'%3E%3Cpath d='M1 3.6 C 18 2.2, 34 4.4, 52 2.9 S 84 3.9, 99 2.4' fill='none' stroke='%23555' stroke-width='1.7' stroke-linecap='round' opacity='.78'/%3E%3Cpath d='M3 4.3 C 26 3.2, 47 4.6, 70 3.4 S 92 4.1, 98 3.6' fill='none' stroke='%23555' stroke-width='.8' stroke-linecap='round' opacity='.45'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
-@media (prefers-color-scheme: dark) { s.pencil::after { filter: invert(1); } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) s.pencil::after { filter: invert(1); } }
+:root[data-theme="dark"] s.pencil::after { filter: invert(1); }
 textarea.pencil-text { text-decoration: line-through; text-decoration-thickness: 1.6px; text-decoration-color: rgba(85, 85, 85, .8); color: var(--muted); }
 .issue-tag { font-size: .72rem; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; background: var(--bg); color: var(--muted); }
 .issue-tag.kosher { color: var(--bad); }
@@ -327,7 +330,8 @@ textarea.pencil-text { text-decoration: line-through; text-decoration-thickness:
 .sub-arrow { color: var(--primary); font-weight: 600; }
 .sub-label { color: var(--muted); font-size: .82rem; }
 .sub-line.kosher .sub-label { color: #2e5a87; }
-@media (prefers-color-scheme: dark) { .sub-line.kosher .sub-label { color: #8fb4dc; } }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sub-line.kosher .sub-label { color: #8fb4dc; } }
+:root[data-theme="dark"] .sub-line.kosher .sub-label { color: #8fb4dc; }
 select.sub-select { font: inherit; font-size: .9rem; padding: 4px 8px; max-inline-size: 100%; border-radius: var(--radius); }
 .sub-why { color: var(--muted); font-size: .74rem; }
 .ingredients li.has-issue label { padding-block-end: 2px; }

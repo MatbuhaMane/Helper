@@ -153,6 +153,41 @@
   }
   window.addEventListener('online', schedulePrefFlush);
 
+  /* ---------- Light or dark: the system's choice until the person picks one (kept per person, like every pref) ---------- */
+  const uiPrefs = prefs('ui', { theme: 'auto' });
+  const systemDark = matchMedia('(prefers-color-scheme: dark)');
+  const isDark = () => (uiPrefs.theme === 'auto' ? systemDark.matches : uiPrefs.theme === 'dark');
+  function applyTheme() {
+    const root = document.documentElement;
+    if (uiPrefs.theme === 'auto') root.removeAttribute('data-theme'); else root.dataset.theme = uiPrefs.theme;
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.content = isDark() ? '#1d1a12' : '#efeee6';
+    document.querySelectorAll('.theme-switch').forEach((b) => { b.setAttribute('aria-checked', String(isDark())); b.title = isDark() ? 'מעבר למצב בהיר' : 'מעבר למצב כהה'; });
+  }
+  applyTheme();
+  systemDark.addEventListener?.('change', applyTheme);
+  window.addEventListener('helper:prefs', (e) => { if (e.detail === 'ui') applyTheme(); });
+  function themeSwitch() {
+    const b = el('button', { class: 'theme-switch', type: 'button', role: 'switch', 'aria-label': 'מצב כהה',
+      html: '<span class="knob"></span><svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg><svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.6A8 8 0 0 1 9.4 4.5a8 8 0 1 0 10.1 10.1z"/></svg>' });
+    b.addEventListener('click', () => {
+      document.documentElement.classList.add('theme-fade');
+      uiPrefs.theme = isDark() ? 'light' : 'dark';
+      savePrefs('ui');
+      applyTheme();
+      setTimeout(() => document.documentElement.classList.remove('theme-fade'), 500);
+    });
+    // a long press (or right click) goes back to following the system
+    let t;
+    b.addEventListener('pointerdown', () => { t = setTimeout(() => { uiPrefs.theme = 'auto'; savePrefs('ui'); applyTheme(); toast('הצבעים יתאימו עכשיו להגדרה של המכשיר'); t = 'done'; }, 700); });
+    b.addEventListener('pointerup', () => clearTimeout(t));
+    b.addEventListener('pointerleave', () => clearTimeout(t));
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); });
+    b.addEventListener('click', (e) => { if (t === 'done') { t = null; e.stopImmediatePropagation(); } }, true);
+    queueMicrotask(applyTheme);
+    return b;
+  }
+
   /** Call at the top of each app page: redirects to the hub sign-in when signed out. */
   async function requireLogin() {
     const r = await me();
@@ -197,6 +232,7 @@
       el('nav', { class: 'topnav', 'aria-label': 'ניווט ראשי', hidden: true }, NAV.map((n) =>
         el('a', { class: 'ink-nav', href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'nav-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, n.label))),
       el('span', { class: 'spacer' }),
+      themeSwitch(),
       el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, hidden: true }, '…'));
     const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) =>
       el('a', { href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'tab-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, icon(n.icon), el('span', {}, n.label))));
@@ -268,12 +304,17 @@
     });
     return daemonLoad;
   }
+  /** Ibn Ezra lives in his tent on the home page; he shows up on other screens only after he was asked to come along (follow). */
+  const DAEMON_DEFAULTS = { speak: true, follow: false, minimized: false, rate: 1.2 };
   function autoDaemon() {
     if (document.body.dataset.daemon === 'hero' || document.body.dataset.daemon === 'off') return;
-    me().then((r) => { if (r.user && !r.offline) loadDaemon().then((d) => d.mount()); });
+    me().then((r) => {
+      if (!r.user || r.offline) return;
+      if (prefs('daemon', DAEMON_DEFAULTS, 'helper.daemon.prefs').follow) loadDaemon().then((d) => d.mount());
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS };
 })();

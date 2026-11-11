@@ -7,7 +7,8 @@ import { Ctx, Env, HttpError, body, json, requireUser } from './core';
 export const DEFAULT_VOICE = 'Sadaltager';
 const DAILY_CHARS = 30000;
 const SAMPLE = 'שלום, אני אבן עזרא. במה אוכל לעזור לכם היום?';
-const STYLE = 'Read this aloud in Hebrew, warmly and calmly, like a wise, kind old scholar with a hint of a smile:';
+// A brisk, lively pace (the person asked for him to read faster; the client can speed playback further, prefs.rate).
+const STYLE = 'Read this aloud in Hebrew at a brisk, lively conversational pace, warmly, like a wise, kind old scholar with a hint of a smile:';
 
 // Gemini's prebuilt voices: name, gender, character (in Hebrew, for the picker)
 const VOICES: [string, 'male' | 'female', string][] = [

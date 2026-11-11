@@ -43,7 +43,7 @@ function back(ctx: Ctx, status: string, next = '/'): Response {
 export async function status(ctx: Ctx) {
   const u = requireUser(ctx);
   const row = await ctx.env.DB.prepare('SELECT refresh, scope FROM music_tokens WHERE email = ? AND provider = ?').bind(u.email, 'spotify').first<{ refresh: string | null; scope: string | null }>();
-  return json({ spotify: { configured: !!ctx.env.SPOTIFY_CLIENT_ID, connected: !!row?.refresh, stream: /streaming/.test(row?.scope || '') }, youtube: { search: ctx.env.YOUTUBE_API_KEY ? 'api' : ctx.env.GEMINI_API_KEY ? 'ai' : 'none' } });
+  return json({ spotify: { configured: !!ctx.env.SPOTIFY_CLIENT_ID, connected: !!row?.refresh, stream: /\bstreaming\b/.test(row?.scope || '') }, youtube: { search: ctx.env.YOUTUBE_API_KEY ? 'api' : ctx.env.GEMINI_API_KEY ? 'ai' : 'none' } });
 }
 
 /** Step 1 of connecting: off to Spotify's own sign-in and consent page. */

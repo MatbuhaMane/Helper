@@ -33,13 +33,18 @@
         st.spotify.configured = s.spotify.configured; st.spotify.connected = s.spotify.connected; st.spotify.stream = s.spotify.stream; st.ytSearch = s.youtube.search;
       } catch (_) { /* offline */ }
       emit();
-      if (st.spotify.connected) { poll(); if (st.spotify.stream && canHost) loadSdk(); }
+      if (st.spotify.connected) { poll(); if (st.spotify.stream && canHost) drmOk().then((ok) => { st.spotify.noDrm = !ok; emit(); if (ok) loadSdk(); }); }
     }
 
     /* ---- Spotify played right here (a computer's browser becomes a Spotify device, "העוזר המשפחתי") ----
        Phones keep the remote way: Spotify's own app plays in the background, a browser tab doesn't. */
     const canHost = !matchMedia('(pointer: coarse)').matches && !/Electron/.test(navigator.userAgent);
     let sdk = null, sdkLoad = null;
+    /** Spotify plays in a browser only with Widevine (the copy-protection module of Chrome, Edge and Firefox); built-in browsers often lack it. */
+    function drmOk() {
+      if (!navigator.requestMediaKeySystemAccess) return Promise.resolve(false);
+      return navigator.requestMediaKeySystemAccess('com.widevine.alpha', [{ initDataTypes: ['cenc'], audioCapabilities: [{ contentType: 'audio/mp4;codecs="mp4a.40.2"' }] }]).then(() => true, () => false);
+    }
     st.here = '';
     function loadSdk() {
       sdkLoad ||= new Promise((resolve) => {
@@ -520,6 +525,10 @@
         el('p', {}, 'כמו בווייז: המוזיקה מתנגנת באפליקציית ספוטיפיי שלכם (גם כשעוברים לאפליקציה אחרת), ומכאן שולטים בה. צריך חשבון פרימיום.'),
         el('a', { class: 'btn primary', href: '/api/music/spotify/login?next=' + encodeURIComponent(location.pathname) }, 'חיבור לספוטיפיי')));
       return;
+    }
+    if (s.stream && s.noDrm) {
+      body.append(el('div', { class: 'mu-note' }, el('b', {}, 'הדפדפן הזה לא יכול לנגן ספוטיפיי בעצמו'),
+        el('p', {}, 'חסר בו רכיב ההגנה (Widevine) שספוטיפיי דורש. פתחו את העוזר בכרום או באדג׳ וזה ינגן כאן, או פתחו את אפליקציית ספוטיפיי ושלטו בה מכאן.')));
     }
     if (!s.stream && !matchMedia('(pointer: coarse)').matches) {
       body.append(el('div', { class: 'mu-note' }, el('b', {}, 'לנגן ישירות כאן, בלי לפתוח את ספוטיפיי?'),

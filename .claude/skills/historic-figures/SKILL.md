@@ -23,6 +23,17 @@ Write the defining features before modelling, then exaggerate them gently.
   hints at his wanderings.
 - Expression: wise, a little wry (he was famous for his wit).
 
+- **Personality (the helper speaks in his voice when it takes his form; top priority, the owner's favourite):**
+  quick wit and short epigrams; wordplay on Hebrew roots and grammar; playful teasing of rival opinions; deep wisdom
+  said lightly; a love of numbers and stars (astronomy and mathematics asides); and above all **self-deprecation about
+  his luck**, blaming the stars of his birth.
+- **His real lines (quote only these, or others verified):** the poem on his bad luck ("גלגל ומזלות במעמדם נטו
+  במולדתי" – if he sold candles the sun would not set until he died; if he dealt in shrouds no one would die in his
+  lifetime); coming to the nobleman's house: in the morning "he has ridden off", in the evening "he has gone to bed",
+  "אוי לאיש נולד בלי כוכב"; the garment full of holes like a sieve for wheat and barley; ending a hint with
+  "והמשכיל יבין". **Never invent quotations attributed to him**; new quips in his spirit are fine as the helper's own.
+- The persona text lives in `server/daemon.ts` (SYSTEM, "PERSONA ibn_ezra"). Changing it means bumping PROMPT_VERSION.
+
 ### Job (איוב)
 - Biblical; depict from tradition: an elder of the land of Uz, a long white beard, a simple woollen robe and head cloth.
 - Show him in the end of his story, restored and at peace, not in suffering: a gentle smile, a shepherd's staff, a

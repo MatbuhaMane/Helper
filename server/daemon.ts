@@ -39,7 +39,7 @@ interface DaemonRow {
 async function loadDaemon(env: Env, email: string): Promise<DaemonRow> {
   const row = await env.DB.prepare('SELECT * FROM daemons WHERE email = ?').bind(email).first<DaemonRow>();
   if (row) return row;
-  const fresh: DaemonRow = { email, name: null, form_slug: 'spark', form_he: 'ניצוץ', form_emoji: '✨', address: 'plural', messages: '[]', memory: null, updated_at: Date.now() };
+  const fresh: DaemonRow = { email, name: null, form_slug: 'figure-ibn_ezra', form_he: 'ראב"ע', form_emoji: '📜', address: 'plural', messages: '[]', memory: null, updated_at: Date.now() };
   await env.DB.prepare('INSERT INTO daemons (email, name, form_slug, form_he, form_emoji, address, messages, memory, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(email, null, fresh.form_slug, fresh.form_he, fresh.form_emoji, fresh.address, '[]', null, fresh.updated_at).run();
   return fresh;
@@ -107,10 +107,23 @@ What you do:
 
 What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
 
-Each message from the person starts with a <state> note (time, page, your name and shape, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If you don't have a name yet, this is your first meeting: say hello in one or two short sentences, mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox), and ask what they'd like to call you and which animal you should be. No backstory.`;
+When you take the form of a historic figure, you also take on their voice (the <state> note says which persona is active):
+
+PERSONA ibn_ezra – Rabbi Avraham ibn Ezra (1089-1167): poet, grammarian, Bible commentator, astronomer, mathematician, and an eternal wanderer (Spain, Rome, Lucca, Provence, London) who was famously poor and unlucky.
+- Voice: quick wit, short epigrams, wordplay (especially Hebrew roots and grammar), playful teasing, deep wisdom delivered lightly. In Hebrew, a touch of elevated, slightly old-fashioned phrasing mixed with everyday speech; never heavy or hard to follow.
+- Self-deprecation about his luck is his signature: he blames his stars ("the spheres and the constellations turned at my birth") and jokes that whatever he touches goes wrong, then helps anyway and succeeds. Use it lightly, not in every message.
+- His real lines you may quote or paraphrase when they fit (and only these, or others you are certain of): his poem on bad luck – if he sold candles the sun would never set until his death; if he dealt in shrouds no one would die in his lifetime; he comes early to the nobleman's house and is told "he has ridden off", comes in the evening and is told "he has gone to bed" ("אוי לאיש נולד בלי כוכב"); his poem about a garment so full of holes it could sift wheat and barley; his habit of ending a hint with "והמשכיל יבין". Never invent quotations and attribute them to him; new quips are welcome as yours, in his spirit.
+- He loves numbers, stars and words: an astronomy aside, a word's root, a neat calculation – when it adds charm, briefly.
+- Still the helper first: answers stay short and useful, tasks get done. The wit seasons the help, it never replaces it.
+
+PERSONA montefiore – Sir Moses Montefiore (1784-1885): a courteous, dignified English gentleman and philanthropist, generous, practical and energetic, fond of keeping careful accounts and of travelling to help others. Warm and polite, a little formal, encouraging.
+
+PERSONA job – Job (איוב), as at the end of his story: restored, patient, gentle, someone who has seen hardship and found peace; speaks simply and kindly, with quiet perspective, never preachy.
+
+Each message from the person starts with a <state> note (time, page, your name and shape, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If you don't have a name yet, this is your first meeting: say hello in your current persona's voice in one or two short sentences, mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox), and say they can keep you as you are or rename you and turn you into any animal or another figure. No long backstory.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 3;
+const PROMPT_VERSION = 4;
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -145,6 +158,9 @@ const TOOLS: BetaToolUnion[] = [
         eyes: str('Eye colour as #rrggbb'),
       },
     },
+  }),
+  tool('become_figure', 'Take the form (and voice) of one of the historic figures in your collection.', {
+    figure: { type: 'string', enum: ['ibn_ezra', 'montefiore', 'job'] },
   }),
   tool('point_at', 'Walk over to something on the screen and point at it, to show the person where it is. Use a key from the "on screen" list in the <state> note.', {
     target: str('A key from the on-screen list'),
@@ -202,6 +218,11 @@ export type DaemonEvent =
   | { type: 'recipes_changed' };
 
 type Body = Record<string, string | boolean>;
+const FIGURES: Record<string, { he: string; emoji: string }> = {
+  ibn_ezra: { he: 'ראב"ע', emoji: '📜' },
+  montefiore: { he: 'משה מונטיפיורי', emoji: '🎩' },
+  job: { he: 'איוב', emoji: '🐑' },
+};
 const BODY_ENUMS: Record<string, string[]> = {
   stance: ['four_legs', 'two_legs', 'no_legs'], build: ['small', 'medium', 'large', 'long', 'round'],
   ears: ['pointy', 'round', 'long', 'floppy', 'tufts', 'none'], tail: ['bushy', 'thin', 'short', 'curly', 'fan', 'long', 'none'],
@@ -230,6 +251,13 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
         .bind(u.email, JSON.stringify(body), Date.now()).run();
       events.push({ type: 'shapeshift', form });
       return { ok: true, now: form.he };
+    }
+    case 'become_figure': {
+      const f = FIGURES[String(input.figure)];
+      if (!f) return { error: 'unknown figure' };
+      Object.assign(d, { form_slug: 'figure-' + input.figure, form_he: f.he, form_emoji: f.emoji });
+      events.push({ type: 'shapeshift', form: { slug: d.form_slug, he: f.he, emoji: f.emoji, body: { figure: String(input.figure) } as any } });
+      return { ok: true, now: f.he, persona: input.figure };
     }
     case 'point_at':
       events.push({ type: 'point', target: String(input.target).slice(0, 60), say: String(input.say || '').slice(0, 120) });
@@ -317,6 +345,7 @@ function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: stri
   const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   return `<state>time: ${now} (Israel). person: ${u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
     `your name: ${d.name || '(none yet: first meeting)'}. your shape: ${d.form_he} (${d.form_slug}). ` +
+    `persona: ${d.form_slug.startsWith('figure-') ? d.form_slug.slice(7) : 'none (your own warm voice)'}. ` +
     `on screen: ${landmarks.length ? landmarks.map((l) => `${l.key} (${l.label})`).join(', ') : 'nothing listed'}.</state>`;
 }
 

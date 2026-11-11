@@ -305,3 +305,155 @@ def export(path):
 def out_dir():
     here = os.path.dirname(os.path.abspath(__file__))
     return os.path.normpath(os.path.join(here, '..', '..'))
+
+
+# ---------------------------------------------------------------- realistic materials (renders)
+
+def skin_mat(name='skin_real', base='#e2b596', flush='#d98a78', sss=0.35, pores=0.25):
+    """Skin: subsurface scattering, a little colour variation (redder nose and cheeks come from vertex position),
+    fine pores and a soft sheen."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    b.inputs['Roughness'].default_value = 0.42
+    b.inputs['Subsurface Weight'].default_value = sss
+    b.inputs['Subsurface Radius'].default_value = (1.0, 0.38, 0.22)
+    if 'Subsurface Scale' in b.inputs:
+        b.inputs['Subsurface Scale'].default_value = 0.012
+    if 'Specular IOR Level' in b.inputs:
+        b.inputs['Specular IOR Level'].default_value = 0.45
+    noise = nt.nodes.new('ShaderNodeTexNoise')
+    noise.inputs['Scale'].default_value = 18
+    noise.inputs['Detail'].default_value = 6
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    ramp.color_ramp.elements[0].color = hexc(base)
+    ramp.color_ramp.elements[1].color = hexc(flush)
+    ramp.color_ramp.elements[0].position = 0.45
+    ramp.color_ramp.elements[1].position = 0.75
+    nt.links.new(noise.outputs['Fac'], ramp.inputs['Fac'])
+    nt.links.new(ramp.outputs['Color'], b.inputs['Base Color'])
+    vor = nt.nodes.new('ShaderNodeTexVoronoi')
+    vor.inputs['Scale'].default_value = 900
+    bump = nt.nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = pores
+    bump.inputs['Distance'].default_value = 0.0004
+    nt.links.new(vor.outputs['Distance'], bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
+    m.diffuse_color = hexc(base)
+    return m
+
+
+def hair_mat(name, melanin=0.0, redness=0.0, roughness=0.32, tint='#ffffff'):
+    """Strand hair (Cycles Principled Hair). melanin 0 = white, 0.2 = grey-blond, 0.8 = dark brown, 1 = black."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    for n in list(nt.nodes):
+        if n.type == 'BSDF_PRINCIPLED':
+            nt.nodes.remove(n)
+    h = nt.nodes.new('ShaderNodeBsdfHairPrincipled')
+    h.parametrization = 'MELANIN'
+    h.inputs['Melanin'].default_value = melanin
+    h.inputs['Melanin Redness'].default_value = redness
+    h.inputs['Roughness'].default_value = roughness
+    h.inputs['Tint'].default_value = hexc(tint)
+    nt.links.new(h.outputs[0], nt.nodes['Material Output'].inputs['Surface'])
+    m.diffuse_color = (0.9, 0.9, 0.88, 1) if melanin < 0.2 else (0.2, 0.15, 0.1, 1)
+    return m
+
+
+def cloth_mat(name, color, rough=0.78, sheen=0.4, weave=0.08):
+    """Wool/cloth: soft sheen and a faint weave bump."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    b = nt.nodes['Principled BSDF']
+    b.inputs['Base Color'].default_value = hexc(color)
+    b.inputs['Roughness'].default_value = rough
+    if 'Sheen Weight' in b.inputs:
+        b.inputs['Sheen Weight'].default_value = sheen
+    wave = nt.nodes.new('ShaderNodeTexWave')
+    wave.inputs['Scale'].default_value = 260
+    bump = nt.nodes.new('ShaderNodeBump')
+    bump.inputs['Strength'].default_value = weave
+    nt.links.new(wave.outputs['Fac'], bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'], b.inputs['Normal'])
+    m.diffuse_color = hexc(color)
+    return m
+
+
+def eye(name, center, radius, iris='#5a4632', look=(0, -1, 0), parent=None):
+    """A realistic eye: sclera, a radial iris, a pupil, and a clear cornea on top."""
+    import math as _m
+    sclera = mat(name + '_sclera_m', '#efe8e0', rough=0.25, coat=0.2, sss=0.1)
+    irm = bpy.data.materials.new(name + '_iris_m')
+    irm.use_nodes = True
+    nt = irm.node_tree
+    b = nt.nodes['Principled BSDF']
+    b.inputs['Roughness'].default_value = 0.3
+    grad = nt.nodes.new('ShaderNodeTexWave')
+    grad.wave_type = 'RINGS'
+    grad.inputs['Scale'].default_value = 3
+    grad.inputs['Distortion'].default_value = 14
+    ramp = nt.nodes.new('ShaderNodeValToRGB')
+    ramp.color_ramp.elements[0].color = hexc('#1a120b')
+    ramp.color_ramp.elements[1].color = hexc(iris)
+    nt.links.new(grad.outputs['Fac'], ramp.inputs['Fac'])
+    nt.links.new(ramp.outputs['Color'], b.inputs['Base Color'])
+    corm = bpy.data.materials.new(name + '_cornea_m')
+    corm.use_nodes = True
+    cb = corm.node_tree.nodes['Principled BSDF']
+    cb.inputs['Base Color'].default_value = (1, 1, 1, 1)
+    cb.inputs['Roughness'].default_value = 0.0
+    cb.inputs['Transmission Weight'].default_value = 1.0
+    cb.inputs['IOR'].default_value = 1.376
+    corm.diffuse_color = (1, 1, 1, 0.1)
+    c = Vector(center)
+    lk = Vector(look).normalized()
+    parts = [ball(name + '_ball', sclera, c, (radius,) * 3, seg=40)]
+    ir = ball(name + '_iris', irm, c + lk * radius * 0.86, (radius * 0.52, radius * 0.52, radius * 0.18), seg=40)
+    ir.rotation_euler = lk.to_track_quat('Z', 'Y').to_euler()
+    pu = ball(name + '_pupil', mat('pupil', '#050403', rough=0.2), c + lk * radius * 0.9, (radius * 0.22, radius * 0.22, radius * 0.12), seg=24)
+    pu.rotation_euler = ir.rotation_euler
+    co = ball(name + '_cornea', corm, c + lk * radius * 0.18, (radius * 0.98,) * 3, seg=40)
+    parts += [ir, pu, co]
+    return parts
+
+
+def grow_hair(ob, name, weight_fn, material, count=4000, length=0.05, children=6, radius=0.0012, clump=0.6,
+              rough=0.002, comb=(0, 0, -1), seed=1):
+    """Strand hair on a region of a mesh. weight_fn(vertex_co) -> 0..1 says where hair grows (and how dense)."""
+    vg = ob.vertex_groups.new(name=name)
+    for v in ob.data.vertices:
+        w = weight_fn(ob.matrix_world @ v.co)
+        if w > 0:
+            vg.add([v.index], float(min(1.0, w)), 'REPLACE')
+    mod = ob.modifiers.new(name, 'PARTICLE_SYSTEM')
+    ps = mod.particle_system
+    ps.vertex_group_density = name
+    ps.vertex_group_length = name
+    ps.seed = seed
+    st = ps.settings
+    st.type = 'HAIR'
+    st.count = count
+    st.hair_length = length
+    st.use_advanced_hair = True
+    st.emit_from = 'FACE'
+    st.normal_factor = 0.6
+    st.object_align_factor = comb
+    st.child_type = 'INTERPOLATED'
+    st.child_percent = children
+    st.rendered_child_count = children
+    st.clump_factor = clump
+    st.roughness_1 = rough
+    st.roughness_endpoint = rough * 2
+    st.root_radius = 1.0
+    st.radius_scale = radius
+    st.tip_radius = 0.2
+    st.hair_step = 6
+    st.display_step = 3
+    st.render_step = 5
+    ob.data.materials.append(material)
+    st.material = len(ob.data.materials)
+    return ps

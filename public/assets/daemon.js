@@ -31,6 +31,7 @@
     lion: { stance: 'four_legs', build: 'large', ears: 'round', tail: 'thin', snout: 'short', pattern: 'mask', main: '#d9a55a', belly: '#f3e2bf', accent: '#8a4a1c', eyes: '#7a4a10' },
   };
   function bodyFor(form) {
+    if (form?.body?.figure || (form?.slug || '').startsWith('figure-')) return { figure: form.body?.figure || form.slug.slice(7) };
     let b = form?.body;
     if (!b || !b.main) {
       let p = PRESETS[form?.slug] || PRESETS[(form?.slug || '').split('-').pop()];
@@ -39,6 +40,16 @@
     }
     const out = { ...DEFAULT, ...Object.fromEntries(Object.entries(b).filter(([, v]) => v !== '' && v != null)) };
     return out;
+  }
+
+  /* ===================== figures (glTF models made in Blender, see figures/) ===================== */
+  const figures = {};
+  async function loadFigure(name) {
+    if (!figures[name]) {
+      const { GLTFLoader } = await import('/vendor/GLTFLoader.js');
+      figures[name] = new GLTFLoader().loadAsync(`/figures/${name}.glb`);
+    }
+    return figures[name];
   }
 
   /* ===================== 3D ===================== */
@@ -54,12 +65,15 @@
     renderer.toneMappingExposure = 1.05;
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(30, 1, 0.1, 50);
-    camera.position.set(0, 1.25, 6.2);
-    camera.lookAt(0, 0.95, 0);
+    camera.position.set(0, 1.3, 6.4);
+    camera.lookAt(0, 1.12, 0);
     scene.add(new THREE.HemisphereLight(0xfff6e2, 0x8a7a55, 1.25));
     const key = new THREE.DirectionalLight(0xffffff, 1.6);
     key.position.set(-2.5, 4, 4);
     scene.add(key);
+    const front = new THREE.DirectionalLight(0xfff4e6, 0.9);   // a soft fill from the viewer, so faces never sit in shadow
+    front.position.set(0.5, 1.8, 6);
+    scene.add(front);
     const rim = new THREE.DirectionalLight(0xdceaf1, 0.9);
     rim.position.set(3, 2, -3);
     scene.add(rim);
@@ -85,7 +99,9 @@
 
   /** Build the animal from its parts. Everything hangs off `rig` (feet at y=0, facing +z, the camera). */
   function build(b) {
-    if (rig) { scene.remove(rig); rig.traverse((o) => { o.geometry?.dispose(); }); }
+    if (rig) { scene.remove(rig); if (!rig.userData.figure) rig.traverse((o) => { o.geometry?.dispose(); }); }
+    if (b.figure) { buildFigure(b.figure); return; }
+    renderer.toneMappingExposure = 1.05;
     parts = { shadow: parts.shadow };
     rig = new THREE.Group();
     scene.add(rig);
@@ -253,6 +269,26 @@
     parts.height = legH + 0.42 * S + (biped ? 1.05 : 0.8) * S;
   }
 
+  /** A historic figure: its model has a skeleton (root, body, head) for the bobble and the body language. */
+  let figureScenes = {};
+  function buildFigure(name) {
+    parts = { shadow: parts.shadow, figure: true, legs: [], tail: [], ears: [], wings: [], eyes: [], mouth: null, biped: true };
+    rig = new THREE.Group();
+    rig.userData.figure = true;
+    scene.add(rig);
+    const gltf = figureScenes[name];
+    if (!gltf) return;
+    const model = gltf.scene;
+    model.scale.setScalar(2.35);
+    rig.add(model);
+    model.traverse((o) => {
+      if (o.isMesh) { o.frustumCulled = false; if (o.material) { o.material.roughness = 0.6; o.material.metalness = 0; } }
+      if (o.isBone && ['root', 'body', 'head'].includes(o.name)) { parts[o.name] = o; o.userData.rest = o.quaternion.clone(); }
+    });
+    parts.height = 2.35;
+    renderer.toneMappingExposure = 1.45;
+  }
+
   function addPattern(b, body, scale, S, biped) {
     if (b.pattern === 'spots') {
       const pts = [[0.3, 0.25, 0.1], [-0.25, 0.3, -0.15], [0.05, 0.4, -0.35], [-0.35, 0.05, 0.2], [0.38, 0.0, -0.3]];
@@ -268,7 +304,7 @@
 
   /* ===================== motion & behaviour ===================== */
   const W = () => innerWidth, Hh = () => innerHeight;
-  const box = { w: 190, h: 190 };
+  const box = { w: 220, h: 220 };
   let pos = { x: 0, y: 0 };            // the feet, in viewport pixels
   let target = null;                    // { x, y, then }
   let facing = 0, faceTarget = 0;
@@ -375,6 +411,9 @@
     // --- the body ---
     const T = reduced ? 0 : t;
     rig.rotation.y = facing;
+    if (parts.figure) {
+      animateFigure(T, dt, now, moving);
+    } else {
     const breath = Math.sin(T * 2.1) * 0.018;
     parts.body.scale.set(1 - breath * 0.4, 1 + breath, 1 - breath * 0.4);
     let lift = 0;
@@ -419,6 +458,7 @@
     parts.ears.forEach((e, i) => { e.rotation.x = Math.sin(T * 3 + i * 2) * 0.04 + (mood === 'worried' ? 0.5 : 0); });
     parts.wings.forEach((w, i) => { w.rotation.z = (pointing ? w.rotation.z : 0) + (i ? -1 : 1) * (moving || dragging || lift > 0.1 ? Math.sin(T * 18) * 0.7 : Math.sin(T * 2) * 0.06); });
     (parts.trunk || []).forEach((s, i) => { s.rotation.x = Math.sin(T * 1.6 - i * 0.6) * 0.18 + 0.15; });
+    }
 
     // Moods.
     if (mood && now > moodUntil) mood = null;
@@ -428,7 +468,7 @@
 
     // Speaking: the mouth opens with the voice.
     if (now > voiceT) voice *= 0.85;
-    if (parts.mouth) parts.mouth.scale.y = (parts.mouth.geometry.type === 'ConeGeometry' ? 1 : 0.25) + voice * 0.9;
+    if (parts.mouth && !parts.figure) parts.mouth.scale.y = (parts.mouth.geometry.type === 'ConeGeometry' ? 1 : 0.25) + voice * 0.9;
 
     // Shapeshift: spin into a burst of sparks, rebuild, grow back.
     if (morph > 0) {
@@ -442,6 +482,55 @@
     tickSparks(dt);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
+  }
+
+  /* A bobblehead's body language: the head rides a spring (it lags, overshoots and wobbles when the body moves,
+     hops or speaks), looks at the cursor, nods off when asleep; the body breathes, waddles when walking,
+     leans toward what it points at, and dangles when dragged. */
+  const bob = { x: 0, vx: 0, z: 0, vz: 0 };
+  let wasMoving = false;
+  const _e = { x: 0, y: 0, z: 0 };
+  function setRot(bone, x, y, z) {
+    if (!bone) return;
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, 'YXZ'));
+    bone.quaternion.copy(bone.userData.rest).multiply(q);
+  }
+  function animateFigure(T, dt, now, moving) {
+    const P = parts;
+    if (now > voiceT) voice *= 0.85;
+    // impulses into the head spring
+    if (moving !== wasMoving) { bob.vx += moving ? -2.2 : 2.6; wasMoving = moving; }
+    if (moving) bob.vz += Math.sin(T * 9) * 0.9 * dt * 60 * 0.05;
+    if (voice > 0.9) bob.vx += 0.35;
+    let lift = 0;
+    if (hop > 0) { const before = hop; hop = Math.max(0, hop - dt * 1.6); lift = Math.abs(Math.sin(hop * Math.PI * 2)) * 0.32; if (Math.floor(before * 4) !== Math.floor(hop * 4)) bob.vx += 1.8; }
+    if (dragging) { bob.vz += Math.sin(T * 7) * 0.6; }
+    const k = 70, c = 5.5;   // springy, under-damped: a real bobblehead wobble
+    bob.vx += (-k * bob.x - c * bob.vx) * dt; bob.x += bob.vx * dt;
+    bob.vz += (-k * bob.z - c * bob.vz) * dt; bob.z += bob.vz * dt;
+    bob.x = Math.max(-0.5, Math.min(0.5, bob.x)); bob.z = Math.max(-0.5, Math.min(0.5, bob.z));
+
+    // where to look
+    const look = pointing && now < pointing.until ? pointing : mouse;
+    const headY = pos.y - box.h * 0.75;
+    const yaw = Math.max(-0.75, Math.min(0.75, (look.x - pos.x) / 450)) - facing * 0.7;
+    const pitch = Math.max(-0.35, Math.min(0.3, (look.y - headY) / 650));
+    _e.y += ((asleep ? 0 : yaw) - _e.y) * Math.min(1, dt * 5);
+    _e.x += ((asleep ? 0.38 : pitch + (mood === 'proud' ? -0.15 : 0)) - _e.x) * Math.min(1, dt * 5);
+    _e.z += (((mood === 'curious' ? 0.28 : 0) + (asleep ? 0.15 : 0)) - _e.z) * Math.min(1, dt * 4);
+    setRot(P.head, _e.x + bob.x + voice * 0.04, _e.y, _e.z + bob.z);
+
+    // body: breathe, waddle, lean toward a pointed-at thing, shiver when worried
+    let leanZ = 0, leanX = 0;
+    if (pointing && now < pointing.until) { leanZ = pointing.x > pos.x ? -0.16 : 0.16; leanX = 0.08; }
+    else if (pointing) pointing = null;
+    const waddle = moving ? Math.sin(T * 9) * 0.13 : 0;
+    const breath = Math.sin(T * 2.1) * 0.012;
+    const shiver = mood === 'worried' ? Math.sin(T * 50) * 0.03 : 0;
+    setRot(P.body, leanX + (asleep ? 0.06 : 0) + breath, 0, leanZ + shiver + (dragging ? Math.sin(T * 7) * 0.25 : 0));
+    setRot(P.root, 0, 0, waddle);
+    rig.position.y = lift + (moving ? Math.abs(Math.sin(T * 9)) * 0.05 : 0);
+    parts.shadow.scale.setScalar(1 - Math.min(0.5, lift));
   }
 
   // Sparks for the shapeshift (small glowing beads that fly out and fade).
@@ -466,8 +555,11 @@
     });
   }
 
-  function shapeshift(form, animate) {
+  async function shapeshift(form, animate) {
     const b = bodyFor(form);
+    if (b.figure) {
+      try { figureScenes[b.figure] = await loadFigure(b.figure); } catch (e) { console.warn('figure model missing', e); }
+    }
     if (!animate || reduced) { build(b); return; }
     morphBody = b; morph = 1; setMood('happy', 1.5);
   }
@@ -690,12 +782,14 @@
     if (!r.user) return;
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
     try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; }
-    if (innerWidth < 600) { box.w = 150; box.h = 150; }
+    if (innerWidth < 600) { box.w = 170; box.h = 170; }
     buildUI();
     const p = buildPanel(!!container);
     (container || document.body).append(p);
     for (const m of state.transcript) addMsg(m.who, m.text);
-    build(bodyFor(state.daemon.form));
+    const first = bodyFor(state.daemon.form);
+    if (first.figure) { try { figureScenes[first.figure] = await loadFigure(first.figure); } catch (e) { console.warn('figure model missing', e); } }
+    build(first);
     updateLabels();
     // Enter from the edge of the screen.
     const home = homeSpot();

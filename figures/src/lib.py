@@ -262,7 +262,7 @@ def render(path, view='3q', res=900, samples=64, target_z=0.5, dist=2.6):
     cam.lens = 70
     co = bpy.data.objects.new('cam', cam)
     bpy.context.collection.objects.link(co)
-    ang = {'3q': -28, 'front': 0, 'side': -80}[view]
+    ang = {'3q': -28, 'front': 0, 'side': -80, 'back': 180, '3q_r': 30}[view]
     a = math.radians(ang)
     co.location = (dist * math.sin(a), -dist * math.cos(a), target_z + 0.18)
     co.rotation_euler = (Vector((0, 0, target_z)) - co.location).to_track_quat('-Z', 'Y').to_euler()
@@ -288,7 +288,7 @@ def _on_chalk(path, bg='#efeee6'):
     bpy.data.images.remove(img)
 
 
-def export(path):
+def export(path, jpeg=False):
     for ob in list(bpy.data.objects):
         if ob.name in ('floor', 'key', 'fill', 'rim') or ob.type in ('LIGHT', 'CAMERA'):
             ob.hide_set(True)
@@ -296,8 +296,9 @@ def export(path):
     keep = [o for o in bpy.data.objects if not o.hide_get()]
     for o in keep:
         o.select_set(True)
+    extra = {'export_image_format': 'JPEG', 'export_jpeg_quality': 92} if jpeg else {}
     bpy.ops.export_scene.gltf(filepath=path, export_format='GLB', use_selection=True, export_apply=True, export_yup=True,
-                              export_animations=False, export_cameras=False, export_lights=False)
+                              export_animations=False, export_cameras=False, export_lights=False, **extra)
     for ob in bpy.data.objects:
         ob.hide_set(False)
 

@@ -49,7 +49,7 @@ Export glTF (`.glb`), Y-up, 1 unit = figure height, feet at the origin, facing +
 `root` > `body` > `head` (the bobble pivot is at the neck), `arm_L`, `arm_R` (pivot at the shoulder), `leg_L`, `leg_R`
 (pivot at the hip), optional `prop`, `tail` / `tail_1..n`, `ear_L` / `ear_R`, `wing_L` / `wing_R`, `trunk_1..n`,
 `arm_1..8_1..n` (octopus). The mouth node is `mouth`; eyelids `lid_L` / `lid_R` (for blinking) when present.
-Budget: ≤ 25k triangles, ≤ 1.5 MB per figure, no textures larger than 1024 px (prefer none).
+Budget: quality first (owner: phones have plenty of space). Up to ~150k triangles and a 4K JPEG texture per figure is fine; keep a single draw call where possible.
 
 ## Animations (done live in the app, from the node names)
 idle breathing, blink, head bobble (a spring: it lags and overshoots when the body moves), look at the cursor, walk,

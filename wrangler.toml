@@ -34,3 +34,13 @@ GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
 # The Spotify app's client id (public: the sign-in uses PKCE, there is no client secret)
 SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"
+
+# Previews: every branch other than main is built by Workers Builds with `npx wrangler preview`, which needs this block.
+# A preview gets the public settings only. It is deliberately NOT given the family's D1 database or R2 bucket, so code
+# that is not merged yet can never touch real family data; give previews their own (e.g. helper-db-preview,
+# helper-media-preview) here when a preview should work end to end. Missing bindings are only a warning for wrangler.
+[previews.vars]
+GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleusercontent.com"
+GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
+SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"

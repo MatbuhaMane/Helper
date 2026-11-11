@@ -105,7 +105,8 @@ How you talk:
 
 What you do:
 - You are their hands in the helper. Use your tools when they help: add to or check off the shopping list, find and save recipes, put a recipe's ingredients on the list, bring the latest headlines, search the web for current facts, prepare a mailbox plan. After using tools, say what you did in a few words.
-- You walk around the person's screen, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). Don't point at every turn, only when it helps.
+- Your home is a tent on the helper's home page; you stand at its entrance. You stay in the tent unless the person EXPLICITLY asks you to come out, to come with them to other screens, or to come along on their computer – then call come_along with on=true and say you're coming. When they ask you to go home, back to your tent, or to stop following them, call come_along with on=false. Never leave the tent on your own initiative, and don't keep offering to.
+- When you are out with them, you walk around the person's screen, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). From the tent you may still point at things on the home page; you go back to the tent afterwards. Don't point at every turn, only when it helps.
 - You stay yourself: you do not turn into animals or other people. If asked, decline lightly (a wanderer has worn many cloaks, but only one face).
 - If the person wants to call you by a nickname, use rename. Show feelings with show_feeling.
 
@@ -114,7 +115,7 @@ What you never do: act behind their back on anything important. You cannot send,
 Each message from the person starts with a <state> note (time, page, the name they call you, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or ראב"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 7;
+const PROMPT_VERSION = 8;
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -130,6 +131,7 @@ const TOOLS: BetaToolUnion[] = [
     target: str('A key from the on-screen list'),
     say: str('A very short line to show beside it, or empty'),
   }),
+  tool('come_along', 'Leave your tent and come with the person to every screen (on=true), or go back home to your tent on the home page (on=false). Only when they explicitly ask.', { on: { type: 'boolean' } }),
   tool('rename', 'Take a new name the person chose for you.', { name: str('The new name, as written by the person') }),
   tool('set_address', 'Remember how the person wants to be addressed in Hebrew.', { form: { type: 'string', enum: ['plural', 'female', 'male'] } }),
   tool('show_feeling', 'Show a feeling with your body for a moment.', { mood: { type: 'string', enum: ['happy', 'proud', 'curious', 'worried', 'sleepy', 'love'] } }),
@@ -176,6 +178,7 @@ export type DaemonEvent =
   | { type: 'shapeshift'; form: { slug: string; he: string; emoji: string; body: Body } }
   | { type: 'point'; target: string; say: string }
   | { type: 'rename'; name: string }
+  | { type: 'follow'; on: boolean }
   | { type: 'emote'; mood: string }
   | { type: 'open'; href: string; label: string }
   | { type: 'mail_plan'; id: string; summary: string }
@@ -189,6 +192,9 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
     case 'point_at':
       events.push({ type: 'point', target: String(input.target).slice(0, 60), say: String(input.say || '').slice(0, 120) });
       return { ok: true };
+    case 'come_along':
+      events.push({ type: 'follow', on: !!input.on });
+      return { ok: true, now: input.on ? 'out with the person, on every screen' : 'back home in the tent' };
     case 'rename': {
       const n = String(input.name).replace(/[<>{}\[\]]/g, '').trim().slice(0, 30);
       if (!n) return { error: 'empty name' };
@@ -268,10 +274,10 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
   return { error: `unknown tool ${name}` };
 }
 
-function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: string; label: string }[]) {
+function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: string; label: string }[], where: string) {
   const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   return `<state>time: ${now} (Israel). person: ${u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
-    `${d.name ? `they call you: ${d.name}` : 'they call you by your own name'}. ` +
+    `${d.name ? `they call you: ${d.name}` : 'they call you by your own name'}. you are: ${where}. ` +
     `on screen: ${landmarks.length ? landmarks.map((l) => `${l.key} (${l.label})`).join(', ') : 'nothing listed'}.</state>`;
 }
 
@@ -294,7 +300,9 @@ async function compactIfNeeded(env: Env, d: DaemonRow, messages: BetaMessagePara
 export async function chat(ctx: Ctx) {
   const u = requireUser(ctx);
   if (!ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
-  const b = await body<{ text?: string; event?: string; page?: string; landmarks?: { key: string; label: string }[] }>(ctx.req);
+  const b = await body<{ text?: string; event?: string; page?: string; where?: string; landmarks?: { key: string; label: string }[] }>(ctx.req);
+  // Where he is now: home in his tent, out with the person, or tucked away as a small tab.
+  const where = b.where === 'out' ? 'out with the person (following them to every screen)' : b.where === 'tab' ? 'out with the person, folded into a small tab at the edge of the screen' : 'home in your tent on the home page';
   const landmarks = (Array.isArray(b.landmarks) ? b.landmarks : []).slice(0, 40)
     .map((l) => ({ key: String(l.key).replace(/[^\w-]/g, '').slice(0, 40), label: String(l.label).replace(/[<>()]/g, '').slice(0, 50) })).filter((l) => l.key);
   const said = (b.text || '').trim().slice(0, 4000);
@@ -304,7 +312,7 @@ export async function chat(ctx: Ctx) {
   const d = await loadDaemon(ctx.env, u.email);
   let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d));
   const fresh = messages.length === 0;
-  const note = stateNote(u, d, (b.page || '/').slice(0, 60), landmarks) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
+  const note = stateNote(u, d, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
   messages.push({ role: 'user', content: [{ type: 'text', text: `${note}\n\n${said || `[${event}]`}` }] });
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });

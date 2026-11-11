@@ -7,7 +7,9 @@
   const { el, api, toast } = H;
   const THREE_URL = '/vendor/three.module.min.js'; // three@0.160.0, served with the app
   // Per person, synced through the server (the old per-device copy is carried over once). Where he stands stays per device.
-  const prefs = H.prefs('daemon', { speak: true }, 'helper.daemon.prefs');
+  // follow: he left his tent and comes along to every screen; minimized: folded into a small tab with his face.
+  // rate: how fast he reads aloud. The defaults live in common.js, which reads these prefs first (to decide whether to bring him at all).
+  const prefs = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
   const savePrefs = () => H.savePrefs('daemon');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -399,12 +401,19 @@
   function clampPos(p) {
     return { x: Math.min(W() - box.w * 0.35, Math.max(box.w * 0.35, p.x)), y: Math.min(bottomLimit(), Math.max(box.h * 0.75, p.y)) };
   }
+  // Docked: at home in his tent on the home page (the dock is a point on the tent's rugs). He follows it as the page scrolls.
+  let dock = null, docked = false;
+  // (his feet are drawn about a quarter of the frame above its bottom edge, so the frame's foot point goes that much below the rug)
+  function dockSpot() { const r = dock.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 + box.h * 0.26 }; }
+  /** Walk back to the tent (the target keeps following the dock while he walks). */
+  function goHome(then) { if (!docked || !dock) return; wake(); hold = null; if (!target && parts?.mixer && !fly) act('walk_start'); target = { ...dockSpot(), dock: true, then }; }
   function homeSpot() {
+    if (docked && dock) return dockSpot();
     try { const s = JSON.parse(localStorage.getItem('helper.daemon.pos') || 'null'); if (s) return clampPos({ x: s.x * W(), y: s.y * Hh() }); } catch (_) { /* ignore */ }
     const rtlEnd = 24 + box.w * 0.45; // bottom, end side (left in RTL)
     return clampPos({ x: rtlEnd, y: bottomLimit() });
   }
-  function rememberSpot() { try { localStorage.setItem('helper.daemon.pos', JSON.stringify({ x: pos.x / W(), y: pos.y / Hh() })); } catch (_) { /* ignore */ } }
+  function rememberSpot() { if (docked) return; try { localStorage.setItem('helper.daemon.pos', JSON.stringify({ x: pos.x / W(), y: pos.y / Hh() })); } catch (_) { /* ignore */ } }
 
   function walkTo(x, y, then) {
     wake();
@@ -432,6 +441,7 @@
       elmt.classList.add('dm-spot');
       setTimeout(() => elmt.classList.remove('dm-spot'), 2600);
       if (say) speakBalloon(say, true);
+      if (docked) setTimeout(() => goHome(), 3200);
     });
     return true;
   }
@@ -480,7 +490,7 @@
     const big = fly?.big;
     fly = null;
     pos = clampPos(pos);
-    rememberSpot();
+    if (docked) setTimeout(() => goHome(), 1400); else rememberSpot();
     if (!parts?.mixer) { hop = 0.5; return; }
     if (big) { act(Math.random() < 0.6 ? 'yell' : 'shrug'); mood = 'worried'; moodUntil = performance.now() + 9000; }
     else act('shrug');
@@ -488,6 +498,7 @@
   /** Idle life: now and then he finds something to do (every animation he has gets its turn). */
   function pastime(now) {
     if (!parts?.mixer) {
+      if (docked) return;
       if (Math.random() < 0.6) walkTo(pos.x + (Math.random() - 0.5) * Math.min(420, W() * 0.5), bottomLimit());
       return;
     }
@@ -498,6 +509,7 @@
     ];
     let r = Math.random() * options.reduce((a, o) => a + o[1], 0);
     const pick = options.find((o) => (r -= o[1]) < 0)[0];
+    if (pick === 'wander' && docked) { hold = { name: 'think', until: now + 3000 + Math.random() * 2000 }; return; }
     if (pick === 'wander') {
       const nx = pos.x + (Math.random() < 0.5 ? -1 : 1) * (120 + Math.random() * Math.min(360, W() * 0.4));
       walkTo(nx, bottomLimit());
@@ -517,7 +529,8 @@
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
     const t = now / 1000;
-    if (!rig) { requestAnimationFrame(frame); return; }
+    if (gone) return;
+    if (!rig || (prefs.minimized && !docked)) { requestAnimationFrame(frame); return; }
 
     // --- where to be ---
     let moving = false;
@@ -558,6 +571,7 @@
       }
       faceTarget = 0;
     } else if (target) {
+      if (target.dock && dock) Object.assign(target, dockSpot());
       const dx = target.x - pos.x, dy = target.y - pos.y;
       const dist = Math.hypot(dx, dy);
       const speed = (parts.wings.length ? 340 : 260) * (reduced ? 4 : 1);
@@ -572,12 +586,15 @@
         moving = true;
         if (Math.abs(dx) > 6) faceTarget = dx > 0 ? 1.05 : -1.05;
       }
+    } else if (docked && dock) {
+      const s = dockSpot();
+      pos.x = s.x; pos.y = s.y;
     }
     if (!moving && !dragging) faceTarget = pointing ? (pointing.x > pos.x ? 0.6 : -0.6) : 0;
     facing += (faceTarget - facing) * Math.min(1, dt * 7);
     if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) pos = homeSpot();
     // Once he has settled he is always at least partly on screen (a phone is narrower than a full figure off the edge).
-    if (!rag && !dragging && !fly && (pos.x < box.w * 0.2 || pos.x > W() - box.w * 0.2 || pos.y < 0 || pos.y > Hh() + box.h)) pos = clampPos(pos);
+    if (!docked && !rag && !dragging && !fly && (pos.x < box.w * 0.2 || pos.x > W() - box.w * 0.2 || pos.y < 0 || pos.y > Hh() + box.h)) pos = clampPos(pos);
     tickSwing(dt);
     const pv = pivotY();
     canvasBox.style.transformOrigin = `${box.w / 2}px ${pv}px`;
@@ -1057,11 +1074,17 @@
     balloon = el('div', { class: 'dm-balloon', hidden: true, role: 'dialog', 'aria-label': 'שיחה עם העוזר' },
       el('div', { class: 'dm-bhead' }, nameEl, el('span', { class: 'spacer' }),
         el('button', { class: 'mini', title: 'בחירת קול', 'aria-label': 'בחירת קול', onclick: () => openVoicePicker() }, svg('voice')),
-        el('button', { class: 'mini', title: 'כל השיחה', 'aria-label': 'כל השיחה', onclick: () => togglePanel() }, svg('list')),
+        el('button', { class: 'mini', title: 'להגדיל לחלונית השיחה', 'aria-label': 'להגדיל לחלונית השיחה', onclick: () => togglePanel(true) }, svg('expand')),
+        minBtn = el('button', { class: 'mini', title: 'לקפל ללשונית', 'aria-label': 'לקפל ללשונית', onclick: () => minimize(true) }, svg('fold')),
+        homeBtn = el('button', { class: 'mini', title: 'הביתה לאוהל', 'aria-label': 'הביתה לאוהל', onclick: () => sendHome() }, svg('tent')),
         el('button', { class: 'mini', title: 'סגירה', 'aria-label': 'סגירה', onclick: closeBalloon }, svg('x'))),
       balloonText, balloonActs,
       el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
-    document.body.append(canvasBox, balloon);
+    // Folded away: a small tab with his face at the edge of the screen; a tap brings him back.
+    tab = el('button', { class: 'dm-tab', hidden: true, title: 'ראב"ע – לפתוח', 'aria-label': 'לפתוח את ראב"ע' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
+    tab.addEventListener('click', () => { minimize(false); openBalloon(); });
+    document.body.append(canvasBox, balloon, tab);
+    syncMode();
 
     // Click to talk; drag to move.
     canvasBox.addEventListener('pointerdown', (e) => {
@@ -1112,6 +1135,10 @@
 
   function svg(name) {
     const P = {
+      expand: '<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>',
+      fold: '<path d="M5 12h14"/><path d="M9 17l3 3 3-3"/>',
+      tent: '<path d="M3 20 12 4l9 16z"/><path d="M12 4v16M9 20l3-6 3 6"/>',
+      send: '<path d="M20 12 4 4l3 8-3 8z"/><path d="M7 12h6"/>',
       mic: '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
       speaker: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
       mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/>',
@@ -1141,6 +1168,41 @@
     balloon.style.setProperty('--tail', `${Math.max(16, Math.min(bw - 16, pos.x - left))}px`);
   }
 
+  /* Where he is: docked (home in the tent), out (following the person), or folded into the tab. */
+  let minBtn, homeBtn, tab, gone = false;
+  function syncMode() {
+    const out = !docked;
+    minBtn.hidden = !out; homeBtn.hidden = !out;
+    const folded = out && prefs.minimized;
+    canvasBox.hidden = folded;
+    tab.hidden = !folded;
+    if (folded) { balloon.hidden = true; if (panel) panel.hidden = true; }
+    document.body.classList.toggle('dm-folded', folded);
+  }
+  function minimize(on) {
+    prefs.minimized = !!on; savePrefs();
+    if (!on) wake();
+    syncMode();
+  }
+  /** He leaves his tent and comes along to every screen. */
+  function comeAlong() {
+    prefs.follow = true; prefs.minimized = false; savePrefs();
+    const wasDocked = docked;
+    docked = false; target = null;
+    syncMode();
+    if (wasDocked) walkTo(Math.min(W() - box.w * 0.6, pos.x + (pos.x < W() / 2 ? 140 : -140)), Math.min(bottomLimit(), pos.y + 30));
+    toast('ראב"ע יבוא איתכם לכל מסך. כדי להחזיר אותו לאוהל: הכפתור עם האוהל בבועה שלו.');
+  }
+  /** Back home to the tent: on the home page he walks there; anywhere else he leaves the screen. */
+  function sendHome() {
+    prefs.follow = false; prefs.minimized = false; savePrefs();
+    if (dock) { docked = true; syncMode(); goHome(); return; }
+    closeBalloon(); if (panel) panel.hidden = true; stopSpeech();
+    canvasBox.classList.add('leaving');
+    toast('ראב"ע חזר לאוהל שלו בדף הבית');
+    setTimeout(() => { gone = true; canvasBox.remove(); balloon.remove(); tab.remove(); panel?.remove(); document.body.classList.remove('dm-folded'); window.dispatchEvent(new Event('helper:daemon-home')); }, 450);
+  }
+
   let greeted = false;
   function openBalloon() {
     wake();
@@ -1162,6 +1224,7 @@
 
   /* His voice: a trained Hebrew voice from the server (Google Cloud Text-to-Speech, the person's choice), with the
      browser's own voice as the fallback. The audio's loudness drives his mouth and head (the same "voice" beat). */
+  const rate = () => Math.max(0.8, Math.min(1.8, Number(prefs.rate) || 1.2));
   let speechSeq = 0, audioEl = null, audioCtx = null, analyser = null, levels = null, cloudVoice = true;
   function stopSpeech() {
     speechSeq++;
@@ -1201,6 +1264,7 @@
       levels = new Uint8Array(analyser.fftSize);
       src.connect(analyser); analyser.connect(audioCtx.destination);
     } catch (_) { analyser = null; }
+    a.playbackRate = rate(); a.preservesPitch = true;
     a.onended = () => { if (audioEl === a) audioEl = null; URL.revokeObjectURL(url); };
     if (mine !== speechSeq) return;
     await a.play();
@@ -1224,7 +1288,7 @@
     const voices = speechSynthesis.getVoices();
     const v = voices.find((x) => x.lang.startsWith(hebrew ? 'he' : 'en') && /natural|online|google/i.test(x.name)) || voices.find((x) => x.lang.startsWith(hebrew ? 'he' : 'en'));
     if (v) u.voice = v;
-    u.rate = 1.02;
+    u.rate = Math.min(2, 1.02 * rate());
     const beat = () => { voice = 1; voiceT = performance.now() + 110; };
     u.onboundary = beat; u.onstart = beat;
     speechSynthesis.speak(u);
@@ -1254,6 +1318,14 @@
       list.append(el('p', {}, 'שירות הקולות עדיין לא זמין, אז הוא מדבר בקול של הדפדפן.'));
       return;
     }
+    const speeds = [[1, 'רגיל'], [1.2, 'מהיר'], [1.4, 'מהיר מאוד'], [1.6, 'טיל']];
+    const speedRow = el('div', { class: 'dm-speeds', role: 'group', 'aria-label': 'מהירות ההקראה' }, el('span', { class: 'muted' }, 'מהירות:'),
+      ...speeds.map(([v, label]) => el('button', { class: 'btn small' + (Math.abs(rate() - v) < 0.05 ? ' primary' : ''), 'aria-pressed': String(Math.abs(rate() - v) < 0.05), onclick: (e) => {
+        prefs.rate = v; savePrefs();
+        speedRow.querySelectorAll('.btn').forEach((b) => { b.classList.toggle('primary', b === e.currentTarget); b.setAttribute('aria-pressed', String(b === e.currentTarget)); });
+        speak('ככה אני מדבר עכשיו. מספיק מהר?', (mine?.voice || data.default));
+      } }, label)));
+    list.append(speedRow);
     const current = mine?.voice || data.default;
     const groups = [['male', 'קולות גבריים'], ['female', 'קולות נשיים']];
     for (const [g, title] of groups) {
@@ -1293,24 +1365,38 @@
   }
 
   /* The full conversation: a drawer (or inline on the home page). */
-  function buildPanel(inline) {
+  function buildPanel() {
     log = el('div', { class: 'dm-log' });
-    panel = el('section', { class: 'dm-panel' + (inline ? ' inline' : ''), hidden: !inline, 'aria-label': 'השיחה' },
-      el('div', { class: 'dm-head' }, el('b', {}, 'השיחה'), el('span', { class: 'spacer' }),
+    panelInput = el('textarea', { rows: 1, placeholder: 'כתבו לראב"ע…', 'aria-label': 'הודעה לעוזר', dir: 'auto' });
+    const grow = () => { panelInput.style.blockSize = 'auto'; panelInput.style.blockSize = Math.min(140, panelInput.scrollHeight) + 'px'; };
+    panelInput.addEventListener('input', grow);
+    panelInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(panelInput.value); panelInput.value = ''; grow(); }
+      if (e.key === 'Escape') togglePanel(false);
+    });
+    panel = el('section', { class: 'dm-panel', hidden: true, role: 'dialog', 'aria-label': 'השיחה עם ראב"ע' },
+      el('div', { class: 'dm-head' }, el('img', { class: 'face', src: '/assets/ibn-ezra-face.webp', alt: '', width: 34, height: 34 }), el('b', {}, 'השיחה'), el('span', { class: 'spacer' }),
         el('button', { class: 'mini', title: 'שיחה חדשה', 'aria-label': 'שיחה חדשה', onclick: async () => {
           if (!confirm('להתחיל שיחה חדשה? העוזר יזכור את הדברים החשובים.')) return;
           await api('/api/daemon/reset', { method: 'POST' });
           log.textContent = '';
           toast('שיחה חדשה');
         } }, svg('reset')),
-        inline ? null : el('button', { class: 'mini', 'aria-label': 'סגירה', onclick: () => togglePanel(false) }, svg('x'))),
-      log);
+        el('button', { class: 'mini', title: 'סגירה', 'aria-label': 'סגירה', onclick: () => togglePanel(false) }, svg('x'))),
+      log,
+      el('div', { class: 'dm-compose' }, panelInput, el('button', { class: 'btn primary', 'aria-label': 'שלח', onclick: () => { send(panelInput.value); panelInput.value = ''; grow(); } }, svg('send'))));
     return panel;
   }
+  let panelInput;
   function togglePanel(open) {
-    if (panel.classList.contains('inline')) { panel.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     panel.hidden = !(open ?? panel.hidden);
-    if (!panel.hidden) log.scrollTop = log.scrollHeight;
+    if (!panel.hidden) {
+      // the balloon's draft moves into the big panel
+      if (input.value.trim()) { panelInput.value = input.value; input.value = ''; }
+      closeBalloon();
+      log.scrollTop = log.scrollHeight;
+      setTimeout(() => panelInput.focus(), 60);
+    }
   }
   function addMsg(who, text, extra = {}) {
     const m = el('div', { class: 'dm-msg ' + who, dir: 'auto' }, text);
@@ -1336,11 +1422,11 @@
     if (parts) parts.thinkStyle = Math.random() < 0.35 ? 'phone' : 'think';
     input.value = '';
     if (text) addMsg('me', text);
-    speakBalloon('…');
+    if (panel.hidden) speakBalloon('…');
     canvasBox.classList.add('thinking');
     setMood('curious', 30);
     try {
-      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks() } });
+      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out' } });
       state.daemon = r.daemon;
       mood = null;
       const actions = [];
@@ -1352,12 +1438,13 @@
         if (ev.type === 'open') actions.push(el('a', { class: 'btn ghost small', href: ev.href }, ev.label.replace(/^\S+\s/, '')));
         if (ev.type === 'mail_plan') actions.push(el('a', { class: 'btn primary small', href: `/mail/#plan=${ev.id}` }, 'לבדיקה ולאישור'));
         if (ev.type === 'groceries_changed') window.dispatchEvent(new Event('helper:groceries-changed'));
+        if (ev.type === 'follow') setTimeout(() => (ev.on ? comeAlong() : sendHome()), 1200);
         if (ev.type === 'recipes_changed') window.dispatchEvent(new Event('helper:recipes-changed'));
       }
       updateLabels();
       const reply = r.reply || (pointAt?.say) || 'בוצע.';
       balloonActs.replaceChildren(...actions);
-      speakBalloon(reply, true);
+      if (panel.hidden) speakBalloon(reply, true);
       addMsg('daemon', reply, { sources: r.sources, actions });
       speak(reply);
       if (parts?.mixer && !r.events.some((e) => e.type === 'point')) {
@@ -1385,31 +1472,42 @@
 
   /* ===================== mounting ===================== */
   let overlay = false;
+  /** opts.dock: the spot in his tent on the home page (he lives there unless asked to come along). opts.overlay: the desktop program. */
   async function mount(container, opts = {}) {
     overlay = !!opts.overlay;
+    dock = opts.dock || null;
+    docked = !!dock && !prefs.follow;
     const r = await H.me();
-    if (!r.user) return;
+    if (!r.user) return false;
+    if (!dock && !prefs.follow) return false;  // at home in his tent: other screens and the desktop see him only when he was asked along
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
     try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; }
     if (innerWidth < 600) { box.w = 170; box.h = 170; }
     if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
     buildUI();
-    const p = buildPanel(!!container);
-    (container || document.body).append(p);
+    document.body.append(buildPanel());
     for (const m of state.transcript) addMsg(m.who, m.text);
     const first = bodyFor(state.daemon.form);
     if (first.figure) { try { figureScenes[first.figure] = await loadFigure(first.figure); } catch (e) { console.warn('figure model missing', e); } }
     build(first);
     updateLabels();
-    // Enter from the edge of the screen.
-    const home = homeSpot();
-    pos = { x: reduced ? home.x : -box.w, y: home.y };
-    walkTo(home.x, home.y, () => {
-      if (!state.transcript.length && container) send('', 'first meeting: the person just opened the helper and sees you for the first time');
+    const firstMeeting = () => {
+      if (!state.transcript.length && dock) send('', 'first meeting: the person just opened the helper and sees you for the first time, standing at the entrance of your tent');
       else if (!state.transcript.length) canvasBox.classList.add('unread');
-    });
+    };
+    if (docked) {
+      // At home: he is already standing at the tent's entrance.
+      pos = dockSpot();
+      setTimeout(firstMeeting, 900);
+    } else {
+      // Following the person: he walks in from the edge of the screen.
+      const home = homeSpot();
+      pos = { x: reduced ? home.x : -box.w, y: home.y };
+      walkTo(home.x, home.y, firstMeeting);
+    }
     requestAnimationFrame(frame);
+    return true;
   }
 
-  H.daemon = { mount, showElement, get holding() { return !!dragging; }, get _parts() { return parts; }, get _rag() { return rag && { state: rag.state, pin: rag.pin, t: rag.t, still: rag.still }; }, _play: (n) => play(n, true) };
+  H.daemon = { mount, showElement, comeAlong, sendHome, minimize, get holding() { return !!dragging; }, get _parts() { return parts; }, get _rag() { return rag && { state: rag.state, pin: rag.pin, t: rag.t, still: rag.still }; }, _play: (n) => play(n, true) };
 })();

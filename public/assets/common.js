@@ -268,12 +268,17 @@
     });
     return daemonLoad;
   }
+  /** Ibn Ezra lives in his tent on the home page; he shows up on other screens only after he was asked to come along (follow). */
+  const DAEMON_DEFAULTS = { speak: true, follow: false, minimized: false, rate: 1.2 };
   function autoDaemon() {
     if (document.body.dataset.daemon === 'hero' || document.body.dataset.daemon === 'off') return;
-    me().then((r) => { if (r.user && !r.offline) loadDaemon().then((d) => d.mount()); });
+    me().then((r) => {
+      if (!r.user || r.offline) return;
+      if (prefs('daemon', DAEMON_DEFAULTS, 'helper.daemon.prefs').follow) loadDaemon().then((d) => d.mount());
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS };
 })();

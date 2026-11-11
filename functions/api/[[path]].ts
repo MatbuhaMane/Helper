@@ -9,6 +9,7 @@ import * as world from '../../server/worldrecipes';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
 import * as prefs from '../../server/prefs';
+import * as recipeCheck from '../../server/recipecheck';
 import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
@@ -101,6 +102,7 @@ route('POST', '/api/recipes/import', kitchen.importRecipe);
 route('GET', '/api/recipes/world', world.search);
 route('GET', '/api/recipes/world/stream', world.searchStream);
 route('POST', '/api/recipes/world/open', world.open);
+route('POST', '/api/recipes/check', recipeCheck.checkRecipe);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);

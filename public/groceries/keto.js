@@ -558,21 +558,25 @@
     return ['bad', '✗ לא מתאים לקטו כמו שהוא'];
   }
 
-  /** The ketosis pie at the top of a recipe (only when the switch is on). Values per serving, estimated once and cached. */
-  function recipePanel(recipe) {
-    if (!state.settings.enabled || !recipe?.ingredients?.length) return null;
-    const box = el('section', { class: 'keto-recipe', 'aria-live': 'polite' }, el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מחשב ערכי קטו למנה…'));
-    const ingredients = recipe.ingredients.filter((i) => i.name).map((i) => ({ name: i.name, measure: i.measure || '' }));
+  /** Values per serving for a recipe and the verdict for our diet: { v, s, verdict: [level, text] }. Estimated once per set of ingredients. */
+  function valuesFor(recipe) {
+    const ingredients = (recipe?.ingredients || []).filter((i) => i.name).map((i) => ({ name: i.name, measure: i.measure || '' }));
+    if (!ingredients.length) return Promise.reject(new Error('אין מצרכים'));
     const key = JSON.stringify([recipe.meta?.servings || '', ingredients]);
     if (!recipeValues.has(key)) {
       const p = api('/api/keto/recipe', { body: { title: recipe.title, servings: recipe.meta?.servings || '', ingredients } });
       p.catch(() => recipeValues.delete(key));
       recipeValues.set(key, p);
     }
-    recipeValues.get(key).then((v) => {
-      const s = M.summarize(v.per_serving);
+    return recipeValues.get(key).then((v) => { const s = M.summarize(v.per_serving); return { v, s, verdict: verdict(s) }; });
+  }
+
+  /** The ketosis pie at the top of a recipe (only when the switch is on). Values per serving, estimated once and cached. */
+  function recipePanel(recipe) {
+    if (!state.settings.enabled || !recipe?.ingredients?.length) return null;
+    const box = el('section', { class: 'keto-recipe', 'aria-live': 'polite' }, el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מחשב ערכי קטו למנה…'));
+    valuesFor(recipe).then(({ v, s, verdict: [level, text] }) => {
       const st = state.settings;
-      const [level, text] = verdict(s);
       box.replaceChildren(
         el('div', { class: 'kr-head' }, el('h4', {}, `ערכי קטו למנה (מתוך ${v.servings})`), el('span', { class: 'kr-verdict ' + level }, text)),
         el('div', { class: 'kr-body' },
@@ -597,6 +601,7 @@
     get enabled() { return !!state.settings.enabled; },
     annotate,
     recipePanel,
+    recipeValues: valuesFor,
     mount(node) { root = node; render(); },
     refresh,
   };

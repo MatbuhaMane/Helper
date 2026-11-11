@@ -301,17 +301,24 @@
     return INGREDIENT_EN_HE[k] || INGREDIENT_EN_HE[k.replace(/(es|s)$/, '')] || INGREDIENT_EN_HE[k + 's'] || name.trim();
   }
 
-  /** Ingredient picker used by both web recipes and saved recipes. Returns the <ul> and a getter for chosen ingredients. */
-  function ingredientPicker(ingredients) {
-    const rows = ingredients.map((ing) => {
+  /** Ingredient picker used by both web recipes and saved recipes. Returns the <ul> and a getter for chosen ingredients.
+   *  An ingredient may carry `issue` (from the kashrut/keto check), `orig` (its name before a substitute) and `kind`;
+   *  then its name is struck through in pencil and a line under it offers substitutes (onSub(index, name|null)). */
+  function ingredientPicker(ingredients, { onSub } = {}) {
+    const rows = ingredients.map((ing, idx) => {
       const existing = findDuplicate(ing.he);
       const basic = /^(water|salt|מים|מלח)$/i.test(ing.en || '') || /^(מים|מלח)$/.test(ing.he);
       const cb = el('input', { type: 'checkbox', checked: !existing && !basic });
       ing.cb = cb;
-      return el('li', {}, el('label', {}, cb,
-        el('span', { class: 'ing-name' }, ing.he, ing.en && ing.he !== ing.en ? el('small', { class: 'muted' }, ` (${ing.en})`) : null),
+      const replaced = ing.issue && ing.orig && ing.he !== ing.orig;
+      return el('li', { class: ing.issue ? 'has-issue ' + ing.kind : '' }, el('label', {}, cb,
+        el('span', { class: 'ing-name' },
+          replaced ? el('s', { class: 'pencil' }, ing.orig) : ing.he,
+          !replaced && ing.issue && !onSub ? el('small', { class: 'issue-tag ' + ing.kind }, ing.issue.reason_he) : null,
+          ing.en && ing.he !== ing.en ? el('small', { class: 'muted' }, ` (${ing.en})`) : null),
         ing.measure ? el('small', { class: 'measure' }, ing.measure) : null,
-        existing ? el('small', { class: 'tag ok' }, existing.checked ? 'נקנה' : 'כבר ברשימה') : null));
+        existing ? el('small', { class: 'tag ok' }, existing.checked ? 'נקנה' : 'כבר ברשימה') : null),
+      ing.issue && onSub ? RecipeFix.subLine(ing.issue, ing.orig || ing.he, replaced ? ing.he : null, (v) => onSub(idx, v), ing.kind) : null);
     });
     return {
       tools: el('div', { class: 'ing-tools' },
@@ -394,8 +401,9 @@
       if (origin && document.body.contains(origin) && !reduceMotion() && !root.classList.contains('instant')) {
         place(origin.getBoundingClientRect());
         root.classList.remove('open');
-        flip.addEventListener('transitionend', done, { once: true });
-        setTimeout(done, 700);
+        const onEnd = (e) => { if (e.target === flip && e.propertyName === 'transform') { flip.removeEventListener('transitionend', onEnd); done(); } };
+        flip.addEventListener('transitionend', onEnd);
+        setTimeout(() => { flip.removeEventListener('transitionend', onEnd); done(); }, 1300);
       } else done();
     }
     closeBtn.addEventListener('click', close);
@@ -429,7 +437,7 @@
       running++;
       setCardState(job.url, 'working');
       job.start();
-      translating.get(job.url).then((recipe) => setCardState(job.url, 'ready', recipe), (e) => setCardState(job.url, 'failed', null, e))
+      translating.get(job.url).then((recipe) => { setCardState(job.url, 'ready', recipe); RecipeFix.check(recipe).catch(() => {}); }, (e) => setCardState(job.url, 'failed', null, e))
         .finally(() => { running--; pump(); });
     }
   }
@@ -481,7 +489,13 @@
       return;
     }
     document.querySelectorAll(`.heart[data-url="${CSS.escape(normUrl(url))}"]`).forEach((h) => h.classList.add('on'));
-    const recipe = await translate(url, hint, true);
+    const translated = await translate(url, hint, true);
+    // The copy in our book is the version on screen: with the substitutes chosen, and a note on what was replaced.
+    const subs = chosenSubs.get(url);
+    const swaps = subs ? [...subs].filter(([, v]) => v).map(([n, v]) => `${translated.ingredients[n]?.name} ← ${v}`) : [];
+    const recipe = swaps.length
+      ? { ...effective(translated, subs), notes: [translated.notes, `תחליפים שבחרנו: ${swaps.join(' · ')}`].filter(Boolean).join('\n\n') }
+      : translated;
     const r = await api('/api/recipes', { body: recipe });
     const saved = { ...recipe, id: r.id, updated_at: r.updated_at };
     book.unshift(saved);
@@ -651,6 +665,50 @@
     return chips.length ? el('div', { class: 'meta-chips' }, chips.map((c) => el('span', { class: 'tag' }, c))) : null;
   }
 
+  /* ---- kashrut and keto in a recipe: the substitutes chosen for each recipe (for this visit) ---- */
+  const chosenSubs = new Map(); // url -> Map(index -> substitute name | null to keep the original)
+  const effective = (recipe, subs) => ({ ...recipe, ingredients: recipe.ingredients.map((i, n) => (subs.get(n) ? { ...i, name: subs.get(n) } : i)) });
+
+  /** The ingredients, the chips at the top and the keto panel of a web recipe; redrawn when a substitute changes. */
+  function recipeParts(url, recipe) {
+    const subs = chosenSubs.get(url) || new Map();
+    chosenSubs.set(url, subs);
+    const status = el('div', { class: 'r-status' }, RecipeFix.kosherChip('checking'));
+    const ketoSlot = el('div');
+    const ingSlot = el('div');
+    let result = null;
+    const openFix = (focus) => result && RecipeFix.openFix({ focus, recipe, result, subs, apply: (next) => { subs.clear(); next.forEach((v, k) => subs.set(k, v)); draw(); } });
+    const draw = () => {
+      const eff = effective(recipe, subs);
+      // The chips: a warning about the original recipe, and stamps for the version on screen.
+      const orig = result ? RecipeFix.kosherStatus(result, new Map()) : 'checking';
+      const now = result ? RecipeFix.kosherStatus(result, subs) : 'checking';
+      status.replaceChildren(...[
+        orig !== 'ok' ? RecipeFix.kosherChip(orig, () => openFix('kosher')) : null,
+        result && now === 'ok' ? RecipeFix.kosherChip('ok', () => openFix('kosher')) : null,
+        result && orig !== 'ok' && now === 'ok' ? el('small', { class: 'r-chip-note' }, 'בגרסה עם התחליפים') : null,
+        RecipeFix.ketoChip(eff, () => result && openFix('keto')),
+      ].filter(Boolean));
+      ketoSlot.replaceChildren(...[Keto.recipePanel(eff)].filter(Boolean));
+      const kosherAt = new Map((result?.kosher || []).map((x) => [x.index, x]));
+      const ketoAt = new Map(Keto.enabled ? (result?.keto || []).map((x) => [x.index, x]) : []);
+      const ingredients = recipe.ingredients.map((i, n) => {
+        const issue = kosherAt.get(n) || ketoAt.get(n);
+        return { he: subs.get(n) || i.name, measure: i.measure, orig: i.name, issue, kind: kosherAt.has(n) ? 'kosher' : 'keto' };
+      });
+      const picker = ingredientPicker(ingredients, { onSub: (n, v) => { subs.set(n, v); draw(); } });
+      ingSlot.replaceChildren(el('h4', {}, `מצרכים (${ingredients.length})`), picker.tools, picker.list, el('div', { class: 'row' }, picker.addButton(recipe.title)));
+    };
+    draw();
+    RecipeFix.check(recipe).then((res) => {
+      result = res;
+      // Every non-kosher ingredient starts out replaced by its first kosher substitute (the family can choose another, or keep it).
+      for (const x of res.kosher) if (!subs.has(x.index)) subs.set(x.index, x.subs[0]);
+      draw();
+    }).catch(() => { status.replaceChildren(...[RecipeFix.ketoChip(effective(recipe, subs), () => {})].filter(Boolean)); });
+    return { status, ketoSlot, ingSlot };
+  }
+
   /** A web recipe, translated, on the full-page sheet. */
   async function showWebRecipe(r, origin) {
     const ready = webCache.get(r.url);
@@ -665,19 +723,18 @@
       }
       if (!sheet.isOpen) return; // closed while it was translating
     }
-    const ingredients = recipe.ingredients.map((i) => ({ he: i.name, measure: i.measure }));
-    const picker = ingredientPicker(ingredients);
+    const parts = recipeParts(r.url, recipe);
     sheet.open(ready ? origin : null, [
       el('div', { class: 'r-hero' },
         recipe.image ? el('img', { src: recipe.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null,
         heart(r.url, r, 'big')),
       el('h3', { class: 'r-title' }, recipe.title),
       el('p', { class: 'r-sub' }, recipe.subtitle),
+      parts.status,
       metaChips(recipe.meta),
-      Keto.recipePanel(recipe),
+      parts.ketoSlot,
       recipe.notes ? el('p', { class: 'r-notes' }, recipe.notes) : null,
-      el('h4', {}, `מצרכים (${ingredients.length})`), picker.tools, picker.list,
-      el('div', { class: 'row' }, picker.addButton(recipe.title)),
+      parts.ingSlot,
       el('h4', {}, 'אופן ההכנה'),
       el('ol', { class: 'steps he' }, recipe.steps.map((s) => el('li', {}, s))),
       el('p', {}, el('a', { href: recipe.source_url, target: '_blank', rel: 'noopener' }, '🔗 המתכון המקורי')),
@@ -813,7 +870,7 @@
       })();
       await saving;
     };
-    const touch = () => { dirty = true; status.textContent = '…'; clearTimeout(timer); timer = setTimeout(save, 700); };
+    const touch = () => { dirty = true; status.textContent = '…'; clearTimeout(timer); timer = setTimeout(save, 700); scheduleCheck(); };
 
     // One-line fields that wrap and grow, so a long name is never cut off on a phone.
     const line = (cls, value, placeholder, label, onEnter) => {
@@ -868,6 +925,48 @@
       renderBook();
     } }, '🗑 מחיקה');
 
+    // Kashrut and keto: a problem ingredient is struck in pencil with substitutes to choose under it; the chips sit under the title.
+    const bstatus = el('div', { class: 'r-status' });
+    const ketoSlot = el('div');
+    let checkTimer = null, lastResult = null, lastNames = null;
+    const rowsNow = () => [...ingList.children];
+    const currentRecipe = () => ({ title: title.value.trim(), meta: draft.meta, ingredients: rowsNow().map((li) => ({ name: li.querySelector('.n').value.trim(), measure: li.querySelector('.m').value.trim() })) });
+    const clearMarks = (li) => { li.querySelector('.sub-line')?.remove(); li.querySelector('.n').classList.remove('pencil-text', 'kosher', 'keto'); };
+    async function runCheck() {
+      const rec = currentRecipe();
+      const names = JSON.stringify(rec.ingredients.map((i) => i.name));
+      if (names === lastNames) return;
+      lastNames = names;
+      if (!rec.ingredients.some((i) => i.name)) { bstatus.replaceChildren(); ketoSlot.replaceChildren(); return; }
+      bstatus.replaceChildren(RecipeFix.kosherChip('checking'));
+      let res;
+      try { res = await RecipeFix.check(rec); } catch (_) { bstatus.replaceChildren(); return; }
+      if (lastNames !== names) return; // changed again meanwhile
+      lastResult = res;
+      const rows = rowsNow();
+      rows.forEach(clearMarks);
+      const mark = (x, kind) => {
+        const li = rows[x.index];
+        if (!li || li.querySelector('.sub-line')) return;
+        const n = li.querySelector('.n');
+        n.classList.add('pencil-text', kind);
+        li.append(RecipeFix.subLine(x, n.value, null, (v) => { if (!v) return; n.value = v; autosize(n); clearMarks(li); touch(); }, kind));
+      };
+      res.kosher.forEach((x) => mark(x, 'kosher'));
+      if (Keto.enabled) res.keto.forEach((x) => mark(x, 'keto'));
+      bstatus.replaceChildren(...[RecipeFix.kosherChip(RecipeFix.kosherStatus(res, new Map()), () => openBookFix('kosher')), RecipeFix.ketoChip(rec, () => openBookFix('keto'))].filter(Boolean));
+      ketoSlot.replaceChildren(...[Keto.recipePanel(rec)].filter(Boolean));
+    }
+    const openBookFix = (focus) => lastResult && RecipeFix.openFix({
+      focus, recipe: currentRecipe(), result: lastResult, subs: new Map(),
+      apply: (next) => {
+        const rows = rowsNow();
+        next.forEach((v, i) => { if (v && rows[i]) { const n = rows[i].querySelector('.n'); n.value = v; autosize(n); clearMarks(rows[i]); } });
+        touch();
+      },
+    });
+    function scheduleCheck() { clearTimeout(checkTimer); checkTimer = setTimeout(runCheck, 1800); }
+
     const shop = el('button', { class: 'btn primary', onclick: async () => {
       await save();
       collect();
@@ -881,8 +980,9 @@
     sheet.open(origin, [
       el('div', { class: 'r-hero' }, draft.image ? el('img', { src: draft.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null),
       title, subtitle,
+      bstatus,
       metaChips(draft.meta),
-      draft.ingredients.length ? Keto.recipePanel(draft) : null,
+      ketoSlot,
       el('div', { class: 'edit-hint' }, status, el('small', { class: 'muted' }, 'Enter מוסיף שורה חדשה')),
       el('h4', {}, 'מצרכים וכמויות'), ingList,
       el('button', { class: 'btn ghost small', onclick: () => { const li = ingRow(); ingList.append(li); li.querySelector('.m').focus(); } }, '+ מצרך'),
@@ -897,6 +997,7 @@
     ], { onLeave: () => save().then(renderBook) }); // closing (or moving on) saves whatever is still waiting
     requestAnimationFrame(() => autosize(notes));
     if (!draft.id) setTimeout(() => title.focus(), 450);
+    runCheck();
   }
 
   function importDialog() {

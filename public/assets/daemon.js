@@ -288,6 +288,7 @@
       if (o.isBone && /Head$/.test(o.name)) parts.mxHead = o;
       if (o.isBone && /Hips$/.test(o.name)) parts.mxHips = o;
       if (o.isBone && /RightHand$/.test(o.name)) parts.mxHandR = o;
+      if (o.isBone) for (const k of RAG_BONES) if (new RegExp(k + '$').test(o.name)) (parts.rag ||= {})[k] = o;
     });
     if (gltf.animations?.length) {
       // a fully animated figure: fit it to 2.35 units, feet on the floor, then drive it with its clips
@@ -353,9 +354,12 @@
   function act(name) { return play(name, false); }
   function baseFor() {
     if (asleep) return 'sleep';
-    if (dragging) return parts.clips?.fall ? 'fall' : 'yell';
+    if (rag || dragging) return 'idle';                 // the ragdoll does the rest
+    if (fly) return fly.big && parts.clips?.fall ? 'fall' : 'idle';
     if (target) return parts.walkStyle || 'walk';
     if (busy) return parts.thinkStyle || 'think';
+    if (hold && performance.now() < hold.until) return hold.name;
+    hold = null;
     return 'idle';
   }
 
@@ -382,6 +386,11 @@
   let pointing = null;                  // { x, y, until }
   let morph = 0, morphBody = null;      // 1 -> 0 while turning into a new animal
   let dragging = null;
+  let fly = null;                       // thrown or dropped: { vx, vy, big }
+  let hold = null;                      // an idle pastime that loops for a while: { name, until }
+  const swing = { th: 0, w: 0 };        // the ragdoll's swing around the finger (radians, clockwise on screen)
+  const finger = { x: 0, y: 0, vx: 0, vy: 0, ax: 0 };
+  let lastMouseMove = 0;
   let lastActivity = performance.now();
   let asleep = false;
   let voice = 0, voiceT = 0;
@@ -400,6 +409,8 @@
 
   function walkTo(x, y, then) {
     wake();
+    hold = null;
+    if (!target && parts?.mixer && !fly) act('walk_start');
     target = { ...clampPos({ x, y }), then };
     if (parts) parts.walkStyle = mood === 'worried' ? 'limp' : Math.random() < 0.2 ? 'texting_walk' : 'walk';
   }
@@ -447,8 +458,60 @@
     if (m === 'happy') hop = 1;
   }
 
+  /* ---- picked up, swung and thrown ---- */
+  const HANG_GAP = 18;                 // px between the finger and the top of his turban
+  let _top = null;
+  function pivotY() {
+    if (_top == null && camera && THREE) {
+      const v = new THREE.Vector3(0, parts.height || 2.35, 0).project(camera);
+      _top = (1 - v.y) / 2 * box.h;
+    }
+    return Math.max(2, (_top ?? box.h * 0.15) - HANG_GAP);
+  }
+  function tickSwing(dt) {
+    const L = Math.max(60, box.h * 0.45);         // finger to his middle, in px
+    let acc;
+    if (dragging) acc = -(2400 / L) * Math.sin(swing.th) - (finger.ax / L) * Math.cos(swing.th) - 1.4 * swing.w;
+    else acc = -40 * swing.th - 7 * swing.w;       // let go: back upright
+    swing.w += acc * dt;
+    swing.th = Math.max(-1.3, Math.min(1.3, swing.th + swing.w * dt));
+    if (!dragging && !fly && Math.abs(swing.th) < 0.002 && Math.abs(swing.w) < 0.01) { swing.th = 0; swing.w = 0; }
+  }
+  function land() {
+    const big = fly?.big;
+    fly = null;
+    pos = clampPos(pos);
+    rememberSpot();
+    if (!parts?.mixer) { hop = 0.5; return; }
+    if (big) { act(Math.random() < 0.6 ? 'yell' : 'shrug'); mood = 'worried'; moodUntil = performance.now() + 9000; }
+    else act('shrug');
+  }
+  /** Idle life: now and then he finds something to do (every animation he has gets its turn). */
+  function pastime(now) {
+    if (!parts?.mixer) {
+      if (Math.random() < 0.6) walkTo(pos.x + (Math.random() - 0.5) * Math.min(420, W() * 0.5), bottomLimit());
+      return;
+    }
+    const near = Math.hypot(mouse.x - pos.x, mouse.y - (pos.y - box.h / 2)) < 280 && now - lastMouseMove < 5000;
+    const options = [
+      ['wander', 28], ['phone', 9], ['think', 7], ['happy', 6], ['shrug', 4], ['talk', 4], ['talk2', 4], ['rap', 4],
+      ['yell', 2], ['bow', 3], ['point_forward', near ? 7 : 2], ['wave', near ? 10 : 1], ['secret', near ? 6 : 1], ['point_low', 2],
+    ];
+    let r = Math.random() * options.reduce((a, o) => a + o[1], 0);
+    const pick = options.find((o) => (r -= o[1]) < 0)[0];
+    if (pick === 'wander') {
+      const nx = pos.x + (Math.random() < 0.5 ? -1 : 1) * (120 + Math.random() * Math.min(360, W() * 0.4));
+      walkTo(nx, bottomLimit());
+    } else if (pick === 'phone') hold = { name: 'phone', until: now + 6000 + Math.random() * 6000 };
+    else if (pick === 'think') hold = { name: 'think', until: now + 3500 + Math.random() * 3000 };
+    else {
+      if (['point_forward', 'wave', 'secret'].includes(pick)) faceTarget = 0;
+      act(pick);
+    }
+  }
+
   let last = performance.now();
-  let nextWander = performance.now() + 25000;
+  let nextWander = performance.now() + 15000;
   let nextBlink = 0, blinkUntil = 0;
 
   function frame(now) {
@@ -459,8 +522,38 @@
 
     // --- where to be ---
     let moving = false;
-    if (dragging) {
-      pos = clampPos({ x: dragging.x, y: dragging.y + box.h * 0.6 });
+    if (rag) {
+      finger.x = dragging ? dragging.x : finger.x; finger.y = dragging ? dragging.y : finger.y;
+      stepRag(dt);
+      if (rag && rag.state !== 'rise') {
+        // the canvas follows the heap of him
+        let cx = 0, cy = 0, n = 0;
+        for (const q of Object.values(rag.p)) { cx += q.x; cy += q.y; n++; }
+        pos = { x: cx / n, y: cy / n + box.h / 2 };
+      }
+      faceTarget = 0;
+    } else if (dragging) {
+      // hang by the turban a little below the finger, so the finger never covers him
+      const vx = (dragging.x - finger.x) / Math.max(dt, 1e-3), vy = (dragging.y - finger.y) / Math.max(dt, 1e-3);
+      const nvx = finger.vx + (vx - finger.vx) * 0.5, nvy = finger.vy + (vy - finger.vy) * 0.5;
+      finger.ax = Math.max(-9000, Math.min(9000, (nvx - finger.vx) / Math.max(dt, 1e-3)));
+      finger.vx = nvx; finger.vy = nvy; finger.x = dragging.x; finger.y = dragging.y;
+      pos = { x: dragging.x, y: dragging.y - pivotY() + box.h };
+      faceTarget = 0;
+    } else if (fly) {
+      fly.vy += 2600 * dt;
+      fly.vx *= Math.pow(0.6, dt);
+      pos.x += fly.vx * dt; pos.y += fly.vy * dt;
+      const minX = box.w * 0.35, maxX = W() - box.w * 0.35;
+      if (pos.x < minX) { pos.x = minX; fly.vx = Math.abs(fly.vx) * 0.5; swing.w -= 4; }
+      if (pos.x > maxX) { pos.x = maxX; fly.vx = -Math.abs(fly.vx) * 0.5; swing.w += 4; }
+      if (pos.y - box.h < 0 && fly.vy < 0) fly.vy = -fly.vy * 0.3;
+      if (pos.y >= bottomLimit()) {
+        pos.y = bottomLimit();
+        if (fly.vy > 1100 && !fly.bounced) { fly.vy = -fly.vy * 0.22; fly.bounced = true; }
+        else land();
+      }
+      faceTarget = 0;
     } else if (target) {
       const dx = target.x - pos.x, dy = target.y - pos.y;
       const dist = Math.hypot(dx, dy);
@@ -468,6 +561,7 @@
       if (dist < 4) {
         pos = { x: target.x, y: target.y };
         const then = target.then; target = null; rememberSpot();
+        act('walk_stop');
         then?.();
       } else {
         const step = Math.min(dist, speed * dt);
@@ -478,16 +572,17 @@
     }
     if (!moving && !dragging) faceTarget = pointing ? (pointing.x > pos.x ? 0.6 : -0.6) : 0;
     facing += (faceTarget - facing) * Math.min(1, dt * 7);
-    canvasBox.style.transform = `translate(${Math.round(pos.x - box.w / 2)}px, ${Math.round(pos.y - box.h)}px)`;
+    tickSwing(dt);
+    const pv = pivotY();
+    canvasBox.style.transformOrigin = `${box.w / 2}px ${pv}px`;
+    canvasBox.style.transform = `translate(${Math.round(pos.x - box.w / 2)}px, ${Math.round(pos.y - box.h)}px)` +
+      (Math.abs(swing.th) > 0.002 ? ` rotate(${swing.th.toFixed(4)}rad)` : '');
     if (balloon && !balloon.hidden) placeBalloon();
 
     // --- idle life: wander now and then, sleep when left alone ---
-    if (!busy && !target && !dragging && balloon.hidden && now > nextWander && !asleep) {
-      nextWander = now + 30000 + Math.random() * 30000;
-      if (Math.random() < 0.6) {
-        const nx = pos.x + (Math.random() - 0.5) * Math.min(420, W() * 0.5);
-        walkTo(nx, bottomLimit());
-      }
+    if (!busy && !target && !dragging && !fly && !rag && !hold && balloon.hidden && now > nextWander && !asleep) {
+      nextWander = now + (15000 + Math.random() * 20000) * (reduced ? 3 : 1);
+      pastime(now);
     }
     if (!asleep && !busy && balloon.hidden && now - lastActivity > 120000) { asleep = true; sleepBadge.hidden = false; }
 
@@ -638,14 +733,15 @@
     const busyClip = P.oneShot && !['wave', 'shrug', 'happy'].includes(P.oneShot.getClip().name);
     const look = pointing && now < pointing.until ? pointing : mouse;
     const headY = pos.y - box.h * 0.75;
-    const free = asleep || busyClip ? 0 : 1;      // clips that move the head on their own keep it
+    const free = asleep || busyClip || rag ? 0 : 1;      // clips that move the head on their own keep it
     // gentle turns: the beard follows the head and the chest doesn't, so a big turn opens a seam between them
     const yaw = Math.max(-0.28, Math.min(0.28, (look.x - pos.x) / 900)) - facing * 0.3;
     const pitch = Math.max(-0.12, Math.min(0.1, (look.y - headY) / 1300));
     _e.y += (yaw * free - _e.y) * Math.min(1, dt * 5);
     _e.x += (pitch * free - _e.x) * Math.min(1, dt * 5);
     if (P.mxHead) {
-      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(_e.x + bob.x * 0.3, _e.y, bob.z * 0.3, 'YXZ'));
+      const wob = rag ? 0 : 0.3;
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(_e.x + bob.x * wob, _e.y, bob.z * wob, 'YXZ'));
       P.mxHead.quaternion.multiply(q);
     }
     if (pointing && now >= pointing.until) pointing = null;
@@ -653,13 +749,156 @@
     const fallW = P.actions.fall ? P.actions.fall.getEffectiveWeight() : 0;
     fallTilt += ((P.base === 'fall' ? 1 : 0) * fallW - fallTilt) * Math.min(1, dt * 8);
     rig.rotation.x = -Math.PI / 2 * fallTilt;
+    rig.position.x = 0;
     rig.position.y = FALL_LIFT * fallTilt;
     rig.position.z = FALL_BACK * fallTilt;
     parts.shadow.visible = fallTilt < 0.5;
     parts.shadow.scale.setScalar(1);
+    applyRag();
+    if (rag) parts.shadow.visible = false;
   }
   let fallTilt = 0;
   const FALL_LIFT = 0.9, FALL_BACK = 0;
+
+  /* ===================== the ragdoll =====================
+     A real one, in the plane of the screen: his joints are particles (Verlet integration) held together by bones of
+     fixed length, the torso is rigid, elbows and knees can't fold flat. Grab any joint and he hangs from it; let go
+     and he keeps the hand's momentum, bounces off the walls and the floor, settles in a heap and gets up.
+     Each frame the particles' directions turn his bones (on top of the idle pose) and move his hips. */
+  const RAG_BONES = ['Hips', 'Spine2', 'Head', 'LeftArm', 'LeftForeArm', 'LeftHand', 'RightArm', 'RightForeArm', 'RightHand',
+    'LeftUpLeg', 'LeftLeg', 'LeftFoot', 'RightUpLeg', 'RightLeg', 'RightFoot'];
+  const RSEG = [   // [bone turned, from particle, to particle, parent segment]
+    ['Hips', 'Hips', 'Spine2', null], ['Head', 'Head', 'top', 'Hips'],
+    ['LeftArm', 'LeftArm', 'LeftForeArm', 'Hips'], ['LeftForeArm', 'LeftForeArm', 'LeftHand', 'LeftArm'],
+    ['RightArm', 'RightArm', 'RightForeArm', 'Hips'], ['RightForeArm', 'RightForeArm', 'RightHand', 'RightArm'],
+    ['LeftUpLeg', 'LeftUpLeg', 'LeftLeg', 'Hips'], ['LeftLeg', 'LeftLeg', 'LeftFoot', 'LeftUpLeg'],
+    ['RightUpLeg', 'RightUpLeg', 'RightLeg', 'Hips'], ['RightLeg', 'RightLeg', 'RightFoot', 'RightUpLeg'],
+  ];
+  const TORSO = ['Spine2', 'Hips', 'LeftArm', 'RightArm', 'LeftUpLeg', 'RightUpLeg', 'Head'];
+  let rag = null;
+  const canRag = () => !!(parts.mixer && parts.rag && RAG_BONES.every((k) => parts.rag[k]));
+
+  function canvasOrigin() { return { x: pos.x - box.w / 2, y: pos.y - box.h }; }
+  function toScreen(v3) {
+    const o = canvasOrigin();
+    const v = v3.clone().project(camera);
+    return { x: o.x + (v.x + 1) / 2 * box.w, y: o.y + (1 - v.y) / 2 * box.h };
+  }
+  function grabRag(cx, cy) {
+    if (!rag) {
+      facing = 0; faceTarget = 0; rig.rotation.y = 0;
+      scene.updateMatrixWorld(true);
+      const P = {};
+      const w = new THREE.Vector3();
+      for (const k of RAG_BONES) { parts.rag[k].getWorldPosition(w); const p = toScreen(w); P[k] = { x: p.x, y: p.y, px: p.x, py: p.y }; }
+      parts.rag.Head.getWorldPosition(w);
+      const t = toScreen(new THREE.Vector3(w.x, (parts.height || 2.35) + rig.position.y, w.z));
+      P.top = { x: t.x, y: t.y, px: t.x, py: t.y };
+      const d = (a, b) => Math.hypot(P[a].x - P[b].x, P[a].y - P[b].y);
+      const cons = [];
+      for (const [, a, b] of RSEG) if (a !== 'Hips') cons.push([a, b, d(a, b), 1, false]);
+      for (let i = 0; i < TORSO.length; i++) for (let j = i + 1; j < TORSO.length; j++) cons.push([TORSO[i], TORSO[j], d(TORSO[i], TORSO[j]), 1, false]);
+      cons.push(['top', 'Spine2', d('top', 'Spine2'), 0.35, false]);    // a floppy neck, not a broken one
+      for (const side of ['Left', 'Right']) {
+        cons.push([side + 'Arm', side + 'Hand', 0.6 * (d(side + 'Arm', side + 'ForeArm') + d(side + 'ForeArm', side + 'Hand')), 1, true]);
+        cons.push([side + 'UpLeg', side + 'Foot', 0.7 * (d(side + 'UpLeg', side + 'Leg') + d(side + 'Leg', side + 'Foot')), 1, true]);
+      }
+      const rest = {};
+      for (const [bone, a, b] of RSEG) rest[bone] = Math.atan2(P[b].y - P[a].y, P[b].x - P[a].x);
+      rag = { p: P, cons, rest, pin: null, state: 'held', still: 0, t: 0, blend: 1 };
+    }
+    // the joint nearest the finger: hands and feet win when close, above the neck means the turban
+    let best = null, bd = Infinity;
+    for (const [k, q] of Object.entries(rag.p)) {
+      const dd = Math.hypot(q.x - cx, q.y - cy) - (/(Hand|Foot)$/.test(k) ? 18 : 0);
+      if (dd < bd) { bd = dd; best = k; }
+    }
+    if (cy < rag.p.Head.y && Math.abs(cx - rag.p.Head.x) < box.w * 0.25) best = 'top';
+    rag.pin = best;
+    rag.gap = best === 'top' ? HANG_GAP : 10;          // hang a little below the finger, so it never covers him
+    rag.state = 'held';
+    rag.t = 0;
+  }
+  function stepRag(dt) {
+    const R = rag, P = R.p, floor = bottomLimit(), right = W();
+    rag.t += dt;
+    if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / 0.7); if (R.blend === 0) endRag(); return; }
+    const sub = 3, h = dt / sub, g = 2600;
+    for (let s_ = 0; s_ < sub; s_++) {
+      for (const [k, q] of Object.entries(P)) {
+        if (R.state === 'held' && k === R.pin) { q.px = q.x; q.py = q.y; q.x = finger.x; q.y = finger.y + R.gap; continue; }
+        const vx = (q.x - q.px) * 0.996, vy = (q.y - q.py) * 0.996;
+        q.px = q.x; q.py = q.y;
+        q.x += vx; q.y += vy + g * h * h;
+      }
+      for (let it = 0; it < 10; it++) {
+        for (const [a, b, len, stiff, isMin] of R.cons) {
+          const A = P[a], B = P[b];
+          const dx = B.x - A.x, dy = B.y - A.y, dist = Math.hypot(dx, dy) || 1e-6;
+          if (isMin && dist >= len) continue;
+          const diff = (dist - len) / dist * stiff;
+          const pa = R.state === 'held' && a === R.pin, pb = R.state === 'held' && b === R.pin;
+          const wa = pa ? 0 : pb ? 1 : 0.5, wb = pb ? 0 : pa ? 1 : 0.5;
+          A.x += dx * diff * wa; A.y += dy * diff * wa;
+          B.x -= dx * diff * wb; B.y -= dy * diff * wb;
+        }
+        for (const [k, q] of Object.entries(P)) {
+          if (R.state === 'held' && k === R.pin) continue;
+          if (q.y > floor) { q.y = floor; q.px += (q.x - q.px) * 0.5; }        // the floor, with friction
+          if (q.x < 6) { q.x = 6; } if (q.x > right - 6) { q.x = right - 6; }
+          if (q.y < 4) q.y = 4;
+        }
+      }
+    }
+    if (R.state === 'free') {
+      let vmax = 0;
+      for (const q of Object.values(P)) vmax = Math.max(vmax, Math.hypot(q.x - q.px, q.y - q.py) / h);
+      R.still = vmax < 45 ? R.still + dt : 0;
+      if (R.still > 0.6 || R.t > 6) {                  // lies there a moment, then picks himself up
+        R.state = 'rise';
+        pos = clampPos({ x: P.Hips.x, y: floor });
+      }
+    }
+  }
+  function releaseRag() { if (rag) { rag.state = 'free'; rag.t = 0; rag.still = 0; } }
+  function endRag() {
+    const fell = rag && rag.p.top.y > rag.p.Hips.y - 20;   // ended up lying down, not standing
+    rag = null;
+    pos = clampPos(pos);
+    rememberSpot();
+    act(fell ? (Math.random() < 0.6 ? 'yell' : 'shrug') : 'shrug');
+    mood = 'worried'; moodUntil = performance.now() + 9000;   // and limps for a bit
+  }
+  /** Turn his bones to the particles' directions and put his hips where the hips particle is. */
+  function applyRag() {
+    if (!rag) return;
+    const P = rag.p, k = rag.state === 'rise' ? rag.blend * rag.blend * (3 - 2 * rag.blend) : 1;
+    const world = {};
+    for (const [bone, a, b, parent] of RSEG) {
+      let dAng = Math.atan2(P[b].y - P[a].y, P[b].x - P[a].x) - rag.rest[bone];
+      dAng = Math.atan2(Math.sin(dAng), Math.cos(dAng));
+      world[bone] = -dAng;                                 // screen clockwise = world-Z clockwise
+      twistScreen(parts.rag[bone], (world[bone] - (parent ? world[parent] : 0)) * k);
+    }
+    // move the whole figure so the hips sit where the hips particle is
+    const hw = new THREE.Vector3();
+    parts.rag.Hips.getWorldPosition(hw);
+    const ndc = hw.clone().project(camera);
+    const o = canvasOrigin();
+    const tx = (P.Hips.x - o.x) / box.w * 2 - 1, ty = 1 - (P.Hips.y - o.y) / box.h * 2;
+    const want = new THREE.Vector3(tx, ty, ndc.z).unproject(camera);
+    rig.position.addScaledVector(want.sub(hw), k);
+  }
+  function twistScreen(bone, ang) {
+    if (!bone?.parent || Math.abs(ang) < 1e-5) return;
+    const qp = new THREE.Quaternion();
+    bone.parent.updateWorldMatrix(true, false);
+    bone.parent.getWorldQuaternion(qp);
+    const qa = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), ang);
+    const inv = qp.clone().invert();
+    bone.quaternion.premultiply(inv.multiply(qa).multiply(qp));
+    bone.updateWorldMatrix(false, true);
+  }
 
   // Sparks for the shapeshift (small glowing beads that fly out and fade).
   let sparks = [];
@@ -725,20 +964,34 @@
       let moved = false;
       canvasBox.setPointerCapture(e.pointerId);
       const onMove = (ev) => {
-        if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 6) { moved = true; target = null; dragging = { x: ev.clientX, y: ev.clientY }; setMood('worried', 0.4); }
+        if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) > 6) {
+          moved = true; target = null; hold = null; fly = null;
+          Object.assign(finger, { x: ev.clientX, y: ev.clientY, vx: 0, vy: 0, ax: 0 });
+          dragging = { x: ev.clientX, y: ev.clientY };
+          if (canRag()) grabRag(start.x, start.y);
+          mood = 'worried'; moodUntil = performance.now() + 400;
+        }
         if (moved) dragging = { x: ev.clientX, y: ev.clientY };
       };
       const onUp = () => {
         canvasBox.removeEventListener('pointermove', onMove);
         canvasBox.removeEventListener('pointerup', onUp);
-        if (moved) { dragging = null; hop = 0.5; rememberSpot(); }
+        if (moved && rag) { dragging = null; releaseRag(); }
+        else if (moved) {
+          dragging = null;
+          // let go: he keeps the hand's momentum, flies, falls and lands
+          const vx = Math.max(-1800, Math.min(1800, finger.vx)), vy = Math.max(-1800, Math.min(1800, finger.vy));
+          const height = bottomLimit() - pos.y;
+          fly = { vx, vy, big: height > 140 || vy < -500 };
+          if (height < 4 && Math.abs(vy) < 200) land();
+        }
         else openBalloon();
       };
       canvasBox.addEventListener('pointermove', onMove);
       canvasBox.addEventListener('pointerup', onUp);
     });
     canvasBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBalloon(); } });
-    window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
+    window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; lastMouseMove = performance.now(); if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
     window.addEventListener('resize', () => { pos = clampPos(pos); });
   }
 

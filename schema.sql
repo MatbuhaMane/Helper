@@ -91,6 +91,18 @@ CREATE TABLE IF NOT EXISTS news_translations (
   data       TEXT NOT NULL,      -- JSON {title_he, paragraphs:[...], from}
   created_at INTEGER NOT NULL
 );
+-- headlines translated into Hebrew (by article id), so only headlines are translated when that's all that's needed
+CREATE TABLE IF NOT EXISTS news_title_tr (
+  id         TEXT PRIMARY KEY,
+  title_he   TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+-- an article checked against independent sources on the web
+CREATE TABLE IF NOT EXISTS news_verifications (
+  item_id    TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,      -- JSON {status, rating, explanation_he, sources:[{url, title}], at}
+  created_at INTEGER NOT NULL
+);
 -- which set of recommended sources each person already received (new ones are added once)
 CREATE TABLE IF NOT EXISTS news_seeds (
   email   TEXT PRIMARY KEY,

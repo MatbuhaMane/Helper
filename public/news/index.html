@@ -25,6 +25,7 @@
           <div class="mast-sub" id="mastSub"></div>
         </div>
         <div class="mast-tools">
+          <button id="viewBtn" class="mini" title="תצוגת כרטיסים / רשימה" aria-label="שנה תצוגה">▦</button>
           <button id="markAll" class="mini" title="סמן את הכתבות שבסינון כנקראו" aria-label="סמן הכל כנקרא">✓✓</button>
           <button id="refresh" class="mini" title="רענון" aria-label="רענון">⟳</button>
         </div>
@@ -33,20 +34,16 @@
       <div class="searchbar" role="search" data-guide="news-search" data-guide-label="חיפוש בחדשות">
         <svg class="s-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
         <input id="q" type="search" placeholder="חיפוש בכתבות… (נושא, שם, מקום)" aria-label="חיפוש בכתבות" autocomplete="off">
-        <label class="hist-switch" title="חיפוש גם בכתבות מהעבר (עד 120 יום)">
+        <label class="hist-switch" title="חיפוש בעבר: בהיסטוריה של המקורות וגם באינטרנט (Gemini)">
           <input id="histSw" type="checkbox" role="switch"><span class="slider" aria-hidden="true"></span><span>בעבר</span>
         </label>
       </div>
 
       <div id="filters" class="filters" aria-label="סינון כתבות"></div>
 
-      <div id="book" class="book" data-guide="articles" data-guide-label="עמוד הכתבות" aria-live="polite"></div>
-
-      <nav class="pager" aria-label="דפדוף">
-        <button id="prevPage" class="turn" aria-label="לעמוד הקודם">›</button>
-        <span id="pageNo" class="page-no"></span>
-        <button id="nextPage" class="turn" aria-label="לעמוד הבא">‹</button>
-      </nav>
+      <div id="webResults" class="websec" hidden></div>
+      <div id="items" class="items" data-guide="articles" data-guide-label="רשימת הכתבות" aria-live="polite"></div>
+      <div id="more" class="more-row" aria-live="polite"></div>
     </section>
   </div>
   <script src="/assets/common.js"></script>

@@ -58,7 +58,21 @@ const HISTORY_DAYS = 120;
 export interface NewsItem {
   id: string; feedId: string; feed: string; title: string; link: string; date: number; summary: string; image: string | null;
   body?: string; lang?: string; kind?: string; quality?: number; country?: string;
-  read?: boolean; starred?: boolean;
+  read?: boolean; starred?: boolean; hidden?: boolean;
+  rating?: number | null;                                  // the person's own rating for this article
+  verified?: { status: string; rating: number } | null;    // checked against independent sources on the web
+}
+
+/** Which outlet a source belongs to, so the same newsroom's site and Telegram channel never count as "independent" of each other. */
+export function ownerOf(url: string): string {
+  const u = url.toLowerCase();
+  const known: [RegExp, string][] = [[/ynet/, 'ynet'], [/walla/, 'walla'], [/maariv/, 'maariv'], [/globes/, 'globes'], [/timesofisrael/, 'toi'], [/jpost/, 'jpost'],
+    [/bbc/, 'bbc'], [/theguardian/, 'guardian'], [/nytimes/, 'nyt'], [/aljazeera|ajanews/, 'aljazeera'], [/dw\.com/, 'dw'], [/npr\.org/, 'npr'],
+    [/n12|mako/, 'n12'], [/i24/, 'i24'], [/idf/, 'idf'], [/pikudhaoref/, 'oref'], [/amitsegal/, 'segal'], [/abualiexpress/, 'abuali'],
+    [/wafa/, 'wafa'], [/maan/, 'maan'], [/qudsn/, 'quds']];
+  for (const [re, name] of known) if (re.test(u)) return name;
+  if (u.startsWith('https://t.me/s/')) return u.slice(15);
+  try { return new URL(url).hostname.replace(/^www\./, '').split('.').slice(-3).join('.'); } catch { return u; }
 }
 
 /** he / ar / en, from the letters in a text. */
@@ -81,7 +95,7 @@ function withInfo(f: FeedRow) {
   return { ...f, lang: f.lang || d?.lang || null, country: f.country || d?.country || null, kind: f.kind || d?.kind || kindOf(f.url), quality: f.quality ?? d?.quality ?? 3, category: f.category || d?.category || null };
 }
 
-async function feedsOf(ctx: Ctx, email: string): Promise<ReturnType<typeof withInfo>[]> {
+export async function feedsOf(ctx: Ctx, email: string): Promise<ReturnType<typeof withInfo>[]> {
   const db = ctx.env.DB;
   const seed = await db.prepare('SELECT version FROM news_seeds WHERE email = ?').bind(email).first<{ version: number }>();
   let { results } = await db.prepare('SELECT * FROM feeds WHERE email = ? ORDER BY folder, position').bind(email).all<FeedRow>();
@@ -176,20 +190,27 @@ export async function deleteFeed(ctx: Ctx) {
 
 /* ---------------- items ---------------- */
 
-async function stateFor(ctx: Ctx, email: string, items: NewsItem[]) {
-  const state = new Map<string, { read: number; starred: number }>();
+export async function stateFor(ctx: Ctx, email: string, items: NewsItem[]) {
+  const state = new Map<string, { read: number; starred: number; hidden: number | null; rating: number | null }>();
+  const checked = new Map<string, { status: string; rating: number }>();
   const ids = items.map((i) => i.id);
   for (let i = 0; i < ids.length; i += 90) {
     const chunk = ids.slice(i, i + 90);
-    const { results } = await ctx.env.DB.prepare(
-      `SELECT item_id, read, starred FROM news_state WHERE email = ? AND item_id IN (${chunk.map(() => '?').join(',')})`,
-    ).bind(email, ...chunk).all<any>();
-    for (const r of results) state.set(r.item_id, r);
+    const marks = chunk.map(() => '?').join(',');
+    const [s, v] = await Promise.all([
+      ctx.env.DB.prepare(`SELECT item_id, read, starred, hidden, rating FROM news_state WHERE email = ? AND item_id IN (${marks})`).bind(email, ...chunk).all<any>(),
+      ctx.env.DB.prepare(`SELECT item_id, data FROM news_verifications WHERE item_id IN (${marks})`).bind(...chunk).all<any>(),
+    ]);
+    for (const r of s.results) state.set(r.item_id, r);
+    for (const r of v.results) { try { const d = JSON.parse(r.data); checked.set(r.item_id, { status: d.status, rating: d.rating }); } catch { /* skip */ } }
   }
   for (const it of items) {
     const s = state.get(it.id);
     it.read = !!s?.read;
     it.starred = !!s?.starred;
+    it.hidden = !!s?.hidden;
+    it.rating = s?.rating ?? null;
+    it.verified = checked.get(it.id) || null;
   }
 }
 
@@ -284,28 +305,52 @@ export async function searchHistory(ctx: Ctx) {
   const { results } = await ctx.env.DB.prepare(
     `SELECT * FROM news_items WHERE feed_url IN (${urls.map(() => '?').join(',')}) AND date >= ? AND ${like} ORDER BY date DESC LIMIT 200`,
   ).bind(...urls, Date.now() - days * 86400e3, ...args).all<any>();
-  const items: NewsItem[] = results.map((r) => {
-    const f = byUrl.get(r.feed_url)!;
-    return { id: r.id, feedId: f.id, feed: f.title, title: r.title, link: r.link, date: r.date, summary: r.summary || '', image: r.image, body: r.body || undefined,
-      lang: r.lang || f.lang || undefined, kind: f.kind, quality: f.quality, country: f.country || undefined };
-  });
+  const items: NewsItem[] = results.map((r) => historyItem(r, byUrl.get(r.feed_url)!));
   if (items.length) await stateFor(ctx, u.email, items);
   return json({ items });
 }
 
 export async function setState(ctx: Ctx) {
   const u = requireUser(ctx);
-  const b = await body<{ ids: string[]; read?: boolean; starred?: boolean; snapshot?: unknown }>(ctx.req);
+  const b = await body<{ ids: string[]; read?: boolean; starred?: boolean; hidden?: boolean; rating?: number | null; snapshot?: unknown }>(ctx.req);
   const ids = (b.ids || []).slice(0, 500);
   const db = ctx.env.DB;
   const now = Date.now();
+  const flag = (v?: boolean) => (v == null ? null : v ? 1 : 0);
+  // rating: a number sets the person's own rating, 0 clears it, absent leaves it as it is
+  const rating = b.rating == null ? null : Math.max(0, Math.min(5, Math.round(Number(b.rating)) || 0));
   await db.batch(ids.map((id) => db.prepare(
-    `INSERT INTO news_state (email, item_id, read, starred, saved, at) VALUES (?, ?, ?, ?, ?, ?)
+    `INSERT INTO news_state (email, item_id, read, starred, saved, at, hidden, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(email, item_id) DO UPDATE SET
-       read = COALESCE(?, read), starred = COALESCE(?, starred), saved = COALESCE(?, saved), at = excluded.at`,
-  ).bind(u.email, id, b.read ? 1 : 0, b.starred ? 1 : 0, b.snapshot ? JSON.stringify(b.snapshot) : null, now,
-    b.read == null ? null : b.read ? 1 : 0, b.starred == null ? null : b.starred ? 1 : 0, b.snapshot ? JSON.stringify(b.snapshot) : null)));
+       read = COALESCE(?, read), starred = COALESCE(?, starred), saved = COALESCE(?, saved), hidden = COALESCE(?, hidden),
+       rating = CASE WHEN ? IS NULL THEN rating WHEN ? = 0 THEN NULL ELSE ? END, at = excluded.at`,
+  ).bind(u.email, id, b.read ? 1 : 0, b.starred ? 1 : 0, b.snapshot ? JSON.stringify(b.snapshot) : null, now, b.hidden ? 1 : 0, rating || null,
+    flag(b.read), flag(b.starred), b.snapshot ? JSON.stringify(b.snapshot) : null, flag(b.hidden), rating, rating, rating)));
   return json({ ok: true });
+}
+
+/** Older articles for the endless scroll: GET /api/news/older?before=<ms>&feeds=id,id&limit=40 (from the history). */
+export async function olderItems(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const before = Number(ctx.url.searchParams.get('before')) || Date.now();
+  const limit = Math.max(10, Math.min(80, Number(ctx.url.searchParams.get('limit')) || 40));
+  let feeds = await feedsOf(ctx, u.email);
+  const only = ctx.url.searchParams.get('feeds');
+  if (only) { const keep = new Set(only.split(',')); feeds = feeds.filter((f) => keep.has(f.id)); }
+  if (!feeds.length) return json({ items: [] });
+  const byUrl = new Map(feeds.map((f) => [f.url, f]));
+  const urls = [...byUrl.keys()];
+  const { results } = await ctx.env.DB.prepare(
+    `SELECT * FROM news_items WHERE feed_url IN (${urls.map(() => '?').join(',')}) AND date < ? ORDER BY date DESC LIMIT ?`,
+  ).bind(...urls, before, limit).all<any>();
+  const items = results.map((r) => historyItem(r, byUrl.get(r.feed_url)!));
+  if (items.length) await stateFor(ctx, u.email, items);
+  return json({ items, more: results.length === limit });
+}
+
+function historyItem(r: any, f: Feed): NewsItem {
+  return { id: r.id, feedId: f.id, feed: f.title, title: r.title, link: r.link, date: r.date, summary: r.summary || '', image: r.image, body: r.body || undefined,
+    lang: r.lang || f.lang || undefined, kind: f.kind, quality: f.quality, country: f.country || undefined };
 }
 
 export async function starredItems(ctx: Ctx) {

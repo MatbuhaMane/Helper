@@ -8,6 +8,7 @@ import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
+import * as newsAi from '../../server/newsai';
 import * as prefs from '../../server/prefs';
 import * as recipeCheck from '../../server/recipecheck';
 import * as songs from '../../server/songs';
@@ -129,6 +130,12 @@ route('GET', '/api/news/article', news.article);
 route('POST', '/api/news/summary', news.summarize);
 route('POST', '/api/news/translate', news.translate);
 route('GET', '/api/news/search', news.searchHistory);
+route('GET', '/api/news/older', news.olderItems);
+route('POST', '/api/news/titles', newsAi.translateTitles);
+route('POST', '/api/news/corroborate', newsAi.corroborate);
+route('POST', '/api/news/verify', newsAi.verify);
+route('GET', '/api/news/websearch', newsAi.webSearch);
+route('POST', '/api/news/find-sources', newsAi.findSources);
 
 /* mail organizer */
 route('GET', '/api/mail/status', mail.mailStatus);

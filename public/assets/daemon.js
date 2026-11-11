@@ -523,7 +523,11 @@
     // --- where to be ---
     let moving = false;
     if (rag) {
-      finger.x = dragging ? dragging.x : finger.x; finger.y = dragging ? dragging.y : finger.y;
+      if (dragging) {
+        const vx = (dragging.x - finger.x) / Math.max(dt, 1e-3), vy = (dragging.y - finger.y) / Math.max(dt, 1e-3);
+        finger.vx += (vx - finger.vx) * 0.4; finger.vy += (vy - finger.vy) * 0.4;
+        finger.x = dragging.x; finger.y = dragging.y;
+      }
       stepRag(dt);
       if (rag && rag.state !== 'rise') {
         // the canvas follows the heap of him
@@ -800,6 +804,11 @@
       for (const [, a, b] of RSEG) if (a !== 'Hips') cons.push([a, b, d(a, b), 1, false]);
       for (let i = 0; i < TORSO.length; i++) for (let j = i + 1; j < TORSO.length; j++) cons.push([TORSO[i], TORSO[j], d(TORSO[i], TORSO[j]), 1, false]);
       cons.push(['top', 'Spine2', d('top', 'Spine2'), 0.35, false]);    // a floppy neck, not a broken one
+      // legs stay together: knees and feet no further apart than when standing (and they don't cross)
+      for (const [a, b] of [['LeftLeg', 'RightLeg'], ['LeftFoot', 'RightFoot']]) {
+        cons.push([a, b, d(a, b) * 0.95, 0.6, 'max']);
+        cons.push([a, b, d(a, b) * 0.55, 0.6, true]);
+      }
       for (const side of ['Left', 'Right']) {
         cons.push([side + 'Arm', side + 'Hand', 0.6 * (d(side + 'Arm', side + 'ForeArm') + d(side + 'ForeArm', side + 'Hand')), 1, true]);
         cons.push([side + 'UpLeg', side + 'Foot', 0.7 * (d(side + 'UpLeg', side + 'Leg') + d(side + 'Leg', side + 'Foot')), 1, true]);
@@ -823,7 +832,7 @@
   function stepRag(dt) {
     const R = rag, P = R.p, floor = bottomLimit(), right = W();
     rag.t += dt;
-    if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / 0.7); if (R.blend === 0) endRag(); return; }
+    if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / (R.gentle ? 0.35 : 0.7)); if (R.blend === 0) endRag(); return; }
     const sub = 3, h = dt / sub, g = 2600;
     for (let s_ = 0; s_ < sub; s_++) {
       for (const [k, q] of Object.entries(P)) {
@@ -836,7 +845,8 @@
         for (const [a, b, len, stiff, isMin] of R.cons) {
           const A = P[a], B = P[b];
           const dx = B.x - A.x, dy = B.y - A.y, dist = Math.hypot(dx, dy) || 1e-6;
-          if (isMin && dist >= len) continue;
+          if (isMin === true && dist >= len) continue;
+          if (isMin === 'max' && dist <= len) continue;
           const diff = (dist - len) / dist * stiff;
           const pa = R.state === 'held' && a === R.pin, pb = R.state === 'held' && b === R.pin;
           const wa = pa ? 0 : pb ? 1 : 0.5, wb = pb ? 0 : pa ? 1 : 0.5;
@@ -845,7 +855,17 @@
         }
         for (const [k, q] of Object.entries(P)) {
           if (R.state === 'held' && k === R.pin) continue;
-          if (q.y > floor) { q.y = floor; q.px += (q.x - q.px) * 0.5; }        // the floor, with friction
+          if (q.y > floor) {                                                     // the floor, with friction
+            const vy = (q.y - q.py) / h;
+            if (R.state === 'free' && vy > 700 && !R.impact && /Foot$/.test(k)) {
+              // a hard landing: the knees buckle and he topples over (a dropped doll doesn't land standing)
+              R.impact = true;
+              const dir = Math.random() < 0.5 ? -1 : 1;
+              P.top.px -= dir * 3.2; P.Spine2.px -= dir * 2.2;
+              P.LeftLeg.px -= dir * 1.5; P.RightLeg.px -= dir * 1.5;
+            }
+            q.y = floor; q.px += (q.x - q.px) * 0.5;
+          }
           if (q.x < 6) { q.x = 6; } if (q.x > right - 6) { q.x = right - 6; }
           if (q.y < 4) q.y = 4;
         }
@@ -861,12 +881,23 @@
       }
     }
   }
-  function releaseRag() { if (rag) { rag.state = 'free'; rag.t = 0; rag.still = 0; } }
+  function releaseRag() {
+    if (!rag) return;
+    rag.state = 'free'; rag.t = 0; rag.still = 0;
+    // put down gently, feet first and upright: he just stands there
+    const P = rag.p, floor = bottomLimit();
+    const feetDown = Math.max(P.LeftFoot.y, P.RightFoot.y) > floor - 28;
+    const upright = Math.abs(Math.atan2(P.Spine2.x - P.Hips.x, P.Hips.y - P.Spine2.y)) < 0.6 && P.top.y < P.Hips.y;
+    const slow = Math.hypot(finger.vx, finger.vy) < 450;
+    if (feetDown && upright && slow) { rag.state = 'rise'; rag.gentle = true; pos = clampPos({ x: P.Hips.x, y: floor }); }
+  }
   function endRag() {
-    const fell = rag && rag.p.top.y > rag.p.Hips.y - 20;   // ended up lying down, not standing
+    const fell = rag && (rag.impact || rag.p.top.y > rag.p.Hips.y - 20);   // a hard landing, or lying down
+    const gentle = rag?.gentle;
     rag = null;
     pos = clampPos(pos);
     rememberSpot();
+    if (gentle) return;                                    // set down nicely: no fuss
     act(fell ? (Math.random() < 0.6 ? 'yell' : 'shrug') : 'shrug');
     mood = 'worried'; moodUntil = performance.now() + 9000;   // and limps for a bit
   }
@@ -1297,5 +1328,5 @@
     requestAnimationFrame(frame);
   }
 
-  H.daemon = { mount, showElement, get _parts() { return parts; }, _play: (n) => play(n, true) };
+  H.daemon = { mount, showElement, get _parts() { return parts; }, get _rag() { return rag && { state: rag.state, pin: rag.pin, t: rag.t, still: rag.still }; }, _play: (n) => play(n, true) };
 })();

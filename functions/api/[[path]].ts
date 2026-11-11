@@ -8,6 +8,7 @@ import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
+import * as prefs from '../../server/prefs';
 import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
@@ -28,10 +29,13 @@ route('POST', '/api/auth/logout', logout);
 route('POST', '/api/auth/desktop/start', desktopStart);
 route('GET', '/api/auth/desktop/approve', desktopApprove);
 route('GET', '/api/auth/desktop/poll', desktopPoll);
-route('GET', '/api/me', (ctx) => {
+route('GET', '/api/me', async (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
-  return json({ user: ctx.user, ai: aiStatus(ctx.env) });
+  // The person's preferences come with "who am I", so every page has them before it draws anything.
+  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email) });
 });
+route('GET', '/api/prefs', prefs.getPrefs);
+route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 
 /* members (owner) */
 route('GET', '/api/members', async (ctx) => {

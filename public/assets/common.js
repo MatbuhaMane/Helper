@@ -70,9 +70,86 @@
     mePromise = mePromise || api('/api/me', { noRedirect: true }).catch((e) => (e.offline ? { user: JSON.parse(localStorage.getItem('helper.me') || 'null'), offline: true } : { user: null }));
     return mePromise.then((r) => {
       try { if (r.user) localStorage.setItem('helper.me', JSON.stringify(r.user)); } catch (_) { /* ignore */ }
+      if (r.user && !r.offline) applyServerPrefs(r.user.email, r.prefs || {});
       return r;
     });
   }
+
+  /* ---------- Preferences per person, kept on the server so they follow them to every device ----------
+   * const prefs = H.prefs('news', { unreadOnly: false });   // filled from the server at sign-in (cached for offline)
+   * prefs.unreadOnly = true; H.savePrefs('news');           // saved locally at once, sent to the server shortly after
+   * A page that wants to react when another device's change arrives listens for 'helper:prefs' (detail = the tool). */
+  const PREFS_CACHE = 'helper.prefs.v1';
+  let prefStore = { email: null, data: {}, at: {}, dirty: {} };
+  try { const c = JSON.parse(localStorage.getItem(PREFS_CACHE) || 'null'); if (c && c.data) prefStore = { email: c.email || null, data: c.data, at: c.at || {}, dirty: c.dirty || {} }; } catch (_) { /* ignore */ }
+  const livePrefs = {};
+  const prefDefaults = {};
+  const savePrefCache = () => { try { localStorage.setItem(PREFS_CACHE, JSON.stringify(prefStore)); } catch (_) { /* ignore */ } };
+
+  /** legacy: the localStorage key the tool used before (or its old values), carried over once if the server has nothing yet. */
+  function prefs(ns, defaults = {}, legacy) {
+    if (livePrefs[ns]) return livePrefs[ns];
+    // First time on this device with the new storage: bring along what the tool used to keep only here.
+    if (!prefStore.data[ns] && legacy) {
+      try {
+        const old = typeof legacy === 'string' ? JSON.parse(localStorage.getItem(legacy) || 'null') : legacy;
+        if (old && typeof old === 'object') { prefStore.data[ns] = old; prefStore.at[ns] = 1; prefStore.dirty[ns] = true; savePrefCache(); }
+      } catch (_) { /* ignore */ }
+    }
+    prefDefaults[ns] = { ...defaults };
+    livePrefs[ns] = Object.assign({}, defaults, prefStore.data[ns] || {});
+    if (prefStore.dirty[ns]) schedulePrefFlush();
+    return livePrefs[ns];
+  }
+
+  function setLocal(ns, data, at, dirty) {
+    prefStore.data[ns] = data;
+    prefStore.at[ns] = at;
+    if (dirty) prefStore.dirty[ns] = true; else delete prefStore.dirty[ns];
+    if (livePrefs[ns]) {
+      for (const k of Object.keys(livePrefs[ns])) if (!(k in data) && !(k in prefDefaults[ns])) delete livePrefs[ns][k];
+      Object.assign(livePrefs[ns], prefDefaults[ns], data);
+    }
+  }
+
+  let prefsApplied = false;
+  function applyServerPrefs(email, server) {
+    if (prefsApplied) return;
+    prefsApplied = true;
+    if (prefStore.email && prefStore.email !== email) prefStore = { email, data: {}, at: {}, dirty: {} }; // someone else signed in here
+    prefStore.email = email;
+    for (const [ns, v] of Object.entries(server)) {
+      // The server wins unless this device has a newer change it hasn't sent yet.
+      if (prefStore.dirty[ns] && (prefStore.at[ns] || 0) > v.at) continue;
+      setLocal(ns, v.data, v.at, false);
+      window.dispatchEvent(new CustomEvent('helper:prefs', { detail: ns }));
+    }
+    savePrefCache();
+    schedulePrefFlush();
+  }
+
+  function savePrefs(ns, patch) {
+    if (!livePrefs[ns]) return;
+    if (patch) Object.assign(livePrefs[ns], patch);
+    setLocal(ns, { ...livePrefs[ns] }, Date.now(), true);
+    savePrefCache();
+    schedulePrefFlush();
+  }
+
+  let prefTimer;
+  function schedulePrefFlush() { clearTimeout(prefTimer); prefTimer = setTimeout(flushPrefs, 400); }
+  async function flushPrefs() {
+    if (!prefsApplied) return; // wait until we know who is signed in
+    for (const ns of Object.keys(prefStore.dirty)) {
+      try {
+        const r = await api('/api/prefs/' + ns, { method: 'PUT', body: { data: prefStore.data[ns], at: prefStore.at[ns] }, noRedirect: true });
+        if (r.stale) { setLocal(ns, r.data, r.at, false); window.dispatchEvent(new CustomEvent('helper:prefs', { detail: ns })); }
+        else delete prefStore.dirty[ns];
+        savePrefCache();
+      } catch (_) { return; } // offline or signed out: try again later
+    }
+  }
+  window.addEventListener('online', schedulePrefFlush);
 
   /** Call at the top of each app page: redirects to the hub sign-in when signed out. */
   async function requireLogin() {
@@ -137,7 +214,7 @@
   async function userMenu() {
     if (!confirm('להתנתק מהעוזר?')) return;
     await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
-    try { localStorage.removeItem('helper.me'); } catch (_) { /* ignore */ }
+    try { localStorage.removeItem('helper.me'); localStorage.removeItem(PREFS_CACHE); } catch (_) { /* ignore */ }
     location.href = '/';
   }
 
@@ -196,5 +273,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs };
 })();

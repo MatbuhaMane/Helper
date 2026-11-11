@@ -6,10 +6,9 @@
   'use strict';
   const { el, api, toast } = H;
   const THREE_URL = '/vendor/three.module.min.js'; // three@0.160.0, served with the app
-  const PREFS = 'helper.daemon.prefs';
-  let prefs = { speak: true };
-  try { prefs = { ...prefs, ...JSON.parse(localStorage.getItem(PREFS) || '{}') }; } catch (_) { /* ignore */ }
-  const savePrefs = () => { try { localStorage.setItem(PREFS, JSON.stringify(prefs)); } catch (_) { /* ignore */ } };
+  // Per person, synced through the server (the old per-device copy is carried over once). Where he stands stays per device.
+  const prefs = H.prefs('daemon', { speak: true }, 'helper.daemon.prefs');
+  const savePrefs = () => H.savePrefs('daemon');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let state = null; // { daemon, transcript, ai }

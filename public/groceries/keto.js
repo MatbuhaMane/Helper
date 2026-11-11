@@ -542,10 +542,61 @@
         el('span', { class: 't-carbs' }, `פ ${fmt(s.carbs)}`), el('span', { class: 't-fiber' }, `ס ${fmt(s.fiber)}`)));
   }
 
+  /* ================= מתכון: ערכים למנה לפי הדיאטה ================= */
+  const recipeValues = new Map(); // ingredients key -> Promise
+  function verdict(s) {
+    const st = state.settings;
+    const preset = M.presets[st.preset] || {};
+    const share = st.netCarbLimit ? s.net / st.netCarbLimit : 0;
+    if (preset.ratio) {
+      if (s.netRatio >= preset.ratio - 0.3 && share <= 0.4) return ['ok', `✓ מתאים ליחס ${preset.ratio}:1`];
+      if (s.netRatio >= preset.ratio - 1) return ['warn', `⚠ גבולי ליחס ${preset.ratio}:1`];
+      return ['bad', `✗ לא מתאים ליחס ${preset.ratio}:1`];
+    }
+    if (share <= 0.35 && s.pct.fat >= st.fatPct - 15) return ['ok', '✓ מתאים לדיאטה'];
+    if (share <= 0.6) return ['warn', '⚠ גבולי – כדאי מנה קטנה או תחליף לפחמימה'];
+    return ['bad', '✗ לא מתאים לקטו כמו שהוא'];
+  }
+
+  /** The ketosis pie at the top of a recipe (only when the switch is on). Values per serving, estimated once and cached. */
+  function recipePanel(recipe) {
+    if (!state.settings.enabled || !recipe?.ingredients?.length) return null;
+    const box = el('section', { class: 'keto-recipe', 'aria-live': 'polite' }, el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מחשב ערכי קטו למנה…'));
+    const ingredients = recipe.ingredients.filter((i) => i.name).map((i) => ({ name: i.name, measure: i.measure || '' }));
+    const key = JSON.stringify([recipe.meta?.servings || '', ingredients]);
+    if (!recipeValues.has(key)) {
+      const p = api('/api/keto/recipe', { body: { title: recipe.title, servings: recipe.meta?.servings || '', ingredients } });
+      p.catch(() => recipeValues.delete(key));
+      recipeValues.set(key, p);
+    }
+    recipeValues.get(key).then((v) => {
+      const s = M.summarize(v.per_serving);
+      const st = state.settings;
+      const [level, text] = verdict(s);
+      box.replaceChildren(
+        el('div', { class: 'kr-head' }, el('h4', {}, `ערכי קטו למנה (מתוך ${v.servings})`), el('span', { class: 'kr-verdict ' + level }, text)),
+        el('div', { class: 'kr-body' },
+          el('button', { class: 'pie-btn', 'aria-label': 'פירוט הערכים לפי מצרכים', onclick: () => showTotals('ערכים למנה', v.per_serving, v.items.map((i) => ({ ...i, grams: i.grams / v.servings, fat: i.fat / v.servings, protein: i.protein / v.servings, carbs: i.carbs / v.servings, fiber: i.fiber / v.servings }))), html: M.pieSvg(v.per_serving, 96, { ring: true }) }),
+          el('div', { class: 'kr-stats' },
+            el('div', {}, el('b', {}, `${fmt(s.net)} ג׳`), el('small', {}, `פחמימות נטו · ${fmt(st.netCarbLimit ? (s.net / st.netCarbLimit) * 100 : 0, 0)}% מהיעד היומי (${st.netCarbLimit})`)),
+            el('div', {}, el('b', {}, fmt(s.kcal, 0)), el('small', {}, 'קלוריות')),
+            el('div', {}, el('b', {}, M.fmtRatio(s.netRatio)), el('small', {}, 'יחס קטו נטו')),
+            el('div', { class: 'kr-macros' }, MACROS.map(([k, label]) => el('span', {}, el('i', { class: 'dot m-' + k }), `${label} ${fmt(s[k])} ג׳ (${fmt(s.pct[k], 0)}%)`))))),
+        el('div', { class: 'row' },
+          el('button', { class: 'btn ghost small', onclick: async () => {
+            await saveMeal({ at: Date.now(), name: recipe.title, status: 'eaten', items: v.items.map((i) => ({ name: i.name, grams: i.grams / v.servings, fat: i.fat / v.servings, protein: i.protein / v.servings, carbs: i.carbs / v.servings, fiber: i.fiber / v.servings })) });
+            toast(`מנה אחת של "${recipe.title}" נרשמה ביומן`);
+          } }, '🍽 אכלנו מנה – הוסף ליומן'),
+          el('small', { class: 'muted' }, 'הערכה לפי המצרכים והכמויות במתכון')));
+    }).catch((e) => box.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לחשב ערכי קטו למתכון: ' + e.message)));
+    return box;
+  }
+
   window.Keto = {
     ready,
     get enabled() { return !!state.settings.enabled; },
     annotate,
+    recipePanel,
     mount(node) { root = node; render(); },
     refresh,
   };

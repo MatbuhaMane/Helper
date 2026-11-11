@@ -191,6 +191,11 @@ CREATE TABLE IF NOT EXISTS keto_weights (
   kg    REAL NOT NULL,
   PRIMARY KEY (email, day)
 );
+CREATE TABLE IF NOT EXISTS recipe_nutrition (
+  key        TEXT PRIMARY KEY,   -- hash of the ingredients and servings
+  data       TEXT NOT NULL,      -- JSON {servings, items:[{name, grams, fat, protein, carbs, fiber}], total, per_serving}
+  created_at INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS foods (
   household  TEXT NOT NULL,      -- '' for shared estimates, a household id for that family's own corrections
   key        TEXT NOT NULL,      -- normalized name

@@ -32,13 +32,14 @@ For the user's request (often in Hebrew):
 1. Work out the dish and the cuisines it belongs to, then search in those cuisines' own languages as well as English and Hebrew.
    Examples: carbonara -> Italian ("spaghetti alla carbonara ricetta"), ramen -> Japanese ("ラーメン レシピ"), shakshuka -> Hebrew, Arabic, English;
    a general request like "chicken thighs" -> several languages and styles (Thai, Indian, French, Mexican, Persian, Georgian...).
-2. Use 3-6 searches. Prefer real recipe pages (a single recipe with ingredients and steps) from good cooking sites and well-known cooks,
+2. Use 2-4 searches. Prefer real recipe pages (a single recipe with ingredients and steps) from good cooking sites and well-known cooks,
    not listicles, category pages, videos only, or shops.
-3. Pick up to 12 distinct recipes, with a mix of countries and languages when the request allows it.
+3. Pick 8-12 distinct recipes when the web has them (fewer only if there truly aren't more), with a mix of countries and languages when the request allows it.
 
 Answer with ONLY a JSON object, no prose before or after:
 {"results":[{"url":"...","title":"title as on the page","title_he":"natural Hebrew name","site":"site or cook name","lang":"page language in Hebrew","country":"country of the dish/site in Hebrew","snippet_he":"one short Hebrew line on what is special about this version","relevance":0-100}]}
-Use only URLs that appeared in your search results. "relevance" is how well the page matches what was asked (an authentic, complete recipe of exactly that dish scores highest).`;
+Use only URLs that appeared in your search results. "relevance" is how well the page matches what was asked (an authentic, complete recipe of exactly that dish scores highest).
+List the results best first: they are shown to the family one by one as you write them.`;
 
 function normUrl(u: string) {
   try {
@@ -54,6 +55,15 @@ function extractJson(text: string): unknown {
   const end = text.lastIndexOf('}');
   if (start < 0 || end <= start) throw new HttpError(502, 'ai_bad_output');
   return JSON.parse(text.slice(start, end + 1));
+}
+
+/** A search hit worth showing while Claude is still choosing: a page on a site, not a video, a social post, a shop or a home page. */
+function looksLikeRecipePage(url: string) {
+  try {
+    const u = new URL(url);
+    if (/(^|\.)(youtube|youtu|facebook|instagram|tiktok|pinterest|twitter|x|amazon|reddit|wikipedia|quora)\./i.test(u.hostname + '.')) return false;
+    return u.pathname.replace(/\/+$/, '').length > 6;
+  } catch { return false; }
 }
 
 /** og:image of a page, quickly (a few hundred KB at most, a short timeout); null when it can't be had. */
@@ -89,7 +99,7 @@ export async function search(ctx: Ctx) {
   if (!ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });
-  const tools: BetaToolUnion[] = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 6 } as BetaToolUnion];
+  const tools: BetaToolUnion[] = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 } as BetaToolUnion];
   const messages: BetaMessageParam[] = [{ role: 'user', content: `Find recipes for: ${q}` }];
   const seen = new Map<string, { title: string; url: string }>();
   let text = '';
@@ -146,6 +156,170 @@ export async function search(ctx: Ctx) {
   return json({ results });
 }
 
+/**
+ * The same search, streamed as lines of JSON so the page can show each recipe the moment it is found:
+ *   {"type":"searching","query":"..."}        a web search Claude is running (for the progress line)
+ *   {"type":"result","result":{...}}          one recipe (Hebrew title, site, country, relevance)
+ *   {"type":"image","url":"...","image":"..."} its picture, once fetched
+ *   {"type":"done","cached":bool} | {"type":"error","error":"code"}
+ */
+export async function searchStream(ctx: Ctx) {
+  requireUser(ctx);
+  const q = (ctx.url.searchParams.get('q') || '').trim().replace(/\s+/g, ' ').slice(0, 120);
+  if (!q) throw new HttpError(400, 'Empty query');
+  const key = q.toLowerCase();
+  const fresh = ctx.url.searchParams.get('fresh') === '1';
+  const cached = fresh ? null : await ctx.env.DB.prepare('SELECT results, created_at FROM recipe_searches WHERE q = ?').bind(key).first<{ results: string; created_at: number }>();
+  const useCache = !!cached && Date.now() - cached.created_at < SEARCH_TTL;
+  if (!useCache && !ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
+
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = writable.getWriter();
+  const enc = new TextEncoder();
+  let open = true;
+  const send = (o: unknown) => { if (open) writer.write(enc.encode(JSON.stringify(o) + '\n')).catch(() => { open = false; }); };
+
+  const work = (async () => {
+    try {
+      if (useCache) {
+        for (const r of JSON.parse(cached!.results)) send({ type: 'result', result: r });
+        send({ type: 'done', cached: true });
+        return;
+      }
+      const results = await streamClaudeSearch(ctx, q, send);
+      if (results.length) {
+        await ctx.env.DB.prepare('INSERT INTO recipe_searches (q, results, created_at) VALUES (?, ?, ?) ON CONFLICT(q) DO UPDATE SET results = excluded.results, created_at = excluded.created_at')
+          .bind(key, JSON.stringify(results), Date.now()).run();
+      }
+      send({ type: 'done', cached: false, count: results.length });
+    } catch (err) {
+      console.error('recipe search stream failed', err instanceof Error ? err.message : err);
+      send({ type: 'error', error: err instanceof HttpError ? err.message : 'search_failed' });
+    } finally {
+      open = false;
+      writer.close().catch(() => {});
+    }
+  })();
+  ctx.waitUntil(work);
+  return new Response(readable, { headers: { 'content-type': 'application/x-ndjson; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
+}
+
+/** Runs the search with streaming and hands each finished result (and later its image) to `send` as soon as it exists. */
+async function streamClaudeSearch(ctx: Ctx, q: string, send: (o: unknown) => void): Promise<Result[]> {
+  const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });
+  const tools: BetaToolUnion[] = [{ type: 'web_search_20260209', name: 'web_search', max_uses: 4 } as BetaToolUnion];
+  const messages: BetaMessageParam[] = [{ role: 'user', content: `Find recipes for: ${q}` }];
+  const seen = new Map<string, string>();      // normalized url -> url as the search returned it
+  const found = new Map<string, Result>();
+  const images: Promise<void>[] = [];
+  const imageOf = new Map<string, Promise<string | null>>();
+  const ogImageOnce = (url: string) => {
+    const n = normUrl(url);
+    if (!imageOf.has(n)) imageOf.set(n, ogImage(url));
+    return imageOf.get(n)!;
+  };
+
+  // A tiny scanner over the JSON answer as it streams in: every object directly inside "results" is emitted once it closes.
+  let text = '', i = 0, depth = 0, inStr = false, esc = false, objStart = -1, started = false;
+  const scan = () => {
+    if (!started) {
+      const at = text.indexOf('"results"');
+      if (at < 0) return;
+      started = true;
+      i = at;
+      depth = 1; // inside the outer object
+    }
+    for (; i < text.length; i++) {
+      const c = text[i];
+      if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') { inStr = true; continue; }
+      if (c === '{') { depth++; if (depth === 2) objStart = i; }
+      else if (c === '}') {
+        if (depth === 2 && objStart >= 0) {
+          try { emit(JSON.parse(text.slice(objStart, i + 1))); } catch { /* not a whole result */ }
+          objStart = -1;
+        }
+        depth--;
+      }
+    }
+  };
+  const emit = (raw: unknown) => {
+    const p = Result.safeParse(raw);
+    if (!p.success) return;
+    const n = normUrl(p.data.url);
+    if ((seen.size && !seen.has(n)) || found.has(n)) return; // only pages the search really returned, each once
+    const r: Result = { ...p.data, url: seen.get(n) || p.data.url, relevance: Math.max(0, Math.min(100, Math.round(p.data.relevance))) };
+    found.set(n, r);
+    send({ type: 'result', result: r });
+    // The picture of a page that was already shown as a raw hit is fetched only once.
+    images.push(ogImageOnce(r.url).then((img) => { r.image = img; if (img) send({ type: 'image', url: r.url, image: img }); }));
+  };
+
+  // Raw search hits are shown at once (original title, picture) while Claude is still choosing; the ranked list replaces them.
+  const hits = new Set<string>();
+  const hit = (url: string, title: string) => {
+    const n = normUrl(url);
+    if (hits.has(n) || found.has(n) || hits.size >= 14 || !looksLikeRecipePage(url)) return;
+    hits.add(n);
+    let site = '';
+    try { site = new URL(url).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
+    send({ type: 'hit', hit: { url, title: String(title || site).slice(0, 200), site } });
+    images.push(ogImageOnce(url).then((img) => { if (img) send({ type: 'image', url, image: img }); }));
+  };
+
+  for (let round = 0; round < 4; round++) {
+    let toolInput = '';
+    let inTool = false;
+    const stream = client.beta.messages.stream({
+      model: SEARCH_MODEL,
+      max_tokens: 8000,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default',
+      output_config: { effort: 'low' },
+      system: SEARCH_SYSTEM,
+      tools,
+      messages,
+    } as any);
+    try {
+      for await (const ev of stream as AsyncIterable<any>) {
+        if (ev.type === 'content_block_start') {
+          const b = ev.content_block;
+          inTool = b.type === 'server_tool_use' && b.name === 'web_search';
+          toolInput = '';
+          if (inTool && b.input?.query) { send({ type: 'searching', query: b.input.query }); inTool = false; }
+          if (b.type === 'web_search_tool_result' && Array.isArray(b.content)) {
+            for (const r of b.content) {
+              if (!r.url) continue;
+              seen.set(normUrl(r.url), r.url);
+              hit(r.url, r.title);
+            }
+          }
+        } else if (ev.type === 'content_block_delta') {
+          if (ev.delta.type === 'input_json_delta') toolInput += ev.delta.partial_json;
+          else if (ev.delta.type === 'text_delta') { text += ev.delta.text; scan(); }
+        } else if (ev.type === 'content_block_stop' && inTool) {
+          try { const query = JSON.parse(toolInput || '{}').query; if (query) send({ type: 'searching', query }); } catch { /* ignore */ }
+          inTool = false;
+        }
+      }
+    } catch (err) {
+      if (err instanceof Anthropic.AuthenticationError) throw new HttpError(503, 'claude_key_invalid');
+      if (err instanceof Anthropic.RateLimitError) throw new HttpError(429, 'ai_busy');
+      throw err;
+    }
+    const final = await stream.finalMessage();
+    if (final.stop_reason !== 'pause_turn') break;
+    messages.push({ role: 'assistant', content: final.content as any });
+  }
+
+  // If the answer wasn't scannable as it streamed, read it whole.
+  if (!found.size && text) {
+    try { for (const r of (extractJson(text) as any).results || []) emit(r); } catch { /* nothing usable */ }
+  }
+  await Promise.race([Promise.all(images), new Promise((r) => setTimeout(r, 6000))]);
+  return [...found.values()].sort((a, b) => b.relevance - a.relevance);
+}
+
 const Translated = z.object({
   found: z.boolean(),
   title_he: z.string(),
@@ -187,7 +361,7 @@ export async function open(ctx: Ctx) {
     material = `Page title: ${art?.title || ''}\n\n${(art?.textContent || '').replace(/\s+\n/g, '\n').slice(0, 28000)}`;
     if (material.length < 250) throw new HttpError(422, 'no_recipe_found');
   }
-  const t = await aiJson(ctx.env, { prefer: 'gemini', system: TRANSLATE_SYSTEM, prompt: `Recipe page: ${url}\n\n${material}`, schema: Translated });
+  const t = await aiJson(ctx.env, { prefer: 'gemini', fast: true, effort: 'low', system: TRANSLATE_SYSTEM, prompt: `Recipe page: ${url}\n\n${material}`, schema: Translated });
   if (!t.found || !t.ingredients.length) throw new HttpError(422, 'no_recipe_found');
 
   let host = '';

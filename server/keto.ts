@@ -4,7 +4,7 @@
 
 import { z } from 'zod';
 import { aiJson } from './ai';
-import { Ctx, HttpError, body, json, requireUser, uid } from './core';
+import { Ctx, HttpError, body, json, requireUser, sha1Hex, uid } from './core';
 import { normalizeName } from './kitchen';
 
 const Settings = z.object({
@@ -167,6 +167,52 @@ export async function estimateFoods(ctx: Ctx) {
     if (stmts.length) await ctx.env.DB.batch(stmts);
   }
   return json({ foods: [...byKey].map(([k, n]) => ({ ...(known.get(k) || { key: k, name: n, fat: 0, protein: 0, carbs: 0, fiber: 0, unit_g: null, is_food: false, source: 'none' }), asked: n })) });
+}
+
+/* ---------------- a whole recipe ---------------- */
+
+const RecipeEstimate = z.object({
+  servings: z.number(),
+  items: z.array(z.object({ name: z.string(), grams: z.number(), fat: z.number(), protein: z.number(), carbs: z.number(), fiber: z.number() })),
+});
+
+const RECIPE_SYSTEM = `You estimate the nutrition of a recipe for someone on a ketogenic diet.
+For every ingredient, work out how many grams the recipe uses (convert cups, spoons, units: one egg 55 g, one onion 110 g, a clove of garlic 4 g, a tablespoon of oil 13 g)
+and give fat, protein, carbs (TOTAL carbohydrates including fiber) and fiber in grams FOR THAT AMOUNT (not per 100 g), as usually bought and eaten.
+Ingredients "to taste" (salt, pepper) or water count as 0. Pasta, rice and grains: use the dry weight given.
+servings: how many servings the recipe makes (from the text given, or your best estimate from the amounts; at least 1).
+Keep each "name" as given, in the same order.`;
+
+/** Values per serving for a recipe (cached by its ingredients), for the ketosis pie at the top of a recipe. */
+export async function recipeNutrition(ctx: Ctx) {
+  requireUser(ctx);
+  const b = await body<{ title?: string; servings?: string; ingredients: { name: string; measure: string }[] }>(ctx.req);
+  const ingredients = (Array.isArray(b.ingredients) ? b.ingredients : []).map((i) => ({ name: String(i.name || '').trim().slice(0, 160), measure: String(i.measure || '').trim().slice(0, 60) })).filter((i) => i.name).slice(0, 60);
+  if (!ingredients.length) throw new HttpError(400, 'No ingredients');
+  const key = await sha1Hex(JSON.stringify({ s: (b.servings || '').trim(), i: ingredients }));
+  const hit = await ctx.env.DB.prepare('SELECT data FROM recipe_nutrition WHERE key = ?').bind(key).first<{ data: string }>();
+  if (hit) return json(JSON.parse(hit.data));
+
+  const est = await aiJson(ctx.env, {
+    prefer: 'gemini',
+    system: RECIPE_SYSTEM,
+    prompt: `Recipe: ${(b.title || '').slice(0, 200)}\nServings stated: ${(b.servings || 'not stated').slice(0, 60)}\nIngredients:\n${ingredients.map((i, n) => `${n + 1}. ${i.measure ? i.measure + ' ' : ''}${i.name}`).join('\n')}`,
+    schema: RecipeEstimate,
+  });
+  const clamp = (n: number) => Math.max(0, Math.min(5000, round1(Number(n) || 0)));
+  const items = est.items.slice(0, ingredients.length).map((x, n) => ({
+    name: ingredients[n]?.name || x.name, grams: clamp(x.grams), fat: clamp(x.fat), protein: clamp(x.protein), carbs: clamp(x.carbs), fiber: Math.min(clamp(x.fiber), clamp(x.carbs)),
+  }));
+  const total = items.reduce((s, x) => ({ fat: s.fat + x.fat, protein: s.protein + x.protein, carbs: s.carbs + x.carbs, fiber: s.fiber + x.fiber }), { fat: 0, protein: 0, carbs: 0, fiber: 0 });
+  const servings = Math.max(1, Math.min(50, Math.round(est.servings) || 1));
+  const per = (v: number) => round1(v / servings);
+  const data = {
+    servings, items,
+    total: { fat: round1(total.fat), protein: round1(total.protein), carbs: round1(total.carbs), fiber: round1(total.fiber) },
+    per_serving: { fat: per(total.fat), protein: per(total.protein), carbs: per(total.carbs), fiber: per(total.fiber) },
+  };
+  await ctx.env.DB.prepare('INSERT INTO recipe_nutrition (key, data, created_at) VALUES (?, ?, ?) ON CONFLICT(key) DO NOTHING').bind(key, JSON.stringify(data), Date.now()).run();
+  return json(data);
 }
 
 const FoodInput = z.object({

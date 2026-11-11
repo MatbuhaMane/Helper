@@ -1,0 +1,30 @@
+/* The shared sheet: a card (a recipe, an article) flips over and grows to fill the page; closing flips it back into the card.
+   Slow and soft on purpose (about a second, gentle easing, deep perspective); with reduced motion it simply opens. */
+.rsheet { position: fixed; inset: 0; z-index: 40; perspective: 1800px; }
+.rsheet[hidden] { display: none; }
+.rs-shade { position: absolute; inset: 0; background: rgba(46, 42, 30, .34); opacity: 0; transition: opacity 420ms var(--ease-river); }
+.rsheet.open .rs-shade { opacity: 1; }
+.rs-flip { position: absolute; inset-inline-start: var(--x, 0); inset-block-start: var(--y, 0); inline-size: var(--w, 100vw); block-size: var(--h, 100dvh);
+  transform-style: preserve-3d; transform: rotateY(0deg);
+  transition: inset-inline-start 560ms var(--ease-river), inset-block-start 560ms var(--ease-river), inline-size 560ms var(--ease-river), block-size 560ms var(--ease-river), transform 560ms var(--ease-river); }
+.rsheet.open .rs-flip { inset-inline-start: 0; inset-block-start: 0; inline-size: 100%; block-size: 100dvh; transform: rotateY(180deg); }
+.rsheet.instant .rs-flip, .rsheet.instant .rs-shade { transition: none; }
+.rs-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius); overflow: hidden; }
+.rs-front { background: var(--card); }
+.rs-front > * { inline-size: 100%; block-size: 100%; margin: 0; pointer-events: none; }
+.rs-back { transform: rotateY(180deg); background: var(--card); display: flex; flex-direction: column; border-radius: 0; }
+.rsheet:not(.open) .rs-back { border-radius: var(--radius); }
+.rs-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 22px max(16px, calc((100vw - 760px) / 2)) calc(40px + env(safe-area-inset-bottom)); }
+.rs-close { position: fixed; inset-block-start: 12px; inset-inline-end: 12px; z-index: 2; box-shadow: var(--lift); }
+.rs-body > h3:first-child { padding-inline-end: 48px; }
+body.sheet-open { overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .rs-flip, .rs-shade { transition: none !important; } }
+/* softer, slower */
+.rsheet { perspective: 2600px; }
+.rs-shade { transition: opacity 900ms cubic-bezier(.4, 0, .2, 1); }
+.rs-flip { transition: inset-inline-start 1050ms cubic-bezier(.45, .05, .2, 1), inset-block-start 1050ms cubic-bezier(.45, .05, .2, 1),
+  inline-size 1050ms cubic-bezier(.45, .05, .2, 1), block-size 1050ms cubic-bezier(.45, .05, .2, 1), transform 1050ms cubic-bezier(.45, .05, .2, 1); }
+.rs-face { box-shadow: 0 18px 50px rgba(46, 42, 30, .18); }
+.rs-body { opacity: 0; transition: opacity 500ms ease 0ms; }
+.rsheet.open .rs-body { opacity: 1; transition: opacity 650ms ease 520ms; }
+.rsheet.instant .rs-body { transition: none; opacity: 1; }

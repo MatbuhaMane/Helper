@@ -3,33 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0f766e">
+  <meta name="theme-color" content="#efeee6">
   <title>חדשות</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/sheet.css">
   <link rel="stylesheet" href="news.css">
 </head>
 <body class="news">
   <div class="shell">
     <aside id="side" class="side" aria-label="מקורות" data-guide="sources" data-guide-label="מקורות החדשות"></aside>
-    <section class="listpane" aria-label="כתבות">
-      <div class="listbar">
-        <button id="menuBtn" class="mini" aria-label="מקורות">☰</button>
-        <strong id="listTitle">כל הכתבות</strong>
-        <span class="spacer"></span>
-        <label class="toggle"><input type="checkbox" id="unreadOnly"> רק לא נקראו</label>
-        <button id="viewBtn" class="mini" title="תצוגת כרטיסים / רשימה" aria-label="שנה תצוגה">▦</button>
-        <button id="markAll" class="mini" title="סמן הכל כנקרא" aria-label="סמן הכל כנקרא">✓✓</button>
-        <button id="refresh" class="mini" title="רענון" aria-label="רענון">⟳</button>
+    <div id="sideShade" class="side-shade" hidden></div>
+
+    <section class="paperpane" aria-label="כתבות">
+      <header class="masthead">
+        <button id="menuBtn" class="mini" aria-label="מקורות וסינון" aria-controls="side" aria-expanded="false">☰</button>
+        <div class="mast">
+          <div class="mast-date" id="mastDate"></div>
+          <h2 id="mastTitle">כל הכתבות</h2>
+          <div class="mast-sub" id="mastSub"></div>
+        </div>
+        <div class="mast-tools">
+          <button id="markAll" class="mini" title="סמן את הכתבות שבסינון כנקראו" aria-label="סמן הכל כנקרא">✓✓</button>
+          <button id="refresh" class="mini" title="רענון" aria-label="רענון">⟳</button>
+        </div>
+      </header>
+
+      <div class="searchbar" role="search" data-guide="news-search" data-guide-label="חיפוש בחדשות">
+        <svg class="s-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+        <input id="q" type="search" placeholder="חיפוש בכתבות… (נושא, שם, מקום)" aria-label="חיפוש בכתבות" autocomplete="off">
+        <label class="hist-switch" title="חיפוש גם בכתבות מהעבר (עד 120 יום)">
+          <input id="histSw" type="checkbox" role="switch"><span class="slider" aria-hidden="true"></span><span>בעבר</span>
+        </label>
       </div>
-      <div id="items" class="items" data-guide="articles" data-guide-label="רשימת הכתבות"></div>
+
+      <div id="filters" class="filters" aria-label="סינון כתבות"></div>
+
+      <div id="book" class="book" data-guide="articles" data-guide-label="עמוד הכתבות" aria-live="polite"></div>
+
+      <nav class="pager" aria-label="דפדוף">
+        <button id="prevPage" class="turn" aria-label="לעמוד הקודם">›</button>
+        <span id="pageNo" class="page-no"></span>
+        <button id="nextPage" class="turn" aria-label="לעמוד הבא">‹</button>
+      </nav>
     </section>
-    <article id="reader" class="reader" aria-live="polite" data-guide="reader" data-guide-label="הכתבה הפתוחה">
-      <div class="reader-empty">בחרו כתבה כדי לקרוא אותה כאן<br><small>מקשים: j/k – הבא/הקודם, s – שמור, o – פתח באתר</small></div>
-    </article>
   </div>
   <script src="/assets/common.js"></script>
+  <script src="/assets/sheet.js"></script>
   <script src="news.js"></script>
 </body>
 </html>

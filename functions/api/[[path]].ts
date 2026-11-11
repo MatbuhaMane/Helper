@@ -127,6 +127,8 @@ route('GET', '/api/news/starred', news.starredItems);
 route('POST', '/api/news/state', news.setState);
 route('GET', '/api/news/article', news.article);
 route('POST', '/api/news/summary', news.summarize);
+route('POST', '/api/news/translate', news.translate);
+route('GET', '/api/news/search', news.searchHistory);
 
 /* mail organizer */
 route('GET', '/api/mail/status', mail.mailStatus);

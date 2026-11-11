@@ -361,8 +361,11 @@
     const root = el('div', { class: 'rsheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }, el('div', { class: 'rs-shade' }), flip);
     document.body.append(root);
     let origin = null, onLeave = null, closing = false;
+    // Where the card is, in logical terms: --x is its distance from the start edge (the right, in Hebrew).
     const place = (r) => {
-      flip.style.setProperty('--x', r.left + 'px'); flip.style.setProperty('--y', r.top + 'px');
+      const rtl = getComputedStyle(document.documentElement).direction === 'rtl';
+      flip.style.setProperty('--x', (rtl ? document.documentElement.clientWidth - r.right : r.left) + 'px');
+      flip.style.setProperty('--y', r.top + 'px');
       flip.style.setProperty('--w', r.width + 'px'); flip.style.setProperty('--h', r.height + 'px');
     };
     const leave = () => { const f = onLeave; onLeave = null; if (f) f(); };

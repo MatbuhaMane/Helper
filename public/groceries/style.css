@@ -234,10 +234,10 @@ textarea.r-title-input:focus, textarea.r-sub-input:focus { box-shadow: none; bor
 .rsheet[hidden] { display: none; }
 .rs-shade { position: absolute; inset: 0; background: rgba(46, 42, 30, .34); opacity: 0; transition: opacity 420ms var(--ease-river); }
 .rsheet.open .rs-shade { opacity: 1; }
-.rs-flip { position: absolute; inset-inline-start: auto; left: var(--x, 0); top: var(--y, 0); width: var(--w, 100vw); height: var(--h, 100dvh);
+.rs-flip { position: absolute; inset-inline-start: var(--x, 0); inset-block-start: var(--y, 0); inline-size: var(--w, 100vw); block-size: var(--h, 100dvh);
   transform-style: preserve-3d; transform: rotateY(0deg);
-  transition: left 560ms var(--ease-river), top 560ms var(--ease-river), width 560ms var(--ease-river), height 560ms var(--ease-river), transform 560ms var(--ease-river); }
-.rsheet.open .rs-flip { left: 0; top: 0; width: 100vw; height: 100dvh; transform: rotateY(180deg); }
+  transition: inset-inline-start 560ms var(--ease-river), inset-block-start 560ms var(--ease-river), inline-size 560ms var(--ease-river), block-size 560ms var(--ease-river), transform 560ms var(--ease-river); }
+.rsheet.open .rs-flip { inset-inline-start: 0; inset-block-start: 0; inline-size: 100%; block-size: 100dvh; transform: rotateY(180deg); }
 .rsheet.instant .rs-flip, .rsheet.instant .rs-shade { transition: none; }
 .rs-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius); overflow: hidden; }
 .rs-front { background: var(--card); }

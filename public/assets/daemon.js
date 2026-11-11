@@ -658,6 +658,7 @@
       rig.rotation.y = facing + k * Math.PI * 4;
     }
     tickSparks(dt);
+    voiceBeat();
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
@@ -947,10 +948,11 @@
     input = el('input', { type: 'text', placeholder: 'מה תרצו לעשות?', 'aria-label': 'הודעה לעוזר' });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) send(input.value); if (e.key === 'Escape') closeBalloon(); });
     micBtn = el('button', { class: 'mini', title: 'דיבור', 'aria-label': 'דיבור', onclick: toggleMic }, svg('mic'));
-    spkBtn = el('button', { class: 'mini', title: 'הקראה בקול', 'aria-label': 'הקראה בקול', 'aria-pressed': String(prefs.speak), onclick: () => { prefs.speak = !prefs.speak; savePrefs(); spkBtn.setAttribute('aria-pressed', String(prefs.speak)); spkBtn.replaceChildren(svg(prefs.speak ? 'speaker' : 'mute')); if (!prefs.speak) speechSynthesis?.cancel(); } }, svg(prefs.speak ? 'speaker' : 'mute'));
+    spkBtn = el('button', { class: 'mini', title: 'הקראה בקול', 'aria-label': 'הקראה בקול', 'aria-pressed': String(prefs.speak), onclick: () => { prefs.speak = !prefs.speak; savePrefs(); spkBtn.setAttribute('aria-pressed', String(prefs.speak)); spkBtn.replaceChildren(svg(prefs.speak ? 'speaker' : 'mute')); if (!prefs.speak) stopSpeech(); } }, svg(prefs.speak ? 'speaker' : 'mute'));
     nameEl = el('b');
     balloon = el('div', { class: 'dm-balloon', hidden: true, role: 'dialog', 'aria-label': 'שיחה עם העוזר' },
       el('div', { class: 'dm-bhead' }, nameEl, el('span', { class: 'spacer' }),
+        el('button', { class: 'mini', title: 'בחירת קול', 'aria-label': 'בחירת קול', onclick: () => openVoicePicker() }, svg('voice')),
         el('button', { class: 'mini', title: 'כל השיחה', 'aria-label': 'כל השיחה', onclick: () => togglePanel() }, svg('list')),
         el('button', { class: 'mini', title: 'סגירה', 'aria-label': 'סגירה', onclick: closeBalloon }, svg('x'))),
       balloonText, balloonActs,
@@ -1003,6 +1005,8 @@
       list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
       x: '<path d="M6 6l12 12M18 6 6 18"/>',
       reset: '<path d="M4 4v6h6"/><path d="M5 15a8 8 0 1 0 2-8.5L4 10"/>',
+      voice: '<path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4"/>',
+      play: '<path d="M8 5.5v13l10-6.5z"/>',
     };
     const t = document.createElement('template');
     t.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${P[name]}</svg>`;
@@ -1043,8 +1047,63 @@
     placeBalloon();
   }
 
-  function speak(text) {
-    if (!prefs.speak || !('speechSynthesis' in window) || !text) return;
+  /* His voice: a trained Hebrew voice from the server (Google Cloud Text-to-Speech, the person's choice), with the
+     browser's own voice as the fallback. The audio's loudness drives his mouth and head (the same "voice" beat). */
+  let speechSeq = 0, audioEl = null, audioCtx = null, analyser = null, levels = null, cloudVoice = true;
+  function stopSpeech() {
+    speechSeq++;
+    if (audioEl) { audioEl.pause(); audioEl = null; }
+    try { speechSynthesis?.cancel(); } catch (_) { /* ignore */ }
+  }
+  async function speak(text, voiceName) {
+    if (!text || (!prefs.speak && !voiceName)) return;
+    stopSpeech();
+    const mine = speechSeq;
+    if (cloudVoice) {
+      try {
+        const r = await fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, voice: voiceName || undefined }) });
+        if (r.status === 503) cloudVoice = false;          // no voice service set up: the browser's voice from now on
+        if (!r.ok) throw new Error('voice ' + r.status);
+        const blob = await r.blob();
+        if (mine !== speechSeq) return;
+        await playAudio(URL.createObjectURL(blob), mine);
+        return;
+      } catch (e) {
+        console.warn('cloud voice unavailable, using the browser voice', e);
+        if (mine !== speechSeq) return;
+      }
+    }
+    browserSpeak(text);
+  }
+  async function playAudio(url, mine) {
+    const a = new Audio(url);
+    a.crossOrigin = 'anonymous';
+    audioEl = a;
+    try {
+      audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      const src = audioCtx.createMediaElementSource(a);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      levels = new Uint8Array(analyser.fftSize);
+      src.connect(analyser); analyser.connect(audioCtx.destination);
+    } catch (_) { analyser = null; }
+    a.onended = () => { if (audioEl === a) audioEl = null; URL.revokeObjectURL(url); };
+    if (mine !== speechSeq) return;
+    await a.play();
+  }
+  /** Called every frame: while audio plays, its loudness makes the speaking beats. */
+  function voiceBeat() {
+    if (!audioEl || audioEl.paused) return;
+    if (analyser) {
+      analyser.getByteTimeDomainData(levels);
+      let sum = 0;
+      for (let i = 0; i < levels.length; i++) { const v = (levels[i] - 128) / 128; sum += v * v; }
+      if (Math.sqrt(sum / levels.length) > 0.06) { voice = 1; voiceT = performance.now() + 90; }
+    } else if (Math.random() < 0.25) { voice = 1; voiceT = performance.now() + 110; }
+  }
+  function browserSpeak(text) {
+    if (!('speechSynthesis' in window)) return;
     const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/https?:\/\/\S+/g, '');
     const u = new SpeechSynthesisUtterance(clean);
     const hebrew = /[֐-׿]/.test(clean);
@@ -1055,8 +1114,42 @@
     u.rate = 1.02;
     const beat = () => { voice = 1; voiceT = performance.now() + 110; };
     u.onboundary = beat; u.onstart = beat;
-    speechSynthesis.cancel();
     speechSynthesis.speak(u);
+  }
+
+  /* Choosing his voice: the trained Hebrew voices, each with a sample; the choice is saved to the person's account. */
+  const SAMPLE = 'שלום, אני אבן עזרא. במה אוכל לעזור לכם היום?';
+  async function openVoicePicker() {
+    const list = el('div', { class: 'dm-voices' }, el('p', { class: 'muted' }, 'טוען קולות…'));
+    H.modal(el('h2', {}, 'הקול של ראב"ע'), el('p', { class: 'muted' }, 'קולות עבריים מאומנים. לחצו ▶ כדי לשמוע, ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
+    let data, mine;
+    try {
+      [data, mine] = await Promise.all([fetch('/api/voice/voices').then((r) => r.json()), H.api('/api/voice/pref').catch(() => ({}))]);
+    } catch (_) { data = { voices: [] }; }
+    list.replaceChildren();
+    if (!data.voices?.length) {
+      list.append(el('p', {}, 'שירות הקולות עדיין לא זמין, אז הוא מדבר בקול של הדפדפן.'));
+      return;
+    }
+    const current = mine?.voice || data.default;
+    const groups = [['male', 'קולות גבריים'], ['female', 'קולות נשיים'], ['neutral', 'קולות נוספים']];
+    for (const [g, title] of groups) {
+      const vs = data.voices.filter((v) => v.gender === g);
+      if (!vs.length) continue;
+      list.append(el('h3', {}, title));
+      for (const v of vs) {
+        const pick = el('button', { class: 'btn small' + (v.name === current ? ' primary' : ''), onclick: async () => {
+          await H.api('/api/voice/pref', { method: 'PUT', body: { voice: v.name } });
+          list.querySelectorAll('.dm-voice .btn.small:not(.play)').forEach((b) => { b.classList.remove('primary'); b.textContent = 'בחירה'; });
+          pick.classList.add('primary'); pick.textContent = 'נבחר';
+          H.toast(`ראב"ע ידבר עכשיו בקול ${v.label}`);
+        } }, v.name === current ? 'נבחר' : 'בחירה');
+        list.append(el('div', { class: 'dm-voice' },
+          el('button', { class: 'btn small play', 'aria-label': `השמעת דוגמה: ${v.label}`, onclick: () => speak(SAMPLE, v.name) }, svg('play')),
+          el('span', { class: 'name' }, v.label, v.hd ? el('small', {}, ' HD') : ''),
+          pick));
+      }
+    }
   }
 
   const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1070,7 +1163,7 @@
     rec.onresult = (e) => { input.value = [...e.results].map((r) => r[0].transcript).join(''); };
     rec.onend = () => { micBtn.classList.remove('on'); const t = input.value.trim(); rec = null; if (t) send(t); };
     rec.onerror = () => { micBtn.classList.remove('on'); rec = null; };
-    speechSynthesis?.cancel();
+    stopSpeech();
     micBtn.classList.add('on');
     setMood('curious', 3);
     rec.start();

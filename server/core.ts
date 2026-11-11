@@ -14,6 +14,8 @@ export interface Env {
   DEV_MODE?: string;            // "1" only for local development: enables /api/auth/dev and the mock URLs below
   ANTHROPIC_BASE_URL?: string;  // dev/test only: point the Claude client at a mock
   GEMINI_BASE_URL?: string;     // dev/test only
+  GOOGLE_TTS_KEY?: string;      // optional: a Google Cloud key for Text-to-Speech (else the Gemini key is used)
+  TTS_BASE_URL?: string;        // dev/test only
 }
 
 export interface Member {

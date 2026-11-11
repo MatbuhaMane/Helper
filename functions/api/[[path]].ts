@@ -6,6 +6,7 @@ import * as daemon from '../../server/daemon';
 import * as kitchen from '../../server/kitchen';
 import * as mail from '../../server/mail';
 import * as news from '../../server/news';
+import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
@@ -65,6 +66,12 @@ route('GET', '/api/daemon', daemon.getDaemon);
 route('POST', '/api/daemon/chat', daemon.chat);
 route('POST', '/api/daemon/reset', daemon.resetChat);
 route('GET', '/api/daemon/form/:slug', daemon.formImage);
+
+/* his voice */
+route('GET', '/api/voice/voices', voice.listVoices);
+route('GET', '/api/voice/pref', voice.getPref);
+route('PUT', '/api/voice/pref', voice.setPref);
+route('POST', '/api/voice/say', voice.say);
 
 /* groceries & recipes */
 route('GET', '/api/groceries', kitchen.listGroceries);

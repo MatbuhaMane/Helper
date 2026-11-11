@@ -129,3 +129,16 @@ CREATE TABLE IF NOT EXISTS desktop_codes (
   sid        TEXT,
   created_at INTEGER NOT NULL
 );
+
+-- his voice: each person's chosen Hebrew voice, and a daily allowance of spoken characters
+CREATE TABLE IF NOT EXISTS voice_prefs (
+  email TEXT PRIMARY KEY,
+  voice TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tts_quota (
+  email TEXT NOT NULL,
+  day TEXT NOT NULL,
+  chars INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, day)
+);

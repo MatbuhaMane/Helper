@@ -529,7 +529,7 @@
         finger.x = dragging.x; finger.y = dragging.y;
       }
       stepRag(dt);
-      if (rag && rag.state !== 'rise') {
+      if (rag && rag.state !== 'rise' && rag.state !== 'asleep') {
         // the canvas follows the heap of him
         let cx = 0, cy = 0, n = 0;
         for (const q of Object.values(rag.p)) { cx += q.x; cy += q.y; n++; }
@@ -836,6 +836,7 @@
     rag.gap = best === 'top' ? HANG_GAP : 10;          // hang a little below the finger, so it never covers him
     rag.state = 'held';
     rag.t = 0;
+    rag.sleepT = 0;
   }
   function stepRag(dt) {
     const R = rag, P = R.p, floor = bottomLimit(), right = W();
@@ -844,7 +845,12 @@
     const bad = Object.values(P).some((q) => !Number.isFinite(q.x) || !Number.isFinite(q.y));
     if (bad || (R.state !== 'held' && R.t > 12)) { rag = null; dragging = null; pos = homeSpot(); rememberSpot(); return; }
     if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / (R.gentle ? 0.4 : 0.9)); if (R.blend === 0) endRag(); return; }
-    const sub = 3, h = dt / sub, g = 2600;
+    if (R.state === 'asleep') {                       // at rest: no more physics, no more jitter; then he gets up
+      R.sleepT += dt;
+      if (R.sleepT > 0.6) { R.state = 'rise'; pos = clampPos({ x: P.Hips.x, y: floor }); }
+      return;
+    }
+    const sub = 4, h = dt / sub, g = 2600;
     for (let s_ = 0; s_ < sub; s_++) {
       for (const [k, q] of Object.entries(P)) {
         if (R.state === 'held' && k === R.pin) { q.px = q.x; q.py = q.y; q.x = finger.x; q.y = finger.y + R.gap; continue; }
@@ -852,6 +858,7 @@
         q.px = q.x; q.py = q.y;
         q.x += vx; q.y += vy + g * h * h;
       }
+      jointLimits(R);
       for (let it = 0; it < 10; it++) {
         for (const [a, b, len, stiff, isMin] of R.cons) {
           const A = P[a], B = P[b];
@@ -893,10 +900,41 @@
       let vmax = 0;
       for (const q of Object.values(P)) vmax = Math.max(vmax, Math.hypot(q.x - q.px, q.y - q.py) / h);
       R.still = vmax < 70 ? R.still + dt : Math.max(0, R.still - dt * 2);
+      if (vmax < 25 && R.still > 0.15 && R.t > 0.4) {   // nearly still: go to sleep (freeze) until he gets up
+        for (const q of Object.values(P)) { q.px = q.x; q.py = q.y; }
+        R.state = 'asleep'; R.sleepT = 0;
+      }
       if (R.still > 0.45 || R.t > 4) {                  // lies there a moment, then picks himself up
         R.state = 'rise';
         pos = clampPos({ x: P.Hips.x, y: floor });
       }
+    }
+  }
+  /* Joint limits and soft muscles (an "active ragdoll"): each limb keeps within a natural range of its parent
+     (knees and elbows can't fold back on themselves, the neck can't flop over), and is gently pulled toward the pose
+     he had, so he falls like a person and not like a wet noodle. */
+  const JOINT = {   // bone: [how far it may turn from its natural angle (rad), muscle strength per step]
+    Head: [0.55, 0.12], LeftArm: [2.4, 0.015], RightArm: [2.4, 0.015], LeftForeArm: [1.7, 0.03], RightForeArm: [1.7, 0.03],
+    LeftUpLeg: [1.1, 0.03], RightUpLeg: [1.1, 0.03], LeftLeg: [0.8, 0.06], RightLeg: [0.8, 0.06],
+  };
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  function jointLimits(R) {
+    const P = R.p, ang = {};
+    for (const [bone, a, b, parent] of RSEG) {
+      ang[bone] = Math.atan2(P[b].y - P[a].y, P[b].x - P[a].x);
+      if (!parent || !JOINT[bone]) continue;
+      if (R.state === 'held' && b === R.pin) continue;      // the joint being held goes where the finger takes it
+      const [lim, mus] = JOINT[bone];
+      const restRel = wrap(R.rest[bone] - R.rest[parent]);
+      const err = wrap(ang[bone] - ang[parent] - restRel);
+      const want = Math.max(-lim, Math.min(lim, err * (1 - mus)));
+      const turn = want - err;
+      if (Math.abs(turn) < 1e-5) continue;
+      // swing the limb's far end around its joint (keeps the bone's length)
+      const A = P[a], B = P[b], c = Math.cos(turn), sn = Math.sin(turn);
+      const dx = B.x - A.x, dy = B.y - A.y;
+      B.x = A.x + dx * c - dy * sn; B.y = A.y + dx * sn + dy * c;
+      ang[bone] += turn;
     }
   }
   function releaseRag() {
@@ -926,9 +964,15 @@
     const b_ = rag.blend;   // ease in and out of the rise
     const P = rag.p, k = rag.state === 'rise' ? (b_ < 0.5 ? 4 * b_ * b_ * b_ : 1 - Math.pow(-2 * b_ + 2, 3) / 2) : 1;
     const world = {};
+    rag.shown ||= {};
     for (const [bone, a, b, parent] of RSEG) {
       let dAng = Math.atan2(P[b].y - P[a].y, P[b].x - P[a].x) - rag.rest[bone];
       dAng = Math.atan2(Math.sin(dAng), Math.cos(dAng));
+      // smooth what is drawn between physics steps (the angle eases toward the simulated one)
+      const prev = rag.shown[bone];
+      const sm = prev == null ? dAng : prev + wrap(dAng - prev) * 0.55;
+      rag.shown[bone] = sm;
+      dAng = sm;
       world[bone] = -dAng;                                 // screen clockwise = world-Z clockwise
       twistScreen(parts.rag[bone], (world[bone] - (parent ? world[parent] : 0)) * k);
     }
@@ -943,7 +987,7 @@
   }
   /** The clips stand him with his feet wide apart; bring the legs in toward each other (about his own forward axis,
       so it holds whichever way he faces). */
-  const STANCE = 0.14;
+  const STANCE = 0.19;
   function narrowStance() {
     if (!parts.rag?.LeftUpLeg || !parts.rag?.RightUpLeg) return;
     const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.getWorldQuaternion(new THREE.Quaternion()));

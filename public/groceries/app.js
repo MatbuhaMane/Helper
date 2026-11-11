@@ -326,6 +326,7 @@
           const r = addByName(ing.he, categorize(ing.he + ' ' + (ing.en || '')), title);
           r.dup ? bumped++ : added++;
         }
+        closeSheet();
         closeModal();
         showTab('list');
         toast(`נוספו ${added} מצרכים מ"${title}"` + (bumped ? ` (${bumped} כבר היו ברשימה)` : ''));
@@ -336,7 +337,7 @@
   /* ================= חיפוש מתכונים מכל העולם ================= */
   const normUrl = (u) => { try { const x = new URL(u); x.hash = ''; return x.href.replace(/\/$/, ''); } catch (_) { return u || ''; } };
   const webCache = new Map(); // url -> translated recipe (for this visit)
-  let lastSearch = null;
+  let lastSearch = null;      // { q, cards: Map(url -> card), done }
 
   async function ensureBook() {
     if (!book) { try { book = (await api('/api/recipes')).recipes; } catch (_) { book = book || []; } }
@@ -349,6 +350,88 @@
   }
   const loading = (t) => el('div', { class: 'loading' }, el('span', { class: 'spinner' }), t);
 
+  /* ---- the sheet: a card flips over and grows to fill the page ---- */
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const sheet = (() => {
+    const front = el('div', { class: 'rs-face rs-front', 'aria-hidden': 'true' });
+    const body = el('div', { class: 'rs-body' });
+    const closeBtn = el('button', { class: 'modal-close rs-close', 'aria-label': 'סגור' }, '✕');
+    const back = el('div', { class: 'rs-face rs-back' }, closeBtn, body);
+    const flip = el('div', { class: 'rs-flip' }, front, back);
+    const root = el('div', { class: 'rsheet', hidden: true, role: 'dialog', 'aria-modal': 'true' }, el('div', { class: 'rs-shade' }), flip);
+    document.body.append(root);
+    let origin = null, onLeave = null, closing = false;
+    const place = (r) => {
+      flip.style.setProperty('--x', r.left + 'px'); flip.style.setProperty('--y', r.top + 'px');
+      flip.style.setProperty('--w', r.width + 'px'); flip.style.setProperty('--h', r.height + 'px');
+    };
+    const leave = () => { const f = onLeave; onLeave = null; if (f) f(); };
+    function open(from, content, opts = {}) {
+      leave();
+      onLeave = opts.onLeave || null;
+      body.replaceChildren(...[].concat(content).filter(Boolean));
+      body.scrollTop = 0;
+      if (!root.hidden && !closing) return; // already open: just show the new content
+      closing = false;
+      origin = from && document.body.contains(from) ? from : null;
+      root.hidden = false;
+      document.body.classList.add('sheet-open');
+      if (!origin || reduceMotion()) { root.classList.add('open', 'instant'); return; }
+      front.replaceChildren(origin.cloneNode(true));
+      place(origin.getBoundingClientRect());
+      root.classList.remove('open', 'instant');
+      void flip.offsetWidth; // start from the card, then animate to the full page
+      requestAnimationFrame(() => root.classList.add('open'));
+    }
+    function close() {
+      if (root.hidden || closing) return;
+      leave();
+      closing = true;
+      const done = () => { if (!closing) return; closing = false; root.hidden = true; root.classList.remove('open', 'instant'); document.body.classList.remove('sheet-open'); body.replaceChildren(); };
+      if (origin && document.body.contains(origin) && !reduceMotion() && !root.classList.contains('instant')) {
+        place(origin.getBoundingClientRect());
+        root.classList.remove('open');
+        flip.addEventListener('transitionend', done, { once: true });
+        setTimeout(done, 700);
+      } else done();
+    }
+    closeBtn.addEventListener('click', close);
+    root.querySelector('.rs-shade').addEventListener('click', close);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !root.hidden) { e.stopImmediatePropagation(); close(); } }, true);
+    return { open, close, get isOpen() { return !root.hidden && !closing; } };
+  })();
+  const closeSheet = () => sheet.close();
+
+  /* ---- translating recipes in the background, a few at a time ---- */
+  const translating = new Map(); // url -> Promise<recipe>
+  const tQueue = [];
+  let running = 0;
+  function translate(url, hint, urgent) {
+    if (webCache.has(url)) return Promise.resolve(webCache.get(url));
+    if (translating.has(url)) { if (urgent) bump(url); return translating.get(url); }
+    let start;
+    const p = new Promise((resolve, reject) => { start = () => api('/api/recipes/world/open', { body: { url, site: hint?.site, country: hint?.country } }).then((r) => { webCache.set(url, r.recipe); resolve(r.recipe); }, reject); });
+    p.catch(() => {});
+    translating.set(url, p);
+    const job = { url, start };
+    if (urgent) tQueue.unshift(job); else tQueue.push(job);
+    setCardState(url, 'queued');
+    pump();
+    return p;
+  }
+  function bump(url) { const i = tQueue.findIndex((j) => j.url === url); if (i > 0) tQueue.unshift(...tQueue.splice(i, 1)); }
+  function pump() {
+    while (running < 3 && tQueue.length) {
+      const job = tQueue.shift();
+      running++;
+      setCardState(job.url, 'working');
+      job.start();
+      translating.get(job.url).then((recipe) => setCardState(job.url, 'ready', recipe), (e) => setCardState(job.url, 'failed', null, e))
+        .finally(() => { running--; pump(); });
+    }
+  }
+
+  /* ---- the results: cards appear as the search finds them ---- */
   const HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.6s-7.6-4.6-9.4-9.3C1.4 8.1 3.4 4.6 6.9 4.6c2.1 0 3.6 1.2 5.1 3 1.5-1.8 3-3 5.1-3 3.5 0 5.5 3.5 4.3 6.7-1.8 4.7-9.4 9.3-9.4 9.3z"/></svg>';
 
   /** Instagram-style heart: saves a copy of the web recipe to our book, or takes it out again. */
@@ -359,23 +442,23 @@
       b.classList.toggle('on', on);
       b.setAttribute('aria-pressed', String(on));
       b.setAttribute('aria-label', on ? 'נשמר בספר המתכונים – לחיצה מוציאה' : 'שמירה בספר המתכונים');
-      b.title = on ? 'נשמר בספר המתכונים' : 'שמירה בספר המתכונים';
+      b.title = on ? 'נשמר בספר המתכונים' : 'שמירה בספר המתכונים (או לחיצה כפולה על הכרטיס)';
     };
     paint();
-    b.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      if (b.classList.contains('busy')) return;
-      b.classList.remove('pop');
-      void b.offsetWidth;
-      b.classList.add('pop', 'busy');
-      try { await toggleSave(url, hint); } catch (err) { toast(err.message); }
-      b.classList.remove('busy');
-      paintHearts();
-    });
+    b.addEventListener('click', (e) => { e.stopPropagation(); like(url, hint, b); });
+    b.addEventListener('dblclick', (e) => e.stopPropagation());
     b.paint = paint;
     return b;
   }
   function paintHearts() { document.querySelectorAll('.heart[data-url]').forEach((h) => h.paint && h.paint()); }
+  async function like(url, hint, btn, { onlyAdd } = {}) {
+    if (btn?.classList.contains('busy')) return;
+    if (onlyAdd && savedCopy(url)) return; // a double tap never takes a recipe out
+    if (btn) { btn.classList.remove('pop'); void btn.offsetWidth; btn.classList.add('pop', 'busy'); }
+    try { await toggleSave(url, hint); } catch (err) { toast(err.message); }
+    btn?.classList.remove('busy');
+    paintHearts();
+  }
 
   async function toggleSave(url, hint) {
     await ensureBook();
@@ -395,8 +478,7 @@
       return;
     }
     document.querySelectorAll(`.heart[data-url="${CSS.escape(normUrl(url))}"]`).forEach((h) => h.classList.add('on'));
-    const recipe = webCache.get(url) || (await api('/api/recipes/world/open', { body: { url, site: hint?.site, country: hint?.country } })).recipe;
-    webCache.set(url, recipe);
+    const recipe = await translate(url, hint, true);
     const r = await api('/api/recipes', { body: recipe });
     const saved = { ...recipe, id: r.id, updated_at: r.updated_at };
     book.unshift(saved);
@@ -404,91 +486,199 @@
     toast(`❤ "${recipe.title}" נשמר בספר המתכונים שלנו`, 'עריכה', () => openBookRecipe(saved));
   }
 
-  async function runSearch(q, fresh) {
-    const steps = ['מחפש בשפות המקור של המנה…', 'קורא אתרי מתכונים מכל העולם…', 'ממיין לפי רלוונטיות…', 'עוד רגע…'];
-    const line = el('span', {}, steps[0]);
-    modal(el('h3', {}, `🌍 מחפש "${q}"`), el('div', { class: 'loading' }, el('span', { class: 'spinner' }), line),
-      el('p', { class: 'muted' }, 'החיפוש עובר על אתרים בכמה שפות, ולכן לוקח עד דקה. כל מתכון שתפתחו יתורגם לעברית.'));
-    let i = 0;
-    const tick = setInterval(() => { line.textContent = steps[Math.min(++i, steps.length - 1)]; }, 9000);
-    let results;
-    try {
-      results = (await api('/api/recipes/world?q=' + encodeURIComponent(q) + (fresh ? '&fresh=1' : ''))).results;
-    } catch (e) {
-      clearInterval(tick);
-      if (e.code === 'ai_not_configured') return runMealDbSearch(q);
-      modal(el('h3', {}, 'החיפוש לא הצליח'), el('p', {}, e.message),
-        el('div', { class: 'row' }, el('button', { class: 'btn primary', onclick: () => runSearch(q) }, 'לנסות שוב'), googleLink(q)));
-      return;
+  const STATE_LABEL = { queued: 'מחכה לתרגום', working: 'מתרגם לעברית…', ready: '✓ מוכן לקריאה', failed: 'אין כאן מתכון' };
+  function setCardState(url, state, recipe, err) {
+    const c = lastSearch?.cards.get(url);
+    if (!c) return;
+    c.state = state;
+    if (recipe) {
+      c.data.title_he = c.data.title_he || recipe.title;
+      c.data.country = c.data.country || recipe.meta?.country;
+      c.data.lang = c.data.lang || recipe.meta?.lang;
     }
-    clearInterval(tick);
-    await ensureBook();
-    lastSearch = { q, results };
-    showResults();
+    if (state === 'failed') {
+      // A page that turned out not to be a recipe leaves quietly (unless Claude chose it).
+      if (!c.ranked && err?.code === 'no_recipe_found') { c.el.classList.add('leaving'); setTimeout(() => { c.el.remove(); lastSearch?.cards.delete(url); updateHeader(); }, 400); return; }
+    }
+    drawCard(c);
   }
 
-  function resultCard(r) {
-    return el('article', { class: 'wcard' },
-      el('button', { class: 'wcard-open', onclick: () => showWebRecipe(r) },
-        r.image ? el('img', { src: r.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => { e.target.replaceWith(el('div', { class: 'ph' }, '🍲')); } }) : el('div', { class: 'ph' }, '🍲'),
+  function drawCard(c) {
+    const d = c.data;
+    const wait = !d.title_he;
+    const img = d.image
+      ? el('img', { src: d.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => { e.target.replaceWith(el('div', { class: 'ph' }, '🍲')); } })
+      : el('div', { class: 'ph' }, lastSearch?.done ? '🍲' : el('span', { class: 'spinner' }));
+    const state = c.state && c.state !== 'ready' ? el('span', { class: 'tstate ' + c.state }, c.state === 'working' ? el('span', { class: 'spinner tiny' }) : null, ' ' + STATE_LABEL[c.state])
+      : c.state === 'ready' ? el('span', { class: 'tstate ready' }, STATE_LABEL.ready) : null;
+    c.el.classList.toggle('waiting', wait);
+    c.el.replaceChildren(
+      el('div', { class: 'wcard-open', role: 'button', tabindex: '0', 'aria-label': `פתיחת ${d.title_he || d.title}` },
+        el('div', { class: 'wcard-img' }, img, state, el('span', { class: 'burst', html: HEART })),
         el('div', { class: 'wcard-body' },
-          el('b', {}, r.title_he),
-          el('small', { class: 'orig', dir: 'auto' }, r.title),
-          el('small', { class: 'where' }, [r.site, r.country].filter(Boolean).join(' · ')),
-          r.snippet_he ? el('p', { class: 'snip' }, r.snippet_he) : null,
-          el('div', { class: 'wcard-tags' }, r.lang ? el('span', { class: 'tag' }, r.lang) : null, el('span', { class: 'tag match' }, `התאמה ${r.relevance}%`)))),
-      heart(r.url, r, 'on-card'));
+          el('b', { dir: 'auto' }, d.title_he || d.title),
+          d.title_he && d.title !== d.title_he ? el('small', { class: 'orig', dir: 'auto' }, d.title) : null,
+          el('small', { class: 'where' }, [d.site, d.country].filter(Boolean).join(' · ')),
+          d.snippet_he ? el('p', { class: 'snip' }, d.snippet_he) : null,
+          el('div', { class: 'wcard-tags' }, d.lang ? el('span', { class: 'tag' }, d.lang) : null, c.ranked ? el('span', { class: 'tag match' }, `התאמה ${d.relevance}%`) : null))),
+      heart(d.url, d, 'on-card'));
   }
 
-  function showResults() {
-    const { q, results } = lastSearch;
-    if (!results.length) {
-      modal(el('h3', {}, `לא נמצאו מתכונים ל"${q}"`), el('p', {}, 'נסו לנסח אחרת, למשל שם המנה ומרכיב עיקרי.'), el('p', {}, googleLink(q)));
+  function makeCard(data, ranked) {
+    const c = { data, ranked, state: null, el: el('article', { class: 'wcard', 'data-url': data.url }) };
+    // One tap opens (the card flips and fills the page); a quick second tap is a heart, as on Instagram.
+    let tapTimer = null;
+    const tap = (e) => {
+      if (e.target.closest('.heart')) return;
+      if (tapTimer) {
+        clearTimeout(tapTimer); tapTimer = null;
+        c.el.classList.remove('liked'); void c.el.offsetWidth; c.el.classList.add('liked');
+        like(c.data.url, c.data, c.el.querySelector('.heart'), { onlyAdd: true });
+        return;
+      }
+      tapTimer = setTimeout(() => { tapTimer = null; showWebRecipe(c.data, c.el); }, 260);
+    };
+    c.el.addEventListener('click', tap);
+    c.el.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.classList.contains('wcard-open')) showWebRecipe(c.data, c.el); });
+    drawCard(c);
+    return c;
+  }
+
+  let seenObs = null;
+  function watchVisible(c) {
+    // Translate what the family can see (and a little beyond), not every page the search touched.
+    seenObs = seenObs || new IntersectionObserver((entries) => {
+      for (const e of entries) if (e.isIntersecting) { seenObs.unobserve(e.target); const url = e.target.dataset.url; const card = lastSearch?.cards.get(url); if (card) translate(url, card.data); }
+    }, { root: document.getElementById('modalBody'), rootMargin: '300px' });
+    seenObs.observe(c.el);
+  }
+
+  function order() {
+    const s = lastSearch;
+    if (!s) return;
+    const list = [...s.cards.values()].sort((a, b) => (b.ranked - a.ranked) || ((b.data.relevance || 0) - (a.data.relevance || 0)) || (a.n - b.n));
+    for (const c of list) s.grid.insertBefore(c.el, s.more); // moving keeps each card's state
+  }
+
+  function updateHeader() {
+    const s = lastSearch;
+    if (!s) return;
+    const n = s.cards.size;
+    s.title.textContent = n ? `🌍 ${n} מתכונים מכל העולם ל"${s.q}"` : `🌍 מחפש "${s.q}"`;
+    const langs = [...new Set([...s.cards.values()].map((c) => c.data.lang).filter(Boolean))];
+    s.sub.textContent = s.done
+      ? `מסודרים לפי התאמה${langs.length > 1 ? `, מ-${langs.length} שפות (${langs.join(', ')})` : ''}. לחיצה פותחת, לחיצה כפולה או ❤ שומרת בספר המתכונים.`
+      : 'המתכונים מופיעים ברגע שהם נמצאים, ומתורגמים לעברית ברקע.';
+  }
+
+  async function runSearch(q, fresh) {
+    const title = el('h3', {}, `🌍 מחפש "${q}"`);
+    const sub = el('p', { class: 'muted' }, 'המתכונים מופיעים ברגע שהם נמצאים, ומתורגמים לעברית ברקע.');
+    const status = el('span', {}, 'מתחיל לחפש…');
+    const more = el('div', { class: 'wcard more', 'aria-live': 'polite' }, el('span', { class: 'spinner big' }), status);
+    const grid = el('div', { class: 'results world' }, more);
+    const s = lastSearch = { q, cards: new Map(), done: false, grid, more, title, sub, n: 0 };
+    seenObs?.disconnect(); seenObs = null;
+    modal(title, sub, grid, el('div', { class: 'row', style: 'margin-top:12px' },
+      el('button', { class: 'btn ghost small', onclick: () => runSearch(q, true) }, '⟳ חיפוש מחדש'), googleLink(q)));
+    await ensureBook();
+
+    const add = (data, ranked) => {
+      const existing = s.cards.get(data.url);
+      if (existing) {
+        if (ranked) { existing.ranked = true; Object.assign(existing.data, data, { image: existing.data.image || data.image }); drawCard(existing); translate(data.url, existing.data); }
+        return existing;
+      }
+      const c = makeCard(data, ranked);
+      c.n = s.n++;
+      s.cards.set(data.url, c);
+      grid.insertBefore(c.el, more);
+      if (ranked && [...s.cards.values()].filter((x) => x.ranked).length <= 4) translate(data.url, data); else watchVisible(c);
+      return c;
+    };
+
+    let res;
+    try {
+      res = await fetch('/api/recipes/world/stream?q=' + encodeURIComponent(q) + (fresh ? '&fresh=1' : ''));
+    } catch (_) { res = null; }
+    if (!res || !res.ok) {
+      const data = res ? await res.json().catch(() => ({})) : {};
+      if (data.error === 'ai_not_configured') return runMealDbSearch(q);
+      more.replaceChildren(el('div', {}, el('p', {}, res ? 'החיפוש לא הצליח.' : 'אין חיבור לאינטרנט.'), el('button', { class: 'btn primary small', onclick: () => runSearch(q) }, 'לנסות שוב')));
       return;
     }
-    const langs = [...new Set(results.map((r) => r.lang).filter(Boolean))];
-    modal(
-      el('h3', {}, `🌍 ${results.length} מתכונים מכל העולם ל"${q}"`),
-      el('p', { class: 'muted' }, `מסודרים לפי התאמה${langs.length > 1 ? `, מ-${langs.length} שפות (${langs.join(', ')})` : ''}. פתיחת מתכון מתרגמת אותו לעברית; ❤ שומר עותק בספר המתכונים שלנו.`),
-      el('div', { class: 'results world' }, results.map(resultCard)),
-      el('div', { class: 'row', style: 'margin-top:12px' },
-        el('button', { class: 'btn ghost small', onclick: () => runSearch(q, true) }, '⟳ חיפוש מחדש'), googleLink(q)));
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let failed = null;
+    for (;;) {
+      let chunk;
+      try { chunk = await reader.read(); } catch (_) { failed = 'נקטע החיבור באמצע החיפוש.'; break; }
+      if (chunk.done) break;
+      buf += dec.decode(chunk.value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl); buf = buf.slice(nl + 1);
+        if (!line.trim() || lastSearch !== s) continue;
+        let ev;
+        try { ev = JSON.parse(line); } catch (_) { continue; }
+        if (ev.type === 'searching') status.textContent = `מחפש: ${ev.query}`;
+        else if (ev.type === 'hit') add({ url: ev.hit.url, title: ev.hit.title, site: ev.hit.site }, false);
+        else if (ev.type === 'result') { add(ev.result, true); order(); }
+        else if (ev.type === 'image') { const c = s.cards.get(ev.url); if (c && !c.data.image) { c.data.image = ev.image; drawCard(c); } }
+        else if (ev.type === 'error') failed = ev.error === 'ai_busy' ? 'העוזר החכם עמוס כרגע. נסו שוב בעוד דקה.' : 'החיפוש לא הצליח.';
+        if (ev.type !== 'image') updateHeader();
+      }
+    }
+    if (lastSearch !== s) return;
+    s.done = true;
+    // Pages Claude chose come first; the other hits stay below while they are checked and translated.
+    order();
+    more.remove();
+    for (const c of s.cards.values()) if (!c.data.image) drawCard(c);
+    updateHeader();
+    if (!s.cards.size) {
+      grid.replaceWith(el('div', {}, el('p', {}, failed || `לא נמצאו מתכונים ל"${q}". נסו לנסח אחרת, למשל שם המנה ומרכיב עיקרי.`), el('p', {}, googleLink(q))));
+    } else if (failed) toast(failed);
   }
 
   function metaChips(meta) {
     if (!meta) return null;
-    const chips = [meta.servings && `🍽 ${meta.servings}`, meta.time && `⏱ ${meta.time}`, meta.lang && `🌐 תורגם מ${meta.lang}`].filter(Boolean);
+    const chips = [meta.servings && `🍽 ${meta.servings}`, meta.time && `⏱ ${meta.time}`, meta.lang && meta.lang !== 'עברית' && `🌐 תורגם מ${meta.lang}`].filter(Boolean);
     return chips.length ? el('div', { class: 'meta-chips' }, chips.map((c) => el('span', { class: 'tag' }, c))) : null;
   }
 
-  async function showWebRecipe(r) {
-    modal(el('h3', {}, r.title_he), loading('פותח את המתכון ומתרגם לעברית…'));
-    let recipe = webCache.get(r.url);
+  /** A web recipe, translated, on the full-page sheet. */
+  async function showWebRecipe(r, origin) {
+    const ready = webCache.get(r.url);
+    if (!ready) sheet.open(origin, [el('h3', { class: 'r-title', dir: 'auto' }, r.title_he || r.title), loading('פותח את המתכון ומתרגם לעברית…')]);
+    let recipe = ready;
     if (!recipe) {
-      try { recipe = (await api('/api/recipes/world/open', { body: { url: r.url, site: r.site, country: r.country } })).recipe; } catch (e) {
-        modal(el('button', { class: 'btn ghost small back', onclick: showResults }, '→ חזרה לתוצאות'),
-          el('h3', {}, 'לא הצלחתי לפתוח את המתכון'), el('p', {}, e.message),
-          el('p', {}, el('a', { href: r.url, target: '_blank', rel: 'noopener' }, '🔗 פתיחה באתר המקורי')));
+      try { recipe = await translate(r.url, r, true); } catch (e) {
+        if (!sheet.isOpen) return;
+        sheet.open(null, [el('h3', {}, 'לא הצלחתי לפתוח את המתכון'), el('p', {}, e.message),
+          el('p', {}, el('a', { href: r.url, target: '_blank', rel: 'noopener' }, '🔗 פתיחה באתר המקורי'))]);
         return;
       }
-      webCache.set(r.url, recipe);
+      if (!sheet.isOpen) return; // closed while it was translating
     }
     const ingredients = recipe.ingredients.map((i) => ({ he: i.name, measure: i.measure }));
     const picker = ingredientPicker(ingredients);
-    modal(
-      lastSearch ? el('button', { class: 'btn ghost small back', onclick: showResults }, '→ חזרה לתוצאות') : null,
+    sheet.open(ready ? origin : null, [
       el('div', { class: 'r-hero' },
         recipe.image ? el('img', { src: recipe.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null,
         heart(r.url, r, 'big')),
       el('h3', { class: 'r-title' }, recipe.title),
       el('p', { class: 'r-sub' }, recipe.subtitle),
       metaChips(recipe.meta),
+      Keto.recipePanel(recipe),
       recipe.notes ? el('p', { class: 'r-notes' }, recipe.notes) : null,
       el('h4', {}, `מצרכים (${ingredients.length})`), picker.tools, picker.list,
       el('div', { class: 'row' }, picker.addButton(recipe.title)),
       el('h4', {}, 'אופן ההכנה'),
       el('ol', { class: 'steps he' }, recipe.steps.map((s) => el('li', {}, s))),
-      el('p', {}, el('a', { href: recipe.source_url, target: '_blank', rel: 'noopener' }, '🔗 המתכון המקורי')));
+      el('p', {}, el('a', { href: recipe.source_url, target: '_blank', rel: 'noopener' }, '🔗 המתכון המקורי')),
+    ]);
   }
 
   /* ---- גיבוי כשאין מפתח לעוזר החכם: מאגר TheMealDB באנגלית ---- */
@@ -576,7 +766,7 @@
       return;
     }
     for (const r of list) {
-      grid.append(el('button', { class: 'book-card', onclick: () => openBookRecipe(r) },
+      grid.append(el('button', { class: 'book-card', onclick: (e) => openBookRecipe(r, e.currentTarget) },
         el('div', { class: 'ph', style: r.image ? `background-image:url("${encodeURI(r.image)}")` : '' }, r.image ? '' : '🍲'),
         el('b', {}, r.title), r.subtitle ? el('small', { class: 'sub' }, r.subtitle) : null, el('small', {}, `${r.ingredients.length} מצרכים · ${r.steps.length} שלבים`)));
     }
@@ -585,7 +775,7 @@
   const autosize = (ta) => { ta.style.blockSize = 'auto'; ta.style.blockSize = ta.scrollHeight + 2 + 'px'; };
 
   /** Our recipe format, edited in place: name, where it came from, ingredients with amounts, steps one by one. Saves as you type. */
-  function openBookRecipe(r) {
+  function openBookRecipe(r, origin) {
     const draft = structuredClone(r);
     let timer = null, dirty = false, saving = null;
     const status = el('span', { class: 'save-status', role: 'status', 'aria-live': 'polite' }, draft.id ? 'כל שינוי נשמר מעצמו' : 'המתכון יישמר כשתתנו לו שם');
@@ -670,7 +860,7 @@
       dirty = false;
       await api('/api/recipes/' + draft.id, { method: 'DELETE' });
       book = (book || []).filter((x) => x.id !== draft.id);
-      closeModal();
+      closeSheet();
       toast('המתכון נמחק');
       renderBook();
     } }, '🗑 מחיקה');
@@ -681,14 +871,15 @@
       const ingredients = draft.ingredients.filter((i) => i.name).map((i) => ({ he: i.name, measure: i.measure }));
       if (!ingredients.length) return toast('אין עדיין מצרכים');
       const picker = ingredientPicker(ingredients);
-      modal(el('button', { class: 'btn ghost small back', onclick: () => openBookRecipe(book.find((x) => x.id === draft.id) || draft) }, '→ חזרה למתכון'),
-        el('h3', {}, `🛒 מצרכים מ"${draft.title}"`), picker.tools, picker.list, picker.addButton(draft.title));
+      sheet.open(null, [el('button', { class: 'btn ghost small back', onclick: () => openBookRecipe(book.find((x) => x.id === draft.id) || draft) }, '→ חזרה למתכון'),
+        el('h3', {}, `🛒 מצרכים מ"${draft.title}"`), picker.tools, picker.list, picker.addButton(draft.title)]);
     } }, '🛒 מצרכים לרשימת הקניות');
 
-    modal(
+    sheet.open(origin, [
       el('div', { class: 'r-hero' }, draft.image ? el('img', { src: draft.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null),
       title, subtitle,
       metaChips(draft.meta),
+      draft.ingredients.length ? Keto.recipePanel(draft) : null,
       el('div', { class: 'edit-hint' }, status, el('small', { class: 'muted' }, 'Enter מוסיף שורה חדשה')),
       el('h4', {}, 'מצרכים וכמויות'), ingList,
       el('button', { class: 'btn ghost small', onclick: () => { const li = ingRow(); ingList.append(li); li.querySelector('.m').focus(); } }, '+ מצרך'),
@@ -699,17 +890,10 @@
         el('label', { class: 'field' }, el('span', {}, 'קישור לתמונה'), image),
         el('label', { class: 'field' }, el('span', {}, 'קישור למתכון המקורי'), source)),
       el('div', { class: 'row', style: 'margin-top:14px' }, shop,
-        draft.source_url ? el('a', { class: 'btn ghost', href: draft.source_url, target: '_blank', rel: 'noopener' }, '🔗 המקור') : null, del));
+        draft.source_url ? el('a', { class: 'btn ghost', href: draft.source_url, target: '_blank', rel: 'noopener' }, '🔗 המקור') : null, del),
+    ], { onLeave: () => save().then(renderBook) }); // closing (or moving on) saves whatever is still waiting
     requestAnimationFrame(() => autosize(notes));
-    if (!draft.id) title.focus();
-
-    // Closing the window saves whatever is still waiting.
-    const m = document.getElementById('modal');
-    const watch = new MutationObserver(() => {
-      if (m.hidden || !document.body.contains(title)) { watch.disconnect(); save().then(renderBook); }
-    });
-    watch.observe(m, { attributes: true, attributeFilter: ['hidden'] });
-    new MutationObserver((_, obs) => { if (!document.body.contains(title)) { obs.disconnect(); save().then(renderBook); } }).observe(document.getElementById('modalBody'), { childList: true });
+    if (!draft.id) setTimeout(() => title.focus(), 450);
   }
 
   function importDialog() {
@@ -730,6 +914,8 @@
         await ensureBook();
         const saved = { ...recipe, id: r.id };
         book.unshift(saved);
+        closeModal();
+        renderBook();
         openBookRecipe(saved);
         toast('המתכון נוסף לספר – אפשר לערוך ישר כאן');
       } catch (e) { toast(e.message); go.disabled = false; go.textContent = 'ייבוא'; }
@@ -741,8 +927,21 @@
   }
 
   $('#bookSearch').addEventListener('input', renderBook);
-  $('#bookNew').addEventListener('click', () => openBookRecipe({ title: '', subtitle: '', image: '', source_url: '', ingredients: [], steps: [], notes: '', tags: [] }));
-  $('#bookImport').addEventListener('click', importDialog);
+  $('#bookWebForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const q = $('#bookWebInput').value.trim();
+    if (q) runSearch(q);
+  });
+
+  // The + button: a small menu to write a recipe or import one from a link.
+  const fab = $('#bookFab');
+  const fabMenu = $('#bookFabMenu');
+  const setFab = (open) => { fabMenu.hidden = !open; fab.setAttribute('aria-expanded', String(open)); fab.classList.toggle('open', open); };
+  fab.addEventListener('click', (e) => { e.stopPropagation(); setFab(fabMenu.hidden); if (!fabMenu.hidden) fabMenu.querySelector('button').focus(); });
+  document.addEventListener('click', (e) => { if (!fabMenu.hidden && !e.target.closest('#bookFabMenu')) setFab(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !fabMenu.hidden) { setFab(false); fab.focus(); } });
+  $('#bookNew').addEventListener('click', () => { setFab(false); openBookRecipe({ title: '', subtitle: '', image: '', source_url: '', ingredients: [], steps: [], notes: '', tags: [] }, fab); });
+  $('#bookImport').addEventListener('click', () => { setFab(false); importDialog(); });
 
   /* ================= לשוניות ================= */
   let ketoMounted = false;

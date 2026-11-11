@@ -99,6 +99,7 @@ route('PUT', '/api/recipes/:id', kitchen.saveRecipe);
 route('DELETE', '/api/recipes/:id', kitchen.deleteRecipe);
 route('POST', '/api/recipes/import', kitchen.importRecipe);
 route('GET', '/api/recipes/world', world.search);
+route('GET', '/api/recipes/world/stream', world.searchStream);
 route('POST', '/api/recipes/world/open', world.open);
 
 /* ketosis */
@@ -112,6 +113,7 @@ route('DELETE', '/api/keto/weights/:day', keto.deleteWeight);
 route('GET', '/api/keto/foods', keto.listFoods);
 route('POST', '/api/keto/foods/estimate', keto.estimateFoods);
 route('PUT', '/api/keto/foods', keto.putFood);
+route('POST', '/api/keto/recipe', keto.recipeNutrition);
 
 /* news */
 route('GET', '/api/news/feeds', news.listFeeds);

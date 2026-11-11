@@ -15,6 +15,8 @@ interface JsonTask<T extends z.ZodType> {
   schema: T;
   prefer: Provider;
   effort?: 'low' | 'medium' | 'high';
+  /** Mechanical work (translation, extraction): skip Gemini's thinking step, which makes it several times faster. */
+  fast?: boolean;
 }
 
 export async function aiJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Promise<z.infer<T>> {
@@ -71,6 +73,7 @@ async function geminiJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Pro
       generationConfig: {
         responseMimeType: 'application/json',
         responseJsonSchema: z.toJSONSchema(task.schema, { target: 'draft-7' }),
+        ...(task.fast ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
       },
     }),
   });

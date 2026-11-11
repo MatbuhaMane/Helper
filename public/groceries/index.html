@@ -46,11 +46,23 @@
 
     <section id="viewBook" hidden>
       <div class="card book-tools">
-        <input id="bookSearch" type="search" placeholder="חיפוש בספר המתכונים…" aria-label="חיפוש מתכון שמור">
-        <button id="bookNew" class="btn primary">מתכון חדש</button>
-        <button id="bookImport" class="btn ghost">ייבוא מקישור</button>
+        <input id="bookSearch" type="search" placeholder="חיפוש בספר המתכונים שלנו…" aria-label="חיפוש מתכון שמור">
       </div>
+      <form id="bookWebForm" class="card recipe-form" autocomplete="off" role="search">
+        <input id="bookWebInput" type="search" placeholder="חפש מתכון מכל העולם… (למשל: קרבונרה, ראמן, תבשיל עוף גאורגי)" aria-label="חיפוש מתכון באינטרנט">
+        <button type="submit" class="btn accent">חפש מתכון</button>
+      </form>
       <div id="bookGrid" class="book-grid"></div>
+
+      <div class="fab-wrap">
+        <div id="bookFabMenu" class="fab-menu" role="menu" hidden>
+          <button id="bookNew" role="menuitem">✍️ כתיבת מתכון</button>
+          <button id="bookImport" role="menuitem">🔗 ייבוא מקישור</button>
+        </div>
+        <button id="bookFab" class="fab" aria-label="הוספת מתכון" aria-haspopup="menu" aria-expanded="false" title="הוספת מתכון">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
     </section>
 
     <section id="viewKeto" class="keto" hidden aria-label="קטוזיס"></section>

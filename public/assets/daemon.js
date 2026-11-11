@@ -1075,7 +1075,8 @@
       el('div', { class: 'dm-bhead' }, nameEl, el('span', { class: 'spacer' }),
         el('button', { class: 'mini', title: 'בחירת קול', 'aria-label': 'בחירת קול', onclick: () => openVoicePicker() }, svg('voice')),
         el('button', { class: 'mini', title: 'להגדיל לחלונית השיחה', 'aria-label': 'להגדיל לחלונית השיחה', onclick: () => togglePanel(true) }, svg('expand')),
-        minBtn = el('button', { class: 'mini', title: 'לקפל ללשונית', 'aria-label': 'לקפל ללשונית', onclick: () => minimize(true) }, svg('fold')),
+        // shaped like the tab he folds into: his face on a little half-pill
+        minBtn = el('button', { class: 'dm-tabbtn', title: 'לקפל ללשונית בצד המסך', 'aria-label': 'לקפל ללשונית בצד המסך', onclick: () => toTab() }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 22, height: 22 })),
         homeBtn = el('button', { class: 'mini', title: 'הביתה לאוהל', 'aria-label': 'הביתה לאוהל', onclick: () => sendHome() }, svg('tent')),
         el('button', { class: 'mini', title: 'סגירה', 'aria-label': 'סגירה', onclick: closeBalloon }, svg('x'))),
       balloonText, balloonActs,
@@ -1172,7 +1173,7 @@
   let minBtn, homeBtn, tab, gone = false;
   function syncMode() {
     const out = !docked;
-    minBtn.hidden = !out; homeBtn.hidden = !out;
+    homeBtn.hidden = !out;
     const folded = out && prefs.minimized;
     canvasBox.hidden = folded;
     tab.hidden = !folded;
@@ -1183,6 +1184,14 @@
     prefs.minimized = !!on; savePrefs();
     if (!on) wake();
     syncMode();
+  }
+  /** Into the tab at the screen's edge (from the tent too: then he also comes along to every screen). */
+  function toTab() {
+    if (docked) {
+      prefs.follow = true; docked = false; target = null;
+      toast('ראב"ע מחכה בלשונית בצד המסך, ויבוא איתכם לכל מסך');
+    }
+    minimize(true);
   }
   /** He leaves his tent and comes along to every screen. */
   function comeAlong() {

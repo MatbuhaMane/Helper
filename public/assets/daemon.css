@@ -28,6 +28,11 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-balloon.below::after { bottom: auto; top: -9px; transform: rotate(225deg); }
 .dm-bhead { display: flex; align-items: center; gap: 4px; margin-block-end: 4px; }
 .dm-bhead .mini[hidden] { display: none; }
+.dm-tabbtn { display: inline-flex; align-items: center; block-size: 30px; padding: 3px; padding-inline-end: 9px; margin-inline: 2px; cursor: pointer;
+  background: var(--card); border: 1px solid var(--line-strong); border-inline-end-width: 3px; border-inline-end-color: var(--primary);
+  border-start-start-radius: 16px; border-end-start-radius: 16px; border-start-end-radius: 3px; border-end-end-radius: 3px; transition: padding .2s var(--ease-river), border-color .2s; }
+.dm-tabbtn:hover, .dm-tabbtn:focus-visible { padding-inline-end: 14px; border-color: var(--primary); }
+.dm-tabbtn img { display: block; inline-size: 22px; block-size: 22px; border-radius: 50%; }
 .dm-bhead b { font-weight: 500; font-size: .92rem; color: var(--muted); }
 .dm-say { font-size: 1rem; line-height: 1.55; white-space: pre-wrap; max-block-size: 34vh; overflow-y: auto; padding-inline-end: 2px; }
 .dm-balloon .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }

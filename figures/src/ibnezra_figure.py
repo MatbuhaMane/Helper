@@ -77,6 +77,9 @@ def clean_mesh(path=None):
     bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], plane_co=(0, 0, cut_z), plane_no=(0, 0, 1), clear_inner=True)
     boundary = [e for e in bm.edges if e.is_boundary]
     bmesh.ops.holes_fill(bm, edges=boundary, sides=0)
+    # generated meshes sometimes come with faces pointing inward: make every face point outward
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-6)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(me)
     bm.free()
     # normalise: feet on the origin, centred, 1 unit tall

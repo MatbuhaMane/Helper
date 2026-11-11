@@ -267,74 +267,133 @@
     return true;
   }
 
-  /* ---- 2. pulled out: a floating card that can be folded to a record ---- */
-  let float = null;
+  /* ---- 2. pulled out: a floating card (folds to a record), or a tab with a treble clef at the screen's edge ----
+     Drag the card (or the record, or the tab) and let go over the menu to dock it back, at a screen edge to make it
+     a tab, anywhere else to leave it floating there. */
+  let float = null, edge = null;
+  const CLEF = '<svg viewBox="0 0 24 40" aria-hidden="true"><path d="M10.6 37.2c1.9 2.2 4.8.3 4-2.4L11.2 7.1c-.5-3.6 3.6-4.9 4.6-1.9 1.3 4-2.2 7.8-5.9 11.5-4.1 4.1-4.6 9.9-.6 12.4 3.5 2.3 9 .6 8.8-3.9-.2-4-4.4-5-6.4-3-1.5 1.5-1 4 1 4.5"/><circle cx="10.2" cy="36.6" r="1.9"/></svg>';
   function mountFloat() {
     float = el('div', { class: 'mu-float', hidden: true, role: 'region', 'aria-label': 'נגן המוזיקה' },
-      el('div', { class: 'mu-grip', 'aria-hidden': 'true' }),
+      el('div', { class: 'mu-grip', 'aria-hidden': 'true', title: 'גררו לתפריט או לצד המסך' }),
       unit('card'),
       el('div', { class: 'mu-float-acts' },
-        btn('fold', 'לקפל לתקליט', () => { P.folded = !P.folded; save(); paintFloat(); }, 'foldbtn'),
+        btn('fold', 'לקפל לתקליט', () => { P.folded = true; save(); paintModes(); }, 'foldbtn'),
         btn('dock', 'בחזרה לתפריט', () => setMode('menu'))));
-    const disc = el('button', { class: 'mu-record', type: 'button', 'aria-label': 'לפתוח את הנגן', onclick: () => { if (moved) return; P.folded = false; save(); paintFloat(); } }, el('span', { class: 'mu-art' }));
+    // folded: a record; a tap opens the card again
+    const disc = el('button', { class: 'mu-record', type: 'button', title: 'לחצו לפתיחה, גררו להזזה', 'aria-label': 'לפתוח את הנגן', onclick: () => { if (justDragged) return; P.folded = false; save(); paintModes(); } }, el('span', { class: 'mu-art' }));
     float.append(disc);
-    document.body.append(float);
-    painters.push((st) => { disc.firstChild.style.backgroundImage = st.art ? `url("${st.art}")` : ''; float.classList.toggle('playing', st.playing); });
-    let moved = false;
-    float.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('button:not(.mu-record), .mu-text, .mu-bar')) return;
-      const r = float.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top, x0 = e.clientX, y0 = e.clientY;
-      moved = false;
-      float.setPointerCapture(e.pointerId);
-      const mv = (ev) => {
-        if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
-        moved = true;
-        place(ev.clientX - dx, ev.clientY - dy);
-      };
-      const up = () => { float.removeEventListener('pointermove', mv); float.removeEventListener('pointerup', up); float.removeEventListener('pointercancel', up); if (moved) rememberSpot(); setTimeout(() => { moved = false; }, 0); };
-      float.addEventListener('pointermove', mv); float.addEventListener('pointerup', up); float.addEventListener('pointercancel', up);
+    // at the edge: a tab with a treble clef; a tap opens the card next to it
+    edge = el('button', { class: 'mu-edge', type: 'button', hidden: true, title: 'נגן המוזיקה – לחצו לפתיחה, גררו להזזה', 'aria-label': 'לפתוח את נגן המוזיקה',
+      onclick: () => { if (justDragged) return; const r = edge.getBoundingClientRect(); P.mode = 'float'; P.folded = false; save(); paintModes(false); requestAnimationFrame(() => { place(r.left < innerWidth / 2 ? 12 : innerWidth - float.offsetWidth - 12, r.top - 40); rememberSpot(); }); } },
+      el('span', { class: 'clef', html: CLEF }), el('span', { class: 'eq', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
+    document.body.append(float, edge);
+    painters.push((st) => { disc.firstChild.style.backgroundImage = st.art ? `url("${st.art}")` : ''; float.classList.toggle('playing', st.playing); edge.classList.toggle('playing', st.playing); });
+    // a press that moves more than a few pixels becomes a drag (a press that doesn't stays a click)
+    for (const h of [float, edge]) h.addEventListener('pointerdown', (e) => {
+      if (e.button > 0 || e.target.closest('.mu-btn, .mu-text, .mu-bar')) return;
+      const r = (h === edge ? edge : float).getBoundingClientRect();
+      pendingDrag(e, h === edge ? { x: 30, y: 30 } : { x: e.clientX - r.left, y: e.clientY - r.top });
     });
-    window.addEventListener('resize', () => { if (!float.hidden) restoreSpot(); });
+    window.addEventListener('resize', () => { if (P.mode === 'float') restoreSpot(); if (P.mode === 'edge') placeEdge(); });
   }
+
+  let justDragged = false;
+  function pendingDrag(e, grab) {
+    const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
+    const mv = (ev) => {
+      if (ev.pointerId !== id || Math.hypot(ev.clientX - x0, ev.clientY - y0) < 7) return;
+      off(); startDrag(ev, grab);
+    };
+    const off = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', off); window.removeEventListener('pointercancel', off); };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', off); window.addEventListener('pointercancel', off);
+  }
+  /** Where a drop at (x, y) lands: back in the menu, a tab at the left or right edge, or nowhere special (it floats). */
+  function zoneAt(x, y) {
+    const bar = innerWidth >= 900 ? document.querySelector('.appbar') : document.querySelector('.tabbar');
+    if (bar) {
+      const r = bar.getBoundingClientRect();
+      if (innerWidth >= 900 ? y < r.bottom + 18 : y > r.top - 18) return 'menu';
+    }
+    if (x < 30) return 'left';
+    if (x > innerWidth - 30) return 'right';
+    return null;
+  }
+  function startDrag(e, grab) {
+    if (P.mode !== 'float') { P.mode = 'float'; save(); paintModes(false); }
+    float.classList.add('dragging');
+    document.body.classList.add('mu-dragging');
+    try { float.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
+    let zone = null;
+    const mv = (ev) => {
+      place(ev.clientX - grab.x, ev.clientY - grab.y);
+      zone = zoneAt(ev.clientX, ev.clientY);
+      document.body.classList.toggle('mu-drop-menu', zone === 'menu');
+      document.body.classList.toggle('mu-drop-left', zone === 'left');
+      document.body.classList.toggle('mu-drop-right', zone === 'right');
+    };
+    const up = (ev) => {
+      window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+      float.classList.remove('dragging');
+      document.body.classList.remove('mu-dragging', 'mu-drop-menu', 'mu-drop-left', 'mu-drop-right');
+      justDragged = true; setTimeout(() => { justDragged = false; }, 50);
+      if (zone === 'menu') setMode('menu');
+      else if (zone) { rememberEdge(zone, ev.clientY); setMode('edge'); }
+      else rememberSpot();
+    };
+    mv(e);
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+  }
+
   function place(x, y) {
     const r = float.getBoundingClientRect();
     x = Math.max(6, Math.min(innerWidth - r.width - 6, x)); y = Math.max(6, Math.min(innerHeight - r.height - 6, y));
     float.style.left = x + 'px'; float.style.top = y + 'px';
   }
-  // where it floats is this screen's business (a phone and a PC differ), so it stays on this device
+  // where it floats (and which edge it waits at) is this screen's business – a phone and a PC differ – so it stays on this device
   function rememberSpot() { const r = float.getBoundingClientRect(); try { localStorage.setItem('helper.music.spot', JSON.stringify({ x: r.left / innerWidth, y: r.top / innerHeight })); } catch (_) { /* ignore */ } }
   function restoreSpot() {
     let s = null; try { s = JSON.parse(localStorage.getItem('helper.music.spot') || 'null'); } catch (_) { /* ignore */ }
     // first time: low on the screen, clear of the menu and of YouTube's video card
     if (s) place(s.x * innerWidth, s.y * innerHeight); else place(innerWidth - float.offsetWidth - 16, innerHeight - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0) - (E.st.yt.id ? 360 : 170));
   }
-  function paintFloat() {
+  function rememberEdge(side, y) { try { localStorage.setItem('helper.music.edge', JSON.stringify({ side, y: y / innerHeight })); } catch (_) { /* ignore */ } }
+  function placeEdge() {
+    let s = null; try { s = JSON.parse(localStorage.getItem('helper.music.edge') || 'null'); } catch (_) { /* ignore */ }
+    s ||= { side: 'left', y: 0.6 };
+    // the screen's own left or right edge (where it was dropped), whatever the page's direction
+    edge.style.left = s.side === 'left' ? '0' : 'auto'; edge.style.right = s.side === 'right' ? '0' : 'auto';
+    edge.classList.toggle('on-left', s.side === 'left'); edge.classList.toggle('on-right', s.side === 'right');
+    edge.style.top = Math.round(Math.max(70, Math.min(innerHeight - 140, s.y * innerHeight - 28))) + 'px';
+  }
+  function paintModes(restore = true) {
     if (!float) return;
     float.hidden = P.mode !== 'float';
     float.classList.toggle('folded', !!P.folded);
-    if (!float.hidden) requestAnimationFrame(restoreSpot);
+    edge.hidden = P.mode !== 'edge';
+    if (P.mode === 'edge') placeEdge();
+    if (!float.hidden && restore) requestAnimationFrame(restoreSpot);
     if (menuSpot) menuSpot.hidden = P.mode !== 'menu';
     paint(E.st);
   }
   function setMode(m) {
-    P.mode = m; if (m === 'menu') P.folded = false; save();
-    paintFloat();
+    P.mode = m; if (m !== 'float') P.folded = false; save();
+    paintModes();
     if (m === 'menu') toast('הנגן חזר למקום שלו בתפריט');
   }
-  /** Dragging the art out of the menu pulls the player out to float where it is dropped. */
+  /** Pulling the art out of the menu (or the strip) takes the player along under the finger. */
   function dragOut(handle) {
     if (!handle) return;
     handle.title = 'גררו כדי לשחרר את הנגן';
     handle.addEventListener('pointerdown', (e) => {
-      const x0 = e.clientX, y0 = e.clientY;
-      handle.setPointerCapture(e.pointerId);
+      const x0 = e.clientX, y0 = e.clientY, id = e.pointerId;
       const mv = (ev) => {
-        if (Math.hypot(ev.clientX - x0, ev.clientY - y0) < 24) return;
-        cleanup(); P.mode = 'float'; P.folded = false; save(); paintFloat();
-        requestAnimationFrame(() => { place(ev.clientX - 30, ev.clientY - 30); rememberSpot(); });
+        if (ev.pointerId !== id || Math.hypot(ev.clientX - x0, ev.clientY - y0) < 20) return;
+        off();
+        P.mode = 'float'; P.folded = false; save(); paintModes(false);
+        startDrag(ev, { x: 30, y: 30 });
       };
-      const cleanup = () => { handle.removeEventListener('pointermove', mv); handle.removeEventListener('pointerup', cleanup); handle.removeEventListener('pointercancel', cleanup); };
-      handle.addEventListener('pointermove', mv); handle.addEventListener('pointerup', cleanup); handle.addEventListener('pointercancel', cleanup);
+      const off = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', off); window.removeEventListener('pointercancel', off); };
+      window.addEventListener('pointermove', mv); window.addEventListener('pointerup', off); window.addEventListener('pointercancel', off);
     });
   }
 
@@ -512,6 +571,7 @@
       // controls of the hidden page give way to the frame's own
       if (menuSpot) menuSpot.hidden = true;
       if (float) float.classList.add('mu-away');
+      if (edge) edge.classList.add('mu-away');
       closePanel();
     }
     shell.src = u.pathname + u.search + u.hash;
@@ -521,7 +581,7 @@
   function start() {
     if (!mountMenu()) return;
     mountFloat();
-    paintFloat();
+    paintModes();
     shellLinks();
     // back from Spotify's sign-in
     const m = new URLSearchParams(location.search).get('music');

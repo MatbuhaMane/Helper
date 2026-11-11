@@ -44,3 +44,14 @@ description: How to model, render, check and export the companion figures with B
 - Subdivision shrinks shapes a little: make parts that must touch overlap slightly.
 - Thin parts (canes, whiskers) under ~0.008 units vanish at 150 px; keep ≥ 0.009.
 - Rendering on CPU: 64 samples + denoising at 900 px takes about a minute per view; don't raise it for previews.
+
+## Lessons from the animated ibn Ezra (generated mesh + Mixamo)
+- Don't bake a front-projected picture into the generated mesh's UVs (or a Smart UV): thousands of tiny islands, and
+  their seams show as shards across the face. Use the projection itself as the model's UV and the picture as its
+  texture; faces the picture never sees point at a plain robe-coloured patch painted into an empty corner.
+- Folded slivers in generated meshes light up black: turn head faces outward (from the head's centre) and body faces
+  outward (away from the nearest bone), give the head rounded normals, and light the figure mostly by its own colours
+  in the app (emissiveMap = map), since the picture already carries the shading.
+- Keep head turns small in the app: the beard follows the head bone and the chest doesn't, so big turns open a dark seam.
+- Tried and dropped: Laplacian smoothing of the face, mirroring half the head (the head isn't symmetric underneath),
+  star-shaped and front/back depth-map head shells (lost the profile, blocky silhouette).

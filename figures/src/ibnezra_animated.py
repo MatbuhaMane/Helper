@@ -58,10 +58,176 @@ def in_place(action):
                     k.handle_right[1] = v0
 
 
+def round_head_normals(ob, U, W, arm):
+    """The generated mesh is crumpled around the nose, brow and turban: folded slivers whose normals point every
+    which way and light up black. The painted picture already carries the face's shading, so the head gets smooth
+    normals pointing out from its centre (a sculpted figurine's soft light), fading into the real ones at the neck."""
+    me = ob.data
+    co = np.array([v.co[:] for v in me.vertices])
+    head_c = (co[U[:, 2] > 0.6].min(0) + co[U[:, 2] > 0.6].max(0)) / 2
+    # turn the head's folded faces around so every face looks outward (they render lit, not as black holes)
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.faces.ensure_lookup_table()
+    flip = [f for f in bm.faces if U[[v.index for v in f.verts], 2].mean() > 0.57
+            and f.normal.dot(f.calc_center_median() - Vector(head_c)) < 0]
+    # the body: outward is away from the nearest bone of the skeleton (world space, rest pose)
+    segs = [(arm.matrix_world @ b.head_local, arm.matrix_world @ b.tail_local) for b in arm.data.bones
+            if not any(k in b.name for k in ('Head', 'Eye', 'Top', 'Hand', 'Thumb', 'Index', 'Middle', 'Ring', 'Pinky'))]
+    A = np.array([a[:] for a, _ in segs])
+    B = np.array([b[:] for _, b in segs])
+    AB = B - A
+    for f in bm.faces:
+        ids = [v.index for v in f.verts]
+        if U[ids, 2].mean() > 0.57 or len(ids) < 3:
+            continue
+        P = W[ids]
+        c = P.mean(0)
+        n = np.cross(P[1] - P[0], P[2] - P[0])
+        t = np.clip(((c - A) * AB).sum(1) / np.maximum((AB * AB).sum(1), 1e-9), 0, 1)
+        Q = A + t[:, None] * AB
+        k = np.argmin(np.linalg.norm(c - Q, axis=1))
+        if np.dot(n, c - Q[k]) < 0:
+            flip.append(f)
+    bmesh.ops.reverse_faces(bm, faces=flip)
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    print('turned', len(flip), 'head faces outward')
+    vn = np.array([v.normal[:] for v in me.vertices])
+    t = np.clip((U[:, 2] - 0.55) / 0.08, 0, 1)
+    w = t * t * (3 - 2 * t)
+    head = U[:, 2] > 0.6
+    c = (co[head].min(0) + co[head].max(0)) / 2
+    radial = co - c
+    radial /= np.linalg.norm(radial, axis=1, keepdims=True) + 1e-9
+    n = radial * w[:, None] + vn * (1 - w[:, None])
+    n /= np.linalg.norm(n, axis=1, keepdims=True) + 1e-9
+    me.normals_split_custom_set_from_vertices([tuple(x) for x in n])
+    print('rounded head normals on', int((w > 0).sum()), 'vertices')
+
+
+def rebuild_head(ob, cut=0.62, N=150):
+    """The generated head is crumpled (folded slivers, one side worse than the other). Replace it with a clean head
+    built the way the picture is painted on, straight from the front: depth maps of the head's front and back
+    surfaces are median-filtered (slivers gone), mirrored about the nose so the two sides match exactly, smoothed,
+    rounded at the silhouette and stitched into one closed surface, skinned to the head bone."""
+    import bmesh
+    from scipy.ndimage import distance_transform_edt, gaussian_filter, median_filter
+    me = ob.data
+    M = np.array(ob.matrix_world)
+    co = np.array([v.co[:] for v in me.vertices])
+    W = (np.c_[co, np.ones(len(co))] @ M.T)[:, :3]
+    z0, z1 = W[:, 2].min(), W[:, 2].max()
+    Hh = z1 - z0
+    zc = z0 + cut * Hh
+    head = W[:, 2] > zc
+    hw = W[head]
+    med_y = np.median(hw[:, 1])
+    fs = -1.0 if (med_y - hw[:, 1].min()) >= (hw[:, 1].max() - med_y) else 1.0   # the front is fs * Y
+    band = head & (W[:, 2] < z0 + 0.78 * Hh)
+    nose_x = W[band][np.argmax(W[band, 1] * fs)][0]
+    half = max(nose_x - hw[:, 0].min(), hw[:, 0].max() - nose_x) + 0.01
+    xs = np.linspace(nose_x - half, nose_x + half, N)
+    zb = zc - 0.03 * Hh
+    NZ = int(N * (z1 + 0.01 - zb) / (2 * half))
+    zs = np.linspace(zb, z1 + 0.01, NZ)
+    polys = [list(p.vertices) for p in me.polygons]
+    bvh = BVHTree.FromPolygons([Vector(p) for p in W], polys)
+    y_far = hw[:, 1].min() - 1, hw[:, 1].max() + 1
+    Df = np.full((NZ, N), np.nan)
+    Db = np.full((NZ, N), np.nan)
+    for j, z in enumerate(zs):
+        for i, x in enumerate(xs):
+            o_front = Vector((x, y_far[1] if fs > 0 else y_far[0], z))
+            o_back = Vector((x, y_far[0] if fs > 0 else y_far[1], z))
+            hf = bvh.ray_cast(o_front, Vector((0, -fs, 0)), 4)[0]
+            hb = bvh.ray_cast(o_back, Vector((0, fs, 0)), 4)[0]
+            if hf is not None and hb is not None:
+                Df[j, i], Db[j, i] = hf.y, hb.y
+    mask = ~np.isnan(Df)
+    # mirror about the nose: the head is the union of both sides, the depths their average
+    mask = mask | mask[:, ::-1]
+    from scipy.ndimage import binary_closing, binary_opening, binary_fill_holes
+    mask = binary_fill_holes(binary_opening(binary_closing(mask, iterations=3), iterations=2))
+    def fill(D):
+        D = D.copy()
+        m = ~np.isnan(D)
+        if (~m).any():
+            idx = distance_transform_edt(~m, return_distances=False, return_indices=True)
+            D = D[tuple(idx)]
+        return D
+    Df, Db = fill(Df), fill(Db)
+    Df = median_filter(Df, size=7)
+    Db = median_filter(Db, size=7)
+    Df = (Df + Df[:, ::-1]) / 2
+    Db = (Db + Db[:, ::-1]) / 2
+    Df = gaussian_filter(Df, 1.2)
+    Db = gaussian_filter(Db, 1.6)
+    # round the silhouette: near the edge both surfaces close in on their middle
+    dist = distance_transform_edt(mask)
+    k = np.sqrt(np.clip(dist / 6.0, 0, 1))
+    mid = (Df + Db) / 2
+    Df = mid + (Df - mid) * k
+    Db = mid + (Db - mid) * k
+    # out with the old head
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.verts.ensure_lookup_table()
+    dead = [f for f in bm.faces if all(head[v.index] for v in f.verts)]
+    bmesh.ops.delete(bm, geom=dead, context='FACES_ONLY')
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    # in with the new one, skinned to the head (fading to the neck at its bottom edge)
+    dl = bm.verts.layers.deform.verify()
+    gh = ob.vertex_groups['mixamorig:Head'].index
+    gn = ob.vertex_groups['mixamorig:Neck'].index
+    inv = np.linalg.inv(M)
+    F, B = {}, {}
+    for j in range(NZ):
+        t = float(np.clip((zs[j] - zb) / (0.08 * Hh), 0, 1))
+        for i in range(N):
+            if not mask[j, i]:
+                continue
+            for store, D in ((F, Df), (B, Db)):
+                v = bm.verts.new((inv @ np.r_[xs[i], D[j, i], zs[j], 1])[:3])
+                v[dl][gh] = 0.15 + 0.85 * t
+                v[dl][gn] = 0.85 * (1 - t)
+                store[j, i] = v
+    quads = [(j, i) for j in range(NZ - 1) for i in range(N - 1)
+             if all((jj, ii) in F for jj, ii in ((j, i), (j, i + 1), (j + 1, i + 1), (j + 1, i)))]
+    qs = set(quads)
+    edge_count = {}
+    for j, i in quads:
+        c4 = [(j, i), (j, i + 1), (j + 1, i + 1), (j + 1, i)]
+        bm.faces.new([F[c] for c in c4])
+        bm.faces.new([B[c] for c in c4[::-1]])
+        for a_, b_ in zip(c4, c4[1:] + c4[:1]):
+            key = tuple(sorted((a_, b_)))
+            edge_count[key] = edge_count.get(key, 0) + 1
+    for (a_, b_), n in edge_count.items():
+        if n == 1:          # the silhouette: stitch front to back
+            bm.faces.new([F[a_], F[b_], B[b_], B[a_]])
+    bm.normal_update()
+    bm.to_mesh(me)
+    bm.free()
+    me.update()
+    print('rebuilt the head:', N, 'x', NZ, 'grid,', len(quads), 'quads a side; vertices now', len(me.vertices))
+
+
 def paint(ob, arm):
     """Project the A-pose picture onto the mesh in its rest pose and bake into its own UVs."""
     arm.data.pose_position = 'REST'
     bpy.context.view_layer.update()
+    # clean surface first: consistent normals and fresh UVs (the scanned mesh's own UVs had tiny, overlapping and
+    # degenerate islands that baked as black holes in the face)
+    for o in bpy.data.objects:
+        o.select_set(o is ob)
+    bpy.context.view_layer.objects.active = ob
+    bpy.ops.object.mode_set(mode='EDIT')
+    bpy.ops.mesh.select_all(action='SELECT')
+    bpy.ops.mesh.normals_make_consistent(inside=False)
+    bpy.ops.object.mode_set(mode='OBJECT')
     deps = bpy.context.evaluated_depsgraph_get()
     ev = ob.evaluated_get(deps)
     me_ev = ev.to_mesh()
@@ -97,7 +263,16 @@ def paint(ob, arm):
     r, g, b = c[:, 0], c[:, 1], c[:, 2]
     skin = (r > g) & (g > b) & (r - b > 0.12) & (r - b < 0.45) & (r > 0.45) & (U[:, 2] < 0.55)
     shoes = U[:, 2] < 0.05
-    back = (~visible & ~(skin | shoes)).astype(float)
+    # only the back half of each height slice may turn plain: the front always takes the picture, even where an
+    # overhang (the turban over the brow, the beard over the chest) blocks the straight ray
+    zb = np.clip((U[:, 2] * 60).astype(int), 0, 60)
+    mid = np.zeros(61)
+    for k in range(61):
+        ys = U[zb == k, 1]
+        mid[k] = (ys.min() + ys.max()) / 2 if len(ys) else 0
+    behind = U[:, 1] > mid[zb]
+    face = (U[:, 2] > 0.63) & (np.abs(U[:, 0]) < 0.16) & (U[:, 1] < (mid[zb] - 0.02))
+    back = (~visible & ~(skin | shoes) & ~face).astype(float)
     nb = [[] for _ in range(len(U))]
     for e in me.edges:
         a_, b_ = e.vertices
@@ -105,61 +280,40 @@ def paint(ob, arm):
         nb[b_].append(a_)
     for _ in range(2):
         back = np.array([(back[i] + back[n].mean()) / 2 if n else back[i] for i, n in enumerate(nb)])
-    attr = me.color_attributes.new('white_back', 'FLOAT_COLOR', 'POINT')
-    attr.data.foreach_set('color', np.repeat(back[:, None], 4, axis=1).ravel())
-
+    # No bake: the bake cut the picture into thousands of tiny islands whose seams showed as shards across the face.
+    # The model reads the picture directly instead: front faces at their spot in it, back faces at a robe-white
+    # patch added in the picture's empty top corner.
+    from PIL import Image as PILImage
+    pic = PILImage.open(IMG).convert('RGB')
+    pw, ph = pic.size
+    patch = max(24, pw // 40)
+    pic.paste(tuple(int(round(c * 255)) for c in hexc('#e2ded6')[:3]), (0, 0, patch, patch))
+    tex_path = f'{ROOT}/figures/build/ibn_ezra_tex.jpg'
+    pic.save(tex_path, quality=93)
+    patch_uv = (patch / 2 / pw, 1 - patch / 2 / ph)
+    uv = np.stack([u, v], axis=1)
+    loop_uv = uv[loops_v].copy()
+    for poly in me.polygons:
+        ids = list(poly.vertices)
+        if back[ids].mean() > 0.5:
+            loop_uv[poly.loop_start:poly.loop_start + poly.loop_total] = patch_uv
+    proj.data.foreach_set('uv', loop_uv.ravel())
+    for l in [l for l in me.uv_layers if l.name != 'proj']:
+        me.uv_layers.remove(l)
     m = bpy.data.materials.new('ibn_ezra')
     m.use_nodes = True
     nt = m.node_tree
     bsdf = nt.nodes['Principled BSDF']
     bsdf.inputs['Metallic'].default_value = 0.0
     bsdf.inputs['Roughness'].default_value = 0.6
-    src = nt.nodes.new('ShaderNodeTexImage')
-    src.image = bpy.data.images.load(IMG)
-    src.extension = 'EXTEND'
-    uvn = nt.nodes.new('ShaderNodeUVMap')
-    uvn.uv_map = 'proj'
-    nt.links.new(uvn.outputs['UV'], src.inputs['Vector'])
-    att = nt.nodes.new('ShaderNodeAttribute')
-    att.attribute_name = 'white_back'
-    mix = nt.nodes.new('ShaderNodeMix')
-    mix.data_type = 'RGBA'
-    nt.links.new(att.outputs['Fac'], mix.inputs['Factor'])
-    nt.links.new(src.outputs['Color'], mix.inputs['A'])
-    mix.inputs['B'].default_value = hexc('#e2ded6')
-    nt.links.new(mix.outputs['Result'], bsdf.inputs['Base Color'])
+    tex = nt.nodes.new('ShaderNodeTexImage')
+    tex.image = bpy.data.images.load(tex_path)
+    tex.extension = 'EXTEND'
+    nt.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
+    m.use_backface_culling = False
     me.materials.clear()
     me.materials.append(m)
-    baked = bpy.data.images.new('ibn_ezra_color', TEX, TEX)
-    tgt = nt.nodes.new('ShaderNodeTexImage')
-    tgt.image = baked
-    nt.nodes.active = tgt
-    me.uv_layers.active = me.uv_layers[target_uv]
-    s = bpy.context.scene
-    s.render.engine = 'CYCLES'
-    s.cycles.samples = 4
-    s.render.bake.use_pass_direct = False
-    s.render.bake.use_pass_indirect = False
-    s.render.bake.use_pass_color = True
-    s.render.bake.margin = 12
-    for o in bpy.data.objects:
-        o.select_set(o is ob)
-    bpy.context.view_layer.objects.active = ob
-    bpy.ops.object.bake(type='DIFFUSE', pass_filter={'COLOR'})
-    path = f'{ROOT}/figures/build/ibn_ezra_anim_color.png'
-    baked.filepath_raw = path
-    baked.file_format = 'PNG'
-    baked.save()
-    # the exported material: just the baked texture on the model's own UVs, both sides lit
-    for n in (mix, att, src, uvn):
-        nt.nodes.remove(n)
-    uvt = nt.nodes.new('ShaderNodeUVMap')
-    uvt.uv_map = target_uv
-    nt.links.new(uvt.outputs['UV'], tgt.inputs['Vector'])
-    nt.links.new(tgt.outputs['Color'], bsdf.inputs['Base Color'])
-    m.use_backface_culling = False
-    me.uv_layers.remove(me.uv_layers['proj'])
-    me.color_attributes.remove(me.color_attributes['white_back'])
+    round_head_normals(ob, U, W, arm)
     arm.data.pose_position = 'POSE'
 
 

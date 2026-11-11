@@ -281,7 +281,9 @@
     const model = gltf.scene;
     rig.add(model);
     model.traverse((o) => {
-      if (o.isMesh) { o.frustumCulled = false; if (o.material) { o.material.roughness = 0.6; o.material.metalness = 0; o.material.side = THREE.DoubleSide; } }
+      if (o.isMesh) { o.frustumCulled = false; if (o.material) { o.material.roughness = 0.6; o.material.metalness = 0; o.material.side = THREE.DoubleSide;
+        // the picture already carries its shading: light him partly by his own colours, so small folds in the mesh don't show as dark slivers
+        if (o.material.map) { o.material.emissive = new THREE.Color(0xffffff); o.material.emissiveMap = o.material.map; o.material.emissiveIntensity = 0.82; o.material.color = new THREE.Color(0x4a4a4a); } } }
       if (o.isBone && ['root', 'body', 'head'].includes(o.name)) { parts[o.name] = o; o.userData.rest = o.quaternion.clone(); }
       if (o.isBone && /Head$/.test(o.name)) parts.mxHead = o;
       if (o.isBone && /Hips$/.test(o.name)) parts.mxHips = o;
@@ -323,7 +325,7 @@
       model.scale.setScalar(2.35);
     }
     parts.height = 2.35;
-    renderer.toneMappingExposure = 1.45;
+    renderer.toneMappingExposure = 1.15;
   }
 
   /* Clips: a looping base (idle, walk, think, sleep...) and one-shots on top (wave, bow, point, shrug...).
@@ -637,12 +639,13 @@
     const look = pointing && now < pointing.until ? pointing : mouse;
     const headY = pos.y - box.h * 0.75;
     const free = asleep || busyClip ? 0 : 1;      // clips that move the head on their own keep it
-    const yaw = Math.max(-0.6, Math.min(0.6, (look.x - pos.x) / 450)) - facing * 0.6;
-    const pitch = Math.max(-0.3, Math.min(0.25, (look.y - headY) / 650));
+    // gentle turns: the beard follows the head and the chest doesn't, so a big turn opens a seam between them
+    const yaw = Math.max(-0.28, Math.min(0.28, (look.x - pos.x) / 900)) - facing * 0.3;
+    const pitch = Math.max(-0.12, Math.min(0.1, (look.y - headY) / 1300));
     _e.y += (yaw * free - _e.y) * Math.min(1, dt * 5);
     _e.x += (pitch * free - _e.x) * Math.min(1, dt * 5);
     if (P.mxHead) {
-      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(_e.x + bob.x * 0.6, _e.y, bob.z * 0.6, 'YXZ'));
+      const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(_e.x + bob.x * 0.3, _e.y, bob.z * 0.3, 'YXZ'));
       P.mxHead.quaternion.multiply(q);
     }
     if (pointing && now >= pointing.until) pointing = null;

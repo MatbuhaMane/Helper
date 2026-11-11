@@ -70,12 +70,12 @@
         await api('/api/music/spotify/cmd', { body: { action, ...extra }, noRedirect: true });
       } catch (e) {
         if (/no_active_device/.test(e.message)) {
-          // No Spotify playing anywhere: wake the first device that's on, or ask to open the Spotify app.
+          // No Spotify playing anywhere: ask where to play (never wake a TV or a speaker on our own), or to open the Spotify app.
           const d = await api('/api/music/spotify/devices', { noRedirect: true }).catch(() => ({ devices: [] }));
-          if (d.devices.length && action !== 'pause') {
-            await api('/api/music/spotify/cmd', { body: { action: 'transfer', device: d.devices[0].id }, noRedirect: true }).catch(() => {});
-            if (action === 'play' && (extra.uri || extra.context)) await api('/api/music/spotify/cmd', { body: { action, ...extra, device: d.devices[0].id }, noRedirect: true }).catch(() => {});
-          } else { st.error = 'no_device'; emit(); return false; }
+          if (action === 'pause') { st.playing = false; emit(); return false; }
+          st.pending = { action, extra };
+          st.error = d.devices.length ? 'pick_device' : 'no_device';
+          emit(); return false;
         } else if (/premium/.test(e.message)) { st.error = 'premium'; emit(); return false; }
         else { toast('ספוטיפיי לא ענה, נסו שוב'); return false; }
       }
@@ -210,6 +210,16 @@
   E.on(paint);
   window.addEventListener('pagehide', () => E.off(paint));
   setInterval(() => paint(E.st), 1000);    // the progress moves between polls
+
+  // Spotify's answers that need the person (where to play, open the app, Premium) — whichever controls were pressed.
+  painters.push((st) => {
+    if (!st.error || document.visibilityState !== 'visible') return;
+    const e = st.error; st.error = '';
+    if (st.playing && e !== 'premium') st.playing = false;
+    if (e === 'pick_device') showDevices(st.pending);
+    if (e === 'no_device') showNoDevice();
+    if (e === 'premium') toast('ספוטיפיי מאפשר שליטה רק לחשבון פרימיום מלא');
+  });
 
   /** A compact now-playing unit (art, title, controls); used in the menu, the strip and the floating card. */
   function unit(kind) {
@@ -373,8 +383,6 @@
       tNow.textContent = fmt(now(st)); tDur.textContent = fmt(st.duration);
       if (document.activeElement !== vol) vol.value = st.volume;
       devBtn.hidden = st.source !== 'spotify' || !st.spotify.connected;
-      if (st.error === 'no_device') { st.error = ''; showNoDevice(); }
-      if (st.error === 'premium') { st.error = ''; toast('ספוטיפיי מאפשר שליטה רק לחשבון פרימיום מלא'); }
     });
 
     function showTab(id) {
@@ -444,13 +452,18 @@
     body.append(el('div', { class: 'mu-results' }, list.map((x) => row(x, (x.kind === 'yt' ? 'יוטיוב · ' : 'ספוטיפיי · ') + (x.artist || x.channel || ''), () => (x.kind === 'yt' ? E.playYT(x) : E.playSpotify(x))))));
   }
 
-  async function showDevices() {
+  /** Where should it play? pending: the press that found no Spotify playing (it is carried out on the chosen device). */
+  async function showDevices(pending) {
     const r = await api('/api/music/spotify/devices', { noRedirect: true }).catch(() => ({ devices: [] }));
     if (!r.devices.length) return showNoDevice();
     const list = el('div', { class: 'mu-results' }, r.devices.map((d) => row({ title: d.name }, d.active ? 'מתנגן כאן עכשיו' : typeLabel(d.type), async () => {
-      await E.spCmd('transfer', { device: d.id }); H.closeModal(); toast('המוזיקה עברה ל' + d.name);
+      H.closeModal();
+      const ok = pending ? await E.spCmd(pending.action, { ...pending.extra, device: d.id }) : await E.spCmd('transfer', { device: d.id });
+      E.st.pending = null;
+      if (ok) toast((pending ? 'מנגן ב' : 'המוזיקה עברה ל') + d.name);
     })));
-    H.modal(el('h2', {}, 'איפה לנגן?'), el('p', { class: 'muted' }, 'המכשירים שבהם ספוטיפיי פתוח עכשיו.'), list);
+    H.modal(el('h2', {}, 'איפה לנגן?'), el('p', { class: 'muted' }, 'המכשירים שבהם ספוטיפיי פתוח עכשיו. לא רואים את הטלפון או המחשב? פתחו בהם את ספוטיפיי.'), list,
+      el('p', {}, el('a', { class: 'btn ghost small', href: 'spotify:', onclick: () => setTimeout(() => E.poll(), 4000) }, 'לפתוח את ספוטיפיי כאן')));
   }
   const typeLabel = (t) => ({ Smartphone: 'טלפון', Computer: 'מחשב', Speaker: 'רמקול', TV: 'טלוויזיה', Tablet: 'טאבלט', CastAudio: 'רמקול', Automobile: 'רכב' })[t] || t;
   function showNoDevice() {

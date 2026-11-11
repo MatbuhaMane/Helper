@@ -91,6 +91,27 @@
     if (btn) { btn.textContent = '★'; btn.setAttribute('aria-pressed', 'true'); }
     toast('נשמר בשירון שלנו');
   }
+  /** Songs with the same name (different artists or versions) become one card. */
+  function groupHits(list) {
+    const groups = new Map();
+    for (const h of list) {
+      const k = norm(h.title).replace(/[^א-תa-z0-9]+/g, ' ').trim();
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(h);
+    }
+    return [...groups.values()];
+  }
+  const groupCard = (vs) => {
+    if (vs.length === 1) return hitCard(vs[0]);
+    const h = vs.find((v) => v.image) || vs[0];
+    const artists = [...new Set(vs.map((v) => v.artist).filter(Boolean))];
+    return card({
+      title: vs[0].title, artist: artists.slice(0, 2).join(', ') + (artists.length > 2 ? ` ועוד ${artists.length - 2}` : ''),
+      snippet: vs[0].snippet, image: h.image, source: vs[0].source,
+      extra: el('span', { class: 'src' }, el('span', { class: 'vers' }, `${vs.length} ביצועים`), ' · ', vs[0].source === 'tab4u' ? 'Tab4u' : 'שירונט'),
+      onOpen: () => openRemote(vs[0], vs),
+    });
+  };
   const hitCard = (h) => card({
     title: h.title, artist: h.artist, snippet: h.snippet, image: h.image, source: h.source,
     extra: el('span', { class: 'src' }, h.source === 'tab4u' ? 'אקורדים · Tab4u' : 'מילים · שירונט', h.rating ? el('span', { class: 'rate' }, ' ★' + h.rating) : null),
@@ -158,11 +179,11 @@
     const own = mine.filter((s) => matches(q, s.title, s.artist, s.body)).map(mineCard);
     const zs = (zemirot?.songs || []).filter((z) => matches(q, z.title, z.lines.map((l) => l.t).join(' '))).map(zemerCard);
     if (tab === 'all' || tab === 'lyrics') {
-      const s = section('מילים', [...results.lyrics.map(hitCard), googleCard('lyrics')]);
+      const s = section('מילים', [...groupHits(results.lyrics).map(groupCard), googleCard('lyrics')]);
       if (s && !results.loading) out.append(s);
     }
     if (tab === 'all' || tab === 'chords') {
-      const s = section('אקורדים', [...results.chords.map(hitCard), googleCard('chords')]);
+      const s = section('אקורדים', [...groupHits(results.chords).map(groupCard), googleCard('chords')]);
       if (s && !results.loading) out.append(s);
     }
     if (tab === 'all') {
@@ -197,7 +218,7 @@
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !reader.hidden) closeReader(); });
   const head = (title, sub) => el('div', {}, el('b', {}, title), sub ? el('small', {}, sub) : null);
 
-  async function openRemote(hit) {
+  async function openRemote(hit, versions = null) {
     openReader(head(hit.title, hit.artist), el('p', { class: 'muted' }, 'טוען את השיר…'));
     let song;
     try { song = await api(`/api/songs/page?url=${encodeURIComponent(hit.url)}`); }
@@ -208,15 +229,17 @@
     const src = SOURCES[song.source];
     const credit = el('p', { class: 'credit' }, (song.credits || []).join(' · '), (song.credits || []).length ? el('br') : null,
       'המקור: ', el('a', { href: song.url, target: '_blank', rel: 'noopener' }, src.label), ' · © כל הזכויות שמורות ליוצרים');
+    const picker = versions && versions.length > 1 ? el('select', { class: 'vpick', 'aria-label': 'ביצוע / גרסה', onchange: (e) => openRemote(versions[Number(e.target.value)], versions) },
+      versions.map((v, i) => el('option', { value: String(i), selected: v.url === hit.url }, (v.artist || 'גרסה ' + (i + 1)) + (v.rating ? ` ★${v.rating}` : '')))) : null;
     const star = el('button', { class: 'mini', title: 'שמירה לשירון שלנו', 'aria-label': 'שמירה לשירון שלנו', onclick: () => saveLink({ ...hit, title: song.title || hit.title, artist: song.artist || hit.artist }, star) }, savedUrl(hit.url) ? '★' : '☆');
     if (song.kind === 'chords') {
-      showSheet(head(song.title || hit.title, song.artist || hit.artist), song.text, [star], credit);
+      showSheet(head(song.title || hit.title, song.artist || hit.artist), song.text, [picker, star].filter(Boolean), credit);
     } else {
-      openReader(head(song.title || hit.title, song.artist || hit.artist), el('div', {}, lyricsView(song.text), credit), [star]);
+      openReader(head(song.title || hit.title, song.artist || hit.artist), el('div', {}, lyricsView(song.text), credit), [picker, star].filter(Boolean));
     }
   }
   function lyricsView(text) {
-    return el('div', { class: 'lyrics' }, text.split(/\n{2,}/).map((st) => el('p', { class: 'stanza' }, st.split('\n').flatMap((l, i) => (i ? [el('br'), l] : [l])))));
+    return el('div', { class: 'lyrics', dir: dirOf(text) }, text.split(/\n{2,}/).map((st) => el('p', { class: 'stanza' }, st.split('\n').flatMap((l, i) => (i ? [el('br'), l] : [l])))));
   }
 
   function openZemer(z) {
@@ -226,41 +249,94 @@
     openReader(head(z.title, zemirot.sections[z.section]), body);
   }
 
-  /* chord sheets: chords over lyrics (or [Am] inline), transpose, and the chords' diagrams */
-  function chordPro(text) {
-    return text.split('\n').flatMap((line) => {
-      if (!/\[[A-G][^\]]*\]/.test(line)) return [line];
-      let chords = '', lyric = '';
-      for (const part of line.split(/(\[[^\]]+\])/)) {
-        if (/^\[[^\]]+\]$/.test(part)) {
-          const ch = part.slice(1, -1);
-          if (chords.length > lyric.length) lyric += ' '.repeat(chords.length - lyric.length + 1);
-          chords += ' '.repeat(Math.max(0, lyric.length - chords.length)) + ch + ' ';
-        } else lyric += part;
-      }
-      return [chords.replace(/\s+$/, ''), lyric];
-    });
+  /** Which way a song reads: left to right when its words are mostly Latin letters (English and the like). */
+  function dirOf(text) {
+    let he = 0, lat = 0;
+    for (const l of String(text).split('\n')) {
+      if (C.isChordLine(l)) continue;
+      const w = l.replace(/\[[^\]]*\]/g, '');
+      he += (w.match(/[\u0590-\u05FF\u0600-\u06FF]/g) || []).length;
+      lat += (w.match(/[A-Za-z\u00C0-\u024F\u0400-\u04FF]/g) || []).length;
+    }
+    return lat > he ? 'ltr' : 'rtl';
   }
+
+  /* chord sheets: each chord is pinned to the letter it is played on (from a chord line over the words, or [Am]
+     inline), so it stays exactly over its syllable in any font, either direction, and when lines wrap. */
   const isTab = (l) => /^\s*[eBGDAEbgda]?\s*[|:]?[-0-9hpbrx/\\~|() ]{8,}$/.test(l) && (l.match(/-/g) || []).length > l.length * 0.4;
+  const isSec = (l) => /^\[[^\]]+\]$/.test(l.trim()) && !C.isChord(l.trim().slice(1, -1)) || /^[^\s\[].{0,24}:\s*$/.test(l.trim());
+  const isDef = (l) => /^[A-G][#b]?[^\s:]*:\s+[x0-9]{6}$/.test(l.trim());
+  const isLyric = (l) => l != null && l.trim() && !C.isChordLine(l) && !isTab(l) && !isSec(l) && !isDef(l);
+  function parseSheet(text) {
+    const L = String(text).replace(/\r/g, '').split('\n');
+    const out = [];
+    for (let i = 0; i < L.length; i++) {
+      const l = L[i];
+      if (!l.trim()) { out.push({ t: 'gap' }); continue; }
+      if (isTab(l)) { out.push({ t: 'tab', l }); continue; }
+      if (isDef(l)) { out.push({ t: 'def', l: l.trim() }); continue; }
+      if (isSec(l)) { out.push({ t: 'sec', l: l.trim().replace(/^\[|\]$/g, '') }); continue; }
+      if (/\[[A-G][^\]]*\]/.test(l) && !C.isChordLine(l)) {          // ChordPro: [Am]words
+        const segs = [];
+        const parts = l.split(/\[([^\]]+)\]/);
+        if (parts[0]) segs.push({ ch: null, tx: parts[0] });
+        for (let k = 1; k < parts.length; k += 2) segs.push({ ch: parts[k], tx: parts[k + 1] || '' });
+        out.push({ t: 'pair', segs });
+        continue;
+      }
+      if (C.isChordLine(l)) {
+        const toks = [...l.matchAll(/\S+/g)].map((m) => ({ ch: m[0], at: m.index }));
+        const next = L[i + 1];
+        if (isLyric(next)) {                                          // chords over words: pin each to its letter
+          const segs = [];
+          let lyr = next;
+          const last = toks[toks.length - 1];
+          if (last.at >= lyr.length) lyr = lyr + ' '.repeat(last.at - lyr.length + 1);
+          if (toks[0].at > 0) segs.push({ ch: null, tx: lyr.slice(0, toks[0].at) });
+          toks.forEach((tk, k) => segs.push({ ch: tk.ch, tx: lyr.slice(tk.at, k + 1 < toks.length ? toks[k + 1].at : undefined) }));
+          out.push({ t: 'pair', segs });
+          i++;
+        } else out.push({ t: 'chords', l });
+        continue;
+      }
+      out.push({ t: 'ly', l });
+    }
+    return out;
+  }
   function showSheet(headNode, text, extraTools = [], footer = null) {
     let steps = 0;
-    const lines = chordPro(text);
+    const items = parseSheet(text);
+    const dir = dirOf(text);
+    const tr = (ch) => (C.isChord(ch) ? C.transpose(ch, steps) : ch);
     const used = () => {
       const set = [];
-      for (const l of lines) if (C.isChordLine(l)) for (const t of l.trim().split(/\s+/)) if (C.isChord(t)) { const n = C.transpose(t, steps); if (!set.includes(n)) set.push(n); }
+      const add = (t) => { if (C.isChord(t)) { const n = C.transpose(t, steps); if (!set.includes(n)) set.push(n); } };
+      for (const it of items) {
+        if (it.t === 'pair') it.segs.forEach((g) => g.ch && add(g.ch));
+        if (it.t === 'chords') it.l.trim().split(/\s+/).forEach(add);
+      }
       return set;
     };
-    const sheet = el('div', { class: 'sheet' });
+    const sheet = el('div', { class: 'sheet', dir });
     const diagrams = el('div', { class: 'diagrams' });
     const keyLabel = el('span', { class: 'key' });
     const draw = () => {
-      sheet.replaceChildren(...lines.map((l) => {
-        if (!l.trim()) return el('div', { class: 'gap' });
-        if (C.isChordLine(l)) return el('div', { class: 'cl', dir: 'rtl' }, ...C.transposeLine(l, steps).split(/(\S+)/).map((p) => (C.isChord(p) ? el('b', { dir: 'ltr' }, p) : p)));
-        if (isTab(l)) return el('pre', { class: 'tab', dir: 'ltr' }, l);
-        if (/^\[.+\]$|^[^\s].{0,24}:\s*$/.test(l.trim())) return el('div', { class: 'sec' }, l.replace(/^\[|\]$/g, ''));
-        if (/^[A-G][#b]?[^\s:]*:\s+[x0-9]{6}$/.test(l.trim())) return el('div', { class: 'cdef', dir: 'ltr' }, l.trim());
-        return el('div', { class: 'ly' }, l);
+      sheet.replaceChildren(...items.map((it) => {
+        if (it.t === 'gap') return el('div', { class: 'gap' });
+        if (it.t === 'tab') return el('pre', { class: 'tab', dir: 'ltr' }, it.l);
+        if (it.t === 'def') return el('div', { class: 'cdef', dir: 'ltr' }, it.l);
+        if (it.t === 'sec') return el('div', { class: 'sec' }, it.l);
+        if (it.t === 'ly') return el('div', { class: 'ly' }, it.l);
+        if (it.t === 'chords') return el('div', { class: 'crow' }, ...it.l.trim().split(/\s+/).map((c) => el(C.isChord(c) ? 'b' : 'span', { dir: 'ltr' }, tr(c))));
+        // a chord name may hang over the next letters (so words aren't torn apart); it keeps its width only when
+        // the next chord comes right after it, so two names never overlap
+        return el('div', { class: 'pl' }, ...it.segs.map((g, k) => {
+          const name = g.ch ? tr(g.ch) : '';
+          const crowded = name && it.segs[k + 1]?.ch;
+          return el('span', { class: 'sg', style: crowded ? `min-inline-size:${(name.length * 0.62 + 0.5).toFixed(2)}em` : null },
+            name ? el('b', { class: 'ch', dir: 'ltr' }, name) : null,
+            el('span', { class: 'tx' }, g.tx || '\u00a0'));
+        }));
       }));
       diagrams.replaceChildren(...used().map((n) => (prefs.instrument === 'piano' ? C.pianoSvg(n) : C.guitarSvg(n))));
       keyLabel.textContent = steps ? (steps > 0 ? '+' : '') + steps : '0';

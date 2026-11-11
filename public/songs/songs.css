@@ -54,10 +54,16 @@ body.reading { overflow: hidden; }
 .zemer p { margin: 0 0 .35em; line-height: 1.9; font-size: 1.08em; }
 .zemer p.refrain { color: var(--vine); font-style: italic; margin-inline-start: 1.2em; }
 
-.sheet { line-height: 1.35; }
-.sheet .cl { white-space: pre; color: var(--soil); font-weight: 500; min-height: 1.3em; margin-top: .55em; direction: rtl; text-align: right; unicode-bidi: isolate; }
-.sheet .ly { direction: rtl; text-align: right; }
-.sheet .cl b { font-weight: 600; color: var(--vine); }
+.sheet { line-height: 1.3; }
+.sheet .pl { margin-top: .45em; padding-top: 1.3em; }
+.sheet .sg { position: relative; display: inline-block; }
+.sheet .ch { position: absolute; inset-block-end: 100%; font-weight: 600; color: var(--vine); font-size: .92em; line-height: 1.3; white-space: nowrap; }
+.sheet[dir="rtl"] .ch { right: 0; }
+.sheet[dir="ltr"] .ch { left: 0; }
+.sheet .tx { white-space: pre; }
+.sheet .crow { display: flex; flex-wrap: wrap; gap: .5em 1.1em; margin: .5em 0 .2em; color: var(--vine); }
+.sheet .crow b { font-weight: 600; }
+.sheet .crow span { color: var(--muted); }
 .sheet .ly { white-space: pre-wrap; }
 .sheet .gap { height: 1em; }
 .sheet .sec { font-weight: 500; color: var(--vine); margin: 1em 0 .2em; }
@@ -92,3 +98,7 @@ body.reading { overflow: hidden; }
   .chord-svg { width: 62px; flex: none; }
   .chord-svg.piano { width: 104px; }
 }
+
+/* versions of the same song (different artists) */
+.vpick { font: inherit; font-size: .9rem; max-width: 46vw; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
+.cfoot .vers { color: var(--vine); font-weight: 500; }

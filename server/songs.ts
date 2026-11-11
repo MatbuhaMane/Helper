@@ -92,9 +92,10 @@ function tab4uSong(html: string) {
   while ((m = re.exec(body))) {
     if (!m[1]) { if (!lastBlank) out.push(''); lastBlank = true; continue; }
     let t = m[2].replace(/<span class=['"]titLine['"]>([\s\S]*?)<\/span>/g, '[$1]').replace(/<br\s*\/?>/gi, '\n');
-    t = t.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+    t = t.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, '\u00a0').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
     for (const l of t.split('\n')) {
-      const line = m[1] === 'song' ? l.replace(/^\s+|\s+$/g, '') : l.replace(/^\s*\n|\s+$/g, '').replace(/^\t+/, '');
+      // the page's own indentation is plain whitespace; the song's spacing is &nbsp; and must stay
+      const line = l.replace(/^[ \t\r]+|[ \t\r]+$/g, '').replace(/\u00a0/g, ' ').replace(/\s+$/, '');
       if (!line.trim()) continue;
       out.push(line);
       lastBlank = false;

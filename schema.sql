@@ -69,6 +69,46 @@ CREATE TABLE IF NOT EXISTS feeds (
   PRIMARY KEY (email, id)
 );
 
+-- every article seen in any feed, so the family can search the past (kept 120 days)
+CREATE TABLE IF NOT EXISTS news_items (
+  id         TEXT PRIMARY KEY,   -- hash of the link
+  feed_url   TEXT NOT NULL,
+  feed_title TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  link       TEXT NOT NULL,
+  date       INTEGER NOT NULL,
+  summary    TEXT,
+  image      TEXT,
+  body       TEXT,               -- full text where the feed carries it (Telegram posts)
+  lang       TEXT,
+  seen_at    INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS news_items_feed_date ON news_items(feed_url, date);
+CREATE INDEX IF NOT EXISTS news_items_date ON news_items(date);
+-- articles translated into Hebrew
+CREATE TABLE IF NOT EXISTS news_translations (
+  url        TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,      -- JSON {title_he, paragraphs:[...], from}
+  created_at INTEGER NOT NULL
+);
+-- headlines translated into Hebrew (by article id), so only headlines are translated when that's all that's needed
+CREATE TABLE IF NOT EXISTS news_title_tr (
+  id         TEXT PRIMARY KEY,
+  title_he   TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+-- an article checked against independent sources on the web
+CREATE TABLE IF NOT EXISTS news_verifications (
+  item_id    TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,      -- JSON {status, rating, explanation_he, sources:[{url, title}], at}
+  created_at INTEGER NOT NULL
+);
+-- which set of recommended sources each person already received (new ones are added once)
+CREATE TABLE IF NOT EXISTS news_seeds (
+  email   TEXT PRIMARY KEY,
+  version INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS news_state (
   email   TEXT NOT NULL,
   item_id TEXT NOT NULL,      -- hash of the article link

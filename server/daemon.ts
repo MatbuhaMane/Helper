@@ -411,7 +411,7 @@ export async function formImage(ctx: Ctx) {
   await ctx.env.DB.prepare(`INSERT INTO image_quota (email, day, count) VALUES (?, ?, 1) ON CONFLICT(email, day) DO UPDATE SET count = count + 1`).bind(u.email, day).run();
 
   const animal = slug.replace(/-/g, ' ');
-  const model = ctx.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image';
+  const model = ctx.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image';
   const res = await fetch(`${(ctx.env.DEV_MODE === '1' && ctx.env.GEMINI_BASE_URL) || 'https://generativelanguage.googleapis.com'}/v1beta/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-goog-api-key': ctx.env.GEMINI_API_KEY },

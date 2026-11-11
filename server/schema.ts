@@ -9,6 +9,14 @@ import type { Env } from './core';
 const COLUMNS: [table: string, column: string, type: string][] = [
   ['recipes', 'subtitle', 'TEXT'],   // where the recipe came from, shown under the title
   ['recipes', 'meta', 'TEXT'],       // JSON {site, original_title, lang, country, servings, time}
+  ['feeds', 'lang', 'TEXT'],         // he | ar | en | ...
+  ['feeds', 'country', 'TEXT'],      // Hebrew name of the source's country
+  ['feeds', 'kind', 'TEXT'],         // web | telegram | facebook | ...
+  ['feeds', 'quality', 'INTEGER'],   // 1-5, quality and reliability (our default, the person can change it)
+  ['feeds', 'category', 'TEXT'],     // editorial | official | journalist | aggregator | activist
+  ['news_state', 'hidden', 'INTEGER'], // the person hid this article
+  ['news_state', 'rating', 'INTEGER'], // the person's own reliability rating for this article (1-5)
+  ['news_state', 'folder', 'TEXT'],    // the folder of a saved article (the folders themselves are in the person's prefs)
 ];
 
 let ready: Promise<void> | null = null;

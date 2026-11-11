@@ -45,8 +45,8 @@ def load_picture():
 
 # ---------------------------------------------------------------- the mesh
 
-def clean_mesh():
-    bpy.ops.import_scene.gltf(filepath=REF_MESH)
+def clean_mesh(path=None):
+    bpy.ops.import_scene.gltf(filepath=path or REF_MESH)
     ob = [o for o in bpy.data.objects if o.type == 'MESH'][0]
     for o in list(bpy.data.objects):
         if o is not ob:

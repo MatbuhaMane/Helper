@@ -13,6 +13,8 @@
   const prefs = H.prefs('news', {
     unreadOnly: false, cards: false, sideLang: [], sideCountry: [], sideKind: [],
     range: 'all', kinds: [], langs: [], minQ: 0, sort: 'date', trTitles: false,
+    customFeeds: [],   // [{id, name, feedIds, filters}] – the person's own feeds: chosen sources and a filter
+    savedFolders: [],  // [{id, name}] in the person's order – folders for saved articles
   }, 'helper.news.prefs');
   const savePrefs = () => H.savePrefs('news');
 
@@ -26,8 +28,13 @@
 
   let feeds = [];
   let items = [];
+  let saved = [];          // saved articles (each with its folder)
   let errors = [];
-  let scope = { type: 'all' }; // {type:'all'} | {type:'folder', folder} | {type:'feed', id} | {type:'starred'}
+  // {type:'all'} | {type:'folder', folder} | {type:'feed', id} | {type:'starred', folder?: id | ''} | {type:'custom', id}
+  let scope = { type: 'all' };
+  const FILTER_KEYS = ['range', 'kinds', 'langs', 'minQ', 'sort', 'unreadOnly'];
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const customOf = (id) => prefs.customFeeds.find((c) => c.id === id);
   let query = '';
   let history = null;      // results from the past, when the "בעבר" switch is on
   let current = null;
@@ -82,11 +89,30 @@
 
     const active = new Set(activeFeeds().map((f) => f.id));
     const unread = (pred) => items.filter((i) => !i.read && !i.hidden && active.has(i.feedId) && pred(i)).length || '';
-    // Saved articles come from their own list; everything else is filtered from what is loaded.
-    const go = (sc) => () => { const reload = sc.type === 'starred' || scope.type === 'starred'; scope = sc; closeSide(); if (reload) load(); else { renderSide(); resetList(); } };
+    const go = (sc) => () => {
+      // A custom feed brings its own filter with it.
+      if (sc.type === 'custom') { const c = customOf(sc.id); if (c?.filters) { FILTER_KEYS.forEach((k) => { if (k in c.filters) prefs[k] = structuredClone(c.filters[k]); }); savePrefs(); renderFilters(); } }
+      scope = sc; closeSide(); renderSide(); resetList();
+    };
     const btn = (label, sc, count, icon) => el('button', { class: 'src', 'aria-current': String(JSON.stringify(sc) === JSON.stringify(scope)), onclick: go(sc) },
       icon || null, el('span', { class: 'src-name' }, label), el('span', { class: 'n' }, count));
-    side.append(el('nav', { class: 'side-nav' }, btn('כל הכתבות', { type: 'all' }, unread(() => true), el('span', { class: 'ico' }, '🗞')), btn('שמורים', { type: 'starred' }, '', el('span', { class: 'ico' }, '⭐'))));
+    const rowWith = (b, onMore, label) => el('div', { class: 'src-row' }, b, el('button', { class: 'mini src-more', 'aria-label': label, title: label, onclick: (e) => { e.stopPropagation(); onMore(); } }, '⋯'));
+
+    // Saved articles, with the person's own folders under them.
+    const inFolder = (id) => saved.filter((s) => (s.folder || '') === id).length || '';
+    side.append(el('nav', { class: 'side-nav' },
+      btn('כל הכתבות', { type: 'all' }, unread(() => true), el('span', { class: 'ico' }, '🗞')),
+      btn('שמורים', { type: 'starred' }, saved.length || '', el('span', { class: 'ico' }, '⭐')),
+      el('div', { class: 'subfolders' },
+        prefs.savedFolders.map((fo) => rowWith(btn(fo.name, { type: 'starred', folder: fo.id }, inFolder(fo.id), el('span', { class: 'ico' }, '📁')), () => editSavedFolder(fo), `עריכת התיקייה ${fo.name}`)),
+        saved.some((s) => !s.folder) && prefs.savedFolders.length ? btn('בלי תיקייה', { type: 'starred', folder: '' }, inFolder(''), el('span', { class: 'ico' }, '·')) : null,
+        el('button', { class: 'link add-sub', onclick: () => newSavedFolder() }, '＋ תיקייה לשמורים'))));
+
+    // The person's own feeds: chosen sources with a filter.
+    side.append(el('h3', { class: 'side-sec' }, el('span', {}, 'הפידים שלי')),
+      el('div', { class: 'side-nav' },
+        prefs.customFeeds.map((c) => rowWith(btn(c.name, { type: 'custom', id: c.id }, unread((i) => c.feedIds.includes(i.feedId)), el('span', { class: 'ico' }, '✦')), () => editCustomFeed(c), `עריכת הפיד ${c.name}`)),
+        el('button', { class: 'link add-sub', onclick: () => editCustomFeed(null) }, '＋ פיד משלי מהסינון הנוכחי')));
 
     const list = activeFeeds();
     for (const folder of [...new Set(list.map((f) => f.folder))]) {
@@ -193,6 +219,116 @@
         } }, 'הסרת המקור')));
   }
 
+  /* ---- folders for saved articles (kept in the person's prefs, so they follow them to every device) ---- */
+  function nameDialog(title, value, onSave, extra = []) {
+    const input = el('input', { type: 'text', value: value || '', placeholder: 'שם', maxlength: 40 });
+    const save = () => { const v = input.value.trim(); if (!v) return toast('צריך שם'); closeModal(); onSave(v); };
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') save(); });
+    modal(el('h3', {}, title), el('label', { class: 'field' }, el('span', {}, 'שם'), input), ...extra,
+      el('div', { class: 'row dialog-actions' }, el('button', { class: 'btn primary', onclick: save }, 'שמירה'), el('button', { class: 'btn ghost', onclick: closeModal }, 'ביטול')));
+    input.focus();
+    input.select();
+  }
+  function newSavedFolder(then) {
+    nameDialog('תיקייה חדשה לשמורים', '', (name) => {
+      const fo = { id: uid(), name };
+      prefs.savedFolders.push(fo); savePrefs(); renderSide();
+      toast(`נוצרה התיקייה "${name}"`);
+      then?.(fo);
+    });
+  }
+  function editSavedFolder(fo) {
+    const at = () => prefs.savedFolders.findIndex((x) => x.id === fo.id);
+    const move = (d) => { const i = at(), j = i + d; if (j < 0 || j >= prefs.savedFolders.length) return; const [x] = prefs.savedFolders.splice(i, 1); prefs.savedFolders.splice(j, 0, x); savePrefs(); renderSide(); };
+    nameDialog('עריכת תיקייה', fo.name, (name) => { fo.name = name; savePrefs(); renderSide(); }, [
+      el('div', { class: 'row' },
+        el('button', { class: 'btn ghost small', onclick: () => move(-1) }, '↑ למעלה'),
+        el('button', { class: 'btn ghost small', onclick: () => move(1) }, '↓ למטה'),
+        el('span', { class: 'spacer' }),
+        el('button', { class: 'btn ghost small danger-text', onclick: async () => {
+          const inside = saved.filter((s) => s.folder === fo.id);
+          if (!confirm(`למחוק את התיקייה "${fo.name}"?${inside.length ? ` ${inside.length} הכתבות שבה יישארו בשמורים, בלי תיקייה.` : ''}`)) return;
+          prefs.savedFolders.splice(at(), 1); savePrefs();
+          inside.forEach((s) => { s.folder = null; });
+          if (inside.length) await mark(inside.map((s) => s.id), { folder: '' });
+          if (scope.type === 'starred' && scope.folder === fo.id) scope = { type: 'starred' };
+          closeModal(); renderSide(); resetList();
+        } }, '🗑 מחיקת התיקייה')),
+    ]);
+  }
+  /** Save an article (or move a saved one) into a folder of the person's choice. */
+  function chooseFolder(it) {
+    const pick = async (folderId) => {
+      closeModal();
+      const was = it.starred;
+      it.starred = true;
+      it.folder = folderId || null;
+      await mark([it.id], { starred: true, folder: folderId || '', snapshot: snapshot(it) });
+      const copy = saved.find((s) => s.id === it.id);
+      if (copy) copy.folder = it.folder; else saved.unshift({ ...it, starred: true, read: true });
+      toast(was ? 'הכתבה הועברה' : `נשמר${folderId ? ` ב"${prefs.savedFolders.find((f) => f.id === folderId)?.name}"` : ''}`);
+      redraw(it); renderSide();
+    };
+    modal(el('h3', {}, it.starred ? 'להעביר לתיקייה' : 'לשמור בתיקייה'),
+      el('div', { class: 'folder-pick' },
+        el('button', { class: 'src', 'aria-current': String(it.starred && !it.folder), onclick: () => pick('') }, el('span', { class: 'ico' }, '⭐'), el('span', {}, 'שמורים (בלי תיקייה)')),
+        prefs.savedFolders.map((fo) => el('button', { class: 'src', 'aria-current': String(it.folder === fo.id), onclick: () => pick(fo.id) }, el('span', { class: 'ico' }, '📁'), el('span', {}, fo.name)))),
+      el('div', { class: 'row dialog-actions' },
+        el('button', { class: 'btn ghost small', onclick: () => { closeModal(); newSavedFolder((fo) => pick(fo.id)); } }, '＋ תיקייה חדשה'),
+        it.starred ? el('button', { class: 'btn ghost small', onclick: () => { closeModal(); unsave(it); } }, 'הסרה מהשמורים') : null));
+  }
+  async function unsave(it) {
+    it.starred = false; it.folder = null;
+    saved = saved.filter((s) => s.id !== it.id);
+    await mark([it.id], { starred: false, folder: '' });
+    toast('הוסר מהשמורים');
+    redraw(it); renderSide();
+    if (scope.type === 'starred') resetList();
+  }
+  const snapshot = (it) => ({ title: it.title, link: it.link, feed: it.feed, feedId: it.feedId, date: it.date, image: it.image, summary: it.summary, body: it.body, lang: it.lang, kind: it.kind, quality: it.quality });
+
+  /* ---- the person's own feeds: chosen sources and a filter, under a name ---- */
+  function editCustomFeed(c) {
+    const chosen = new Set(c ? c.feedIds : activeFeeds().map((f) => f.id));
+    const name = el('input', { type: 'text', value: c?.name || '', placeholder: 'למשל: הבוקר שלי, ביטחון, כלכלה', maxlength: 40 });
+    const keepFilter = el('input', { type: 'checkbox', checked: true });
+    const list = el('div', { class: 'feed-pick' });
+    const draw = () => list.replaceChildren(...[...new Set(feeds.map((f) => f.folder))].map((folder) => el('fieldset', {},
+      el('legend', {}, folder),
+      feeds.filter((f) => f.folder === folder).map((f) => el('label', { class: 'pick' },
+        el('input', { type: 'checkbox', checked: chosen.has(f.id), onchange: (e) => { if (e.target.checked) chosen.add(f.id); else chosen.delete(f.id); } }),
+        srcIcon(f), el('span', {}, f.title))))));
+    draw();
+    const save = () => {
+      const n = name.value.trim();
+      if (!n) return toast('תנו לפיד שם');
+      if (!chosen.size) return toast('בחרו לפחות מקור אחד');
+      const filters = keepFilter.checked ? Object.fromEntries(FILTER_KEYS.map((k) => [k, structuredClone(prefs[k])])) : null;
+      if (c) Object.assign(c, { name: n, feedIds: [...chosen], filters: filters || c.filters || null });
+      else { c = { id: uid(), name: n, feedIds: [...chosen], filters }; prefs.customFeeds.push(c); }
+      savePrefs(); closeModal();
+      scope = { type: 'custom', id: c.id };
+      renderSide(); resetList();
+      toast(`הפיד "${n}" נשמר`);
+    };
+    modal(el('h3', {}, c ? 'עריכת פיד' : 'פיד משלי'),
+      el('label', { class: 'field' }, el('span', {}, 'שם הפיד'), name),
+      el('div', { class: 'row' }, el('b', {}, 'מקורות'), el('span', { class: 'spacer' }),
+        el('button', { class: 'link', onclick: () => { feeds.forEach((f) => chosen.add(f.id)); draw(); } }, 'הכל'),
+        el('button', { class: 'link', onclick: () => { chosen.clear(); draw(); } }, 'כלום')),
+      list,
+      el('label', { class: 'toggle', style: 'margin-top:10px' }, keepFilter, 'לשמור גם את הסינון והמיון הנוכחיים'),
+      el('div', { class: 'row dialog-actions' },
+        el('button', { class: 'btn primary', onclick: save }, 'שמירה'),
+        c ? el('button', { class: 'btn ghost', onclick: () => {
+          if (!confirm(`למחוק את הפיד "${c.name}"?`)) return;
+          prefs.customFeeds = prefs.customFeeds.filter((x) => x.id !== c.id); savePrefs(); closeModal();
+          if (scope.type === 'custom' && scope.id === c.id) scope = { type: 'all' };
+          renderSide(); resetList();
+        } }, 'מחיקת הפיד') : null));
+    name.focus();
+  }
+
   /* ================= the filter row ================= */
   function renderFilters() {
     const box = $('#filters');
@@ -221,8 +357,11 @@
   /* ================= which articles ================= */
   function visible() {
     const active = new Set(activeFeeds().map((f) => f.id));
-    let list = (history || items).filter((i) => !i.hidden);
-    if (scope.type !== 'starred') list = list.filter((i) => active.has(i.feedId) || !feedOf(i));
+    let list = (history || (scope.type === 'starred' ? saved : items)).filter((i) => !i.hidden);
+    if (scope.type === 'starred' && scope.folder != null) list = list.filter((i) => (i.folder || '') === scope.folder);
+    // A custom feed has its own sources (the side filters don't apply to it).
+    if (scope.type === 'custom') { const c = customOf(scope.id); const keep = new Set(c?.feedIds || []); list = list.filter((i) => keep.has(i.feedId)); }
+    else if (scope.type !== 'starred') list = list.filter((i) => active.has(i.feedId) || !feedOf(i));
     if (scope.type === 'folder') list = list.filter((i) => feedOf(i)?.folder === scope.folder);
     if (scope.type === 'feed') list = list.filter((i) => i.feedId === scope.id);
     if (prefs.unreadOnly && scope.type !== 'starred') list = list.filter((i) => !i.read || i === current);
@@ -326,6 +465,7 @@
       const ids = activeFeeds().map((f) => f.id);
       if (scope.type === 'feed') p.set('feeds', scope.id);
       else if (scope.type === 'folder') p.set('feeds', activeFeeds().filter((f) => f.folder === scope.folder).map((f) => f.id).join(','));
+      else if (scope.type === 'custom') p.set('feeds', (customOf(scope.id)?.feedIds || []).join(','));
       else if (ids.length < feeds.length) p.set('feeds', ids.join(','));
       const r = await api('/api/news/older?' + p);
       const have = new Set(items.map((i) => i.id));
@@ -359,7 +499,8 @@
   }
 
   function scopeTitle() {
-    if (scope.type === 'starred') return 'שמורים';
+    if (scope.type === 'starred') return scope.folder ? prefs.savedFolders.find((f) => f.id === scope.folder)?.name || 'שמורים' : scope.folder === '' ? 'שמורים בלי תיקייה' : 'שמורים';
+    if (scope.type === 'custom') return customOf(scope.id)?.name || 'הפיד שלי';
     if (scope.type === 'folder') return scope.folder;
     if (scope.type === 'feed') return feeds.find((f) => f.id === scope.id)?.title || '';
     return 'כל הכתבות';
@@ -377,7 +518,7 @@
         renderSide();
       }),
       act(it.read ? '◯' : '✓', it.read ? 'סימון כלא נקראה' : 'סימון כנקראה', () => { it.read = !it.read; mark([it.id], { read: it.read }); redraw(it); renderSide(); }),
-      act(it.starred ? '★' : '☆', it.starred ? 'הסרה מהשמורים' : 'שמירה', () => { toggleStar(it); redraw(it); }),
+      act(it.starred ? '★' : '☆', it.starred ? 'שמור – להעביר או להסיר' : 'שמירה (בתיקייה)', () => (prefs.savedFolders.length || it.starred ? chooseFolder(it) : toggleStar(it))),
       act('⚖', 'דרגת האמינות של הכתבה', () => box.replaceChildren(
         ...[1, 2, 3, 4, 5].map((n) => act('★'.repeat(n), `${n} מתוך 5`, () => { it.rating = n; mark([it.id], { rating: n }); redraw(it); })),
         act('↺', 'חזרה לאמינות האוטומטית', () => { it.rating = null; mark([it.id], { rating: 0 }); redraw(it); }))));
@@ -388,9 +529,14 @@
   function closeMenus() { document.querySelectorAll('.it.menu-open').forEach((n) => n.classList.remove('menu-open')); }
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.it.menu-open')) closeMenus(); });
 
+  /** Save (or unsave) without a folder – the quick way when there are no folders yet. */
   function toggleStar(it) {
-    it.starred = !it.starred;
-    mark([it.id], { starred: it.starred, snapshot: it.starred ? { title: it.title, link: it.link, feed: it.feed, feedId: it.feedId, date: it.date, image: it.image, summary: it.summary, body: it.body, lang: it.lang, kind: it.kind, quality: it.quality } : undefined });
+    if (it.starred) return unsave(it);
+    it.starred = true;
+    mark([it.id], { starred: true, snapshot: snapshot(it) });
+    if (!saved.some((s) => s.id === it.id)) saved.unshift({ ...it, starred: true, read: true });
+    toast('נשמר בשמורים');
+    redraw(it); renderSide();
   }
 
   /* ================= translating headlines only ================= */
@@ -432,17 +578,18 @@
     renderSide();
     if (!items.length) { $('#items').replaceChildren(el('div', { class: 'loading', style: 'padding:30px' }, el('span', { class: 'spinner' }), 'טוען כתבות…')); }
     try {
-      if (scope.type === 'starred') items = tidy((await api('/api/news/starred')).items);
-      else {
-        const r = await api('/api/news/items');
-        items = tidy(r.items);
-        errors = r.errors;
-      }
+      const [r, s] = await Promise.all([api('/api/news/items'), api('/api/news/starred').catch(() => ({ items: saved }))]);
+      items = tidy(r.items);
+      errors = r.errors;
+      saved = tidy(s.items);
+      // An article that is both loaded and saved shares its folder.
+      const folderOf = new Map(saved.map((x) => [x.id, x.folder]));
+      items.forEach((i) => { if (folderOf.has(i.id)) i.folder = folderOf.get(i.id); });
     } catch (e) { toast(e.message); }
     renderSide();
     renderFilters();
     resetList();
-    if (scope.type !== 'starred') corroborateAll();
+    corroborateAll();
   }
   async function loadFeeds() { feeds = (await api('/api/news/feeds')).feeds; }
   async function mark(ids, patch) { try { await api('/api/news/state', { body: { ids, ...patch } }); } catch (e) { toast(e.message); } }
@@ -477,8 +624,36 @@
   $('#q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { $('#q').value = ''; runSearch(); } if (e.key === 'Enter') { clearTimeout(searchTimer); runSearch(); } });
   $('#histSw').addEventListener('change', runSearch);
 
-  /* ================= the article (the card flips open to the full page) ================= */
-  async function openArticle(it, origin, mode = 'reader') {
+  /* ================= the article: the card flips into a panel with the gist; the full article on request ================= */
+  const ICON = {
+    amlek: '✨', ivrut: '🌐', tachles: '🔍', full: '📖', back: '↩', out: '↗', more: '⋯', prev: '→', next: '←',
+  };
+
+  /** One tidy row of tools: the main action, three helpers (אמלק / עברת / תכלס) and "more" for the rest. */
+  function toolbar(it, ctx) {
+    const lang = it.lang || feedOf(it)?.lang || 'he';
+    const tool = (icon, label, title, fn, extra = {}) => el('button', { class: 'tool', title, onclick: fn, ...extra }, el('span', { class: 'tool-i', 'aria-hidden': 'true' }, icon), el('span', { class: 'tool-l' }, label));
+    const moreMenu = el('div', { class: 'tool-menu', role: 'menu', hidden: true });
+    const moreBtn = tool(ICON.more, 'עוד', 'עוד פעולות', (e) => { e.stopPropagation(); moreMenu.hidden = !moreMenu.hidden; }, { 'aria-haspopup': 'menu' });
+    const item = (label, fn) => el('button', { role: 'menuitem', onclick: () => { moreMenu.hidden = true; fn(); } }, label);
+    moreMenu.append(
+      it.kind !== 'websearch' ? item(it.starred ? '★ שמור – להעביר או להסיר' : '☆ שמירה', () => chooseFolder(it)) : null,
+      item('📤 שיתוף', () => share(it)),
+      item(it.kind === 'telegram' ? '↗ פתיחה בטלגרם' : '↗ פתיחה באתר המקורי', () => window.open(it.link, '_blank', 'noopener')),
+      ctx.full && it.kind !== 'telegram' ? item(ctx.embed ? '📄 חזרה לתצוגת קריאה' : '🖼 האתר המקורי בתוך החלונית', () => ctx.toggleEmbed()) : null);
+    return el('div', { class: 'tools' },
+      ctx.main,
+      el('div', { class: 'tool-row' },
+        tool(ICON.amlek, 'אַמְלֵק לִי', 'סיכום קצר של הכתבה', ctx.amlek),
+        lang !== 'he' ? tool(ICON.ivrut, 'עַבְרֵת לי', 'תרגום הכתבה לעברית', ctx.ivrut) : null,
+        tool(ICON.tachles, 'בדוק אם תכלס', 'בדיקה מול מקורות בלתי תלויים ברשת', ctx.tachles),
+        el('div', { class: 'tool-more' }, moreBtn, moreMenu)));
+  }
+
+  // One listener closes any open "more" menu when tapping elsewhere.
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.tool-more')) document.querySelectorAll('.tool-menu').forEach((m) => { m.hidden = true; }); }, { capture: true });
+
+  async function openArticle(it, origin) {
     closeMenus();
     current = it;
     if (!it.read) { it.read = true; mark([it.id], { read: true }); origin?.classList.add('read'); renderSide(); }
@@ -486,87 +661,109 @@
     const lang = it.lang || f?.lang || 'he';
     const list = it.kind === 'websearch' ? [it] : visible();
     const idx = list.indexOf(it);
-    const body = el('div', { class: 'a-body' });
-    const sumBox = el('div');
-    const checkBox = el('div');
     const r0 = rating(it);
-    const starBtn = el('button', { class: 'btn ghost small', onclick: () => { toggleStar(it); starBtn.textContent = it.starred ? '★ שמור' : '☆ שמור'; redraw(it); } }, it.starred ? '★ שמור' : '☆ שמור');
-    let original = null;
-    const trBtn = lang !== 'he' ? el('button', { class: 'btn ghost small', onclick: async () => {
-      if (original) { body.replaceChildren(...original); original = null; trBtn.textContent = '🌐 תרגום לעברית'; return; }
-      trBtn.disabled = true; trBtn.textContent = 'מתרגם…';
+    const boxes = { amlek: el('div'), tachles: el('div'), ivrut: el('div') };
+    const textOf = () => it.body || it.summary || '';
+    const isPost = it.kind === 'telegram' || (it.body && it.body.length > 40);
+
+    // The helpers, shared by the panel and the full article.
+    const amlek = async (e) => {
+      const b = e?.currentTarget; if (b) b.disabled = true;
+      boxes.amlek.replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מאמלק…'));
       try {
-        const t = await api('/api/news/translate', { body: { url: it.link, title: it.title, text: it.body || '' } });
-        original = [...body.childNodes];
-        body.replaceChildren(el('div', { class: 'translated' }, el('p', { class: 'tr-note' }, `🌐 תורגם מ${t.from || LANG[lang] || 'השפה המקורית'} לעברית`),
-          el('h3', { class: 'tr-title' }, t.title_he), ...t.paragraphs.map((p) => el('p', {}, p))));
-        trBtn.textContent = '↺ הצג את המקור';
-      } catch (e) { toast(e.message); trBtn.textContent = '🌐 תרגום לעברית'; }
-      trBtn.disabled = false;
-    } }, '🌐 תרגום לעברית') : null;
-    const sumBtn = el('button', { class: 'btn ghost small', onclick: async () => {
-      sumBtn.disabled = true;
-      sumBox.replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מסכם…'));
-      try {
-        const s = await api('/api/news/summary', { body: { url: it.link, text: it.body || '' } });
-        sumBox.replaceChildren(el('div', { class: 'notice summary' }, el('strong', {}, '✨ בקצרה'), el('ul', {}, s.bullets.map((b) => el('li', {}, b)))));
-      } catch (e) { sumBox.replaceChildren(); toast(e.message); sumBtn.disabled = false; }
-    } }, '✨ סכם לי');
-    const showCheck = (v) => checkBox.replaceChildren(el('div', { class: 'verdict v-' + v.status },
-      el('div', { class: 'v-head' }, el('b', {}, VERDICT[v.status] || 'נבדק'), el('span', { class: 'k-q' }, stars(v.rating))),
-      v.explanation_he ? el('p', {}, v.explanation_he) : null,
-      v.sources?.length ? el('div', { class: 'v-sources' }, el('small', { class: 'muted' }, 'מקורות בלתי תלויים:'), v.sources.map((s) => el('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.title || new URL(s.url).hostname))) : null));
-    const checkBtn = el('button', { class: 'btn ghost small', title: 'בדיקת הכתבה מול מקורות בלתי תלויים ברשת (Gemini)', onclick: async () => {
-      checkBtn.disabled = true;
-      checkBox.replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'בודק מול מקורות בלתי תלויים…'));
+        const s = await api('/api/news/summary', { body: { url: it.link, text: textOf() } });
+        boxes.amlek.replaceChildren(el('div', { class: 'note-box amlek' }, el('b', {}, '✨ אמלק'), el('ul', {}, s.bullets.map((x) => el('li', {}, x)))));
+      } catch (err) { boxes.amlek.replaceChildren(); toast(err.message); if (b) b.disabled = false; }
+    };
+    const tachles = async (e) => {
+      const b = e?.currentTarget; if (b) b.disabled = true;
+      boxes.tachles.replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'בודק מול מקורות בלתי תלויים… (עד חצי דקה)'));
       try {
         const v = await api('/api/news/verify', { body: { id: it.id, title: it.title, summary: it.summary, link: it.link, feed: it.feed, date: it.date } });
         it.verified = { status: v.status, rating: v.rating };
-        showCheck(v);
+        boxes.tachles.replaceChildren(el('div', { class: 'note-box verdict v-' + v.status },
+          el('div', { class: 'v-head' }, el('b', {}, VERDICT[v.status] || 'נבדק'), el('span', { class: 'k-q' }, stars(v.rating))),
+          v.explanation_he ? el('p', {}, v.explanation_he) : null,
+          v.sources?.length ? el('div', { class: 'v-sources' }, el('small', { class: 'muted' }, 'מקורות בלתי תלויים:'), v.sources.map((s) => el('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.title || new URL(s.url).hostname))) : null));
         redraw(it);
-      } catch (e) { checkBox.replaceChildren(); toast(e.message); }
-      checkBtn.disabled = false;
-    } }, '🔍 אמת מול מקורות');
-    const nav = (d) => { const next = list[idx + d]; if (next) openArticle(next, null); };
-    const content = [
-      el('div', { class: 'a-bar' },
-        el('button', { class: 'btn ghost small', disabled: idx <= 0, onclick: () => nav(-1), title: 'הכתבה הקודמת (k)' }, '→ הקודמת'),
-        el('button', { class: 'btn ghost small', disabled: idx < 0 || idx >= list.length - 1, onclick: () => nav(1), title: 'הכתבה הבאה (j)' }, 'הבאה ←'),
-        el('span', { class: 'spacer' }),
-        it.kind !== 'telegram' ? el('button', { class: 'btn ghost small', 'aria-pressed': String(mode === 'embed'), onclick: () => openArticle(it, null, mode === 'embed' ? 'reader' : 'embed') }, mode === 'embed' ? '📄 תצוגת קריאה' : '🖼 האתר המקורי') : null,
-        checkBtn, trBtn, sumBtn, it.kind !== 'websearch' ? starBtn : null,
-        el('a', { class: 'btn ghost small', href: it.link, target: '_blank', rel: 'noopener' }, it.kind === 'telegram' ? '↗ בטלגרם' : '↗ באתר'),
-        el('button', { class: 'btn ghost small', onclick: () => share(it) }, '📤 שתף')),
-      el('article', { class: 'a-paper' },
-        el('div', { class: 'a-kicker' }, srcIcon(f, it.link), el('span', {}, it.feed), el('span', { class: 'k-q', title: `אמינות: ${r0.why}` }, stars(r0.q)),
-          el('span', { class: 'a-why' }, r0.why), f?.category ? el('span', { class: 'a-cat' }, CATEGORY[f.category]) : null),
-        el('h2', { class: 'a-title', dir: 'auto' }, it.title),
-        titleHe[it.id] ? el('p', { class: 'a-title-he' }, titleHe[it.id]) : null,
-        el('div', { class: 'a-byline' }, [new Date(it.date).toLocaleString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }), f?.country, LANG[lang]].filter(Boolean).join(' · ')),
-        checkBox, sumBox, body),
-    ];
-    H.sheet.open(origin, content, { className: 'news-sheet' });
+      } catch (err) { boxes.tachles.replaceChildren(); toast(err.message); }
+      if (b) b.disabled = false;
+    };
+    let translated = null;
+    const ivrut = async (e, into) => {
+      const b = e?.currentTarget;
+      if (translated) { boxes.ivrut.replaceChildren(); translated = null; return; }
+      if (b) b.disabled = true;
+      boxes.ivrut.replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מעברת…'));
+      try {
+        const t = await api('/api/news/translate', { body: { url: it.link, title: it.title, text: it.body || '' } });
+        translated = t;
+        boxes.ivrut.replaceChildren(el('div', { class: 'note-box translated' }, el('p', { class: 'tr-note' }, `🌐 עוברת מ${t.from || LANG[lang] || 'השפה המקורית'}`),
+          el('h3', { class: 'tr-title' }, t.title_he), ...(into === 'full' ? t.paragraphs : t.paragraphs.slice(0, 3)).map((p) => el('p', {}, p)),
+          into === 'full' || t.paragraphs.length <= 3 ? null : el('button', { class: 'link', onclick: () => showFull(true) }, 'לכל הכתבה בעברית ←')));
+      } catch (err) { boxes.ivrut.replaceChildren(); toast(err.message); }
+      if (b) b.disabled = false;
+    };
 
-    if (mode === 'embed') {
-      body.append(el('p', { class: 'muted', style: 'font-size:.82rem' }, 'חלק מהאתרים חוסמים הצגה בתוך דף אחר. אם הדף ריק – חזרו לתצוגת קריאה או פתחו באתר.'),
-        el('iframe', { src: it.link, sandbox: 'allow-scripts allow-same-origin allow-popups', referrerpolicy: 'no-referrer', title: it.title }));
-      return;
-    }
-    if (it.kind === 'telegram' || (it.body && it.body.length > 40)) {
-      body.append(it.image ? el('img', { class: 'a-lead', src: it.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null,
-        el('div', { class: 'content tg-post', dir: 'auto' }, (it.body || it.summary || '').split(/\n+/).map((p) => el('p', {}, p))));
-      return;
-    }
-    body.append(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'טוען את הכתבה…'));
-    try {
-      const a = await api('/api/news/article?url=' + encodeURIComponent(it.link));
-      if (current !== it) return;
-      body.replaceChildren(el('div', { class: 'content', dir: a.dir || 'auto', html: a.content }));
-    } catch (e) {
-      if (current !== it) return;
-      body.replaceChildren(it.summary ? el('p', { class: 'content', dir: 'auto' }, it.summary) : '',
-        el('p', { class: 'notice warn' }, e.message + ' ', el('a', { href: it.link, target: '_blank', rel: 'noopener' }, 'פתח באתר ↗')));
-    }
+    const head = () => [
+      el('div', { class: 'a-nav' },
+        el('button', { class: 'mini', disabled: idx <= 0, onclick: () => nav(-1), title: 'הכתבה הקודמת (k)', 'aria-label': 'הכתבה הקודמת' }, ICON.prev),
+        el('button', { class: 'mini', disabled: idx < 0 || idx >= list.length - 1, onclick: () => nav(1), title: 'הכתבה הבאה (j)', 'aria-label': 'הכתבה הבאה' }, ICON.next)),
+      el('div', { class: 'a-kicker' }, srcIcon(f, it.link), el('span', { class: 'k-src' }, it.feed), el('span', { class: 'k-q', title: `אמינות: ${r0.why}` }, stars(r0.q)),
+        r0.short || r0.tag === 'mine' ? el('span', { class: 'k-why ' + r0.tag, title: r0.why }, r0.short || 'שלכם') : null),
+      el('h2', { class: 'a-title', dir: 'auto' }, it.title),
+      titleHe[it.id] ? el('p', { class: 'a-title-he' }, titleHe[it.id]) : null,
+      el('div', { class: 'a-byline' }, [new Date(it.date).toLocaleString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }), f?.country, LANG[lang], f?.category ? CATEGORY[f.category] : null].filter(Boolean).join(' · ')),
+    ];
+    const nav = (d) => { const next = list[idx + d]; if (next) openArticle(next, null); };
+
+    // 1. The panel: the picture, the headline and the gist. The full article only when asked for.
+    const panel = () => {
+      const main = isPost
+        ? el('a', { class: 'btn primary tool-main', href: it.link, target: '_blank', rel: 'noopener' }, it.kind === 'telegram' ? '↗ לפוסט בטלגרם' : '↗ לכתבה באתר')
+        : el('button', { class: 'btn primary tool-main', onclick: () => showFull(false) }, `${ICON.full} לכתבה המלאה`);
+      const gist = isPost ? textOf() : (it.summary && it.summary !== it.title ? it.summary : '');
+      return [
+        it.image ? el('div', { class: 'a-hero' }, el('img', { src: it.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.parentElement.remove() })) : null,
+        ...head(),
+        gist ? el('div', { class: 'a-gist', dir: 'auto' }, gist.split(/\n+/).map((p) => el('p', {}, p))) : el('p', { class: 'muted' }, 'אין תקציר לכתבה הזו. אפשר לפתוח את הכתבה המלאה, או לבקש אמלק.'),
+        boxes.tachles, boxes.amlek, boxes.ivrut,
+        toolbar(it, { main, amlek, ivrut: (e) => ivrut(e, 'panel'), tachles, full: false }),
+      ];
+    };
+
+    // 2. The full article in a larger panel (the original site is one click away).
+    let embed = false;
+    const showFull = async (inHebrew) => {
+      const body = el('div', { class: 'a-body' });
+      const main = el('div', { class: 'tool-main-pair' },
+        el('button', { class: 'btn ghost tool-main', onclick: () => H.sheet.open(null, panel(), { className: 'news-sheet', size: 'panel' }) }, `${ICON.back} לתקציר`),
+        el('a', { class: 'btn primary tool-main', href: it.link, target: '_blank', rel: 'noopener' }, `${ICON.out} לכתבה במקור`));
+      const render = () => H.sheet.open(null, [
+        ...head(), boxes.tachles, boxes.amlek, boxes.ivrut,
+        toolbar(it, { main, amlek, ivrut: (e) => ivrut(e, 'full'), tachles, full: true, embed, toggleEmbed: () => { embed = !embed; showFull(false); } }),
+        body,
+      ], { className: 'news-sheet full-article', size: 'large' });
+      render();
+      if (inHebrew && translated) { boxes.ivrut.replaceChildren(); translated = null; ivrut(null, 'full'); }
+      if (embed) {
+        body.append(el('p', { class: 'muted', style: 'font-size:.82rem' }, 'חלק מהאתרים חוסמים הצגה בתוך חלונית. אם היא ריקה – חזרו לתצוגת קריאה או פתחו במקור.'),
+          el('iframe', { src: it.link, sandbox: 'allow-scripts allow-same-origin allow-popups', referrerpolicy: 'no-referrer', title: it.title }));
+        return;
+      }
+      body.append(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'טוען את הכתבה…'));
+      try {
+        const a = await api('/api/news/article?url=' + encodeURIComponent(it.link));
+        if (current !== it) return;
+        body.replaceChildren(el('div', { class: 'content', dir: a.dir || 'auto', html: a.content }));
+      } catch (err) {
+        if (current !== it) return;
+        body.replaceChildren(it.summary ? el('p', { class: 'content', dir: 'auto' }, it.summary) : '',
+          el('p', { class: 'notice warn' }, err.message + ' ', el('a', { href: it.link, target: '_blank', rel: 'noopener' }, 'לכתבה במקור ↗')));
+      }
+    };
+
+    H.sheet.open(origin, panel(), { className: 'news-sheet', size: 'panel' });
   }
 
   async function share(it) {

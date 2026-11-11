@@ -312,20 +312,23 @@ export async function searchHistory(ctx: Ctx) {
 
 export async function setState(ctx: Ctx) {
   const u = requireUser(ctx);
-  const b = await body<{ ids: string[]; read?: boolean; starred?: boolean; hidden?: boolean; rating?: number | null; snapshot?: unknown }>(ctx.req);
+  const b = await body<{ ids: string[]; read?: boolean; starred?: boolean; hidden?: boolean; rating?: number | null; folder?: string | null; snapshot?: unknown }>(ctx.req);
   const ids = (b.ids || []).slice(0, 500);
   const db = ctx.env.DB;
   const now = Date.now();
   const flag = (v?: boolean) => (v == null ? null : v ? 1 : 0);
   // rating: a number sets the person's own rating, 0 clears it, absent leaves it as it is
   const rating = b.rating == null ? null : Math.max(0, Math.min(5, Math.round(Number(b.rating)) || 0));
+  // folder: a folder id moves a saved article there, '' takes it out of any folder, absent leaves it as it is
+  const folder = b.folder == null ? null : String(b.folder).slice(0, 40);
   await db.batch(ids.map((id) => db.prepare(
-    `INSERT INTO news_state (email, item_id, read, starred, saved, at, hidden, rating) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO news_state (email, item_id, read, starred, saved, at, hidden, rating, folder) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(email, item_id) DO UPDATE SET
        read = COALESCE(?, read), starred = COALESCE(?, starred), saved = COALESCE(?, saved), hidden = COALESCE(?, hidden),
-       rating = CASE WHEN ? IS NULL THEN rating WHEN ? = 0 THEN NULL ELSE ? END, at = excluded.at`,
-  ).bind(u.email, id, b.read ? 1 : 0, b.starred ? 1 : 0, b.snapshot ? JSON.stringify(b.snapshot) : null, now, b.hidden ? 1 : 0, rating || null,
-    flag(b.read), flag(b.starred), b.snapshot ? JSON.stringify(b.snapshot) : null, flag(b.hidden), rating, rating, rating)));
+       rating = CASE WHEN ? IS NULL THEN rating WHEN ? = 0 THEN NULL ELSE ? END,
+       folder = CASE WHEN ? IS NULL THEN folder WHEN ? = '' THEN NULL ELSE ? END, at = excluded.at`,
+  ).bind(u.email, id, b.read ? 1 : 0, b.starred ? 1 : 0, b.snapshot ? JSON.stringify(b.snapshot) : null, now, b.hidden ? 1 : 0, rating || null, folder || null,
+    flag(b.read), flag(b.starred), b.snapshot ? JSON.stringify(b.snapshot) : null, flag(b.hidden), rating, rating, rating, folder, folder, folder)));
   return json({ ok: true });
 }
 
@@ -355,9 +358,9 @@ function historyItem(r: any, f: Feed): NewsItem {
 
 export async function starredItems(ctx: Ctx) {
   const u = requireUser(ctx);
-  const { results } = await ctx.env.DB.prepare('SELECT item_id, saved FROM news_state WHERE email = ? AND starred = 1 AND saved IS NOT NULL ORDER BY at DESC LIMIT 300')
+  const { results } = await ctx.env.DB.prepare('SELECT item_id, saved, folder, rating FROM news_state WHERE email = ? AND starred = 1 AND saved IS NOT NULL ORDER BY at DESC LIMIT 500')
     .bind(u.email).all<any>();
-  return json({ items: results.map((r) => ({ ...JSON.parse(r.saved), id: r.item_id, starred: true, read: true })) });
+  return json({ items: results.map((r) => ({ ...JSON.parse(r.saved), id: r.item_id, starred: true, read: true, folder: r.folder || null, rating: r.rating || null })) });
 }
 
 /* ---------------- reader view, summary, translation ---------------- */

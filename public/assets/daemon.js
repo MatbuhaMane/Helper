@@ -285,6 +285,7 @@
       if (o.isBone && ['root', 'body', 'head'].includes(o.name)) { parts[o.name] = o; o.userData.rest = o.quaternion.clone(); }
       if (o.isBone && /Head$/.test(o.name)) parts.mxHead = o;
       if (o.isBone && /Hips$/.test(o.name)) parts.mxHips = o;
+      if (o.isBone && /RightHand$/.test(o.name)) parts.mxHandR = o;
     });
     if (gltf.animations?.length) {
       // a fully animated figure: fit it to 2.35 units, feet on the floor, then drive it with its clips
@@ -296,6 +297,22 @@
       model.scale.setScalar(k);
       model.position.set(-(bb.min.x + bb.max.x) / 2 * k, -bb.min.y * k, -(bb.min.z + bb.max.z) / 2 * k);
       parts.mixer = new THREE.AnimationMixer(model);
+      // the anachronism: a little smartphone in his right hand, shown only for the phone clips
+      if (parts.mxHandR) {
+        const phone = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.15, 0.012), new THREE.MeshStandardMaterial({ color: '#1d1f22', roughness: 0.35, metalness: 0.4 }));
+        const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.066, 0.135), new THREE.MeshBasicMaterial({ color: '#bfe3ff' }));
+        screen.position.z = 0.0065;
+        phone.add(body, screen);
+        const worldScale = new THREE.Vector3();
+        parts.mxHandR.getWorldScale(worldScale);
+        phone.scale.setScalar(1 / Math.max(1e-6, worldScale.x) * 0.9);   // keep it phone-sized whatever the bone scale
+        phone.position.set(0, 0.09 / Math.max(1e-6, worldScale.x), 0.02 / Math.max(1e-6, worldScale.x));
+        phone.rotation.set(0, Math.PI / 2, 0);
+        phone.visible = false;
+        parts.mxHandR.add(phone);
+        parts.phone = phone;
+      }
       parts.clips = Object.fromEntries(gltf.animations.map((c) => [c.name, c]));
       parts.actions = {};
       parts.base = null;
@@ -605,6 +622,10 @@
     const want = baseFor();
     if (want !== P.base) play(want, true);
     P.mixer.update(dt);
+    if (P.phone) {
+      const playing = (n) => P.actions[n]?.isRunning() && P.actions[n].getEffectiveWeight() > 0.5;
+      P.phone.visible = playing('phone') || playing('texting_walk');
+    }
     if (moving !== wasMoving) { bob.vx += moving ? -1.6 : 2.0; wasMoving = moving; }
     if (voice > 0.9) bob.vx += 0.25;
     if (hop > 0) { hop = Math.max(0, hop - dt * 1.6); }
@@ -907,5 +928,5 @@
     requestAnimationFrame(frame);
   }
 
-  H.daemon = { mount, showElement };
+  H.daemon = { mount, showElement, get _parts() { return parts; }, _play: (n) => play(n, true) };
 })();

@@ -1,45 +1,36 @@
-// His voice: Google Cloud Text-to-Speech with trained Hebrew voices (Chirp 3: HD, he-IL). Each person picks a voice;
-// every spoken line is cached in R2 (same voice + text = no new charge), with a daily per-person allowance.
-// The key: GOOGLE_TTS_KEY if set, else the Gemini key (the same Google Cloud project, with the Text-to-Speech API on).
+// His voice: Gemini's speech generation (30 trained voices that speak Hebrew), directed to sound like a warm, wise
+// old scholar. Each person picks a voice; every spoken line is cached in R2 (same voice + text = no new charge), with a
+// daily per-person allowance. Uses the Gemini key the helper already has.
 
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
 
-export const DEFAULT_VOICE = 'he-IL-Chirp3-HD-Charon';
+export const DEFAULT_VOICE = 'Sadaltager';
 const DAILY_CHARS = 30000;
+const SAMPLE = 'שלום, אני אבן עזרא. במה אוכל לעזור לכם היום?';
+const STYLE = 'Read this aloud in Hebrew, warmly and calmly, like a wise, kind old scholar with a hint of a smile:';
 
-function key(env: Env) { return env.GOOGLE_TTS_KEY || env.GEMINI_API_KEY || ''; }
-function base(env: Env) { return (env.DEV_MODE === '1' && env.TTS_BASE_URL) || 'https://texttospeech.googleapis.com'; }
+// Gemini's prebuilt voices: name, gender, character (in Hebrew, for the picker)
+const VOICES: [string, 'male' | 'female', string][] = [
+  ['Sadaltager', 'male', 'בקיא'], ['Charon', 'male', 'מסביר'], ['Algenib', 'male', 'צרוד'], ['Iapetus', 'male', 'צלול'],
+  ['Rasalgethi', 'male', 'מסביר'], ['Schedar', 'male', 'שקול'], ['Orus', 'male', 'תקיף'], ['Alnilam', 'male', 'תקיף'],
+  ['Algieba', 'male', 'חלק'], ['Enceladus', 'male', 'נושם'], ['Umbriel', 'male', 'נינוח'], ['Achird', 'male', 'ידידותי'],
+  ['Zubenelgenubi', 'male', 'יומיומי'], ['Puck', 'male', 'עליז'], ['Fenrir', 'male', 'נלהב'], ['Sadachbia', 'male', 'תוסס'],
+  ['Gacrux', 'female', 'בוגר'], ['Sulafat', 'female', 'חם'], ['Vindemiatrix', 'female', 'עדין'], ['Achernar', 'female', 'רך'],
+  ['Despina', 'female', 'חלק'], ['Erinome', 'female', 'צלול'], ['Kore', 'female', 'תקיף'], ['Callirrhoe', 'female', 'נינוח'],
+  ['Aoede', 'female', 'אוורירי'], ['Zephyr', 'female', 'בהיר'], ['Autonoe', 'female', 'בהיר'], ['Leda', 'female', 'צעיר'],
+  ['Laomedeia', 'female', 'עליז'], ['Pulcherrima', 'female', 'נחרץ'],
+];
+const NAMES = new Set(VOICES.map((v) => v[0]));
 
-async function googleError(r: Response) {
-  const t = await r.text();
-  try { return JSON.parse(t).error?.message || t.slice(0, 300); } catch { return t.slice(0, 300); }
-}
+function model(env: Env) { return env.GEMINI_TTS_MODEL || 'gemini-2.5-flash-preview-tts'; }
+function base(env: Env) { return (env.DEV_MODE === '1' && env.GEMINI_BASE_URL) || 'https://generativelanguage.googleapis.com'; }
 
-/** The Hebrew voices (public: names only). The trained Chirp 3: HD voices first. */
-export async function listVoices(ctx: Ctx) {
-  const env = ctx.env;
-  if (!key(env)) return json({ voices: [], error: 'no key' });
-  const cache = caches.default;
-  const ck = new Request('https://voices.helper/he-IL/v1');
-  const hit = env.DEV_MODE === '1' ? null : await cache.match(ck);
-  if (hit) return hit;
-  let r: Response;
-  try { r = await fetch(`${base(env)}/v1/voices?languageCode=he-IL`, { headers: { 'x-goog-api-key': key(env) } }); }
-  catch (e) { return json({ voices: [], error: 'voice service unreachable' }); }
-  if (!r.ok) {
-    const msg = await googleError(r);
-    console.error('TTS voices', r.status, msg);
-    return json({ voices: [], error: msg, status: r.status });
-  }
-  const data = await r.json<{ voices?: { name: string; ssmlGender: string; languageCodes: string[] }[] }>();
-  const rank = (n: string) => (/Chirp3-HD/.test(n) ? 0 : /Chirp-HD/.test(n) ? 1 : /Neural2|Wavenet/.test(n) ? 2 : 3);
-  const voices = (data.voices || [])
-    .filter((v) => v.languageCodes?.includes('he-IL'))
-    .map((v) => ({ name: v.name, gender: v.ssmlGender === 'FEMALE' ? 'female' : v.ssmlGender === 'MALE' ? 'male' : 'neutral', label: v.name.replace(/^he-IL-/, '').replace(/^Chirp3-HD-/, ''), hd: rank(v.name) === 0 }))
-    .sort((a, b) => rank(a.name) - rank(b.name) || a.gender.localeCompare(b.gender) || a.label.localeCompare(b.label));
-  const res = json({ voices, default: DEFAULT_VOICE }, 200, { 'cache-control': 'public, max-age=86400' });
-  if (voices.length) ctx.waitUntil(cache.put(ck, res.clone()));
-  return res;
+/** The voices (public). */
+export function listVoices(ctx: Ctx) {
+  return json({
+    voices: VOICES.map(([name, gender, trait]) => ({ name, gender, label: name, trait, hd: true })),
+    default: DEFAULT_VOICE, available: !!ctx.env.GEMINI_API_KEY,
+  }, 200, { 'cache-control': 'public, max-age=3600' });
 }
 
 export async function getPref(ctx: Ctx) {
@@ -52,10 +43,15 @@ export async function setPref(ctx: Ctx) {
   const u = requireUser(ctx);
   const b = await body<{ voice: string }>(ctx.req);
   const v = String(b.voice || '');
-  if (!/^he-IL-[A-Za-z0-9-]{2,60}$/.test(v)) throw new HttpError(400, 'Invalid voice');
+  if (!NAMES.has(v)) throw new HttpError(400, 'Invalid voice');
   await ctx.env.DB.prepare('INSERT INTO voice_prefs (email, voice, updated_at) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET voice = excluded.voice, updated_at = excluded.updated_at')
     .bind(u.email, v, Date.now()).run();
   return json({ ok: true, voice: v });
+}
+
+async function googleError(r: Response) {
+  const t = await r.text();
+  try { return JSON.parse(t).error?.message || t.slice(0, 300); } catch { return t.slice(0, 300); }
 }
 
 async function sha(s: string) {
@@ -63,42 +59,79 @@ async function sha(s: string) {
   return [...new Uint8Array(d)].map((x) => x.toString(16).padStart(2, '0')).join('');
 }
 
-/** Speak a line: returns MP3. Body: { text, voice? } (voice defaults to the person's choice). */
+/** A WAV file around Gemini's raw 16-bit mono PCM. */
+function wav(pcm: Uint8Array, rate: number) {
+  const h = new DataView(new ArrayBuffer(44));
+  const w = (o: number, t: string) => { for (let i = 0; i < 4; i++) h.setUint8(o + i, t.charCodeAt(i)); };
+  w(0, 'RIFF'); h.setUint32(4, 36 + pcm.length, true); w(8, 'WAVE'); w(12, 'fmt ');
+  h.setUint32(16, 16, true); h.setUint16(20, 1, true); h.setUint16(22, 1, true); h.setUint32(24, rate, true);
+  h.setUint32(28, rate * 2, true); h.setUint16(32, 2, true); h.setUint16(34, 16, true); w(36, 'data'); h.setUint32(40, pcm.length, true);
+  const out = new Uint8Array(44 + pcm.length);
+  out.set(new Uint8Array(h.buffer), 0); out.set(pcm, 44);
+  return out;
+}
+
+const AUDIO_HEADERS = { 'content-type': 'audio/wav', 'cache-control': 'private, max-age=604800' };
+
+/** Synthesize (or fetch from the cache) one line in one voice. Returns the WAV bytes, and whether it was new. */
+async function synth(ctx: Ctx, voice: string, text: string): Promise<{ bytes: Uint8Array | ReadableStream; fresh: boolean }> {
+  const env = ctx.env;
+  if (!env.GEMINI_API_KEY) throw new HttpError(503, 'no voice service');
+  const k = `tts/${await sha(`gemini|${model(env)}|${voice}|${STYLE}|${text}`)}.wav`;
+  const stored = env.MEDIA ? await env.MEDIA.get(k) : null;
+  if (stored) return { bytes: stored.body, fresh: false };
+  let r: Response | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    r = await fetch(`${base(env)}/v1beta/models/${model(env)}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: `${STYLE}\n${text}` }] }],
+        generationConfig: { responseModalities: ['AUDIO'], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } },
+      }),
+    });
+    if (r.ok || r.status < 500) break;
+  }
+  if (!r!.ok) {
+    const msg = await googleError(r!);
+    console.error('TTS', r!.status, msg);
+    throw new HttpError(r!.status === 429 ? 429 : 502, `voice service: ${msg}`);
+  }
+  const data = await r!.json<any>();
+  const part = data.candidates?.[0]?.content?.parts?.find((p: any) => p.inlineData?.data);
+  if (!part) throw new HttpError(502, 'voice service: no audio');
+  const rate = Number(/rate=(\d+)/.exec(part.inlineData.mimeType || '')?.[1] || 24000);
+  const pcm = Uint8Array.from(atob(part.inlineData.data), (c) => c.charCodeAt(0));
+  const bytes = wav(pcm, rate);
+  if (env.MEDIA) ctx.waitUntil(env.MEDIA.put(k, bytes, { httpMetadata: { contentType: 'audio/wav' } }));
+  return { bytes, fresh: true };
+}
+
+/** The picker's sample line in a voice (public: one fixed sentence per voice, cached for good). */
+export async function sample(ctx: Ctx) {
+  const v = decodeURIComponent(ctx.params.voice || '');
+  if (!NAMES.has(v)) throw new HttpError(400, 'Invalid voice');
+  const { bytes } = await synth(ctx, v, SAMPLE);
+  return new Response(bytes, { headers: { ...AUDIO_HEADERS, 'cache-control': 'public, max-age=2592000' } });
+}
+
+/** Speak a line. Body: { text, voice? } (voice defaults to the person's choice). */
 export async function say(ctx: Ctx) {
   const u = requireUser(ctx);
   const env = ctx.env;
-  if (!key(env)) throw new HttpError(503, 'no voice service');
   const b = await body<{ text: string; voice?: string }>(ctx.req);
   const text = String(b.text || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().slice(0, 1200);
   if (!text) throw new HttpError(400, 'empty');
   let voice = String(b.voice || '');
   if (!voice) voice = (await env.DB.prepare('SELECT voice FROM voice_prefs WHERE email = ?').bind(u.email).first<{ voice: string }>())?.voice || DEFAULT_VOICE;
-  if (!/^he-IL-[A-Za-z0-9-]{2,60}$/.test(voice)) throw new HttpError(400, 'Invalid voice');
-  // a line with no Hebrew in it is read by the same voice in English (Chirp 3: HD names are shared across languages)
-  const hebrew = /[֐-׿]/.test(text);
-  const lang = hebrew || !/Chirp3-HD/.test(voice) ? 'he-IL' : 'en-US';
-  const name = lang === 'he-IL' ? voice : voice.replace(/^he-IL-/, 'en-US-');
-  const k = `tts/${await sha(`${name}|${text}`)}.mp3`;
-  const headers = { 'content-type': 'audio/mpeg', 'cache-control': 'private, max-age=604800' };
-  const stored = env.MEDIA ? await env.MEDIA.get(k) : null;
-  if (stored) return new Response(stored.body, { headers });
+  if (!NAMES.has(voice)) voice = DEFAULT_VOICE;
   const day = new Date().toISOString().slice(0, 10);
   const q = await env.DB.prepare('SELECT chars FROM tts_quota WHERE email = ? AND day = ?').bind(u.email, day).first<{ chars: number }>();
   if ((q?.chars || 0) + text.length > DAILY_CHARS) throw new HttpError(429, 'daily voice allowance used');
-  const r = await fetch(`${base(env)}/v1/text:synthesize`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-goog-api-key': key(env) },
-    body: JSON.stringify({ input: { text }, voice: { languageCode: lang, name }, audioConfig: { audioEncoding: 'MP3' } }),
-  });
-  if (!r.ok) {
-    const msg = await googleError(r);
-    console.error('TTS synthesize', r.status, msg);
-    throw new HttpError(502, `voice service: ${msg}`);
+  const { bytes, fresh } = await synth(ctx, voice, text);
+  if (fresh) {
+    await env.DB.prepare('INSERT INTO tts_quota (email, day, chars) VALUES (?, ?, ?) ON CONFLICT(email, day) DO UPDATE SET chars = chars + excluded.chars')
+      .bind(u.email, day, text.length).run();
   }
-  const { audioContent } = await r.json<{ audioContent: string }>();
-  const bytes = Uint8Array.from(atob(audioContent), (c) => c.charCodeAt(0));
-  await env.DB.prepare('INSERT INTO tts_quota (email, day, chars) VALUES (?, ?, ?) ON CONFLICT(email, day) DO UPDATE SET chars = chars + excluded.chars')
-    .bind(u.email, day, text.length).run();
-  if (env.MEDIA) ctx.waitUntil(env.MEDIA.put(k, bytes, { httpMetadata: { contentType: 'audio/mpeg' } }));
-  return new Response(bytes, { headers });
+  return new Response(bytes, { headers: AUDIO_HEADERS });
 }

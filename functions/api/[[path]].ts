@@ -72,6 +72,7 @@ route('GET', '/api/voice/voices', voice.listVoices);
 route('GET', '/api/voice/pref', voice.getPref);
 route('PUT', '/api/voice/pref', voice.setPref);
 route('POST', '/api/voice/say', voice.say);
+route('GET', '/api/voice/sample/:voice', voice.sample);
 
 /* groceries & recipes */
 route('GET', '/api/groceries', kitchen.listGroceries);

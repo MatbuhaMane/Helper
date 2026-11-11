@@ -1117,11 +1117,21 @@
     speechSynthesis.speak(u);
   }
 
+  async function playSample(name) {
+    stopSpeech();
+    const mine = speechSeq;
+    try {
+      const r = await fetch(`/api/voice/sample/${encodeURIComponent(name)}`);
+      if (!r.ok) throw new Error('sample ' + r.status);
+      const blob = await r.blob();
+      if (mine === speechSeq) await playAudio(URL.createObjectURL(blob), mine);
+    } catch (e) { H.toast('הדוגמה לא נטענה, נסו שוב בעוד רגע'); }
+  }
+
   /* Choosing his voice: the trained Hebrew voices, each with a sample; the choice is saved to the person's account. */
-  const SAMPLE = 'שלום, אני אבן עזרא. במה אוכל לעזור לכם היום?';
-  async function openVoicePicker() {
+    async function openVoicePicker() {
     const list = el('div', { class: 'dm-voices' }, el('p', { class: 'muted' }, 'טוען קולות…'));
-    H.modal(el('h2', {}, 'הקול של ראב"ע'), el('p', { class: 'muted' }, 'קולות עבריים מאומנים. לחצו ▶ כדי לשמוע, ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
+    H.modal(el('h2', {}, 'הקול של ראב"ע'), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
     let data, mine;
     try {
       [data, mine] = await Promise.all([fetch('/api/voice/voices').then((r) => r.json()), H.api('/api/voice/pref').catch(() => ({}))]);
@@ -1132,7 +1142,7 @@
       return;
     }
     const current = mine?.voice || data.default;
-    const groups = [['male', 'קולות גבריים'], ['female', 'קולות נשיים'], ['neutral', 'קולות נוספים']];
+    const groups = [['male', 'קולות גבריים'], ['female', 'קולות נשיים']];
     for (const [g, title] of groups) {
       const vs = data.voices.filter((v) => v.gender === g);
       if (!vs.length) continue;
@@ -1145,8 +1155,8 @@
           H.toast(`ראב"ע ידבר עכשיו בקול ${v.label}`);
         } }, v.name === current ? 'נבחר' : 'בחירה');
         list.append(el('div', { class: 'dm-voice' },
-          el('button', { class: 'btn small play', 'aria-label': `השמעת דוגמה: ${v.label}`, onclick: () => speak(SAMPLE, v.name) }, svg('play')),
-          el('span', { class: 'name' }, v.label, v.hd ? el('small', {}, ' HD') : ''),
+          el('button', { class: 'btn small play', 'aria-label': `השמעת דוגמה: ${v.label}`, onclick: () => playSample(v.name) }, svg('play')),
+          el('span', { class: 'name' }, v.label, v.trait ? el('small', {}, ' · ' + v.trait) : ''),
           pick));
       }
     }

@@ -307,3 +307,72 @@ body.sheet-open { overflow: hidden; }
   .wcard-body .snip { display: none; }
   .wcard-body b { font-size: .92rem; }
 }
+
+/* ================= כשרות וקטו במתכון ================= */
+/* the fix window opens above the full-page recipe (its own dialog, so the results window underneath stays) */
+.fix-dialog { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 16px; }
+.fix-body { overflow-y: auto; padding: 22px 22px 26px; }
+.fix-body > h3:first-child { margin: 0 0 6px; padding-inline-end: 44px; font-size: 1.3rem; }
+@media (max-width: 520px) { .fix-dialog { padding: 0; place-items: end stretch; } .fix-dialog .modal-glass { width: 100%; max-height: 90dvh; border-radius: 16px 16px 0 0; background: var(--card); backdrop-filter: none; } .fix-body { padding: 18px 16px calc(24px + env(safe-area-inset-bottom)); } }
+.r-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 6px 0 10px; min-block-size: 30px; }
+.r-chip { font: inherit; font-size: .88rem; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; transition: border-color var(--dur-quick), background var(--dur-quick); }
+.r-chip.quiet { cursor: default; color: var(--muted); border-style: dashed; }
+.r-chip.warn { border-color: color-mix(in srgb, var(--bad) 55%, transparent); background: color-mix(in srgb, var(--bad) 8%, var(--card)); }
+.r-chip.maybe { border-color: var(--olive); background: color-mix(in srgb, var(--olive) 16%, var(--card)); }
+.r-chip:not(.quiet):hover { border-color: var(--primary); }
+.r-chip-note { color: var(--muted); font-size: .78rem; }
+/* stamps: ink on paper, a little crooked, as if pressed by hand */
+.stamp-btn { border: 0; background: none; padding: 0; cursor: pointer; line-height: 0; border-radius: 50%; }
+.stamp-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.stamp { inline-size: 58px; block-size: 58px; font-family: Rubik, sans-serif; opacity: .9; transition: transform var(--dur-draw) var(--ease-river); }
+.stamp-kosher { color: #2e5a87; transform: rotate(-9deg); }
+.stamp-keto { color: #7d6d1c; transform: rotate(7deg); }
+.stamp-btn:hover .stamp { transform: rotate(0) scale(1.04); }
+@media (prefers-color-scheme: dark) { .stamp-kosher { color: #8fb4dc; } .stamp-keto { color: #d6c565; } }
+.stamp-btn { animation: stamp-in 520ms var(--ease-river) both; }
+@keyframes stamp-in { from { opacity: 0; transform: scale(1.35); } to { opacity: 1; transform: none; } }
+
+/* an ingredient crossed out in pencil, with its substitute on the line below */
+s.pencil { text-decoration: none; position: relative; color: var(--muted); white-space: normal; }
+s.pencil::after { content: ''; position: absolute; inset-inline: -2px; inset-block-start: 52%; block-size: 6px; transform: translateY(-50%) rotate(-1.2deg); pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 6' preserveAspectRatio='none'%3E%3Cpath d='M1 3.6 C 18 2.2, 34 4.4, 52 2.9 S 84 3.9, 99 2.4' fill='none' stroke='%23555' stroke-width='1.7' stroke-linecap='round' opacity='.78'/%3E%3Cpath d='M3 4.3 C 26 3.2, 47 4.6, 70 3.4 S 92 4.1, 98 3.6' fill='none' stroke='%23555' stroke-width='.8' stroke-linecap='round' opacity='.45'/%3E%3C/svg%3E") center / 100% 100% no-repeat; }
+@media (prefers-color-scheme: dark) { s.pencil::after { filter: invert(1); } }
+textarea.pencil-text { text-decoration: line-through; text-decoration-thickness: 1.6px; text-decoration-color: rgba(85, 85, 85, .8); color: var(--muted); }
+.issue-tag { font-size: .72rem; margin-inline-start: 6px; padding: 1px 7px; border-radius: 999px; background: var(--bg); color: var(--muted); }
+.issue-tag.kosher { color: var(--bad); }
+.sub-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-block: 0 8px; padding-inline: 32px 4px; font-size: .9rem; }
+.ing-edit li { flex-wrap: wrap; }
+.ing-edit .sub-line { flex-basis: 100%; padding-inline-start: calc(32% + 10px); }
+.sub-arrow { color: var(--primary); font-weight: 600; }
+.sub-label { color: var(--muted); font-size: .82rem; }
+.sub-line.kosher .sub-label { color: #2e5a87; }
+@media (prefers-color-scheme: dark) { .sub-line.kosher .sub-label { color: #8fb4dc; } }
+select.sub-select { font: inherit; font-size: .9rem; padding: 4px 8px; max-inline-size: 100%; border-radius: var(--radius); }
+.sub-why { color: var(--muted); font-size: .74rem; }
+.ingredients li.has-issue label { padding-block-end: 2px; }
+/* the fix window */
+.fix-presets { margin: 6px 0 4px; }
+.fix-list { list-style: none; padding: 0; margin: 0 0 8px; }
+.fix-list li { display: grid; gap: 4px; padding: 8px 0; border-block-end: 1px solid var(--line); }
+.fix-orig { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.fine { color: var(--muted); font-size: .76rem; margin-block-start: 12px; }
+@media (max-width: 520px) {
+  .ing-edit .sub-line { padding-inline-start: 8px; }
+  .sub-line { padding-inline-start: 30px; }
+  .stamp { inline-size: 52px; block-size: 52px; }
+}
+
+/* ================= הכרטיס המתהפך: רך ואיטי יותר ================= */
+.rsheet { perspective: 2600px; }
+.rs-shade { transition: opacity 900ms cubic-bezier(.4, 0, .2, 1); }
+.rs-flip { transition: inset-inline-start 1050ms cubic-bezier(.45, .05, .2, 1), inset-block-start 1050ms cubic-bezier(.45, .05, .2, 1),
+  inline-size 1050ms cubic-bezier(.45, .05, .2, 1), block-size 1050ms cubic-bezier(.45, .05, .2, 1), transform 1050ms cubic-bezier(.45, .05, .2, 1); }
+.rs-face { box-shadow: 0 18px 50px rgba(46, 42, 30, .18); }
+.rs-body { opacity: 0; transition: opacity 500ms ease 0ms; }
+.rsheet.open .rs-body { opacity: 1; transition: opacity 650ms ease 520ms; }
+.rsheet.instant .rs-body { transition: none; opacity: 1; }
+
+/* a long (or crossed-out) ingredient name stays beside its checkbox and wraps there */
+.ingredients .ing-name { flex: 1 1 0; min-inline-size: 0; }
+.ingredients label { flex-wrap: nowrap; }
+.ingredients .measure { flex: none; }

@@ -46,18 +46,51 @@
   }
 
   /* ---------- stamps ---------- */
-  function stamp(kind) {
+  let arcId = 0;
+  /** A round ink stamp; `caption` (e.g. "בגרסה עם התחליפים") is written along an arc under it. */
+  function stamp(kind, caption) {
     const label = kind === 'kosher' ? 'כשר' : 'קטו';
     const sub = kind === 'kosher' ? 'לפי המצרכים' : 'מתאים ✓';
+    const id = 'arc' + (++arcId);
     const t = document.createElement('template');
-    t.innerHTML = `<svg class="stamp stamp-${kind}" viewBox="0 0 64 64" role="img" aria-label="${label} – ${sub}">
-      <title>${kind === 'kosher' ? 'כשר לפי המצרכים (לא תחליף להשגחה)' : 'מתאים לדיאטה הקטוגנית שלנו'}</title>
-      <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="2.4"/>
-      <circle cx="32" cy="32" r="24.5" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2.2"/>
-      <text x="32" y="34" text-anchor="middle" font-size="17" font-weight="600" fill="currentColor">${label}</text>
-      <text x="32" y="46" text-anchor="middle" font-size="6.6" fill="currentColor">${sub}</text>
+    // The stamp sits in the top of an 80×84 box; the caption follows a "smile" arc just under its rim.
+    t.innerHTML = `<svg class="stamp stamp-${kind}${caption ? ' with-caption' : ''}" viewBox="0 0 80 ${caption ? 84 : 64}" role="img" aria-label="${label} – ${sub}${caption ? ' – ' + caption : ''}">
+      <title>${kind === 'kosher' ? 'כשר לפי המצרכים (לא תחליף להשגחה)' : 'מתאים לדיאטה הקטוגנית שלנו'}${caption ? ' – ' + caption : ''}</title>
+      <g class="stamp-ink">
+        <circle cx="40" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="2.4"/>
+        <circle cx="40" cy="32" r="24.5" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2.2"/>
+        <text x="40" y="34" text-anchor="middle" font-size="17" font-weight="600" fill="currentColor">${label}</text>
+        <text x="40" y="46" text-anchor="middle" font-size="6.6" fill="currentColor">${sub}</text>
+      </g>
+      ${caption ? `<path id="${id}" d="M 6 52 A 36 36 0 0 0 74 52" fill="none"/>
+      <text class="stamp-caption" font-size="9.4" font-weight="500" fill="currentColor"><textPath href="#${id}" startOffset="50%" text-anchor="middle">${caption}</textPath></text>` : ''}
     </svg>`;
     return t.content.firstChild;
+  }
+
+  /**
+   * The two rows under a recipe's title: warnings (each opens the fix window) and, on their own row, the stamps.
+   * kosherOrig: the recipe as published; kosherNow: the version on screen; keto: the version on screen (null when the switch is off).
+   * subbed: { kosher, keto } – whether that stamp is thanks to substitutes (then the arc caption says so).
+   */
+  function statusRows({ kosherOrig, kosherNow, keto, subbed = {}, onFix }) {
+    const warns = el('div', { class: 'r-warns' });
+    const stamps = el('div', { class: 'r-stamps' });
+    const box = el('div', { class: 'r-status' }, warns, stamps);
+    const caption = 'בגרסה עם התחליפים';
+    if (kosherOrig === 'checking') warns.append(kosherChip('checking'));
+    else if (kosherOrig && kosherOrig !== 'ok' && kosherOrig !== 'error') warns.append(kosherChip(kosherOrig, () => onFix('kosher')));
+    if (kosherNow === 'ok') stamps.append(el('button', { class: 'stamp-btn', title: 'כשר לפי המצרכים – לחיצה לפרטים', onclick: () => onFix('kosher') }, stamp('kosher', subbed.kosher ? caption : null)));
+    if (keto && Keto.enabled) {
+      const wait = el('span', { class: 'r-chip quiet' }, el('span', { class: 'spinner tiny' }), ' בודק קטו…');
+      warns.append(wait);
+      Keto.recipeValues(keto).then(({ verdict: [level] }) => {
+        wait.remove();
+        if (level === 'ok') stamps.append(el('button', { class: 'stamp-btn', title: 'מתאים לקטו – לחיצה לפרטים', onclick: () => onFix('keto') }, stamp('keto', subbed.keto ? caption : null)));
+        else warns.append(el('button', { class: 'r-chip ' + (level === 'warn' ? 'maybe' : 'warn'), onclick: () => onFix('keto'), 'aria-haspopup': 'dialog' }, level === 'warn' ? '⚠️ גבולי לקטו' : '⚠️ לא מתאים לקטו'));
+      }).catch(() => wait.remove());
+    }
+    return box;
   }
 
   /* ---------- the chips at the top of a recipe ---------- */
@@ -135,5 +168,5 @@
       el('p', { class: 'fine' }, 'הבדיקה לפי שמות המצרכים בלבד ואינה תחליף להשגחה; את ההכשר של כל מוצר בודקים על האריזה.'));
   }
 
-  window.RecipeFix = { check, kosherStatus, kosherChip, ketoChip, subLine, openFix, stamp };
+  window.RecipeFix = { check, kosherStatus, kosherChip, ketoChip, statusRows, subLine, openFix, stamp };
 })();

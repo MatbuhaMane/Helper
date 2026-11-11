@@ -32,3 +32,5 @@ bucket_name = "helper-media"
 GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleusercontent.com"
 GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
+# The Spotify app's client id (public: the sign-in uses PKCE, there is no client secret)
+SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"

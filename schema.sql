@@ -143,6 +143,60 @@ CREATE TABLE IF NOT EXISTS tts_quota (
   PRIMARY KEY (email, day)
 );
 
+-- worldwide recipe search: cached search results (per query) and translated recipes (per page)
+CREATE TABLE IF NOT EXISTS recipe_searches (
+  q          TEXT PRIMARY KEY,
+  results    TEXT NOT NULL,      -- JSON [{url, title_he, title, site, lang, country, image, snippet_he, relevance}]
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS web_recipes (
+  url        TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,      -- JSON recipe already translated to Hebrew
+  created_at INTEGER NOT NULL
+);
+
+-- ketosis: each person's diet settings, meal log (eaten and planned), weight, and nutrition per 100 g
+CREATE TABLE IF NOT EXISTS keto_settings (
+  email      TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,      -- JSON {enabled, preset, netCarbLimit, kcalTarget, fatPct, proteinPct, carbPct}
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS keto_meals (
+  email      TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  at         INTEGER NOT NULL,   -- when it was (or will be) eaten
+  name       TEXT NOT NULL,
+  items      TEXT NOT NULL,      -- JSON [{name, grams, fat, protein, carbs, fiber}] (values for the amount used)
+  fat        REAL NOT NULL,
+  protein    REAL NOT NULL,
+  carbs      REAL NOT NULL,
+  fiber      REAL NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'eaten',   -- 'eaten' | 'planned'
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE INDEX IF NOT EXISTS keto_meals_at ON keto_meals(email, at);
+CREATE TABLE IF NOT EXISTS keto_weights (
+  email TEXT NOT NULL,
+  day   TEXT NOT NULL,           -- YYYY-MM-DD
+  kg    REAL NOT NULL,
+  PRIMARY KEY (email, day)
+);
+CREATE TABLE IF NOT EXISTS foods (
+  household  TEXT NOT NULL,      -- '' for shared estimates, a household id for that family's own corrections
+  key        TEXT NOT NULL,      -- normalized name
+  name       TEXT NOT NULL,
+  fat        REAL NOT NULL,      -- grams per 100 g
+  protein    REAL NOT NULL,
+  carbs      REAL NOT NULL,      -- total carbohydrates (fiber included, as on Israeli labels' "פחמימות")
+  fiber      REAL NOT NULL,
+  unit_g     REAL,               -- weight of one typical unit (an egg, a slice), if it has one
+  is_food    INTEGER NOT NULL DEFAULT 1,
+  source     TEXT NOT NULL,      -- 'ai' | 'user'
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (household, key)
+);
+
 -- the songbook: saved links (Shironet, Tab4u…) and the family's own chord sheets
 CREATE TABLE IF NOT EXISTS songs (
   id TEXT PRIMARY KEY,

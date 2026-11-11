@@ -1,6 +1,6 @@
 /* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls always go to the network. */
-const CACHE = 'helper-v2';
-const ASSETS = ['/', '/assets/base.css', '/assets/common.js', '/groceries/', '/groceries/style.css', '/groceries/data.js', '/groceries/app.js', '/manifest.json', '/icon.svg'];
+const CACHE = 'helper-v3';
+const ASSETS = ['/', '/assets/base.css', '/assets/common.js', '/groceries/', '/groceries/style.css', '/groceries/data.js', '/groceries/foods.js', '/groceries/keto.js', '/groceries/app.js', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

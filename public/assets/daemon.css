@@ -7,6 +7,10 @@
 .dm-stage.thinking::before { content: ''; position: absolute; top: 8%; left: 50%; inline-size: 34px; block-size: 6px; margin-left: -17px; border-radius: 3px;
   background: repeating-linear-gradient(90deg, var(--tint) 0 8px, var(--primary) 8px 16px); background-size: 16px 6px; animation: dm-flow .9s linear infinite; }
 @media (max-width: 599px) { .dm-stage { inline-size: 170px; block-size: 170px; } }
+@media (max-width: 420px) { .dm-stage { inline-size: 136px; block-size: 136px; } }
+/* Room at the end of every page so the last buttons can always be scrolled out from under him. */
+body:has(.dm-stage) main { padding-block-end: 150px; }
+@media (max-width: 420px) { body:has(.dm-stage) main { padding-block-end: 130px; } }
 
 .dm-zz { position: absolute; top: 14%; right: 22%; font-weight: 500; color: var(--muted); pointer-events: none; font-size: 15px; }
 .dm-zz b, .dm-zz i { font-style: normal; font-weight: 500; position: absolute; }

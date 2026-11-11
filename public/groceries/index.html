@@ -15,6 +15,7 @@
     <div class="tabs" role="tablist">
       <button role="tab" id="tabList" aria-selected="true">רשימת קניות</button>
       <button role="tab" id="tabBook" aria-selected="false" data-guide="recipe-book-tab" data-guide-label="ספר המתכונים">ספר מתכונים</button>
+      <button role="tab" id="tabKeto" aria-selected="false" data-guide="keto-tab" data-guide-label="קטוזיס">קטוזיס</button>
       <span class="spacer"></span>
       <span id="sync" class="sync"></span>
     </div>
@@ -30,7 +31,7 @@
       <div id="dupBanner" class="card banner" hidden></div>
 
       <form id="recipeForm" class="card recipe-form" autocomplete="off" data-guide="recipe-search" data-guide-label="חיפוש מתכון ברשת">
-        <input id="recipeInput" type="text" placeholder="חפש מתכון ברשת… (למשל: עוף, פסטה, chicken curry)" aria-label="חיפוש מתכון">
+        <input id="recipeInput" type="text" placeholder="חפש מתכון מכל העולם… (למשל: קרבונרה, ראמן, תבשיל עוף גאורגי)" aria-label="חיפוש מתכון">
         <button type="submit" class="btn accent">חפש מתכון</button>
       </form>
 
@@ -51,10 +52,14 @@
       </div>
       <div id="bookGrid" class="book-grid"></div>
     </section>
+
+    <section id="viewKeto" class="keto" hidden aria-label="קטוזיס"></section>
   </main>
 
   <script src="/assets/common.js"></script>
   <script src="data.js"></script>
+  <script src="foods.js"></script>
+  <script src="keto.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

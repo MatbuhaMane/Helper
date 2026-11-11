@@ -577,7 +577,8 @@
     if (!moving && !dragging) faceTarget = pointing ? (pointing.x > pos.x ? 0.6 : -0.6) : 0;
     facing += (faceTarget - facing) * Math.min(1, dt * 7);
     if (!Number.isFinite(pos.x) || !Number.isFinite(pos.y)) pos = homeSpot();
-    if (!rag && !dragging && !fly && (pos.x < -box.w || pos.x > W() + box.w || pos.y < 0 || pos.y > Hh() + box.h)) pos = clampPos(pos);
+    // Once he has settled he is always at least partly on screen (a phone is narrower than a full figure off the edge).
+    if (!rag && !dragging && !fly && (pos.x < box.w * 0.2 || pos.x > W() - box.w * 0.2 || pos.y < 0 || pos.y > Hh() + box.h)) pos = clampPos(pos);
     tickSwing(dt);
     const pv = pivotY();
     canvasBox.style.transformOrigin = `${box.w / 2}px ${pv}px`;
@@ -1392,6 +1393,7 @@
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
     try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; }
     if (innerWidth < 600) { box.w = 170; box.h = 170; }
+    if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
     buildUI();
     const p = buildPanel(!!container);
     (container || document.body).append(p);

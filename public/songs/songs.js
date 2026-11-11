@@ -10,10 +10,9 @@
   const $ = (s) => document.querySelector(s);
   const C = window.Chords;
 
-  const PREFS_KEY = 'helper.songs.prefs';
-  let prefs = { size: 1, instrument: 'guitar' };
-  try { prefs = { ...prefs, ...JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') }; } catch (_) { /* ignore */ }
-  const savePrefs = () => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* ignore */ } };
+  // Per person, synced through the server (the old per-device copy is carried over once).
+  const prefs = H.prefs('songs', { size: 1, instrument: 'guitar' }, 'helper.songs.prefs');
+  const savePrefs = () => H.savePrefs('songs');
 
   const TABS = [
     ['all', 'הכל'], ['lyrics', 'מילים'], ['chords', 'אקורדים'], ['zemirot', 'זמירות שבת'], ['mine', 'השירון שלנו'], ['dict', 'מילון אקורדים'],

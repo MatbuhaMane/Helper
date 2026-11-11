@@ -36,4 +36,8 @@ npm install
 cp .dev.vars.example .dev.vars   # DEV_MODE=1 enables the dev sign-in; add your own API keys there
 npm run dev                      # http://localhost:8788
 npm run typecheck
+node tools/push-keys.mjs         # copy the AI keys from .dev.vars to the live Worker (never prints them)
 ```
+
+Preferences: use `H.prefs('tool', defaults)` / `H.savePrefs('tool')` from `common.js` for anything a person chooses;
+they are stored per user on the server (`/api/prefs`, table `user_prefs`) and arrive with `/api/me`.

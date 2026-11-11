@@ -143,6 +143,15 @@ CREATE TABLE IF NOT EXISTS tts_quota (
   PRIMARY KEY (email, day)
 );
 
+-- each person's preferences per tool (news view, songbook instrument, ...), so they follow them to every device
+CREATE TABLE IF NOT EXISTS user_prefs (
+  email      TEXT NOT NULL,
+  ns         TEXT NOT NULL,      -- the tool: 'news', 'songs', 'groceries', 'daemon', ...
+  data       TEXT NOT NULL,      -- JSON object
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (email, ns)
+);
+
 -- worldwide recipe search: cached search results (per query) and translated recipes (per page)
 CREATE TABLE IF NOT EXISTS recipe_searches (
   q          TEXT PRIMARY KEY,

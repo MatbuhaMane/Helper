@@ -6,10 +6,9 @@
   await H.requireLogin();
   const $ = (s) => document.querySelector(s);
 
-  const PREFS_KEY = 'helper.news.prefs';
-  let prefs = { unreadOnly: false, cards: false };
-  try { prefs = { ...prefs, ...JSON.parse(localStorage.getItem(PREFS_KEY) || '{}') }; } catch (_) { /* ignore */ }
-  const savePrefs = () => { try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (_) { /* ignore */ } };
+  // Per person, synced through the server (the old per-device copy is carried over once).
+  const prefs = H.prefs('news', { unreadOnly: false, cards: false }, 'helper.news.prefs');
+  const savePrefs = () => H.savePrefs('news');
 
   let feeds = [];
   let items = [];
@@ -202,6 +201,7 @@
   $('#unreadOnly').checked = prefs.unreadOnly;
   $('#unreadOnly').addEventListener('change', (e) => { prefs.unreadOnly = e.target.checked; savePrefs(); renderItems(); });
   $('#viewBtn').addEventListener('click', () => { prefs.cards = !prefs.cards; savePrefs(); renderItems(); });
+  window.addEventListener('helper:prefs', (e) => { if (e.detail === 'news') { $('#unreadOnly').checked = prefs.unreadOnly; renderItems(); } });
   $('#refresh').addEventListener('click', load);
   $('#menuBtn').addEventListener('click', () => $('#side').classList.toggle('open'));
   $('#markAll').addEventListener('click', async () => {

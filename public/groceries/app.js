@@ -18,7 +18,9 @@
 
   /* ================= מצב וסנכרון ================= */
   // items: Map id -> item. pending: ops not yet confirmed by the server (kept across reloads for offline use).
-  let { items, pending, since, hideChecked } = loadCache();
+  let { items, pending, since, hideChecked: legacyHide } = loadCache();
+  // "Hide checked items" is a per-person preference that follows them to every device.
+  const listPrefs = H.prefs('groceries', { hideChecked: false }, legacyHide ? { hideChecked: true } : null);
 
   function loadCache() {
     try {
@@ -28,7 +30,7 @@
     return { items: new Map(), pending: [], since: 0, hideChecked: false };
   }
   function saveCache() {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ items: [...items.values()], pending, since, hideChecked })); } catch (_) { /* ignore */ }
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ items: [...items.values()], pending, since })); } catch (_) { /* ignore */ }
   }
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
@@ -170,13 +172,13 @@
   function render() {
     const list = $('#list');
     list.textContent = '';
-    $('#hideChecked').checked = hideChecked;
+    $('#hideChecked').checked = listPrefs.hideChecked;
     const all = [...items.values()];
     for (const cat of CATEGORIES) {
       let catItems = all.filter((i) => (catById[i.cat] ? i.cat : 'other') === cat.id);
       if (!catItems.length) continue;
       const remaining = catItems.filter((i) => !i.checked).length;
-      if (hideChecked) catItems = catItems.filter((i) => !i.checked);
+      if (listPrefs.hideChecked) catItems = catItems.filter((i) => !i.checked);
       catItems.sort((a, b) => (a.checked - b.checked) || a.name.localeCompare(b.name, 'he'));
       list.append(el('div', { class: 'card category' },
         el('h2', {}, el('span', {}, `${cat.icon} ${cat.name}`), el('span', { class: 'count' }, remaining ? `${remaining} נותרו` : '✓ הכל נקנה')),
@@ -271,7 +273,8 @@
     $('#addInput').focus();
   });
 
-  $('#hideChecked').addEventListener('change', (e) => { hideChecked = e.target.checked; saveCache(); render(); });
+  $('#hideChecked').addEventListener('change', (e) => { H.savePrefs('groceries', { hideChecked: e.target.checked }); render(); });
+  window.addEventListener('helper:prefs', (e) => { if (e.detail === 'groceries') render(); });
   $('#clearChecked').addEventListener('click', () => {
     const done = [...items.values()].filter((i) => i.checked);
     if (!done.length) return toast('אין פריטים מסומנים');

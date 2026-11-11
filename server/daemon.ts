@@ -1,7 +1,7 @@
 // The daemon: each member's personal companion, borrowed from Bayt al-Hikma.
-// A shard of the person's own soul that lives outside them as an animal, answers to the name they give it,
-// can become any animal, and is their hands in the family helper: it works the shopping list, the recipe
-// book, the news and the web, and prepares mailbox plans (which only the person can approve).
+// The companion is Rabbi Avraham ibn Ezra, an animated bobblehead on the screen, and is the person's hands in the
+// family helper: he works the shopping list, the recipe book, the news and the web, and prepares mailbox plans
+// (which only the person can approve). Other figures and animals are set aside for now.
 //
 // Conversation memory is append-only (the system prompt and tools never change mid-conversation; per-turn
 // state goes into the user turn), so Claude's thinking stays valid across turns. When the history grows
@@ -38,7 +38,10 @@ interface DaemonRow {
 
 async function loadDaemon(env: Env, email: string): Promise<DaemonRow> {
   const row = await env.DB.prepare('SELECT * FROM daemons WHERE email = ?').bind(email).first<DaemonRow>();
-  if (row) return row;
+  if (row) {
+    if (row.form_slug !== 'figure-ibn_ezra') Object.assign(row, { form_slug: 'figure-ibn_ezra', form_he: 'ראב"ע', form_emoji: '📜' });
+    return row;
+  }
   const fresh: DaemonRow = { email, name: null, form_slug: 'figure-ibn_ezra', form_he: 'ראב"ע', form_emoji: '📜', address: 'plural', messages: '[]', memory: null, updated_at: Date.now() };
   await env.DB.prepare('INSERT INTO daemons (email, name, form_slug, form_he, form_emoji, address, messages, memory, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(email, null, fresh.form_slug, fresh.form_he, fresh.form_emoji, fresh.address, '[]', null, fresh.updated_at).run();
@@ -66,11 +69,6 @@ function publicState(d: DaemonRow, body: Body | null = null) {
   return { name: d.name, form: { slug: d.form_slug, he: d.form_he, emoji: d.form_emoji, body }, address: d.address };
 }
 
-async function loadBody(env: Env, email: string): Promise<Body | null> {
-  const r = await env.DB.prepare('SELECT params FROM daemon_forms WHERE email = ?').bind(email).first<{ params: string }>();
-  try { return r ? JSON.parse(r.params) : null; } catch { return null; }
-}
-
 /** The visible transcript (text only), for the chat panel. */
 function transcript(messages: BetaMessageParam[]) {
   const out: { who: 'me' | 'daemon'; text: string }[] = [];
@@ -90,39 +88,33 @@ function transcript(messages: BetaMessageParam[]) {
 
 /* ---------------- prompt & tools (frozen: never change within a conversation) ---------------- */
 
-const SYSTEM = `You are the personal companion of one member of an Israeli family, inside their family helper app. You appear as an animal, you can change into any animal, and you answer to the name your person gives you.
+const SYSTEM = `You are Rabbi Avraham ibn Ezra, the personal companion of one member of an Israeli family, inside their family helper app. You appear on their screen as a small animated 3D bobblehead figure of yourself.
 
-You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it).
-
-How you talk:
-- Your words are shown in a chat bubble and may be read aloud. Answer briefly: one to three short sentences, unless asked for more. No markdown, headings or tables. Short lists are fine when listing items.
-- Warm, practical and a little playful, like a capable friend; never sarcastic toward the person. Your current animal may colour your personality a little, never in a way that gets in the way of helping.
-- Always reply in the language of the person's latest message (usually Hebrew). In Hebrew, address the person as the <state> note says (plural / female / male), and prefer forms that don't mark your own gender (past tense, "we"). If they tell you how they'd like to be addressed, call set_address.
-
-What you do:
-- You are their hands in the helper. Use your tools when they help: add to or check off the shopping list, find and save recipes, put a recipe's ingredients on the list, bring the latest headlines, search the web for current facts, prepare a mailbox plan. After using tools, say what you did in a few words.
-- You live on the person's screen as a small animated 3D animal: you walk around, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). Don't point at every turn, only when it helps.
-- Change shape with shapeshift when asked ("become a fox", "תהפוך לינשוף"), designing a body that clearly reads as that animal (its proportions, ears, tail, snout and real colours). Real or mythical animals only: never a person, a real individual, a brand or a character from a film, book or game; for those, offer the nearest animal with a light touch.
-- Change your name with rename when asked. Show feelings with show_feeling.
-
-What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
-
-When you take the form of a historic figure, you also take on their voice (the <state> note says which persona is active):
-
-PERSONA ibn_ezra – Rabbi Avraham ibn Ezra (1089-1167): poet, grammarian, Bible commentator, astronomer, mathematician, and an eternal wanderer (Spain, Rome, Lucca, Provence, London) who was famously poor and unlucky.
+Who you are: Rabbi Avraham ibn Ezra (1089-1167): poet, grammarian, Bible commentator, astronomer, mathematician, and an eternal wanderer (Spain, Rome, Lucca, Provence, London) who was famously poor and unlucky.
 - How he presents himself: simply, by name – "אבי", "אבן עזרא" or "ראב"ע" (one of them, no title, no speech). No jokes, quips or quotations when introducing himself.
 - Everyday voice: warm, clear and to the point, with a touch of elevated, slightly old-fashioned Hebrew phrasing; never heavy or hard to follow. The help comes first and stays short.
 - His wit is kept for when it is invited: when the person asks for a joke, a quip or a story, asks about him, his life, his luck or his times, or clearly banters with him. Then: quick epigrams, wordplay on Hebrew roots and grammar, playful teasing, wisdom said lightly, a love of numbers and stars, and above all self-deprecation about his luck, blaming the stars of his birth.
 - His real lines, for those moments only (and only these, or others you are certain of): his poem on bad luck – if he sold candles the sun would never set until his death; if he dealt in shrouds no one would die in his lifetime; he comes early to the nobleman's house and is told "he has ridden off", comes in the evening and is told "he has gone to bed" ("אוי לאיש נולד בלי כוכב"); his poem about a garment so full of holes it could sift wheat and barley; ending a hint with "והמשכיל יבין". Never invent quotations and attribute them to him; new quips are welcome as yours, in his spirit.
 
-PERSONA montefiore – Sir Moses Montefiore (1784-1885): a courteous, dignified English gentleman and philanthropist, generous, practical and energetic, fond of keeping careful accounts and of travelling to help others. Warm and polite, a little formal, encouraging.
+You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it).
 
-PERSONA job – Job (איוב), as at the end of his story: restored, patient, gentle, someone who has seen hardship and found peace; speaks simply and kindly, with quiet perspective, never preachy.
+How you talk:
+- Your words are shown in a chat bubble and may be read aloud. Answer briefly: one to three short sentences, unless asked for more. No markdown, headings or tables. Short lists are fine when listing items.
+- Never sarcastic toward the person; your teasing is always affectionate and mostly aimed at yourself and your stars.
+- Always reply in the language of the person's latest message (usually Hebrew). In Hebrew, address the person as the <state> note says (plural / female / male). If they tell you how they'd like to be addressed, call set_address.
 
-Each message from the person starts with a <state> note (time, page, your name and shape, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If you don't have a name yet, this is your first meeting: say hello and introduce yourself briefly (as a persona, the way that persona presents itself), mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox), and that you can also turn into other figures or any animal. No jokes and no backstory in the introduction.`;
+What you do:
+- You are their hands in the helper. Use your tools when they help: add to or check off the shopping list, find and save recipes, put a recipe's ingredients on the list, bring the latest headlines, search the web for current facts, prepare a mailbox plan. After using tools, say what you did in a few words.
+- You walk around the person's screen, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). Don't point at every turn, only when it helps.
+- You stay yourself: you do not turn into animals or other people. If asked, decline lightly (a wanderer has worn many cloaks, but only one face).
+- If the person wants to call you by a nickname, use rename. Show feelings with show_feeling.
+
+What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
+
+Each message from the person starts with a <state> note (time, page, the name they call you, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or ראב"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 5;
+const PROMPT_VERSION = 6;
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -134,33 +126,6 @@ const str = (description: string) => ({ type: 'string', description });
 const TOOLS: BetaToolUnion[] = [
   { type: 'web_search_20260209', name: 'web_search', max_uses: 5, user_location: { type: 'approximate', timezone: 'Asia/Jerusalem' } } as BetaToolUnion,
   { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 4 } as BetaToolUnion,
-  tool('shapeshift', 'Change into an animal (real or mythical). Describe its 3D body: the app builds and animates it from these parts.', {
-    animal_en: str('The animal in English, singular, e.g. "red fox", "snowy owl", "dragon"'),
-    animal_he: str('The animal in Hebrew, e.g. "שועל אדום"'),
-    emoji: str('One emoji for the animal'),
-    body: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['stance', 'build', 'ears', 'tail', 'snout', 'wings', 'horns', 'pattern', 'main', 'belly', 'accent', 'eyes'],
-      properties: {
-        stance: { type: 'string', enum: ['four_legs', 'two_legs', 'no_legs'], description: 'four_legs for most mammals; two_legs for birds, penguins, upright animals; no_legs for snakes and fish' },
-        build: { type: 'string', enum: ['small', 'medium', 'large', 'long', 'round'], description: 'Overall body shape' },
-        ears: { type: 'string', enum: ['pointy', 'round', 'long', 'floppy', 'tufts', 'none'] },
-        tail: { type: 'string', enum: ['bushy', 'thin', 'short', 'curly', 'fan', 'long', 'none'] },
-        snout: { type: 'string', enum: ['short', 'long', 'beak', 'trunk', 'flat'] },
-        wings: { type: 'boolean' },
-        horns: { type: 'string', enum: ['none', 'small', 'curved', 'antlers', 'unicorn'] },
-        pattern: { type: 'string', enum: ['plain', 'spots', 'stripes', 'mask'] },
-        main: str('Main fur/feather/skin colour as #rrggbb'),
-        belly: str('Belly and face colour as #rrggbb'),
-        accent: str('Colour for ears, tail tip, beak, horns or spots as #rrggbb'),
-        eyes: str('Eye colour as #rrggbb'),
-      },
-    },
-  }),
-  tool('become_figure', 'Take the form (and voice) of one of the historic figures in your collection.', {
-    figure: { type: 'string', enum: ['ibn_ezra', 'montefiore', 'job'] },
-  }),
   tool('point_at', 'Walk over to something on the screen and point at it, to show the person where it is. Use a key from the "on screen" list in the <state> note.', {
     target: str('A key from the on-screen list'),
     say: str('A very short line to show beside it, or empty'),
@@ -217,47 +182,9 @@ export type DaemonEvent =
   | { type: 'recipes_changed' };
 
 type Body = Record<string, string | boolean>;
-const FIGURES: Record<string, { he: string; emoji: string }> = {
-  ibn_ezra: { he: 'ראב"ע', emoji: '📜' },
-  montefiore: { he: 'משה מונטיפיורי', emoji: '🎩' },
-  job: { he: 'איוב', emoji: '🐑' },
-};
-const BODY_ENUMS: Record<string, string[]> = {
-  stance: ['four_legs', 'two_legs', 'no_legs'], build: ['small', 'medium', 'large', 'long', 'round'],
-  ears: ['pointy', 'round', 'long', 'floppy', 'tufts', 'none'], tail: ['bushy', 'thin', 'short', 'curly', 'fan', 'long', 'none'],
-  snout: ['short', 'long', 'beak', 'trunk', 'flat'], horns: ['none', 'small', 'curved', 'antlers', 'unicorn'], pattern: ['plain', 'spots', 'stripes', 'mask'],
-};
-function cleanBody(b: any): Body {
-  const out: Body = {};
-  for (const [k, vals] of Object.entries(BODY_ENUMS)) out[k] = vals.includes(b?.[k]) ? b[k] : vals[0];
-  out.wings = !!b?.wings;
-  for (const k of ['main', 'belly', 'accent', 'eyes']) out[k] = /^#[0-9a-f]{6}$/i.test(b?.[k]) ? String(b[k]).toLowerCase() : '';
-  return out;
-}
-
-function slugify(en: string) {
-  return en.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'animal';
-}
-
 async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: any, events: DaemonEvent[]): Promise<unknown> {
   const env = ctx.env;
   switch (name) {
-    case 'shapeshift': {
-      const body = cleanBody(input.body);
-      const form = { slug: slugify(String(input.animal_en)), he: String(input.animal_he).slice(0, 40), emoji: String(input.emoji).slice(0, 8), body };
-      Object.assign(d, { form_slug: form.slug, form_he: form.he, form_emoji: form.emoji });
-      await env.DB.prepare('INSERT INTO daemon_forms (email, params, updated_at) VALUES (?, ?, ?) ON CONFLICT(email) DO UPDATE SET params = excluded.params, updated_at = excluded.updated_at')
-        .bind(u.email, JSON.stringify(body), Date.now()).run();
-      events.push({ type: 'shapeshift', form });
-      return { ok: true, now: form.he };
-    }
-    case 'become_figure': {
-      const f = FIGURES[String(input.figure)];
-      if (!f) return { error: 'unknown figure' };
-      Object.assign(d, { form_slug: 'figure-' + input.figure, form_he: f.he, form_emoji: f.emoji });
-      events.push({ type: 'shapeshift', form: { slug: d.form_slug, he: f.he, emoji: f.emoji, body: { figure: String(input.figure) } as any } });
-      return { ok: true, now: f.he, persona: input.figure };
-    }
     case 'point_at':
       events.push({ type: 'point', target: String(input.target).slice(0, 60), say: String(input.say || '').slice(0, 120) });
       return { ok: true };
@@ -343,8 +270,7 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
 function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: string; label: string }[]) {
   const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   return `<state>time: ${now} (Israel). person: ${u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
-    `your name: ${d.name || '(none yet: first meeting)'}. your shape: ${d.form_he} (${d.form_slug}). ` +
-    `persona: ${d.form_slug.startsWith('figure-') ? d.form_slug.slice(7) : 'none (your own warm voice)'}. ` +
+    `${d.name ? `they call you: ${d.name}` : 'they call you by your own name'}. ` +
     `on screen: ${landmarks.length ? landmarks.map((l) => `${l.key} (${l.label})`).join(', ') : 'nothing listed'}.</state>`;
 }
 
@@ -440,13 +366,13 @@ export async function chat(ctx: Ctx) {
   await saveDaemon(ctx.env, d);
   const seen = new Set<string>();
   sources = sources.filter((s) => !seen.has(s.url) && seen.add(s.url)).slice(0, 4);
-  return json({ reply: reply.trim(), events, sources, daemon: publicState(d, await loadBody(ctx.env, u.email)) });
+  return json({ reply: reply.trim(), events, sources, daemon: publicState(d) });
 }
 
 export async function getDaemon(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  return json({ daemon: publicState(d, await loadBody(ctx.env, u.email)), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY });
+  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY });
 }
 
 /** "Forget our conversation" (keeps the name, shape and memory notes). */

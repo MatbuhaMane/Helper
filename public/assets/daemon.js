@@ -774,7 +774,7 @@
     if (!greeted) { greeted = true; act('wave'); }
     balloon.hidden = false;
     canvasBox.classList.remove('unread');
-    if (!balloonText.textContent) balloonText.textContent = state?.daemon?.name ? `כן? במה אפשר לעזור?` : 'היי! איך תרצו לקרוא לי?';
+    if (!balloonText.textContent) balloonText.textContent = 'כן? במה אפשר לעזור?';
     placeBalloon();
     setTimeout(() => input.focus(), 30);
   }
@@ -851,8 +851,8 @@
   function updateLabels() {
     const d = state?.daemon;
     if (!d) return;
-    nameEl.textContent = d.name ? `${d.name} · ${d.form.he}` : 'העוזר שלך';
-    canvasBox.setAttribute('aria-label', `${d.name || 'העוזר שלך'} – לחצו כדי לדבר`);
+    nameEl.textContent = d.name && d.name !== d.form.he ? `${d.name} · ${d.form.he}` : d.form.he;
+    canvasBox.setAttribute('aria-label', `${d.name || d.form.he} – לחצו כדי לדבר`);
   }
 
   async function send(text, event) {
@@ -932,7 +932,7 @@
     const home = homeSpot();
     pos = { x: reduced ? home.x : -box.w, y: home.y };
     walkTo(home.x, home.y, () => {
-      if (!state.daemon.name && !state.transcript.length && container) send('', 'first meeting: the person just opened the helper and sees you for the first time');
+      if (!state.transcript.length && container) send('', 'first meeting: the person just opened the helper and sees you for the first time');
       else if (!state.transcript.length) canvasBox.classList.add('unread');
     });
     requestAnimationFrame(frame);

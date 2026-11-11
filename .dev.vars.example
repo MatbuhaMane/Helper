@@ -5,3 +5,10 @@ GOOGLE_CLIENT_ID=dev
 GOOGLE_CLIENT_SECRET=dev
 # ANTHROPIC_API_KEY=
 # GEMINI_API_KEY=
+
+# Music player (optional)
+# Spotify app Client ID from developer.spotify.com/dashboard (public; no secret needed). Redirect URIs to register:
+#   http://127.0.0.1:8788/api/music/spotify/callback   and   https://<your site>/api/music/spotify/callback
+SPOTIFY_CLIENT_ID=
+# YouTube Data API v3 key for fast search (without it, search goes through Gemini with Google Search: slower)
+YOUTUBE_API_KEY=

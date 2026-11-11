@@ -245,6 +245,7 @@
       const chip = document.getElementById('userchip');
       chip.hidden = false;
       chip.textContent = (r.user.name || r.user.email).split(' ')[0];
+      if (!r.offline) loadMusic();
     });
     return bar;
   }
@@ -306,6 +307,12 @@
   }
   /** Ibn Ezra lives in his tent on the home page; he shows up on other screens only after he was asked to come along (follow). */
   const DAEMON_DEFAULTS = { speak: true, follow: false, minimized: false, rate: 1.2 };
+  /** The music player lives in the menu of every screen (its script and styles load after the menu is drawn). */
+  function loadMusic() {
+    if (document.querySelector('script[src^="/assets/music.js"]')) return;
+    document.head.append(el('link', { rel: 'stylesheet', href: '/assets/music.css' }));
+    document.head.append(el('script', { src: '/assets/music.js' }));
+  }
   function autoDaemon() {
     if (document.body.dataset.daemon === 'hero' || document.body.dataset.daemon === 'off') return;
     me().then((r) => {

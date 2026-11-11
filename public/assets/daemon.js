@@ -733,7 +733,7 @@
     if (moving !== wasMoving) { bob.vx += moving ? -1.6 : 2.0; wasMoving = moving; }
     if (voice > 0.9) bob.vx += 0.25;
     if (hop > 0) { hop = Math.max(0, hop - dt * 1.6); }
-    const k = 70, c = 6;
+    const k = 60, c = 10;          // a soft nod that settles, not a lingering wobble
     bob.vx += (-k * bob.x - c * bob.vx) * dt; bob.x += bob.vx * dt;
     bob.vz += (-k * bob.z - c * bob.vz) * dt; bob.z += bob.vz * dt;
     bob.x = Math.max(-0.4, Math.min(0.4, bob.x)); bob.z = Math.max(-0.4, Math.min(0.4, bob.z));
@@ -761,6 +761,7 @@
     rig.position.z = FALL_BACK * fallTilt;
     parts.shadow.visible = fallTilt < 0.5;
     parts.shadow.scale.setScalar(1);
+    narrowStance();
     applyRag();
     if (rag) parts.shadow.visible = false;
   }
@@ -805,7 +806,7 @@
       const cons = [];
       for (const [, a, b] of RSEG) if (a !== 'Hips') cons.push([a, b, d(a, b), 1, false]);
       for (let i = 0; i < TORSO.length; i++) for (let j = i + 1; j < TORSO.length; j++) cons.push([TORSO[i], TORSO[j], d(TORSO[i], TORSO[j]), 1, false]);
-      cons.push(['top', 'Spine2', d('top', 'Spine2'), 0.35, false]);    // a floppy neck, not a broken one
+      cons.push(['top', 'Spine2', d('top', 'Spine2'), 0.8, false]);     // a loose neck, but not a wobbly one
       // legs stay together: knees and feet no further apart than when standing (and they don't cross)
       for (const [a, b] of [['LeftLeg', 'RightLeg'], ['LeftFoot', 'RightFoot']]) {
         cons.push([a, b, d(a, b) * 0.95, 0.6, 'max']);
@@ -817,7 +818,12 @@
       }
       const rest = {};
       for (const [bone, a, b] of RSEG) rest[bone] = Math.atan2(P[b].y - P[a].y, P[b].x - P[a].x);
-      rag = { p: P, cons, rest, pin: null, state: 'held', still: 0, t: 0, blend: 1 };
+      // how thick he is around each joint (so he lies on the floor, not half into it)
+      const Hpx = Math.max(60, Math.max(P.LeftFoot.y, P.RightFoot.y) - P.top.y);
+      const R_ = { top: 0.04, Head: 0.15, Spine2: 0.17, Hips: 0.16, LeftArm: 0.08, RightArm: 0.08, LeftForeArm: 0.06, RightForeArm: 0.06,
+        LeftHand: 0.04, RightHand: 0.04, LeftUpLeg: 0.1, RightUpLeg: 0.1, LeftLeg: 0.07, RightLeg: 0.07, LeftFoot: 0.02, RightFoot: 0.02 };
+      const rad = Object.fromEntries(Object.entries(R_).map(([k, f]) => [k, f * Hpx]));
+      rag = { p: P, cons, rest, rad, pin: null, state: 'held', still: 0, t: 0, blend: 1 };
     }
     // the joint nearest the finger: hands and feet win when close, above the neck means the turban
     let best = null, bd = Infinity;
@@ -837,12 +843,12 @@
     // safety net: if the physics ever breaks (or he is lost off screen for long), he simply comes back home
     const bad = Object.values(P).some((q) => !Number.isFinite(q.x) || !Number.isFinite(q.y));
     if (bad || (R.state !== 'held' && R.t > 12)) { rag = null; dragging = null; pos = homeSpot(); rememberSpot(); return; }
-    if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / (R.gentle ? 0.35 : 0.7)); if (R.blend === 0) endRag(); return; }
+    if (R.state === 'rise') { R.blend = Math.max(0, R.blend - dt / (R.gentle ? 0.4 : 0.9)); if (R.blend === 0) endRag(); return; }
     const sub = 3, h = dt / sub, g = 2600;
     for (let s_ = 0; s_ < sub; s_++) {
       for (const [k, q] of Object.entries(P)) {
         if (R.state === 'held' && k === R.pin) { q.px = q.x; q.py = q.y; q.x = finger.x; q.y = finger.y + R.gap; continue; }
-        const vx = (q.x - q.px) * 0.996, vy = (q.y - q.py) * 0.996;
+        const vx = (q.x - q.px) * 0.993, vy = (q.y - q.py) * 0.993;
         q.px = q.x; q.py = q.y;
         q.x += vx; q.y += vy + g * h * h;
       }
@@ -860,7 +866,8 @@
         }
         for (const [k, q] of Object.entries(P)) {
           if (R.state === 'held' && k === R.pin) continue;
-          if (q.y > floor) {                                                     // the floor, with friction
+          const r = R.rad[k] || 0, fl = floor - r;
+          if (q.y > fl) {
             const vy = (q.y - q.py) / h;
             if (R.state === 'free' && vy > 700 && !R.impact && /Foot$/.test(k)) {
               // a hard landing: the knees buckle and he topples over (a dropped doll doesn't land standing)
@@ -869,18 +876,24 @@
               P.top.px -= dir * 3.2; P.Spine2.px -= dir * 2.2;
               P.LeftLeg.px -= dir * 1.5; P.RightLeg.px -= dir * 1.5;
             }
-            q.y = floor; q.px += (q.x - q.px) * 0.5;
+            q.y = fl;
           }
-          if (q.x < 6) { q.x = 6; } if (q.x > right - 6) { q.x = right - 6; }
-          if (q.y < 4) q.y = 4;
+          if (q.x < 6 + r) q.x = 6 + r;
+          if (q.x > right - 6 - r) q.x = right - 6 - r;
+          if (q.y < 4 + r) q.y = 4 + r;
         }
+      }
+      // the floor soaks up the bounce and most of the slide (once per step, after the bones are satisfied)
+      for (const [k, q] of Object.entries(P)) {
+        if (R.state === 'held' && k === R.pin) continue;
+        if (q.y >= floor - (R.rad[k] || 0) - 0.5) { q.py = q.y; q.px = q.x - (q.x - q.px) * 0.25; }
       }
     }
     if (R.state === 'free') {
       let vmax = 0;
       for (const q of Object.values(P)) vmax = Math.max(vmax, Math.hypot(q.x - q.px, q.y - q.py) / h);
-      R.still = vmax < 45 ? R.still + dt : 0;
-      if (R.still > 0.6 || R.t > 6) {                  // lies there a moment, then picks himself up
+      R.still = vmax < 70 ? R.still + dt : Math.max(0, R.still - dt * 2);
+      if (R.still > 0.45 || R.t > 4) {                  // lies there a moment, then picks himself up
         R.state = 'rise';
         pos = clampPos({ x: P.Hips.x, y: floor });
       }
@@ -900,6 +913,7 @@
     const fell = rag && (rag.impact || rag.p.top.y > rag.p.Hips.y - 20);   // a hard landing, or lying down
     const gentle = rag?.gentle;
     rag = null;
+    bob.x = bob.vx = bob.z = bob.vz = 0; _e.x = _e.y = 0;   // no leftover wobble when he stands up
     pos = clampPos(pos);
     rememberSpot();
     if (gentle) return;                                    // set down nicely: no fuss
@@ -909,7 +923,8 @@
   /** Turn his bones to the particles' directions and put his hips where the hips particle is. */
   function applyRag() {
     if (!rag) return;
-    const P = rag.p, k = rag.state === 'rise' ? rag.blend * rag.blend * (3 - 2 * rag.blend) : 1;
+    const b_ = rag.blend;   // ease in and out of the rise
+    const P = rag.p, k = rag.state === 'rise' ? (b_ < 0.5 ? 4 * b_ * b_ * b_ : 1 - Math.pow(-2 * b_ + 2, 3) / 2) : 1;
     const world = {};
     for (const [bone, a, b, parent] of RSEG) {
       let dAng = Math.atan2(P[b].y - P[a].y, P[b].x - P[a].x) - rag.rest[bone];
@@ -926,12 +941,21 @@
     const want = new THREE.Vector3(tx, ty, ndc.z).unproject(camera);
     rig.position.addScaledVector(want.sub(hw), k);
   }
-  function twistScreen(bone, ang) {
+  /** The clips stand him with his feet wide apart; bring the legs in toward each other (about his own forward axis,
+      so it holds whichever way he faces). */
+  const STANCE = 0.14;
+  function narrowStance() {
+    if (!parts.rag?.LeftUpLeg || !parts.rag?.RightUpLeg) return;
+    const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(rig.getWorldQuaternion(new THREE.Quaternion()));
+    twistScreen(parts.rag.LeftUpLeg, -STANCE, fwd);   // his left leg is on the viewer's right
+    twistScreen(parts.rag.RightUpLeg, STANCE, fwd);
+  }
+  function twistScreen(bone, ang, axis = null) {
     if (!bone?.parent || Math.abs(ang) < 1e-5) return;
     const qp = new THREE.Quaternion();
     bone.parent.updateWorldMatrix(true, false);
     bone.parent.getWorldQuaternion(qp);
-    const qa = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), ang);
+    const qa = new THREE.Quaternion().setFromAxisAngle(axis || new THREE.Vector3(0, 0, 1), ang);
     const inv = qp.clone().invert();
     bone.quaternion.premultiply(inv.multiply(qa).multiply(qp));
     bone.updateWorldMatrix(false, true);

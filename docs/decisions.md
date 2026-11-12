@@ -28,11 +28,9 @@ location, and Google is open to everyone with a monthly limit.
 - **For the owner:** a Google Maps Platform API key restricted to "Places API (New)", with a daily quota cap in Google
   Cloud, entered as the secret `GOOGLE_MAPS_API_KEY`. Until then the page says the search is not set up.
 - **For the master:** add `GOOGLE_MAPS_API_KEY?: string` to `Env` in core.ts (places.ts reads it through a local type
-  until then); add `test:restaurants` and `test:places` to `npm test`; and a question on Google's terms: "add to our
-  list" prefills the form with the name and address from Google, and the family saves it as their own entry. The terms
-  forbid copying business names and addresses in bulk; one entry a person chooses to save looks like their own
-  content, but the Service Specific Terms page did not load for me, so please read it (or tell me to keep only the
-  place ID and leave the name for the person to type).
+  until then); add `test:restaurants` and `test:places` to `npm test`. Google's terms (the master's answer): only the
+  place ID is kept. "Add to our list" shows Google's name and address for reference, and the person types the name in
+  their own words; the link saved is `https://www.google.com/maps/place/?q=place_id:<id>` (a URL, no API call).
 - **For design:** `.rs`, `.rs-card`, `.rs-fav`, `.rs-filters`, `.rs-tags`, `.rs-kosher` (`kosher`, `mehadrin`, `no`),
   `.rs-near`, `.rs-place`, `.rs-attrib` (Google's attribution: keep it visible), `.fs-restaurant`; and a restaurant
   icon for the portal tile (it uses `food` now).

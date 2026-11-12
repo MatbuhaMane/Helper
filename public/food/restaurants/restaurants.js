@@ -3,7 +3,8 @@
    no outside source and no AI. The look is design's (.rs-*); the inline rules only hold the layout until then.
    "מה יש בסביבה" (the owner's choice C) asks Google Places, on request only: around the city in the settings, or
    where the device is now (with its permission, not kept). Google's answer is shown, marked "Google Maps", and
-   never stored; adding one to our list keeps the family's own fields and Google's place ID. */
+   never stored; adding one to our list keeps only Google's place ID with the family's own words (Google's terms: its
+   names and addresses may not be stored, so they are shown in the form for reference and the person types their own). */
 (async () => {
   const { el, api, toast } = H;
   await H.requireLogin();
@@ -91,18 +92,22 @@
   function edit(r = null, from = null, onSaved = null) {
     const f = (label, input) => el('label', { style: 'display:grid;gap:4px' }, el('span', { class: 'small muted' }, label), input);
     const inp = (v, o = {}) => el('input', { type: 'text', value: v || '', dir: 'auto', style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)', ...o });
-    const name = inp(r?.name ?? from?.name, { required: true, maxlength: 120, placeholder: 'למשל: חומוס אבו שוקרי' });
-    const place = inp(r?.place ?? from?.address, { maxlength: 160, placeholder: 'עיר, שכונה או כתובת' });
-    const cuisine = inp(r?.cuisine ?? (from?.kind && from.kind !== 'מסעדה' ? from.kind : ''), { maxlength: 60, list: 'rs-cuisines', placeholder: 'למשל: חומוסיה' });
+    const name = inp(r?.name, { required: true, maxlength: 120, placeholder: 'למשל: חומוס אבו שוקרי' });
+    const place = inp(r?.place, { maxlength: 160, placeholder: 'עיר, שכונה או כתובת' });
+    const cuisine = inp(r?.cuisine, { maxlength: 60, list: 'rs-cuisines', placeholder: 'למשל: חומוסיה' });
     const kosher = el('select', { style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)' },
       Object.entries(KOSHER).map(([v, t]) => el('option', { value: v, selected: (r?.kosher || '') === v }, t)));
-    const link = inp(r?.link ?? from?.maps, { type: 'url', dir: 'ltr', maxlength: 500, placeholder: 'https://… (אתר, תפריט או מפה)' });
+    // from a search: a link to the place by its ID (a plain URL, nothing of Google's content)
+    const link = inp(r?.link ?? (from ? `https://www.google.com/maps/place/?q=place_id:${from.id}` : ''), { type: 'url', dir: 'ltr', maxlength: 500, placeholder: 'https://… (אתר, תפריט או מפה)' });
     const phone = inp(r?.phone, { type: 'tel', dir: 'ltr', maxlength: 30, placeholder: '02-1234567' });
     const note = el('textarea', { rows: 3, dir: 'auto', maxlength: 1000, placeholder: 'מה הזמנו, מה כדאי, למי זה מתאים…',
       style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)' }, r?.note || '');
     const fav = el('input', { type: 'checkbox', checked: !!r?.fav });
     H.modal(el('h2', {}, r ? 'עריכת מסעדה' : from ? 'להוסיף לרשימה שלנו' : 'מסעדה חדשה'),
       el('datalist', { id: 'rs-cuisines' }, CUISINES.map((c) => el('option', { value: c }))),
+      from ? el('div', { class: 'rs-from card', style: 'padding:10px 12px;display:grid;gap:2px' },
+        el('small', { class: 'muted' }, 'ב־Google Maps:'), el('b', { dir: 'auto' }, from.name), el('small', { class: 'muted', dir: 'auto' }, [from.kind, from.address].filter(Boolean).join(' · ')),
+        el('small', { class: 'muted' }, 'כתבו את השם במילים שלכם. מ־Google נשמר רק הקישור למקום.')) : null,
       el('form', { style: 'display:grid;gap:10px', onsubmit: async (e) => {
         e.preventDefault();
         const b = e.target.querySelector('button[type=submit]'); b.disabled = true;

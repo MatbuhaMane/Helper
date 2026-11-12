@@ -33,6 +33,14 @@ Only items the owner agreed to go here. Business and vision talk with the owner,
    `git show design:<path>`. Keep the inline stopgaps until the morning merge brings the files into main.
 2. The "without AI" list, the vision session's next order.
 
+### Master, after the morning merge (with the owner's OK to go live)
+
+- Add `test:research-pack` (server/test-research-pack.mjs, 20 tests) to package.json and to `npm test`.
+- Review `saveToDrive` in server/notes.ts, which notes and drafts now share (same drive.file grant).
+- Ready on ai-features: 6d9a822 + 2144965. Ready on design: up to 1a680b2.
+- After design's goals.css (bcd1d08) reaches main, tell ai-features to link it, since the old .gl-step rules clash with
+  its markup.
+
 ### design
 
 Nothing tonight: the look of research step 2 is done (1a680b2, for the morning merge), and the last 8 badges come from

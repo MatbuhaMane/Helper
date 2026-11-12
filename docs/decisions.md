@@ -11,6 +11,78 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Fifteen business decisions, approved by the owner (business)
+
+The owner approved all fifteen recommendations from the business session's self-check. Details:
+`docs/business/closed-questions.md` (round two). Each item lists which areas it affects.
+
+1. **Credit packs ₪5 / 10 / 20 / 50, with the same credits per shekel in every pack.**
+   - Why: ₪5 is the safe no-loss minimum. An equal rate stops people buying many small packs.
+   - Affects: ai-features (the credits ledger), design (the pack picker).
+   - Status: Decided.
+2. **Credits are deducted by each action's metered cost (`costOf`), with an estimate before an expensive action.**
+   - Why: every use stays inside 30/30/30/10, and nobody is surprised.
+   - Affects: ai-features, master (`server/prices.ts`, `server/meter.ts`).
+   - Status: Decided.
+3. **App store vs web: the same price everywhere, with bonus credits on the web.**
+   - Why: it is simple to explain and steers buyers to the cheaper channel.
+   - Affects: none until the store stage.
+   - Status: Decided.
+4. **Free download from the stores, with in-app purchases.**
+   - Why: this is the standard model in both stores.
+   - Affects: master (store packaging, later).
+   - Status: Decided.
+5. **At launch, the web and PWA only, through an Israeli payment provider with cards and Bit; the stores come later.**
+   - Why: no store commission, and Bit suits small sums.
+   - Affects: master (the payment integration).
+   - Status: Provisional. The provider is chosen after comparing fees, the fixed fee per transaction above all.
+6. **Purchases per user (credits, companion packs) or per family (the family's own companion, the album).**
+   - Why: every user is an endpoint, and shared things belong to the family.
+   - Affects: ai-features, design.
+   - Status: Decided.
+7. **Storage: files in the user's Drive or iCloud, small encrypted family text on our server.**
+   - Why: no storage cost for the owner, and family sharing stays simple.
+   - Affects: master, ai-features.
+   - Status: Decided.
+8. **The gathering is built on the current Worker; local-first comes later.**
+   - Why: it is the fastest way to a beta.
+   - Affects: master, ai-features.
+   - Status: Decided.
+9. **The gathering's first version contains what `docs/business/gathering.md` section 3 lists.**
+   - Why: it is the smallest scope that delivers the first minute.
+   - Affects: ai-features, design.
+   - Status: Decided.
+10. **The beta is in Hebrew, in the owner's extended family; Arabic follows as a second wave with a partner from Arab
+    society.**
+    - Why: prove the viral loop first, and earn trust in the second community properly.
+    - Affects: master (translation timing), design.
+    - Status: Provisional. Revisit after three months: stop and rethink if the viral coefficient is below 0.3 and fewer
+      than two members of an average family are active each week.
+11. **The north-star metric is family members active each week, per family; the secondary one is gatherings
+    coordinated.**
+    - Why: it measures daily use and the owner's goal of meeting.
+    - Affects: ai-features (anonymous counts).
+    - Status: Decided.
+12. **Every price is based on the providers' 2027 prices.**
+    - Why: Gemini 3.8 Flash and its TTS double in price on 2027-01-01.
+    - Affects: master (`server/prices.ts` already holds them).
+    - Status: Decided.
+13. **A relative may add a relative without approval, with a name and a relation only; the added person can hide or
+    block.**
+    - Why: it keeps adding easy while protecting people who have not joined.
+    - Affects: ai-features (tree privacy).
+    - Status: Decided.
+14. **Matrix, on an Apache-2.0 homeserver, is the messaging base once the full network comes.**
+    - Why: it is mature and end-to-end encrypted, and its licence does not force us to publish our code.
+    - Affects: master, ai-features (later).
+    - Status: Provisional. Re-checked when the full network is started.
+15. **No business is registered during the beta; there is an accountant meeting before the first sale.**
+    - Why: the beta has no revenue.
+    - Affects: none.
+    - Status: Provisional. Exempt dealer, licensed dealer or a company is decided at the meeting.
+
+Also decided: store ratings and download counts are not researched for now (the owner).
+
 ## 2026-11-12 – Merged into main: ai-features (stage 2, the calendar link) and design (master)
 
 Merged with the owner's approval; the master's part of the proposals below is done:
@@ -22,7 +94,9 @@ Merged with the owner's approval; the master's part of the proposals below is do
 - `public/index.html`: the sun and the moon behind the tent's picture take their taps again (ai-features found it: the picture's
   rectangle covered them).
 - Kept design's line in `common.js` (the tree in the main menu) and the rename in the master's files; `CLAUDE.md`'s title says הָאֹהֶל.
-- Open with the owner: whether the calendar link includes the tree by default (today it does), and the Workers plan (CPU per request).
+- The owner's answers: the calendar link includes the family tree **only when the person ticks it** (the box starts unticked, and
+  the server takes the tree only on `tree: true`; changed in `calendar.js` and `calendar.ts` by the master); the account is on the
+  **paid Workers plan**, so a feed's 6–10 ms of CPU is fine; `business` goes into main with this push.
 Status: done.
 
 ## 2026-11-12 – The calendar as a live link for Google Calendar (ai-features)
@@ -117,6 +191,124 @@ master's file): `{ href: '/family/', label: 'עץ המשפחה', short: 'משפ�
 so it is in the PC's top menu and in the phone's tab bar (now eight tabs; all fit at 375 px). `base.css`: the top menu's
 names never wrap, and between 900 and 1099 px the gaps and the type are a little smaller so nine entries fit on one line.
 Master: please keep the line when you merge `design`. Status: done (on `design`).
+
+## 2026-11-12 – The owner's answers on money, privacy, media, the gathering, the product's limits and its name (business)
+
+All thirteen answers are in `docs/business/closed-questions.md`. These are the ones the code will need.
+
+**Working name: הָאֹהֶל ("the tent")**
+- It is also a play on Arabic أَهْل, "family, kin". It is provisional until the owner has tried the product with
+  their family.
+- The business docs use it from now on.
+- The master decides when and whether it replaces "העוזר המשפחתי" in `CLAUDE.md`, `public/manifest.json` and the UI.
+
+**Money**
+- VAT and the payment fee come off first; the rest is split 30/30/30/10.
+- Trial: a one-time free credit per Google account, worth about ₪1–2 of AI cost.
+- The smallest credit pack is the cheapest one that makes no loss, about ₪3 under current assumptions; ₪5 is
+  proposed. Every pack gives the same number of credits per shekel.
+
+**Privacy and the family**
+- A relative who has not joined appears in the tree with a name and a relation only, until they join and approve.
+- What part of the tree is visible outside the vault follows each user's privacy setting.
+- Relatives can add each other. Friends send requests, and the receiving side must approve them.
+- Links between families in the forest need both sides' approval. Users can block and hide.
+- Children under 12 join only through a parent. They have no network of their own and no messages with anyone outside
+  the family.
+
+**Messages and media**
+- No Matrix yet. Version one of the gathering has a comment thread and WhatsApp links.
+- On the free tier, media stays on the server for 30 days, or until every recipient has downloaded it.
+
+**The gathering**
+- An invitation link shows the name, the date, the place and the first names of those coming. It expires after the
+  gathering.
+- Any registered user can create a gathering.
+
+**Limits of the public version**
+- Mail sorting and the PC guide work only through the user's own agent.
+- Links instead of the Spotify player.
+- The songbook holds only songs the family types in, or links to songs that are free online (no copying).
+- Sefaria texts only where the licence allows commercial use.
+
+Status: Decided (the owner, 2026-11-12). How and when each item reaches the code is the master's call.
+
+## 2026-11-12 – The family gathering is the first tool to perfect and launch with (business)
+
+The owner chose the family gathering as the tool that opens the door; everything else waits behind it. Brief:
+`docs/business/gathering.md`.
+
+**What it does:** an event with a date and place, an invitation by WhatsApp link, and RSVP with a headcount, with no
+sign-in. It also has a "who brings what" list that feeds each person's own grocery list, an ICS add-to-calendar link, a
+reminder, invitees suggested from the tree, and culture-aware notes (Shabbat and holidays, fasts, kosher or halal). The
+gathering itself is always free.
+
+**What the master and ai-features need to look at:**
+- **A gathering crosses households.** Today everything is per `household`, so this needs guest access by link and an
+  extended family.
+- **Suggesting invitees needs part of the tree.** Names and relations would have to be available outside the vault,
+  without unlocking it. Which parts is the master's decision, since it owns the vault's security.
+- **Anonymous counts for the beta metrics:** link opened, RSVP, and sign-up from an invitation.
+
+**The proposed order:** build it on the current Worker, and move to local-first later (`docs/business/plan.md`,
+stage 3). The design of the invitation and the RSVP page belongs to design.
+
+Status: Decided (the owner, 2026-11-12). The code gaps listed above are proposals for the master and ai-features.
+
+## 2026-11-12 – Product direction: a free core, a family social network, a culture per user (business)
+
+The owner set the direction (details in `docs/business/vision.md`):
+- **Every user is an endpoint.** The goal is daily use by each person.
+- **The social network is the family tree.** People connect as relatives, and the forest links families by marriage.
+- **The culture follows each user's settings.** Jewish, Muslim or Christian: the calendar, holidays, content and food rules.
+  The choice is independent of the language.
+- **The interface is in Arabic, Hebrew and English.** Two right-to-left languages and one left-to-right, so the master
+  needs to plan the translation infrastructure (UI strings and AI prompts).
+- **Sharing covers everything:** messages, events, greetings, photos and media. The owner prefers to build on reliable
+  open source rather than from scratch. The business proposal is Matrix with an Apache-2.0 homeserver, our own UI, and
+  federation off (`docs/business/social-and-growth.md`); the technical choice belongs to the master and ai-features.
+- **Personalization is free:** each user or family picks a palette, keeps its own recipe and song books, has a personal
+  companion and a personal feed. Design owns the palettes.
+- **The helper sits on top of the services people already use: Google, WhatsApp and their own paid AI.**
+  - **For one person:** everyday tools, highly accessible, in the person's own language.
+  - **For the family:** a meeting point to set and coordinate events, settle who brings what, and keep and share the
+    family story.
+  - **Proposals** (`docs/business/integrations.md`) for the master and ai-features: a remote MCP connector so the
+    user's own Claude, ChatGPT or Gemini works on the family's data at no AI cost to the owner; an ICS calendar feed;
+    WhatsApp share links; Google Photos Picker; Gmail only through the user's own agent, which may avoid CASA.
+- **The app works without AI, in a simpler version.** Connecting the services a user subscribes to unlocks the rest.
+  Most everyday tools already work without AI today (checked in `server/`, see `docs/business/integrations.md` 3a).
+- **A button for an AI ability never looks broken when no AI is connected.** It invites the user instead, for example
+  "Connect your Claude, ChatGPT or Gemini to import a recipe from a link", and also offers credits. For ai-features
+  and design.
+- **Credits on our server for users who do not want their own AI.** Credits never expire (the owner). The proposed
+  mechanism (`docs/business/pricing.md` 6a–6d):
+  - one credit is a fixed amount of real AI cost;
+  - each action deducts credits by its metered cost (`costOf` in `server/prices.ts`), with an estimate shown before
+    an expensive action.
+- **The owner's pricing model for everything paid: 30% materials, 30% labour, 30% profit, 10% tithe.** This is a
+  working assumption.
+  - **Proposed:** VAT and the payment fee come off first, and only what remains is split.
+  - **For credits:** the shopper's price is about 4.1× the AI cost on the web and 4.6–5.6× in an app store.
+- **A free trial and packs from a few shekels.**
+  - **Trial:** a one-time free credit per Google account, proposed at about ₪1–2 of AI cost.
+  - **Packs:** for example ₪5 / 10 / 20 / 50, priced in shekels.
+  - **Store vs web:** the same price everywhere, with bonus credits on the web; relevant only once the app is in the
+    stores.
+
+  Still to be set: the trial amount, the pack sizes, and the payment provider (Bit for small sums?).
+- **The core is free for everyone.** Paid extras only: features that cost the owner money (server AI), family photos,
+  a companion figure unique to the family, and companion packs.
+
+What this means for the other areas: a free user must cost almost nothing. A new feature therefore runs on the device,
+or from a shared cache, or sits behind payment. Nothing changes in the code yet. Prices, quotas and the paid catalogue
+come after the AI measurement, around 2026-11-26.
+
+Proposals for the owner and the areas:
+- **ai-features:** a per-user culture setting, and family gatherings (calendar + invitations + who brings what + recipes).
+- **design:** a companion unique to a family, and companion packs as purchasable items.
+
+Status: Decided (the owner, 2026-11-12). The work for each area is a proposal until the master schedules it.
 
 ## 2026-11-12 – The dev server's port lives in wrangler.toml (master)
 

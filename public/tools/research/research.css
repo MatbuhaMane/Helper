@@ -253,13 +253,14 @@
 /* the draft screen: a writing surface like a page, a toolbar that stays under the bar, the export row at the foot */
 .rx-draft > input[type="text"] { border: 0 !important; background: none !important; box-shadow: none !important; padding: 4px 2px !important; font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem) !important; }
 .rx-draft > input[type="text"]:focus { outline: none; box-shadow: inset 0 -2px 0 var(--primary) !important; }
-.rx-toolbar { position: sticky; inset-block-start: calc(var(--appbar-h) + 6px); z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 999px;
+.rx-toolbar { position: sticky; inset-block-start: calc(var(--appbar-h) + 6px); z-index: 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 22px;
   background: var(--glass); border: 1px solid var(--glass-border); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
 .rx-toolbar .btn { border-radius: 999px; }
 .rx-draft > textarea { min-block-size: 60vh; padding: 24px clamp(16px, 4vw, 40px) !important; border-radius: 20px !important; background: var(--card) !important;
   border: 1px solid var(--line) !important; font-size: 1.06rem !important; line-height: 1.85 !important; box-shadow: 0 14px 32px -28px rgba(46, 42, 30, .5); resize: vertical; }
 .rx-draft > textarea:focus { outline: none; border-color: var(--primary) !important; }
 .rx .rx-preview { padding: 10px; border-radius: 20px; }
+.rx-preview[hidden], .rx-draft > textarea[hidden] { display: none !important; }   /* (their inline display:grid would keep the hidden preview as an empty box) */
 .rx-export { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-block-start: 10px; border-block-start: 1px solid var(--line); }
 .rx-export .btn { border-radius: 999px; }
 /* the research journal: today's lines on a ruled page, the days before as short entries with their date in the margin */
@@ -271,3 +272,18 @@
 .rx-journal-entry > p { line-height: 1.6; }
 @media (max-width: 520px) { .rx-journal-entry { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
 @media (prefers-reduced-motion: reduce) { .rx .rx-draft-item:hover { transform: none; } }
+/* the academic pack (2144965): the word count beside the save state, the format row, the checklist before handing in */
+.rx-words { font-variant-numeric: tabular-nums; padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); white-space: nowrap; }
+.rx-format { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 12px; border-radius: 16px; background: color-mix(in srgb, var(--olive) 9%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--olive) 30%, var(--line)); font-size: .92rem; }
+.rx-format label { display: inline-flex; align-items: center; gap: 6px; }
+.rx-format input[type="number"] { inline-size: 6.5em; padding: 5px 8px; text-align: center; font-variant-numeric: tabular-nums; }
+.rx .rx-checks { padding: 14px 18px; display: grid; gap: 10px; }
+.rx-checks > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 8px; }
+.rx-checks > summary::-webkit-details-marker { display: none; }
+.rx-checks > summary::after { content: "▾"; margin-inline-start: auto; color: var(--muted); transition: transform var(--dur-quick) var(--ease-river); }
+.rx-checks[open] > summary::after { transform: rotate(180deg); }
+.rx-checks li { padding: 6px 10px; border-radius: 10px; line-height: 1.45; }
+.rx-checks li.ok { color: var(--muted); background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.rx-checks li.todo { color: var(--text); background: color-mix(in srgb, var(--rx-open) 9%, transparent); font-weight: 500; }
+@media (max-width: 520px) { .rx-toolbar { position: static; } }   /* on a phone the many tools wrap: they stay in place rather than cover the page */

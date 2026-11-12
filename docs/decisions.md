@@ -17,6 +17,14 @@ The owner set the direction (details in `docs/business/vision.md`):
 - **Every user is an endpoint.** The goal is daily use by each person.
 - **The social network is the family tree.** People connect as relatives, and the forest links families by marriage.
 - **The culture follows each user's settings.** Jewish, Muslim or Christian: the calendar, holidays, content and food rules.
+  The choice is independent of the language.
+- **The interface is in Arabic, Hebrew and English.** Two right-to-left languages and one left-to-right, so the master
+  needs to plan the translation infrastructure (UI strings and AI prompts).
+- **Sharing covers everything:** messages, events, greetings, photos and media. The owner prefers to build on reliable
+  open source rather than from scratch. The business proposal is Matrix with an Apache-2.0 homeserver, our own UI, and
+  federation off (`docs/business/social-and-growth.md`); the technical choice belongs to the master and ai-features.
+- **Personalization is free:** each user or family picks a palette, keeps its own recipe and song books, has a personal
+  companion and a personal feed. Design owns the palettes.
 - **The core is free for everyone.** Paid extras only: features that cost the owner money (server AI), family photos,
   a companion figure unique to the family, and companion packs.
 

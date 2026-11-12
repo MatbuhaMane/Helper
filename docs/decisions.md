@@ -318,6 +318,66 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)
+
+**Decided:**
+- Every tool that uses AI also has a version that is not smart but still useful, for users with no AI connection and no
+  credits. It can be built from templates, search, rules or forms.
+- The invitation to connect an AI or buy credits comes in addition to that version, never instead of it.
+
+This extends the earlier decisions: "The app works without AI, in a simpler version" and "A button for an AI ability
+never looks broken" (the entry "Product direction").
+
+**Affects:**
+- ai-features: every AI tool, existing and new, including the recipe book, the diets and the weather.
+- Design: how the two versions look side by side.
+- Vision: the goal-management spec.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The PC guide and the mail organizer: the simple path, through the user's own AI (vision, the owner)
+
+**Decided:**
+- Both tools are developed on the simple path that ai-features assessed, about half a day each.
+  - **The PC guide:** a copy button for the rules, a checklist with progress, a Mac variant, and a "how did it go" step.
+  - **A public mail organizer:** like the PC guide, it runs on the user's own Claude with its Gmail connector, under our
+    safety rules: label instead of delete, preview first, and an undo list.
+- The family's current mail tool (`server/mail.ts`, on the owner's keys) stays as it is.
+- Our own public Gmail tool is put off: it needs the restricted `gmail.modify` scope, Google's paid security assessment,
+  and our AI.
+
+**Why:** the owner's condition: "if it is simple, develop it; if it is very complex, keep it for later". It fits
+`closed-questions.md` 12 (in the public version, only through the user's own agent).
+
+**Affects:** ai-features.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The family tree opens freely after the first sign-in; the ring and the top bar are rebuilt (vision, the owner)
+
+Three decisions, confirmed by the owner one sentence at a time. The rest of the owner's notes from the same list are
+instructions, sent in the vision session's batch 2 (`docs/vision/batch.md`).
+
+1. **The family tree opens without asking again.** After the first sign-in on a device, the family tree opens without a
+   passkey. Only special actions ask each time: opening sealed vault documents, changing privacy, linking trees, deleting
+   and exporting.
+   - Affects: the master (the vault's security: where the key lives, and the trade-off; explain it to the owner and
+     propose a safe way) and ai-features (`family.js`, `server/vault/index.ts`).
+2. **The home page's ring around the campfire has only three fixed items:** the family tree, tools and settings.
+   Everything else is pinned to the ring by each user with a long press in the tools box, which holds every menu. The
+   choice is saved per user (`H.prefs`).
+   - Affects: ai-features (pinning and saving), design, the master (`public/index.html`).
+3. **The top bar keeps five items:**
+   - בית;
+   - עץ המשפחה;
+   - ניווט: a dropdown to the site's parts;
+   - כלים: a dropdown to every tool;
+   - הגדרות: a gear icon.
+   - The phone's bottom tab bar has the same five items (the owner).
+   - Affects: the master (`NAV` in `common.js`) and design.
+
+Status: Decided (the owner).
+
 ## 2026-11-12 – One visual style for everything; images are made through the Gemini API (vision, the owner)
 
 **Decided:**

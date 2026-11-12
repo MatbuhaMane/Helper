@@ -6,7 +6,7 @@
      H.APPS                    the catalogue
      H.ringApps()              what the ring shows now, in order
      H.isPinned(href)          H.togglePin(href) → pinned or not (saved)
-     H.appIcon(name)           H.icon, with a gear for הגדרות until the shared icons have one */
+     H.appIcon(name)           the icon of a menu (H.icon) */
 (() => {
   if (!window.H || H.APPS) return;
   const APPS = [
@@ -48,12 +48,7 @@
     const pinned = prefs().pins.map(byHref).filter((a) => a && !a.fixed);
     return [byHref('/family/'), ...pinned, byHref('/tools/'), byHref('/settings/')];
   }
-  // a gear (Feather, MIT) for הגדרות, until the shared icons have their own
-  const GEAR = '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>';
-  function appIcon(name, cls) {
-    const s = H.icon(name, cls);
-    if (name === 'settings' && s && !s.innerHTML.trim()) s.innerHTML = GEAR;
-    return s;
-  }
+  // (the shared icons have the gear for הגדרות now; appIcon stays as the one name the ring and the tools page use)
+  const appIcon = (name, cls) => H.icon(name, cls);
   Object.assign(H, { APPS, ringApps, isPinned, togglePin, appIcon });
 })();

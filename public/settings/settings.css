@@ -76,6 +76,17 @@
 .chip[data-swatch="desert"] { --sw1: #9a4a24; --sw2: #e0a85a; }
 .chip[data-swatch="vineyard"] { --sw1: #6b2a4a; --sw2: #c9a0c0; }
 .chip[data-swatch="dusk"] { --sw1: #3d4a8a; --sw2: #e8b26a; }
+/* the themes that change the background: three colours (the ground in a ring around the two) */
+.chip[data-swatch="sand"] { --sw1: #8a461c; --sw2: #dba65a; --sw3: #efe5d1; }
+.chip[data-swatch="sage"] { --sw1: #3b6634; --sw2: #adc58c; --sw3: #e5ebdf; }
+.chip[data-swatch="mist"] { --sw1: #3a4d82; --sw2: #b7c2e2; --sw3: #e8e9ee; }
+.chip[data-swatch="custom"] { --sw1: var(--primary); --sw2: var(--olive); }
+.chip[data-swatch]:is([data-swatch="sand"], [data-swatch="sage"], [data-swatch="mist"])::before { box-shadow: 0 0 0 3px var(--sw3), 0 0 0 4px rgba(0, 0, 0, .14); }
+/* the font choices show themselves in their own letters */
+.chip[data-font-sample="heebo"] { font-family: 'Heebo', sans-serif; }
+.chip[data-font-sample="round"] { font-family: 'Varela Round', sans-serif; }
+.chip[data-font-sample="serif"] { font-family: 'Frank Ruhl Libre', serif; }
+.chip[data-font-sample="readable"] { font-family: Arial, sans-serif; }
 /* a switch: the checkbox drawn as a sliding knob (transform only) */
 .st-switch { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; line-height: 1.4; }
 .st-switch input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0; inline-size: 44px; block-size: 26px; border-radius: 999px;

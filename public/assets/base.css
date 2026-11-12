@@ -3,7 +3,7 @@
   vine for links, focus and the active state, olive only as a colour field, a pale Shechinah blue for decoration.
   One typeface (Rubik). Flat surfaces framed by thin lines; motion arrives slowly and leaves quickly.
 */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&family=Heebo:wght@400;500;600&family=Varela+Round&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap');
 
 :root {
   --icon-ink: #2e2a1e;   /* the line of the pastel icons: dark ink in both themes, so the pastel fill keeps its colour at night too */
@@ -110,6 +110,34 @@
 :root[data-theme="dark"][data-palette="desert"] { --primary: #e6a17a; --ok: #e6a17a; --tint: #2e1c14; }
 :root[data-theme="dark"][data-palette="vineyard"] { --primary: #d9a0bf; --ok: #d9a0bf; --tint: #2a1624; }
 :root[data-theme="dark"][data-palette="dusk"] { --primary: #a9b4ec; --ok: #a9b4ec; --tint: #161c3a; }
+
+/* Themes that change the background too (vision batch 5): the whole room in another light – its ground, its cards, its
+   lines and its ink – by day and at night. Contrast checked: text 12:1 and more, the active colour 5.5:1, ink on the field 7:1.
+     sand   חול     a warm dune: sand ground, terracotta
+     sage   מרווה   a garden: sage ground, deep leaf green
+     mist   ערפל    a cool morning: mist-grey ground, slate blue */
+:root[data-palette="sand"] { --bg: #efe5d1; --card: #f9f3e7; --chalk: #efe5d1; --chalk-raised: #f9f3e7; --text: #2e2418; --ink: #2e2418; --muted: #66543a;
+  --line: #ddd0b6; --line-strong: #c9b998; --vine: #8a461c; --primary: #8a461c; --olive: #dba65a; --tint: #f5e4cf; --glass: rgba(249, 243, 231, .84); }
+:root[data-palette="sage"] { --bg: #e5ebdf; --card: #f3f6ef; --chalk: #e5ebdf; --chalk-raised: #f3f6ef; --text: #232b20; --ink: #232b20; --muted: #525e4a;
+  --line: #d0dac8; --line-strong: #b9c7ae; --vine: #3b6634; --primary: #3b6634; --olive: #adc58c; --tint: #dfeedd; --glass: rgba(243, 246, 239, .84); }
+:root[data-palette="mist"] { --bg: #e8e9ee; --card: #f5f6f9; --chalk: #e8e9ee; --chalk-raised: #f5f6f9; --text: #23252e; --ink: #23252e; --muted: #545867;
+  --line: #d4d6df; --line-strong: #bfc2ce; --vine: #3a4d82; --primary: #3a4d82; --olive: #b7c2e2; --tint: #e0e5f5; --glass: rgba(245, 246, 249, .84); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="sand"] { --bg: #15100a; --card: #201912; --text: #ecdfc8; --muted: #b8a688; --line: #2e251a; --line-strong: #43372a; --primary: #e8a878; --ok: #e8a878; --primary-ink: #15100a; --tint: #2e1c14; --glass: rgba(32, 25, 18, .88); }
+  :root:not([data-theme="light"])[data-palette="sage"] { --bg: #0a110c; --card: #121b14; --text: #dde6d6; --muted: #a6b4a0; --line: #1c2a1f; --line-strong: #2b3e2f; --primary: #9fd29a; --ok: #9fd29a; --primary-ink: #0a110c; --tint: #142a18; --glass: rgba(18, 27, 20, .88); }
+  :root:not([data-theme="light"])[data-palette="mist"] { --bg: #0b0d14; --card: #141722; --text: #dfe1ea; --muted: #a9adbd; --line: #1e2232; --line-strong: #2d3349; --primary: #a8b8ee; --ok: #a8b8ee; --primary-ink: #0b0d14; --tint: #161c3a; --glass: rgba(20, 23, 34, .88); }
+}
+:root[data-theme="dark"][data-palette="sand"] { --bg: #15100a; --card: #201912; --text: #ecdfc8; --muted: #b8a688; --line: #2e251a; --line-strong: #43372a; --primary: #e8a878; --ok: #e8a878; --primary-ink: #15100a; --tint: #2e1c14; --glass: rgba(32, 25, 18, .88); }
+:root[data-theme="dark"][data-palette="sage"] { --bg: #0a110c; --card: #121b14; --text: #dde6d6; --muted: #a6b4a0; --line: #1c2a1f; --line-strong: #2b3e2f; --primary: #9fd29a; --ok: #9fd29a; --primary-ink: #0a110c; --tint: #142a18; --glass: rgba(18, 27, 20, .88); }
+:root[data-theme="dark"][data-palette="mist"] { --bg: #0b0d14; --card: #141722; --text: #dfe1ea; --muted: #a9adbd; --line: #1e2232; --line-strong: #2d3349; --primary: #a8b8ee; --ok: #a8b8ee; --primary-ink: #0b0d14; --tint: #161c3a; --glass: rgba(20, 23, 34, .88); }
+/* A theme of one's own (data-palette="custom"): settings sets --primary, --olive, --bg and --card on <html> from
+   H.palette.derive() (palette.js), which already keeps the contrast; by night the derived night values come in the same way. */
+
+/* The fonts to choose from (data-font): Rubik is the hub's own; each of the others loads only for whoever picks it. */
+:root[data-font="heebo"] body, :root[data-font="heebo"] :is(button, input, select, textarea) { font-family: 'Heebo', system-ui, sans-serif; }
+:root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, sans-serif; }
+:root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', serif; }
+:root[data-font="serif"] :is(h1, h2, h3) { font-weight: 700; }
 
 /* Reading comfort (הגדרות › נגישות; settings/apply.js marks <html>): the text size is the root's font size (every rem grows
    with it); these are the rest. */

@@ -1,0 +1,25 @@
+/* Figure2D (figure2d.js): a drawn figure, its head and body cut from one picture, its face in vector. Sized by --f2-size
+   (the width); the height follows the picture. Everything moves on transform only. */
+.f2 { position: relative; inline-size: var(--f2-size, 160px); aspect-ratio: 1 / var(--f2-ratio, 1); touch-action: manipulation; cursor: pointer;
+  -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.f2-body, .f2-head { position: absolute; inset: 0; will-change: transform; }
+.f2-body { transform-origin: 50% 100%; }
+.f2-pic { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none;
+  filter: drop-shadow(0 6px 6px rgba(30, 20, 10, .22)); }
+.f2-head .f2-pic { filter: none; }
+.f2-face { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; pointer-events: none; }
+.f2-eye .f2-glad { opacity: 0; }
+.f2.glad .f2-eye .f2-lid { opacity: 0; }
+.f2.glad .f2-eye .f2-glad { opacity: 1; }
+.f2-cheek { opacity: .5; }
+.f2.glad .f2-cheek { opacity: .8; }
+/* a soft shadow on the ground under it */
+.f2::after { content: ""; position: absolute; z-index: -1; inset-inline: 18%; inset-block-end: -2%; block-size: 6%; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(30, 20, 10, .28), transparent); }
+:root[data-theme="dark"] .f2::after { background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .f2::after { background: radial-gradient(closest-side, rgba(0, 0, 0, .55), transparent); } }
+/* asleep: a slow "z" rises */
+.f2.sleeping::before { content: "z"; position: absolute; inset-block-start: 4%; inset-inline-end: 6%; font: 700 1.1rem/1 var(--font, inherit); color: var(--muted);
+  animation: f2-z 2.6s ease-in-out infinite; }
+@keyframes f2-z { 0% { opacity: 0; transform: translate(0, 6px) scale(.8); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-8px, -18px) scale(1.2); } }
+@media (prefers-reduced-motion: reduce) { .f2.sleeping::before { animation: none; opacity: .8; } }

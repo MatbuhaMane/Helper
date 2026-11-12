@@ -25,6 +25,12 @@ decisions: log them in `docs/decisions.md` for the master and ai-features.
 - **The market.** Who it is for (Hebrew-speaking families first?), what exists, what makes it different (the family tree
   and the forest, kashrut and keto in recipes, the companion).
 
+## Working mode
+
+Follow `docs/business/working-mode.md` (set by the owner, 2026-11-12): end every topic with a recommendation and a quick
+question; record approved decisions in `docs/decisions.md` (decision, why, affects, Decided or Provisional); flag anything
+that affects other areas; don't reopen settled decisions without new information.
+
 ## Open questions
 
 - Who pays: subscriptions through the app stores, Stripe, or both?

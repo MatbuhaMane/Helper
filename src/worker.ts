@@ -2,6 +2,8 @@
 // API responses leave with the security headers here; static pages get the same from public/_headers (see docs/security.md).
 import { onRequest } from '../functions/api/[[path]]';
 import type { Env } from '../server/core';
+import { nightly } from '../server/vault/backup';
+import { ensureSchema } from '../server/schema';
 
 /** The family vault's page: only our own scripts (none inline), nothing framed, nothing from outside but the font. */
 const VAULT_CSP = [
@@ -39,5 +41,10 @@ export default {
       return secure(res, url);
     }
     return secure(await env.ASSETS.fetch(request), url);
+  },
+  /** the nightly job: the vault's backups (only where the vault is configured) */
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (!env.VAULT_KEY) return;
+    ctx.waitUntil(ensureSchema(env).then(() => nightly(env)).then((r) => console.log('vault backup', JSON.stringify(r))).catch((e) => console.error('vault backup failed', e instanceof Error ? e.stack : e)));
   },
 };

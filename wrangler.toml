@@ -53,3 +53,9 @@ GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleuse
 GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
 SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"
+# previews sign in through the live site (a public address; see server/core.ts previewHandoff)
+PRODUCTION_ORIGIN = "https://helper.shemrivers.workers.dev"
+
+# The vault's nightly backups (server/vault/backup.ts): missing Drive copies, and an encrypted snapshot. 01:30 UTC.
+[triggers]
+crons = ["30 1 * * *"]

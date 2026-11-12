@@ -72,16 +72,54 @@ opened by anyone** – that is the point, and it is also the risk. To keep a cop
 **Rotating it:** put the current key in `VAULT_KEY_OLD`, a new one in `VAULT_KEY`. Everything still opens; new items use the new key.
 (A re-wrapping job that moves old items to the new key is a planned follow-up.)
 
-## Google Drive and the NAS (prepared, not connected)
+## Backups: Cloudflare first, Google Drive and the NAS as encrypted copies
 
-`server/vault/store.ts` is a driver interface (`put`, `get`, `delete`); each item records its store. Today: `r2`.
-Because only ciphertext ever reaches a store, Drive and the NAS can hold copies safely – a leak there exposes nothing without `VAULT_KEY`.
+Cloudflare R2 is the main store. Every vault file also has two encrypted copies, and the vault's records are saved every night:
 
-- **NAS – as a backup first.** A scheduled Worker copies new vault objects (ciphertext) to the NAS, reached only through a Cloudflare Tunnel
-  protected by Cloudflare Access with a service token (`NAS_URL`, `NAS_ACCESS_ID`, `NAS_ACCESS_SECRET`). No port is opened on the home router.
-- **Google Drive – as a store or a second backup.** The `drive.file` scope (only files the helper made), through each person's own Google
-  sign-in, into a "Helper vault" folder. Shared items in a folder shared with the family; private items in the person's own Drive.
-- To switch where new files go: `VAULT_STORE=drive|nas` once the driver is written.
+| Where | How it gets there | What it is for |
+|---|---|---|
+| Google Drive (the owner's) | The Worker copies each new file right away (ciphertext, as it is) into the folder "Helper vault (encrypted)", through the owner's own Google sign-in with the `drive.file` scope (only files the helper made). The nightly job fills in anything missed. | **A live copy**: if R2 cannot give a file back, the vault reads it from Drive (`readWithFailover`). |
+| The family NAS (Synology) | The NAS **pulls** the bucket's `vault/` folder itself with Cloud Sync and a **read-only** R2 token. Nothing at home is open to the internet, and the NAS cannot change anything in Cloudflare. | **A cold copy at home**, with its own history. |
+| A nightly snapshot | 01:30 UTC (the Worker's cron): the tree and the items' records – already sealed – encrypted once more, to R2 `_backup/` (two weeks kept) and to Drive. | With the files and `VAULT_KEY`, it restores everything. |
+
+**Recovery without Cloudflare at all:** copy the NAS folder (or download the Drive folder) to a computer and run
+
+```bash
+node tools/vault-restore.mjs <backup folder> <output folder>
+```
+
+It asks for `VAULT_KEY` (hidden) and writes every document and picture, decrypted, in a folder per person, with `people.json`.
+
+**Connecting Drive (the owner, once):** ניהול משפחה → גיבויים → חיבור Google Drive. In Google Cloud (project family-helper-514321) the
+Google Drive API must be enabled and the `.../auth/drive.file` scope added to the consent screen (a non-sensitive scope: no verification).
+
+**Setting up the NAS (the NAS's administrator, once):**
+1. Cloudflare → R2 → Manage API tokens → Create: permission **Object Read only**, only the bucket `helper-media`. Note the Access Key ID,
+   the Secret and the endpoint `https://<account id>.r2.cloudflarestorage.com`.
+2. DSM → Package Center → install **Cloud Sync**.
+3. Cloud Sync → + → **S3 Storage** → S3-compatible: the endpoint, the two keys, signature v4, bucket `helper-media`, remote folder `/vault`.
+4. Local folder: e.g. a shared folder `Backups/helper-vault`, visible only to the administrator. Direction: **Download remote changes only**,
+   and tick **Don't remove files in the local folder when they are removed from the remote** (so a deletion in the cloud never deletes the home copy).
+5. Optional: Snapshot Replication or Hyper Backup on that folder, for history.
+
+`server/vault/store.ts` keeps a driver interface (`r2` now; `drive`/`nas` as main stores if ever wanted).
+
+## Previews
+
+Previews (`<branch>-helper.shemrivers.workers.dev`) have their own database and bucket (test data), their own vault key and token key,
+and they sign in **through the live site**: a preview sends the person to the live site's Google sign-in, and the live site – only for a
+member of the family – sends back a ticket signed with `PREVIEW_HANDOFF_KEY`, good for one minute, once, and only for that preview's address.
+No Google redirect address per branch is needed.
+
+## Setting and replacing secrets
+
+```bash
+node tools/secrets.mjs
+```
+
+One pass over every secret: what it is, where a new one is made (Anthropic, Google AI Studio, Google Cloud), and where it goes – the live
+site, the previews' shared base config, `.dev.vars`. Keys from services are pasted (hidden). Keys the helper makes (`VAULT_KEY`,
+`TOKEN_KEY`) are made there and copied to the clipboard so they go into the password manager first. Nothing is printed.
 
 ## The family's checklist
 
@@ -95,12 +133,11 @@ Because only ciphertext ever reaches a store, Drive and the NAS can hold copies 
 - A strict CSP for the whole app (today only the vault has one): the other pages have inline scripts and embed YouTube, Spotify and others,
   so they need their scripts moved to files and an allow-list.
 - "Sign out of all devices" and a list of active sessions.
-- The NAS backup job, and the Drive driver.
 - A job that re-wraps keys after a rotation.
 - Rate limiting on sign-in attempts at the edge (Cloudflare WAF rate-limiting rules).
 
 ## Tests
 
 ```bash
-npm run test:vault      # the vault's encryption and passkey checks, with a simulated authenticator (real keys and signatures)
+npm run test:vault      # the vault's encryption, passkey checks (a simulated authenticator, real keys) and the preview sign-in tickets
 ```

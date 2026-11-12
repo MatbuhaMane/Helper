@@ -22,6 +22,8 @@ export interface Env {
   VAULT_KEY_OLD?: string;       // only while rotating VAULT_KEY: the previous key, so older files still open
   VAULT?: R2Bucket;             // optional: a bucket of the vault's own (else MEDIA under vault/)
   VAULT_STORE?: string;         // where new vault files go: r2 (default) | drive | nas
+  PRODUCTION_ORIGIN?: string;   // set on previews only: the live site, through which a preview signs in (a public URL)
+  PREVIEW_HANDOFF_KEY?: string; // the same secret on the live site and the previews: signs the one-minute sign-in tickets
 }
 
 export interface Member {
@@ -135,11 +137,28 @@ async function admitMember(env: Env, email: string, name: string | null): Promis
 /* ---------------- Google OAuth ---------------- */
 
 export const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
+export const DRIVE_FILE_SCOPE = 'https://www.googleapis.com/auth/drive.file';   // only files the helper itself made
+
+/** A preview of this Worker (feature-x-helper.<sub>.workers.dev), seen from the live site (helper.<sub>.workers.dev). */
+export function isPreviewOf(live: URL, origin: string): boolean {
+  const esc = live.hostname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`^https://[a-z0-9-]{1,63}-${esc}$`).test(origin);
+}
+const onPreview = (env: Env, url: URL) => !!env.PRODUCTION_ORIGIN && url.origin !== env.PRODUCTION_ORIGIN;
 
 export function googleLogin(ctx: Ctx): Response {
   const { env, url } = ctx;
   if (!env.GOOGLE_CLIENT_ID) throw new HttpError(500, 'GOOGLE_CLIENT_ID is not configured');
-  const gmail = url.searchParams.get('gmail') === '1';
+  // a preview has no Google redirect address of its own: it signs in through the live site, which sends back a ticket
+  if (onPreview(env, url)) {
+    const p = new URLSearchParams({ preview: url.origin, next: safeNext(url.searchParams.get('next')) });
+    if (url.searchParams.get('reauth') === '1') p.set('reauth', '1');
+    return redirect(`${env.PRODUCTION_ORIGIN}/api/auth/login?${p}`);
+  }
+  const preview = url.searchParams.get('preview');
+  if (preview && !isPreviewOf(url, preview)) throw new HttpError(400, 'Unknown preview');
+  const gmail = !preview && url.searchParams.get('gmail') === '1';
+  const driveBackup = !preview && url.searchParams.get('drive') === '1';   // the owner connects Drive for the vault's backups
   const reauth = url.searchParams.get('reauth') === '1';   // the vault: prove it is you again, now
   const next = safeNext(url.searchParams.get('next'));
   const state = uid();
@@ -147,18 +166,18 @@ export function googleLogin(ctx: Ctx): Response {
     client_id: env.GOOGLE_CLIENT_ID,
     redirect_uri: `${url.origin}/api/auth/callback`,
     response_type: 'code',
-    scope: gmail ? `openid email profile ${GMAIL_SCOPE}` : 'openid email profile',
+    scope: gmail ? `openid email profile ${GMAIL_SCOPE}` : driveBackup ? `openid email profile ${DRIVE_FILE_SCOPE}` : 'openid email profile',
     state,
     include_granted_scopes: 'true',
-    prompt: gmail ? 'consent' : reauth ? 'login' : 'select_account',
+    prompt: gmail || driveBackup ? 'consent' : reauth ? 'login' : 'select_account',
   });
   if (reauth) p.set('max_age', '0');
-  if (gmail) p.set('access_type', 'offline');
+  if (gmail || driveBackup) p.set('access_type', 'offline');
   return new Response(null, {
     status: 302,
     headers: {
       location: `https://accounts.google.com/o/oauth2/v2/auth?${p}`,
-      'set-cookie': cookie('oauth', JSON.stringify({ state, next }), 600),
+      'set-cookie': cookie('oauth', JSON.stringify({ state, next, preview: preview || undefined }), 600),
     },
   });
 }
@@ -195,16 +214,60 @@ export async function googleCallback(ctx: Ctx): Promise<Response> {
   const member = await admitMember(env, email, claims.name || null);
   if (!member) return redirect('/?error=not_invited&email=' + encodeURIComponent(email));
 
-  if (tok.refresh_token && tok.scope?.includes(GMAIL_SCOPE)) {
+  // a preview asked: no session here – a signed one-minute ticket for that preview
+  if (saved.preview && isPreviewOf(url, saved.preview)) {
+    if (!env.PREVIEW_HANDOFF_KEY) throw new HttpError(503, 'previews_not_configured');
+    const ticket = await signTicket(env.PREVIEW_HANDOFF_KEY, { email, name: claims.name || null, aud: saved.preview, exp: Date.now() + 60e3, n: uid() + uid() });
+    const back = new Headers({ location: `${saved.preview}/api/auth/handoff?t=${encodeURIComponent(ticket)}&next=${encodeURIComponent(safeNext(saved.next))}` });
+    back.append('set-cookie', cookie('oauth', '', 0));
+    return new Response(null, { status: 302, headers: back });
+  }
+
+  if (tok.refresh_token && (tok.scope?.includes(GMAIL_SCOPE) || tok.scope?.includes(DRIVE_FILE_SCOPE))) {
     await env.DB.prepare(
       `INSERT INTO google_tokens (email, refresh_token, scope, updated_at) VALUES (?, ?, ?, ?)
        ON CONFLICT(email) DO UPDATE SET refresh_token = excluded.refresh_token, scope = excluded.scope, updated_at = excluded.updated_at`,
     ).bind(email, await encrypt(env, tok.refresh_token), tok.scope, Date.now()).run();
+    // the owner connected Drive: the vault's backups go to their Drive from now on
+    if (tok.scope.includes(DRIVE_FILE_SCOPE) && member.role === 'owner') {
+      await env.DB.prepare("INSERT INTO backup_state (key, value) VALUES ('drive_email', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(email).run();
+    }
   }
 
   const headers = new Headers({ location: safeNext(saved.next) });
   headers.append('set-cookie', await createSession(env, email));
   headers.append('set-cookie', cookie('oauth', '', 0));
+  return new Response(null, { status: 302, headers });
+}
+
+/* ---------------- previews: a one-minute, single-use, signed ticket from the live site ---------------- */
+const b64u = (s: string) => btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+async function hmacKey(secret: string) {
+  return crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
+}
+export async function signTicket(secret: string, data: Record<string, unknown>) {
+  const body = b64u(unescape(encodeURIComponent(JSON.stringify(data))));
+  const sig = new Uint8Array(await crypto.subtle.sign('HMAC', await hmacKey(secret), new TextEncoder().encode(body)));
+  return body + '.' + b64u(String.fromCharCode(...sig));
+}
+export async function previewHandoff(ctx: Ctx): Promise<Response> {
+  const { env, url } = ctx;
+  if (!onPreview(env, url) || !env.PREVIEW_HANDOFF_KEY) throw new HttpError(404, 'Not found');
+  const [body, sig] = String(url.searchParams.get('t') || '').split('.');
+  if (!body || !sig) throw new HttpError(400, 'Bad ticket');
+  const raw = Uint8Array.from(atob(sig.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((sig.length + 3) % 4)), (c) => c.charCodeAt(0));
+  const ok = await crypto.subtle.verify('HMAC', await hmacKey(env.PREVIEW_HANDOFF_KEY), raw, new TextEncoder().encode(body));
+  if (!ok) throw new HttpError(403, 'Bad ticket');
+  const t = JSON.parse(b64urlDecode(body)) as { email: string; name: string | null; aud: string; exp: number; n: string };
+  if (t.aud !== url.origin || t.exp < Date.now()) throw new HttpError(403, 'Ticket expired');
+  // single use
+  const used = await env.DB.prepare('INSERT INTO handoff_nonces (n, exp) VALUES (?, ?) ON CONFLICT(n) DO NOTHING').bind(t.n, t.exp).run();
+  if (!used.meta.changes) throw new HttpError(403, 'Ticket used');
+  await env.DB.prepare('DELETE FROM handoff_nonces WHERE exp < ?').bind(Date.now() - 3600e3).run();
+  const member = await admitMember(env, String(t.email).toLowerCase(), t.name);
+  if (!member) return redirect('/?error=not_invited');
+  const headers = new Headers({ location: safeNext(url.searchParams.get('next')) });
+  headers.append('set-cookie', await createSession(env, member.email));
   return new Response(null, { status: 302, headers });
 }
 

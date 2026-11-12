@@ -1,7 +1,7 @@
 // Single entry point for /api/*: a tiny router over the server modules.
 
 import { aiStatus } from '../../server/ai';
-import { Ctx, Env, HttpError, body, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
+import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
 import * as daemon from '../../server/daemon';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
@@ -36,6 +36,7 @@ function route(method: string, path: string, h: Handler) {
 route('GET', '/api/auth/login', googleLogin);
 route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
+route('GET', '/api/auth/handoff', previewHandoff);
 route('POST', '/api/auth/logout', logout);
 route('POST', '/api/auth/desktop/start', desktopStart);
 route('GET', '/api/auth/desktop/approve', desktopApprove);
@@ -220,6 +221,9 @@ route('PUT', '/api/vault/items/:id', vault.itemSave);
 route('DELETE', '/api/vault/items/:id', vault.itemDelete);
 route('POST', '/api/vault/items/:id/restore', vault.itemRestore);
 route('GET', '/api/vault/audit', vault.auditLog);
+route('GET', '/api/vault/backups', vault.backups);
+route('POST', '/api/vault/backups/run', vault.backupsRun);
+route('POST', '/api/vault/backups/drive/disconnect', vault.driveDisconnect);
 
 /* mail organizer */
 route('GET', '/api/mail/status', mail.mailStatus);

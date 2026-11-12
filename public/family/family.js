@@ -99,6 +99,7 @@
   async function open() {
     const [t, st] = await Promise.all([call('/api/vault/tree'), call('/api/vault/status')]);
     S.people = t.people; S.me = t.me; S.until = st.until;
+    S.owner = (await H.me()).user?.role === 'owner';
     schedule();
     const clock = el('span', { class: 'fv-clock muted' });
     const bar = el('div', { class: 'fv-bar' },
@@ -108,6 +109,7 @@
       el('button', { class: 'btn small', onclick: () => personForm() }, '+ בן משפחה'),
       el('button', { class: 'btn small ghost', onclick: activity }, 'יומן פעילות'),
       el('button', { class: 'btn small ghost', onclick: keys }, 'מפתחות גישה'),
+      S.owner ? el('button', { class: 'btn small ghost', onclick: backups }, 'גיבויים') : null,
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
     const board = el('div', { class: 'fv-tree' });
     root.replaceChildren(el('section', { class: 'fv' }, bar, board));
@@ -367,6 +369,30 @@
         passkeysWork() ? el('button', { class: 'btn primary', onclick: async () => { try { await addPasskey(); toast('המפתח נשמר'); H.closeModal(); keys(); } catch (err) { if (err?.name !== 'NotAllowedError') say(err); } } }, '+ המכשיר הזה') : el('p', { class: 'muted' }, 'המכשיר הזה לא תומך במפתחות גישה.'));
       H.modal(box);
     } catch (e) { say(e); }
+  }
+
+  /* ---------- backups (the owner): Cloudflare first, an encrypted copy on Drive, the NAS pulls its own ---------- */
+  async function backups() {
+    let b;
+    try { b = await call('/api/vault/backups'); } catch (e) { return say(e); }
+    const when = (t) => (t ? new Date(t).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : 'עוד לא');
+    const run = el('button', { class: 'btn small', onclick: async () => {
+      run.disabled = true; run.textContent = 'מגבה…';
+      try { const r = await call('/api/vault/backups/run', { method: 'POST' }); toast(`הגיבוי הסתיים: ${r.copied} עותקים חדשים${r.failed ? `, ${r.failed} נכשלו` : ''}`); H.closeModal(); backups(); }
+      catch (e) { say(e); run.disabled = false; run.textContent = 'גיבוי עכשיו'; }
+    } }, 'גיבוי עכשיו');
+    H.modal(el('div', { class: 'fv-form' },
+      el('h2', {}, 'גיבויים'),
+      el('p', { class: 'muted small' }, 'הקבצים נשמרים ב־Cloudflare. מכל קובץ נשמר עותק מוצפן גם ב־Google Drive, וה־NAS מושך לעצמו את כל העותקים. בלי מפתח הכספת אי אפשר לקרוא אף אחד מהם.'),
+      el('div', { class: 'fv-item' }, el('b', {}, 'Google Drive'),
+        b.drive.email
+          ? [el('span', { dir: 'ltr', class: 'muted small' }, b.drive.email), el('span', {}, `${b.drive.copies} מתוך ${b.drive.files} קבצים מגובים`),
+             el('button', { class: 'btn small ghost', onclick: async () => { if (!confirm('לנתק את Google Drive מהגיבויים? העותקים שכבר שם נשארים.')) return; await call('/api/vault/backups/drive/disconnect', { method: 'POST' }); H.closeModal(); backups(); } }, 'ניתוק')]
+          : [el('span', { class: 'muted small' }, 'לא מחובר'), el('button', { class: 'btn small primary', onclick: () => { location.href = '/api/auth/login?drive=1&next=' + encodeURIComponent('/family/?fresh=1'); } }, 'חיבור Google Drive')]),
+      el('div', { class: 'fv-item' }, el('b', {}, 'NAS'), el('span', { class: 'muted small' }, 'ה־NAS מושך את הגיבויים מ־Cloudflare בעצמו (Cloud Sync). כך שום דבר בבית לא פתוח לאינטרנט. ההגדרה מתוארת ב־docs/security.md.')),
+      el('div', { class: 'fv-item' }, el('b', {}, 'עותק לילי של האילן'), el('span', { class: 'muted small' }, `האחרון: ${when(b.lastSnapshot)}`),
+        b.lastRun ? el('span', { class: 'muted small' }, `הגיבוי האחרון: ${when(b.lastRun.at)} · ${b.lastRun.copied} עותקים חדשים${b.lastRun.failed ? ` · ${b.lastRun.failed} נכשלו` : ''}`) : null),
+      el('div', { class: 'fv-acts' }, run)));
   }
 
   /* ---------- leaving the page alone ---------- */

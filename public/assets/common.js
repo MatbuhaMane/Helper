@@ -154,6 +154,21 @@
     }
   }
   window.addEventListener('online', schedulePrefFlush);
+  /** Leaving the page (or hiding it, as a phone does when switching apps) before the 400 ms flush: what changed goes out now,
+      with keepalive so the browser finishes the request after the page is gone. It stays marked unsent until a later page
+      confirms it, and the server keeps the newer of two copies (by their time), so sending twice is harmless. */
+  function flushPrefsNow() {
+    if (!prefsApplied) return;
+    clearTimeout(prefTimer);
+    for (const ns of Object.keys(prefStore.dirty)) {
+      try {
+        fetch('/api/prefs/' + ns, { method: 'PUT', keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ data: prefStore.data[ns], at: prefStore.at[ns] }) }).catch(() => { /* the next page sends it */ });
+      } catch (_) { /* the next page sends it */ }
+    }
+  }
+  window.addEventListener('pagehide', flushPrefsNow);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushPrefsNow(); });
 
   /* ---------- Day and night: the app follows the sun (sunrise → day, sunset → night) ----------
      A press on the switch picks the other one until the next sunrise or sunset, then the sun leads again;

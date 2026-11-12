@@ -35,6 +35,35 @@ paid extra, after a check of Google's caching terms.
 What the owner decides: which of A, B and C, and (for B and C) whether the place comes from the city in the
 settings, from the device's location, or both.
 
+## The owner's choice (2026-11-12): A, then C
+
+**A is built** (`/food/restaurants/`, server/restaurants.ts): the family's own list, and the ones missed in the slider.
+
+**C, Google Places: what its terms allow, and so how it would work.** From Google's Places API policies page:
+- Only **place IDs** may be stored indefinitely. Coordinates may be kept for up to 30 days. Names, addresses, ratings,
+  hours and reviews may not be copied, stored or pre-fetched; fresh details are fetched when someone opens a place.
+  So the shared week-long cache planned above is **not allowed**: every search is a real, billed call.
+- Places content shown without a Google map needs Google's attribution (the Google Maps logo, or the words
+  "Google Maps"), kept visibly apart from other content. Photos and reviews credit their author and link to them
+  on Google Maps.
+
+So C is built like this:
+- **Only on request**: a button "מה יש בסביבה" in מסעדות שלנו, never on its own in the slider, so nobody spends a
+  call by just opening the portal.
+- **Nearby Search "Pro"** with a field mask (name, address, rating, opening now, kosher is not a Google field), 20
+  results. **Details** (hours, phone, website) only when a result is opened. Photos not at first: they cost more and
+  need their author's credit.
+- **"Add to our list"** keeps only the Google place ID (allowed) together with the family's own fields, so the
+  family's list stays theirs; details are fetched fresh when opened.
+- **The cost guard**: a monthly cap of searches per person (counted in the meter like an AI call) and a daily
+  quota cap set on the key in Google Cloud, so a bill can never run away. 5,000 searches a month are free; then
+  about $32 per 1,000.
+- **What the owner provides**: a Google Maps Platform API key restricted to "Places API (New)", with a daily quota
+  cap, entered as the secret `GOOGLE_MAPS_API_KEY` (the owner enters it; it is never written in the code).
+
+Sources (C's terms): [Places API policies](https://developers.google.com/maps/documentation/places/web-service/policies).
+The Service Specific Terms page did not load fully; it is to be read before the build.
+
 Sources: [Google Maps Platform pricing](https://developers.google.com/maps/billing-and-pricing/pricing),
 [Google Places API pricing in 2026 (openplacesapi.com)](https://openplacesapi.com/blog/google-places-api-pricing),
 [Overpass API (OSM wiki)](https://wiki.openstreetmap.org/wiki/Overpass_API),

@@ -181,6 +181,12 @@
     .moon { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--moon-size, 100px); block-size: var(--moon-size, 100px); margin: calc(var(--moon-size, 100px) / -2) 0 0 calc(var(--moon-size, 100px) / -2);
       padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .92; -webkit-tap-highlight-color: transparent; transition: opacity 1.2s; }
     .moon:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
+    /* the moon's secret: a beat of the sky, and the eclipse rising */
+    .sun.egg-beat > img, .moon.egg-beat > img { animation: egg-beat .26s ease-out; }
+    @keyframes egg-beat { 40% { scale: 1.16; filter: brightness(1.35); } }
+    .egg-eclipse { position: absolute; left: var(--x); top: var(--y); inline-size: var(--s); block-size: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+      opacity: 0; translate: 0 70%; scale: .7; pointer-events: none; transition: opacity 1.4s ease-out, translate 1.8s cubic-bezier(.2, .7, .2, 1), scale 1.8s cubic-bezier(.2, .7, .2, 1); }
+    .egg-eclipse.up { opacity: 1; translate: 0 0; scale: 1; }
     /* a lunar eclipse: the moon in the earth's shadow turns copper */
     .moon.eclipse img { filter: sepia(.9) saturate(2.4) hue-rotate(-28deg) brightness(.72); }
     /* a solar eclipse: the eclipse drawing is larger than the sun's ball (its corona reaches out) */
@@ -262,6 +268,7 @@
     }
 
     const u = r.user;
+    const isOwner = u?.role === 'owner';
     // greeted by the Hebrew name (Google gives English names): the one set in the helper, or a Google name already in Hebrew
     const heFirst = (s) => (s && /[\u0590-\u05FF]/.test(s) ? s.trim().split(/\s+/)[0] : '');
     const first = u.he_name?.trim() || heFirst(u.name);
@@ -274,7 +281,7 @@
       { href: '/parasha/', ic: 'torah', name: 'פרשת השבוע', sub: 'הפרשה, הקריאה וזמני השבת', pillow: 'p02', c2: '#8e2435' },
       { href: '/tools/', ic: 'tools', name: 'כלים', sub: 'סידור המייל, סידור המחשב, משימות ומזג אוויר', pillow: 'p09', c2: '#c27c12' },
     ];
-    if (u.role === 'owner') apps.push({ href: '/admin/', ic: 'family', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר', pillow: 'p15', c2: '#8a5a32' });
+    apps.push({ href: '/family/', ic: 'family', name: 'ניהול משפחה', sub: 'אילן היוחסין, המסמכים והתמונות של המשפחה', pillow: 'p15', c2: '#8a5a32' });
 
     /* The moon's drawings, one for each of the eight phases (tools/moon-art.py cuts them from the artwork). */
     const MOON_ART = '/assets/moon/';
@@ -454,7 +461,53 @@
       const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
 
       /* the angle of the sun on the orbit: 0 rising (right), π setting (left); the moon is always half an orbit away */
-      let A = 0, tween = null, held = null;
+      let A = 0, tween = null, held = null, sink = 0;
+
+      /* The moon's secret (the owner's way to the members' admin): the moon is held on the horizon facing the sun – left,
+         left, right, left – a second each time (between two lefts it is lifted off the horizon and brought back). The sky
+         answers with 1, 1, 2 and 3 beats; then both sink and the eclipse rises. Anyone else just turns the sky. */
+      const SECRET = [['L', 1], ['L', 1], ['R', 2], ['L', 3]];
+      const egg = { step: 0, side: null, since: 0, last: 0, done: null, timer: 0, finale: false };
+      const sideNow = () => (Math.abs(Math.sin(A)) < 0.22 ? (Math.cos(A) > 0 ? 'L' : 'R') : null);   // where the moon stands on the horizon
+      function beat(n) {
+        for (let i = 0; i < n; i++) setTimeout(() => {
+          for (const b of [sun, moon]) { b.classList.remove('egg-beat'); void b.offsetWidth; b.classList.add('egg-beat'); }
+          navigator.vibrate?.(40);
+        }, i * 380);
+      }
+      function eggTick() {
+        if (!isOwner || held !== moon || egg.finale) return;
+        const now = performance.now();
+        if (egg.step && now - egg.last > 10000) { egg.step = 0; egg.done = null; }      // too long: start again
+        const side = sideNow();
+        if (side !== egg.side) { egg.side = side; egg.since = now; if (side !== egg.done) egg.done = null; return; }
+        if (!side || side === egg.done || now - egg.since < 1000) return;
+        egg.done = side;                                   // counted once per visit to that end
+        const [want, beats] = SECRET[egg.step];
+        if (side !== want) { egg.step = side === SECRET[0][0] ? 1 : 0; egg.last = now; if (egg.step) beat(SECRET[0][1]); return; }   // a wrong end: from the start
+        egg.step++; egg.last = now; beat(beats);
+        if (egg.step === SECRET.length) { egg.finale = true; setTimeout(finale, (beats - 1) * 380 + 260 + 500); }
+      }
+      function finale() {
+        // both stand still at the two ends of the horizon, sink slowly behind the tent, and the eclipse rises in their place
+        held = null; box.classList.remove('turning'); moon.classList.remove('held');
+        cancelAnimationFrame(tween?.raf); tween = null;
+        A = Math.round(A / Math.PI) * Math.PI;
+        const t0 = performance.now(), sinkMs = 1800;
+        const down = (t) => {
+          const k = Math.min(1, (t - t0) / sinkMs);
+          sink = geo.size * 1.3 * (k * k * (3 - 2 * k));
+          sun.style.opacity = moon.style.opacity = String(1 - k);
+          paint();
+          if (k < 1) requestAnimationFrame(down);
+        };
+        requestAnimationFrame(down);
+        const ec = el('img', { class: 'egg-eclipse', src: '/assets/eclipse.webp', alt: '' });
+        ec.style.setProperty('--x', geo.cx + 'px'); ec.style.setProperty('--y', (geo.cy - geo.ry * 0.92) + 'px'); ec.style.setProperty('--s', Math.round(geo.size * 1.9) + 'px');   // at the top of the orbit, in open sky
+        box.append(ec);
+        setTimeout(() => ec.classList.add('up'), sinkMs - 300);
+        setTimeout(() => { location.href = '/admin/'; }, sinkMs + 2200);
+      }
       const dark = () => document.documentElement.dataset.theme === 'dark';
       function nightQ(s, now) {
         const y1 = H.sunTimes(new Date(now - 864e5)), t1 = H.sunTimes(new Date(now + 864e5));
@@ -473,8 +526,8 @@
       function paint() {
         const g = geo, size = g.size, ms = Math.round(size * 0.9);
         const S = at(A), M = at(A + Math.PI);
-        sun.style.transform = `translate(${S.x.toFixed(1)}px, ${S.y.toFixed(1)}px)`;
-        moon.style.transform = `translate(${M.x.toFixed(1)}px, ${M.y.toFixed(1)}px)`;
+        sun.style.transform = `translate(${S.x.toFixed(1)}px, ${(S.y + sink).toFixed(1)}px)`;
+        moon.style.transform = `translate(${M.x.toFixed(1)}px, ${(M.y + sink).toFixed(1)}px)`;
         const sinS = Math.sin(A);
         sun.classList.toggle('under', sinS < -0.12);
         moon.classList.toggle('under', -sinS < -0.12);
@@ -547,16 +600,22 @@
           const off = (A + own) - last;
           const mv = (ev) => {
             if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
-            if (!moved) { moved = true; held = body; cancelAnimationFrame(tween?.raf); tween = null; box.classList.add('turning'); body.classList.add('held'); try { body.setPointerCapture(ev.pointerId); } catch (_) { /* ignore */ } }
+            if (egg.finale) return;
+            if (!moved) {
+              moved = true; held = body; cancelAnimationFrame(tween?.raf); tween = null; box.classList.add('turning'); body.classList.add('held'); try { body.setPointerCapture(ev.pointerId); } catch (_) { /* ignore */ }
+              if (body === moon && isOwner) { clearInterval(egg.timer); egg.side = null; egg.timer = setInterval(eggTick, 100); }
+            }
             const a2 = ang(ev);
             let d = a2 - last; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
             last = a2; unwrapped += d;
             A = unwrapped + off - own;
             paint();
+            if (body === moon) eggTick();
           };
           const up = () => {
             removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
-            if (!moved) return;
+            clearInterval(egg.timer);
+            if (!moved || egg.finale) return;
             held = null; body.classList.remove('held'); box.classList.remove('turning');
             body.justTurned = true; setTimeout(() => { body.justTurned = false; }, 60);
             const wantNight = Math.sin(A) < 0;     // the moon is the one up

@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Product direction: a free core, a family social network, a culture per user (business)
+
+The owner set the direction (details in `docs/business/vision.md`):
+- **Every user is an endpoint.** The goal is daily use by each person.
+- **The social network is the family tree.** People connect as relatives, and the forest links families by marriage.
+- **The culture follows each user's settings.** Jewish, Muslim or Christian: the calendar, holidays, content and food rules.
+- **The core is free for everyone.** Paid extras only: features that cost the owner money (server AI), family photos,
+  a companion figure unique to the family, and companion packs.
+
+What this means for the other areas: a free user must cost almost nothing. A new feature therefore runs on the device,
+or from a shared cache, or sits behind payment. Nothing changes in the code yet. Prices, quotas and the paid catalogue
+come after the AI measurement, around 2026-11-26.
+
+Proposals for the owner and the areas:
+- **ai-features:** a per-user culture setting, and family gatherings (calendar + invitations + who brings what + recipes).
+- **design:** a companion unique to a family, and companion packs as purchasable items.
+
+Status: proposed.
+
 ## 2026-11-12 – The dev server's port lives in wrangler.toml (master)
 
 Answer to design's entry "`npm run dev -- --port N` fails in the area worktrees": `package.json` now runs plain

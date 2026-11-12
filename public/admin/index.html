@@ -75,7 +75,7 @@
       e.preventDefault();
       try {
         await api('/api/members', { body: { email: email.value, he_name: he_name.value, name: name.value, household: household.value } });
-        toast(`${email.value} נוסף. עכשיו אפשר לשלוח לו את הקישור לעוזר.`);
+        toast(`${email.value} נוסף. עכשיו אפשר לשלוח לו את הקישור לאוהל.`);
         email.value = name.value = he_name.value = '';
         load();
       } catch (err) { toast(err.message); }

@@ -52,3 +52,20 @@
 .apps-grid.flat .app:hover .ic, .apps-grid.flat .app:focus-visible .ic { box-shadow: none; transform: translateY(-3px); }
 .apps-grid.flat .app:hover .ic .icon { transform: rotate(-6deg) scale(1.06); }
 .apps-grid.flat .app:focus-visible .ic { outline: 3px solid var(--primary); outline-offset: 4px; }
+
+/* כלים: a rack of hand tools hanging over the title – each a silhouette from /assets/tool-icons in the colour of an app on the
+   page, with a soft shadow on the wall behind it, from a thin wooden rail. Only on the tools folder (decoration, aria-hidden by nature) */
+.folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head { position: relative; padding-block-start: 84px;
+  --rack-img: url(/assets/tool-icons/hammer.webp), url(/assets/tool-icons/wrench.webp), url(/assets/tool-icons/pliers.webp), url(/assets/tool-icons/screwdriver.webp), url(/assets/tool-icons/combo-wrench.webp), url(/assets/tool-icons/pump-pliers.webp), url(/assets/tool-icons/ring-wrench.webp), linear-gradient(#000, #000);
+  --rack-pos: -16px 6px, 18px 6px, 42.5px 6px, 72px 6px, 104px 6px, 124px 6px, 161px 6px, 0 0;
+  --rack-size: 60px 60px, 48px 48px, 55px 55px, 52px 52px, 44px 44px, 60px 60px, 42px 42px, 100% 3px; }
+.folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head::before,
+.folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head::after { content: ""; position: absolute; inset-block-start: 0; inset-inline: 0;
+  margin-inline: auto; inline-size: 196px; block-size: 66px; pointer-events: none;
+  -webkit-mask-image: var(--rack-img); mask-image: var(--rack-img); -webkit-mask-position: var(--rack-pos); mask-position: var(--rack-pos);
+  -webkit-mask-size: var(--rack-size); mask-size: var(--rack-size); -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; }
+/* the shadow: the same shapes, a little lower and to the side */
+.folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head::before { background: color-mix(in srgb, var(--icon-ink) 34%, transparent); transform: translate(2px, 3px); }
+/* the tools themselves; the rail in soil, over the colours */
+.folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head::after {
+  background: linear-gradient(var(--soil), var(--soil)) 0 0 / 100% 3px no-repeat, linear-gradient(to right, #ffc062 0px 28px, #8cc4f5 28px 56px, #ff9ab8 56px 84px, #ffd65c 84px 112px, #86d9a0 112px 140px, #b9a3ff 140px 168px, #ffb68a 168px 196px); }

@@ -76,5 +76,9 @@ for (const it of data.items) {
   writeFileSync(join(folder, name), bytes);
   ok++;
 }
-writeFileSync(join(out, 'people.json'), JSON.stringify({ snapshot: snap.id, people: Object.values(people), items }, null, 2));
+// the relationships (snapshots from version 2 on), by name as well as by id
+const who = (id) => people[id]?.name || id;
+const links = (data.links || []).map((l) => ({ ...l, a_name: who(l.a), b_name: who(l.b) }));
+writeFileSync(join(out, 'people.json'), JSON.stringify({ snapshot: snap.id, version: data.version || 1, people: Object.values(people), links, items,
+  bridges: data.bridges || [], roles: data.roles || [], households: data.households || [] }, null, 2));
 console.log(`נפתחו ${ok} קבצים${missing ? `, ${missing} חסרים בתיקיית הגיבוי` : ''}. הכול ב־${out}`);

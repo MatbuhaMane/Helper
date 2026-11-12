@@ -1,0 +1,214 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" font-family="Rubik, sans-serif">
+<defs><filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="6"/></filter>
+<radialGradient id="crown" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#a8c28c"/><stop offset="1" stop-color="#55622f"/></radialGradient></defs>
+<rect width="960" height="600" fill="#efeee6"/>
+<text x="940" y="40" text-anchor="end" font-size="22" font-weight="600" fill="#2e2a1e">היער – סקיצה ראשונה (רמה 2: היער הקרוב)</text>
+<text x="940" y="64" text-anchor="end" font-size="13" fill="#625a45">כל עץ הוא משק בית, העלים הם האנשים; שורש מחבר שני עצים שחולקים אדם</text>
+<path d="M470,330 Q360.0,298.0 250,210" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M470,330 Q580.0,293.0 690,200" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M470,330 Q595.0,418.0 720,450" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M250,210 Q240.0,363.0 230,460" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M690,200 Q585.0,183.0 480,110" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M720,450 Q795.0,418.0 870,330" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M250,210 Q170.0,293.0 90,320" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<path d="M690,200 Q705.0,353.0 720,450" fill="none" stroke="#9c7a55" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+<circle cx="470" cy="330" r="92" fill="url(#crown)" opacity="0.95"/>
+<circle cx="455.7" cy="358.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="457.1" cy="312.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="421.7" cy="318.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="524.6" cy="350.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="522.5" cy="342.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="492.4" cy="340.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="403.7" cy="364.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="497.6" cy="357.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="414.4" cy="272.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="424.3" cy="305.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="487.5" cy="327.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="497.8" cy="295.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="487.4" cy="352.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="443.4" cy="399.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="496.4" cy="386.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="437.8" cy="291.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="450.4" cy="323.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="504.6" cy="343.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="447.3" cy="281.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="445.4" cy="387.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="427.0" cy="343.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="488.9" cy="264.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="472.3" cy="392.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="394.2" cy="317.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="464.3" cy="286.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="498.0" cy="326.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="407.9" cy="365.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="503.1" cy="376.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="535.0" cy="346.3" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="475.7" cy="268.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="502.6" cy="297.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="448.7" cy="270.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="421.4" cy="303.3" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="512.7" cy="262.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="404.1" cy="340.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="533.7" cy="355.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="420.8" cy="264.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="489.1" cy="290.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="419.5" cy="374.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="525.2" cy="337.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="483.8" cy="354.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="537.0" cy="356.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="498.1" cy="359.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="410.7" cy="378.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="518.1" cy="356.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="396.6" cy="306.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="502.1" cy="260.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="470" cy="330" r="98" fill="none" stroke="#55622f" stroke-width="2.5"/>
+<text x="470" y="444" text-anchor="middle" font-size="15" font-weight="500" fill="#2e2a1e">משפחת לוי · אנחנו</text>
+<circle cx="250" cy="210" r="70" fill="url(#crown)" opacity="0.7"/>
+<circle cx="243.1" cy="248.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="214.4" cy="253.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="272.5" cy="203.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="262.9" cy="235.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="254.4" cy="251.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="223.9" cy="193.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="288.8" cy="211.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="219.2" cy="243.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="297.7" cy="195.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="203.1" cy="205.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="243.8" cy="197.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="292.8" cy="178.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="287.8" cy="172.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="220.4" cy="233.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="288.0" cy="238.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="264.4" cy="215.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="256.2" cy="233.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="242.6" cy="221.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="273.3" cy="210.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="279.1" cy="231.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="305.4" cy="219.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="232.6" cy="194.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="249.5" cy="245.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="236.2" cy="225.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="284.8" cy="161.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="209.2" cy="218.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="266.5" cy="219.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<text x="250" y="302" text-anchor="middle" font-size="15" font-weight="500" fill="#2e2a1e">משפחת כהן</text>
+<circle cx="690" cy="200" r="78" fill="url(#crown)" opacity="0.7"/>
+<circle cx="670.8" cy="229.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="703.0" cy="176.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="755.6" cy="209.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="664.4" cy="195.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="679.2" cy="197.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="623.8" cy="188.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="727.1" cy="157.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="687.1" cy="241.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="719.8" cy="251.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="631.2" cy="187.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="674.6" cy="228.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="715.4" cy="137.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="726.7" cy="151.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="714.3" cy="146.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="697.1" cy="248.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="682.9" cy="209.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="725.4" cy="206.3" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="686.7" cy="256.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="733.8" cy="187.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="752.4" cy="173.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="729.4" cy="188.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="696.0" cy="231.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="700.1" cy="229.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="644.1" cy="154.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="715.3" cy="160.3" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="655.2" cy="150.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="737.6" cy="228.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="740.7" cy="167.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="690.0" cy="153.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="716.2" cy="254.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="659.8" cy="252.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="732.1" cy="192.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="636.1" cy="238.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<text x="690" y="300" text-anchor="middle" font-size="15" font-weight="500" fill="#2e2a1e">משפחת מזרחי</text>
+<circle cx="230" cy="460" r="58" fill="url(#crown)" opacity="0.7"/>
+<circle cx="226.9" cy="440.5" r="4.2" fill="none" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="243.0" cy="473.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="265.6" cy="435.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="256.5" cy="494.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="268.6" cy="455.2" r="4.2" fill="none" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="209.0" cy="488.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="233.9" cy="464.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="268.0" cy="453.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="184.3" cy="452.3" r="4.2" fill="none" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="189.0" cy="478.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="240.2" cy="440.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="229.7" cy="486.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="232.2" cy="496.7" r="4.2" fill="none" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="228.2" cy="491.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="261.1" cy="493.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="210.3" cy="485.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="190.5" cy="437.2" r="4.2" fill="none" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="189.6" cy="482.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="720" cy="450" r="64" fill="url(#crown)" opacity="0.95"/>
+<circle cx="680.6" cy="449.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="712.7" cy="448.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="698.5" cy="458.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="768.3" cy="451.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="737.4" cy="482.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="713.7" cy="410.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="702.1" cy="484.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="675.1" cy="433.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="751.8" cy="475.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="720.3" cy="478.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="725.4" cy="411.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="676.4" cy="432.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="750.7" cy="431.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="690.8" cy="425.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="675.2" cy="446.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="682.3" cy="461.6" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="668.1" cy="457.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="704.1" cy="402.0" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="745.7" cy="440.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="671.2" cy="430.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="730.7" cy="433.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="745.9" cy="474.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<text x="720" y="536" text-anchor="middle" font-size="15" font-weight="500" fill="#2e2a1e">משפחת פרץ</text>
+<circle cx="480" cy="110" r="48" fill="url(#crown)" opacity="0.7"/>
+<circle cx="496.7" cy="118.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="507.9" cy="123.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="487.6" cy="74.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="498.2" cy="136.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="472.3" cy="97.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="507.7" cy="84.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="487.0" cy="146.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="458.7" cy="125.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="514.6" cy="107.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="493.2" cy="131.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="458.0" cy="107.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="487.2" cy="130.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="870" cy="330" r="44" fill="url(#crown)" opacity="0.7"/>
+<circle cx="869.2" cy="325.3" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="848.7" cy="322.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="889.4" cy="332.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="852.7" cy="312.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="901.0" cy="343.3" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="878.0" cy="297.5" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="883.9" cy="340.7" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="899.1" cy="337.4" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="868.4" cy="342.1" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="841.3" cy="345.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="90" cy="320" r="40" fill="url(#crown)" opacity="0.7"/>
+<circle cx="96.4" cy="306.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="107.0" cy="343.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="67.3" cy="309.2" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="96.1" cy="323.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="82.6" cy="301.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="116.1" cy="332.8" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="72.2" cy="299.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<circle cx="114.0" cy="333.9" r="4.2" fill="#f7f6f0" stroke="#f7f6f0" stroke-width="1.4" opacity=".9"/>
+<path d="M525,351 Q574,158 624,188 L631,188 Q724,335 737,483" fill="none" stroke="#c2b04e" stroke-width="14" stroke-linecap="round" opacity=".55" filter="url(#glow)"/>
+<path d="M525,351 Q574,158 624,188 L631,188 Q724,335 737,483" fill="none" stroke="#fff6c8" stroke-width="3" stroke-linecap="round"/>
+<circle cx="525" cy="351" r="7" fill="#fff6c8" stroke="#c2b04e" stroke-width="2.5"/>
+<circle cx="624" cy="188" r="7" fill="#fff6c8" stroke="#c2b04e" stroke-width="2.5"/>
+<circle cx="631" cy="188" r="7" fill="#fff6c8" stroke="#c2b04e" stroke-width="2.5"/>
+<circle cx="737" cy="483" r="7" fill="#fff6c8" stroke="#c2b04e" stroke-width="2.5"/>
+<g><rect x="707" y="435" width="60" height="24" rx="12" fill="#f7f6f0" stroke="#c2b04e" stroke-width="1.5"/><text x="737" y="452" text-anchor="middle" font-size="13" font-weight="600" fill="#2e2a1e">רונית</text></g>
+<g transform="translate(24,520)"><rect width="390" height="62" rx="12" fill="#f7f6f0" stroke="#dcd8c9"/><text x="370" y="26" text-anchor="end" font-size="14" font-weight="600" fill="#2e2a1e">איך אנחנו קשורים לרונית?‏</text><text x="370" y="48" text-anchor="end" font-size="13" fill="#625a45">אחות של בעלה של בת הדודה של אבא – דרך משפחת מזרחי</text></g>
+<text x="940" y="586" text-anchor="end" font-size="12" fill="#625a45">עלה חלול = קרוב/ת משפחה אנונימי/ת · הקו הזוהר עובר גם דרכו</text>
+</svg>

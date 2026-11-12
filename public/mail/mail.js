@@ -1,4 +1,4 @@
-/* סידור המייל: מסבירים במילים מה רוצים, העוזר מציע תוכנית, מראה דוגמאות ומבקש אישור לפני כל שינוי.
+/* סידור המייל: מסבירים במילים מה רוצים, האוהל מציע תוכנית, מראה דוגמאות ומבקש אישור לפני כל שינוי.
  * שום מייל לא נמחק אף פעם. כל שינוי נרשם וניתן לביטול. */
 (async () => {
   'use strict';
@@ -24,7 +24,7 @@
     root.textContent = '';
     root.append(el('div', { class: 'card', style: 'padding:22px' },
       el('h2', { style: 'margin-top:0' }, 'לחבר את הג׳ימייל'),
-      el('p', {}, 'העוזר יוכל לקרוא את רשימת המיילים שלך ולסדר אותם – רק אחרי שתראי מה הוא מציע ותאשרי.'),
+      el('p', {}, 'האוהל יוכל לקרוא את רשימת המיילים שלך ולסדר אותם – רק אחרי שתראי מה הוא מציע ותאשרי.'),
       el('ul', {},
         el('li', {}, '🛡 שום מייל לא נמחק אף פעם. כשמבקשים למחוק – המיילים עוברים לתווית "לבדיקה לפני מחיקה".'),
         el('li', {}, '↩️ כל שינוי נשמר, ואפשר לבטל אותו בלחיצה.'),
@@ -39,7 +39,7 @@
     const send = el('button', { class: 'btn primary big', onclick: () => ask(input.value) }, 'שלחי ✨');
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask(input.value); });
     root.append(
-      el('div', { class: 'notice', style: 'margin-top:14px' }, '🛡 העוזר אף פעם לא מוחק מיילים, ושום דבר לא משתנה בלי האישור שלך. כל שינוי אפשר לבטל.'),
+      el('div', { class: 'notice', style: 'margin-top:14px' }, '🛡 האוהל אף פעם לא מוחק מיילים, ושום דבר לא משתנה בלי האישור שלך. כל שינוי אפשר לבטל.'),
       chat,
       el('div', { class: 'card ask', 'data-guide': 'mail-request', 'data-guide-label': 'כאן כותבים מה לסדר במייל' }, input,
         el('div', { class: 'ideas' }, IDEAS.map((t) => el('button', { class: 'chip', onclick: () => { input.value = t; input.focus(); } }, t))),
@@ -47,7 +47,7 @@
           el('button', { class: 'btn ghost small', onclick: showHistory }, '🕘 שינויים קודמים וביטול'),
           el('a', { class: 'btn ghost small', href: 'https://takeout.google.com/settings/takeout/custom/gmail', target: '_blank', rel: 'noopener' }, '💾 גיבוי מלא של הג׳ימייל'),
           el('button', { class: 'btn ghost small', onclick: async () => {
-            if (!confirm('לנתק את הג׳ימייל מהעוזר?')) return;
+            if (!confirm('לנתק את הג׳ימייל מהאוהל?')) return;
             await api('/api/mail/disconnect', { method: 'POST' });
             renderConnect();
           } }, 'ניתוק'))));

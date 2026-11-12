@@ -1,0 +1,682 @@
+<title>עץ המשפחה המצויר</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap">
+<style>
+/* A painted tree you climb by scrolling, and a forest of family trees joined by a golden thread.
+   The Helper's tokens (limestone, basalt ink, vine, olive, soil; Rubik), plus the art's own colours. */
+:root {
+  --chalk: #efeee6; --card: #f7f6f0; --ink: #2e2a1e; --muted: #625a45; --vine: #55622f; --olive: #c2b04e; --soil: #9c7a55;
+  --sky-top: #cfe3ee; --sky-low: #efeee6; --hill-1: #dcd3ae; --hill-2: #cdbf8e;
+  --glass: rgba(247, 246, 240, .78); --glass-line: rgba(46, 42, 30, .14); --shadow: 0 10px 30px rgba(46, 42, 30, .14);
+  --gold: #e3ad2f; --gold-hi: #fff2bf; --glow: rgba(242, 196, 76, .55);
+  --art-filter: none;
+  --ease-river: cubic-bezier(0.22, 1, 0.36, 1);
+  --font: 'Rubik', 'Segoe UI', 'Arial Hebrew', system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --chalk: #111a2c; --card: #18233a; --ink: #e7e1d3; --muted: #a9afbd; --vine: #a8c28c;
+  --sky-top: #0b1222; --sky-low: #1a2640; --hill-1: #243049; --hill-2: #1d2840;
+  --glass: rgba(24, 35, 58, .78); --glass-line: rgba(231, 225, 211, .12); --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --gold: #f4c64e; --gold-hi: #fff6d2; --glow: rgba(255, 205, 90, .7);
+  --art-filter: brightness(.8) saturate(.88);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --chalk: #111a2c; --card: #18233a; --ink: #e7e1d3; --muted: #a9afbd; --vine: #a8c28c;
+  --sky-top: #0b1222; --sky-low: #1a2640; --hill-1: #243049; --hill-2: #1d2840;
+  --glass: rgba(24, 35, 58, .78); --glass-line: rgba(231, 225, 211, .12); --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  --gold: #f4c64e; --gold-hi: #fff6d2; --glow: rgba(255, 205, 90, .7);
+  --art-filter: brightness(.8) saturate(.88);
+  color-scheme: dark; }
+
+html, body { height: 100%; }
+body { background: var(--chalk); color: var(--ink); font-family: var(--font); font-size: 15px; overflow: hidden; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--vine); outline-offset: 2px; border-radius: 10px; }
+.app { position: relative; height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+
+/* the bar */
+.bar { display: flex; align-items: center; gap: 10px; padding-block: 10px; position: relative; z-index: 5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: var(--chalk); border-block-end: 1px solid var(--glass-line); }
+.bar h1 { margin: 0; font-size: 1.2rem; font-weight: 600; }
+.bar .proto { font-size: .72rem; color: var(--muted); border: 1px dashed var(--glass-line); border-radius: 999px; padding: 2px 8px; }
+.bar .grow { flex: 1; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.seg button { border: 0; background: none; padding: 6px 14px; border-radius: 999px; cursor: pointer; color: var(--muted); font-size: .9rem; }
+.seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); font-weight: 500; }
+.icon-btn { inline-size: 38px; block-size: 38px; border-radius: 50%; border: 1px solid var(--glass-line); background: var(--card); cursor: pointer; display: grid; place-items: center; }
+.icon-btn svg { inline-size: 18px; block-size: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 420px) { .bar .proto { display: none; } .bar h1 { font-size: 1.05rem; } }
+
+/* views */
+.view { position: relative; min-height: 0; overflow: hidden;
+  background: linear-gradient(to bottom, var(--sky-top), var(--sky-low) 78%); }
+.view[hidden] { display: none !important; }
+.view.leaving { animation: zoom-out .7s var(--ease-river) both; }
+.view.arriving { animation: zoom-in .8s var(--ease-river) both; }
+@keyframes zoom-out { to { transform: scale(.42); opacity: 0; filter: blur(2px); } }
+@keyframes zoom-in { from { transform: scale(1.18); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- the tree ---------- */
+.scroller { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; scroll-snap-type: y proximity; overscroll-behavior: contain; scrollbar-width: thin; }
+.world { position: relative; margin-inline: auto; max-inline-size: 980px; }
+.band { position: relative; scroll-snap-align: center; }
+.band svg.art { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; overflow: visible; filter: var(--art-filter); }
+.band .tags { position: absolute; inset: 0; }   /* tags are placed in the drawing's own (physical) pixel coordinates */
+
+.tag { position: absolute; display: grid; justify-items: center; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 0;
+  transition: transform .5s var(--ease-river); }
+.tag .rope { position: absolute; inset-block-end: 100%; inline-size: 2px; background: #6b4a2b; border-radius: 2px; }
+.tag .rope::after { content: ""; position: absolute; inset-block-end: -3px; inset-inline-start: -3px; inline-size: 8px; block-size: 6px; border-radius: 4px; background: #6b4a2b; }
+.plank { display: grid; justify-items: center; gap: 4px; padding: 10px 8px 9px; inline-size: 100%; box-sizing: border-box; border-radius: 12px;
+  background: linear-gradient(170deg, #e2b878, #c9935a 70%, #bb8549); border: 2.5px solid #2e2a1e; color: #2e2a1e;
+  box-shadow: 0 3px 0 rgba(46, 42, 30, .25), 0 10px 18px -8px rgba(46, 42, 30, .5); filter: var(--art-filter); }
+.plank b { font-weight: 600; font-size: .95rem; line-height: 1.15; text-align: center; }
+.plank small { font-size: .74rem; font-weight: 500; color: #4a3a22; line-height: 1.1; }
+.av { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; background: #f5ecd6; border: 2px solid #2e2a1e; font-weight: 600; font-size: .95rem; color: #55622f; }
+.tag.small .plank { padding: 7px 6px 7px; gap: 2px; border-radius: 10px; }
+.tag.small .av { inline-size: 32px; block-size: 32px; font-size: .78rem; }
+.tag.small b { font-size: .82rem; }
+.tag.small small { font-size: .68rem; }
+.tag.me .plank { box-shadow: 0 0 0 4px color-mix(in srgb, var(--olive) 70%, transparent), 0 10px 22px -6px rgba(46, 42, 30, .55); }
+.tag:hover { transform: rotate(-1.5deg); }
+.tag:active { transform: rotate(1deg) scale(.98); }
+/* a couple hangs on one sign, from two ropes */
+.tag.couple .plank { grid-auto-flow: column; align-items: start; gap: 6px; }
+.tag.couple .who { display: grid; justify-items: center; gap: 3px; border: 0; background: none; padding: 0; cursor: pointer; color: inherit; min-inline-size: 0; }
+.tag.couple .amp { align-self: center; font-weight: 600; color: #6b4a2b; font-size: .9rem; }
+
+/* where am I: a pill on the phone, a rail on the PC */
+.where { position: absolute; z-index: 3; inset-block-start: 12px; inset-inline: 0; margin-inline: auto; inline-size: max-content; max-inline-size: calc(100% - 32px);
+  display: flex; align-items: center; gap: 4px; padding: 4px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: var(--shadow); }
+.where b { padding-inline: 10px; font-weight: 600; font-size: .92rem; }
+.where button { border: 0; background: none; cursor: pointer; padding: 6px 10px; border-radius: 999px; font-size: .8rem; color: var(--muted); display: inline-flex; gap: 4px; align-items: center; }
+.where button:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.where button[disabled] { visibility: hidden; }
+.rail { display: none; }
+@media (min-width: 900px) {
+  .where { display: none; }
+  .rail { display: grid; gap: 6px; position: absolute; z-index: 3; inset-inline-end: 24px; inset-block-start: 50%; transform: translateY(-50%);
+    padding: 10px 8px; border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  .rail button { display: flex; align-items: center; gap: 10px; border: 0; background: none; cursor: pointer; padding: 6px 10px; border-radius: 12px; color: var(--muted); font-size: .9rem; }
+  .rail button::before { content: ""; inline-size: 9px; block-size: 9px; border-radius: 50%; border: 2px solid currentColor; }
+  .rail button[aria-current="true"] { color: var(--ink); font-weight: 600; }
+  .rail button[aria-current="true"]::before { background: var(--vine); border-color: var(--vine); }
+}
+
+/* glass: the forest prompt, the person sheet, the meeting */
+.glass { background: var(--glass); border: 1px solid var(--glass-line); backdrop-filter: blur(16px) saturate(1.1); -webkit-backdrop-filter: blur(16px) saturate(1.1); box-shadow: var(--shadow); }
+.prompt { position: absolute; z-index: 6; inset-inline: 0; margin-inline: auto; inset-block-end: max(18px, env(safe-area-inset-bottom, 0px));
+  inline-size: min(420px, calc(100% - 32px)); box-sizing: border-box; border-radius: 22px; padding: 16px 18px; display: grid; gap: 10px;
+  animation: rise .6s var(--ease-river) both; }
+.prompt[hidden] { display: none; }
+.prompt h2 { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.prompt p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.45; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--glass-line); background: var(--card); padding: 9px 16px; border-radius: 999px; cursor: pointer; font-weight: 500; }
+.btn.primary { background: var(--vine); color: var(--chalk); border-color: transparent; }
+.btn.gold { background: linear-gradient(180deg, #f2c75a, #d79f25); color: #2e2a1e; border-color: #2e2a1e; }
+@keyframes rise { from { transform: translateY(16px); opacity: 0; } }
+
+.sheet { position: absolute; z-index: 7; inset-inline: 0; inset-block-end: 0; margin-inline: auto; inline-size: min(520px, 100%); box-sizing: border-box;
+  border-radius: 24px 24px 0 0; padding: 18px max(18px, env(safe-area-inset-right, 0px)) max(18px, env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px));
+  display: grid; gap: 12px; animation: rise .45s var(--ease-river) both; }
+.sheet[hidden] { display: none; }
+.sheet-head { display: flex; align-items: center; gap: 12px; }
+.sheet-head .av { inline-size: 56px; block-size: 56px; font-size: 1.1rem; }
+.sheet-head h2 { margin: 0; font-size: 1.2rem; }
+.sheet-head .grow { flex: 1; min-inline-size: 0; }
+.rel { color: var(--vine); font-weight: 500; font-size: .92rem; }
+.facts { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; font-size: .9rem; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+
+/* ---------- the forest ---------- */
+.forest-top { position: absolute; z-index: 4; inset-block-start: 12px; inset-inline: 0; margin-inline: auto; inline-size: min(560px, calc(100% - 32px)); }
+.search { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 5px 6px 5px 14px; }
+.search svg { inline-size: 18px; block-size: 18px; flex: none; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; margin-inline-start: 8px; }
+.search input { flex: 1; min-inline-size: 0; border: 0; background: none; font: inherit; color: var(--ink); padding: 8px 2px; outline: none; }
+.search input::placeholder { color: var(--muted); }
+.results { list-style: none; margin: 8px 0 0; padding: 6px; border-radius: 18px; display: grid; gap: 2px; max-block-size: 50vh; overflow: auto; }
+.results[hidden] { display: none; }
+.results button { inline-size: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; background: none; border-radius: 12px; cursor: pointer; text-align: start; }
+.results button:hover, .results button:focus-visible { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+.results .av { inline-size: 34px; block-size: 34px; font-size: .8rem; flex: none; }
+.results b { font-weight: 500; }
+.results small { color: var(--muted); display: block; font-size: .78rem; }
+.results .label { padding: 6px 10px 2px; font-size: .76rem; color: var(--muted); }
+.hint { margin: 8px auto 0; inline-size: max-content; max-inline-size: 100%; font-size: .82rem; color: var(--muted); padding: 6px 12px; border-radius: 999px; }
+
+.fscroller { position: absolute; inset: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.forest { position: relative; block-size: 100%; }
+.forest svg { position: absolute; inset: 0; overflow: visible; }
+.forest svg .art { filter: var(--art-filter); }
+.sign { position: absolute; transform: translate(-50%, 0); padding: 5px 11px; border-radius: 9px; background: linear-gradient(170deg, #e2b878, #c9935a);
+  border: 2px solid #2e2a1e; color: #2e2a1e; font-weight: 600; font-size: .85rem; white-space: nowrap; filter: var(--art-filter); box-shadow: 0 3px 0 rgba(46, 42, 30, .25); }
+.sign.ours::after { content: "העץ שלנו"; position: absolute; inset-block-end: calc(100% + 6px); inset-inline: 0; margin-inline: auto; inline-size: max-content;
+  font-size: .7rem; font-weight: 600; background: var(--vine); color: var(--chalk); padding: 2px 8px; border-radius: 999px; }
+.pin { position: absolute; transform: translate(-50%, -130%); padding: 3px 9px; border-radius: 999px; background: var(--gold-hi); color: #2e2a1e; border: 1.5px solid #b98a1c;
+  font-size: .76rem; font-weight: 600; white-space: nowrap; box-shadow: 0 0 14px var(--glow); animation: pop .4s var(--ease-river) both; pointer-events: none; }
+.pin.big { font-size: .9rem; padding: 4px 12px; }
+@keyframes pop { from { transform: translate(-50%, -100%) scale(.6); opacity: 0; } }
+
+.meet { position: absolute; z-index: 6; inset-inline: 0; inset-block-end: 0; margin-inline: auto; inline-size: min(720px, 100%); box-sizing: border-box;
+  border-radius: 24px 24px 0 0; display: grid; gap: 12px; animation: rise .6s var(--ease-river) both;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); max-block-size: 70%; overflow: auto; }
+.meet[hidden] { display: none; }
+.meet-rel { text-align: center; display: grid; gap: 2px; }
+.meet-rel b { font-size: 1.15rem; font-weight: 600; }
+.meet-rel small { color: var(--muted); font-size: .85rem; }
+.pair { display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); align-items: start; }
+.pair .thread { align-self: center; block-size: 3px; border-radius: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-hi), var(--gold)); box-shadow: 0 0 10px var(--glow); }
+.pcard { border-radius: 18px; background: var(--card); border: 1px solid var(--glass-line); overflow: hidden; }
+.pcard-head { inline-size: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 12px; border: 0; background: none; cursor: pointer; text-align: start; }
+.pcard-head .av { inline-size: 42px; block-size: 42px; }
+.pcard-head b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.pcard-head small { display: block; color: var(--vine); font-size: .78rem; font-weight: 500; }
+.pcard-head .chev { inline-size: 18px; block-size: 18px; fill: none; stroke: var(--muted); stroke-width: 2; transition: transform .3s var(--ease-river); }
+.pcard-head[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.pcard-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s var(--ease-river); }
+.pcard-head[aria-expanded="true"] + .pcard-body { grid-template-rows: 1fr; }
+.pcard-body > div { overflow: hidden; }
+.pcard-body .facts { padding: 0 12px 12px; font-size: .84rem; }
+.chain { margin: 0; padding: 0 12px 12px; list-style: none; display: grid; gap: 3px; font-size: .82rem; color: var(--muted); }
+.chain b { color: var(--ink); font-weight: 500; }
+@media (max-width: 460px) {
+  .pair { grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr); }
+  .pcard-head { grid-template-columns: minmax(0, 1fr) auto; padding: 10px; gap: 6px; }
+  .pcard-head .av { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  .scroller { scroll-behavior: auto; }
+}
+</style>
+
+<div class="app" dir="rtl" lang="he">
+  <header class="bar">
+    <h1>עץ המשפחה</h1>
+    <span class="proto">אב טיפוס · ציורי ביניים</span>
+    <span class="grow"></span>
+    <div class="seg" role="group" aria-label="תצוגה">
+      <button id="toTree" aria-pressed="true">העץ</button>
+      <button id="toForest" aria-pressed="false">היער</button>
+    </div>
+    <button class="icon-btn" id="theme" aria-label="יום או לילה" title="יום או לילה"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z"/></svg></button>
+  </header>
+
+  <main style="display:grid;min-height:0">
+    <section class="view" id="treeView" aria-label="העץ">
+      <div class="scroller" id="scroller" tabindex="0" aria-label="העץ: גללו למעלה אל ההורים והסבים, ולמטה אל הילדים">
+        <div class="world" id="world"></div>
+      </div>
+      <div class="where" id="where">
+        <button id="up" aria-label="למעלה"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg><span></span></button>
+        <b id="hereName">אנחנו</b>
+        <button id="down" aria-label="למטה"><span></span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
+      </div>
+      <nav class="rail" id="rail" aria-label="הדורות"></nav>
+      <div class="prompt glass" id="prompt" role="dialog" aria-labelledby="promptTitle" hidden>
+        <h2 id="promptTitle">מעל הסבים מתחיל היער</h2>
+        <p>שם עומדים העצים של המשפחות שהתחתנו איתנו. רוצים לצאת לטיול ביער ולחפש קרוב משפחה?</p>
+        <div class="acts"><button class="btn primary" id="goForest">לטיול ביער</button><button class="btn" id="stay">להישאר בעץ</button></div>
+      </div>
+    </section>
+
+    <section class="view" id="forestView" aria-label="היער" hidden>
+      <div class="fscroller" id="fscroller" dir="ltr"><div class="forest" id="forest"></div></div>
+      <div class="forest-top">
+        <div class="search glass" role="search">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+          <input id="q" type="search" placeholder="חיפוש קרוב משפחה לפי שם" aria-label="חיפוש קרוב משפחה לפי שם" autocomplete="off">
+          <button class="btn" id="backTree">לעץ</button>
+        </div>
+        <ul class="results glass" id="results" hidden></ul>
+        <p class="hint glass" id="hint">בחרו קרוב משפחה, וחוט זהב יוביל אליו</p>
+      </div>
+      <div class="meet glass" id="meet" hidden></div>
+    </section>
+  </main>
+
+  <div class="sheet glass" id="sheet" role="dialog" aria-modal="false" aria-labelledby="sheetName" hidden></div>
+</div>
+
+<script>
+(() => {
+  /* ---------- the family (examples) ---------- */
+  const P = {};
+  const add = (id, name, sex, born, place) => (P[id] = { id, name, sex, born, place, parents: [], kids: [], partner: null });
+  const couple = (a, b, ...kids) => { P[a].partner = b; P[b].partner = a; for (const k of kids) { P[k].parents.push(a, b); P[a].kids.push(k); P[b].kids.push(k); } };
+  add('avraham', 'אברהם לוי', 'm', 1938, 'חברון'); add('sara', 'שרה לוי', 'f', 1941, 'ירושלים');
+  add('yosef', 'יוסף כהן', 'm', 1940, 'צפת'); add('rachel', 'רחל כהן', 'f', 1943, 'צפת');
+  add('shlomo', 'שלמה מזרחי', 'm', 1939, 'בגדד'); add('esther', 'אסתר מזרחי', 'f', 1942, 'בצרה');
+  add('moshe', 'משה פרץ', 'm', 1945, 'מרקש'); add('hana', 'חנה פרץ', 'f', 1948, 'אשקלון');
+  add('natan', 'נתן בן דוד', 'm', 1946, 'טבריה'); add('orly', 'אורלי בן דוד', 'f', 1949, 'חיפה');
+  add('david', 'דוד לוי', 'm', 1965, 'ירושלים'); add('ruth', 'רות מזרחי', 'f', 1968, 'ירושלים');
+  add('miriam', 'מרים לוי', 'f', 1967, 'צפת'); add('gideon', 'גדעון כהן', 'm', 1970, 'צפת');
+  add('eli', 'אלי מזרחי', 'm', 1966, 'רמת גן'); add('yoni', 'יוני מזרחי', 'm', 1972, 'רמת גן');
+  add('shira', 'שירה כהן', 'f', 1972, 'טבריה');
+  add('mishael', 'מישאל לוי', 'm', 1990, 'ירושלים'); add('tamar', 'תמר לוי', 'f', 1994, 'ירושלים');
+  add('noa', 'נועה לוי', 'f', 1992, 'אשקלון'); add('ronit', 'רונית פרץ', 'f', 1995, 'אשקלון');
+  add('dana', 'דנה מזרחי', 'f', 1996, 'רמת גן'); add('omer', 'עומר כהן', 'm', 2000, 'חיפה');
+  add('uri', 'אורי לוי', 'm', 2018, 'ירושלים'); add('yaeli', 'יעלי לוי', 'f', 2021, 'ירושלים');
+  couple('avraham', 'sara', 'david', 'ruth'); couple('yosef', 'rachel', 'miriam', 'gideon'); couple('shlomo', 'esther', 'eli', 'yoni');
+  couple('moshe', 'hana', 'noa', 'ronit'); couple('natan', 'orly', 'shira');
+  couple('david', 'miriam', 'mishael', 'tamar'); couple('ruth', 'eli', 'dana'); couple('gideon', 'shira', 'omer'); couple('mishael', 'noa', 'uri', 'yaeli');
+  const ME = 'mishael';
+  const TREES = [   // a forest from our own tree: each founding couple is a tree
+    { id: 'mizrahi', name: 'משפחת מזרחי', root: 'shlomo', kind: 'carob' },
+    { id: 'peretz', name: 'משפחת פרץ', root: 'moshe', kind: 'fig' },
+    { id: 'levi', name: 'משפחת לוי', root: 'avraham', kind: 'olive', ours: true },
+    { id: 'cohen', name: 'משפחת כהן', root: 'yosef', kind: 'oak' },
+    { id: 'bendavid', name: 'משפחת בן דוד', root: 'natan', kind: 'terebinth' },
+  ];
+  const first = (p) => p.name.split(' ')[0];
+  const initials = (p) => p.name.split(' ').slice(0, 2).map((w) => w[0]).join('');
+  const father = (p) => p.parents.map((id) => P[id]).find((q) => q.sex === 'm');
+  const mother = (p) => p.parents.map((id) => P[id]).find((q) => q.sex === 'f');
+  const siblings = (p) => { const f = p.parents[0]; return f ? P[f].kids.filter((k) => k !== p.id).map((k) => P[k]) : []; };
+  /** which tree a person grows on: the father's line, else the mother's, else the couple they founded */
+  function treeOf(id, seen = new Set()) {
+    if (seen.has(id)) return null; seen.add(id);
+    const p = P[id];
+    const t = TREES.find((t) => t.root === id || P[t.root].partner === id);
+    if (t) return t;
+    const f = father(p) || mother(p);
+    return f ? treeOf(f.id, seen) : null;
+  }
+
+  /* ---------- how are we related ---------- */
+  function path(from, to) {
+    const prev = { [from]: null }, q = [from];
+    while (q.length) {
+      const id = q.shift(); if (id === to) break;
+      const p = P[id];
+      for (const [n, step] of [...p.parents.map((x) => [x, 'up']), ...p.kids.map((x) => [x, 'down']), ...(p.partner ? [[p.partner, 'partner']] : [])])
+        if (!(n in prev)) { prev[n] = [id, step]; q.push(n); }
+    }
+    if (!(to in prev)) return null;
+    const out = []; for (let id = to; prev[id]; id = prev[id][0]) out.unshift({ id, step: prev[id][1] });
+    return out;   // the people after me, each with the step that reached them
+  }
+  const W = { up: ['אבא', 'אמא'], down: ['בן', 'בת'], side: ['אח', 'אחות'], partner: ['בעל', 'אישה'] };
+  function words(steps) {
+    const s = [];
+    for (let i = 0; i < steps.length; i++) {
+      if (steps[i].step === 'up' && steps[i + 1]?.step === 'down') { s.push({ id: steps[i + 1].id, step: 'side' }); i++; } else s.push(steps[i]);
+    }
+    return s.map((x) => W[x.step][P[x.id].sex === 'm' ? 0 : 1]);
+  }
+  const NAMES = [
+    [/^(אבא|אמא) של (אבא|אמא)$/, (m) => (m[1] === 'אבא' ? 'סבא' : 'סבתא')],
+    [/^(אח|אחות) של (אבא|אמא)$/, (m) => (m[1] === 'אח' ? 'דוד' : 'דודה')],
+    [/^(בעל|אישה) של (אח|אחות) של (אבא|אמא)$/, (m) => (m[1] === 'בעל' ? 'דוד' : 'דודה')],
+    [/^(בן|בת) של (אח|אחות) של (אבא|אמא)$/, (m) => (m[1] === 'בן' ? 'בן דוד' : 'בת דודה')],
+    [/^(בן|בת) של (בן|בת)$/, (m) => (m[1] === 'בן' ? 'נכד' : 'נכדה')],
+    [/^(בן|בת) של (אח|אחות)$/, (m) => (m[1] === 'בן' ? 'אחיין' : 'אחיינית')],
+    [/^(אח|אחות) של (בעל|אישה)$/, (m) => (m[1] === 'אח' ? 'גיס' : 'גיסה')],
+    [/^(בעל|אישה) של (אח|אחות)$/, (m) => (m[1] === 'בעל' ? 'גיס' : 'גיסה')],
+    [/^(אבא|אמא) של אישה$/, (m) => (m[1] === 'אבא' ? 'חותן' : 'חותנת')],
+    [/^(אבא|אמא) של בעל$/, (m) => (m[1] === 'אבא' ? 'חם' : 'חמות')],
+  ];
+  function relation(to, from = ME) {
+    if (to === from) return { short: 'אני', long: '' };
+    const st = path(from, to); if (!st) return { short: 'קרוב/ת משפחה', long: '' };
+    const w = words(st).reverse().join(' של ');
+    for (const [re, f] of NAMES) { const m = w.match(re); if (m) return { short: f(m), long: w }; }
+    return { short: w.split(' של ').length === 1 ? w : 'קרוב/ת משפחה', long: w.split(' של ').length === 1 ? '' : w };
+  }
+
+  /* ---------- drawing helpers (stand-in art until the painted pictures arrive) ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  const S = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.append(e); return e; };
+  const rng = (seed) => () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
+  const INK = '#2e2a1e', BARK = '#8a5a32', BARK_DK = '#6b4325';
+  const LEAVES = { olive: ['#7f8c4a', '#9aa765', '#b8c283'], oak: ['#5f7b33', '#7b9a3e', '#9bb75a'], carob: ['#455f2d', '#5f7d39', '#7f9c4f'],
+    fig: ['#6d8c35', '#8eac47', '#b0c968'], terebinth: ['#74813f', '#97a052', '#b98a4a'] };
+  /** a cluster of leaves: one ink silhouette, then the colours on top (a cartoon outline) */
+  function leaves(g, cx, cy, rx, ry, n, r, pal, rnd) {
+    const pts = []; for (let i = 0; i < n; i++) { const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()); pts.push([cx + Math.cos(a) * rx * d, cy + Math.sin(a) * ry * d, r * (0.7 + rnd() * 0.5)]); }
+    const ink = S('g', { fill: INK }, g), col = S('g', {}, g);
+    for (const [x, y, rr] of pts) S('circle', { cx: x, cy: y, r: rr + 3 }, ink);
+    pts.forEach(([x, y, rr], i) => { S('circle', { cx: x, cy: y, r: rr, fill: pal[i % 2] }, col); if (i % 3 === 0) S('circle', { cx: x - rr * 0.3, cy: y - rr * 0.35, r: rr * 0.38, fill: pal[2], opacity: 0.9 }, col); });
+  }
+  /** a branch: a tapered curve from the trunk out to its tip */
+  function branch(g, x0, y0, xc, yc, x1, y1, t0, t1) {
+    const up = [], lo = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = i / 24, x = (1 - t) ** 2 * x0 + 2 * (1 - t) * t * xc + t * t * x1, y = (1 - t) ** 2 * y0 + 2 * (1 - t) * t * yc + t * t * y1;
+      const dx = 2 * (1 - t) * (xc - x0) + 2 * t * (x1 - xc), dy = 2 * (1 - t) * (yc - y0) + 2 * t * (y1 - yc), L = Math.hypot(dx, dy) || 1;
+      const th = (t0 + (t1 - t0) * t) / 2; up.push([x - (dy / L) * th, y + (dx / L) * th]); lo.push([x + (dy / L) * th, y - (dx / L) * th]);
+    }
+    const d = 'M' + up.map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' L') + ' L' + lo.reverse().map((p) => p.map((v) => v.toFixed(1)).join(',')).join(' L') + ' Z';
+    S('path', { d, fill: BARK, stroke: INK, 'stroke-width': 2.6, 'stroke-linejoin': 'round' }, g);
+  }
+  const onCurve = (x0, y0, xc, yc, x1, y1, x) => {   // the y of the curve at a given x
+    let best = y0, bd = 1e9;
+    for (let i = 0; i <= 60; i++) { const t = i / 60, cx = (1 - t) ** 2 * x0 + 2 * (1 - t) * t * xc + t * t * x1; if (Math.abs(cx - x) < bd) { bd = Math.abs(cx - x); best = (1 - t) ** 2 * y0 + 2 * (1 - t) * t * yc + t * t * y1; } }
+    return best;
+  };
+  function trunk(g, cx, tw, top, bottom, rnd) {
+    top -= 1.5; bottom += 1.5;   // a little into the next band, so no seam shows where two bands meet
+    const l = cx - tw / 2, r = cx + tw / 2, h = bottom - top, w1 = (rnd() - 0.5) * 6, w2 = (rnd() - 0.5) * 6;
+    S('path', { d: `M${l},${top} Q${l + w1},${top + h / 2} ${l},${bottom} L${r},${bottom} Q${r + w2},${top + h / 2} ${r},${top} Z`, fill: BARK }, g);
+    for (const [x, ww] of [[l, w1], [r, w2]]) S('path', { d: `M${x},${top} Q${x + ww},${top + h / 2} ${x},${bottom}`, fill: 'none', stroke: INK, 'stroke-width': 2.8 }, g);
+    for (let i = 0; i < 3; i++) { const x = l + tw * (0.25 + i * 0.25) + (rnd() - 0.5) * 4, y = top + rnd() * h * 0.5;
+      S('path', { d: `M${x},${y} q${(rnd() - 0.5) * 8},${h * 0.2} ${(rnd() - 0.5) * 6},${h * 0.4}`, fill: 'none', stroke: BARK_DK, 'stroke-width': 2, 'stroke-linecap': 'round' }, g); }
+  }
+
+  /* ---------- the tree, one band per generation ---------- */
+  const me = P[ME], dad = father(me), mom = mother(me);
+  const BANDS = [
+    { key: 'crown', label: 'היער' },
+    { key: 'grand', label: 'סבים', right: [{ couple: [father(dad).id, mother(dad).id] }], left: [{ couple: [father(mom).id, mother(mom).id] }] },
+    { key: 'parents', label: 'הורים', right: [{ id: dad.id }], left: [{ id: mom.id }], rightLow: siblings(dad).map((p) => ({ id: p.id, small: true })), leftLow: siblings(mom).map((p) => ({ id: p.id, small: true })) },
+    { key: 'us', label: 'אנחנו', right: [{ id: ME, me: true }], left: me.partner ? [{ id: me.partner }] : [], rightLow: siblings(me).map((p) => ({ id: p.id, small: true })) },
+    { key: 'kids', label: 'ילדים', right: me.kids.slice(0, 1).map((id) => ({ id })), left: me.kids.slice(1, 2).map((id) => ({ id })), rightLow: me.kids.slice(2).map((id) => ({ id, small: true })) },
+    { key: 'roots', label: 'שורשים' },
+  ];
+  const world = document.getElementById('world'), scroller = document.getElementById('scroller');
+
+  function tagEl(spec, w) {
+    const b = document.createElement(spec.couple ? 'div' : 'button');
+    b.className = 'tag' + (spec.small ? ' small' : '') + (spec.couple ? ' couple' : '') + (spec.me ? ' me' : '');
+    b.style.inlineSize = w + 'px';
+    const plank = document.createElement('span'); plank.className = 'plank';
+    if (spec.couple) {
+      spec.couple.forEach((id, i) => {
+        if (i) { const amp = document.createElement('span'); amp.className = 'amp'; amp.textContent = 'ו'; amp.setAttribute('aria-hidden', 'true'); plank.append(amp); }
+        const who = document.createElement('button'); who.className = 'who'; who.dataset.id = id; who.setAttribute('aria-label', `${P[id].name}, ${relation(id).short}`);
+        who.innerHTML = `<span class="av">${initials(P[id])}</span><b>${first(P[id])}</b><small>${relation(id).short}</small>`;
+        plank.append(who);
+      });
+      for (const x of ['22%', '78%']) { const r = document.createElement('span'); r.className = 'rope'; r.style.insetInlineStart = x; plank.before(r); b.append(r); }
+    } else {
+      b.dataset.id = spec.id; b.setAttribute('aria-label', `${P[spec.id].name}, ${spec.me ? 'אני' : relation(spec.id).short}`);
+      plank.innerHTML = `<span class="av">${initials(P[spec.id])}</span><b>${first(P[spec.id])}</b><small>${spec.me ? 'אני' : relation(spec.id).short}</small>`;
+      const r = document.createElement('span'); r.className = 'rope'; r.style.insetInlineStart = 'calc(50% - 1px)'; b.append(r);
+    }
+    b.append(plank);
+    return b;
+  }
+
+  function drawTree() {
+    const Wd = Math.min(world.parentElement.clientWidth, 980), phone = Wd < 600, k = phone ? 1 : 1.25;
+    world.style.inlineSize = Wd + 'px';
+    world.replaceChildren();
+    const cx = Wd / 2, tw = Math.round(Math.max(38, Math.min(70, Wd * 0.1)));
+    const TAG = phone ? 92 : 128, SMALL = phone ? 72 : 100, COUPLE = phone ? 152 : 210, pad = phone ? 10 : 40;
+    const H = { crown: 430 * k, grand: 300 * k, parents: 430 * k, us: 400 * k, kids: 300 * k, roots: 250 * k };
+    BANDS.forEach((band, bi) => {
+      const h = H[band.key], el = document.createElement('div'); el.className = 'band'; el.dataset.key = band.key; el.style.blockSize = h + 'px';
+      const svg = S('svg', { class: 'art', viewBox: `0 0 ${Wd} ${h}`, 'aria-hidden': 'true' }); const g = S('g', {}, svg); const fg = S('g');
+      const tags = document.createElement('div'); tags.className = 'tags';
+      const rnd = rng(17 + bi * 31);
+      if (band.key === 'crown') {
+        trunk(g, cx, tw, h * 0.5, h, rnd);
+        branch(g, cx - tw * 0.3, h * 0.72, cx - Wd * 0.18, h * 0.62, cx - Wd * 0.3, h * 0.5, tw * 0.45, 8);
+        branch(g, cx + tw * 0.3, h * 0.68, cx + Wd * 0.2, h * 0.6, cx + Wd * 0.32, h * 0.46, tw * 0.45, 8);
+        leaves(g, cx, h * 0.38, Math.min(Wd * 0.42, 380), h * 0.3, phone ? 46 : 70, phone ? 26 : 34, LEAVES.olive, rnd);
+      } else if (band.key === 'roots') {
+        S('ellipse', { cx, cy: h * 0.62, rx: Math.min(Wd * 0.42, 340), ry: h * 0.2, fill: '#b08a5a', stroke: INK, 'stroke-width': 2.6 }, g);
+        trunk(g, cx, tw, 0, h * 0.55, rnd);
+        for (const s of [-1, 1]) for (const f of [0.55, 1]) branch(g, cx + s * tw * 0.3, h * 0.42, cx + s * tw * (1.2 + f), h * 0.58, cx + s * Wd * 0.16 * (f + 0.4), h * (0.6 + f * 0.08), tw * 0.42 * f + 6, 4);
+        for (let i = 0; i < 16; i++) { const x = cx + (rnd() - 0.5) * Math.min(Wd * 0.8, 640), y = h * (0.5 + rnd() * 0.22);
+          S('path', { d: `M${x},${y} l-4,-12 M${x},${y} l1,-15 M${x},${y} l6,-11`, stroke: '#5f7b33', 'stroke-width': 2.4, 'stroke-linecap': 'round', fill: 'none' }, g); }
+      } else {
+        trunk(fg, cx, tw, 0, h, rnd);
+        const rows = [['right', 'left', 0.34], ['rightLow', 'leftLow', 0.74]];
+        for (const [rk, lk, yy] of rows) {
+          for (const [side, key] of [[1, rk], [-1, lk]]) {
+            const items = band[key] || []; if (!items.length && yy > 0.5) continue;
+            const y0 = h * (yy + 0.06), rise = h * (yy > 0.5 ? 0.05 : 0.09), tipX = cx + side * (Wd / 2 - pad * 0.4), xc = cx + side * Wd * 0.18;
+            branch(g, cx, y0, xc, y0 - rise * 0.6, tipX, y0 - rise, yy > 0.5 ? tw * 0.42 : tw * 0.62, 7);
+            leaves(g, tipX - side * 22, y0 - rise - 12, 36 * k, 20 * k, 9, 13 * k, LEAVES.olive, rnd);
+            leaves(g, xc + side * 20, y0 - rise * 0.6 - 18, 26 * k, 14 * k, 6, 11 * k, LEAVES.olive, rnd);
+            const region0 = cx + side * (tw / 2 + 14), region1 = cx + side * (Wd / 2 - pad);
+            items.forEach((it, i) => {
+              const w = it.couple ? COUPLE : it.small ? SMALL : TAG;
+              const n = items.length, f = n === 1 ? 0.55 : (i + 0.5) / n;
+              let x = region0 + (region1 - region0) * f; const half = w / 2;
+              x = side > 0 ? Math.min(Math.max(x, region0 + side * half), region1 - half) : Math.max(Math.min(x, region0 - half), region1 + half);
+              const ay = onCurve(cx, y0, xc, y0 - rise * 0.6, tipX, y0 - rise, x), rope = 18 + (n > 1 ? i * 26 : 0);
+              const t = tagEl(it, w); t.style.left = (x - half) + 'px'; t.style.top = (ay + rope) + 'px';
+              t.querySelectorAll('.rope').forEach((r) => (r.style.blockSize = rope + 'px'));
+              tags.append(t);
+            });
+          }
+        }
+        svg.append(fg);
+      }
+      el.append(svg, tags); world.append(el);
+    });
+  }
+
+  /* where am I, and the forest prompt */
+  const rail = document.getElementById('rail'), hereName = document.getElementById('hereName'), up = document.getElementById('up'), down = document.getElementById('down');
+  const visibleBands = () => BANDS.filter((b) => b.key !== 'roots');
+  rail.replaceChildren(...visibleBands().map((b) => { const x = document.createElement('button'); x.textContent = b.label; x.onclick = () => go(b.key); x.dataset.key = b.key; return x; }));
+  function go(key, smooth = true) {
+    const el = world.querySelector(`.band[data-key="${key}"]`); if (!el) return;
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scroller.scrollTo({ top: el.offsetTop + el.offsetHeight / 2 - scroller.clientHeight / 2, behavior: smooth && !reduce ? 'smooth' : 'auto' });
+  }
+  let current = 'us', promptShown = false, promptDismissed = false;
+  function onScroll() {
+    const mid = scroller.scrollTop + scroller.clientHeight / 2;
+    let best = 'us', bd = 1e9;
+    for (const el of world.querySelectorAll('.band')) { if (el.dataset.key === 'roots') continue; const d = Math.abs(el.offsetTop + el.offsetHeight / 2 - mid); if (d < bd) { bd = d; best = el.dataset.key; } }
+    if (best !== current) { current = best; showWhere(); }
+    const crown = world.querySelector('.band[data-key="crown"]');
+    const crownSeen = crown && mid < crown.offsetTop + crown.offsetHeight;   // the middle of the screen has passed above the grandparents
+    if (crownSeen && !promptShown && !promptDismissed) { promptShown = true; prompt.hidden = false; }
+    if (!crownSeen) { promptDismissed = false; if (promptShown) { promptShown = false; prompt.hidden = true; } }
+  }
+  function showWhere() {
+    const list = visibleBands(), i = list.findIndex((b) => b.key === current);
+    hereName.textContent = list[i].label;
+    up.disabled = i <= 0; down.disabled = i >= list.length - 1;
+    up.querySelector('span').textContent = list[i - 1]?.label || ''; down.querySelector('span').textContent = list[i + 1]?.label || '';
+    up.onclick = () => go(list[i - 1].key); down.onclick = () => go(list[i + 1].key);
+    rail.querySelectorAll('button').forEach((b) => b.setAttribute('aria-current', String(b.dataset.key === current)));
+  }
+  const prompt = document.getElementById('prompt');
+  document.getElementById('stay').onclick = () => { prompt.hidden = true; promptDismissed = true; go('grand'); };
+  scroller.addEventListener('scroll', onScroll, { passive: true });
+
+  /* a person's sheet */
+  const sheet = document.getElementById('sheet');
+  function openSheet(id) {
+    const p = P[id], r = relation(id), t = treeOf(id);
+    sheet.innerHTML = `<div class="sheet-head"><span class="av">${initials(p)}</span><div class="grow"><h2 id="sheetName">${p.name}</h2><div class="rel">${r.short}${r.long && r.long !== r.short ? ' · ' + r.long : ''}</div></div>
+      <button class="icon-btn" id="closeSheet" aria-label="סגירה"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <dl class="facts"><dt>נולד/ה</dt><dd>${p.born}, ${p.place}</dd><dt>בעץ של</dt><dd>${t ? t.name : '—'}</dd>${p.partner ? `<dt>בן/בת זוג</dt><dd>${P[p.partner].name}</dd>` : ''}</dl>
+      ${id !== ME ? `<div class="acts"><button class="btn gold" id="findIt">חוט הזהוב אל ${first(p)} ביער</button></div>` : ''}`;
+    sheet.hidden = false;
+    sheet.querySelector('#closeSheet').onclick = closeSheet;
+    sheet.querySelector('#findIt')?.addEventListener('click', () => { closeSheet(); showForest(() => thread(id)); });
+    sheet.querySelector('#closeSheet').focus();
+  }
+  const closeSheet = () => { sheet.hidden = true; };
+  world.addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) openSheet(b.dataset.id); });
+
+  /* ---------- the forest ---------- */
+  const forest = document.getElementById('forest'), fscroller = document.getElementById('fscroller');
+  let F = null;   // the forest's geometry: where each tree and each person stands
+  function drawForest() {
+    const vw = fscroller.clientWidth, vh = fscroller.clientHeight, phone = vw < 600;
+    const per = phone ? 220 : Math.max(200, Math.min(320, (vw - 80) / TREES.length)), Wf = Math.max(vw, per * TREES.length + 80), groundY = vh * (phone ? 0.7 : 0.68);
+    const top = 118, usable = groundY - top;   // the search sits above the crowns
+    forest.style.inlineSize = Wf + 'px'; forest.replaceChildren();
+    const svg = S('svg', { viewBox: `0 0 ${Wf} ${vh}`, width: Wf, height: vh, 'aria-hidden': 'true' }); forest.append(svg);
+    const defs = S('defs', {}, svg);
+    defs.innerHTML = `<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+      <linearGradient id="goldline" x1="0" x2="1"><stop offset="0" stop-color="#d9a12a"/><stop offset=".5" stop-color="#ffe9a3"/><stop offset="1" stop-color="#d9a12a"/></linearGradient>`;
+    const art = S('g', { class: 'art' }, svg);
+    // the hills and the path
+    S('path', { d: `M0,${groundY - 70} C${Wf * 0.2},${groundY - 120} ${Wf * 0.35},${groundY - 40} ${Wf * 0.55},${groundY - 90} S${Wf * 0.85},${groundY - 50} ${Wf},${groundY - 100} L${Wf},${vh} L0,${vh} Z`, fill: 'var(--hill-1)' }, art);
+    S('path', { d: `M0,${groundY - 10} C${Wf * 0.25},${groundY - 40} ${Wf * 0.5},${groundY + 10} ${Wf * 0.75},${groundY - 30} S${Wf},${groundY - 5} ${Wf},${groundY - 20} L${Wf},${vh} L0,${vh} Z`, fill: 'var(--hill-2)', stroke: INK, 'stroke-width': 2, 'stroke-opacity': .35 }, art);
+    S('path', { d: `M0,${groundY + 22} C${Wf * 0.3},${groundY + 6} ${Wf * 0.6},${groundY + 40} ${Wf},${groundY + 14}`, fill: 'none', stroke: 'var(--soil)', 'stroke-width': 3, 'stroke-dasharray': '2 9', 'stroke-linecap': 'round', opacity: .8 }, art);
+    const trees = {}, spots = {};
+    TREES.forEach((t, i) => {
+      const x = 40 + per * (i + 0.5) + (Wf - per * TREES.length - 80) / 2, rnd = rng(101 + i * 7);
+      const trunkH = { olive: 0.3, oak: 0.36, carob: 0.26, fig: 0.3, terebinth: 0.33 }[t.kind] * usable;
+      const rx = per * (t.kind === 'carob' ? 0.47 : 0.44), ry = Math.min(usable * 0.3, rx * (t.kind === 'oak' ? 0.98 : 0.88));
+      const cy = Math.max(top + ry, groundY - trunkH - ry * 0.6);
+      const tw = t.kind === 'olive' ? 34 : 26;
+      trunk(art, x, tw, cy + ry * 0.5, groundY + 4, rnd);
+      branch(art, x - 4, cy + ry * 0.75, x - rx * 0.35, cy + ry * 0.4, x - rx * 0.55, cy + ry * 0.1, 14, 5);
+      branch(art, x + 4, cy + ry * 0.7, x + rx * 0.3, cy + ry * 0.35, x + rx * 0.6, cy, 14, 5);
+      leaves(art, x, cy, rx, ry, phone ? 38 : 46, 22, LEAVES[t.kind], rnd);
+      trees[t.id] = { x, cy, rx, ry, groundY };
+      const sign = document.createElement('div'); sign.className = 'sign' + (t.ours ? ' ours' : ''); sign.textContent = t.name; sign.dir = 'rtl';
+      sign.style.left = x + 'px'; sign.style.top = (cy + ry + 12) + 'px'; forest.append(sign);
+    });
+    // where each person stands: in their tree's crown, a row per generation from the founders down
+    const members = {}; for (const id in P) { const t = treeOf(id); if (t) (members[t.id] ||= []).push(id); }
+    const depth = (id, t) => (t.root === id || P[t.root].partner === id ? 0 : 1 + Math.min(...P[id].parents.filter((q) => treeOf(q) === t).map((q) => depth(q, t)), 9));
+    const leafDots = S('g', {}, svg);
+    for (const t of TREES) {
+      const tr = trees[t.id], rows = {};
+      for (const id of members[t.id] || []) (rows[depth(id, t)] ||= []).push(id);
+      Object.entries(rows).forEach(([d, ids]) => {
+        const n = Math.max(...Object.keys(rows).map(Number)) + 1, gap = (tr.ry * 1.35) / Math.max(1, n - 1);
+        const yy = tr.cy - tr.ry * 0.62 + d * (n > 1 ? gap : 0), half = tr.rx * Math.sqrt(Math.max(0.1, 1 - ((yy - tr.cy) / tr.ry) ** 2)) * 0.75;
+        ids.forEach((id, i) => {
+          const x = tr.x + (ids.length === 1 ? 0 : -half + (2 * half * i) / (ids.length - 1));
+          spots[id] = { x, y: yy, tree: t.id };
+          S('circle', { cx: x, cy: yy, r: 4.5, fill: '#f7f1dc', stroke: INK, 'stroke-width': 1.5, opacity: id === ME ? 1 : 0.75 }, leafDots);
+        });
+      });
+    }
+    // the roots between trees that share a family (a marriage)
+    const roots = S('g', { class: 'art' }, svg); roots.parentNode.insertBefore(roots, leafDots);
+    const seen = new Set();
+    for (const id in P) { const p = P[id]; if (!p.partner) continue; const a = treeOf(id), b = treeOf(p.partner); if (!a || !b || a === b) continue;
+      const k = [a.id, b.id].sort().join(); if (seen.has(k)) continue; seen.add(k);
+      const x1 = trees[a.id].x, x2 = trees[b.id].x, gy = groundY + 6;
+      S('path', { d: `M${x1},${gy} C${x1},${gy + 26} ${x2},${gy + 26} ${x2},${gy}`, fill: 'none', stroke: '#6b4a2b', 'stroke-width': 3, 'stroke-linecap': 'round', opacity: .55 }, roots); }
+    const threadLayer = S('g', {}, svg);
+    F = { Wf, vh, trees, spots, svg, threadLayer, per, ground: groundY };
+    centerOn(trees.levi.x, false);
+  }
+  function centerOn(x, smooth = true) { fscroller.scrollTo({ left: x - fscroller.clientWidth / 2, behavior: smooth ? 'smooth' : 'auto' }); }
+
+  /* search */
+  const q = document.getElementById('q'), results = document.getElementById('results'), hint = document.getElementById('hint');
+  function listResults() {
+    const s = q.value.trim(), all = Object.values(P).filter((p) => p.id !== ME);
+    const hits = s ? all.filter((p) => p.name.includes(s)).slice(0, 8) : ['dana', 'omer', 'ronit', 'yoni', 'orly'].map((id) => P[id]);
+    results.innerHTML = (s ? '' : '<li class="label">קרובים מעצים אחרים</li>') + (hits.length ? hits.map((p) => `<li><button data-id="${p.id}"><span class="av">${initials(p)}</span><span><b>${p.name}</b><small>${(() => { const r = relation(p.id); return r.short === 'קרוב/ת משפחה' && r.long ? r.long : r.short; })()} · ${treeOf(p.id)?.name || ''}</small></span></button></li>`).join('') : '<li class="label">לא מצאנו קרוב משפחה בשם הזה</li>');
+    results.hidden = false;
+  }
+  q.addEventListener('focus', listResults); q.addEventListener('input', listResults);
+  q.addEventListener('keydown', (e) => { if (e.key === 'Escape') { results.hidden = true; q.blur(); } if (e.key === 'Enter') results.querySelector('button')?.click(); });
+  results.addEventListener('click', (e) => { const b = e.target.closest('button[data-id]'); if (!b) return; results.hidden = true; q.value = ''; q.blur(); thread(b.dataset.id); });
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.forest-top')) results.hidden = true; });
+
+  /* the golden thread */
+  let running = null;
+  function thread(to) {
+    if (!F) return;
+    cancelAnimationFrame(running); meet.hidden = true; hint.hidden = true;
+    F.threadLayer.replaceChildren(); forest.querySelectorAll('.pin').forEach((x) => x.remove());
+    const steps = path(ME, to); if (!steps) return;
+    const ids = [ME, ...steps.map((s) => s.id)], pts = ids.map((id) => F.spots[id]).filter(Boolean);
+    let d = `M${pts[0].x},${pts[0].y}`;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i], cross = a.tree !== b.tree, room = F.ground - 46 - Math.max(a.y, b.y);   // it hangs between the trees, never into the ground
+      const sag = cross ? Math.max(20, Math.min(160, 50 + Math.abs(b.x - a.x) * 0.25, room / 0.75)) : 18;
+      d += ` C${a.x + (b.x - a.x) * 0.25},${Math.max(a.y, b.y) + sag} ${a.x + (b.x - a.x) * 0.75},${Math.max(a.y, b.y) + sag} ${b.x},${b.y}`;
+    }
+    const glow = S('path', { d, fill: 'none', stroke: 'var(--glow)', 'stroke-width': 12, 'stroke-linecap': 'round', filter: 'url(#glow)' }, F.threadLayer);
+    const line = S('path', { d, fill: 'none', stroke: 'url(#goldline)', 'stroke-width': 3.2, 'stroke-linecap': 'round' }, F.threadLayer);
+    const bead = S('circle', { r: 6, fill: '#fff6d2', stroke: '#c9951f', 'stroke-width': 2 }, F.threadLayer);
+    const beadGlow = S('circle', { r: 14, fill: 'var(--glow)', filter: 'url(#glow)' }, F.threadLayer); F.threadLayer.insertBefore(beadGlow, bead);
+    const L = line.getTotalLength();
+    // where along the thread each person is, so they light up as the bead passes
+    const at = pts.map((p) => { let best = 0, bd = 1e9; for (let s = 0; s <= L; s += 4) { const q2 = line.getPointAtLength(s), dd = Math.hypot(q2.x - p.x, q2.y - p.y); if (dd < bd) { bd = dd; best = s; } } return best; });
+    for (const pth of [glow, line]) { pth.style.strokeDasharray = L; pth.style.strokeDashoffset = L; }
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches, dur = reduce ? 0 : Math.min(4200, 1400 + L * 1.6), t0 = performance.now();
+    let lit = 0;
+    const light = (i) => {
+      const p = pts[i], id = ids[i]; S('circle', { cx: p.x, cy: p.y, r: 7, fill: '#fff2bf', stroke: '#c9951f', 'stroke-width': 2.2 }, F.threadLayer);
+      const pin = document.createElement('div'); pin.className = 'pin' + (i === 0 || i === pts.length - 1 ? ' big' : ''); pin.dir = 'rtl';
+      pin.textContent = i === 0 ? 'אני' : first(P[id]); pin.style.left = p.x + 'px'; pin.style.top = p.y + 'px'; forest.append(pin);
+    };
+    const tick = (now) => {
+      const k = dur ? Math.min(1, (now - t0) / dur) : 1, e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2, s = L * e;
+      for (const pth of [glow, line]) pth.style.strokeDashoffset = L - s;
+      const h = line.getPointAtLength(s); bead.setAttribute('cx', h.x); bead.setAttribute('cy', h.y); beadGlow.setAttribute('cx', h.x); beadGlow.setAttribute('cy', h.y);
+      while (lit < pts.length && at[lit] <= s + 1) light(lit++);
+      if (fscroller.scrollWidth > fscroller.clientWidth) fscroller.scrollLeft = h.x - fscroller.clientWidth / 2;
+      if (k < 1) running = requestAnimationFrame(tick); else { bead.remove(); beadGlow.remove(); setTimeout(() => showMeet(to, steps), reduce ? 0 : 350); }
+    };
+    running = requestAnimationFrame(tick);
+  }
+
+  /* the meeting: our card and theirs, side by side */
+  const meet = document.getElementById('meet');
+  const chev = '<svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>';
+  function pcard(id, otherId, open) {
+    const p = P[id], r = id === ME ? { short: 'אני' } : relation(id);
+    const st = path(ME, id) || [];
+    return `<article class="pcard"><button class="pcard-head" aria-expanded="${open}"><span class="av">${initials(p)}</span><span><b>${p.name}</b><small>${r.short}</small></span>${chev}</button>
+      <div class="pcard-body"><div><dl class="facts"><dt>נולד/ה</dt><dd>${p.born}, ${p.place}</dd><dt>בעץ של</dt><dd>${treeOf(id)?.name || '—'}</dd></dl>
+      ${id !== ME && st.length ? `<ol class="chain">${[{ id: ME }, ...st].map((s, i) => `<li><b>${first(P[s.id])}</b>${i ? ' · ' + relation(s.id).short : ' · אני'}</li>`).join('')}</ol>` : ''}</div></div></article>`;
+  }
+  function showMeet(to, steps) {
+    const r = relation(to);
+    meet.innerHTML = `<div class="meet-rel"><b>${P[to].name} · ${r.short}</b>${r.long && r.long !== r.short ? `<small>${r.long}</small>` : ''}</div>
+      <div class="pair">${pcard(ME, to, false)}<span class="thread" aria-hidden="true"></span>${pcard(to, ME, false)}</div>
+      <div class="acts" style="justify-content:center"><button class="btn" id="again">קרוב נוסף</button><button class="btn primary" id="home">חזרה לעץ</button></div>`;
+    meet.hidden = false;
+    meet.querySelectorAll('.pcard-head').forEach((b) => b.addEventListener('click', () => b.setAttribute('aria-expanded', String(b.getAttribute('aria-expanded') !== 'true'))));
+    meet.querySelector('#again').onclick = () => { meet.hidden = true; q.focus(); };
+    meet.querySelector('#home').onclick = () => showTree();
+    // keep the person we found in view above the panel
+    centerOn((F.spots[to].x + F.spots[ME].x) / 2 > 0 && Math.abs(F.spots[to].x - F.spots[ME].x) < fscroller.clientWidth * 0.8 ? (F.spots[to].x + F.spots[ME].x) / 2 : F.spots[to].x);
+  }
+
+  /* ---------- moving between the tree and the forest ---------- */
+  const treeView = document.getElementById('treeView'), forestView = document.getElementById('forestView');
+  const toTree = document.getElementById('toTree'), toForest = document.getElementById('toForest');
+  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function swap(from, to, then) {
+    prompt.hidden = true; closeSheet();
+    const done = () => { from.hidden = true; from.classList.remove('leaving'); to.hidden = false; to.classList.add('arriving'); then && then(); setTimeout(() => to.classList.remove('arriving'), 820); };
+    if (reduceMotion()) { from.hidden = true; to.hidden = false; then && then(); return; }
+    from.classList.add('leaving'); setTimeout(done, 520);
+  }
+  function showForest(then) {
+    if (!forestView.hidden) { then && then(); return; }
+    toForest.setAttribute('aria-pressed', 'true'); toTree.setAttribute('aria-pressed', 'false');
+    swap(treeView, forestView, () => { drawForest(); meet.hidden = true; hint.hidden = false; if (then) setTimeout(then, reduceMotion() ? 0 : 650); });
+  }
+  function showTree() {
+    if (!treeView.hidden) return;
+    toTree.setAttribute('aria-pressed', 'true'); toForest.setAttribute('aria-pressed', 'false');
+    swap(forestView, treeView, () => { promptDismissed = true; go('grand', false); });
+  }
+  toForest.onclick = () => showForest(); toTree.onclick = showTree;
+  document.getElementById('goForest').onclick = () => showForest(() => q.focus());
+  document.getElementById('backTree').onclick = showTree;
+  document.getElementById('theme').onclick = () => {
+    const root = document.documentElement, dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+  };
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeSheet(); prompt.hidden = true; } });
+
+  let rw = 0;
+  new ResizeObserver(() => {
+    const w = scroller.clientWidth; if (Math.abs(w - rw) < 2) return; rw = w;
+    const keep = current; drawTree(); go(keep, false); showWhere();
+    if (!forestView.hidden) drawForest();
+  }).observe(document.querySelector('main'));
+  drawTree(); go('us', false); showWhere();
+})();
+</script>

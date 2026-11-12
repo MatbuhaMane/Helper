@@ -40,12 +40,27 @@ Read this before changing sign-in, the API, the family vault, or the headers.
   `webauthn.ts` without outside packages (ES256 and RS256; challenge, origin, site, user verification and the signature counter are all checked).
 - **Who sees what.** Enforced on the server only: same household for the tree and shared items; private items only for whoever added them
   (another member gets "not found", as if the item did not exist); only the one who added an item can make it private or shared.
+- **Linked trees (stage 2, `kin.ts`).** Two households' trees join only through a link that a head on the other side approves, and the
+  person's own consent when they are a user. Outside its household a person shows by privacy levels per field group (identity, dates,
+  notes, files: `private` / `household` / `linked` / `forest`, the strictest of all their records, or their own if they are a user); the
+  default keeps everything in the household, so outsiders see "קרוב/ת משפחה". Files and emails never leave the household; other households'
+  records and households go by opaque ids. What does leave by default is the **shape** of the tree (how many people, who is whose child),
+  so paths across trees do not break. The tribe head (named by the app's owner) can see and edit the cards of non-users across the
+  linked trees, never their files. Views from outside are written into the activity log of the household that was seen.
 - **Files.** Allowed types only (PDF, images, Word, Excel, plain text), checked by their first bytes, not by their name; at most 25 MB.
   Served back with `Content-Disposition: attachment`, `Content-Security-Policy: sandbox`, `no-store` – the page shows them from memory (blob URLs)
   and revokes those on lock.
 - **The page.** Its own strict CSP: scripts from our origin only, none inline, no frames. The music player, the text capture and the companion
   do not load there (`data-vault`). Nothing about the vault is cached by the service worker.
 - **Activity log.** Unlocks, views, uploads, edits, deletions, passkey changes; IP addresses are kept only as a keyed fingerprint.
+
+### Links that are their own key (`server/calendar.ts`)
+- `GET /api/calendar/feed/:token` (the calendar that Google, Apple or Outlook subscribe to) answers **without a session**: the link is the key.
+  It is 24 random bytes (32 characters); only its SHA-256 hash is stored; it is rate-limited; a new link replaces the old one, it can be
+  cancelled at any time, and it stops working when the member is removed. It shows what that member sees in the calendar page, the tree's
+  privacy included.
+- Known trade-off: with the "include the family tree" option, names and birth and memorial dates from the tree reach the calendar page and
+  this link **without the vault being unlocked**, and the subscribing service (Google, Apple, Microsoft) keeps a copy.
 
 ### The desktop program (`desktop/main.js`)
 - Context isolation and the sandbox are on; navigation is locked to the app; links open in the browser only if they are http(s);
@@ -80,7 +95,7 @@ Cloudflare R2 is the main store. Every vault file also has two encrypted copies,
 |---|---|---|
 | Google Drive (the owner's) | The Worker copies each new file right away (ciphertext, as it is) into the folder "Helper vault (encrypted)", through the owner's own Google sign-in with the `drive.file` scope (only files the helper made). The nightly job fills in anything missed. | **A live copy**: if R2 cannot give a file back, the vault reads it from Drive (`readWithFailover`). |
 | The family NAS (Synology) | The NAS **pulls** the bucket's `vault/` folder itself with Cloud Sync and a **read-only** R2 token. Nothing at home is open to the internet, and the NAS cannot change anything in Cloudflare. | **A cold copy at home**, with its own history. |
-| A nightly snapshot | 01:30 UTC (the Worker's cron): the tree and the items' records – already sealed – encrypted once more, to R2 `_backup/` (two weeks kept) and to Drive. | With the files and `VAULT_KEY`, it restores everything. |
+| A nightly snapshot | 01:30 UTC (the Worker's cron): the tree (people, relationships, links between trees, heads, households' names) and the items' records – already sealed – encrypted once more, to R2 `_backup/` (two weeks kept) and to Drive. Older snapshots (version 1) hold people and items only, not the relationships. | With the files and `VAULT_KEY`, it restores everything. |
 
 **Recovery without Cloudflare at all:** copy the NAS folder (or download the Drive folder) to a computer and run
 
@@ -140,4 +155,7 @@ site, the previews' shared base config, `.dev.vars`. Keys from services are past
 
 ```bash
 npm run test:vault      # the vault's encryption, passkey checks (a simulated authenticator, real keys) and the preview sign-in tickets
+npm run test:forest     # linked trees: privacy levels, anonymity, the tribe, one person in two trees, relationship names
+npm run test:calendar   # the Hebrew dates on the server, against the page's own algorithm
+npm test                # all of them, with the AI meter's tests
 ```

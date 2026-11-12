@@ -17,7 +17,7 @@ import * as K from './kin';
 
 const IDLE = 15 * 60e3, MAX = 2 * 3600e3, FRESH = 10 * 60e3, KEEP_DELETED = 30 * 864e5;
 const MAX_FILE = 25 * 1024 * 1024;
-const NAME = 'העוזר המשפחתי';
+const NAME = 'הָאֹ֔הֶל';
 
 /* ---------------- small helpers ---------------- */
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>העוזר – שולחן העבודה</title>
+  <title>הָאֹ֔הֶל – שולחן העבודה</title>
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/base.css">
   <style>
@@ -22,7 +22,7 @@
     const desk = window.helperDesktop;   // provided by the desktop program (preload); absent in a normal browser
     const r = await H.me();
     if (!r.user) {
-      const box = H.el('div', { class: 'signin' }, 'צריך להתחבר פעם אחת: לחצו על סמל העוזר ליד השעון ← "התחברות".');
+      const box = H.el('div', { class: 'signin' }, 'צריך להתחבר פעם אחת: לחצו על סמל האוהל ליד השעון ← "התחברות".');
       document.body.append(box);
       desk?.setInteractive(true);
       return;

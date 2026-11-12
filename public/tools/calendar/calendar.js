@@ -397,7 +397,7 @@
   /* the browser's own notification, once a day for each coming day, when the helper is opened */
   async function askNotify() {
     const r = await Notification.requestPermission();
-    toast(r === 'granted' ? 'התראות הופעלו: תראו אותן כשתפתחו את העוזר' : 'ההתראות לא אושרו בדפדפן');
+    toast(r === 'granted' ? 'התראות הופעלו: תראו אותן כשתפתחו את האוהל' : 'ההתראות לא אושרו בדפדפן');
     if (r === 'granted') drawRemind();
   }
   function notify(list) {
@@ -418,7 +418,7 @@
     const d8 = (d) => iso(d).replace(/-/g, '');
     const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
     const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z');
-    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Helper//Family calendar//HE', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${esc('לוח השנה – העוזר המשפחתי')}`];
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Helper//Family calendar//HE', 'CALSCALE:GREGORIAN', `X-WR-CALNAME:${esc('לוח השנה – האוהל')}`];
     for (const g of groups) {
       const a = fromIso(g.from), b = addDays(fromIso(g.to), 1);
       const memo = g.items[0].family ? (g.items[0].family.note || '') : plain(g.items.find((i) => i.memo)?.memo || '');

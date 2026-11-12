@@ -340,6 +340,12 @@ select.sub-select { font: inherit; font-size: .9rem; padding: 4px 8px; max-inlin
 .fix-list { list-style: none; padding: 0; margin: 0 0 8px; }
 .fix-list li { display: grid; gap: 4px; padding: 8px 0; border-block-end: 1px solid var(--line); }
 .fix-orig { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+/* the plain check and its ✨ upgrade (ai-upgrade.md): the upgrade sits under the result with a line on what it adds */
+.fix-smart { margin: 10px 0 4px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, var(--olive) 9%, var(--card)); }
+.fix-smart > small { flex: 1 1 14rem; line-height: 1.45; }
+/* what has no amount: a soft amber note, not an error */
+.fix-missing { margin: 8px 0 4px; padding: 8px 12px; border-radius: 12px; line-height: 1.5;
+  background: color-mix(in srgb, #e0a83a 13%, var(--card)); border-inline-start: 3px solid color-mix(in srgb, #e0a83a 70%, transparent); }
 .fine { color: var(--muted); font-size: .76rem; margin-block-start: 12px; }
 @media (max-width: 520px) {
   .ing-edit .sub-line { padding-inline-start: 8px; }

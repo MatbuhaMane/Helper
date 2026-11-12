@@ -49,7 +49,7 @@
           <div>
             <span class="gl-len long">ארוכת טווח</span>
             <h3><a href="#" data-go="goal">האוהל מצליח ומפרנס</a></h3>
-            <p class="gl-why">שהמשפחה תנהל את החיים יחד ותשמור על קשר, ושאוכל להמשיך ליצור דברים שעוזרים לאנשים.</p>
+            <p class="gl-reason">שהמשפחה תנהל את החיים יחד ותשמור על קשר, ושאוכל להמשיך ליצור דברים שעוזרים לאנשים.</p>
           </div>
         </div>
         <ol class="gl-path" style="--n:5;--at:1.5">
@@ -68,7 +68,7 @@
           <div>
             <span class="gl-len">רגילה</span>
             <h3><a href="#">לרוץ 5 ק״מ</a></h3>
-            <p class="gl-why">להיות בכושר כשהילדים רוצים לטייל.</p>
+            <p class="gl-reason">להיות בכושר כשהילדים רוצים לטייל.</p>
           </div>
         </div>
         <ol class="gl-path" style="--n:3;--at:2">
@@ -85,7 +85,7 @@
           <div>
             <span class="gl-len short">קצרה · היום</span>
             <h3><a href="#">לסדר את המחסן</a></h3>
-            <p class="gl-why">שיהיה מקום לאופניים לפני החורף.</p>
+            <p class="gl-reason">שיהיה מקום לאופניים לפני החורף.</p>
           </div>
         </div>
         <p class="gl-next"><b>לפנות את המדף העליון</b></p>
@@ -106,7 +106,7 @@
     <div>
       <span class="gl-len long">ארוכת טווח · מאז אלול</span>
       <h1>האוהל מצליח ומפרנס</h1>
-      <p class="gl-why">שהמשפחה תנהל את החיים יחד ותשמור על קשר, ושאוכל להמשיך ליצור דברים שעוזרים לאנשים.</p>
+      <p class="gl-reason">שהמשפחה תנהל את החיים יחד ותשמור על קשר, ושאוכל להמשיך ליצור דברים שעוזרים לאנשים.</p>
       <div class="gl-week"><div class="gl-days" aria-hidden="true"><i class="gl-day done"></i><i class="gl-day done"></i><i class="gl-day"></i><i class="gl-day done"></i><i class="gl-day done today"></i><i class="gl-day"></i><i class="gl-day rest"></i></div><small>השבוע <b>4 מתוך 6</b> · שבת למנוחה</small></div>
     </div>
   </section>
@@ -140,21 +140,21 @@
       <blockquote>להיות בכושר כשהילדים רוצים לטייל.</blockquote>
       <p>צעד קטנטן להיום: <b>לנעול נעלי ריצה ולצאת לחמש דקות.</b></p>
     </article>
-    <article class="card gl-step">
+    <article class="card gl-tstep">
       <button class="gl-tick" type="button" aria-pressed="false" aria-label="סיימתי">✓</button>
       <div><b>לשלוח את הקישור לבני הדודים</b><small>האוהל מצליח ומפרנס · 5 דקות</small></div>
-      <div class="gl-step-acts"><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></div>
+      <div class="gl-tstep-acts"><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></div>
     </article>
-    <article class="card gl-step">
+    <article class="card gl-tstep">
       <button class="gl-tick" type="button" aria-pressed="true" aria-label="סיימתי">✓</button>
       <div><b>ריצה של 20 דקות, בקצב נוח</b><small>לרוץ 5 ק״מ · 20 דקות</small></div>
     </article>
-    <article class="card gl-step">
+    <article class="card gl-tstep">
       <button class="gl-tick" type="button" aria-pressed="false" aria-label="סיימתי">✓</button>
       <div><b>לפנות את המדף העליון</b><small>לסדר את המחסן · היום</small></div>
-      <div class="gl-step-acts"><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></div>
+      <div class="gl-tstep-acts"><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></div>
     </article>
-    <article class="card gl-done" hidden>
+    <article class="card gl-alldone" hidden>
       <span class="gl-flame" aria-hidden="true">🔥</span>
       <p><b>זהו להיום.</b></p>
       <p class="muted">השבוע 5 מתוך 6. נתראה מחר.</p>
@@ -214,7 +214,7 @@
 <!-- ============ 6. "נתקעתי" (a modal in the app: H.modal) ============ -->
 <main class="gl" data-screen="stuck" hidden>
   <a class="gl-back" href="#" data-go="today">‹ היום</a>
-  <section class="card gl-stuck" style="padding:20px;max-inline-size:560px;justify-self:center;inline-size:100%">
+  <section class="card gl-stuckbox" style="padding:20px;max-inline-size:560px;justify-self:center;inline-size:100%">
     <h2>בוא נקטין את הצעד</h2>
     <p class="gl-from">הצעד: <b>לשלוח את הקישור לבני הדודים</b></p>
     <span class="gl-five">⏱ גרסה של 5 דקות</span>
@@ -235,36 +235,36 @@
 <script>
   // the badges (docs/vision/goals.md, section 3): id, name, how, shelf; state for the prototype: earned / progress / locked / secret
   const B = [
-    ['yated-rishona', 'יתד ראשונה', 'הצעד הראשון במטרה חדשה', 'start', 'earned'],
-    ['gachelet', 'גחלת', '3 ימים של צעדים', 'start', 'earned'],
-    ['medura', 'מדורה', '7 ימים של צעדים', 'start', 'p:5/7'],
-    ['esh-tamid', 'אש תמיד', '30 ימים של צעדים', 'start', 'p:12/30', 'אֵשׁ תָּמִיד תּוּקַד עַל הַמִּזְבֵּחַ, לֹא תִכְבֶּה'],
-    ['shabbat-menucha', 'שבת למנוחה', 'חזרת לצעדים אחרי הפסקה בשבת', 'start', 'earned'],
-    ['shabbtotai', 'אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ', 'שמירת מנוחה 7 שבתות ברצף', 'start', 'p:3/7'],
-    ['amud-haohel', 'עמוד האוהל', 'סיימת תהליך שלם', 'way', 'earned'],
-    ['haohel-omed', 'האוהל עומד', 'השגת מטרה', 'way', 'locked'],
-    ['masa', 'מסע', '100 צעדים בסך הכול', 'way', 'p:41/100'],
-    ['gashash', 'גשש', 'סיימת מחקר בעוזר המחקר', 'way', 'locked'],
-    ['alot-hashachar', 'עלות השחר', 'צעד מוקדם בבוקר', 'way', 'earned'],
-    ['mishmeret-laila', 'משמרת לילה', 'צעד מאוחר בלילה', 'way', 'locked'],
-    ['ish-masa', 'איש מסע', 'עמידה במשימה שארכה יותר משנה', 'way', 'locked'],
-    ['matanot-ktanot', 'מתנות קטנות', 'השלמת 10 מטרות קצרות', 'way', 'p:3/10'],
-    ['avnei-derech', 'אבני דרך', 'מטרה קצרה בכל יום במשך שבוע', 'way', 'locked'],
-    ['derech-rishit', 'דרך ראשית', 'מטרה קצרה בכל יום במשך חודש', 'way', 'locked'],
-    ['derech-chaim', 'דרך חיים', 'מטרה קצרה בכל יום במשך שנה', 'way', 'locked'],
-    ['derech-hachaim', 'דרך החיים', '', 'way', 'secret'],
-    ['derech-hamelech', 'דרך המלך', 'תחזוקת מטלות פעילות והשלמתן במשך 10 שנים', 'way', 'locked'],
-    ['shevet', 'שבט', 'עודדת בן משפחה, או השלמתם יחד מטרה משותפת', 'kin', 'locked'],
-    ['malach-derech', 'מלאך דרך', 'עזרת לבן משפחה או לחבר להשלים מטרה שלו', 'kin', 'locked'],
-    ['yoetz', 'יועץ', 'נתת עצה טובה, וסימנו אותה בלייק', 'kin', 'locked'],
-    ['katef-tomechet', 'כתף תומכת', 'עקבת אחרי המסע של חבר במטרה שלו', 'kin', 'earned'],
+    ['peg', 'יתד ראשונה', 'הצעד הראשון במטרה חדשה', 'start', 'earned'],
+    ['ember', 'גחלת', '3 ימים של צעדים', 'start', 'earned'],
+    ['fire', 'מדורה', '7 ימים של צעדים', 'start', 'p:5/7'],
+    ['eternal', 'אש תמיד', '30 ימים של צעדים', 'start', 'p:12/30', 'אֵשׁ תָּמִיד תּוּקַד עַל הַמִּזְבֵּחַ, לֹא תִכְבֶּה'],
+    ['rest_return', 'שבת למנוחה', 'חזרת לצעדים אחרי הפסקה בשבת', 'start', 'earned'],
+    ['rest_seven', 'אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ', 'שמירת מנוחה 7 שבתות ברצף', 'start', 'p:3/7'],
+    ['pole', 'עמוד האוהל', 'סיימת תהליך שלם', 'way', 'earned'],
+    ['standing', 'האוהל עומד', 'השגת מטרה', 'way', 'locked'],
+    ['journey', 'מסע', '100 צעדים בסך הכול', 'way', 'p:41/100'],
+    ['tracker', 'גשש', 'סיימת מחקר בעוזר המחקר', 'way', 'locked'],
+    ['dawn', 'עלות השחר', 'צעד מוקדם בבוקר', 'way', 'earned'],
+    ['night', 'משמרת לילה', 'צעד מאוחר בלילה', 'way', 'locked'],
+    ['traveller', 'איש מסע', 'עמידה במשימה שארכה יותר משנה', 'way', 'locked'],
+    ['gifts', 'מתנות קטנות', 'השלמת 10 מטרות קצרות', 'way', 'p:3/10'],
+    ['milestones', 'אבני דרך', 'מטרה קצרה בכל יום במשך שבוע', 'way', 'locked'],
+    ['highway', 'דרך ראשית', 'מטרה קצרה בכל יום במשך חודש', 'way', 'locked'],
+    ['way_of_life', 'דרך חיים', 'מטרה קצרה בכל יום במשך שנה', 'way', 'locked'],
+    ['the_way', 'דרך החיים', '', 'way', 'secret'],
+    ['kings_way', 'דרך המלך', 'תחזוקת מטלות פעילות והשלמתן במשך 10 שנים', 'way', 'locked'],
+    ['tribe', 'שבט', 'עודדת בן משפחה, או השלמתם יחד מטרה משותפת', 'kin', 'locked'],
+    ['angel', 'מלאך דרך', 'עזרת לבן משפחה או לחבר להשלים מטרה שלו', 'kin', 'locked'],
+    ['adviser', 'יועץ', 'נתת עצה טובה, וסימנו אותה בלייק', 'kin', 'locked'],
+    ['shoulder', 'כתף תומכת', 'עקבת אחרי המסע של חבר במטרה שלו', 'kin', 'earned'],
   ];
-  const HAVE = new Set(['yated-rishona','gachelet','medura','esh-tamid','shabbat-menucha','shabbtotai','amud-haohel','haohel-omed','masa','alot-hashachar','mishmeret-laila','ish-masa','avnei-derech','katef-tomechet']);
+  const HAVE = new Set(['peg','ember','fire','eternal','rest_return','rest_seven','pole','standing','journey','dawn','night','traveller','milestones','shoulder']);
   const SHELF = { start: 'התחלה ועקביות', way: 'התקדמות', kin: 'משפחה וחברים' };
   const img = (id, st) => st === 'secret' ? '/assets/badges/secret.webp' : HAVE.has(id) ? `/assets/badges/${id}.webp` : '/assets/badges/secret.webp';
   function badge([id, name, how, , st, quote], isNew) {
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'gl-badge' + (st === 'earned' ? '' : st === 'secret' ? ' secret' : ' locked') + (isNew ? ' new' : '');
+    b.type = 'button'; b.className = 'gl-badge' + (st === 'earned' ? ' on' : st === 'secret' ? ' secret' : '') + (isNew ? ' new on' : '');
     b.setAttribute('aria-expanded', 'false');
     const p = st.startsWith('p:') ? st.slice(2).split('/').map(Number) : null;
     b.innerHTML = `<img src="${img(id, st)}" alt="" loading="lazy"><b>${st === 'secret' ? '???' : name}</b>`
@@ -278,7 +278,7 @@
   for (const [k, title] of Object.entries(SHELF)) {
     const s = document.createElement('section'); s.className = 'gl-shelf';
     s.innerHTML = `<h3>${title}</h3><ul class="gl-patches"></ul>`;
-    B.filter((x) => x[3] === k).forEach((x) => { const li = document.createElement('li'); li.append(badge(x, x[0] === 'alot-hashachar')); s.querySelector('ul').append(li); });
+    B.filter((x) => x[3] === k).forEach((x) => { const li = document.createElement('li'); li.append(badge(x, x[0] === 'dawn')); s.querySelector('ul').append(li); });
     wall.append(s);
   }
   const mine = document.querySelector('[data-badges="mine"]');

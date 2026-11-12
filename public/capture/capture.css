@@ -1,0 +1,16 @@
+/* "שמירה לאוהל" – what the phone's share sheet opens: a small, sure card; then a calm "✓ נשמר" */
+.cap { max-inline-size: 560px; margin: 16px auto; padding: 20px 20px 18px; display: grid; gap: 12px; border-radius: 24px; box-shadow: var(--lift); }
+.cap h1 { margin: 0; font-size: 1.4rem; }
+.cap .field { display: grid; gap: 5px; }
+.cap .field > span { font-size: .84rem; font-weight: 600; color: var(--muted); }
+.cap .field :is(input, textarea, select) { inline-size: 100%; font-size: 1rem; }
+.cap textarea { min-block-size: 120px; line-height: 1.6; }
+.cap > p { padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 4%, transparent); overflow-wrap: anywhere; }
+.cap > p a { color: var(--primary); }
+.cap > div:last-child .btn { inline-size: 100%; justify-content: center; min-block-size: 46px; font-size: 1.05rem; }
+.cap-done { max-inline-size: 560px; margin: 28px auto; padding: 26px 20px; display: grid; gap: 10px; text-align: center; border-radius: 24px;
+  background: color-mix(in srgb, var(--primary) 7%, var(--card)); border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); animation: cap-in .45s var(--ease-river) both; }
+.cap-done > b { font-size: 1.3rem; color: var(--primary); }
+@keyframes cap-in { from { opacity: 0; transform: scale(.96); } }
+@media (max-width: 520px) { .cap, .cap-done { margin-inline: 0; border-radius: 20px; } }
+@media (prefers-reduced-motion: reduce) { .cap-done { animation: none; } }

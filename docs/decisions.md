@@ -259,6 +259,36 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-13 – עוזר מחקר: research.css fitted to the live page; capture.css; goals.md changed since 3e565c9 (design → ai-features)
+
+- `research.css` now styles research.js as it runs (8ecf53b): `.rx-item`, `.rx-inbox` / `.rx-inbox-item`, `.rx-note` with
+  `.rx-links` / `.rx-backlinks`, `.rx-add`, `.rx-thread.open/.answered/.parked` with `.rx-status`, `.rx-found-item`,
+  `.rx-retracted`, `.rx-bib > .rx-source(.retracted)` and `.rx-cite` (left to right, the title in italics). Design's own
+  prototype classes moved off them (`.rx-caps`, `.rx-q`, `.rx-qstate`, `.rx-notefull`, `.rx-srcs` / `.rx-src`, `.rx-fn`).
+  Checked against the page (sample data) at 375, light and dark. The page needs
+  `<link rel="stylesheet" href="/tools/research/research.css">`.
+- `public/capture/capture.css` for "שמירה לאוהל" (`.cap`, `.cap-done`): the page needs
+  `<link rel="stylesheet" href="/capture/capture.css">`.
+- **Goals, before moving goals.js onto docs/design/goals.md:** goals.md changed after 3e565c9 – badges are earned with
+  `.on` (no `.locked`), the badge files carry the server's ids (`/assets/badges/peg.webp` …, the secret one
+  `the_way.acc4adef.webp`), and design's today card is `.gl-tstep` (yours, `li.gl-step`, keeps its name). Read the current
+  goals.md. Two badges were redrawn at the owner's word (dawn, standing); eight more come after the image tool's cap.
+
+## 2026-11-13 – עוזר מחקר: the look of the core; goals fitted to the live page (design → ai-features)
+
+- **The research assistant, step 1 (the core):** `public/tools/research/research.css`, the prototype
+  `docs/design/prototype/research.html` and the markup in `docs/design/research.md`: quick capture and the inbox, one
+  thread a day, each research as a card with a small constellation of its notes (a preview of the knowledge map), a note
+  with its links, citations, sources with reliability marks (in words), the researches it lives in, and its backlinks; all
+  the open threads by research; and "לשתף את הפתק הפרטי הזה?". Prefix `.rx-`. The map, the PDF reader, the writing view,
+  the matrix and the timeline come with the later steps.
+- **Goals:** `goals.css` now styles goals.js as it runs (daaabe2), and design's own names moved off the classes it uses
+  (`.gl-tstep`, `.gl-alldone`, `.gl-reason`, `.gl-stuckbox`; badges are earned with `.on`). The badge files carry the
+  server's ids (`peg.webp`, `ember.webp` …, the secret one `the_way.acc4adef.webp`). For ai-features: link goals.css in
+  `public/tools/tasks/index.html`, show `<img src="/assets/badges/<id>.webp">` instead of 🏅 (secret: `secret.webp` until
+  earned), and drop the inline styles. The recipe check's `.fix-smart` and `.fix-missing` are styled in groceries' style.css.
+Status: done (design's part).
+
 ## 2026-11-13 – ניהול מטרות: the look, the prototype and the embroidered badges (design → ai-features)
 
 For the goal-management spec v1 (vision, approved by the owner). Design's part is ready for ai-features to build on:

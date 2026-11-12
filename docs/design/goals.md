@@ -17,15 +17,15 @@ consistency, the rest day's violet). Load `/assets/base.css` and `/tools/tasks/g
 | The length | `span.gl-len` (`.short` / – / `.long`) | |
 | The next step | `p.gl-next > b` | |
 | Today's card (dashboard) | `a.gl-todaycard > .gl-flame + div(b, small) + .gl-go` | |
-| A goal card | `article.card.gl-goal > .gl-goal-top(ring box, div(.gl-len, h3 > a, p.gl-why)) + ol.gl-path + p.gl-next + .gl-week` | the link in `h3` covers the card |
+| A goal card | `article.card.gl-goal > .gl-goal-top(ring box, div(.gl-len, h3 > a, p.gl-reason)) + ol.gl-path + p.gl-next + .gl-week` | the link in `h3` covers the card |
 | A goal's page | `section.card.gl-hero` then `.gl-procs > details.card.gl-proc > summary(ring box, h3, small) + ul.gl-checks` | |
 | A checklist row | `li.gl-check(.next) > input[type=checkbox] + label + button.gl-stuckbtn?` | `.next` lights the next step |
-| Today | `.gl-today > article.card.gl-step > button.gl-tick[aria-pressed] + div(b, small) + .gl-step-acts` | 2–3 of them; then `article.card.gl-done` |
+| Today | `.gl-today > article.card.gl-tstep > button.gl-tick[aria-pressed] + div(b, small) + .gl-tstep-acts` | 2–3 of them; then `article.card.gl-alldone` |
 | The why comes back | `article.card.gl-whyback > p + blockquote + p` | after two days with no step; no scolding |
-| נתקעתי | `button.gl-stuckbtn`; the modal (H.modal): `.gl-stuck > h2 + p.gl-from + span.gl-five + p.gl-q + input + .ai-pair(btn primary, btn ai-up) + p.ai-note?` | |
+| נתקעתי | `button.gl-stuckbtn`; the modal (H.modal): `.gl-stuckbox > h2 + p.gl-from + span.gl-five + p.gl-q + input + .ai-pair(btn primary, btn ai-up) + p.ai-note?` | |
 | Weekly review | `section.card.gl-review > header(h1, .gl-minute) + .gl-week + .gl-rq(label, .gl-quick > .chip[aria-pressed], textarea) ×3` | |
 | New goal | `section.card.gl-new > ol.gl-steps > li(.done/.now) > span` ×5, then the step's own parts: `.gl-field.gl-write(textarea, button.gl-mic[aria-pressed])`, `.gl-lens[role=radiogroup] > button[role=radio][aria-checked]`, `ol.gl-plist > li(input, button.gl-x)`, `.gl-wdays > button[aria-pressed]` (`.rest` + disabled for the rest day), `.gl-new-acts` | ✨ next to the plain action in `.ai-pair`, as in `ai-upgrade.md` |
-| The badge wall | `.gl-wall > section.gl-shelf > h3 + ul.gl-patches > li > button.gl-badge(.locked/.secret/.new)[aria-expanded] > img + b + span.gl-bar? + span.gl-tip[role=tooltip]` | see below |
+| The badge wall | `.gl-wall > section.gl-shelf > h3 + ul.gl-patches > li > button.gl-badge(.on/.secret/.soon/.new)[aria-expanded] > img + b + span.gl-bar? + span.gl-tip[role=tooltip]` | see below |
 | My badges (dashboard) | `.gl-mine > button.gl-badge …` | the last ones earned |
 
 ## The badges
@@ -33,10 +33,10 @@ consistency, the rest day's violet). Load `/assets/base.css` and `/tools/tasks/g
 Embroidered patches in the cushions' style, made with the image tool (prompts: `figures/art/library/badges/README.md`).
 The pictures are `/assets/badges/<id>.webp` (320 px, transparent); the 640 px masters are in `figures/art/library/badges/`.
 
-- **Earned:** `button.gl-badge` with the picture, the name, and in `.gl-tip`: name, how, and "נרקם אצלך ב…".
-- **Not yet:** add `.locked` (greyed and faded), and `span.gl-bar > i[style="--p:41"]` when there is a count (41 of 100).
+- **Earned:** `button.gl-badge.on` with the picture, the name, and in `.gl-tip`: name, how, and "נרקם אצלך ב…".
+- **Not yet:** no `.on` (greyed and faded), and `span.gl-bar > i[style="--p:41"]` when there is a count (41 of 100).
 - **Secret** (דרך החיים): `.secret`, the picture `/assets/badges/secret.webp` (a silhouette), the name `???`, and the tip
-  "טלאי סודי · מי שימצא אותו, יידע." Its real picture is `/assets/badges/derech-hachaim.acc4adef.webp` – a name nobody
+  "טלאי סודי · מי שימצא אותו, יידע." Its real picture is `/assets/badges/the_way.acc4adef.webp` – a name nobody
   guesses: send it only once it is earned.
 - **Just earned:** add `.new` once; the patch stitches itself onto the wall.
 - **The way to it:** on a computer the glass card opens above the patch on hover; on a phone (or any touch screen) a tap
@@ -44,29 +44,29 @@ The pictures are `/assets/badges/<id>.webp` (320 px, transparent); the 640 px ma
 
 | id | name | shelf |
 |---|---|---|
-| yated-rishona | יתד ראשונה | התחלה ועקביות |
-| gachelet | גחלת | 〃 |
-| medura | מדורה | 〃 |
-| esh-tamid | אש תמיד | 〃 (with the verse in a `q`) |
-| shabbat-menucha | שבת למנוחה | 〃 (for those who keep Shabbat; other traditions get their own later) |
-| shabbtotai | אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ | 〃 |
-| amud-haohel | עמוד האוהל | התקדמות |
-| haohel-omed | האוהל עומד | 〃 |
-| masa | מסע | 〃 |
-| gashash | גשש | 〃 (waits for the research assistant) |
-| alot-hashachar | עלות השחר | 〃 |
-| mishmeret-laila | משמרת לילה | 〃 |
-| ish-masa | איש / אשת מסע | 〃 |
-| matanot-ktanot | מתנות קטנות | 〃 |
-| avnei-derech | אבני דרך | 〃 |
-| derech-rishit | דרך ראשית | 〃 |
-| derech-chaim | דרך חיים | 〃 |
-| derech-hachaim | דרך החיים (secret) | 〃 |
-| derech-hamelech | דרך המלך | 〃 |
-| shevet | שבט | משפחה וחברים |
-| malach-derech | מלאך דרך | 〃 |
-| yoetz | יועץ | 〃 |
-| katef-tomechet | כתף תומכת | 〃 |
+| peg | יתד ראשונה | התחלה ועקביות |
+| ember | גחלת | 〃 |
+| fire | מדורה | 〃 |
+| eternal | אש תמיד | 〃 (with the verse in a `q`) |
+| rest_return | שבת למנוחה | 〃 (for those who keep Shabbat; other traditions get their own later) |
+| rest_seven | אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ | 〃 |
+| pole | עמוד האוהל | התקדמות |
+| standing | האוהל עומד | 〃 |
+| journey | מסע | 〃 |
+| tracker | גשש | 〃 (waits for the research assistant) |
+| dawn | עלות השחר | 〃 |
+| night | משמרת לילה | 〃 |
+| traveller | איש / אשת מסע | 〃 |
+| gifts | מתנות קטנות | 〃 |
+| milestones | אבני דרך | 〃 |
+| highway | דרך ראשית | 〃 |
+| way_of_life | דרך חיים | 〃 |
+| the_way | דרך החיים (secret) | 〃 |
+| kings_way | דרך המלך | 〃 |
+| tribe | שבט | משפחה וחברים |
+| angel | מלאך דרך | 〃 |
+| adviser | יועץ | 〃 |
+| shoulder | כתף תומכת | 〃 |
 
-Still to be embroidered (the image tool's daily cap): gashash, matanot-ktanot, derech-rishit, derech-chaim,
-derech-hamelech, shevet, malach-derech, yoetz. Until they arrive, show `secret.webp` in their place.
+Still to be embroidered (the image tool's daily cap): tracker, gifts, highway, way_of_life,
+kings_way, tribe, angel, adviser. Until they arrive, show `secret.webp` in their place.

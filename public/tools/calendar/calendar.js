@@ -175,7 +175,7 @@
     let f = null;
     try { f = (await H.api('/api/calendar/feed')).feed; } catch (_) { return linkBox.replaceChildren(); }
     const when = (t) => new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-    const tree = el('input', { type: 'checkbox', checked: f ? f.tree : true, 'aria-label': 'כולל הימים מעץ המשפחה' });
+    const tree = el('input', { type: 'checkbox', checked: f ? f.tree : false, 'aria-label': 'כולל הימים מעץ המשפחה' });
     const make = async (again) => {
       if (again && !confirm('ליצור קישור חדש? הקישור הקודם יפסיק לעבוד, וצריך יהיה להוסיף את החדש ליומן במקומו.')) return;
       try { madeUrl = (await H.api('/api/calendar/feed', { method: 'POST', body: { tree: tree.checked } })).url; drawLink(); }

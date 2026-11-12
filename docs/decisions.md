@@ -94,7 +94,9 @@ Merged with the owner's approval; the master's part of the proposals below is do
 - `public/index.html`: the sun and the moon behind the tent's picture take their taps again (ai-features found it: the picture's
   rectangle covered them).
 - Kept design's line in `common.js` (the tree in the main menu) and the rename in the master's files; `CLAUDE.md`'s title says הָאֹהֶל.
-- Open with the owner: whether the calendar link includes the tree by default (today it does), and the Workers plan (CPU per request).
+- The owner's answers: the calendar link includes the family tree **only when the person ticks it** (the box starts unticked, and
+  the server takes the tree only on `tree: true`; changed in `calendar.js` and `calendar.ts` by the master); the account is on the
+  **paid Workers plan**, so a feed's 6–10 ms of CPU is fine; `business` goes into main with this push.
 Status: done.
 
 ## 2026-11-12 – The calendar as a live link for Google Calendar (ai-features)

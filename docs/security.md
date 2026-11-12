@@ -59,8 +59,10 @@ Read this before changing sign-in, the API, the family vault, or the headers.
   It is 24 random bytes (32 characters); only its SHA-256 hash is stored; it is rate-limited; a new link replaces the old one, it can be
   cancelled at any time, and it stops working when the member is removed. It shows what that member sees in the calendar page, the tree's
   privacy included.
-- Known trade-off: with the "include the family tree" option, names and birth and memorial dates from the tree reach the calendar page and
-  this link **without the vault being unlocked**, and the subscribing service (Google, Apple, Microsoft) keeps a copy.
+- The family tree is **off by default** in the link (the owner's decision): only a person who ticks "include the family tree" sends the
+  tree's names and birth and memorial dates there. Known trade-off when they do: those reach the link **without the vault being
+  unlocked**, and the subscribing service (Google, Apple, Microsoft) keeps a copy. The calendar page itself shows the tree's days to
+  signed-in members of the household, also without an unlock.
 
 ### The desktop program (`desktop/main.js`)
 - Context isolation and the sandbox are on; navigation is locked to the app; links open in the browser only if they are http(s);

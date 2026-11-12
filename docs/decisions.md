@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The owner can gift credits to chosen users from the admin page (business)
+
+**Decision:** an owner-only action on the admin page (the moon's secret, an easter egg) gives credits to a chosen user,
+at the owner's expense.
+- They are ordinary credits marked with the source "gift", spent before purchased ones. They never expire and cannot be
+  refunded or transferred.
+- The recipient gets a note, for example "קיבלת 200 קרדיטים מתנה מהאוהל".
+- A grant above ₪20 of AI cost asks for a second confirmation. The admin page shows this month's gifts and what they
+  really cost.
+- A gift costs the owner only the real AI cost. It is not revenue and stays outside 30/30/30/10 and the tithe.
+
+**Why:** the owner wants to treat chosen people; the confirmation and the monthly total protect against a typo.
+
+**Affects:**
+- ai-features: a credits ledger with a source on each grant (trial, purchase, gift), gift spent first, and the
+  recipient's note.
+- master: the owner-only admin action, written to the audit log.
+- design: only if the easter egg gets a look of its own.
+
+**Status:** Decided (the owner). It comes after the AI limit for new accounts, which creates the ledger. Details:
+`docs/business/pricing.md` 6a, "קרדיטים במתנה מהבעלים".
+
 ## 2026-11-12 – Guests can join once new accounts are AI-limited; the beta's stop condition is updated (business)
 
 **What changed:** the owner decided that an invitation does not admit guests until AI limits or credits exist (master's

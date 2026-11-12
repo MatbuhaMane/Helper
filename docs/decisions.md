@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Shared research: within the household only, for now (master)
+The owner decided that a research is shared only within its household for now, and later with others too. The reason is
+that members have no age yet, so the "under 12 only with the family" rule cannot be enforced.
+
+ai-features does the following before step 3 (b24e1c1, 9376809, 46d5e59) is merged:
+- invite() refuses an invitee from another household (403 not_same_household).
+- An invitation does not reveal whether an address is registered: it gives the same answer for "not a member" and
+  "another household".
+- Members are shown by name, not by email address. The owner of the research still sees addresses.
+
+Opening sharing to other households waits for a child marker or a birth year on members (the master owns members), and
+then for the owner's OK. Status: accepted.
+
 ## 2026-11-14 – The research assistant, step 3: shared research (ai-features → master for a security review, design)
 
 The owner's go-ahead ("כן, שלב 3"), from vision's spec (`docs/vision/research.md`):
@@ -19,12 +32,12 @@ The owner's go-ahead ("כן, שלב 3"), from vision's spec (`docs/vision/resear
   history; invites readers), contributor (adds, and changes only what they wrote), reader (sees and comments). The server
   checks every write through `access()` in `server/researches.ts`; someone not in a research gets 404, as if it were not
   there. The page offers only what the role allows.
-- **Joining:** the owner (or an editor, for readers) invites someone who is already in הָאֹהֶל, by their address (no mail
-  goes out; nobody new is let in). The invitation waits on the research assistant's home screen; it counts only after it
-  is accepted. Someone from another household is marked "a partner from outside" and joins only on their own approval.
-  **Children under 12 work only with the family:** the rule is in `mayJoin()` (tested), but **members have no age yet**,
-  so it is not enforced. When the master adds a child marker (or a birth year) to `members`, `invite()` passes it as
-  `inviteeChild` / `ownerChild`. That is a master decision.
+- **Joining (after the master's review, a47e3c5):** within the owner's household only, for now (the master's entry
+  above). The owner (or an editor, for readers) invites someone of the household who is already in הָאֹהֶל; whoever is
+  not – not registered, or of another household – gets the very same 403 `not_same_household` (`inviteCheck`), so an
+  invitation never tells whether an address exists. No mail goes out; it counts only once accepted. Members are shown
+  by name; their addresses go only to the research's owner (`memberView`). The children's rule waits in `mayJoin()`
+  for when sharing opens beyond the household.
 - **Private notes:** a note keeps living in its author's פתקים (`research_notes.note_email`). When a note of mine joins a
   research that is shared (or one that isn't mine), the server answers 409 `ask_share` and the page asks each time
   whether to share it. If not, the others see "a private note of X": no title, no text, not in drafts, ✨ or exports. Only
@@ -46,7 +59,7 @@ The owner's go-ahead ("כן, שלב 3"), from vision's spec (`docs/vision/resear
 - **For design:** new classes `.rx-invites`, `.rx-sharing`, `.rx-role` (a role pill), `.rx-shared` (on a research card),
   `.rx-private` (a note that wasn't shared), `.rx-comments`, `.rx-comment`, `.rx-history`. Inline rules hold the layout for
   now. Also fixed: `.rx-preview` no longer has an inline `display`, so the `[hidden]` guard in research.css can go.
-Status: done on `ai-features`; needs the master's security review before merging.
+Status: done on `ai-features`; reviewed by the master, with the three changes in a47e3c5.
 
 ## 2026-11-14 – The research assistant, step 2 completed: the academic pack, docx and slides, and the ✨ tools (ai-features → master, design)
 

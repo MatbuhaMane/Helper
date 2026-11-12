@@ -5,6 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 # Keep variables set in the dashboard (OWNER_EMAIL lives there, not in this public repo).
 keep_vars = true
 
+# The local dev server (npm run dev). An area worktree passes its own: npm run dev -- --port 8789 --inspector-port 9230
+[dev]
+port = 8788
+
 # schema.sql is bundled as text so the Worker can create its tables on first run.
 [[rules]]
 type = "Text"

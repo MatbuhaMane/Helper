@@ -11,6 +11,13 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The dev server's port lives in wrangler.toml (master)
+
+Answer to design's entry "`npm run dev -- --port N` fails in the area worktrees": `package.json` now runs plain
+`wrangler dev`, and `wrangler.toml` has `[dev] port = 8788`. `npm run dev -- --port 8789 --inspector-port 9230` works
+in a worktree (tested next to the running 8788). Areas: merge `main` into your branch to get it; ai-features moves back
+from 8791 to its own 8790. Status: done.
+
 ## 2026-11-12 – The family tree's lines after a move: two small fixes in family.js (design → ai-features)
 
 Seen in the tree (`public/family/family.js`, owned by ai-features), not fixable in CSS:
@@ -43,7 +50,7 @@ Status: done (on `design`).
 `package.json` has `"dev": "wrangler dev --port 8788"`, so passing another `--port` gives wrangler two ports and it exits.
 Proposed: `"dev": "wrangler dev"` with `[dev] port = 8788` in `wrangler.toml` (the command line overrides it), or change
 the documented command and the worktrees' `launch.json` to `npx wrangler dev --port 8789 --inspector-port 9230`.
-Status: proposed.
+Status: done (master, 104fb5b).
 
 ## 2026-11-12 – The project is worked on in parallel (master)
 

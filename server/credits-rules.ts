@@ -53,3 +53,9 @@ export function withKey(provider: 'claude' | 'gemini', url: string, init: Reques
   h.set('x-goog-api-key', key);
   return [u.href, { ...init, headers: h }];
 }
+
+/** the same for a call made with a Request object: a new Request with the person's key, the rest kept */
+export function requestWithKey(provider: 'claude' | 'gemini', req: Request, key: string): Request {
+  const [url, init] = withKey(provider, req.url, { headers: req.headers }, key);
+  return new Request(url, new Request(req, { headers: init.headers }));
+}

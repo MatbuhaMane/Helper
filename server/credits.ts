@@ -13,6 +13,7 @@ import { Env, HttpError, Ctx, body, json, requireUser, uid } from './core';
 import { costOf, UsageRow } from './prices';
 import { seal, unseal } from './vault/crypto';
 import { setting } from './settings';
+import { rateLimit } from './vault';
 import * as R from './credits-rules';
 
 interface Allowance { email: string; limited: number; since: number }
@@ -90,6 +91,7 @@ export async function mine(ctx: Ctx) {
 /** PUT /api/me/ai/keys {provider, key} – checked with the provider before it is kept (sealed) */
 export async function keySave(ctx: Ctx) {
   const u = requireUser(ctx);
+  await rateLimit(ctx, 'aikey:' + u.email, 10, 3600e3);                  // ten tries an hour: no testing of stolen keys here
   const b = await body<{ provider?: string; key?: string }>(ctx.req);
   const provider = b.provider === 'claude' || b.provider === 'gemini' ? b.provider : null;
   const key = provider && R.cleanKey(provider, b.key);

@@ -65,5 +65,15 @@ eq('the hint shows only the end', C.keyHint('sk-ant-api03-secretsecret1234'), 'â
   eq('Gemini: a request with no headers gets one', new Headers(i3.headers).get('x-goog-api-key'), 'AIza-mine');
 }
 
+/* ---- the same with a Request object ---- */
+{
+  const req = new Request('https://generativelanguage.googleapis.com/v1beta/models/g:generateContent?key=APP-KEY', { method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': 'APP-KEY' }, body: '{"q":1}' });
+  const r = C.requestWithKey('gemini', req, 'AIza-mine');
+  ok('a Request: their key, the app\'s gone from the address', r.headers.get('x-goog-api-key') === 'AIza-mine' && !r.url.includes('APP-KEY'));
+  ok('a Request: method and body kept', r.method === 'POST' && (await r.text()) === '{"q":1}' && r.headers.get('content-type') === 'application/json');
+  const c = C.requestWithKey('claude', new Request('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': 'APP-KEY' }, body: '{}' }), 'sk-ant-mine');
+  eq('a Request to Claude: their key', c.headers.get('x-api-key'), 'sk-ant-mine');
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

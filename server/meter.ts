@@ -10,7 +10,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Env } from './core';
 import { gate } from './credits';
-import { providerOf, withKey } from './credits-rules';
+import { providerOf, requestWithKey, withKey } from './credits-rules';
 
 interface Scope { env: Env; email: string | null; feature: string; waitUntil: (p: Promise<unknown>) => void }
 const store = new AsyncLocalStorage<Scope>();
@@ -98,12 +98,18 @@ function install() {
     // whoever connected their own key has their requests sent with it
     let own = false;
     const scope = store.getStore();
-    if (scope && !(input instanceof Request)) {
-      const target = typeof input === 'string' ? input : input.href;
+    if (scope) {
+      // every way of calling fetch is gated: a string, a URL, or a Request (with its init folded in first)
+      if (input instanceof Request && init) { input = new Request(input, init); init = undefined; }
+      const target = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       const provider = providerOf(target);
       if (provider) {
         const g = await gate(scope.env, scope.email, provider);
-        if (g.key) { [input, init] = withKey(provider, target, init, g.key); own = true; }
+        if (g.key) {
+          if (input instanceof Request) input = requestWithKey(provider, input, g.key);
+          else [input, init] = withKey(provider, target, init, g.key);
+          own = true;
+        }
       }
     }
     const res = await original(input as any, init);

@@ -36,6 +36,18 @@
         : el('p', { class: 'muted small' }, 'עוד אין. מכשיר נעשה מוכר כשפותחים בו את עץ המשפחה בפעם הראשונה.'));
   }
 
+  /* the tools menu: lock its arrangement (design's launcher.js obeys it live – no long press, no right click, no "סידור") */
+  function menuBox() {
+    const tools = H.prefs('tools', { order: [], locked: false });
+    const sw = el('input', { type: 'checkbox', checked: !!tools.locked, 'aria-label': 'נעילת סידור התפריט', onchange: (e) => {
+      tools.locked = e.target.checked; H.savePrefs('tools'); toast(e.target.checked ? 'סידור התפריט נעול' : 'אפשר לסדר את התפריט');
+    } });
+    return el('section', { id: 'menu', class: 'st-menu' },
+      el('h2', {}, 'התפריט'),
+      el('label', { class: 'st-switch' }, sw, ' נעילת סידור התפריט'),
+      el('p', { class: 'muted small' }, 'כשנעול, לחיצה ארוכה (או קליק ימני במחשב) בתפריט הכלים לא מזיזה את האפליקציות.'));
+  }
+
   async function draw() {
     let me;
     try { me = await api('/api/me/ai'); } catch (e) { return say(e); }
@@ -71,7 +83,7 @@
         el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
         el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט')))));
-    root.querySelector('.st')?.append(devicesBox);
+    root.querySelector('.st')?.append(menuBox(), devicesBox);
     drawDevices();
     if (location.hash === '#services') document.getElementById('services')?.scrollIntoView({ block: 'start' });
   }

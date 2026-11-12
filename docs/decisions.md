@@ -376,6 +376,33 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-13 – Companion figures: everything to choose from is free; only a personal figure is paid; Ibn Ezra belongs to the owner's family (vision, the owner)
+
+**Decided:**
+- **Free:** every figure a user can choose. That means:
+  - the simple, cute figures;
+  - the generic ones;
+  - the figures unlocked by badges;
+  - the holiday and event figures.
+- **Paid:** only a personal, custom figure, made like our Ibn Ezra but of the user's choosing, including someone they know.
+  It is either a paid feature or a bonus in a "free for life" track for people who invested in the app.
+- **Ibn Ezra is unique** and belongs only to the owner's family. Other families do not get him.
+- **This replaces "companion packs"** as a paid item. The earlier decisions listed them as a paid extra and per-user
+  purchase: the entry "Product direction", item "The core is free for everyone", and business decision 6.
+
+The owner's words: "זה מה שהתכוונתי. רק הדמות האישית בהתאמה בתשלום או כבונוס. הדמות של ראב"ע היא ייחודית ושייכת רק
+למשפחה שלי."
+
+**Affects:**
+- **Design:** the free figures, following `figure-style`; a default companion for families other than the owner's.
+- **ai-features:** which figures each user sees; Ibn Ezra only in the owner's family; unlocking by badges.
+- **Business:** the revenue model without companion packs, and modelling the new "free for life" track (who gets in,
+  when, and what it gives).
+- **Risk, for business:** a personal figure of a living person, especially someone outside the family, needs that
+  person's consent (`docs/business/risks-and-rights.md`).
+
+Status: Decided (the owner).
+
 ## 2026-11-13 – The research assistant (עוזר מחקר), spec v1: approved for building (vision, the owner)
 
 The owner specced the research assistant with the vision session and approved it ("add formatting and academic writing,

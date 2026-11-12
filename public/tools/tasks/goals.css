@@ -73,8 +73,8 @@
 .gl-goal h3 a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }   /* the whole card opens the goal */
 .gl-goal h3 a:focus-visible { outline: none; }
 .gl-goal:has(h3 a:focus-visible) { outline: 3px solid var(--primary); outline-offset: 2px; }
-.gl-why { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.gl-why::before { content: "למה: "; font-weight: 600; color: var(--olive-ink); }
+.gl-reason { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gl-reason::before { content: "למה: "; font-weight: 600; color: var(--olive-ink); }
 .gl-len { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600;
   background: color-mix(in srgb, var(--olive) 22%, var(--card)); color: var(--text); }
 .gl-len.short { background: color-mix(in srgb, #f2b43c 26%, var(--card)); }
@@ -100,7 +100,7 @@
 /* a goal's own page: the ring large, the why, the week; then each process with its checklist */
 .gl-hero { display: flex; align-items: center; gap: 20px; padding: 20px; flex-wrap: wrap; }
 .gl-hero > div { flex: 1; min-inline-size: 220px; display: grid; gap: 8px; }
-.gl-hero .gl-why { -webkit-line-clamp: 4; font-size: 1rem; }
+.gl-hero .gl-reason { -webkit-line-clamp: 4; font-size: 1rem; }
 .gl-procs { display: grid; gap: 12px; }
 .gl-proc { padding: 0; overflow: hidden; }
 .gl-proc > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 14px 16px; }
@@ -136,25 +136,25 @@
 
 /* ---------- today: two or three big steps, nothing more ---------- */
 .gl-today { display: grid; gap: 12px; max-inline-size: 640px; inline-size: 100%; justify-self: center; }
-.gl-step { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; padding: 16px 18px; }
-.gl-step .gl-tick { inline-size: 48px; block-size: 48px; border-radius: 50%; border: 2.5px solid var(--line-strong); background: var(--card); cursor: pointer; display: grid; place-items: center;
+.gl-tstep { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; padding: 16px 18px; }
+.gl-tstep .gl-tick { inline-size: 48px; block-size: 48px; border-radius: 50%; border: 2.5px solid var(--line-strong); background: var(--card); cursor: pointer; display: grid; place-items: center;
   font-size: 1.4rem; color: transparent; transition: background-color .25s, border-color .25s, color .25s, transform var(--dur-press); }
-.gl-step .gl-tick:hover { border-color: var(--primary); color: color-mix(in srgb, var(--primary) 45%, transparent); }
-.gl-step .gl-tick:active { transform: scale(.9); }
-.gl-step .gl-tick:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
-.gl-step .gl-tick[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); animation: gl-pop .45s var(--ease-river); }
+.gl-tstep .gl-tick:hover { border-color: var(--primary); color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.gl-tstep .gl-tick:active { transform: scale(.9); }
+.gl-tstep .gl-tick:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.gl-tstep .gl-tick[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); animation: gl-pop .45s var(--ease-river); }
 @keyframes gl-pop { 40% { transform: scale(1.18); } }
-.gl-step > div { display: grid; gap: 3px; min-inline-size: 0; }
-.gl-step b { font-size: 1.08rem; font-weight: 600; line-height: 1.35; }
-.gl-step small { color: var(--muted); }
-.gl-step .gl-step-acts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
-.gl-step:has(.gl-tick[aria-pressed="true"]) b { color: var(--muted); text-decoration: line-through; }
-.gl-step:has(.gl-tick[aria-pressed="true"]) { border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); }
+.gl-tstep > div { display: grid; gap: 3px; min-inline-size: 0; }
+.gl-tstep b { font-size: 1.08rem; font-weight: 600; line-height: 1.35; }
+.gl-tstep small { color: var(--muted); }
+.gl-tstep .gl-tstep-acts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.gl-tstep:has(.gl-tick[aria-pressed="true"]) b { color: var(--muted); text-decoration: line-through; }
+.gl-tstep:has(.gl-tick[aria-pressed="true"]) { border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); }
 /* all done for today */
-.gl-done { text-align: center; padding: 26px 18px; display: grid; gap: 6px; justify-items: center; background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
-.gl-done[hidden] { display: none; }
-.gl-done .gl-flame { font-size: 2.4rem; line-height: 1; }
-.gl-done p { margin: 0; }
+.gl-alldone { text-align: center; padding: 26px 18px; display: grid; gap: 6px; justify-items: center; background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+.gl-alldone[hidden] { display: none; }
+.gl-alldone .gl-flame { font-size: 2.4rem; line-height: 1; }
+.gl-alldone p { margin: 0; }
 /* the why comes back (two days without a step): no scolding – the person's own words, and one tiny step */
 .gl-whyback { display: grid; gap: 10px; padding: 18px 20px; border-inline-start: 4px solid var(--olive); background: color-mix(in srgb, var(--olive) 10%, var(--card)); }
 .gl-whyback blockquote { margin: 0; font-size: 1.12rem; line-height: 1.6; font-weight: 500; }
@@ -164,11 +164,11 @@
 /* "נתקעתי" – a quiet way out, never a red button */
 .gl-stuckbtn { font: inherit; font-size: .84rem; padding: 4px 11px; border-radius: 999px; border: 1px dashed var(--line-strong); background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .gl-stuckbtn:hover { color: var(--text); border-style: solid; }
-.gl-stuck { display: grid; gap: 12px; }
-.gl-stuck h2 { font-size: 1.2rem; }
-.gl-stuck .gl-from { margin: 0; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--text) 4%, transparent); color: var(--muted); }
-.gl-stuck .gl-from b { color: var(--text); font-weight: 500; }
-.gl-stuck .gl-q { margin: 0; font-size: 1.05rem; font-weight: 500; }
+.gl-stuckbox { display: grid; gap: 12px; }
+.gl-stuckbox h2 { font-size: 1.2rem; }
+.gl-stuckbox .gl-from { margin: 0; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--text) 4%, transparent); color: var(--muted); }
+.gl-stuckbox .gl-from b { color: var(--text); font-weight: 500; }
+.gl-stuckbox .gl-q { margin: 0; font-size: 1.05rem; font-weight: 500; }
 .gl-five { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--gl-ember-soft); color: var(--text); }
 
 /* ---------- the weekly review: one minute, three questions, quick answers ---------- */
@@ -248,9 +248,9 @@
 .gl-badge:focus-visible img { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 50%; }
 .gl-badge > b { font-size: .8rem; font-weight: 600; line-height: 1.25; }
 /* not yet earned: faded and greyed – visible, and its way told on hover or a tap */
-.gl-badge.locked img { filter: grayscale(1) opacity(.38); }
-.gl-badge.locked > b { color: var(--muted); font-weight: 500; }
-.gl-badge.locked:hover img, .gl-badge.locked[aria-expanded="true"] img { filter: grayscale(.4) opacity(.75); }
+.gl-badge:not(.on):not(.secret) img { filter: grayscale(1) opacity(.38); }
+.gl-badge:not(.on):not(.secret) > b { color: var(--muted); font-weight: 500; }
+.gl-badge:not(.on):not(.secret):hover img, .gl-badge:not(.on):not(.secret)[aria-expanded="true"] img { filter: grayscale(.4) opacity(.75); }
 /* a secret: only its silhouette, no name, no way */
 .gl-badge.secret img { filter: opacity(.3); }
 :root[data-theme="dark"] .gl-badge.secret img { filter: invert(1) opacity(.28); }
@@ -295,6 +295,67 @@
 @media (prefers-reduced-motion: reduce) {
   .gl-ring, .gl-path::after, .gl-bar > i { transition: none; }
   .gl-goal:hover, .gl-todaycard:hover, .gl-lens button:hover { transform: none; }
-  .gl-step .gl-tick[aria-pressed="true"], .gl-mic[aria-pressed="true"], .gl-badge.new img { animation: none; }
+  .gl-tstep .gl-tick[aria-pressed="true"], .gl-mic[aria-pressed="true"], .gl-badge.new img { animation: none; }
   .gl-badge:hover img, .gl-badge[aria-expanded="true"] img { transform: none; }
 }
+
+/* ===================== ai-features' markup in goals.js (daaabe2) =====================
+   The same look for the classes the page draws today. Where it still carries inline layout, that layout wins until
+   ai-features drops it; colours, edges and motion come from here. */
+.gl > .folder-back, .gl-one > .folder-back { justify-self: start; color: var(--muted); text-decoration: none; font-size: .95rem; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.gl > .folder-back:hover, .gl-one > .folder-back:hover { color: var(--primary); }
+.gl :is(.gl-today, .gl-why, .gl-review-due, .gl-process, .gl-empty) { padding: 16px 18px; display: grid; gap: 10px; }
+/* today: the ember card on top; on the rest day, a quiet violet one */
+.gl .gl-today { background: linear-gradient(135deg, var(--gl-ember-soft), color-mix(in srgb, var(--olive) 10%, var(--card))); border-color: color-mix(in srgb, var(--gl-ember) 30%, var(--line)); }
+.gl .gl-today > b:first-child { font-size: 1.1rem; }
+.gl .gl-today.rest { background: color-mix(in srgb, var(--gl-rest) 12%, var(--card)); border-color: color-mix(in srgb, var(--gl-rest) 35%, var(--line)); }
+/* the why comes back */
+.gl .gl-why { border-inline-start: 4px solid var(--olive); background: color-mix(in srgb, var(--olive) 10%, var(--card)); }
+.gl .gl-why > p { font-weight: 500; line-height: 1.6; }
+.gl-why-line { color: var(--muted); font-style: italic; }
+/* the weekly review is due */
+.gl .gl-review-due { background: color-mix(in srgb, var(--gl-rest) 10%, var(--card)); border-color: color-mix(in srgb, var(--gl-rest) 30%, var(--line)); }
+/* the pulse: the week, the streak and the badges as three quiet tiles */
+.gl .gl-pulse { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); background: none; border: 0; box-shadow: none; padding: 0; }
+.gl-pulse > div { display: grid; gap: 2px; align-content: start; padding: 14px 16px; border-radius: 18px; background: var(--card); border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
+.gl-pulse > div > div { font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gl-pulse > div:first-child > div { color: var(--gl-ember); }
+.gl-pulse .btn { justify-self: start; margin-block-start: 4px; }
+/* a goal card (a button) */
+.gl .gl-goal { font: inherit; color: inherit; text-align: start; cursor: pointer; inline-size: 100%; }
+.gl .gl-goal:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.gl-kind { flex: none; display: inline-flex; align-items: center; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; border: 0 !important;
+  background: color-mix(in srgb, var(--olive) 22%, var(--card)); color: var(--text); }
+.gl-kind.short { background: color-mix(in srgb, #f2b43c 26%, var(--card)); }
+.gl-kind.long { background: color-mix(in srgb, var(--gl-rest) 20%, var(--card)); }
+.gl-bar { background: var(--gl-track) !important; }   /* (over the temporary inline --line) */
+.gl-bar > span { display: block; block-size: 100%; background: var(--primary); border-radius: inherit; transition: inline-size .6s var(--ease-river); }
+.gl-goal:has(.gl-bar[aria-valuenow="100"]) .gl-bar > span { background: var(--gl-ember); }
+/* a process and its steps (li.gl-step: a checkbox, the words, נתקעתי) */
+.gl .gl-process.done { border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); background: color-mix(in srgb, var(--primary) 5%, var(--card)); }
+.gl .gl-process.done > div:first-child > b::after { content: " ✓"; color: var(--primary); }
+li.gl-step { padding: 6px 4px; border-radius: 12px; align-items: center !important; }
+li.gl-step:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+li.gl-step input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; margin: 0; inline-size: 24px; block-size: 24px; border-radius: 8px; border: 2px solid var(--line-strong);
+  background: var(--card); cursor: pointer; display: grid; place-items: center; transition: background-color var(--dur-quick), border-color var(--dur-quick), transform var(--dur-press); }
+li.gl-step input[type="checkbox"]::before { content: ""; inline-size: 10px; block-size: 5px; border: solid var(--primary-ink); border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg) scale(0); margin-block-start: -3px;
+  transition: transform .25s var(--ease-river); }
+li.gl-step input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+li.gl-step input[type="checkbox"]:checked::before { transform: rotate(-45deg) scale(1); }
+li.gl-step input[type="checkbox"]:active { transform: scale(.9); }
+li.gl-step input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+li.gl-step.small > span > span:first-child { font-weight: 500; }
+li.gl-step.small { background: var(--gl-ember-soft); }
+/* נתקעתי: quiet and dashed, never alarming */
+.gl .btn.gl-stuck { border-style: dashed; color: var(--muted); border-radius: 999px; }
+.gl .btn.gl-stuck:hover { color: var(--text); border-style: solid; }
+/* the microphone in the wizard (theirs is a small button beside the field) */
+.btn.gl-mic { border-radius: 999px; }
+.btn.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; animation: gl-rec 1.4s ease-in-out infinite; }
+/* the goals reached */
+.gl > details.gl-done > summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.gl .gl-empty { text-align: center; justify-items: center; padding: 28px 20px; }
+/* badges in the gallery (a modal): the embroidered picture once there is one (img), else their placeholder */
+.gl-badge .how { display: block; }
+.gl-badge.soon:not(.on) img, .gl-badge.soon:not(.on) > span { opacity: .5; }
+@media (prefers-reduced-motion: reduce) { .btn.gl-mic[aria-pressed="true"] { animation: none; } }

@@ -7,6 +7,7 @@ import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
 import * as admin from '../../server/admin';
+import * as credits from '../../server/credits';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
@@ -322,6 +323,13 @@ route('GET', '/api/admin/audit', admin.auditList);
 route('GET', '/api/messages', admin.messagesForMe);
 route('POST', '/api/messages/:id/read', admin.messageRead);
 route('GET', '/api/me/features', admin.myFeatures);
+
+/* the AI allowance (ai-features, server/credits.ts): a person's own services, and the room's view of everyone's */
+route('GET', '/api/me/ai', credits.mine);
+route('PUT', '/api/me/ai/keys', credits.keySave);
+route('DELETE', '/api/me/ai/keys/:provider', credits.keyDelete);
+route('GET', '/api/admin/allowances', admin.allowances);
+route('PUT', '/api/admin/allowances', admin.allowanceSave);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

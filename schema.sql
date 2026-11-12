@@ -670,3 +670,31 @@ CREATE TABLE IF NOT EXISTS user_features (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (email, feature)
 );
+
+-- The AI allowance (server/credits.ts): a member with no row is family (no limit, at the owner's cost); a new account
+-- from an invitation is limited and spends its grants (trial, purchase, gift – none expire). Own keys are sealed.
+CREATE TABLE IF NOT EXISTS ai_allowance (
+  email      TEXT PRIMARY KEY,
+  limited    INTEGER NOT NULL DEFAULT 1,
+  since      INTEGER NOT NULL,                -- usage from here on is spent from the grants
+  updated_by TEXT,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ai_credits (
+  id         TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  source     TEXT NOT NULL,                   -- trial | purchase | gift
+  usd        REAL NOT NULL,                   -- dollars of real AI cost (prices.ts costOf)
+  note       TEXT,
+  by_email   TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ai_credits_email ON ai_credits(email);
+CREATE TABLE IF NOT EXISTS user_ai_keys (
+  email    TEXT NOT NULL,
+  provider TEXT NOT NULL,                     -- claude | gemini
+  key_enc  TEXT NOT NULL,
+  hint     TEXT,
+  added_at INTEGER NOT NULL,
+  PRIMARY KEY (email, provider)
+);

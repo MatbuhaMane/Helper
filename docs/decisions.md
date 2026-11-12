@@ -11,6 +11,34 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The AI allowance: the family free, new accounts on an opening gift, own keys (ai-features, the owner's decision)
+
+The owner: new users simply use the app on the credit they were given, with no notice; they connect their own
+service or buy credit in the app's settings, "חיבור לשירותים"; the owner's family has no limit at all, on the owner.
+- **Who is limited**: only a row in `ai_allowance` with `limited = 1`. A member with no row – everyone invited until now,
+  and everyone the owner invites – is family. The room's members table has a switch per member (the owners cannot be
+  limited). A new account from an invitation is started with `startTrial(env, email)` (`server/credits.ts`): limited, with
+  a one-time trial grant of `credits.trial_ils` (a setting, ₪1.5) in dollars of real AI cost.
+- **Grants** (`ai_credits`): a source each – trial, purchase, gift; none expire; spent gift first, then trial, then purchase
+  (`server/credits-rules.ts`, 24 tests in `server/test-credits.mjs`). The balance is the grants less the real cost
+  (`costOf`) of what the account used since it started, not counting what went with its own key.
+- **Enforcement, in the master's files (small; please review every line)**: `server/meter.ts` – before each request to
+  Claude or Gemini, `gate()`: a limited account with nothing left gets `402 ai_credit_needed`; whoever connected their
+  own key has the request sent with it (`x-api-key`, `x-goog-api-key`) and the row marked `own_key`. `server/ai.ts` –
+  `aiJson` returns that 402 when any provider was refused for credit (the Anthropic SDK wraps it in its own error).
+- **Own keys** (`user_ai_keys`, sealed with the vault key): Claude and Gemini are real – checked with the provider (listing
+  the models, free) before they are kept. ChatGPT and buying credit are placeholders ("בקרוב"): no OpenAI path, no payments.
+- **Appended**: tables `ai_allowance`, `ai_credits`, `user_ai_keys`; column `ai_usage.own_key` (COLUMNS); five routes
+  (`/api/me/ai`, `/api/me/ai/keys`, `/api/admin/allowances`); a setting `credits.trial_ils`. The cost report and the room
+  leave out own-key rows (they cost the owner nothing).
+- New pages and files: `public/settings/` (הגדרות: the account, and "חיבור לשירותים", `#services`), `public/assets/ai-invite.js`
+  (`H.aiInvite()`: the invitation when the AI says no for credit).
+- **For the master** (proposed): `common.js` – in `api()`, on `402 ai_credit_needed` call `H.aiInvite()` (load
+  `/assets/ai-invite.js`), so every AI button invites instead of erroring; the user menu could open `/settings/` (it has
+  logout too); `admitMember` for invitation guests calls `startTrial`; `test:credits` in `npm test`.
+- **For design**: `.st`, `.st-account`, `.st-services`, `.st-service`, `.st-key`, and `.ai-invite` (the modal) – unstyled.
+Status: done on `ai-features`; the gifts in the room come after guest sign-up opens.
+
 ## 2026-11-12 – החדר של האוהל: the owner's room, entered with the owner's biometric (ai-features, at the owner's request)
 
 The owner's easter egg behind the moon (`/admin/`), rebuilt as the back door to the app's settings:

@@ -17,6 +17,7 @@ import { verifyAssertion } from './vault/webauthn';
 import { costOf, UsageRow } from './prices';
 import { saveSetting, settingsNow } from './settings';
 import * as R from './admin-rules';
+import { allowanceOf, setLimited } from './credits';
 
 const rpId = (ctx: Ctx) => ctx.url.hostname;
 const b64u = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -109,7 +110,7 @@ export async function leave(ctx: Ctx) {
 
 const count = async (env: Env, sql: string, ...args: unknown[]) => ((await env.DB.prepare(sql).bind(...args).first<{ n: number }>())?.n || 0);
 async function aiByMonth(env: Env) {
-  const { results } = await env.DB.prepare('SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage ORDER BY at LIMIT 500000').all<UsageRow & { at: number }>();
+  const { results } = await env.DB.prepare('SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE COALESCE(own_key, 0) = 0 ORDER BY at LIMIT 500000').all<UsageRow & { at: number }>();
   const by: Record<string, number> = {};
   let calls = 0, today = 0;
   const day = new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
@@ -305,3 +306,29 @@ export async function auditList(ctx: Ctx) {
 
 /** for other modules: is this member one of the owners (OWNER_EMAIL)? */
 export const isMainOwner = (env: Env, m: Member) => owners(env).has(m.email);
+
+/* ---------------- the AI allowance of each member (server/credits.ts) ---------------- */
+
+/** GET /api/admin/allowances – each member: family (no limit), or limited with what is left */
+export async function allowances(ctx: Ctx) {
+  await requireAdmin(ctx, 'own');
+  const { results } = await ctx.env.DB.prepare('SELECT email FROM members ORDER BY email').all<{ email: string }>();
+  const rate = Number((await settingsNow(ctx.env)).find((s) => s.key === 'money.usd_ils')?.value || 3.7);
+  const out: Record<string, { limited: boolean; left_ils?: number; spent_ils?: number }> = {};
+  for (const m of results) {
+    const a = await allowanceOf(ctx.env, m.email) as { limited: boolean; total?: number; spent?: number };
+    out[m.email] = a.limited ? { limited: true, left_ils: Math.round((a.total || 0) * rate * 100) / 100, spent_ils: Math.round((a.spent || 0) * rate * 100) / 100 } : { limited: false };
+  }
+  return json({ allowances: out });
+}
+/** PUT /api/admin/allowances {email, limited} – mark someone family (no limit) or limited */
+export async function allowanceSave(ctx: Ctx) {
+  const a = await requireAdmin(ctx, 'own');
+  const b = await body<{ email?: string; limited?: boolean }>(ctx.req);
+  const email = String(b.email || '').toLowerCase();
+  if (!(await ctx.env.DB.prepare('SELECT 1 FROM members WHERE email = ?').bind(email).first())) throw new HttpError(404, 'not_member');
+  if (owners(ctx.env).has(email) && b.limited) throw new HttpError(400, 'already_owner');
+  await setLimited(ctx.env, email, !!b.limited, a.by);
+  await log(ctx, a, b.limited ? 'ai:limited' : 'ai:family', email);
+  return json({ ok: true });
+}

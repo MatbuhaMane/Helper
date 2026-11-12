@@ -136,17 +136,24 @@
 
   /* ---------- members (who may sign in, and to which household) ---------- */
   async function members(box) {
-    const { members: list } = await call('/api/members');
+    const [{ members: list }, { allowances: ai }] = await Promise.all([call('/api/members'), call('/api/admin/allowances')]);
+    // the AI: family has no limit (on you); a limited account spends its credit (server/credits.ts)
+    const aiCell = (m) => {
+      const a = ai[m.email] || { limited: false };
+      const sw = el('input', { type: 'checkbox', checked: !a.limited, 'aria-label': 'AI בלי הגבלה ל־' + m.email, disabled: m.role === 'owner',
+        onchange: async (e) => { try { await call('/api/admin/allowances', { method: 'PUT', body: { email: m.email, limited: !e.target.checked } }); toast(e.target.checked ? 'בלי הגבלה' : 'מוגבל לקרדיט'); members(box); } catch (err) { say(err); } } });
+      return el('td', {}, el('label', {}, sw, a.limited ? ` מוגבל · נשאר ₪${a.left_ils}` : ' משפחה, בלי הגבלה'));
+    };
     const email = el('input', { type: 'email', required: true, dir: 'ltr', placeholder: 'כתובת Gmail', 'aria-label': 'כתובת Gmail' });
     const he = el('input', { type: 'text', placeholder: 'שם בעברית', 'aria-label': 'השם בעברית' });
     const house = el('input', { type: 'text', value: 'family', dir: 'ltr', 'aria-label': 'משק הבית' });
     box.replaceChildren(section('members-s', 'חברים',
       el('p', { class: 'muted small' }, 'רק מי שברשימה יכול להתחבר. משק הבית קובע עם מי חולקים רשימת קניות, מתכונים, לוח שנה ועץ משפחה.'),
-      el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ['שם', 'אימייל', 'בית', 'תפקיד', ''].map((h) => el('th', {}, h)))),
+      el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ['שם', 'אימייל', 'בית', 'תפקיד', 'AI', ''].map((h) => el('th', {}, h)))),
         el('tbody', {}, list.map((m) => el('tr', {},
           el('td', {}, el('input', { type: 'text', value: m.he_name || '', placeholder: m.name || '', 'aria-label': 'השם בעברית של ' + (m.name || m.email), style: 'inline-size:9em',
             onchange: async (e) => { try { await call('/api/members/' + encodeURIComponent(m.email) + '/name', { method: 'PUT', body: { he_name: e.target.value } }); toast('נשמר'); } catch (err) { say(err); } } })),
-          el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household), el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר'),
+          el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household), el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר'), aiCell(m),
           el('td', {}, m.email === st.as.email ? '' : btn('✕', async () => { await call('/api/members/' + encodeURIComponent(m.email), { method: 'DELETE' }); members(box); }, 'btn small ghost', `להסיר את ${m.email}?`))))))),
       el('form', { class: 'ad-form', onsubmit: async (e) => {
         e.preventDefault();
@@ -227,7 +234,7 @@
   /* ---------- the room's own log ---------- */
   async function log(box) {
     const { log: list } = await call('/api/admin/audit');
-    const ACT = { enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
+    const ACT = { 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
       'feature:on': 'פתח תכונה', 'feature:off': 'סגר תכונה', 'super:add': 'נתן הרשאת־על', 'super:remove': 'ביטל הרשאת־על' };
     box.replaceChildren(section('log-s', 'יומן החדר',
       list.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('tbody', {}, list.map((r) => el('tr', {},

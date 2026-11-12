@@ -24,6 +24,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['fridges', 'household', 'TEXT'],       // whose fridge (older rows: the family's)
   ['family_people', 'privacy', 'TEXT'],      // JSON {identity, dates, notes, files}: private | household | linked | forest
   ['family_people', 'anonymous', 'INTEGER'], // 1: outside the household only "קרוב/ת משפחה"
+  ['ai_usage', 'own_key', 'INTEGER'],        // 1: sent with the person's own key (costs the owner nothing, needs no credit)
 ];
 
 let ready: Promise<void> | null = null;

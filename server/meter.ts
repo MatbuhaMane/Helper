@@ -9,6 +9,8 @@
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Env } from './core';
+import { gate } from './credits';
+import { providerOf } from './credits-rules';
 
 interface Scope { env: Env; email: string | null; feature: string; waitUntil: (p: Promise<unknown>) => void }
 const store = new AsyncLocalStorage<Scope>();
@@ -26,12 +28,12 @@ export function featureOf(path: string) {
 
 interface Usage { provider: 'claude' | 'gemini'; model: string; input: number; output: number; cacheWrite: number; cacheRead: number; searches: number; grounded: number; audioOut: number; imageOut: number }
 
-function record(u: Usage) {
+function record(u: Usage, own = false) {
   const s = store.getStore();
   if (!s || !(u.input || u.output || u.cacheRead || u.cacheWrite)) return;
-  s.waitUntil(s.env.DB.prepare(`INSERT INTO ai_usage (at, email, feature, provider, model, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(Date.now(), s.email, s.feature, u.provider, u.model.slice(0, 80), u.input, u.output, u.cacheWrite, u.cacheRead, u.searches, u.grounded, u.audioOut, u.imageOut).run()
+  s.waitUntil(s.env.DB.prepare(`INSERT INTO ai_usage (at, email, feature, provider, model, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out, own_key)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(Date.now(), s.email, s.feature, u.provider, u.model.slice(0, 80), u.input, u.output, u.cacheWrite, u.cacheRead, u.searches, u.grounded, u.audioOut, u.imageOut, own ? 1 : null).run()
     .catch((e: unknown) => console.error('meter', e instanceof Error ? e.message : e)));
 }
 
@@ -44,7 +46,7 @@ function claudeUsage(model: string, us: any): Usage {
     searches: us?.server_tool_use?.web_search_requests || 0, grounded: 0, audioOut: 0, imageOut: 0,
   };
 }
-async function readClaudeStream(body: ReadableStream<Uint8Array>, fallbackModel: string) {
+async function readClaudeStream(body: ReadableStream<Uint8Array>, fallbackModel: string, own: boolean) {
   const reader = body.pipeThrough(new TextDecoderStream()).getReader();
   let buf = '', model = fallbackModel;
   const us: Record<string, any> = {};
@@ -68,7 +70,7 @@ async function readClaudeStream(body: ReadableStream<Uint8Array>, fallbackModel:
       } catch (_) { /* a partial line or a ping */ }
     }
   }
-  record(claudeUsage(model, us));
+  record(claudeUsage(model, us), own);
 }
 
 /* ---------- Gemini: usageMetadata in the answer (and grounding metadata when Google Search was used) ---------- */
@@ -86,12 +88,34 @@ function geminiUsage(model: string, d: any): Usage {
   };
 }
 
+/** a request sent with the person's own key instead of the app's (server/credits.ts) */
+function withKey(provider: 'claude' | 'gemini', url: string, init: RequestInit | undefined, key: string): [string, RequestInit] {
+  const h = new Headers(init?.headers);
+  if (provider === 'claude') { h.set('x-api-key', key); return [url, { ...init, headers: h }]; }
+  const u = new URL(url);
+  u.searchParams.delete('key');
+  h.set('x-goog-api-key', key);
+  return [u.href, { ...init, headers: h }];
+}
+
 let installed = false;
 function install() {
   if (installed) return;
   installed = true;
   const original = globalThis.fetch;
   globalThis.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
+    // the allowance (server/credits.ts): a limited account with nothing left is refused (402 ai_credit_needed), and
+    // whoever connected their own key has their requests sent with it
+    let own = false;
+    const scope = store.getStore();
+    if (scope && !(input instanceof Request)) {
+      const target = typeof input === 'string' ? input : input.href;
+      const provider = providerOf(target);
+      if (provider) {
+        const g = await gate(scope.env, scope.email, provider);
+        if (g.key) { [input, init] = withKey(provider, target, init, g.key); own = true; }
+      }
+    }
     const res = await original(input as any, init);
     try {
       if (!store.getStore() || !res.ok) return res;
@@ -101,13 +125,13 @@ function install() {
         try { model = JSON.parse(typeof init?.body === 'string' ? init.body : '{}').model || ''; } catch (_) { /* not JSON */ }
         if ((res.headers.get('content-type') || '').includes('text/event-stream') && res.body) {
           const [mine, theirs] = res.body.tee();
-          store.getStore()!.waitUntil(readClaudeStream(mine, model).catch(() => {}));
+          store.getStore()!.waitUntil(readClaudeStream(mine, model, own).catch(() => {}));
           return new Response(theirs, { status: res.status, statusText: res.statusText, headers: res.headers });
         }
-        res.clone().json().then((d: any) => record(claudeUsage(d?.model || model, d?.usage))).catch(() => {});
+        res.clone().json().then((d: any) => record(claudeUsage(d?.model || model, d?.usage), own)).catch(() => {});
       } else if (url.startsWith('https://generativelanguage.googleapis.com/') && /:generateContent/.test(url)) {
         const model = /models\/([^:]+):/.exec(url)?.[1] || '';
-        res.clone().json().then((d: any) => record(geminiUsage(model, d))).catch(() => {});
+        res.clone().json().then((d: any) => record(geminiUsage(model, d), own)).catch(() => {});
       }
     } catch (e) { console.error('meter', e instanceof Error ? e.message : e); }
     return res;

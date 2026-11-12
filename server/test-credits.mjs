@@ -1,0 +1,54 @@
+// Tests for the AI allowance (server/credits-rules.ts):   node server/test-credits.mjs
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const dir = mkdtempSync(join(tmpdir(), 'credits-test-'));
+const out = join(dir, 'credits.mjs');
+execFileSync(process.execPath, [join(process.cwd(), 'node_modules/esbuild/bin/esbuild'), join(process.cwd(), 'server/credits-rules.ts'), '--bundle', '--format=esm', '--platform=neutral', `--outfile=${out}`, '--log-level=error']);
+const C = await import(pathToFileURL(out).href);
+
+let pass = 0, fail = 0;
+const ok = (name, cond) => { if (cond) pass++; else { fail++; console.error('FAIL', name); } };
+const eq = (name, got, want) => ok(`${name}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`, JSON.stringify(got) === JSON.stringify(want));
+const r2 = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, Math.round(v * 1e6) / 1e6]));
+
+/* ---- what is left, and in which order it is spent ---- */
+const g = [{ source: 'trial', usd: 0.4, at: 1 }, { source: 'gift', usd: 0.2, at: 2 }, { source: 'purchase', usd: 1, at: 3 }];
+eq('nothing spent', r2(C.remaining(g, 0)), { gift: 0.2, trial: 0.4, purchase: 1, total: 1.6, granted: 1.6, over: 0 });
+eq('gifts first', r2(C.remaining(g, 0.15)), { gift: 0.05, trial: 0.4, purchase: 1, total: 1.45, granted: 1.6, over: 0 });
+eq('then the trial', r2(C.remaining(g, 0.5)), { gift: 0, trial: 0.1, purchase: 1, total: 1.1, granted: 1.6, over: 0 });
+eq('what was bought lasts longest', r2(C.remaining(g, 1.2)), { gift: 0, trial: 0, purchase: 0.4, total: 0.4, granted: 1.6, over: 0 });
+eq('spent past everything', r2(C.remaining(g, 2)), { gift: 0, trial: 0, purchase: 0, total: 0, granted: 1.6, over: 0.4 });
+eq('two gifts add up', r2(C.remaining([{ source: 'gift', usd: 0.1, at: 1 }, { source: 'gift', usd: 0.1, at: 2 }], 0.05)).gift, 0.15);
+eq('an unknown source or a negative grant counts for nothing', C.remaining([{ source: 'free', usd: 5, at: 1 }, { source: 'gift', usd: -1, at: 2 }], 0).total, 0);
+eq('no grants', C.remaining([], 0.3).total, 0);
+
+/* ---- may they use the AI now ---- */
+ok('family: always', C.mayUse(false, 0, false));
+ok('a new account with something left', C.mayUse(true, 0.01, false));
+ok('a new account with nothing left: no', !C.mayUse(true, 0, false));
+ok('their own key: always', C.mayUse(true, 0, true));
+
+/* ---- the trial ---- */
+eq('₪1.5 at 3.75 = $0.4', C.trialUsd(1.5, 3.75), 0.4);
+
+/* ---- which requests are AI ---- */
+eq('Claude', C.providerOf('https://api.anthropic.com/v1/messages'), 'claude');
+eq('Claude: counting tokens is not a call', C.providerOf('https://api.anthropic.com/v1/messages/count_tokens'), null);
+eq('Gemini', C.providerOf('https://generativelanguage.googleapis.com/v1beta/models/gemini-x:generateContent?key=k'), 'gemini');
+eq('Gemini streaming', C.providerOf('https://generativelanguage.googleapis.com/v1beta/models/gemini-x:streamGenerateContent?alt=sse'), 'gemini');
+eq('Gemini: listing models is not a call', C.providerOf('https://generativelanguage.googleapis.com/v1beta/models?key=k'), null);
+eq('anything else', C.providerOf('https://www.hebcal.com/hebcal'), null);
+
+/* ---- keys ---- */
+ok('a Claude key', C.cleanKey('claude', ' sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789 ') === 'sk-ant-api03-abcdefghijklmnopqrstuvwxyz0123456789');
+ok('a Gemini key', C.cleanKey('gemini', 'AIzaSyA1234567890abcdefghijklmnopqrstuv') === 'AIzaSyA1234567890abcdefghijklmnopqrstuv');
+ok('a key of the wrong shape', C.cleanKey('claude', 'AIzaSyA1234567890abcdefghijklmnopqrstuv') === null && C.cleanKey('gemini', 'hello') === null);
+ok('an unknown provider', C.cleanKey('openai', 'sk-abc') === null);
+eq('the hint shows only the end', C.keyHint('sk-ant-api03-secretsecret1234'), '…1234');
+
+console.log(`${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

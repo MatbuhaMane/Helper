@@ -11,6 +11,20 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
+
+The owner gives AI credit to chosen people from the room: the owner only (not a super), from the owner's own account,
+written to the room's log. A gift is a grant of the source "gift" in `ai_credits` – shekels of real AI cost turned into
+dollars at the room's rate, spent before any other credit, never expiring, never refunded or moved. Above ₪20 the server
+answers `409 {confirm: true}` and the room asks again. The recipient gets a personal note for a month ("🎁 קיבלת מתנה
+מהאוהל: קרדיט בשווי ₪…", with the owner's word if any, linking to הגדרות) – a gift's recipient is one of those who see
+amounts (`credits-rules.showsAmounts`), so nobody on the trial alone sees one. The room shows this month's gifts, what they
+come to, and how much of each person's gifts was really used (gifts go first, so it is what they spent, up to the gifts).
+- **Appended**: column `admin_messages.to_email` (COLUMNS: a message for one person; the list of messages to everyone
+  leaves those out); routes `GET/POST /api/admin/gifts`. Rules in `server/credits-rules.ts` (`giftIls`, `needsConfirm`,
+  `ilsToUsd`, `giftUsed`), 8 more tests (46).
+Status: done on `ai-features`.
+
 ## 2026-11-12 – Guests join from an invitation, into a household of their own (master)
 
 The owner's decision (business's entry "Guests can join once new accounts are AI-limited"), now that the allowance exists:

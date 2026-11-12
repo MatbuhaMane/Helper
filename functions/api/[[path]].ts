@@ -345,6 +345,8 @@ route('GET', '/api/design/images', designImages.list);
 route('POST', '/api/design/images', designImages.make);
 route('GET', '/api/design/images/:batch/:i', designImages.picture);
 route('PUT', '/api/admin/allowances', admin.allowanceSave);
+route('GET', '/api/admin/gifts', admin.gifts);
+route('POST', '/api/admin/gifts', admin.giftAdd);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

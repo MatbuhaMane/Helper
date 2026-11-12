@@ -81,5 +81,16 @@ ok('after a gift: amounts', C.showsAmounts([{ source: 'trial' }, { source: 'gift
 ok('after a purchase: amounts', C.showsAmounts([{ source: 'purchase' }]));
 ok('no grants: no amounts', !C.showsAmounts([]));
 
+/* ---- gifts ---- */
+eq('a gift in shekels', [C.giftIls('5'), C.giftIls(20.004), C.giftIls(0), C.giftIls(-3), C.giftIls(501), C.giftIls('x')], [5, 20, null, null, null, null]);
+ok('₪20: no second confirmation', !C.needsConfirm(20, undefined));
+ok('₪20.5: a second confirmation', C.needsConfirm(20.5, undefined) && !C.needsConfirm(20.5, true) && C.needsConfirm(25, 'yes'));
+eq('₪37 at 3.7 = $10', C.ilsToUsd(37, 3.7), 10);
+const gifted = [{ source: 'trial', usd: 0.4, at: 1 }, { source: 'gift', usd: 1, at: 2 }, { source: 'gift', usd: 0.5, at: 3 }];
+eq('used of the gifts: what was spent, gifts first', C.giftUsed(gifted, 0.7), 0.7);
+eq('used of the gifts: never more than the gifts', C.giftUsed(gifted, 3), 1.5);
+eq('used of the gifts: nothing spent', C.giftUsed(gifted, 0), 0);
+eq('no gifts', C.giftUsed([{ source: 'trial', usd: 1, at: 1 }], 0.5), 0);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

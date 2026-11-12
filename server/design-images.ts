@@ -41,7 +41,7 @@ export async function make(ctx: Ctx) {
   const refs = await Promise.all(ask.refs.map((p) => asset(ctx, p)));
   const model = ctx.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image';
   const base = (ctx.env.DEV_MODE === '1' && ctx.env.GEMINI_BASE_URL) || 'https://generativelanguage.googleapis.com';
-  const batch = R.batchName(today(), uid());
+  const batch = R.batchName(today(), uid()), started = Date.now();
   const images: { i: number; url: string }[] = [], failed: string[] = [];
   for (let i = 1; i <= ask.n; i++) {
     // metered as its own kind, so the cost report shows what design's pictures cost
@@ -54,12 +54,14 @@ export async function make(ctx: Ctx) {
       }),
     }));
     if (!res.ok) { failed.push(`${i}: ${res.status}`); console.error('design image', res.status, (await res.text().catch(() => '')).slice(0, 300)); continue; }
-    const pic = R.imageOf(await res.json());
+    const data = await res.json();
+    const usd = costOf(R.usageOf(model, Date.now(), data));          // this picture's own cost, kept with it
+    const pic = R.imageOf(data);
     if ('why' in pic) { failed.push(`${i}: ${pic.why}`); continue; }
     const bytes = Uint8Array.from(atob(pic.b64), (c) => c.charCodeAt(0));
     await ctx.env.MEDIA.put(`design/${batch}/${i}.${R.extOf(pic.mime)}`, bytes, { httpMetadata: { contentType: pic.mime } });
-    await ctx.env.DB.prepare('INSERT INTO design_images (batch, i, day, prompt, refs, aspect, mime, size, by_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(batch, i, today(), ask.prompt, JSON.stringify(ask.refs), ask.aspect, pic.mime, bytes.length, u.email, Date.now()).run();
+    await ctx.env.DB.prepare('INSERT INTO design_images (batch, i, day, prompt, refs, aspect, mime, size, by_email, created_at, usd, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(batch, i, today(), ask.prompt, JSON.stringify(ask.refs), ask.aspect, pic.mime, bytes.length, u.email, Date.now(), usd, started).run();
     images.push({ i, url: `/api/design/images/${batch}/${i}` });
   }
   if (!images.length) throw new HttpError(502, 'images_failed: ' + failed.join('; ').slice(0, 300));
@@ -80,18 +82,26 @@ export async function picture(ctx: Ctx) {
 /** GET /api/design/images – the batches (prompt, references, when, how many, what they cost), so nothing is made twice */
 export async function list(ctx: Ctx) {
   requireOwner(ctx);
-  const { results } = await ctx.env.DB.prepare(`SELECT batch, MIN(prompt) AS prompt, MIN(refs) AS refs, MIN(aspect) AS aspect, COUNT(*) AS n, GROUP_CONCAT(i) AS made, MIN(created_at) AS first, MAX(created_at) AS last
-    FROM design_images GROUP BY batch ORDER BY first DESC LIMIT 100`).all<{ batch: string; prompt: string; refs: string; aspect: string; n: number; made: string; first: number; last: number }>();
-  // the cost of each batch: the meter's design-image calls between its first and last picture (give or take a minute)
-  const since = results.length ? Math.min(...results.map((r) => r.first)) - 10 * 60e3 : Date.now();
-  const { results: usage } = await ctx.env.DB.prepare("SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE feature = 'design-image' AND at >= ?")
-    .bind(since).all<UsageRow & { at: number }>();
+  const { results } = await ctx.env.DB.prepare(`SELECT batch, MIN(prompt) AS prompt, MIN(refs) AS refs, MIN(aspect) AS aspect, COUNT(*) AS n, GROUP_CONCAT(i) AS made,
+      MIN(created_at) AS first, MAX(created_at) AS last, MIN(started_at) AS started, SUM(usd) AS usd, COUNT(usd) AS priced
+    FROM design_images GROUP BY batch ORDER BY first DESC LIMIT 100`).all<{ batch: string; prompt: string; refs: string; aspect: string; n: number; made: string; first: number; last: number; started: number | null; usd: number | null; priced: number }>();
+  // a batch's cost: the sum of its own pictures' costs. Batches made before that was kept: each metered call goes to one
+  // batch only, the latest one started by then. Their start, when it is not known: 3 seconds before the first picture
+  // (a call's meter row is written just before its picture is kept, and a call takes 8–10 seconds)
+  const old = results.filter((b) => b.priced < b.n);
+  const fromMeter: Record<string, number> = {};
+  if (old.length) {
+    const starts = results.map((b) => ({ batch: b.batch, start: b.started ?? b.first - 3e3 }));
+    const { results: usage } = await ctx.env.DB.prepare("SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE feature = 'design-image' AND at >= ?")
+      .bind(Math.min(...starts.map((s) => s.start))).all<UsageRow & { at: number }>();
+    for (const x of usage) { const b = R.batchOf(x.at, starts); if (b) fromMeter[b] = (fromMeter[b] || 0) + (costOf(x) ?? 0); }
+  }
   const made = (await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM design_images WHERE day = ?').bind(today()).first<{ n: number }>())?.n || 0;
   return json({
     today: made, cap: await setting<number>(ctx.env, 'design.images_per_day'),
     batches: results.map((b) => ({
       batch: b.batch, prompt: b.prompt, refs: JSON.parse(b.refs || '[]'), aspect: b.aspect, n: b.n, at: b.first,
-      usd: Math.round(usage.filter((x) => x.at >= b.first - 60e3 && x.at <= b.last + 60e3).reduce((s, x) => s + (costOf(x) ?? 0), 0) * 10000) / 10000,
+      usd: Math.round((b.priced === b.n ? b.usd || 0 : fromMeter[b.batch] || 0) * 10000) / 10000,
       images: String(b.made || '').split(',').filter(Boolean).map(Number).sort((x, y) => x - y).map((i) => `/api/design/images/${b.batch}/${i}`),
     })),
   });

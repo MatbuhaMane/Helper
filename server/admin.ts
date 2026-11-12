@@ -19,7 +19,8 @@ import { verifyAssertion } from './vault/webauthn';
 import { costOf, UsageRow } from './prices';
 import { saveSetting, settingsNow } from './settings';
 import * as R from './admin-rules';
-import { allowanceOf, setLimited } from './credits';
+import { allowanceOf, balance, setLimited } from './credits';
+import * as C from './credits-rules';
 
 const rpId = (ctx: Ctx) => ctx.url.hostname;
 const b64u = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -241,7 +242,7 @@ export async function supersSave(ctx: Ctx) {
 const LEVELS = new Set(['info', 'warn', 'party']);
 export async function messagesList(ctx: Ctx) {
   await requireAdmin(ctx, 'own');
-  const { results } = await ctx.env.DB.prepare('SELECT m.*, (SELECT COUNT(*) FROM message_reads r WHERE r.message = m.id) AS seen FROM admin_messages m ORDER BY m.created_at DESC LIMIT 50').all();
+  const { results } = await ctx.env.DB.prepare('SELECT m.*, (SELECT COUNT(*) FROM message_reads r WHERE r.message = m.id) AS seen FROM admin_messages m WHERE m.to_email IS NULL ORDER BY m.created_at DESC LIMIT 50').all();
   return json({ messages: results, members: await count(ctx.env, 'SELECT COUNT(*) AS n FROM members') });
 }
 export async function messageSend(ctx: Ctx) {
@@ -267,8 +268,8 @@ export async function messageStop(ctx: Ctx) {
 /** GET /api/messages – for everyone signed in: what the owner sent and they have not closed yet */
 export async function messagesForMe(ctx: Ctx) {
   const u = requireUser(ctx);
-  const { results } = await ctx.env.DB.prepare(`SELECT id, text, level, link, created_at FROM admin_messages m WHERE active = 1 AND ends_at > ?
-    AND NOT EXISTS (SELECT 1 FROM message_reads r WHERE r.message = m.id AND r.email = ?) ORDER BY created_at DESC LIMIT 3`).bind(Date.now(), u.email).all();
+  const { results } = await ctx.env.DB.prepare(`SELECT id, text, level, link, created_at FROM admin_messages m WHERE active = 1 AND ends_at > ? AND (m.to_email IS NULL OR m.to_email = ?)
+    AND NOT EXISTS (SELECT 1 FROM message_reads r WHERE r.message = m.id AND r.email = ?) ORDER BY created_at DESC LIMIT 3`).bind(Date.now(), u.email, u.email).all();
   return json({ messages: results });
 }
 export async function messageRead(ctx: Ctx) {
@@ -347,4 +348,60 @@ export async function allowanceSave(ctx: Ctx) {
   await setLimited(ctx.env, email, !!b.limited, a.by);
   await log(ctx, a, b.limited ? 'ai:limited' : 'ai:family', email);
   return json({ ok: true });
+}
+
+/* ---------------- credit gifts (the owner only, from the owner's own account) ---------------- */
+// A gift is a grant of the source "gift" (ai_credits): shekels of real AI cost, spent before any other credit, never
+// expiring, never refunded or moved. Above ₪20 the room asks again (confirm: true). The recipient gets a note – only a
+// buyer or a gift's recipient ever sees amounts (credits-rules.showsAmounts), and a recipient is one by now.
+
+const monthStart = () => { const d = new Date(Date.now() + 2 * 3600e3); return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1) - 2 * 3600e3; };
+
+/** POST /api/admin/gifts {email, ils, note, confirm} */
+export async function giftAdd(ctx: Ctx) {
+  const a = await requireAdmin(ctx, 'own');
+  if (a.level !== 'owner') throw new HttpError(403, 'owner_only');
+  const b = await body<{ email?: string; ils?: unknown; note?: string; confirm?: unknown }>(ctx.req);
+  const email = String(b.email || '').trim().toLowerCase();
+  const m = await ctx.env.DB.prepare('SELECT he_name, name FROM members WHERE email = ?').bind(email).first<{ he_name: string | null; name: string | null }>();
+  if (!m) throw new HttpError(404, 'not_member');
+  const ils = C.giftIls(b.ils);
+  if (ils === null) throw new HttpError(400, 'bad_amount');
+  if (C.needsConfirm(ils, b.confirm)) return json({ confirm: true, ils }, 409);        // the room asks again
+  const rate = Number((await settingsNow(ctx.env)).find((s) => s.key === 'money.usd_ils')?.value || 3.7);
+  const note = String(b.note || '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, 200);
+  const now = Date.now();
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare('INSERT INTO ai_credits (id, email, source, usd, note, by_email, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(uid(), email, 'gift', C.ilsToUsd(ils, rate), note || null, a.by, now),
+    // the recipient's note, for them alone, for a month
+    ctx.env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
+      .bind(uid(), `🎁 קיבלת מתנה מהאוהל: קרדיט בשווי ₪${ils} לעוזר החכם.${note ? ' ' + note : ''}`, 'party', '/settings/#services', a.by, now, now + 30 * 864e5, email),
+  ]);
+  await log(ctx, a, 'gift', `${email} ₪${ils}`);
+  return json({ ok: true, ils });
+}
+
+/** GET /api/admin/gifts – this month's gifts, what they come to, and how much of each person's gifts was really used */
+export async function gifts(ctx: Ctx) {
+  const a = await requireAdmin(ctx, 'own');
+  if (a.level !== 'owner') throw new HttpError(403, 'owner_only');
+  const rate = Number((await settingsNow(ctx.env)).find((s) => s.key === 'money.usd_ils')?.value || 3.7);
+  const since = monthStart();
+  const { results } = await ctx.env.DB.prepare(`SELECT c.email, c.usd, c.note, c.by_email, c.created_at, m.he_name, m.name FROM ai_credits c LEFT JOIN members m ON m.email = c.email
+    WHERE c.source = 'gift' AND c.created_at >= ? ORDER BY c.created_at DESC`).bind(since).all<{ email: string; usd: number; note: string | null; by_email: string; created_at: number; he_name: string | null; name: string | null }>();
+  const ils = (usd: number) => Math.round(usd * rate * 100) / 100;
+  // per recipient: all their gifts, and what of them was spent (gifts go first), as the meter measured it
+  const used: Record<string, number> = {};
+  for (const email of [...new Set(results.map((r) => r.email))]) {
+    const al = await ctx.env.DB.prepare('SELECT since FROM ai_allowance WHERE email = ?').bind(email).first<{ since: number }>();
+    const { results: grants } = await ctx.env.DB.prepare('SELECT source, usd, created_at AS at FROM ai_credits WHERE email = ?').bind(email).all<C.Grant>();
+    const b = al ? await balance(ctx.env, email, al.since) : { spent: 0 };
+    used[email] = ils(C.giftUsed(grants, b.spent));
+  }
+  const total = results.reduce((s, r) => s + r.usd, 0);
+  return json({
+    month: { given_ils: ils(total), used_ils: Object.values(used).reduce((s, x) => s + x, 0), count: results.length },
+    gifts: results.map((r) => ({ email: r.email, name: r.he_name || r.name || r.email, ils: ils(r.usd), note: r.note, at: r.created_at })),
+    used, confirm_above: C.GIFT_CONFIRM_ILS,
+  });
 }

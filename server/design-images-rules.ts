@@ -43,3 +43,25 @@ export function imageOf(data: unknown): { b64: string; mime: string } | { why: s
   return { b64: inline.data, mime: /^image\/(png|jpeg|webp)$/.test(mime) ? mime : 'image/png' };
 }
 export const extOf = (mime: string) => (mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : 'png');
+
+/** the usage of one answer, read as the meter reads Gemini's (server/meter.ts geminiUsage), so its cost can be kept with
+    the picture: a batch's cost is then the sum of its own pictures, never a window of time that overlaps another batch */
+export function usageOf(model: string, at: number, data: unknown) {
+  const d = data as { modelVersion?: string; usageMetadata?: Record<string, unknown> };
+  const m = (d?.usageMetadata || {}) as Record<string, number> & { candidatesTokensDetails?: { modality: string; tokenCount?: number }[] };
+  const by = (mod: string) => (m.candidatesTokensDetails || []).filter((x) => x.modality === mod).reduce((s, x) => s + (x.tokenCount || 0), 0);
+  const audio = by('AUDIO'), image = by('IMAGE'), out = (m.candidatesTokenCount || 0) + (m.thoughtsTokenCount || 0);
+  return {
+    at, model: d?.modelVersion || model,
+    input: (m.promptTokenCount || 0) - (m.cachedContentTokenCount || 0) + (m.toolUsePromptTokenCount || 0),
+    output: out - audio - image, cache_write: 0, cache_read: m.cachedContentTokenCount || 0, searches: 0, grounded: 0, audio_out: audio, image_out: image,
+  };
+}
+
+/** for batches made before each picture kept its cost: every metered call goes to one batch only – the latest one that
+    had started by then (batches run one at a time). `starts` are the batches' start times. */
+export function batchOf(at: number, starts: { batch: string; start: number }[]): string | null {
+  let best: { batch: string; start: number } | null = null;
+  for (const s of starts) if (s.start <= at && (!best || s.start > best.start)) best = s;
+  return best?.batch ?? null;
+}

@@ -11,6 +11,18 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The recipe check without AI (docs/ai/without-ai.md #4) (ai-features → master, design)
+
+`POST /api/recipes/check` now checks by word lists first (`server/recipe-rules.ts`, 17 tests in
+`server/test-recipe-rules.mjs`): non-kosher foods, seafood, shrimp, meat with dairy (the dairy marked, with its
+substitutes), high-carb foods for keto, and the ingredients with no amount (`missing`). The answer has the same shape
+plus `method: 'rules' | 'ai'`. The AI checks by itself only when it is free for the person (the family, or their own
+key), as before; otherwise on request (`{ai: true}`, "✨ בדיקה חכמה" in the fix window, an invitation when no AI is
+left). An AI answer already cached for the same ingredients is used for anyone at no cost.
+- **For the master:** add `test:recipe-rules` to `npm test`. No route or table.
+- **For design:** `.fix-smart` (an `.ai-pair` with ✨ and a short note), `.fix-missing` (the ingredients with no amount).
+Status: done (on `ai-features`).
+
 ## 2026-11-13 – The study room without AI (docs/ai/without-ai.md #7) (ai-features → master, design)
 
 The dictionaries, the concordance and the commentaries already worked without AI. Now:

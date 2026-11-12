@@ -164,6 +164,21 @@
     choices('השפה', [['he', 'עברית'], ['ar', 'العربية', { soon: true }], ['en', 'English', { soon: true }]], me.lang || 'he', (v) => { me.lang = v; keep('me'); }),
     el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'));
 
+  /* ---------- my place: the city (restaurants nearby now; Shabbat times and the weather later) ---------- */
+  const CITIES = ['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'בני ברק', 'פתח תקווה', 'ראשון לציון', 'אשדוד', 'נתניה', 'חולון', 'רמת גן', 'רחובות',
+    'בית שמש', 'מודיעין', 'כפר סבא', 'הרצליה', 'רעננה', 'אשקלון', 'בת ים', 'טבריה', 'צפת', 'עכו', 'נצרת', 'אילת', 'אריאל', 'מעלה אדומים', 'ביתר עילית', 'אלעד'];
+  function myPlace() {
+    const city = el('input', { type: 'text', value: me.city || '', list: 'st-cities', dir: 'auto', maxlength: 60, placeholder: 'למשל: ירושלים', 'aria-label': 'העיר שלי',
+      style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text);max-inline-size:320px' });
+    let t = 0;
+    city.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { me.city = city.value.trim(); keep('me'); }, 600); });
+    city.addEventListener('change', () => { clearTimeout(t); me.city = city.value.trim(); keep('me'); toast(me.city ? 'נשמר: ' + me.city : 'העיר נמחקה'); });
+    return section('place', 'המקום שלי',
+      el('datalist', { id: 'st-cities' }, CITIES.map((c) => el('option', { value: c }))),
+      el('div', { class: 'st-field' }, el('label', { style: 'display:grid;gap:4px' }, el('span', { class: 'st-label' }, 'העיר שלי'), city)),
+      el('p', { class: 'muted small' }, 'משמשת לחיפוש מסעדות בסביבה, ובהמשך לזמני שבת ולמזג האוויר. המיקום המדויק של המכשיר לא נשמר: הוא נשאל רק כשמבקשים "לידי עכשיו".'));
+  }
+
   /* ---------- the tools menu: lock its arrangement (design's launcher.js obeys it live) ---------- */
   function menuBox() {
     const tools = H.prefs('tools', { order: [], locked: false });
@@ -195,11 +210,11 @@
   }
 
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
-  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
+  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st', style: 'grid-template-columns:minmax(0,1fr)' },
     el('h1', {}, 'הגדרות'),
     el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות', style: ROW }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id, style: 'white-space:nowrap' }, name))),
-    dayNight(), accessibility(), servicesBox, assistantBox, palettes(), faith(), menuBox(), devicesBox,
+    dayNight(), accessibility(), servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),

@@ -737,6 +737,7 @@ CREATE TABLE IF NOT EXISTS restaurants (
   link       TEXT,
   phone      TEXT,
   note       TEXT,
+  place_id   TEXT,             -- Google's place ID, when it came from a search (the only thing of Google's that may be kept)
   fav        INTEGER NOT NULL DEFAULT 0,
   visited_at INTEGER,
   visited_by TEXT,
@@ -745,4 +746,12 @@ CREATE TABLE IF NOT EXISTS restaurants (
   updated_at INTEGER NOT NULL,
   deleted    INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (household, id)
+);
+
+-- restaurants from Google Places: searches per person per month (server/places.ts), nothing of the answers
+CREATE TABLE IF NOT EXISTS places_usage (
+  email TEXT NOT NULL,
+  month TEXT NOT NULL,          -- YYYY-MM
+  n     INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, month)
 );

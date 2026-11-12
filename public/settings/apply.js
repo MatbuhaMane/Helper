@@ -13,7 +13,7 @@
   if (!window.H || H.applySettings) return;
   const ACCESS = { text: 1, spacing: 'normal', font: 'default', contrast: 'normal', motion: 'device', vibrate: true, sounds: true };
   const LOOK = { palette: '' };
-  const ME = { religion: 'jewish', lang: 'he' };
+  const ME = { religion: 'jewish', lang: 'he', city: '' };   // (city: the restaurants nearby; Shabbat times and the weather later)
   const root = document.documentElement;
   const mark = (name, value) => { if (value) root.dataset[name] = value; else delete root.dataset[name]; };
 

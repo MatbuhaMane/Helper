@@ -11,6 +11,33 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Restaurants: the family's list (A) and Google Places (C) (ai-features → master, design)
+
+The owner chose A, then C (docs/ai/restaurants.md); for C, the place is both the city in the settings and the device's
+location, and Google is open to everyone with a monthly limit.
+- **A, מסעדות שלנו** (`/food/restaurants/`): table `restaurants` (appended to schema.sql), routes `/api/restaurants`
+  (list, add, change, delete, `/:id/fav`, `/:id/visit`), 5 tests (`server/test-restaurants.mjs`). In the food
+  portal: a tile, and in the slider the favourites not visited for 30 days and the new ones.
+- **C, Google Places** (`server/places.ts`, 14 tests in `server/test-places.mjs`): `GET/POST /api/restaurants/search`,
+  on request only. A text search around the city (`prefs me.city`, a new "המקום שלי" in the settings) or a nearby
+  search around the device's point (asked with its permission, used for that one call, not kept). Only the "Pro"
+  fields. Nothing of Google's answer is stored; a restaurant added from it keeps Google's place ID
+  (`restaurants.place_id`, allowed indefinitely). Results are marked "Google Maps". Limits: 20 searches a month for a
+  limited person, none for the family (`ai_allowance.limited`), and 4,500 a month for the whole site (Google's free
+  tier is 5,000), counted in the new table `places_usage`.
+- **For the owner:** a Google Maps Platform API key restricted to "Places API (New)", with a daily quota cap in Google
+  Cloud, entered as the secret `GOOGLE_MAPS_API_KEY`. Until then the page says the search is not set up.
+- **For the master:** add `GOOGLE_MAPS_API_KEY?: string` to `Env` in core.ts (places.ts reads it through a local type
+  until then); add `test:restaurants` and `test:places` to `npm test`; and a question on Google's terms: "add to our
+  list" prefills the form with the name and address from Google, and the family saves it as their own entry. The terms
+  forbid copying business names and addresses in bulk; one entry a person chooses to save looks like their own
+  content, but the Service Specific Terms page did not load for me, so please read it (or tell me to keep only the
+  place ID and leave the name for the person to type).
+- **For design:** `.rs`, `.rs-card`, `.rs-fav`, `.rs-filters`, `.rs-tags`, `.rs-kosher` (`kosher`, `mehadrin`, `no`),
+  `.rs-near`, `.rs-place`, `.rs-attrib` (Google's attribution: keep it visible), `.fs-restaurant`; and a restaurant
+  icon for the portal tile (it uses `food` now).
+Status: done (on `ai-features`); C waits for the key.
+
 ## 2026-11-12 – Vision batch 4 on ai-features: what was built, and what others are asked (ai-features → master, design)
 
 Built on `ai-features` (each commit names its item):

@@ -16,13 +16,15 @@ const Input = z.object({
   phone: z.string().trim().max(30).optional().default('').refine((s) => !s || /^[+\d][\d\s-]{5,}$/.test(s), 'a phone number'),
   note: z.string().trim().max(1000).optional().default(''),
   fav: z.boolean().optional(),
+  // Google's place ID (from a search): the only thing of Google's that may be kept
+  placeId: z.string().regex(/^[A-Za-z0-9_-]{10,300}$/).optional().nullable(),
 });
 export interface Restaurant {
   id: string; name: string; place: string; cuisine: string; kosher: string; link: string; phone: string; note: string;
-  fav: boolean; visitedAt: number | null; visitedBy: string | null; createdAt: number; updatedAt: number;
+  fav: boolean; placeId: string | null; visitedAt: number | null; visitedBy: string | null; createdAt: number; updatedAt: number;
 }
 const toRestaurant = (r: any): Restaurant => ({ id: r.id, name: r.name, place: r.place || '', cuisine: r.cuisine || '', kosher: r.kosher || '',
-  link: r.link || '', phone: r.phone || '', note: r.note || '', fav: !!r.fav, visitedAt: r.visited_at || null, visitedBy: r.visited_by || null,
+  link: r.link || '', phone: r.phone || '', note: r.note || '', fav: !!r.fav, placeId: r.place_id || null, visitedAt: r.visited_at || null, visitedBy: r.visited_by || null,
   createdAt: r.created_at, updatedAt: r.updated_at });
 
 /** the slider's restaurants: favourites not visited for `stale` days (longest first), then new ones never visited */
@@ -56,15 +58,15 @@ export async function save(ctx: Ctx) {
   const d = p.data, now = Date.now();
   if (ctx.params.id) {
     const r = await ctx.env.DB.prepare(`UPDATE restaurants SET name = ?, place = ?, cuisine = ?, kosher = ?, link = ?, phone = ?, note = ?,
-      fav = COALESCE(?, fav), updated_at = ? WHERE household = ? AND id = ? AND deleted = 0`)
-      .bind(d.name, d.place, d.cuisine, d.kosher, d.link, d.phone, d.note, d.fav === undefined ? null : d.fav ? 1 : 0, now, u.household, ctx.params.id).run();
+      fav = COALESCE(?, fav), place_id = COALESCE(?, place_id), updated_at = ? WHERE household = ? AND id = ? AND deleted = 0`)
+      .bind(d.name, d.place, d.cuisine, d.kosher, d.link, d.phone, d.note, d.fav === undefined ? null : d.fav ? 1 : 0, d.placeId || null, now, u.household, ctx.params.id).run();
     if (!r.meta.changes) throw new HttpError(404, 'Not found');
     return json({ ok: true, id: ctx.params.id });
   }
   const id = uid();
-  await ctx.env.DB.prepare(`INSERT INTO restaurants (household, id, name, place, cuisine, kosher, link, phone, note, fav, created_by, created_at, updated_at, deleted)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`)
-    .bind(u.household, id, d.name, d.place, d.cuisine, d.kosher, d.link, d.phone, d.note, d.fav ? 1 : 0, u.email, now, now).run();
+  await ctx.env.DB.prepare(`INSERT INTO restaurants (household, id, name, place, cuisine, kosher, link, phone, note, place_id, fav, created_by, created_at, updated_at, deleted)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`)
+    .bind(u.household, id, d.name, d.place, d.cuisine, d.kosher, d.link, d.phone, d.note, d.placeId || null, d.fav ? 1 : 0, u.email, now, now).run();
   return json({ ok: true, id });
 }
 

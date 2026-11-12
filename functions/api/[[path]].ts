@@ -168,6 +168,7 @@ route('POST', '/api/research/word', research.word);
 
 /* the smart calculator */
 route('POST', '/api/calc/solve', calc.solve);
+route('GET', '/api/calc/rates', calc.currencyRates);
 
 /* fridges (shared by the whole family) */
 route('GET', '/api/fridges', fridge.listFridges);

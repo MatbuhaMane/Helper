@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The calculator without AI: percentages, currencies, fractions, equations (ai-features → master, design)
+
+The second tool of `docs/ai/without-ai.md`. The calculator reads "15% מ-80", "100 דולר בשקלים" / "$50 + 20 €" (today's
+European Central Bank rates as mathjs units) and shows a simple fraction under a decimal. The smart tab has "🧮 חישוב"
+(primary): an equation's real roots (π/6 for trig), a function's derivative and zeros, or an expression's value, on the
+device; "✨ פתרון" is `.ai-up` (`offer` → the AI invitation when a limited account has no credit and no key of its own).
+The pure helpers are in `public/tools/calc/plain.js` (loaded by calc.js, so `index.html` is unchanged).
+- Route appended: `GET /api/calc/rates` → `calc.currencyRates` (Frankfurter, `api.frankfurter.dev`; no key, nothing about
+  the person is sent; six hours in memory and in Cloudflare's cache). No table.
+- For the master: add `node server/test-calc-plain.mjs` to `npm test` (and `"test:calc-plain"`) in `package.json`.
+- For design (it was there before this change): at phone width the smart tab's formula bubbles (`.cx-bubbles`) widen the
+  page to about 2200 px; a KaTeX `\sqrt` path inside a bubble is 7000 px wide and only its own `svg` clips it. Something
+  like `.cx-bubble { overflow: hidden; }` or `contain: paint` in `calc.css` should fix it.
+Status: done (on `ai-features`); the bubbles: proposed to design.
+
 ## 2026-11-12 – Recipe import works without AI; the AI only on ✨ (ai-features → master)
 
 The first tool of `docs/ai/without-ai.md`. `POST /api/recipes/import {url}` now reads the page without AI

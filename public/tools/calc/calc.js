@@ -3,7 +3,10 @@
      constants, derivatives (derivative), integrals (integrate), equations (solve), and a graph for anything with x;
      the expression is shown typeset as you type (mathjs + KaTeX);
    - the smart calculator: a problem typed, in LaTeX or as a photo/screenshot → solved step by step, proved or disproved
-     (with a counterexample), explained, or a solution checked – with formula bubbles by course. */
+     (with a counterexample), explained, or a solution checked – with formula bubbles by course.
+   Without AI (docs/ai/without-ai.md #2): the calculator also reads percentages ("15% מ-80"), currencies at today's rates
+   ("100 דולר בשקלים") and shows a simple fraction; the smart tab's "🧮 חישוב" solves equations and expressions on the
+   device (plain.js), and "✨ פתרון" is the AI – an invitation when there is none. */
 (async () => {
   const { el, api, toast } = H;
   await H.requireLogin();
@@ -17,6 +20,7 @@
   document.head.append(el('link', { rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css' }));
   const libs = Promise.all([
     load('https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.2.0/math.min.js'),
+    load('/tools/calc/plain.js'),
     load('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js').then(() => load('https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js')),
   ]);
   const tex = (node) => { try { window.renderMathInElement?.(node, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }], throwOnError: false }); } catch (_) { /* leave the text */ } return node; };
@@ -36,10 +40,11 @@
   const exprIn = el('input', { class: 'cx-expr', type: 'text', dir: 'ltr', spellcheck: 'false', autocomplete: 'off', placeholder: '2*sin(pi/4) + 3^2', 'aria-label': 'ביטוי לחישוב' });
   const pretty = el('div', { class: 'cx-pretty', dir: 'ltr', 'aria-hidden': 'true' });
   const result = el('div', { class: 'cx-result', dir: 'ltr', 'aria-live': 'polite' });
+  const hint = el('div', { class: 'cx-pretty', dir: 'auto' });     // a simple fraction, or where the rate comes from
   const plotBox = el('div', { class: 'cx-plot', hidden: true });
   const degBtn = el('button', { class: 'cx-key fn mode', type: 'button', onclick: () => { P.deg = !P.deg; save(); degBtn.textContent = P.deg ? 'DEG' : 'RAD'; live(); } }, P.deg ? 'DEG' : 'RAD');
 
-  const clean = (s) => s.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√\(/g, 'sqrt(').replace(/√/g, 'sqrt').replace(/²/g, '^2');
+  const clean = (s) => (window.CalcPlain ? CalcPlain.prepare(s) : s).replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/π/g, 'pi').replace(/√\(/g, 'sqrt(').replace(/√/g, 'sqrt').replace(/²/g, '^2');
   function setupMath() {
     const m = window.math;
     const k = Math.PI / 180;
@@ -61,22 +66,49 @@
       },
     }, { override: true });
   }
+  /* currencies: today's rates (the European Central Bank's) as units, so "100 USD to ILS" and "50 EUR + 20 USD" work */
+  const SYM = { ILS: '₪', USD: '$', EUR: '€', GBP: '£' };
+  let money = null;
+  async function setupMoney() {
+    try {
+      const r = await api('/api/calc/rates');
+      const m = window.math;
+      m.createUnit('ILS');
+      for (const [code, per] of Object.entries(r.rates)) { try { m.createUnit(code, { definition: `${1 / per} ILS` }); } catch (_) { /* a name mathjs already has */ } }
+      money = { date: r.date, codes: new Set(['ILS', ...Object.keys(r.rates)]) };
+      live();
+    } catch (_) { /* offline: no currencies, the rest works */ }
+  }
+  const currencyOf = (v) => (money && v && v.isUnit && v.units.length === 1 && money.codes.has(v.units[0].unit.name) ? v.units[0].unit.name : null);
+  const amount = (n, code) => `${n.toLocaleString('he-IL', { maximumFractionDigits: 2 })} ${SYM[code] || code}`;
+  /** the line under the result: "= 3/4", or the shekels and the rate's date */
+  function hintOf(v) {
+    if (typeof v === 'number') { const f = CalcPlain.asFraction(v); return f ? '= ' + f : ''; }
+    const code = currencyOf(v);
+    if (!code) return '';
+    const day = new Date(money.date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' });
+    return (code === 'ILS' ? '' : `≈ ${amount(v.toNumber('ILS'), 'ILS')} · `) + `שער הבנק המרכזי האירופי, ${day}`;
+  }
   const withDeg = (s) => (P.deg ? s.replace(/\b(a?)(sin|cos|tan)\(/g, (_, a, f) => `${a}${f}d(`) : s);
   const fmt = (v) => {
     const m = window.math;
     if (v && typeof v === 'object' && v.isNode) return v.toString();
     if (typeof v === 'function') return 'פונקציה';
+    const code = currencyOf(v);
+    if (code) return amount(v.toNumber(code), code);
     return m.format(v, { precision: 12, lowerExp: -9, upperExp: 12 });
   };
   function live() {
     const m = window.math; if (!m) return;
     const s = clean(exprIn.value.trim());
     plotBox.hidden = true;
+    hint.textContent = '';
     if (!s) { pretty.replaceChildren(); result.textContent = ''; result.className = 'cx-result'; return; }
     try { window.katex.render(m.parse(s).toTex({ parenthesis: 'auto' }), pretty, { throwOnError: false }); } catch (_) { pretty.textContent = ''; }
     try {
       const v = m.evaluate(withDeg(s), { ans });
       result.textContent = '= ' + fmt(v); result.className = 'cx-result';
+      hint.textContent = hintOf(v);
     } catch (e) {
       // a function of x: draw it
       if (/\bx\b/.test(s) && /Undefined symbol x/.test(e.message)) { result.textContent = 'f(x) – הגרף למטה'; result.className = 'cx-result fx'; plot(s); }
@@ -91,6 +123,7 @@
       addHistory(s, fmt(v));
       if (pad.auto !== false) padAdd(`${s} = ${fmt(v)}`);
       result.textContent = '= ' + fmt(v); result.className = 'cx-result done';
+      hint.textContent = hintOf(v);
     } catch (e) {
       if (/\bx\b/.test(s)) { plot(s); return; }
       result.textContent = 'לא הבנתי: ' + e.message.replace(/\(char \d+\)/, ''); result.className = 'cx-result err';
@@ -227,12 +260,12 @@
     ['נגזרת', 'derivative("x^3*sin(x)", "x")'], ['אינטגרל', 'integrate("x^2", "x", 0, 1)'], ['פתרון משוואה', 'solve("x^3-2x-5", "x", 2)'],
     ['פישוט', 'simplify("2x + 3x - x^2/x")'], ['מטריצה ודטרמיננטה', 'det([[2, 1], [1, 3]])'], ['הופכית', 'inv([[2, 1], [1, 3]])'],
     ['ערכים עצמיים', 'eigs([[2, 1], [1, 2]]).values'], ['מערכת משוואות', 'lusolve([[2, 1], [1, 3]], [3, 5])'], ['מספרים מרוכבים', '(2 + 3i) * (1 - i)'],
-    ['יחידות', '9.81 m/s^2 * 2 s to km/h'], ['קבועים', 'planckConstant * speedOfLight / (500 nm) to eV'], ['גרף', 'sin(x)/x'],
+    ['אחוזים', '15% מ-80'], ['מטבע', '100 דולר בשקלים'], ['יחידות', '9.81 m/s^2 * 2 s to km/h'], ['קבועים', 'planckConstant * speedOfLight / (500 nm) to eV'], ['גרף', 'sin(x)/x'],
   ];
   const tools = el('div', { class: 'cx-tools' }, el('small', {}, 'כלים – לחצו לדוגמה, ושנו כרצונכם:'),
     el('div', { class: 'cx-chips' }, TOOLS.map(([t, ex]) => el('button', { type: 'button', class: 'cx-chip', onclick: () => { exprIn.value = ex; live(); if (!/\bx\b/.test(ex) || /"x"/.test(ex)) run(); exprIn.focus(); } }, t))));
   const calcView = el('section', { class: 'cx-calc' },
-    el('div', { class: 'card cx-screen' }, exprIn, pretty, result),
+    el('div', { class: 'card cx-screen' }, exprIn, pretty, result, hint),
     el('div', { class: 'cx-calc-cols' }, el('div', {}, keypad), el('div', { class: 'cx-side' }, tools, plotBox, el('div', { class: 'cx-stack' }, padEl, padBtn, histCard))));
 
   /* ===================== the smart calculator ===================== */
@@ -246,11 +279,16 @@
   const bubbles = el('div', { class: 'cx-bubbles' });
   const modeRow = el('div', { class: 'cx-modes', role: 'radiogroup', 'aria-label': 'מה לעשות' });
   const MODES = [['solve', 'לפתור'], ['prove', 'להוכיח או להפריך'], ['explain', 'להסביר'], ['check', 'לבדוק את הפתרון שלי']];
-  const go = el('button', { class: 'btn primary cx-go', type: 'button', onclick: () => ask() }, '✨ פתרון');
+  const go = el('button', { class: 'btn ai-up cx-go', type: 'button', onclick: () => ask() }, '✨ פתרון');
+  const plainGo = el('button', { class: 'btn primary', type: 'button', title: 'משוואות, ביטויים ונגזרות – במכשיר, בלי AI', onclick: () => plainSolve() }, '🧮 חישוב');
+  // no AI left (a limited account out of credit, with no key of its own): ✨ invites instead of failing
+  let noAi = false;
+  api('/api/me/ai').then((me) => { noAi = !!me.out && !Object.keys(me.keys || {}).length; go.classList.toggle('offer', noAi); }).catch(() => {});
+  const invite = () => (H.aiInvite ? Promise.resolve() : load('/assets/ai-invite.js')).then(() => H.aiInvite?.()).catch(() => toast('אפשר לחבר AI בהגדרות ← חיבור לשירותים'));
 
   let prevT = 0;
   problem.addEventListener('input', () => { clearTimeout(prevT); prevT = setTimeout(() => { preview.replaceChildren(...(/\$/.test(problem.value) ? [rich(problem.value)] : [])); }, 250); });
-  problem.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) ask(); });
+  problem.addEventListener('keydown', (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) (noAi ? plainSolve() : ask()); });
   file.addEventListener('change', () => { if (file.files[0]) takeImage(file.files[0]); file.value = ''; });
   // a screenshot pasted, or a picture dropped
   document.addEventListener('paste', (e) => { if (P.tab !== 'smart') return; const f = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith('image/'))?.getAsFile(); if (f) { e.preventDefault(); takeImage(f); } });
@@ -285,6 +323,7 @@
   async function ask(followUp, asMode) {
     const text = followUp ?? problem.value.trim();
     const mode = asMode || P.mode;
+    if (noAi) return invite();
     if (!text && !image) { toast('כתבו את השאלה או צרפו תמונה'); return; }
     go.disabled = true; go.textContent = 'חושב…';
     if (!followUp) { convo = []; out.replaceChildren(); }
@@ -300,7 +339,10 @@
       if (!followUp) { P.problems = [{ t: r.title || text.slice(0, 60), q: text, mode: P.mode, at: Date.now() }, ...(P.problems || [])].slice(0, 15); save(); drawPast(); }
     } catch (e) {
       wait.remove();
-      out.append(el('div', { class: 'card cx-err' }, el('b', {}, 'לא הצלחתי לפתור כרגע. '), el('span', {}, /ai_not_configured/.test(e.message) ? 'אין חיבור לבינה המלאכותית.' : 'נסו שוב בעוד רגע.')));
+      if (e.code === 'ai_credit_needed') { noAi = true; go.classList.add('offer'); }
+      const noAiNow = e.code === 'ai_credit_needed' || /ai_not_configured/.test(e.message);
+      out.append(el('div', { class: 'card cx-err' }, el('b', {}, 'לא הצלחתי לפתור כרגע. '),
+        el('span', {}, noAiNow ? 'בינתיים "🧮 חישוב" פותר משוואות וביטויים גם בלי AI.' : 'נסו שוב בעוד רגע.')));
     }
     go.disabled = false; go.textContent = '✨ פתרון';
   }
@@ -324,6 +366,80 @@
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => { navigator.clipboard?.writeText(asText()); toast('הועתק (עם ה־LaTeX)'); } }, 'העתקה')),
       more);
   }
+  /* ---------- 🧮 חישוב: the smart tab without AI ----------
+     An equation → its real roots (between −100 and 100); a function of one letter → its derivative and zeros, and a
+     graph in the calculator; a plain expression → its value. A word problem or a proof stays with ✨. */
+  const num = (r) => {
+    const f = CalcPlain.asFraction(r);
+    if (f) return f;
+    // a simple multiple of π (the roots of sin and cos): π/6, 5π/6, −2π/3
+    for (let d = 1; d <= 12; d++) {
+      const k = Math.round((r / Math.PI) * d);
+      if (k && Math.abs((r / Math.PI) * d - k) < 1e-8) { const g = (a, b) => (b ? g(b, a % b) : a), c = g(Math.abs(k), d); const n = k / c, dd = d / c; return `${n < 0 ? '−' : ''}${Math.abs(n) === 1 ? '' : Math.abs(n)}π${dd === 1 ? '' : '/' + dd}`; }
+    }
+    return window.math.format(r, { precision: 10 });
+  };
+  /** the roots as a line (left to right), and a Hebrew note under it: none found, or (a periodic equation) how many more */
+  const rootList = (v, rs, none) => {
+    if (!rs.length) return { note: none };
+    const near = rs.length > 8 ? [...rs].sort((a, b) => Math.abs(a) - Math.abs(b)).slice(0, 6).sort((a, b) => a - b) : rs;
+    return { math: near.map((r) => `${v} = ${num(r)}`).join(',   '),
+      note: rs.length > near.length ? `ועוד ${rs.length - near.length} פתרונות בין 100− ל־100. נראה שהמשוואה מחזורית.` : '' };
+  };
+  function plainSolve() {
+    const m = window.math;
+    if (!m || !window.CalcPlain) { toast('ספריות החישוב עוד נטענות'); return; }
+    const raw = problem.value.trim();
+    if (!raw) { toast(image ? 'את התמונה קורא רק ✨ העוזר החכם. אפשר להקליד את התרגיל.' : 'כתבו תרגיל או משוואה'); return; }
+    const s = clean(CalcPlain.fromLatex(raw));
+    const rows = [];
+    let title = 'חישוב', toCalc = null;
+    try {
+      const eqn = CalcPlain.equation(s);
+      if (eqn) {
+        title = 'פתרון המשוואה';
+        const c = m.compile(withDeg(eqn.expr));
+        const rs = CalcPlain.roots((x) => { const y = c.evaluate({ [eqn.v]: x, ans }); return typeof y === 'number' ? y : NaN; });
+        rows.push(['הפתרונות', rootList(eqn.v, rs, 'לא מצאתי פתרון ממשי בין 100− ל־100')]);
+        if (eqn.v === 'x') toCalc = eqn.expr;
+      } else {
+        const node = m.parse(withDeg(s));
+        const free = [...new Set(node.filter((n) => n.isSymbolNode && !(n.name in m) && n.name !== 'ans' && !(money?.codes.has(n.name))).map((n) => n.name))];
+        if (free.length === 1) {
+          const v = free[0];
+          title = `פונקציה של ${v}`;
+          rows.push(['הנגזרת', m.simplify(m.derivative(node, v)).toString()]);
+          const c = node.compile();
+          const rs = CalcPlain.roots((x) => { const y = c.evaluate({ [v]: x, ans }); return typeof y === 'number' ? y : NaN; });
+          rows.push(['האפסים', rootList(v, rs, 'אין אפסים בין 100− ל־100')]);
+          if (v === 'x') toCalc = s;
+        } else if (free.length) {
+          throw new Error('more than one letter');
+        } else {
+          const val = node.evaluate({ ans });
+          rows.push(['התוצאה', fmt(val)]);
+          const h = hintOf(val);
+          if (h) rows.push(['', { note: h }]);
+        }
+      }
+    } catch (_) {
+      out.replaceChildren(el('div', { class: 'card cx-err' }, el('b', {}, 'החישוב בלי AI מבין ביטויים ומשוואות. '),
+        el('span', {}, 'למשל x^2 - 5x + 6 = 0, או \\frac{1}{2} + \\sqrt{2}. שאלה במילים, הוכחה או הסבר – "✨ פתרון".')));
+      return;
+    }
+    const shown = el('div', { class: 'cx-problem-shown', dir: 'ltr' });
+    try { window.katex.render(m.parse(s.replace(/(?<![<>!=])=(?!=)/, '==')).toTex({ parenthesis: 'auto' }).replace('==', '='), shown, { throwOnError: false }); } catch (_) { shown.textContent = s; }
+    out.replaceChildren(el('article', { class: 'card cx-answer' },
+      el('div', { class: 'cx-ans-head' }, el('h3', {}, title), el('span', { class: 'spacer' }), el('small', { class: 'by' }, 'בלי AI')),
+      shown,
+      ...rows.map(([k, v]) => {
+        const { math, note } = typeof v === 'string' ? { math: v, note: '' } : v;
+        return el('div', { class: 'cx-final' }, k ? el('small', {}, k) : null, math ? el('div', { dir: 'ltr' }, math) : null, note ? el('div', { class: 'muted' }, note) : null);
+      }),
+      el('div', { class: 'cx-ans-acts' },
+        toCalc ? el('button', { class: 'btn small', type: 'button', onclick: () => { exprIn.value = toCalc; show('calc'); live(); } }, '📈 גרף במחשבון') : null,
+        el('small', { class: 'muted' }, 'הסבר שלב אחר שלב – "✨ פתרון".'))));
+  }
   const pastBox = el('div', { class: 'cx-past' });
   function drawPast() {
     const list = P.problems || [];
@@ -336,7 +452,7 @@
       problem, preview, imgBox,
       el('div', { class: 'cx-ask-acts' },
         el('button', { class: 'btn ghost', type: 'button', onclick: () => file.click() }, '📷 תמונה או צילום מסך'), file,
-        el('small', { class: 'muted' }, 'אפשר גם להדביק צילום מסך (Ctrl+V)'), el('span', { class: 'spacer' }), go)),
+        el('small', { class: 'muted' }, 'אפשר גם להדביק צילום מסך (Ctrl+V)'), el('span', { class: 'spacer' }), el('div', { class: 'ai-pair' }, plainGo, go))),
     out, pastBox);
 
   /* ===================== the page ===================== */
@@ -351,5 +467,5 @@
   root.append(el('div', { class: 'cx' }, el('a', { class: 'folder-back', href: '/tools/' }, '‹ כלים'), el('div', { class: 'cx-head' }, el('h1', {}, 'מחשבון'), tabs), calcView, smartView));
   show(P.tab || 'calc');
   padPaint(); drawHist(); drawPast();
-  try { await libs; setupMath(); drawSubjects(); live(); } catch (_) { toast('ספריות החישוב לא נטענו – בדקו את החיבור'); }
+  try { await libs; setupMath(); drawSubjects(); live(); setupMoney(); } catch (_) { toast('ספריות החישוב לא נטענו – בדקו את החיבור'); }
 })();

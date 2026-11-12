@@ -167,6 +167,52 @@
           el('p', { class: 'muted cal-fine' }, 'הקובץ (ics) נפתח ביומן של הטלפון או של Google ומוסיף את החגים, הצומות והימים המשפחתיים של השנה, כל אחד עם התראה לפי התזכורת שבחרתם. התראות בדפדפן מופיעות כשפותחים את העוזר.'))),
       yearBox)));
 
+  /* the calendar in Google (or Apple, or Outlook): a private live link that the other calendar subscribes to, and keeps
+     up to date by itself. Only its hash is kept on the server, so the link is shown once, when it is made. */
+  const linkBox = el('section', { class: 'card cal-sync cal-link' });
+  let madeUrl = '';
+  async function drawLink() {
+    let f = null;
+    try { f = (await H.api('/api/calendar/feed')).feed; } catch (_) { return linkBox.replaceChildren(); }
+    const when = (t) => new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const tree = el('input', { type: 'checkbox', checked: f ? f.tree : true, 'aria-label': 'כולל הימים מעץ המשפחה' });
+    const make = async (again) => {
+      if (again && !confirm('ליצור קישור חדש? הקישור הקודם יפסיק לעבוד, וצריך יהיה להוסיף את החדש ליומן במקומו.')) return;
+      try { madeUrl = (await H.api('/api/calendar/feed', { method: 'POST', body: { tree: tree.checked } })).url; drawLink(); }
+      catch (e) { toast(e?.message || 'לא הצלחתי ליצור קישור'); }
+    };
+    const cancel = async () => {
+      if (!confirm('לבטל את הקישור? היומן ב־Google יפסיק להתעדכן מהאוהל.')) return;
+      try { await H.api('/api/calendar/feed', { method: 'DELETE' }); madeUrl = ''; toast('הקישור בוטל'); drawLink(); } catch (e) { toast(e?.message || 'לא הצלחתי לבטל'); }
+    };
+    const parts = [el('h3', {}, 'חיבור ליומן Google')];
+    if (madeUrl && f) {
+      const webcal = madeUrl.replace(/^https?:/, 'webcal:');
+      const field = el('input', { type: 'text', readonly: true, value: madeUrl, dir: 'ltr', class: 'cal-link-url', 'aria-label': 'הקישור ללוח השנה', onfocus: (e) => e.target.select() });
+      parts.push(
+        el('p', {}, 'הקישור מוכן. הוסיפו אותו ליומן פעם אחת, ומאז החגים והימים המשפחתיים יתעדכנו שם לבד.'),
+        field,
+        el('div', { class: 'cal-tools start' },
+          el('a', { class: 'cal-today', href: 'https://calendar.google.com/calendar/r?cid=' + encodeURIComponent(webcal), target: '_blank', rel: 'noopener' }, 'הוספה ל־Google Calendar'),
+          el('button', { class: 'cal-today', onclick: async () => { try { await navigator.clipboard.writeText(madeUrl); toast('הקישור הועתק'); } catch (_) { field.select(); toast('סמנו והעתיקו את הקישור'); } } }, 'העתקת הקישור'),
+          el('a', { class: 'cal-today', href: webcal }, 'אייפון ו־Outlook')),
+        el('p', { class: 'muted cal-fine' }, 'אם הכפתור לא עובד: ב־Google Calendar במחשב, ליד "יומנים אחרים" לחצו + ואז "מכתובת URL", והדביקו את הקישור. הקישור מוצג רק עכשיו; אם תצטרכו אותו שוב, צרו קישור חדש.'));
+    } else if (f) {
+      parts.push(
+        el('p', {}, `יש קישור פעיל מ־${when(f.created)}${f.used ? `. היומן קרא אותו לאחרונה ב־${when(f.used)}` : '. היומן עוד לא קרא אותו'}${f.tree ? '' : ' (בלי הימים מעץ המשפחה)'}.`),
+        el('div', { class: 'cal-tools start' },
+          el('button', { class: 'cal-today', onclick: () => make(true) }, 'קישור חדש'),
+          el('button', { class: 'cal-today', onclick: cancel }, 'ביטול הקישור')));
+    } else {
+      parts.push(
+        el('p', {}, 'קישור אישי ש־Google Calendar (או היומן באייפון וב־Outlook) נרשם אליו: החגים, הצומות והימים המשפחתיים מופיעים שם ומתעדכנים לבד, לפי מה שבחרתם להציג כאן.'),
+        el('label', { class: 'cal-check' }, tree, ' כולל ימי ההולדת והזיכרון מעץ המשפחה'),
+        el('div', { class: 'cal-tools start' }, el('button', { class: 'cal-today', onclick: () => make(false) }, 'יצירת קישור')));
+    }
+    parts.push(el('p', { class: 'muted cal-fine' }, 'מי שיש לו את הקישור רואה את הימים האלה, אז אל תשתפו אותו. אם הוא דלף, צרו קישור חדש והקודם יפסיק לעבוד. Google מתעדכן כמה פעמים ביום, והתזכורות שם נקבעות בהגדרות היומן ב־Google.'));
+    linkBox.replaceChildren(...parts);
+  }
+
   async function drawMonth() {
     let first, last;
     if (P.mode === 'heb') { first = monthStart(view); last = monthEnd(view); }
@@ -401,4 +447,6 @@
   await loadFamily();
   drawAll();
   drawRemind();
+  root.querySelector('.cal-sync')?.after(linkBox);     // beside the phone's calendar
+  drawLink();
 })();

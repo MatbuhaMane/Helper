@@ -260,7 +260,7 @@
   border: 1px solid var(--line) !important; font-size: 1.06rem !important; line-height: 1.85 !important; box-shadow: 0 14px 32px -28px rgba(46, 42, 30, .5); resize: vertical; }
 .rx-draft > textarea:focus { outline: none; border-color: var(--primary) !important; }
 .rx .rx-preview { padding: 10px; border-radius: 20px; }
-.rx-preview[hidden], .rx-draft > textarea[hidden] { display: none !important; }   /* (their inline display:grid would keep the hidden preview as an empty box) */
+.rx-preview[hidden], .rx-draft > textarea[hidden] { display: none; }
 .rx-export { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-block-start: 10px; border-block-start: 1px solid var(--line); }
 .rx-export .btn { border-radius: 999px; }
 /* the research journal: today's lines on a ruled page, the days before as short entries with their date in the margin */

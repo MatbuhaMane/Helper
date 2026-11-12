@@ -123,3 +123,7 @@ body.dm-folded main { padding-block-end: 0; }
 .dm-voice .name small { font-size: 11px; color: var(--olive, #c2b04e); font-weight: 700; }
 .dm-voice .play { width: 36px; padding: 0; display: grid; place-items: center; }
 .dm-voice .play .icon { width: 16px; height: 16px; fill: currentColor; }
+
+/* the companion's ways (without AI, docs/ai/without-ai.md #8): where to go, as round pills; the ✨ one stands out as the upgrade */
+.dm-balloon .acts .btn, .dm-msg .acts .btn { border-radius: 999px; font-size: .86rem; padding: 5px 12px; }
+.dm-balloon .acts .btn[href="/settings/"], .dm-msg .acts .btn[href="/settings/"] { background: color-mix(in srgb, var(--accent) 22%, var(--card)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--text); }

@@ -26,29 +26,29 @@ def find(name):
     return Image.open(hits[0]).convert('RGB')
 
 
-def disc(img, cx, cy, r_guess):
-    """the disc round (cx, cy): its radius is where its dark outline ends along many rays"""
+def discs(img):
+    """every disc on the picture: blue or dark pixels (the checkerboard is neutral grey), in round, solid groups"""
+    from skimage import measure, morphology
     a = np.asarray(img).astype(int)
-    h, w, _ = a.shape
-    radii = []
-    for th in np.linspace(0, 2 * np.pi, 72, endpoint=False):
-        last = None
-        for r in range(int(r_guess * 0.7), int(r_guess * 1.25)):
-            x, y = int(cx + r * np.cos(th)), int(cy + r * np.sin(th))
-            if not (0 <= x < w and 0 <= y < h): break
-            if a[y, x].max() < 90: last = r          # the outline (and the dark face) are dark; the checkerboard is not
-        if last: radii.append(last)
-    r = float(np.median(radii)) + 1.0
-    return cx, cy, r
+    ink = ((a[:, :, 2] - a[:, :, 0]) > 18) | (a.max(2) < 90)
+    ink = morphology.closing(ink, morphology.disk(3))
+    out = []
+    for r in measure.regionprops(measure.label(ink)):
+        y0, x0, y1, x1 = r.bbox
+        h, w = y1 - y0, x1 - x0
+        if h > img.size[1] * 0.08 and 0.85 < w / h < 1.18 and r.area > 0.6 * np.pi * (h / 2) ** 2:   # round and filled (not a label)
+            out.append(((x0 + x1) / 2, (y0 + y1) / 2, w / 2, h / 2))
+    return out
 
 
-def cut(img, cx, cy, r):
-    s = int(np.ceil(r)) + 2
-    box = img.crop((int(cx - s), int(cy - s), int(cx + s), int(cy + s))).convert('RGBA')
-    n = box.size[0]
-    yy, xx = np.mgrid[0:n, 0:n]
-    d = np.hypot(xx + 0.5 - n / 2, yy + 0.5 - n / 2)
-    alpha = np.clip(r - d + 0.5, 0, 1)                # a soft, anti-aliased edge
+def cut(img, cx, cy, rx, ry):
+    """the disc as an ellipse (rx, ry), with a soft edge, scaled to a square picture"""
+    sx, sy = int(np.ceil(rx)) + 2, int(np.ceil(ry)) + 2
+    box = img.crop((int(cx - sx), int(cy - sy), int(cx + sx), int(cy + sy))).convert('RGBA')
+    w, h = box.size
+    yy, xx = np.mgrid[0:h, 0:w]
+    e = np.hypot((xx + 0.5 - w / 2) / rx, (yy + 0.5 - h / 2) / ry)      # 1 on the edge
+    alpha = np.clip((1 - e) * min(rx, ry) + 0.5, 0, 1)
     px = np.asarray(box).copy(); px[:, :, 3] = (alpha * 255).astype(np.uint8)
     return Image.fromarray(px).resize((SIZE, SIZE), Image.LANCZOS)
 
@@ -57,50 +57,67 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     sheet = find('moon-phases')
     W, H = sheet.size
-    k = W / 1932                                       # positions measured on the 1932 px sheet
-    spots = {  # name: (x, y, r) on the sheet – the labels are the sheet's own; row 3's first disc is a last-quarter twin
-        'new': (285, 322, 210), 'waxing-crescent': (715, 322, 210), 'first-quarter': (1182, 322, 182), 'waxing-gibbous': (1640, 322, 210),
-        'waning-gibbous': (1640, 945, 175), 'third-quarter': (1188, 1500, 185), 'waning-crescent': (1640, 1500, 175),
+    k = W / 1932                                       # where each phase sits (measured on a 1932 px copy of the sheet)
+    spots = {  # the labels are the sheet's own; row 3's first disc (a last-quarter twin) and row 2's see-through one are left out
+        'new': (285, 322), 'waxing-crescent': (715, 322), 'first-quarter': (1182, 322), 'waxing-gibbous': (1640, 322),
+        'waning-gibbous': (1640, 945), 'third-quarter': (1188, 1500), 'waning-crescent': (1640, 1500),
     }
-    for name, (x, y, r) in spots.items():
-        cx, cy, rr = disc(sheet, x * k, y * k, r * k)
-        cut(sheet, cx, cy, rr).save(os.path.join(OUT, name + '.webp'), quality=90, method=6)
-        print(name, round(rr))
+    found = discs(sheet)
+    for name, (x, y) in spots.items():
+        cx, cy, rx, ry = min(found, key=lambda d: (d[0] - x * k) ** 2 + (d[1] - y * k) ** 2)
+        cut(sheet, cx, cy, rx - 2.5, ry - 2.5).save(os.path.join(OUT, name + '.webp'), quality=90, method=6)   # (the edge pixels are half checkerboard)
+        print(name, round(cx), round(cy), round(rx), round(ry))
     full = find('moon-full')
-    fw, fh = full.size
-    cx, cy, rr = disc(full, fw / 2, fh / 2, min(fw, fh) * 0.49)
-    cut(full, cx, cy, rr).save(os.path.join(OUT, 'full.webp'), quality=90, method=6)
-    print('full', round(rr))
+    cx, cy, rx, ry = max(discs(full), key=lambda d: d[2])
+    cut(full, cx, cy, rx - 4, ry - 4).save(os.path.join(OUT, 'full.webp'), quality=90, method=6)
+    print('full', round(cx), round(cy), round(rx), round(ry))
 
     # the eclipse: rebuild the dark checkerboard from the empty corners, then the corona is the light above it
     ec = find('eclipse')
     a = np.asarray(ec).astype(float)
     eh, ew, _ = a.shape
-    corner = a[: eh // 8, : ew // 8].mean(2)
-    lo, hi = np.percentile(corner, 20), np.percentile(corner, 80)
-    # the size of a square: the distance between colour changes along the top row
-    row = corner[4] > (lo + hi) / 2
-    edges = np.flatnonzero(np.diff(row.astype(int)))
-    sq = int(np.median(np.diff(edges))) if len(edges) > 2 else max(1, ew // 64)
-    yy, xx = np.mgrid[0:eh, 0:ew]
-    first_light = row[0]
-    checker = ((xx // sq + yy // sq) % 2 == 0) == first_light
-    bg = np.where(checker, hi, lo)[:, :, None] * np.ones(3)
-    light = np.clip((a - bg) / np.maximum(1, 255 - bg), 0, 1).max(2)
-    alpha = np.clip((light - 0.06) / 0.94, 0, 1)        # the faint stars and the noise go
+    L = a.mean(2)
+    corner = L[: eh // 10, : ew // 10]
+    lo, hi = np.percentile(corner, 15), np.percentile(corner, 85)
+    # the squares: their exact size (a fraction of a pixel matters over 2000 px) from the colour changes along the top row
+    row = L[6] > (lo + hi) / 2
+    edges = np.flatnonzero(np.diff(row.astype(int))) + 0.5
+    steps = np.diff(edges); steps = steps[(steps > np.median(steps) * 0.6) & (steps < np.median(steps) * 1.4)]
+    sq = float(np.mean(steps))
+    x0 = float(np.median((edges - edges[0]) % sq + edges[0] % sq)) % sq
+    yy, xx = np.mgrid[0:eh, 0:ew].astype(float)
+    first_light = bool(row[int(x0 + sq / 2) % ew])
+    cell = (np.floor((xx - x0) / sq) + np.floor((yy - x0) / sq)) % 2 == 0
+    checker = cell == first_light
+    # near a square's edge the two colours blur together: count it as the lighter one (never invents corona there)
+    fx, fy = ((xx - x0) / sq) % 1, ((yy - x0) / sq) % 1
+    near = (np.minimum(fx, 1 - fx) * sq < 2) | (np.minimum(fy, 1 - fy) * sq < 2)
+    from scipy import ndimage
+    bgL = np.where(checker, hi, lo)
+    light = np.clip((L - bgL) / np.maximum(1, 255 - bgL), 0, 1)
+    keep = (~near).astype(float)
+    light = np.where(near, ndimage.gaussian_filter(light * keep, 3) / np.maximum(ndimage.gaussian_filter(keep, 3), 1e-3), light)
+    light = ndimage.gaussian_filter(light, 1.2)
+    alpha = np.clip((light - 0.05) / 0.95, 0, 1)        # the faint stars and the noise go
     # the sun's ring and the moon's face are solid
     cx, cy = ew / 2, eh * 0.465
     d = np.hypot(xx - cx, yy - cy)
-    ring = (a.mean(2) > 0) & (d < ew * 0.247)
+    gold = (a[:, :, 0] > 190) & (a[:, :, 1] > 140) & (a[:, :, 2] < 170) & (d < ew * 0.3)
+    ring_r = np.percentile(d[gold], 99.5) + 1
+    ring = d < ring_r
     alpha = np.where(ring, 1.0, alpha)
-    rgb = np.where(ring[:, :, None], a, np.clip((a - bg * (1 - alpha[:, :, None])) / np.maximum(alpha[:, :, None], 1e-3), 0, 255))
+    corona = np.array([236, 243, 255], float)          # the corona's light, a little blue
+    rgb = np.where(ring[:, :, None], a, corona)
     out = np.dstack([rgb, alpha * 255]).astype(np.uint8)
     img = Image.fromarray(out, 'RGBA')
     # only the round part (the words under it are left out), square round the sun
-    half = int(ew * 0.40)
+    half = int(ew * 0.35)
+    # the corona fades out before the edge of the square (the words under it, and the stars, stay outside)
+    fade = np.clip((half - np.hypot(xx - cx, yy - cy)) / (half * 0.18), 0, 1)
+    px = np.asarray(img).copy(); px[:, :, 3] = (px[:, :, 3] * fade).astype(np.uint8); img = Image.fromarray(px, 'RGBA')
     img = img.crop((int(cx - half), int(cy - half), int(cx + half), int(cy + half))).resize((SIZE * 2, SIZE * 2), Image.LANCZOS)
     img.save(os.path.join(R, 'public', 'assets', 'eclipse.webp'), quality=90, method=6)
-    print('eclipse', sq, lo, hi)
+    print('eclipse', round(sq, 3), round(x0, 2), lo, hi, round(ring_r))
 
 
 if __name__ == '__main__':

@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Shared research: within the household only, for now (master)
+The owner decided that a research is shared only within its household for now, and later with others too. The reason is
+that members have no age yet, so the "under 12 only with the family" rule cannot be enforced.
+
+ai-features does the following before step 3 (b24e1c1, 9376809, 46d5e59) is merged:
+- invite() refuses an invitee from another household (403 not_same_household).
+- An invitation does not reveal whether an address is registered: it gives the same answer for "not a member" and
+  "another household".
+- Members are shown by name, not by email address. The owner of the research still sees addresses.
+
+Opening sharing to other households waits for a child marker or a birth year on members (the master owns members), and
+then for the owner's OK. Status: accepted.
+
 ## 2026-11-14 – The research assistant, step 2 completed: the academic pack, docx and slides, and the ✨ tools (ai-features → master, design)
 
 The owner's scope for step 2 (vision): beyond 6d9a822, now also

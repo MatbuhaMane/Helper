@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – One visual style for everything; images are made through the Gemini API (vision, the owner)
+
+**Decided:**
+- All of the app's graphics keep one style: the hand-drawn illustration of the tent (bold dark ink outlines, warm earthy
+  colours, painted texture, no realistic lighting), as in `docs/design/family-tree-art.md`.
+- Anything that departs from it is redrawn in that style. The first case is the campfire in the middle of the home
+  page's ring: both its drawing and its motion fall short (`campfire-strip.webp` has 16 frames in 1.5 s and looks jumpy).
+- The owner approved that design may make images itself through the Gemini API (the project's key, a few cents per
+  image), with `public/assets/tent.webp` as the style reference, instead of the owner generating them by hand.
+  The owner chooses between the versions.
+
+**Why:** the app is shown to the family only when it is ready and looks good. A photographed fire or a flat line drawing
+would clash with the painted scene.
+
+**Affects:** design (the art, the image pipeline, the fire's animation). The master: the fire's markup and CSS are in
+`public/index.html`.
+
+Details: `docs/vision/style.md`. Status: Decided (the owner). Handed over in the vision session's batch.
+
 ## 2026-11-12 – A fifth area: Vision & conversation, חזון ודיבור (master, at the owner's request)
 
 A session for flowing conversation with the owner about the project. When a decision takes shape, it confirms it with the

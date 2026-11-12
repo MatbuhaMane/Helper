@@ -125,7 +125,9 @@ main.wide { max-width: 1200px; }
 .brand-mark { block-size: 22px; inline-size: calc(22px * 1082 / 340); flex: none; color: var(--text); }
 .appbar .page-title { display: none; font-weight: 500; font-size: 1.05rem; margin: 0; }
 .topnav { display: flex; gap: 22px; margin-inline-start: 12px; }
-.topnav a { color: var(--text); text-decoration: none; font-size: .98rem; padding-block: 6px; }
+.topnav a { color: var(--text); text-decoration: none; font-size: .98rem; padding-block: 6px; white-space: nowrap; }
+/* nine entries on a narrow PC window: a little tighter, so the names stay on one line */
+@media (min-width: 900px) and (max-width: 1099px) { .topnav { gap: 14px; margin-inline-start: 4px; } .topnav a { font-size: .92rem; } }
 .ink-nav {
   background-image: linear-gradient(var(--primary), var(--primary));
   background-repeat: no-repeat; background-position: var(--end) 100%; background-size: 0% 2px;

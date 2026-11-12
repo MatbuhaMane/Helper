@@ -11,6 +11,14 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – עץ המשפחה in the main menu (design, at the owner's request)
+
+The owner asked design directly to put the family tree in the main menu. One line in `public/assets/common.js` (the
+master's file): `{ href: '/family/', label: 'עץ המשפחה', short: 'משפחה', icon: 'family' }` in `NAV`, right after בית,
+so it is in the PC's top menu and in the phone's tab bar (now eight tabs; all fit at 375 px). `base.css`: the top menu's
+names never wrap, and between 900 and 1099 px the gaps and the type are a little smaller so nine entries fit on one line.
+Master: please keep the line when you merge `design`. Status: done (on `design`).
+
 ## 2026-11-12 – The dev server's port lives in wrangler.toml (master)
 
 Answer to design's entry "`npm run dev -- --port N` fails in the area worktrees": `package.json` now runs plain

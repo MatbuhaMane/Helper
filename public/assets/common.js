@@ -281,6 +281,7 @@
   };
   const NAV = [
     { href: '/', label: 'בית', icon: 'home' },
+    { href: '/family/', label: 'עץ המשפחה', short: 'משפחה', icon: 'family' },
     // (also: the pages that live inside a folder light up the folder's entry)
     { href: '/food/', label: 'אוכל', icon: 'food', also: ['/groceries/'] },
     { href: '/news/', label: 'חדשות', icon: 'news' },

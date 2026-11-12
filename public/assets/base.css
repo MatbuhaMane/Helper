@@ -12,6 +12,7 @@
   --ink: #2e2a1e;
   --vine: #55622f;
   --olive: #c2b04e;
+  --olive-ink: color-mix(in srgb, var(--olive) 50%, var(--ink));   /* olive as text: deep enough by day (3:1 and more); the olive itself at night */
   --soil: #9c7a55;
   --tint: #dceaf1;
 
@@ -64,6 +65,7 @@
     --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
     --tint: #22344f;
+    --olive-ink: var(--olive);
     color-scheme: dark;
   } }
 :root[data-theme="dark"] {
@@ -81,6 +83,7 @@
     --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
     --tint: #22344f;
+    --olive-ink: var(--olive);
     color-scheme: dark;
   }
 @media (max-width: 899px) { :root { --tabbar-h: 64px; --appbar-h: 54px; } }

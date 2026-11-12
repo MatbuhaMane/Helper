@@ -77,3 +77,6 @@
 .fv-full { max-inline-size: min(92vw, 1100px); max-block-size: 80vh; border-radius: 12px; display: block; }
 .fv-lockbadge { font-size: .85rem; }
 @media (max-width: 599px) { .fv-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fv-two { grid-template-columns: minmax(0, 1fr); } }
+
+/* a person's dates and place, under the name */
+.fv-life { margin: 2px 0 0; font-size: .88rem; }

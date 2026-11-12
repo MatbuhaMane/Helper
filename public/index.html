@@ -311,7 +311,14 @@
     const eclipseAt = (now = Date.now()) => ECLIPSES.find((e) => now >= e.from && now <= e.to) || null;
     const nextEclipse = (kind, now = Date.now()) => ECLIPSES.find((e) => e.kind === kind && e.to > now) || null;
     /** "שלום מישאל": the Hebrew name the family's owner set for each member (just "שלום" until there is one) */
-    const greeting = () => el('div', { class: 'greet' }, el('h1', {}, swell(first ? `שלום ${first}` : 'שלום')));
+    /** the greeting of the hour: בוקר טוב, צהריים טובים, ערב טוב – and שבת שלום from Friday noon to the end of Shabbat, שבוע טוב on Saturday night */
+    function hello(now = new Date()) {
+      const h = now.getHours(), day = now.getDay(), set = H.sunTimes(now).set;
+      if ((day === 5 && h >= 12) || (day === 6 && now < set)) return 'שבת שלום';
+      if (day === 6 && now >= set) return 'שבוע טוב';
+      return h >= 5 && h < 12 ? 'בוקר טוב' : h >= 12 && h < 17 ? 'צהריים טובים' : h >= 17 && h < 23 ? 'ערב טוב' : 'שלום';
+    }
+    const greeting = () => el('div', { class: 'greet' }, el('h1', {}, swell(first ? `${hello()} ${first}` : hello())));
     const dock = el('span', { class: 'dock', 'aria-hidden': 'true' });
     const wheel = appWheel(apps);
     root.append(el('div', { class: 'home' },

@@ -33,12 +33,12 @@ body.news {
 .side button.src[aria-current="true"] { background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--primary); font-weight: 500; }
 .src-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .side .n { margin-inline-start: auto; font-size: .75rem; color: var(--muted); }
-.side .q { font-size: .5rem; letter-spacing: 1px; color: var(--olive); flex: none; }
+.side .q { font-size: .5rem; letter-spacing: 1px; color: var(--olive-ink); flex: none; }
 .side .ico { inline-size: 18px; text-align: center; }
 .fav { inline-size: 16px; block-size: 16px; border-radius: 3px; flex: none; }
 .fav.tg { display: inline-grid; place-items: center; color: #2aa0d8; }
 .fav.tg svg { inline-size: 16px; block-size: 16px; fill: currentColor; }
-.side .err { color: var(--accent); font-size: .75rem; }
+.side .err { color: var(--olive-ink); font-size: .75rem; }
 .side .addsrc { margin: 16px 8px 8px; inline-size: calc(100% - 16px); }
 .side-note { font-size: .74rem; margin: 6px 8px; line-height: 1.5; }
 .side-shade { display: none; }
@@ -98,11 +98,11 @@ body.news {
 .it .t { font-family: var(--serif); font-weight: 700; font-size: 1.12rem; line-height: 1.35; color: var(--newsink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 .it.read .t { font-weight: 500; color: color-mix(in srgb, var(--newsink) 60%, var(--paper)); }
 .it .t-orig { font-size: .78rem; color: var(--muted); margin-block-start: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.it .star { color: var(--olive); }
+.it .star { color: var(--olive-ink); }
 .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 7px; font-size: .75rem; color: var(--muted); margin-block-start: 5px; }
 .k-src { font-weight: 500; color: var(--text); }
 .k-lang { border: 1px solid var(--rule); border-radius: 999px; padding: 0 6px; font-size: .68rem; }
-.k-q { color: var(--olive); letter-spacing: 1px; font-size: .7rem; }
+.k-q { color: var(--olive-ink); letter-spacing: 1px; font-size: .7rem; }
 .k-why { font-size: .7rem; padding: 0 7px; border-radius: 999px; background: color-mix(in srgb, var(--rule) 45%, transparent); }
 .k-why.corroborated, .k-why.confirmed { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
 .k-why.lone, .k-why.unconfirmed { color: var(--muted); }
@@ -148,7 +148,7 @@ body.news {
 .src-hit { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); }
 .src-hit-main { flex: 1; min-inline-size: 0; display: grid; gap: 1px; }
 .src-hit-main b { display: flex; align-items: center; gap: 6px; }
-.src-hit .q { color: var(--olive); }
+.src-hit .q { color: var(--olive-ink); }
 
 /* ================= the article: a panel with the gist, and the full article in a larger panel ================= */
 .news-sheet .rs-back, .news-sheet .rs-front { background: var(--paper); }
@@ -241,7 +241,7 @@ body.news {
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 .star-pick { display: flex; gap: 2px; }
 .star-pick button { font: inherit; font-size: 1.6rem; line-height: 1; background: none; border: 0; padding: 2px; cursor: pointer; color: var(--rule); transition: color var(--dur-quick), transform var(--dur-press); }
-.star-pick button.on { color: var(--olive); }
+.star-pick button.on { color: var(--olive-ink); }
 .star-pick button:hover { transform: scale(1.12); }
 
 /* ================= tablet and phone ================= */
@@ -275,3 +275,4 @@ body.news {
 /* the add-source dialog: room between the search, the filters and the results */
 #modalBody .row { gap: 10px; }
 .src-results { gap: 8px; margin-block: 12px; }
+

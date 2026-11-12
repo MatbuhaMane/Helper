@@ -254,11 +254,25 @@
     try { localStorage.setItem('fv-focus', id); } catch (_) { /* fine */ }
     draw();
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const anims = [];
     for (const c of board.querySelectorAll('.fv-card')) {
       const was = before.get(c.dataset.id), now = c.getBoundingClientRect();
-      if (was) c.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' });
-      else c.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' });
+      if (was) anims.push(c.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }));
+      else anims.push(c.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' }));
     }
+    // the lines were measured while the cards were still gliding: draw them again where the cards came to rest
+    Promise.allSettled(anims.map((a) => a.finished)).then(() => redrawLines(board));
+  }
+  /** the lines on the board as it is now (the layer is made anew by every drawing) */
+  function redrawLines(board) {
+    const svg = board.querySelector('.fv-lines');
+    if (svg) connect(board, svg);
+  }
+  /** redraw the lines when the board changes size – once per board, finding the current layer each time */
+  function watchSize(board) {
+    if (board.dataset.watch) return;
+    board.dataset.watch = '1';
+    new ResizeObserver(() => redrawLines(board)).observe(board);
   }
   /** the nuclear family around the person in the centre: grandparents, parents, the person with siblings and partners, children */
   function drawFamily(board) {
@@ -281,7 +295,7 @@
       grandkids.length ? el('p', { class: 'fv-more muted' }, `ועוד ${grandkids.length} ${grandkids.length === 1 ? 'נכד/ה' : 'נכדים'} – לחצו על אחד הילדים כדי לרדת בענף`) : null,
     ].filter(Boolean));
     requestAnimationFrame(() => connect(board, lines));
-    if (!board.dataset.watch) { board.dataset.watch = '1'; new ResizeObserver(() => connect(board, lines)).observe(board); }
+    watchSize(board);
   }
   /** generations from the parent links (partners share a row) – the zoomed-out view until the forest comes */
   function generations() {
@@ -313,7 +327,7 @@
     lines.setAttribute('class', 'fv-lines'); lines.setAttribute('aria-hidden', 'true');
     board.replaceChildren(lines, ...generations().map((row) => el('div', { class: 'fv-row' }, row.map((p) => card(p, p.id === S.focus ? 'focus' : '')))));
     requestAnimationFrame(() => connect(board, lines));
-    if (!board.dataset.watch) { board.dataset.watch = '1'; new ResizeObserver(() => connect(board, lines)).observe(board); }
+    watchSize(board);
   }
   function card(p, role = '') {
     if (!p) return null;
@@ -346,7 +360,9 @@
     const b = board.getBoundingClientRect();
     svg.setAttribute('width', b.width); svg.setAttribute('height', b.height);
     const box = (id) => { const c = board.querySelector(`.fv-card[data-id="${CSS.escape(id)}"]`); if (!c) return null; const r = c.getBoundingClientRect(); return { x: r.left - b.left + r.width / 2, top: r.top - b.top, bottom: r.bottom - b.top, l: r.left - b.left, r: r.right - b.left, mid: r.top - b.top + r.height / 2 }; };
-    let d = '', dash = '';
+    let d = '', dash = '', lineage = '';
+    // the line of descent of the person in the centre: from their grandparents to their parents, and from their parents to them
+    const upLine = new Set(S.focus ? [S.focus, ...parentsOf(S.focus)] : []);
     for (const l of S.links) if (l.type === 'partner') {
       const x = box(l.a), y = box(l.b);
       if (!x || !y) continue;
@@ -359,9 +375,10 @@
       const ps = parentsOf(p.id).map(box).filter(Boolean);
       if (!a || !ps.length) continue;
       const from = ps.length >= 2 ? (ps[0].x + ps[1].x) / 2 : ps[0].x, y0 = Math.max(...ps.map((x) => x.bottom)), ym = (y0 + a.top) / 2;
-      d += `M${from},${ps.length >= 2 ? ps[0].mid : y0} V${ym} H${a.x} V${a.top} `;
+      const seg = `M${from},${ps.length >= 2 ? ps[0].mid : y0} V${ym} H${a.x} V${a.top} `;
+      if (upLine.has(p.id)) lineage += seg; else d += seg;
     }
-    svg.innerHTML = `<path d="${d}"/><path class="ended" d="${dash}"/>`;
+    svg.innerHTML = `<path d="${d}"/><path class="ended" d="${dash}"/><path class="lineage" d="${lineage}"/>`;
   }
 
   /* ---------- adding or editing a person ---------- */

@@ -7,7 +7,7 @@ import type { BetaContentBlock, BetaMessageParam, BetaToolUnion } from '@anthrop
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser } from './core';
-import { recipeFromJsonLd } from './kitchen';
+import { recipeFromJsonLd, recipeFromPage } from './recipe-parse';
 import { fetchPage, readable } from './web';
 
 const SEARCH_MODEL = 'claude-sonnet-5-5';
@@ -352,7 +352,8 @@ export async function open(ctx: Ctx) {
   if (cached && Date.now() - cached.created_at < RECIPE_TTL) return json({ recipe: JSON.parse(cached.data), cached: true });
 
   const page = await fetchPage(url);
-  const ld = recipeFromJsonLd(page.html, url);
+  // what the page itself holds (its structured recipe, or the lists under its headings) is cleaner material than the raw text
+  const ld = recipeFromJsonLd(page.html, url) || recipeFromPage(page.html, url);
   let material: string;
   if (ld && ld.ingredients.length) {
     material = JSON.stringify({ title: ld.title, description: ld.notes, ingredients: ld.ingredients.map((i) => [i.measure, i.name].filter(Boolean).join(' ')), steps: ld.steps });

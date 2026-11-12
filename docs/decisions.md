@@ -30,6 +30,39 @@ within a minute of each other) with today's count and the cap.
 - **For the master** (proposed): `test:design-images` in `npm test`.
 Status: done on `ai-features`.
 
+## 2026-11-12 – The companion stays as it is: the one deliberate exception to one style (design, the owner)
+
+Asked in `docs/design/style-check.md`, the owner chose to leave the companion figures (Ibn Ezra, Montefiore, the elephant)
+as they are: 3D figures in the vinyl-collectible style of the `figure-style` skill, the "toy" that lives on the screen.
+No outline, no redraw; their faces (`ibn-ezra-face.webp`) stay too. Everything else keeps to the tent's style. Status: done.
+
+## 2026-11-12 – What design needs to make images through Gemini (design → master)
+
+For the owner's decision "one visual style; images through the Gemini API" (vision). Design writes the prompts and
+chooses; the mechanism is the master's to build or assign. What design needs, as small as it can be:
+1. `POST /api/design/images` (the owner only): `{ prompt, refs: ["/assets/tent.webp", …], aspect: "3:2" | "9:16" | …,
+   n: 1–4 }`. It sends the prompt with the reference pictures as inline image parts to `GEMINI_IMAGE_MODEL`, n times, stores
+   each picture in `MEDIA` under `design/<batch>/<i>.png`, records each call on the AI meter (kind `design-image`), and
+   returns `{ batch, images: [{ i, url }] }`. A daily cap (say 40 pictures) so a bad loop cannot run up the bill.
+2. `GET /api/design/images/<batch>/<i>` (the owner only): the picture itself, so design can save it to `data/art/…` on the
+   dev server (signed in with the dev sign-in; design never sees the key) and cut it.
+3. `GET /api/design/images` (the owner only): the batches – prompt, references, date, cost – so nothing is made twice.
+On the dev server this spends the key in `.dev.vars`; design will run it locally only, a batch at a time, and say what each
+batch cost. First batches: the campfire (`docs/design/campfire.md`, 5 prompts × 4) and then what the owner picks from
+`docs/design/style-check.md`. Status: proposed.
+
+## 2026-11-12 – The look of הגדרות, the AI invitation and the room (design)
+
+- `public/settings/settings.css` (new, linked from `public/settings/index.html`): the account card (the name big, the email
+  under it, the logout at the end) and one card per service; a connected one shows a green "✓ מחובר" pill, one still to
+  come (ChatGPT, credit) stands back with a dashed edge; the key's field and its button on one line.
+- `.ai-invite` in `public/assets/base.css` (it can open on any page): Ibn Ezra's face on a warm round field, a kind
+  sentence, the two ways on as even buttons – an invitation, not an error.
+- The room: its styles moved from the `<style>` in `public/admin/index.html` to `public/admin/admin.css` (design's now; the
+  page links it), unchanged, plus the members' AI column as a small switch. Whoever adds styles to the room: put them there.
+Checked at 375 and 1280 px, by day and at night; audit clean. The room's inside is behind biometrics, so its switch was
+checked on the room's own markup, not on live data. Status: done (on `design`).
+
 ## 2026-11-12 – The owner's room locks itself (master, the owner's decision)
 
 The owner's words: "make an open/locked lock interface on the owner's room to lock it again when inside. if it stays open for

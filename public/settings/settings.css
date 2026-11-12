@@ -1,0 +1,47 @@
+/* הגדרות – a person's own settings: the account, and "חיבור לשירותים" (their own AI, or credit). Quiet cards, one per service;
+   a connected one says so in green, one that is still to come stands back with a dashed edge. */
+.st { max-inline-size: 760px; margin: 0 auto; padding-block: 18px 48px; display: grid; gap: 18px; }
+.st > h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); line-height: 1.15; }
+.st h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.st .card { margin: 0; padding: 18px; border-radius: 22px; border-color: color-mix(in srgb, var(--line) 75%, transparent);
+  box-shadow: 0 12px 30px -22px rgba(46, 42, 30, .4); min-inline-size: 0; }
+
+/* the account: the name big, the email under it, the logout at the end */
+.st-account { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 14px; }
+.st-account > h2 { grid-column: 1 / -1; font-size: .82rem; font-weight: 600; color: var(--muted); letter-spacing: .03em; margin-block-end: 6px; }
+.st-account > p { grid-column: 1; margin: 0; }
+.st-account > p:not(.muted) { font-size: 1.2rem; font-weight: 600; }
+.st-account > p.muted { overflow-wrap: anywhere; text-align: end; }
+.st-account > .btn { grid-column: 2; grid-row: 2 / span 2; align-self: center; }
+
+/* the services */
+.st-services { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; align-items: start; }
+.st-services > h2, .st-services > p { grid-column: 1 / -1; margin: 0; line-height: 1.55; }
+.st-services > p.small { padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--olive) 14%, var(--card)); }
+.st-service { display: grid; gap: 10px; align-content: start; }
+.st-service h3 { margin: 0; font-size: 1.02rem; display: flex; align-items: center; gap: 10px; }
+/* a small round mark before each service's name */
+.st-service h3::before { content: ""; inline-size: 30px; block-size: 30px; border-radius: 10px; flex: none;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--primary) 30%, var(--card)), color-mix(in srgb, var(--primary) 12%, var(--card)));
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line)); }
+.st-service > p { margin: 0; line-height: 1.5; }
+/* connected: a green line, with its check */
+.st-service:not(:has(form)) > p:not(.muted) { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 4px 12px; border-radius: 999px;
+  font-size: .9rem; font-weight: 500; color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); }
+.st-service:not(:has(form)) > p:not(.muted)::before { content: "✓"; font-weight: 700; }
+.st-service:not(:has(form)) > .btn { justify-self: start; }
+/* still to come: it stands back */
+.st-service:not(:has(form)):not(:has(> p:not(.muted))) { border-style: dashed; box-shadow: none; background: color-mix(in srgb, var(--card) 60%, var(--bg)); }
+.st-service:not(:has(form)):not(:has(> p:not(.muted))) h3::before { filter: grayscale(1); opacity: .6; }
+.st-service .btn:disabled { justify-self: start; }
+
+/* the key: the field and the button on one line, the note under them */
+.st-key { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; margin: 0; }
+.st-key label { display: grid; gap: 5px; font-size: .86rem; color: var(--muted); min-inline-size: 0; }
+.st-key input { font: inherit; font-size: .95rem; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 12px;
+  padding: 9px 12px; min-inline-size: 0; inline-size: 100%; box-sizing: border-box; font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+.st-key input:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 1px; border-color: var(--primary); }
+.st-key .btn { min-block-size: 40px; }
+.st-key > p { grid-column: 1 / -1; margin: 0; line-height: 1.5; }
+.st-key bdi { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .85em; }
+@media (max-width: 520px) { .st .card { padding: 16px 14px; border-radius: 20px; } }

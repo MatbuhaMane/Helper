@@ -1,0 +1,47 @@
+/* החדר של האוהל – the owner's room (moved here from the page; design's from now on) */
+.ad { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 14px 60px; }
+.ad > * { min-inline-size: 0; }
+.ad h2 { margin: 0 0 8px; font-size: 1.15rem; } .ad h3 { margin: 14px 0 6px; font-size: 1rem; }
+.ad-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ad-bar .spacer { flex: 1; }
+.ad-nav { display: flex; flex-wrap: wrap; gap: 6px; position: sticky; inset-block-start: calc(var(--appbar-h, 56px) + 4px); z-index: 2; padding: 6px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+.ad-nav a { padding: 4px 10px; border-radius: 10px; text-decoration: none; color: var(--text); font-size: .92rem; }
+.ad-nav a:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.ad-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.ad-tile { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); }
+.ad-tile b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; } .ad-tile small { color: var(--muted); }
+.ad-tile.good b { color: var(--primary); } .ad-tile.bad b { color: var(--danger, #b42318); }
+.ad table { inline-size: 100%; border-collapse: collapse; font-size: .9rem; }
+.ad td, .ad th { padding: 6px 8px; border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
+.ad th { color: var(--muted); font-weight: 500; }
+.ad .num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ad-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; margin-block: 10px; }
+.ad-form label { display: grid; gap: 4px; font-size: .88rem; color: var(--muted); }
+.ad input, .ad select, .ad textarea { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); min-inline-size: 0; }
+.ad-set { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding-block: 10px; border-block-end: 1px solid var(--line); }
+.ad-set p { grid-column: 1 / -1; margin: 0; }
+.ad-scroll { overflow-x: auto; }
+.ad-gate { text-align: center; padding: 34px 18px; }
+.ad-gate .big { font-size: 3rem; line-height: 1; }
+.ad-alert { border-inline-start: 3px solid var(--danger, #b42318); }
+.ad-bars { display: flex; align-items: flex-end; gap: 3px; block-size: 70px; margin-block: 6px; }
+.ad-bars i { flex: 1; background: color-mix(in srgb, var(--primary) 70%, transparent); border-radius: 3px 3px 0 0; min-block-size: 2px; }
+.small { font-size: .88rem; }
+.ad-lock { white-space: nowrap; }
+.ad-stay { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ad-warn { position: fixed; inset-inline: 16px; inset-block-end: calc(var(--tabbar-h, 64px) + 16px); z-index: 50; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 6px 10px; padding: 12px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--line-strong);
+  border-inline-start: 4px solid var(--danger, #b42318); box-shadow: var(--lift, 0 8px 24px rgba(0, 0, 0, .25)); }
+.ad-warn[hidden] { display: none; }
+
+/* the AI column of the members: a small switch (on: family, no limit; off: limited to credit), and its words beside it */
+.ad tbody td > label:has(> input[type="checkbox"]) { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; cursor: pointer; font-size: .86rem; }
+.ad tbody td > label > input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: relative; flex: none; margin: 0; cursor: pointer;
+  inline-size: 38px; block-size: 22px; border-radius: 999px; background: var(--line-strong); transition: background .2s var(--ease-river); }
+.ad tbody td > label > input[type="checkbox"]::before { content: ""; position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 16px; block-size: 16px;
+  border-radius: 50%; background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: inset-inline-start .2s var(--ease-river); }
+.ad tbody td > label > input[type="checkbox"]:checked { background: var(--primary); }
+.ad tbody td > label > input[type="checkbox"]:checked::before { inset-inline-start: 19px; }
+.ad tbody td > label > input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
+.ad tbody td > label > input[type="checkbox"]:disabled { opacity: .55; cursor: default; }
+@media (prefers-reduced-motion: reduce) { .ad tbody td > label > input[type="checkbox"], .ad tbody td > label > input[type="checkbox"]::before { transition: none; } }

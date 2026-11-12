@@ -84,3 +84,35 @@ html:has(.fun) { overscroll-behavior-y: contain; }
 .fun-pull.spin span { animation: fun-pull-spin .8s linear infinite; }
 @keyframes fun-pull-spin { to { rotate: 360deg; } }
 @media (prefers-reduced-motion: reduce) { .fun-pull.spin span { animation: none; } }
+
+/* a recommendation opens: a tap anywhere on the card flips it over into the whole page (the shared sheet, as in the
+   recipe book); the card lifts a little under the pointer to say so */
+.fun-pick { cursor: pointer; transition: transform .35s var(--ease-river), box-shadow .35s var(--ease-river); }
+.fun-pick:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -18px rgba(46, 42, 30, .45); }
+.fun-pick:active { transform: translateY(-1px) scale(.995); }
+.fun-open { all: unset; cursor: pointer; }
+.fun-open:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 6px; }
+@media (prefers-reduced-motion: reduce) { .fun-pick, .fun-pick:hover, .fun-pick:active { transition: none; transform: none; } }
+
+/* the open recommendation, in the sheet */
+.fun-sheet { display: grid; gap: 14px; padding-block-end: 8px; }
+.fun-sheet-img { border-radius: 22px; overflow: hidden; aspect-ratio: 16 / 9; background: color-mix(in srgb, var(--tint) 40%, var(--card));
+  box-shadow: 0 18px 40px -24px rgba(46, 42, 30, .55); margin-block-start: 34px; }
+.fun-sheet-img img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.fun-sheet h2 { margin: 2px 0 0; font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.3rem); line-height: 1.2; text-wrap: balance; }
+.fun-sheet .fun-orig { margin: -6px 0 0; font-size: .95rem; text-align: start; }
+.fun-sheet .fun-tags span { font-size: .82rem; padding: 3px 12px; }
+.fun-sheet .fun-what { font-size: 1.08rem; line-height: 1.75; }
+.fun-why-box { display: grid; gap: 4px; padding: 14px 16px; border-radius: 18px; background: color-mix(in srgb, var(--tint) 22%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--tint) 55%, var(--line)); }
+/* at night a pastel mixed into the navy turns grey: only a breath of it, and its own colour on the edge */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fun-why-box { background: color-mix(in srgb, var(--tint) 7%, var(--card)); border-color: color-mix(in srgb, var(--tint) 30%, var(--line)); } }
+:root[data-theme="dark"] .fun-why-box { background: color-mix(in srgb, var(--tint) 7%, var(--card)); border-color: color-mix(in srgb, var(--tint) 30%, var(--line)); }
+.fun-why-box small { font-size: .78rem; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.fun-why-box .fun-why { color: var(--text); font-size: 1rem; line-height: 1.7; }
+.fun-sheet .fun-where { gap: 8px; }
+.fun-sheet .fun-svc { padding: 7px 14px 7px 8px; font-size: .95rem; }
+.fun-sheet .fun-svc-logo, .fun-sheet .fun-svc-dot { inline-size: 28px; block-size: 28px; border-radius: 8px; }
+.fun-sheet-acts { display: flex; flex-wrap: wrap; gap: 8px; padding-block-start: 6px; }
+.fun-sheet-acts .btn { text-decoration: none; }
+@media (max-width: 520px) { .fun-sheet-img { border-radius: 16px; margin-block-start: 40px; } .fun-sheet-acts .btn { flex: 1 1 100%; justify-content: center; } }

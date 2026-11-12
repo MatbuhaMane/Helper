@@ -30,22 +30,44 @@
 
   /* a recommendation */
   const logo = (w) => (w.domain ? el('img', { class: 'fun-svc-logo', src: `/api/fun/logo/${w.domain}`, alt: '', loading: 'lazy', onerror: (e) => e.target.replaceWith(el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1))) }) : el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1)));
-  function card(p, tint) {
-    const where = p.where?.length
-      ? el('div', { class: 'fun-where' }, el('small', {}, 'איפה:'), p.where.map((w) => {
-          const inner = [logo(w), el('span', { class: 'fun-svc-name' }, w.name), w.note ? el('small', {}, w.note) : ''];
-          return w.url ? el('a', { class: 'fun-svc', href: w.url, target: '_blank', rel: 'noopener' }, ...inner) : el('span', { class: 'fun-svc' }, ...inner);
-        }))
-      : el('p', { class: 'fun-where none muted' }, 'עוד לא ידוע איפה אפשר למצוא את זה בישראל.');
-    return el('article', { class: 'fun-card', style: `--tint:${tint}` },
-      p.image ? el('a', { class: 'fun-img', href: p.link, target: '_blank', rel: 'noopener', tabindex: -1, 'aria-hidden': 'true' }, el('img', { src: p.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => e.target.closest('.fun-img').remove() })) : '',
+  const whereOf = (p) => (p.where?.length
+    ? el('div', { class: 'fun-where' }, el('small', {}, 'איפה:'), p.where.map((w) => {
+        const inner = [logo(w), el('span', { class: 'fun-svc-name' }, w.name), w.note ? el('small', {}, w.note) : ''];
+        return w.url ? el('a', { class: 'fun-svc', href: w.url, target: '_blank', rel: 'noopener' }, ...inner) : el('span', { class: 'fun-svc' }, ...inner);
+      }))
+    : el('p', { class: 'fun-where none muted' }, 'עוד לא ידוע איפה אפשר למצוא את זה בישראל.'));
+  const tagsOf = (p) => el('div', { class: 'fun-tags' }, p.kind ? el('span', { class: 'fun-kind' }, p.kind) : '', p.family ? el('span', { class: 'fun-age' }, p.family) : '', p.rating ? el('span', { class: 'fun-rate' }, '★ ' + p.rating) : '');
+  function card(p, tint, cat) {
+    const art = el('article', { class: 'fun-card fun-pick', style: `--tint:${tint}` },
+      p.image ? el('div', { class: 'fun-img' }, el('img', { src: p.image, alt: '', loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => e.target.closest('.fun-img').remove() })) : '',
       el('div', { class: 'fun-body' },
-        el('div', { class: 'fun-tags' }, p.kind ? el('span', { class: 'fun-kind' }, p.kind) : '', p.family ? el('span', { class: 'fun-age' }, p.family) : '', p.rating ? el('span', { class: 'fun-rate' }, '★ ' + p.rating) : ''),
-        el('h3', { dir: 'auto' }, p.title), p.original && p.original !== p.title ? el('p', { class: 'fun-orig', dir: 'ltr' }, p.original) : '',
+        tagsOf(p),
+        // the title opens the card (for the keyboard); a tap anywhere on the card does too
+        el('h3', { dir: 'auto' }, el('button', { class: 'fun-open', type: 'button', 'aria-haspopup': 'dialog' }, p.title)),
+        p.original && p.original !== p.title ? el('p', { class: 'fun-orig', dir: 'ltr' }, p.original) : '',
         p.what ? el('p', { class: 'fun-what' }, p.what) : '',
         p.why ? el('p', { class: 'fun-why' }, p.why) : '',
-        where,
+        whereOf(p),
         el('a', { class: 'fun-src', href: p.link, target: '_blank', rel: 'noopener' }, 'ההמלצה מ־', p.source, ' ↗')));
+    art.addEventListener('click', (e) => { if (e.target.closest('a') || getSelection().toString()) return; openPick(p, tint, cat, art); });
+    return art;
+  }
+  /* a card opens: it flips over and grows into the whole page, as a recipe does in the recipe book (H.sheet) */
+  const WATCH = { tv: 'טריילר ביוטיוב', film: 'טריילר ביוטיוב', games: 'טריילר ביוטיוב', music: 'להאזנה ביוטיוב', live: 'קטעים מהופעות ביוטיוב' };
+  function openPick(p, tint, cat, from) {
+    const name = p.original || p.title, q = cat === 'music' ? name : cat === 'live' ? name + ' live' : name + ' trailer';
+    H.sheet.open(from, el('article', { class: 'fun-sheet', style: `--tint:${tint}` },
+      p.image ? el('div', { class: 'fun-sheet-img' }, el('img', { src: p.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.parentElement.remove() })) : '',
+      tagsOf(p),
+      el('h2', { dir: 'auto' }, p.title),
+      p.original && p.original !== p.title ? el('p', { class: 'fun-orig', dir: 'ltr' }, p.original) : '',
+      p.what ? el('p', { class: 'fun-what' }, p.what) : '',
+      p.why ? el('div', { class: 'fun-why-box' }, el('small', {}, 'למה כדאי'), el('p', { class: 'fun-why' }, p.why)) : '',
+      whereOf(p),
+      el('div', { class: 'fun-sheet-acts' },
+        WATCH[cat] ? el('a', { class: 'btn primary', href: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q), target: '_blank', rel: 'noopener' }, '▶ ', WATCH[cat]) : '',
+        p.link ? el('a', { class: 'btn ghost', href: p.link, target: '_blank', rel: 'noopener' }, 'ההמלצה המלאה ב־', p.source, ' ↗') : '')));
+    document.querySelector('.rsheet .rs-close')?.focus({ preventScroll: true });
   }
 
   /* something going round the web: a video plays in its card (YouTube, privacy-enhanced); a picture shows whole */
@@ -98,7 +120,7 @@
         if (mine !== token) return;
         const key = (p) => (p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
         const fresh = d.picks.filter((p) => !S.seen.has(p.link) && !S.seen.has(key(p)) && S.seen.add(p.link) && S.seen.add(key(p)));
-        board.append(...fresh.map((p) => card(p, tint)));
+        board.append(...fresh.map((p) => card(p, tint, S.cat)));
         if (S.page === 0) { keep(S.cat, d); stamp.textContent = `נבחרו ${ago(d.at)}`; }
         S.done = !d.more || !d.picks.length;
       }
@@ -132,7 +154,7 @@
     const old = fresh ? null : kept(cat);
     if (fresh) scrollTo({ top: 0, behavior: 'smooth' });
     if (old && cat === 'funny' && old.items?.length) { board.replaceChildren(...old.items.map(viralCard)); old.items.forEach((v) => S.seen.add(v.id || v.src)); S.cursor = old.cursor; S.page = 1; stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
-    else if (old && old.picks?.length) { board.replaceChildren(...old.picks.map((p) => card(p, tint))); old.picks.forEach((p) => { S.seen.add(p.link); S.seen.add((p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')); }); S.page = 1; stamp.textContent = `נבחרו ${ago(old.at)}`; }
+    else if (old && old.picks?.length) { board.replaceChildren(...old.picks.map((p) => card(p, tint, cat))); old.picks.forEach((p) => { S.seen.add(p.link); S.seen.add((p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')); }); S.page = 1; stamp.textContent = `נבחרו ${ago(old.at)}`; }
     else board.replaceChildren(spinner(cat === 'funny' ? 'מחפש מה הכי ויראלי עכשיו…' : `בוחר את המומלצים ב${name} ובודק איפה אפשר לראות אותם… (עד דקה)`));
     if (!old) { const first = board.firstElementChild; S.page = 0; more().then(() => first?.classList.contains('fun-wait') && first.remove()); }
     else more();

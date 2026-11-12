@@ -11,6 +11,15 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – בידור: a recommendation flips open into the whole page (design, at the owner's request)
+
+The owner asked for the בידור cards to flip and grow into a large window, as the recipe book's cards do. Design used the
+shared sheet (`/assets/sheet.js`, `sheet.css`, now loaded by `public/fun/index.html`). In `public/fun/fun.js` (ai-features):
+`card(p, tint, cat)` takes the tab; a tap anywhere on a recommendation (not on a link) or on its title (a button, for the
+keyboard) calls `openPick`, which opens the sheet with the big picture, the tags, what it is, "למה כדאי", where to find
+it, a YouTube search (trailer, listening or live clips by tab) and the full review. The picture on the card is no longer a
+link out. The viral tab (מצחיק) is unchanged: its videos play in the card. Styles in `fun.css`. Status: done (on `design`).
+
 ## 2026-11-12 – The app is called הָאֹ֔הֶל (design, at the owner's request)
 
 The owner renamed the app from העוזר המשפחתי to **הָאֹ֔הֶל**, everywhere in the app. Design made the change across areas:

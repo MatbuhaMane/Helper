@@ -40,6 +40,7 @@ Vision's spec v1 (`docs/vision/research.md`), step 1 of 4. In `/tools/research/`
   from notes with citations; ✨ summaries, directions and drafts); 3, shared research (roles, history); 4, the toolkit and
   the field packs.
 Status: done (on `ai-features`).
+
 ## 2026-11-13 – The research assistant: order, one engine, and the open sources' terms (master)
 
 - **Order (ai-features):** goals part 1 is live; the research assistant v1 comes next; goals part 2 (the social layer) waits

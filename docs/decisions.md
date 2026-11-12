@@ -11,6 +11,22 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The study room without AI (docs/ai/without-ai.md #7) (ai-features → master, design)
+
+The dictionaries, the concordance and the commentaries already worked without AI. Now:
+- **The researcher:** "🔎 חיפוש בספריא" (primary) searches all of Sefaria's sources by the question's key words
+  (`public/parasha/plain.js`, 13 tests in `server/test-parasha-plain.mjs`; through the existing `/api/research/search`),
+  beside "✨ שאלה לחוקר" (`.ai-up`, `offer` when no AI is left); a link to the verse's commentaries.
+- **A word:** the Hebrew explanation (AI) comes by itself only when the AI is free for this person (the family, or their
+  own key); a limited account gets "✨ פירוש בעברית" and spends nothing on a tap.
+- **Translation:** "📖 התרגום של ספריא" (Sefaria's own translation of a Sefaria source, e.g. the Metsudah Onkelos) and
+  "📚 מילון למילים" (each word in Sefaria's dictionaries) beside "✨ תרגום לעברית". AI results carry `.ai-note`.
+- **For the master:** `public/parasha/index.html` loads `plain.js` before `study.js`; add `test:parasha-plain` to
+  `npm test`. No route or table.
+- **For design:** `.rs-ask-acts` (the researcher's two buttons, on their own row), `.rs-plain` and `.rs-plain-hit`
+  (the search results; an inline rule holds them until then), `.rs-tr-plain`, `.rs-tr-gloss`, `.rs-tr-sef`.
+Status: done (on `ai-features`).
+
 ## 2026-11-12 – Restaurants: the family's list (A) and Google Places (C) (ai-features → master, design)
 
 The owner chose A, then C (docs/ai/restaurants.md); for C, the place is both the city in the settings and the device's

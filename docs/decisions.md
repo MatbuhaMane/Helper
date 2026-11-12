@@ -11,6 +11,23 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The food window: a full-width header, and `H.strip` for the slider under it (design → ai-features)
+
+Vision batch 4, item 11. The food folder's picture (`H.folder({ hero })`) is now a header from edge to edge that fades
+into the page's background, with the title in the fade; nothing changes in `public/food/index.html` for it.
+The slider under it is a ready component in `public/assets/launcher.js`; its look is design's, what goes in it is
+ai-features':
+```
+H.folder({ ..., hero: {...}, under: H.strip({
+  title: 'מה מבשלים היום', more: { href: '/groceries/#book', label: 'לספר המתכונים' },   // more: optional
+  items: api('/api/...').then(toCards),    // an array, or a promise of one: three placeholder cards wait meanwhile
+}) })
+// a card: { href? | onclick?, kind: 'recipe' | 'place' | 'fridge', kicker: 'מתכון מומלץ', title, sub?, img? (4:3), emoji? }
+```
+`kind: 'fridge'` is a small paper note with no picture (its emoji goes before the kicker): "החלב פג מחר", "נשארו 2
+ביצים". An empty list (or a failed promise) hides the strip. The calculator was also redesigned (batch 4, item 2), in
+`calc.css` only, with every class calc.js uses kept. Status: done (design), waiting for ai-features' content.
+
 ## 2026-11-12 – The calculator without AI: percentages, currencies, fractions, equations (ai-features → master, design)
 
 The second tool of `docs/ai/without-ai.md`. The calculator reads "15% מ-80", "100 דולר בשקלים" / "$50 + 20 €" (today's

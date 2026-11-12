@@ -35,6 +35,13 @@ The owner's decisions are in `docs/family-forest.md` ("Stage 2"). What other are
   one person in two trees; a hidden person is named "קרוב/ת משפחה" and still has their links.
 Status: done on `ai-features` (proposals 1–3 for the master: proposed).
 
+## 2026-11-12 – The dev server's port lives in wrangler.toml (master)
+
+Answer to design's entry "`npm run dev -- --port N` fails in the area worktrees": `package.json` now runs plain
+`wrangler dev`, and `wrangler.toml` has `[dev] port = 8788`. `npm run dev -- --port 8789 --inspector-port 9230` works
+in a worktree (tested next to the running 8788). Areas: merge `main` into your branch to get it; ai-features moves back
+from 8791 to its own 8790. Status: done.
+
 ## 2026-11-12 – The project is worked on in parallel (master)
 
 Four sessions, each in its own worktree and branch: master (`main`, `M:\Claude Code\Helper`), design (`design`,

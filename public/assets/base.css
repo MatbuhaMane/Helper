@@ -307,3 +307,13 @@ html.embedded body { padding-block-end: 0; }
   background: var(--text); color: var(--bg); box-shadow: var(--lift); cursor: pointer; animation: cap-in .18s ease-out; }
 .cap-btn[hidden] { display: none; }
 @keyframes cap-in { from { opacity: 0; transform: translateY(4px); } }
+/* the AI invitation (ai-invite.js): when someone's AI credit runs out it is not an error but an invitation – Ibn Ezra's
+   face on a warm round field, a kind sentence, and the way on */
+.ai-invite { display: grid; justify-items: center; text-align: center; gap: 10px; padding-block: 6px 2px; max-inline-size: 420px; margin-inline: auto; }
+.ai-invite::before { content: ""; inline-size: 96px; block-size: 96px; border-radius: 50%;
+  background: url(/assets/ibn-ezra-face.webp) center 30% / 84% no-repeat, radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--olive) 38%, var(--card)), color-mix(in srgb, var(--tint) 70%, var(--card)));
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--olive) 14%, transparent), 0 12px 26px -14px rgba(46, 42, 30, .5); }
+.ai-invite h2 { margin: 4px 0 0; font-size: 1.35rem; text-wrap: balance; }
+.ai-invite p { margin: 0; line-height: 1.6; color: var(--muted); max-inline-size: 34ch; }
+.ai-invite .sky-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-block-start: 8px; inline-size: 100%; }
+.ai-invite .sky-acts .btn { flex: 1 1 140px; justify-content: center; min-block-size: 44px; }

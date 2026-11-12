@@ -11,6 +11,18 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The look of הגדרות, the AI invitation and the room (design)
+
+- `public/settings/settings.css` (new, linked from `public/settings/index.html`): the account card (the name big, the email
+  under it, the logout at the end) and one card per service; a connected one shows a green "✓ מחובר" pill, one still to
+  come (ChatGPT, credit) stands back with a dashed edge; the key's field and its button on one line.
+- `.ai-invite` in `public/assets/base.css` (it can open on any page): Ibn Ezra's face on a warm round field, a kind
+  sentence, the two ways on as even buttons – an invitation, not an error.
+- The room: its styles moved from the `<style>` in `public/admin/index.html` to `public/admin/admin.css` (design's now; the
+  page links it), unchanged, plus the members' AI column as a small switch. Whoever adds styles to the room: put them there.
+Checked at 375 and 1280 px, by day and at night; audit clean. The room's inside is behind biometrics, so its switch was
+checked on the room's own markup, not on live data. Status: done (on `design`).
+
 ## 2026-11-12 – The owner's room locks itself (master, the owner's decision)
 
 The owner's words: "make an open/locked lock interface on the owner's room to lock it again when inside. if it stays open for

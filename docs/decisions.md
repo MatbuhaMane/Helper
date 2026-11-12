@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The research assistant: order, one engine, and the open sources' terms (master)
+
+- **Order (ai-features):** goals part 1 is live; the research assistant v1 comes next; goals part 2 (the social layer) waits
+  for a design proposal, since it needs the friends/approval and under-12 rules.
+- **One engine:** `server/research.ts` becomes a shared core (sources, search, citations); the Torah researcher is one source
+  pack (Sefaria), the academic researcher another. PDFs to Drive use the same incremental `drive.file` grant as notes.
+  "Share to הָאֹהֶל" from the phone: ai-features builds a receiving page (`/capture/`, GET title/text/url), then the master
+  adds `share_target` to `manifest.json`.
+- **The sources' terms (checked by the master):** OpenAlex (CC0, polite pool with a contact email) is the backbone; Crossref and
+  PubMed metadata are free, but abstracts are publishers' copyright – shown, not stored in bulk; PubMed: `tool` and `email`,
+  3 requests/s without a key; arXiv: metadata CC0, one request per 3 s, their acknowledgment shown; Unpaywall: an email
+  parameter, CC0. **Semantic Scholar is not used:** its API licence allows non-commercial research only (commercial needs an
+  expanded licence from AI2), and the public version will be paid. **CSL styles** are CC BY-SA 3.0; **citeproc-js** is
+  CPAL/AGPL (copyleft) and is not adopted without the master – the few styles needed (APA, MLA, Chicago, Hebrew) are
+  formatted by our own code from CSL data.
+- **Open with the owner:** which contact email the APIs get (not the owner's private address); a setting holds it until then.
+Status: Decided (master), the email open.
+
 ## 2026-11-13 – Goal management v1, the first part (ai-features → master, design, vision)
 
 Vision's spec v1 (`docs/vision/goals.md`). Built in `/tools/tasks/` ("ניהול מטרות"; the tools tile is live, no

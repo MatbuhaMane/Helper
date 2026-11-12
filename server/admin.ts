@@ -6,8 +6,9 @@
 // from the last action and two hours at most.
 //   * opened from the owner's own account: everything – the dashboard, money, settings, members, messages, features,
 //     and who else may enter (הרשאת-על, a "super" with their own passkey: everything but naming supers).
-//   * opened from someone else's account: only what fits a visit – this user's special features, a message to all,
-//     and how the app is doing. No money, settings or members on a device that is not the owner's.
+//   * opened from someone else's account: only what fits a visit – this user's special features and how the app is
+//     doing; no money, settings, members or messages to all on a device that is not the owner's. A visit locks after
+//     five idle minutes, half an hour at most (the owner may walk away from that device).
 // Who is "the owner": the emails in OWNER_EMAIL (never written in the code). Every action is written to admin_audit.
 
 import { Ctx, Env, HttpError, Member, body, getCookie, json, requireUser, uid } from './core';
@@ -222,12 +223,12 @@ export async function supersSave(ctx: Ctx) {
 
 const LEVELS = new Set(['info', 'warn', 'party']);
 export async function messagesList(ctx: Ctx) {
-  await requireAdmin(ctx, 'any');
+  await requireAdmin(ctx, 'own');
   const { results } = await ctx.env.DB.prepare('SELECT m.*, (SELECT COUNT(*) FROM message_reads r WHERE r.message = m.id) AS seen FROM admin_messages m ORDER BY m.created_at DESC LIMIT 50').all();
   return json({ messages: results, members: await count(ctx.env, 'SELECT COUNT(*) AS n FROM members') });
 }
 export async function messageSend(ctx: Ctx) {
-  const a = await requireAdmin(ctx, 'any');
+  const a = await requireAdmin(ctx, 'own');            // never from someone else's device: a message to all goes out in the owner's name
   const b = await body<{ text?: string; level?: string; link?: string; days?: number }>(ctx.req);
   const text = String(b.text || '').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 500);
   if (!text) throw new HttpError(400, 'text_required');
@@ -241,7 +242,7 @@ export async function messageSend(ctx: Ctx) {
   return json({ id });
 }
 export async function messageStop(ctx: Ctx) {
-  const a = await requireAdmin(ctx, 'any');
+  const a = await requireAdmin(ctx, 'own');
   await ctx.env.DB.prepare('UPDATE admin_messages SET active = 0 WHERE id = ?').bind(ctx.params.id).run();
   await log(ctx, a, 'message:stop', ctx.params.id);
   return json({ ok: true });

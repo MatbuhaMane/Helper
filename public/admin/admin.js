@@ -52,22 +52,22 @@
     clearInterval(lockTimer);
     const clock = el('small', { class: 'muted' });
     let last = Date.now();
-    lockTimer = setInterval(() => { const s = Math.max(0, Math.round((last + 15 * 60e3 - Date.now()) / 1000)); clock.textContent = `ננעל בעוד ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (!s) { clearInterval(lockTimer); gate(); } }, 1000);
+    const idle = (st.own ? 15 : 5) * 60e3;                // a visit locks sooner (server/admin-rules.ts)
+    lockTimer = setInterval(() => { const s = Math.max(0, Math.round((last + idle - Date.now()) / 1000)); clock.textContent = `ננעל בעוד ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (!s) { clearInterval(lockTimer); gate(); } }, 1000);
     document.addEventListener('click', () => { last = Date.now(); }, { capture: true });
     const bar = el('div', { class: 'card ad-bar' },
-      el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו, הודעה לכולם ומצב האוהל.')),
+      el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל. ננעל אחרי 5 דקות.')),
       el('span', { class: 'spacer' }), clock,
       btn('נעילה', async () => { await call('/api/admin/leave', { method: 'POST' }); clearInterval(lockTimer); gate(); }, 'btn small ghost'));
     const parts = st.own
       ? [['dash', 'לוח'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
-      : [['dash', 'מצב האוהל'], ['features', `התכונות של ${st.as.name}`], ['messages', 'הודעה לכולם']];
+      : [['dash', 'מצב האוהל'], ['features', `התכונות של ${st.as.name}`]];
     const nav = el('nav', { class: 'ad-nav', 'aria-label': 'חלקי החדר' }, parts.map(([id, n]) => el('a', { href: '#' + id }, n)));
     const boxes = Object.fromEntries(parts.map(([id]) => [id, el('div', { id })]));
     root.replaceChildren(el('section', { class: 'ad' }, bar, nav, ...parts.map(([id]) => boxes[id])));
     dash(boxes.dash);
     features(boxes.features);
-    messages(boxes.messages);
-    if (st.own) { settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); }
+    if (st.own) { messages(boxes.messages); settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); }
   }
 
   /* ---------- the dashboard, and the money ---------- */

@@ -51,6 +51,11 @@ const now = 10_000_000_000;
 ok('alive', A.entryAlive({ created_at: now - 60e3, last_at: now - 60e3 }, now));
 ok('a quarter of an hour without anything: closed', !A.entryAlive({ created_at: now - 20 * 60e3, last_at: now - 16 * 60e3 }, now));
 ok('two hours at most', !A.entryAlive({ created_at: now - 2.1 * 3600e3, last_at: now - 1000 }, now));
+const own = { by_email: 'o@x', as_email: 'o@x' }, visit = { by_email: 'o@x', as_email: 'noa@x' };
+ok('own account: still open after 10 idle minutes', A.entryAlive({ ...own, created_at: now - 20 * 60e3, last_at: now - 10 * 60e3 }, now));
+ok('a visit: closed after 5 idle minutes', !A.entryAlive({ ...visit, created_at: now - 6 * 60e3, last_at: now - 5.5 * 60e3 }, now));
+ok('a visit: open after 4 idle minutes', A.entryAlive({ ...visit, created_at: now - 10 * 60e3, last_at: now - 4 * 60e3 }, now));
+ok('a visit: half an hour at most', !A.entryAlive({ ...visit, created_at: now - 31 * 60e3, last_at: now - 1000 }, now));
 
 /* ---- settings ---- */
 const s = (o) => ({ key: 'k', label: 'k', help: '', group: 'g', def: 0, ...o });

@@ -61,8 +61,13 @@ export function cleanEntry(b: Record<string, unknown>): Entry {
 /* ---------------- entering the room ---------------- */
 
 export const IDLE = 15 * 60e3, MAX = 2 * 3600e3;
-/** an entry lasts a quarter of an hour from the last action, two hours at most */
-export const entryAlive = (s: { created_at: number; last_at: number }, now = Date.now()) => now - s.last_at < IDLE && now - s.created_at < MAX;
+/** a visit (the owner's biometric on someone else's account): shorter, since the owner may walk away from that device */
+export const VISIT_IDLE = 5 * 60e3, VISIT_MAX = 30 * 60e3;
+/** an entry lasts a quarter of an hour from the last action, two hours at most; a visit five minutes, half an hour at most */
+export const entryAlive = (s: { created_at: number; last_at: number; by_email?: string; as_email?: string }, now = Date.now()) => {
+  const visit = !!s.by_email && s.by_email !== s.as_email;
+  return now - s.last_at < (visit ? VISIT_IDLE : IDLE) && now - s.created_at < (visit ? VISIT_MAX : MAX);
+};
 
 /* ---------------- settings ---------------- */
 

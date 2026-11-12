@@ -1,0 +1,126 @@
+/* מפגש משפחתי – the invitation (most of the family's first sight of האוהל, on a phone, from WhatsApp) and the host's page.
+   The invitation is a card you could hold: the tent drawn on top, the name of the day, when and where as chips, who is
+   coming; then one clear answer, what each one brings, a reminder, and the comments as speech bubbles. Calm, warm, few
+   colours: the hub's tokens only. */
+
+/* ---------- shared: cards, fields, buttons ---------- */
+.ga { display: grid; gap: 14px; }
+.ga .card { margin: 0; padding: 18px 18px 16px; border-radius: 24px; border-color: color-mix(in srgb, var(--line) 75%, transparent);
+  box-shadow: 0 12px 30px -22px rgba(46, 42, 30, .4); display: grid; gap: 10px; min-inline-size: 0; }
+.ga h2 { margin: 0; font-size: 1.12rem; font-weight: 600; }
+.ga .card > p { margin: 0; line-height: 1.55; }
+.ga input[type="text"], .ga input[type="url"], .ga input[type="date"], .ga input[type="time"], .ga input[type="email"], .ga select, .ga textarea,
+.ga-form input[type="text"], .ga-form input[type="url"], .ga-form input[type="date"], .ga-form input[type="time"], .ga-form select, .ga-form textarea {
+  font: inherit; font-size: 1rem; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 12px;
+  padding: 10px 12px; min-inline-size: 0; max-inline-size: 100%; box-sizing: border-box; }
+.ga input:focus-visible, .ga select:focus-visible, .ga textarea:focus-visible, .ga-form input:focus-visible, .ga-form select:focus-visible, .ga-form textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 1px; border-color: var(--primary); }
+.ga label, .ga-form label { display: grid; gap: 5px; font-size: .88rem; color: var(--muted); min-inline-size: 0; }
+/* a plain button is a button: a field of its own, a thin edge */
+.ga .btn:not(.primary):not(.ghost):not(.accent), .ga-form .btn:not(.primary):not(.ghost):not(.accent) { background: var(--bg); border-color: var(--line-strong); }
+.ga .btn:not(.primary):hover, .ga-form .btn:not(.primary):hover { border-color: var(--primary); color: var(--primary); }
+.ga .btn.danger { color: var(--danger); }
+.ga-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.ga-inline { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0; }
+.ga-inline input[type="text"] { flex: 1 1 180px; }
+.ga-inline select { flex: 0 0 auto; }
+.ga-notes { margin: 0; border-radius: 18px; }
+.ga-notes ul { margin: 0; padding-inline-start: 18px; display: grid; gap: 6px; line-height: 1.5; }
+
+/* ---------- the invitation ---------- */
+.ga-invite { max-inline-size: 560px; margin: 0 auto; box-sizing: border-box;
+  padding-block: max(16px, env(safe-area-inset-top)) 40px; padding-inline: max(14px, env(safe-area-inset-left)) max(14px, env(safe-area-inset-right)); }
+/* the head: the invitation itself */
+.ga-invite .ga-head { text-align: center; justify-items: center; gap: 8px; padding: 20px 18px 18px; overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint) 70%, var(--card)), var(--card) 48%); }
+.ga-invite .ga-head::before { content: ""; display: block; inline-size: min(180px, 52%); aspect-ratio: 1400 / 794; margin-block-end: 2px;
+  background: url(/assets/tent.webp) center / contain no-repeat; filter: drop-shadow(0 10px 12px rgba(46, 42, 30, .18)); }
+.ga-invite .ga-head > small { font-size: .78rem; font-weight: 600; letter-spacing: .04em; color: var(--muted); }
+.ga-invite .ga-head h1 { margin: 0; font-size: clamp(1.8rem, 1.3rem + 2.4vw, 2.5rem); line-height: 1.15; text-wrap: balance; }
+.ga-invite .ga-head > p { margin: 0; }
+/* the day and the place: chips */
+.ga-invite .ga-head > h1 + p { font-weight: 500; font-size: 1.02rem; padding: 6px 14px; border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--text); text-wrap: balance; }
+.ga-invite .ga-head > p > a { display: inline-flex; align-items: center; gap: 4px; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: var(--bg); color: var(--text); text-decoration: none; font-size: .95rem; }
+.ga-invite .ga-head > p > a:hover { border-color: var(--primary); color: var(--primary); }
+.ga-invite .ga-head > p.muted { font-size: .95rem; line-height: 1.55; max-inline-size: 42ch; }
+.ga-total { margin-block-start: 4px !important; font-size: .92rem; line-height: 1.5; padding: 8px 14px; border-radius: 14px;
+  background: color-mix(in srgb, var(--olive) 16%, var(--card)); }
+
+/* the answer */
+.ga-rsvp > p { color: var(--primary); font-weight: 500; }
+.ga-count { display: flex; align-items: center; gap: 10px; font-size: .92rem; }
+.ga-count > span { flex: 1; color: var(--muted); }
+.ga-count .btn { inline-size: 42px; block-size: 42px; padding: 0; justify-content: center; border-radius: 50%; font-size: 1.25rem; line-height: 1; }
+.ga-count output { min-inline-size: 2ch; text-align: center; font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ga-rsvp > input { inline-size: 100%; }
+.ga-rsvp .ga-acts .btn { flex: 1 1 30%; justify-content: center; min-block-size: 46px; }
+.ga-rsvp .ga-acts .btn.primary { font-weight: 600; }
+@media (max-width: 420px) { .ga-rsvp .ga-acts .btn.primary { flex-basis: 100%; } .ga-rsvp .ga-acts .btn:not(.primary) { flex-basis: 40%; } }
+
+/* who brings what: one row each, its button at the end */
+.ga-list-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ga-list-items > li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 12px; border-radius: 14px;
+  background: color-mix(in srgb, var(--text) 3.5%, var(--card)); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.ga-list-items > li > b { font-weight: 500; }
+.ga-list-items > li > .btn { margin-inline-start: auto; }
+.ga-kind { font-size: .74rem; padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--olive) 22%, transparent); color: var(--text); }
+
+/* a reminder */
+.ga-cal .ga-acts .btn { flex: 1 1 auto; justify-content: center; }
+
+/* the comments: speech bubbles */
+.ga-comments ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ga-comments li { position: relative; padding: 10px 14px; line-height: 1.5; border-radius: 16px 16px 16px 16px; border-end-start-radius: 4px;
+  background: color-mix(in srgb, var(--tint) 55%, var(--card)); overflow-wrap: anywhere; }
+.ga-comments li .btn { padding: 2px 8px; margin-inline-start: 6px; font-size: .8rem; vertical-align: middle; }
+.ga-comments li p { margin: 2px 0 0; }
+
+/* after the answer: the door to the rest of the tent */
+.ga-join { background: color-mix(in srgb, var(--primary) 7%, var(--card)) !important; border-style: dashed !important; justify-items: start; }
+.ga-fine { margin: 0; text-align: center; line-height: 1.5; padding-inline: 12px; }
+
+/* ---------- the host's page ---------- */
+main.wide > .ga { max-inline-size: 780px; margin: 0 auto; padding-block: 18px 48px; }
+main.wide > .ga > p.muted { margin: 0; line-height: 1.55; }
+.ga > .ga-head:not(.card) { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; }
+.ga > .ga-head:not(.card) h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); line-height: 1.15; }
+.ga > .ga-head:not(.card) > div { display: grid; gap: 4px; min-inline-size: 0; }
+.ga > .ga-head:not(.card) > div > p { margin: 0; }
+.ga > .ga-head:not(.card) a { color: var(--primary); }
+.ga .folder-back { justify-self: start; color: var(--muted); text-decoration: none; font-size: .92rem; }
+.ga .folder-back:hover { color: var(--primary); }
+.ga > section > h2 { margin-block-end: 8px; }
+.ga-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.ga-row { gap: 6px !important; }
+.ga-row h3 { margin: 0; font-size: 1.05rem; }
+.ga-row h3 a { color: var(--text); text-decoration: none; }
+.ga-row h3 a:hover { color: var(--primary); }
+.ga-row p { margin: 0; }
+.ga-empty { display: flex !important; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
+.ga-ideas ul, .ga-coming ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ga-ideas li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; padding: 8px 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.ga-ideas li:last-child { border-block-end: 0; }
+.ga-coming li { padding: 8px 0; border-block-end: 1px solid color-mix(in srgb, var(--line) 70%, transparent); line-height: 1.5; }
+.ga-coming li:last-child { border-block-end: 0; }
+.ga-coming li p { margin: 2px 0 0; }
+.ga-share .ga-acts .btn.primary { font-weight: 600; }
+.ga-stats { margin: 0; font-variant-numeric: tabular-nums; }
+/* whom to invite: chips, with the ones who answered marked */
+.ga-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ga-chips li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 12px; border-radius: 999px; border: 1px solid var(--line-strong);
+  background: var(--bg); font-size: .9rem; }
+.ga-chips li.on { background: color-mix(in srgb, var(--primary) 12%, var(--card)); border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); }
+.ga-chips li .btn { padding: 0 7px; min-block-size: 26px; border: 0 !important; background: none !important; font-size: .8rem; }
+/* the form in a window */
+.ga-form { display: grid; gap: 12px; min-inline-size: min(440px, 80vw); }
+.ga-form h2 { margin: 0; }
+.ga-form > p { margin: 0; line-height: 1.5; }
+.ga-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.ga-pick { display: grid; gap: 6px; max-block-size: 40vh; overflow: auto; padding-block: 2px; }
+.ga-check { display: flex !important; align-items: center; gap: 8px; color: var(--text) !important; font-size: .95rem !important; }
+.ga-check input { inline-size: 18px; block-size: 18px; margin: 0; accent-color: var(--primary); }
+@media (max-width: 520px) { .ga-two { grid-template-columns: minmax(0, 1fr); } .ga .card { padding: 16px 14px 14px; border-radius: 20px; } }
+@media (prefers-reduced-motion: reduce) { .ga * { transition: none !important; } }

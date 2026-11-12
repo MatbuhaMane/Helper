@@ -209,7 +209,8 @@ async function limitGuest(ctx: Ctx, what: string, max: number) {
   const ip = ctx.req.headers.get('cf-connecting-ip') || 'local';
   await rateLimit(ctx, `gather-${what}:${await fingerprint(ctx.env, ip)}`, max, 3600e3);
 }
-const guestOf = (ctx: Ctx) => ctx.url.searchParams.get('guest') || ctx.req.headers.get('x-guest') || '';
+/** a guest's key comes only in a header (or a POST body), never in the address, so it stays out of logs */
+const guestOf = (ctx: Ctx) => ctx.req.headers.get('x-guest') || '';
 
 /** GET /api/gather/invite/:token – the gathering, as the invitation shows it (and nothing more) */
 export async function invite(ctx: Ctx) {

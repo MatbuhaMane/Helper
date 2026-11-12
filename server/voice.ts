@@ -4,7 +4,7 @@
 
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
 
-export const DEFAULT_VOICE = 'Sadaltager';
+export const DEFAULT_VOICE = 'Algenib';   // the owner's choice: deep and a little gravelly
 const DAILY_CHARS = 30000;
 // the sample has ח and ע in it, so the accent can be heard
 const SAMPLE = 'שלום וברכה, אני אבן עזרא, ושמח לעזור לכם. מה נחפש יחד היום?';
@@ -17,7 +17,7 @@ const STYLE = 'Read this aloud in Hebrew as a very old, wise and kind Mizrahi Je
 
 // Gemini's prebuilt voices: name, gender, character (in Hebrew, for the picker)
 const VOICES: [string, 'male' | 'female', string][] = [
-  ['Sadaltager', 'male', 'בקיא'], ['Charon', 'male', 'מסביר'], ['Algenib', 'male', 'צרוד'], ['Iapetus', 'male', 'צלול'],
+  ['Algenib', 'male', 'צרוד'], ['Sadaltager', 'male', 'בקיא'], ['Charon', 'male', 'מסביר'], ['Iapetus', 'male', 'צלול'],
   ['Rasalgethi', 'male', 'מסביר'], ['Schedar', 'male', 'שקול'], ['Orus', 'male', 'תקיף'], ['Alnilam', 'male', 'תקיף'],
   ['Algieba', 'male', 'חלק'], ['Enceladus', 'male', 'נושם'], ['Umbriel', 'male', 'נינוח'], ['Achird', 'male', 'ידידותי'],
   ['Zubenelgenubi', 'male', 'יומיומי'], ['Puck', 'male', 'עליז'], ['Fenrir', 'male', 'נלהב'], ['Sadachbia', 'male', 'תוסס'],

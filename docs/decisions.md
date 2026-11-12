@@ -274,7 +274,7 @@ instructions, sent in the vision session's batch 2 (`docs/vision/batch.md`).
    - ניווט: a dropdown to the site's parts;
    - כלים: a dropdown to every tool;
    - הגדרות: a gear icon.
-   - Open: whether the phone's bottom tab bar follows the same five. Asked of the owner.
+   - The phone's bottom tab bar has the same five items (the owner).
    - Affects: the master (`NAV` in `common.js`) and design.
 
 Status: Decided (the owner).

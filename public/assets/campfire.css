@@ -1,0 +1,29 @@
+/* The campfire (campfire.js): the base, the flame tongues standing on its embers, the near half of the base over their feet,
+   a few sparks, and the warm glow breathing with the fire (--cf-heat, 0…1, set on every frame). */
+.cf { position: relative; inline-size: var(--fw, 140px); aspect-ratio: 640 / 376; isolation: isolate; }
+.cf-defs { position: absolute; inline-size: 0; block-size: 0; overflow: hidden; }
+.cf-base, .cf-front { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: contain; pointer-events: none; -webkit-user-drag: none; }
+/* the near half: the front logs' ends and the front stones, over the flames' feet */
+.cf-front { z-index: 3; clip-path: inset(var(--cf-anchor, 58%) 0 0 0); }
+.cf-flames { position: absolute; inset: 0; z-index: 2; pointer-events: none; container-type: size; }
+/* a tongue stands on the embers; its height is a share of the base's width (--h, a number); it is placed in the drawing's
+   own coordinates (left, from the centre), as the picture is not mirrored in Hebrew */
+.cf-tongue { position: absolute; inset-block-end: calc(100% - var(--cf-anchor, 58%) - 4%); left: calc(50% + var(--x, 0%));
+  block-size: calc(var(--h, 60) * 1cqw); inline-size: auto; max-inline-size: none; transform: translateX(-50%); transform-origin: 50% 100%;
+  will-change: transform, opacity; -webkit-user-drag: none; }
+
+/* the glow: under everything, warm, breathing with the flames */
+.cf-glow { position: absolute; inset: -40% -35% -10%; z-index: 0; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side at 50% 55%, rgba(255, 190, 90, calc(.38 + var(--cf-heat, .5) * .22)), rgba(255, 120, 30, calc(.12 + var(--cf-heat, .5) * .1)) 55%, transparent);
+  filter: blur(8px); }
+:root[data-theme="dark"] .cf-glow { mix-blend-mode: screen; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cf-glow { mix-blend-mode: screen; } }
+
+/* a few sparks, rising and going out now and then */
+.cf-sparks { position: absolute; inset: 0; z-index: 4; pointer-events: none; }
+.cf-sparks i { position: absolute; left: calc(50% + var(--sx, 0%)); inset-block-end: calc(100% - var(--cf-anchor, 58%) + 30%); inline-size: 3px; block-size: 3px;
+  border-radius: 50%; background: #ffcf6b; box-shadow: 0 0 6px 1px rgba(255, 170, 60, .8); opacity: 0;
+  animation: cf-spark 3.8s ease-out infinite; animation-delay: var(--sd, 0s); }
+@keyframes cf-spark { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 8% { opacity: .95; } 60% { opacity: .5; } 100% { transform: translate(6px, -46px) scale(.4); opacity: 0; } }
+.cf.still .cf-sparks { display: none; }
+@media (prefers-reduced-motion: reduce) { .cf-sparks { display: none; } }

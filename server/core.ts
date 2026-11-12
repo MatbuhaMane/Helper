@@ -8,6 +8,7 @@ export interface Env {
   TOKEN_KEY?: string;           // optional base64 of 32 random bytes; encrypts Gmail refresh tokens (else derived)
   ANTHROPIC_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  GOOGLE_MAPS_API_KEY?: string; // Places API (New) for the restaurants nearby (server/places.ts); unset: the search says it is not set up
   GEMINI_MODEL?: string;
   GEMINI_IMAGE_MODEL?: string;
   MEDIA?: R2Bucket;            // daemon form pictures (optional; falls back to the edge cache)

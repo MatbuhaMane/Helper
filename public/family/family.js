@@ -106,7 +106,7 @@
       el('h1', {}, 'אילן היוחסין'),
       el('span', { class: 'spacer' }),
       clock,
-      el('button', { class: 'btn small', onclick: () => personForm() }, '+ בן משפחה'),
+      el('button', { class: 'btn small primary', onclick: () => personForm() }, '+ בן משפחה'),
       el('button', { class: 'btn small ghost', onclick: activity }, 'יומן פעילות'),
       el('button', { class: 'btn small ghost', onclick: keys }, 'מפתחות גישה'),
       S.owner ? el('button', { class: 'btn small ghost', onclick: backups }, 'גיבויים') : null,
@@ -376,7 +376,7 @@
     let b;
     try { b = await call('/api/vault/backups'); } catch (e) { return say(e); }
     const when = (t) => (t ? new Date(t).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : 'עוד לא');
-    const run = el('button', { class: 'btn small', onclick: async () => {
+    const run = el('button', { class: 'btn small primary', onclick: async () => {
       run.disabled = true; run.textContent = 'מגבה…';
       try { const r = await call('/api/vault/backups/run', { method: 'POST' }); toast(`הגיבוי הסתיים: ${r.copied} עותקים חדשים${r.failed ? `, ${r.failed} נכשלו` : ''}`); H.closeModal(); backups(); }
       catch (e) { say(e); run.disabled = false; run.textContent = 'גיבוי עכשיו'; }

@@ -23,7 +23,8 @@ Seen in the tree (`public/family/family.js`, owned by ai-features), not fixable 
    `new ResizeObserver(() => { const s = board.querySelector('.fv-lines'); if (s) connect(board, s); })`.
 3. Optional, styled already: give the path from the person in the centre up to their parents and grandparents its own
    `<path class="lineage">`; `family.css` draws it a little stronger in `--primary`.
-Status: proposed.
+Status: accepted – all three done by ai-features in 079b046 (branch `ai-features`); complete when the master merges
+`ai-features` and `design`, which together draw the line of descent.
 
 ## 2026-11-12 – Design batch 1: the tree's look, the tools rack, the forest sketch (design)
 

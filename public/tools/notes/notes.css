@@ -40,6 +40,10 @@
 .nt-ed-head { flex-wrap: wrap; row-gap: 6px; }
 .nt-close { inline-size: 34px; padding-inline: 0; justify-content: center; }
 .nt-state:empty { display: none; }
+.nt-state.warn { color: #a2560c; }
+:root[data-theme="dark"] .nt-state.warn { color: #f0a868; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nt-state.warn { color: #f0a868; } }
+.nt-modal-acts { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-block-start: 12px; }
 @media (max-width: 760px) {
   /* two lines: ‹ and ✕ on the first, the star, the state and the actions on the second */
   .nt-ed-head .nt-back { order: -3; }

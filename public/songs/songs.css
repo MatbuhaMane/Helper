@@ -108,3 +108,15 @@ body.reading { overflow: hidden; }
 /* a heart on a double tap (vision batch 4, item 10): songs.js plays it (transform and opacity); its look is here */
 .heart-burst { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none;
   font-size: 4.5rem; line-height: 1; color: #e0245e; text-shadow: 0 6px 18px rgba(224, 36, 94, .35); }
+/* the heart (♡/❤) on a card's foot and in the reader's bar: red once the song is loved */
+.fav { color: var(--muted); line-height: 1; }
+.fav[aria-pressed="true"] { color: #e0245e; }
+.scard .fav { inline-size: 32px; block-size: 32px; border-radius: 50%; border: 0; background: none; cursor: pointer; display: inline-grid; place-items: center; font-size: 1.05rem;
+  transition: background-color var(--dur-quick); }
+.scard .fav:hover { background: color-mix(in srgb, #e0245e 10%, transparent); }
+.scard .fav:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
+/* "🎸 אני מנגן", when it is on */
+.chip.plays[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+/* the reader inside the flip sheet (H.sheet, className songs-sheet): the bar on top, the song scrolling under it */
+.songs-sheet .sreader-in { display: flex; flex-direction: column; block-size: 100%; min-block-size: 0; }
+.songs-sheet .rbar { padding-top: 10px; }

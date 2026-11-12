@@ -11,10 +11,13 @@
 .app .ic { position: relative; inline-size: 76px; block-size: 76px; border-radius: 22px; display: grid; place-items: center; color: #fff;
   background: radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, .38), transparent 55%), linear-gradient(150deg, var(--c1), var(--c2));
   box-shadow: 0 10px 18px -8px color-mix(in srgb, var(--c2) 75%, transparent), inset 0 -3px 8px rgba(0, 0, 0, .12);
-  transition: transform .3s var(--ease-river), box-shadow .3s var(--ease-river); }
+  transition: transform .3s var(--ease-river); }
+.app .ic::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s var(--ease-river);
+  box-shadow: 0 16px 24px -10px color-mix(in srgb, var(--c2) 80%, transparent); }
+.app:hover .ic::after { opacity: 1; }
 .app .ic .icon { inline-size: 36px; block-size: 36px; stroke-width: 1.9; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
 .app .name { font-size: .98rem; font-weight: 500; text-align: center; line-height: 1.25; }
-.app:hover .ic, .app:focus-visible .ic { transform: translateY(-3px) scale(1.04); box-shadow: 0 16px 24px -10px color-mix(in srgb, var(--c2) 80%, transparent), inset 0 -3px 8px rgba(0, 0, 0, .12); }
+.app:hover .ic, .app:focus-visible .ic { transform: translateY(-3px) scale(1.04); }
 .app:active .ic { transform: scale(.93); }
 .app:focus-visible { outline: none; }
 .app:focus-visible .ic { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--primary); }
@@ -50,6 +53,7 @@
 .apps-grid.flat .app .ic .icon { inline-size: 72px; block-size: 72px; stroke-width: 1.5; filter: none;
   fill: var(--tint, color-mix(in srgb, var(--c1) 55%, #fff)); stroke-linejoin: round; stroke-linecap: round; transition: transform .35s var(--ease-river); }
 .apps-grid.flat .app:hover .ic, .apps-grid.flat .app:focus-visible .ic { box-shadow: none; transform: translateY(-3px); }
+.apps-grid.flat .app .ic::after, .app .ic.art::after { display: none; }   /* (no shadow under a flat icon or a drawn tool) */
 .apps-grid.flat .app:hover .ic .icon { transform: rotate(-6deg) scale(1.06); }
 .apps-grid.flat .app:focus-visible .ic { outline: 3px solid var(--primary); outline-offset: 4px; }
 
@@ -139,8 +143,9 @@
 .strip.at-end .strip-track { --fade-e: 0px; }
 .strip-card { flex: 0 0 auto; inline-size: 220px; scroll-snap-align: start; display: grid; grid-template-rows: auto 1fr; overflow: hidden; text-align: start;
   border-radius: 18px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; font: inherit; padding: 0; cursor: pointer;
-  box-shadow: 0 1px 2px rgba(46, 42, 30, .06); transition: transform var(--dur-quick) var(--ease-river), box-shadow var(--dur-quick), border-color var(--dur-quick); }
-.strip-card:hover { transform: translateY(-3px); box-shadow: var(--lift); border-color: var(--line-strong); }
+  box-shadow: 0 1px 2px rgba(46, 42, 30, .06); transition: transform var(--dur-quick) var(--ease-river), border-color var(--dur-quick); }
+.strip-card:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+.strip-card:active { transform: scale(.98); }
 .strip-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 .strip-pic { display: block; aspect-ratio: 4 / 3; background: color-mix(in srgb, var(--olive) 18%, var(--card)); overflow: hidden; }
 .strip-pic img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }

@@ -15,8 +15,10 @@ main.songs-main { max-width: 1200px; padding-top: 18px; }
 @media (max-width: 520px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 
 .scard { display: flex; flex-direction: column; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; cursor: pointer;
-  transition: transform .15s var(--ease-river, ease), box-shadow .15s, border-color .15s; min-height: 230px; }
-.scard:hover, .scard:focus-visible { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--line-strong); outline: none; }
+  transition: transform .2s var(--ease-river, ease), border-color .2s; min-height: 230px; }
+.scard:hover, .scard:focus-visible { transform: translateY(-3px); border-color: var(--line-strong); outline: none; }
+.scard:focus-visible { box-shadow: 0 0 0 3px var(--primary); }
+.scard:active { transform: scale(.98); }
 .scard.ghost { min-height: 230px; background: linear-gradient(90deg, var(--card), color-mix(in srgb, var(--line) 60%, var(--card)), var(--card)); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
 @keyframes shimmer { to { background-position: -200% 0; } }
 .cover { position: relative; height: 112px; background: color-mix(in srgb, var(--olive) 18%, var(--card)); overflow: hidden; }

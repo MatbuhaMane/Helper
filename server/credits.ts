@@ -35,12 +35,18 @@ export async function balance(env: Env, email: string, since: number) {
 /** the meter's gate, before a request to Claude or Gemini: their own key to use (if any), or a refusal when nothing is left */
 export async function gate(env: Env, email: string | null, provider: 'claude' | 'gemini'): Promise<{ key: string | null }> {
   if (!email) return { key: null };                                          // the system's own jobs
-  const key = await ownKey(env, email, provider).catch(() => null);
-  const a = await env.DB.prepare('SELECT email, limited, since FROM ai_allowance WHERE email = ?').bind(email).first<Allowance>();
-  if (!a || !a.limited || key) return { key };                               // family, or their own key
-  const b = await balance(env, email, a.since);
-  if (!R.mayUse(true, b.total, false)) throw new HttpError(402, 'ai_credit_needed');
-  return { key: null };
+  let key: string | null = null, a: Allowance | null = null, left = 0;
+  try {
+    key = await ownKey(env, email, provider).catch(() => null);
+    a = await env.DB.prepare('SELECT email, limited, since FROM ai_allowance WHERE email = ?').bind(email).first<Allowance>();
+    if (a?.limited && !key) left = (await balance(env, email, a.since)).total;
+  } catch (e) {
+    // the allowance could not be read: the AI stays open (as for the family) rather than failing everyone
+    console.error('credits gate', e instanceof Error ? e.message : e);
+    return { key };
+  }
+  if (!R.mayUse(!!a?.limited, left, !!key)) throw new HttpError(402, 'ai_credit_needed');
+  return { key };
 }
 
 /** a new account (from an invitation): limited, with the one-time trial grant. Calling it twice changes nothing. */

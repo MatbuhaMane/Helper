@@ -59,3 +59,7 @@ export function requestWithKey(provider: 'claude' | 'gemini', req: Request, key:
   const [url, init] = withKey(provider, req.url, { headers: req.headers }, key);
   return new Request(url, new Request(req, { headers: init.headers }));
 }
+
+/** may this account see amounts – its balance, a cost estimate before an expensive action, the note of a gift? Only once
+    it bought credit or received a gift; on the trial alone it is used silently (the owner's decision) */
+export const showsAmounts = (grants: { source: string }[]) => grants.some((g) => g.source === 'purchase' || g.source === 'gift');

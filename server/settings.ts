@@ -11,6 +11,7 @@ export const SETTINGS: Setting[] = [
   { key: 'calendar.feed', group: 'לוח שנה', label: 'קישור ליומן Google פעיל', help: 'כשכבוי, היומנים שנרשמו מפסיקים לקבל עדכונים (הקישורים נשמרים).', type: 'bool', def: true },
   { key: 'ai.monthly_budget_usd', group: 'בינה מלאכותית', label: 'תקציב חודשי ל־AI (דולר)', help: 'מעבר לסכום הזה הלוח מציג אזהרה. 0: בלי תקציב. (עצירה של הקריאות עצמן: הצעה לסשן הראשי.)', type: 'number', def: 0, min: 0, max: 10000 },
   { key: 'credits.trial_ils', group: 'בינה מלאכותית', label: 'מתנת פתיחה לחשבון חדש (₪)', help: 'כמה AI מקבל חשבון חדש שהגיע מהזמנה, בשקלים של עלות אמיתית. בני המשפחה בלי הגבלה.', type: 'number', def: 1.5, min: 0, max: 50 },
+  { key: 'design.images_per_day', group: 'בינה מלאכותית', label: 'תמונות לעיצוב ביום', help: 'כמה תמונות כלי העיצוב (Gemini) מכין ביום לכל היותר, כדי שלולאה לא תריץ חשבון.', type: 'number', def: 40, min: 0, max: 400 },
   { key: 'money.usd_ils', group: 'כסף', label: 'שער הדולר (₪)', help: 'לחישוב ההוצאות בדולרים בשקלים. שער משוער – עדכנו מדי פעם.', type: 'number', def: 3.7, min: 1, max: 10 },
 ];
 const byKey = new Map(SETTINGS.map((s) => [s.key, s]));

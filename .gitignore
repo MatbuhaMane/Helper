@@ -10,3 +10,6 @@ data/witnesses/sources/
 data/art/
 data/family.sql
 data/voice-samples/
+
+# machine-specific: each worktree keeps its own dev-server port here
+.claude/launch.json

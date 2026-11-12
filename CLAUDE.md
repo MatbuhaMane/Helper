@@ -42,3 +42,60 @@ node tools/push-keys.mjs         # copy the AI keys from .dev.vars to the live W
 
 Preferences: use `H.prefs('tool', defaults)` / `H.savePrefs('tool')` from `common.js` for anything a person chooses;
 they are stored per user on the server (`/api/prefs`, table `user_prefs`) and arrive with `/api/me`.
+
+## Working in parallel (several Claude sessions)
+
+The project is worked on by several sessions at once, one per area, each in its own git worktree and branch,
+so no two sessions edit the same working copy.
+
+| Session | Folder | Branch | Dev server (port / inspector) | Brief |
+|---|---|---|---|---|
+| Master | `M:\Claude Code\Helper` | `main` | 8788 / 9229 | this file, `docs/decisions.md` |
+| Design & graphics | `M:\Claude Code\Helper-design` | `design` | 8789 / 9230 | `docs/areas/design.md` |
+| Business modeling | `M:\Claude Code\Helper-business` | `business` | none (docs only) | `docs/areas/business.md` |
+| AI & feature mechanics | `M:\Claude Code\Helper-ai` | `ai-features` | 8790 / 9231 | `docs/areas/ai-features.md` |
+
+Run an area's dev server with `npm run dev -- --port 8789 --inspector-port 9230` (each worktree has its own
+untracked `.claude/launch.json` with its port). Each worktree has its own `node_modules`, its own `.dev.vars` (copied by the owner, never
+committed or printed) and its own local database in `.wrangler/` (empty at first; tables are created on first use, use the dev sign-in).
+Google sign-in on localhost works only on port 8788.
+
+### Who owns what
+
+A file has one owner. Other sessions propose changes to it (in `docs/decisions.md` or a message to the master) instead of editing it.
+
+- **design**: `public/**/*.css` (including `public/assets/base.css`, the design tokens), images, icons and fonts under
+  `public/assets/` (not `common.js`), `public/figures/`, `figures/`, the figure skills in `.claude/skills/`, `docs/design/`.
+- **business**: `docs/business/`.
+- **ai-features**: `server/` feature modules (AI, news, recipes, keto, calendar, daemon, voice, mail, music…), the family tree
+  logic in `server/vault/index.ts`, each page's JavaScript (`public/*/*.js`, `public/tools/*/*.js`), `docs/ai/`, `docs/family-forest.md`.
+- **master** (shared files): `functions/api/[[path]].ts`, `schema.sql`, `server/schema.ts`, `server/core.ts`, `server/ai.ts`,
+  `server/meter.ts`, `server/prices.ts`, the vault's security (`server/vault/crypto.ts`, `webauthn.ts`, `store.ts`, `backup.ts`),
+  `src/`, `wrangler.toml`, `package.json`, `package-lock.json`, `public/sw.js`, `public/_headers`, `public/manifest.json`,
+  `public/assets/common.js`, `public/index.html`, `desktop/`, `tools/`, `.github/`, `.gitignore`, `README.md`, this file,
+  `docs/areas/`, `docs/decisions.md`, `docs/security.md`.
+
+Exception: an area may **append** a route line to `functions/api/[[path]].ts`, a table to `schema.sql` or a column to the
+`COLUMNS` list in `server/schema.ts` for its own feature, never editing existing lines, and records it in `docs/decisions.md`.
+
+### Rules
+
+1. Each area session works only in its own worktree and branch, in small, clear commits.
+2. Areas never bump `CACHE` in `public/sw.js`; the master bumps it once per merge into `main`.
+3. Sync often: at the start of each work day, and before asking for a merge, merge `main` into the area branch
+   (`git merge main`) and resolve conflicts there.
+4. A change that affects another area (a shared file, an API another area uses, a design token, a price) gets an entry
+   in `docs/decisions.md` and is flagged to the master.
+5. Only the master merges area branches into `main`, after reviewing the diff (`git diff main...design`), checking for
+   conflicts, and running `npm run typecheck`, `npm run test:vault`, `npm run test:meter` and the page audit.
+6. **A push to `main` deploys the live site.** The master pushes `main` only with the owner's approval. Area branches are
+   pushed only with the owner's approval; a pushed branch gets its own preview address with its own database.
+7. Never delete, force-push, rewrite history or discard someone's uncommitted work.
+
+### Merging an area (the master)
+
+```bash
+git switch main
+git merge --no-ff design          # after reviewing git diff main...design
+# bump CACHE in public/sw.js, commit, run the checks, then ask the owner before git push
+```

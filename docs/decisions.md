@@ -376,6 +376,27 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-12 – A new tool, "עוזר מחקר", alongside goal management (vision, the owner)
+
+**Decided:** a new tool, the research assistant (עוזר מחקר). It offers:
+- focused web search;
+- saved notes;
+- research projects that are kept in progress;
+- suggestions for directions to continue and help with tasks.
+
+It goes alongside goal management, and the owner and the vision session spec both tools together (`docs/vision/goals.md`).
+Nothing is built before the owner confirms the spec.
+
+It is a general tool, unlike the Torah researcher (`server/research.ts`), but the two may share an engine.
+
+By the rule "Every AI tool also has a useful version without AI", its plain version is a research folder (notes, saved
+links, progress, and search that opens in an ordinary search engine). Focused search and suggestions are the ✨ upgrade,
+through the user's own AI or credits.
+
+**Affects:** vision (the spec) now; ai-features and design once the spec is confirmed.
+
+Status: Decided (the owner).
+
 ## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)
 
 **Decided:**

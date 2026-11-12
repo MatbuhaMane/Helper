@@ -58,7 +58,8 @@
 **מקורות הסריקה:** rashamnu.co.il · ‏App Store: hmly, ‏ListNest, ‏GSList, הלוח העברי, ‏ALMO AI, ‏Foods, ‏Foozy, אוכל טוב, מתכונית, ספר המתכונים הגדול, קלוריה, ‏CalJ, ‏Jewish+ · lib.hebcal.co.il/features/family-calendar.html · alternativeto.net (Aparator) · myjewishday.pages.dev · calcalist.co.il (Meerkat) · f-droid.org (BaldPhone) · israelhayom.co.il (מוקד אנוש).
 הערה: "הלוח העברי" (hebcal.co.il) הוא מוצר נפרד מ-Hebcal.com, שהאוהל משתמש ב-API שלו.
 
-**נשאר לבדוק ידנית:** דירוגים ומספרי הורדות בחנויות, המחירים של hmly Plus ושל המנוי ב"הלוח העברי", והאם יש אפליקציה ייעודית למתכונים כשרים או לקטו בעברית שהחיפוש לא מצא.
+**נשאר לבדוק ידנית:** המחירים של hmly Plus ושל המנוי ב"הלוח העברי", והאם יש אפליקציה ייעודית למתכונים כשרים או לקטו בעברית שהחיפוש לא מצא.
+**הוחלט (הבעלים):** דירוגים ומספרי הורדות בחנויות לא נבדקים כרגע. המוצר ייחודי, והבדיקה הזו לא תשנה את הכיוון.
 
 ## 3. מה מבדיל את האוהל
 

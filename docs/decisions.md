@@ -46,9 +46,12 @@ streamline בלי הודעה שהם עובדים על קרדיט ... לגבי ב
    The MCP connector (`docs/business/integrations.md`) is still the later path for people who have a subscription but
    no API key.
 
-**One interaction for the owner to settle:** business decision 2 shows an estimate before an expensive AI action, and the
-gift decision sends the recipient a note. The proposal is that both apply only once a user has bought credits or
-received a gift. Trial users see nothing until their credits run out.
+**Settled by the owner (same day):** business decision 2 shows a cost estimate before an expensive AI action, and the
+gift decision sends the recipient a note.
+- Both show only to users who have bought credits or received a gift.
+- Trial users see neither, until their trial credits run out and the inviting AI buttons appear.
+- Affects ai-features.
+- Status: Decided (the owner).
 
 ## 2026-11-12 – The owner can gift credits to chosen users from the admin page (business)
 

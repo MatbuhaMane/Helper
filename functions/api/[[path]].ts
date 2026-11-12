@@ -16,6 +16,7 @@ import * as notes from '../../server/notes';
 import * as food from '../../server/food';
 import * as restaurants from '../../server/restaurants';
 import * as places from '../../server/places';
+import * as goals from '../../server/goals';
 import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
@@ -192,6 +193,20 @@ route('PUT', '/api/restaurants/:id', restaurants.save);
 route('DELETE', '/api/restaurants/:id', restaurants.remove);
 route('POST', '/api/restaurants/:id/fav', restaurants.fav);
 route('POST', '/api/restaurants/:id/visit', restaurants.visit);
+route('GET', '/api/goals', goals.list);
+route('POST', '/api/goals', goals.create);
+route('GET', '/api/goals/template', goals.template);
+route('POST', '/api/goals/review', goals.review);
+route('POST', '/api/goals/ai/plan', goals.aiPlan);
+route('POST', '/api/goals/ai/stuck', goals.aiStuck);
+route('PUT', '/api/goals/:id', goals.update);
+route('DELETE', '/api/goals/:id', goals.remove);
+route('POST', '/api/goals/:id/processes', goals.addProcess);
+route('PUT', '/api/goals/processes/:id', goals.editProcess);
+route('DELETE', '/api/goals/processes/:id', goals.removeProcess);
+route('POST', '/api/goals/processes/:id/steps', goals.addStep);
+route('PUT', '/api/goals/steps/:id', goals.editStep);
+route('DELETE', '/api/goals/steps/:id', goals.removeStep);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);

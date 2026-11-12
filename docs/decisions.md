@@ -11,6 +11,34 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Goal management v1, the first part (ai-features → master, design, vision)
+
+Vision's spec v1 (`docs/vision/goals.md`). Built in `/tools/tasks/` ("ניהול מטרות"; the tools tile is live, no
+longer "בקרוב"):
+- **The structure:** goals (short, regular, long) → processes (checklists) → small steps, each person's own.
+  Tables appended to schema.sql: `goals`, `goal_processes`, `goal_steps`, `goal_reviews`, `goal_badges`. Routes
+  `/api/goals` (the dashboard's data, add, change, delete), `/api/goals/template`, `/api/goals/review`, processes and
+  steps, and ✨ `/api/goals/ai/plan` and `/api/goals/ai/stuck`.
+- **The logic** (`server/goals-logic.ts`, 34 tests in `server/test-goals.mjs`): the rest day by tradition (prefs
+  `me.religion`, or the person's own in prefs `goals.rest`), the forgiving week ("1 מתוך 6", the rest day out of the
+  count), a streak the rest day never breaks, the "why" after two quiet working days, the weekly review on the day
+  before the rest day, today's 2–3 steps, eleven templates without AI (the tent itself among them), and the badges.
+  The family badges and "גשש" are listed as "בקרוב".
+- **The page:** the dashboard; a new goal in five steps (written or spoken through the browser's own speech-to-text);
+  "היום"; a goal's checklists; "נתקעתי" (a guided question and starters, or ✨ suggestions) that adds a 5-minute step
+  before the stuck one; the weekly minute; the badges gallery (secret ones a silhouette); the rest-day picker.
+  For the owner, the empty dashboard offers "⛺ להתחיל במטרה של האוהל".
+- **Not in this part:** sharing, following a friend, advice and likes, family goals with roles, family templates; a step
+  as a calendar event, a shopping item or a gathering; ✨ better transcription; push reminders. The reminders for now
+  are in the app itself (today's steps and the "why" on opening).
+- **For the master:** add `test:goals` to `npm test`; in `apps.js` (design's) the tile's name "ניהול מטרות". For push
+  reminders later: web push in `public/sw.js` and VAPID keys (yours and the owner's); the goal's `time` is stored ready.
+- **For design:** `goals.css` for `.gl` (`.gl-today`, `.gl-why`, `.gl-review-due`, `.gl-pulse`, `.gl-goals`, `.gl-goal`,
+  `.gl-kind.short|regular|long`, `.gl-bar`, `.gl-process`, `.gl-step` (`.done`, `.small`), `.gl-stuck`, `.gl-mic`,
+  `.gl-badge` (`.on`, `.secret`, `.soon`), `.gl-empty`); the embroidered badge patches (the spec's style); the inline
+  rules only hold the layout until then.
+Status: done (on `ai-features`); the second part waits for the owner to try this one.
+
 ## 2026-11-13 – The recipe check without AI (docs/ai/without-ai.md #4) (ai-features → master, design)
 
 `POST /api/recipes/check` now checks by word lists first (`server/recipe-rules.ts`, 17 tests in

@@ -755,3 +755,58 @@ CREATE TABLE IF NOT EXISTS places_usage (
   n     INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (email, month)
 );
+
+-- ניהול מטרות: goals → processes (checklists) → small daily steps, each person's own (server/goals.ts)
+CREATE TABLE IF NOT EXISTS goals (
+  email      TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  why        TEXT,
+  kind       TEXT NOT NULL,      -- short (under a day), regular, long (over a year)
+  due        TEXT,               -- YYYY-MM-DD
+  status     TEXT NOT NULL,      -- active, done, archived, deleted
+  days       TEXT,               -- JSON [weekday 0-6]: the days to work on it (none: every day but the rest day)
+  time       TEXT,               -- HH:MM
+  template   TEXT,
+  sort       INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  done_at    INTEGER,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS goal_processes (
+  email      TEXT NOT NULL,
+  goal_id    TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  sort       REAL NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS goal_steps (
+  email      TEXT NOT NULL,
+  goal_id    TEXT NOT NULL,
+  process_id TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  sort       REAL NOT NULL DEFAULT 0,
+  small      INTEGER NOT NULL DEFAULT 0,   -- 1: a 5-minute version ("נתקעתי")
+  done_at    INTEGER,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS goal_reviews (
+  email      TEXT NOT NULL,
+  week       TEXT NOT NULL,      -- the day of the review, YYYY-MM-DD
+  good       TEXT,
+  stuck      TEXT,
+  change     TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, week)
+);
+CREATE TABLE IF NOT EXISTS goal_badges (
+  email     TEXT NOT NULL,
+  badge     TEXT NOT NULL,
+  earned_at INTEGER NOT NULL,
+  PRIMARY KEY (email, badge)
+);

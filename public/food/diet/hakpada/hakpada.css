@@ -39,7 +39,9 @@
 
 /* the dashboard */
 .hk-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-@media (max-width: 899px) { .hk-cards { grid-template-columns: 1fr; } }
+@media (max-width: 899px) { .hk-cards { grid-template-columns: minmax(0, 1fr); } }   /* minmax: a long row of buttons may not widen the card past the screen */
+.hk-card { min-inline-size: 0; }
+.hk-card .hk-acts { flex-wrap: wrap; }
 .hk-card { padding: 16px; display: grid; gap: 8px; align-content: start; }
 .hk-card .hk-acts { justify-content: flex-start; }
 .hk-card p { margin: 0; font-size: .92rem; }

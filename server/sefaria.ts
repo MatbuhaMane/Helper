@@ -16,7 +16,7 @@ export async function proxy(ctx: Ctx) {
   requireUser(ctx);
   const path = decodeURIComponent(ctx.url.pathname.replace(/^\/api\/sefaria\//, ''));
   const rule = ALLOWED.find(([re]) => re.test(path));
-  if (!rule) throw new HttpError(404, 'Not found');
+  if (!rule || /(^|\/)\.\.(\/|$)|[\\\u0000-\u001f]/.test(path)) throw new HttpError(404, 'Not found');   // no way out of the allowed paths
   const days = rule[1];
   const key = path + (ctx.url.search || '');
   const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': `public, max-age=${days * 86400}`, 'x-copy': '' };

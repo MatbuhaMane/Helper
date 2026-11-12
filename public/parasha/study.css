@@ -208,3 +208,10 @@
 .rs-next-b:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
 .rs-text { padding-block-end: 30px; }
 .rs-word-save { justify-self: start; }
+
+/* the Scrolls: words the editors filled in */
+.rs-recon { color: var(--muted); opacity: .7; }
+
+/* the verse number: a target a finger can hit */
+.rs-n { min-inline-size: 26px; min-block-size: 26px; padding: 0 4px; border-radius: 8px; }
+.rs-n:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }

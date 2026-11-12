@@ -46,10 +46,18 @@
   const plural = (n, one, many) => `${fmt(n)} ${n === 1 ? one : many}`;
   function heNum(n) {
     const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'], tens = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'], hund = ['', 'ק', 'ר', 'ש', 'ת'];
-    let s = n >= 100 ? hund[Math.floor(n / 100)] : ''; n %= 100;
+    let s = '', h = Math.floor(n / 100); n %= 100;
+    while (h >= 4) { s += 'ת'; h -= 4; }   // 700 = תש
+    s += hund[h];
     if (n === 15) return s + 'טו';
     if (n === 16) return s + 'טז';
     return s + tens[Math.floor(n / 10)] + ones[n % 10];
+  }
+  /** a day as a Hebrew date in letters: "ד׳ בכסלו תשפ״ז" */
+  function heDate(d) {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-u-ca-hebrew', { day: 'numeric', year: 'numeric' }).formatToParts(d).map((p) => [p.type, p.value]));
+    const mark = (s) => (s.length > 1 ? s.slice(0, -1) + '״' + s.slice(-1) : s + '׳');
+    return `${mark(heNum(+parts.day))} ב${new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { month: 'long' }).format(d)} ${mark(heNum(+parts.year % 1000))}`;
   }
   const openHit = (h) => (/ \d+:\d+$/.test(h.ref) && !/\d+[ab]:/.test(h.ref)
     ? H.study(h.ref.replace(/:\d+$/, ''), h.heRef.replace(/:[^:]+$/, ''), { select: h.ref })
@@ -294,7 +302,7 @@
       el('header', { class: 'pr-head' },
         el('span', { class: 'pr-logo', 'aria-hidden': 'true' }, H.icon('torah')),
         el('div', {}, el('small', {}, 'פרשת השבוע'), el('h1', {}, par ? par.hebrew || par.title : 'אין קריאה רגילה השבת'),
-          par?.hdate ? el('p', { class: 'muted' }, 'שבת ' + new Date(par.date + 'T12:00').toLocaleDateString('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long', year: 'numeric' })) : null)),
+          par?.hdate ? el('p', { class: 'muted' }, 'שבת ' + heDate(new Date(par.date + 'T12:00'))) : null)),
       par?.memo ? el('section', { class: 'card pr-memo' }, el('h2', {}, 'על הפרשה'), el('p', { dir: 'auto' }, par.memo)) : null,
       el('div', { class: 'pr-cols' },
         el('div', { class: 'pr-col' },

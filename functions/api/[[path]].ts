@@ -122,6 +122,7 @@ route('DELETE', '/api/notes/:id', notes.remove);
 
 /* בידור: recommendations by medium, with where to watch */
 route('GET', '/api/fun/picks', fun.picks);
+route('GET', '/api/fun/viral', fun.viral);
 route('GET', '/api/fun/logo/:domain', fun.logo);
 
 /* the family's days in the calendar (shared) */

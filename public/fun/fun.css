@@ -48,3 +48,25 @@ a.fun-svc:hover { border-color: var(--primary); }
   .fun-logo { inline-size: 56px; block-size: 56px; } .fun-logo .icon { inline-size: 52px; block-size: 52px; }
 }
 @media (prefers-reduced-motion: reduce) { .fun-spin { animation-duration: 2.4s; } }
+
+/* the end of the board, where the next page loads */
+.fun-foot { min-block-size: 40px; display: grid; place-items: center; }
+.fun-end { margin: 8px 0 0; font-size: .86rem; }
+
+/* מצחיק: a column layout, so pictures and videos of every height sit close */
+.fun-board.viral { display: block; columns: 320px; column-gap: 16px; }
+.fun-board.viral > * { break-inside: avoid; margin-block-end: 16px; }
+.fun-play { all: unset; position: relative; display: block; inline-size: 100%; cursor: pointer; background: #000; }
+.fun-play img { display: block; inline-size: 100%; aspect-ratio: 16 / 9; object-fit: cover; opacity: .92; transition: opacity .2s; }
+.fun-play.pic img { aspect-ratio: auto; min-block-size: 220px; max-block-size: 520px; object-fit: contain; }
+.fun-pic img { min-block-size: 160px; }
+.fun-play:hover img { opacity: 1; }
+.fun-play:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
+.fun-play-ic { position: absolute; inset: 0; margin: auto; inline-size: 62px; block-size: 62px; border-radius: 50%; display: grid; place-items: center;
+  background: rgba(0, 0, 0, .55); color: #fff; font-size: 1.5rem; padding-inline-start: 4px; box-shadow: 0 6px 18px rgba(0, 0, 0, .35); }
+.fun-frame { position: relative; aspect-ratio: 16 / 9; background: #000; }
+.fun-frame.tall { aspect-ratio: 4 / 5; }
+.fun-frame iframe { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; border: 0; }
+.fun-pic img { display: block; inline-size: 100%; max-block-size: 640px; object-fit: contain; background: color-mix(in srgb, var(--text) 4%, transparent); }
+.fun-flag { background: color-mix(in srgb, #fff0b3 70%, transparent) !important; }
+.fun-i h3, .fun-v h3 { font-size: 1.02rem; }

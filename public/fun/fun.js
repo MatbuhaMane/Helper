@@ -1,7 +1,9 @@
-/* בידור: recommendations only, by medium – television, film, live shows, music, games, funny things, books.
-   Each card says what it is and why it is recommended, and where it can be watched, heard, played or booked in Israel, with the
-   logo of the service. The picks are chosen on the server (server/fun.ts) and kept for twelve hours. The tab you were on is
-   remembered for you (H.prefs), and the last picks of each tab stay on this device so the board opens at once. */
+/* בידור: by medium – television, film, live shows, music, games, funny things, books – and it scrolls on without end.
+   Every tab but מצחיק shows recommendations only: what it is, why, and where it can be watched, heard, played or booked in
+   Israel, with the service's logo (chosen on the server, server/fun.ts; each page kept for twelve hours; the next page reads
+   older headlines). מצחיק is what is going round the web: the most popular comedy on YouTube in Israel and in the world,
+   played right here, and funny, kind pictures from Reddit. The tab you were on is remembered for you (H.prefs); the first page of
+   each tab stays on this device so the board opens at once. */
 (async () => {
   const { el, toast } = H;
   await H.requireLogin();
@@ -15,12 +17,14 @@
   const tabs = el('nav', { class: 'fun-tabs', role: 'tablist', 'aria-label': 'סוגי הבידור' });
   const board = el('section', { class: 'fun-board', 'aria-live': 'polite' });
   const stamp = el('p', { class: 'fun-stamp muted' });
+  const foot = el('div', { class: 'fun-foot' });   // the end of the board: when it comes into view, the next page loads
   root.append(el('div', { class: 'fun' },
     el('header', { class: 'fun-head' },
       el('span', { class: 'fun-logo', 'aria-hidden': 'true' }, H.icon('fun')),
       el('div', {}, el('small', {}, 'בידור'), el('h1', {}, 'מה שווה לראות, לשמוע ולשחק'), el('p', { class: 'muted' }, 'רק המלצות – ואיפה אפשר למצוא אותן בישראל'))),
-    tabs, stamp, board));
+    tabs, stamp, board, foot));
 
+  /* a recommendation */
   const logo = (w) => (w.domain ? el('img', { class: 'fun-svc-logo', src: `/api/fun/logo/${w.domain}`, alt: '', loading: 'lazy', onerror: (e) => e.target.replaceWith(el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1))) }) : el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1)));
   function card(p, tint) {
     const where = p.where?.length
@@ -39,33 +43,92 @@
         where,
         el('a', { class: 'fun-src', href: p.link, target: '_blank', rel: 'noopener' }, 'ההמלצה מ־', p.source, ' ↗')));
   }
+
+  /* something going round the web: a video plays in its card (YouTube, privacy-enhanced); a picture shows whole */
+  const views = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1)} מיליון צפיות` : n >= 1e3 ? `${Math.round(n / 1e3)} אלף צפיות` : n ? `${n} צפיות` : '');
+  function viralCard(v) {
+    const flag = v.region === 'il' ? el('span', { class: 'fun-flag' }, '🇮🇱 ויראלי בארץ') : el('span', { class: 'fun-flag' }, '🌍 ויראלי בעולם');
+    if (v.type === 'video') {
+      const media = el('button', { class: 'fun-play', 'aria-label': 'ניגון: ' + v.title, onclick: () => {
+        media.replaceWith(el('div', { class: 'fun-frame' }, el('iframe', { src: `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0&playsinline=1`, title: v.title, allow: 'autoplay; encrypted-media; picture-in-picture; fullscreen', allowfullscreen: true, loading: 'lazy' })));
+      } }, el('img', { src: v.thumb, alt: '', loading: 'lazy' }), el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'));
+      return el('article', { class: 'fun-card fun-v' }, media, el('div', { class: 'fun-body' },
+        el('div', { class: 'fun-tags' }, flag, views(v.views) ? el('span', {}, views(v.views)) : ''),
+        el('h3', { dir: 'auto' }, v.title), el('a', { class: 'fun-src', href: v.url, target: '_blank', rel: 'noopener' }, v.channel, ' · YouTube ↗')));
+    }
+    const img = el('img', { src: v.src, alt: v.title, loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => e.target.closest('.fun-card').remove() });
+    let media = el('div', { class: 'fun-pic' }, img);
+    if (v.video) {   // a video on Reddit: its picture, and a tap plays it in Reddit's own player
+      media = el('button', { class: 'fun-play pic', 'aria-label': 'ניגון: ' + v.title, onclick: () => {
+        const path = new URL(v.video).pathname;
+        media.replaceWith(el('div', { class: 'fun-frame tall' }, el('iframe', { src: `https://www.redditmedia.com${path}?ref_source=embed&ref=share&embed=true&theme=${H.isDark?.() ? 'dark' : 'light'}`, title: v.title, allow: 'autoplay; encrypted-media; fullscreen', allowfullscreen: true, loading: 'lazy', sandbox: 'allow-scripts allow-same-origin allow-popups' })));
+      } }, img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'));
+    }
+    return el('article', { class: 'fun-card fun-i' }, media, el('div', { class: 'fun-body' },
+      el('div', { class: 'fun-tags' }, flag), el('h3', { dir: 'auto' }, v.title), el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, ' · Reddit ↗')));
+  }
+
   const keep = (cat, d) => { try { localStorage.setItem('fun-' + cat, JSON.stringify(d)); } catch (_) { /* full */ } };
   const kept = (cat) => { try { return JSON.parse(localStorage.getItem('fun-' + cat) || 'null'); } catch (_) { return null; } };
   const ago = (t) => { const h = Math.round((Date.now() - t) / 36e5); return h < 1 ? 'עכשיו' : h === 1 ? 'לפני שעה' : h < 24 ? `לפני ${h} שעות` : `לפני ${Math.round(h / 24)} ימים`; };
+  const spinner = (text) => el('p', { class: 'fun-wait muted' }, el('span', { class: 'fun-spin', 'aria-hidden': 'true' }), text);
 
-  function draw(d, tint) {
-    stamp.textContent = d ? `${d.picks.length} המלצות · נבחרו ${ago(d.at)}` : '';
-    if (!d) return;
-    board.replaceChildren(...(d.picks.length ? d.picks.map((p) => card(p, tint)) : [el('p', { class: 'muted' }, 'אין כרגע המלצות בקטגוריה הזו. נסו שוב מאוחר יותר.')]));
+  /* the state of the open tab, and the next page */
+  let S = null, token = 0;
+  async function more() {
+    if (!S || S.busy || S.done) return;
+    S.busy = true;
+    const mine = token, [, name, , tint] = CATS.find((c) => c[0] === S.cat);
+    foot.replaceChildren(spinner(S.cat === 'funny' ? 'מביא עוד…' : `בוחר עוד המלצות ב${name}…`));
+    try {
+      if (S.cat === 'funny') {
+        const d = await H.api('/api/fun/viral' + (S.cursor ? '?cursor=' + encodeURIComponent(S.cursor) : ''));
+        if (mine !== token) return;
+        const fresh = d.items.filter((v) => !S.seen.has(v.id || v.src) && S.seen.add(v.id || v.src));
+        board.append(...fresh.map(viralCard));
+        S.cursor = d.cursor; S.done = !d.cursor;
+        if (S.page === 0) { keep('funny', { items: fresh, cursor: d.cursor, at: Date.now() }); stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
+      } else {
+        const d = await H.api(`/api/fun/picks?cat=${S.cat}&page=${S.page}`);
+        if (mine !== token) return;
+        const key = (p) => (p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+        const fresh = d.picks.filter((p) => !S.seen.has(p.link) && !S.seen.has(key(p)) && S.seen.add(p.link) && S.seen.add(key(p)));
+        board.append(...fresh.map((p) => card(p, tint)));
+        if (S.page === 0) { keep(S.cat, d); stamp.textContent = `נבחרו ${ago(d.at)}`; }
+        S.done = !d.more || !d.picks.length;
+      }
+      S.page++;
+    } catch (_) {
+      if (mine !== token) return;
+      S.failed = (S.failed || 0) + 1;
+      if (S.failed > 2) S.done = true;
+      if (!board.childElementCount) board.replaceChildren(el('p', {}, 'לא הצלחתי להביא כרגע. נסו שוב בעוד רגע.'));
+    } finally {
+      if (mine === token) {
+        S.busy = false;
+        foot.replaceChildren(S.done ? el('p', { class: 'muted fun-end' }, board.childElementCount ? 'זה הכל לעכשיו – עוד יגיע בקרוב.' : '') : '');
+        // still room on the screen: the next page at once
+        if (!S.done && foot.getBoundingClientRect().top < innerHeight + 400) more();
+      }
+    }
   }
-  let token = 0;
-  async function open(cat, fresh) {
+  new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) more(); }, { rootMargin: '600px 0px' }).observe(foot);
+
+  function open(cat) {
     P.cat = cat; H.savePrefs('fun');
     const [, name, , tint] = CATS.find((c) => c[0] === cat);
     tabs.querySelectorAll('[role=tab]').forEach((t) => { const on = t.dataset.cat === cat; t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); });
-    const mine = ++token;
+    token++;
+    S = { cat, page: 0, seen: new Set(), busy: false, done: false, cursor: null };
+    board.classList.toggle('viral', cat === 'funny');
+    stamp.textContent = '';
+    // what this device kept from last time, while the fresh first page comes
     const old = kept(cat);
-    if (old) draw(old, tint);
-    else board.replaceChildren(el('p', { class: 'fun-wait muted' }, el('span', { class: 'fun-spin', 'aria-hidden': 'true' }), `בוחר את המומלצים ב${name} ובודק איפה אפשר לראות אותם… (עד דקה)`));
-    try {
-      const d = await H.api(`/api/fun/picks?cat=${cat}${fresh ? '&fresh=1' : ''}`);
-      if (mine !== token) return;
-      keep(cat, d); draw(d, tint);
-    } catch (_) {
-      if (mine !== token) return;
-      if (!old) board.replaceChildren(el('p', {}, 'לא הצלחתי להביא המלצות כרגע. נסו שוב בעוד רגע.'));
-      else toast('מוצגות ההמלצות האחרונות שנשמרו');
-    }
+    if (old && cat === 'funny' && old.items?.length) { board.replaceChildren(...old.items.map(viralCard)); old.items.forEach((v) => S.seen.add(v.id || v.src)); S.cursor = old.cursor; S.page = 1; stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
+    else if (old && old.picks?.length) { board.replaceChildren(...old.picks.map((p) => card(p, tint))); old.picks.forEach((p) => { S.seen.add(p.link); S.seen.add((p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')); }); S.page = 1; stamp.textContent = `נבחרו ${ago(old.at)}`; }
+    else board.replaceChildren(spinner(cat === 'funny' ? 'מחפש מה הכי ויראלי עכשיו…' : `בוחר את המומלצים ב${name} ובודק איפה אפשר לראות אותם… (עד דקה)`));
+    if (!old) { const first = board.firstElementChild; S.page = 0; more().then(() => first?.classList.contains('fun-wait') && first.remove()); }
+    else more();
   }
   tabs.append(...CATS.map(([cat, name, ic, tint]) => el('button', { role: 'tab', class: 'fun-tab', 'data-cat': cat, style: `--tint:${tint}`, onclick: () => open(cat) },
     el('span', { class: 'ic' }, H.icon(ic)), el('span', {}, name))));

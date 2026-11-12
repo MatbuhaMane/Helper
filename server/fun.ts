@@ -67,19 +67,20 @@ const Pick = z.object({
 const Picks = z.object({ picks: z.array(Pick).default([]) });
 const KEEP = 12 * 3600e3;
 
-async function choose(ctx: Ctx, cat: string) {
+const PAGE = 30;   // headlines read for one page of picks (the board scrolls on: each page reads the next, older ones)
+async function choose(ctx: Ctx, cat: string, page = 0, already: string[] = []) {
   const c = CATEGORIES[cat];
   const lists = await Promise.all(c.sources.map((src, k) => sourceItems(ctx, { id: `fun-${cat}-${k}`, ...src }).catch(() => [] as NewsItem[])));
   const seen = new Set<string>();
   const items = lists.flat().filter((it) => it.title && !seen.has(it.link) && seen.add(it.link))
-    .sort((a, b) => b.date - a.date).filter((it) => Date.now() - it.date < 21 * 864e5).slice(0, 45);
-  if (!items.length) throw new HttpError(502, 'no_items');
+    .sort((a, b) => b.date - a.date).filter((it) => Date.now() - it.date < 45 * 864e5).slice(page * PAGE, (page + 1) * PAGE);
+  if (!items.length) { if (page) return []; throw new HttpError(502, 'no_items'); }
   const list = items.map((it, i) => `${i}. [${it.feed}] ${it.title} — ${String(it.summary || '').replace(/\s+/g, ' ').slice(0, 220)}`).join('\n');
   const system = `You curate an entertainment board for an Israeli family (Hebrew speakers; adults, teenagers and children). The category: ${c.name} – ${c.what}.
 From the recent headlines below, choose only what is WORTH RECOMMENDING: works that reviewers praise or that are widely loved, notable new releases with good reception, events worth going to. Leave out gossip, scandals, deaths, lawsuits, business news, politics, crime, and anything crude or not suitable for a family. Prefer what is available in Israel. 4–8 picks; fewer if few are worth it.
 For each pick use Google Search to check where in Israel it can be watched / heard / played / bought / booked RIGHT NOW (the streaming service or channel, the cinemas, the venue and the ticket site, the music services, the game platforms, the bookshops). Name each service as it is called (Netflix, yes, HOT, כאן 11, קשת 12, Disney+, Apple TV+, Spotify, Steam, PlayStation, Eventim…) and give its domain. If you could not find where, give an empty list – never guess.
-Write in Hebrew: "title" (the Hebrew name if it has one, else the original), "original" (the original name), "kind" (סדרה / סרט / אלבום / שיר / הופעה / מחזה / משחק / ספר / קומיקס …), "what" (one sentence: what it is), "why" (one or two sentences: why it is recommended, from the reviews), "rating" (a review score if there is one, e.g. "Metacritic 88", else empty), "family" (who it suits: "לכל המשפחה" / "מגיל 12" / "למבוגרים"…).
-Answer with JSON only: {"picks": [{"i": <the number of the headline>, "title": "", "original": "", "kind": "", "what": "", "why": "", "rating": "", "family": "", "where": [{"name": "", "domain": "", "note": "e.g. עונה 2, from 20.11, tickets from ₪150", "url": ""}]}]}`;
+Write in Hebrew: "title" (the Hebrew name if it has one, else the original), "original" (the original name), "kind" (סדרה / סרט / אלבום / שיר / הופעה / מחזה / משחק / ספר / קומיקס …), "what" (one sentence: what it is), "why" (one or two sentences: why it is recommended, from the reviews), "rating" (a review score ONLY if your search found it for this very release – not an older edition or the original – e.g. "Metacritic 88"; else empty), "family" (who it suits: "לכל המשפחה" / "מגיל 12" / "למבוגרים"…).
+${already.length ? `Already on the board – do NOT pick these again, nor other news about them: ${already.slice(0, 60).join(' · ')}\n` : ''}Answer with JSON only: {"picks": [{"i": <the number of the headline>, "title": "", "original": "", "kind": "", "what": "", "why": "", "rating": "", "family": "", "where": [{"name": "", "domain": "", "note": "e.g. עונה 2, from 20.11, tickets from ₪150", "url": ""}]}]}`;
   let picks: z.infer<typeof Pick>[] = [];
   try {
     const g = await geminiGrounded(ctx.env, { system, prompt: list });
@@ -97,29 +98,40 @@ Answer with JSON only: {"picks": [{"i": <the number of the headline>, "title": "
   });
 }
 
-/** GET /api/fun/picks?cat=tv → { cat, name, picks, at } (kept for twelve hours; older ones are shown while new ones are chosen) */
+/** GET /api/fun/picks?cat=tv&page=0 → { cat, name, picks, page, more, at } (each page kept for twelve hours; older ones are shown
+    while new ones are chosen). "more" is false when there are no older headlines left to choose from. */
 export async function picks(ctx: Ctx) {
   requireUser(ctx);
   const cat = ctx.url.searchParams.get('cat') || 'tv';
   if (!CATEGORIES[cat]) throw new HttpError(400, 'Unknown category');
-  const key = 'fun|' + cat;
+  const page = Math.max(0, Math.min(20, parseInt(ctx.url.searchParams.get('page') || '0', 10) || 0));
+  const key = 'fun|' + cat + (page ? '|' + page : '');
   const row = await ctx.env.DB.prepare('SELECT answer, created_at FROM research_answers WHERE key = ?').bind(key).first<{ answer: string; created_at: number }>();
-  const fresh = ctx.url.searchParams.get('fresh') === '1';
+  // a fresh choice costs an AI call with search: at most once every ten minutes per page
+  const fresh = ctx.url.searchParams.get('fresh') === '1' && (!row || Date.now() - row.created_at > 10 * 60e3);
   const save = async () => {
-    const list = await choose(ctx, cat);
+    // what the earlier pages already recommend, so a later page brings new things
+    let already: string[] = [];
+    if (page) {
+      const keys = Array.from({ length: page }, (_, k) => 'fun|' + cat + (k ? '|' + k : ''));
+      const rows = await ctx.env.DB.prepare(`SELECT answer FROM research_answers WHERE key IN (${keys.map(() => '?').join(',')})`).bind(...keys).all<{ answer: string }>();
+      already = rows.results.flatMap((r) => { try { return (JSON.parse(r.answer) as any[]).flatMap((x) => [x.title, x.original].filter(Boolean)); } catch (_) { return []; } });
+    }
+    const list = (await choose(ctx, cat, page, already)).filter((x) => !already.includes(x.title) && !(x.original && already.includes(x.original)));
     if (list.length) await ctx.env.DB.prepare('INSERT OR REPLACE INTO research_answers (key, answer, created_at) VALUES (?, ?, ?)').bind(key, JSON.stringify(list), Date.now()).run();
     return list;
   };
   if (row && !fresh) {
     if (Date.now() - row.created_at > KEEP) ctx.waitUntil(save().catch((e) => console.error('fun refresh', e)));
-    return json({ cat, name: CATEGORIES[cat].name, picks: JSON.parse(row.answer), at: row.created_at });
+    return json({ cat, name: CATEGORIES[cat].name, picks: JSON.parse(row.answer), page, more: true, at: row.created_at });
   }
   const list = await save();
-  return json({ cat, name: CATEGORIES[cat].name, picks: list, at: Date.now() });
+  return json({ cat, name: CATEGORIES[cat].name, picks: list, page, more: list.length > 0, at: Date.now() });
 }
 
 /** GET /api/fun/logo/:domain – the service's icon, kept at the edge for a month */
 export async function logo(ctx: Ctx) {
+  requireUser(ctx);
   const d = String(ctx.params.domain || '').toLowerCase();
   if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(d)) throw new HttpError(400, 'Bad domain');
   const cache = (globalThis as any).caches?.default as Cache | undefined;
@@ -131,4 +143,97 @@ export async function logo(ctx: Ctx) {
   const res = new Response(r.body, { headers: { 'content-type': r.headers.get('content-type') || 'image/png', 'cache-control': 'public, max-age=2592000' } });
   if (cache) ctx.waitUntil(cache.put(key, res.clone()));
   return res;
+}
+
+/* מצחיק: what is going round the web right now – the most popular comedy videos on YouTube in Israel and in the world (embedded),
+   and funny, kind pictures from Reddit's family-friendly communities. An endless feed: each page carries the cursor of the next.
+   Each upstream page is kept at the edge for an hour. */
+type Viral =
+  | { type: 'video'; id: string; title: string; channel: string; thumb: string; views: number; region: 'il' | 'world'; url: string }
+  | { type: 'image'; src: string; title: string; link: string; source: string; region: 'world'; video?: string };
+const SUBS = 'MadeMeSmile+wholesomememes+AnimalsBeingDerps+aww+funny';
+// politics is left out of a family's funny feed (the late-night shows lead the comedy charts)
+const POLITICS = /trump|biden|harris|vance|obama|election|congress|senate|republican|democrat|maga|netanyahu|נתניהו|ביבי|בחירות|הכנסת|ממשלה|לפיד|בן גביר|סמוטריץ/i;
+
+async function edgeJson<T>(ctx: Ctx, key: string, ttl: number, make: () => Promise<T>): Promise<T> {
+  const cache = (globalThis as any).caches?.default as Cache | undefined;
+  const req = new Request('https://fun-viral.internal/' + encodeURIComponent(key));
+  const hit = await cache?.match(req);
+  if (hit) return hit.json() as Promise<T>;
+  const v = await make();
+  if (cache) ctx.waitUntil(cache.put(req, new Response(JSON.stringify(v), { headers: { 'content-type': 'application/json', 'cache-control': `max-age=${ttl}` } })));
+  return v;
+}
+
+/** YouTube's most popular comedy (category 23) in a region – one unit of quota a page; entertainment (24) where comedy has no chart */
+async function youtubePage(ctx: Ctx, region: 'IL' | 'US', token: string | null) {
+  const key = ctx.env.YOUTUBE_API_KEY;
+  if (!key) return { items: [] as Viral[], next: null as string | null };
+  return edgeJson(ctx, `yt|${region}|${token || ''}`, 3600, async () => {
+    for (const cat of ['23', '24']) {
+      const u = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&chart=mostPopular&regionCode=${region}&videoCategoryId=${cat}&maxResults=10${token ? '&pageToken=' + encodeURIComponent(token) : ''}&key=${key}`;
+      const r = await fetch(u);
+      if (!r.ok) continue;
+      const d = (await r.json()) as any;
+      const items: Viral[] = (d.items || []).filter((v: any) => v.status?.embeddable !== false && !POLITICS.test((v.snippet?.title || '') + ' ' + (v.snippet?.channelTitle || ''))).map((v: any) => ({
+        type: 'video', id: v.id, title: v.snippet?.title || '', channel: v.snippet?.channelTitle || '',
+        thumb: v.snippet?.thumbnails?.high?.url || v.snippet?.thumbnails?.medium?.url || '', views: +(v.statistics?.viewCount || 0),
+        region: region === 'IL' ? 'il' : 'world', url: `https://www.youtube.com/watch?v=${v.id}`,
+      }));
+      if (items.length) return { items, next: (d.nextPageToken as string) || null };
+    }
+    return { items: [] as Viral[], next: null };
+  });
+}
+
+/** Reddit's top of the day in kind, funny communities (its RSS – the JSON API refuses servers) */
+async function redditPage(ctx: Ctx, after: string | null) {
+  return edgeJson(ctx, `rd|${after || ''}`, 3600, async () => {
+    const r = await fetch(`https://www.reddit.com/r/${SUBS}/top/.rss?t=day&limit=15${after ? '&after=' + encodeURIComponent(after) : ''}`, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; HelperFamilyApp/1.0)' } });
+    if (!r.ok) return { items: [] as Viral[], next: null as string | null };
+    const xml = await r.text();
+    const unesc = (x: string) => x.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#32;/g, ' ');
+    const entries = xml.split('<entry').slice(1);
+    let last: string | null = null;
+    const items: Viral[] = [];
+    for (const e of entries) {
+      const id = /<id>([^<]+)<\/id>/.exec(e)?.[1] || null;
+      last = id || last;
+      const title = unesc(/<title>([^<]*)<\/title>/.exec(e)?.[1] || '');
+      const link = /<link href="([^"]+)"/.exec(e)?.[1] || '';
+      const source = /<category term="[^"]*" label="([^"]+)"/.exec(e)?.[1] || 'Reddit';
+      const content = unesc(/<content type="html">([\s\S]*?)<\/content>/.exec(e)?.[1] || '');
+      const target = /<a href="([^"]+)">\[link\]<\/a>/.exec(content)?.[1] || '';
+      const thumb = unesc(/<media:thumbnail url="([^"]+)"/.exec(e)?.[1] || '');
+      if (/nsfw|porn|sex/i.test(title) || POLITICS.test(title)) continue;
+      if (/^https:\/\/i\.redd\.it\/.+\.(jpe?g|png|gif|webp)$/i.test(target)) items.push({ type: 'image', src: target, title, link, source, region: 'world' });
+      else if (/^https:\/\/v\.redd\.it\//.test(target) && thumb) items.push({ type: 'image', src: thumb, title, link, source, region: 'world', video: link });
+      else if (/^https:\/\/i\.imgur\.com\/.+\.(jpe?g|png|gif)$/i.test(target)) items.push({ type: 'image', src: target, title, link, source, region: 'world' });
+    }
+    return { items, next: entries.length ? last : null };
+  });
+}
+
+/** GET /api/fun/viral?cursor=… → { items, cursor } (cursor: null at the very end) */
+export async function viral(ctx: Ctx) {
+  requireUser(ctx);
+  let cur: { il: string | null | false; us: string | null | false; rd: string | null | false } = { il: null, us: null, rd: null };
+  try { const c = ctx.url.searchParams.get('cursor'); if (c) cur = JSON.parse(atob(c)); } catch (_) { throw new HttpError(400, 'Bad cursor'); }
+  const [il, us, rd] = await Promise.all([
+    cur.il === false ? null : youtubePage(ctx, 'IL', cur.il).catch(() => null),
+    cur.us === false ? null : youtubePage(ctx, 'US', cur.us).catch(() => null),
+    cur.rd === false ? null : redditPage(ctx, cur.rd).catch(() => null),
+  ]);
+  // mixed: a video from Israel, two pictures, a video from the world, two pictures…
+  const a = il?.items || [], b = us?.items || [], c = rd?.items || [];
+  const items: Viral[] = [];
+  for (let i = 0, j = 0, k = 0; i < a.length || j < b.length || k < c.length;) {
+    if (i < a.length) items.push(a[i++]);
+    for (let n = 0; n < 2 && k < c.length; n++) items.push(c[k++]);
+    if (j < b.length) items.push(b[j++]);
+    for (let n = 0; n < 2 && k < c.length; n++) items.push(c[k++]);
+  }
+  const next = { il: il?.next ?? false, us: us?.next ?? false, rd: rd?.next ?? false };
+  const done = next.il === false && next.us === false && next.rd === false;
+  return json({ items, cursor: done ? null : btoa(JSON.stringify(next)) });
 }

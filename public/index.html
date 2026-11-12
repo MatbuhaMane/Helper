@@ -434,13 +434,16 @@
         if (!ms) { A = goal; paint(); return; }
         const from = A, t0 = performance.now();
         cancelAnimationFrame(tween?.raf);
-        tween = { raf: 0 };
+        // each turn has its own record, so a frame of an older turn that still fires can neither move the orbit nor touch the new one
+        const mine = { raf: 0 };
+        tween = mine;
         const step = (t) => {
+          if (tween !== mine) return;
           const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3);
           A = from + (goal - from) * e; paint();
-          if (k < 1) tween.raf = requestAnimationFrame(step); else tween = null;
+          if (k < 1) mine.raf = requestAnimationFrame(step); else tween = null;
         };
-        tween.raf = requestAnimationFrame(step);
+        mine.raf = requestAnimationFrame(step);
       }
       function paintPhase(m) {
         // the dark part of the face: half the disc on the unlit side, closed by the terminator (an ellipse)

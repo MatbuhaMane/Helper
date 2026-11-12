@@ -285,6 +285,7 @@
     { href: '/food/', label: 'אוכל', icon: 'food', also: ['/groceries/'] },
     { href: '/news/', label: 'חדשות', icon: 'news' },
     { href: '/fun/', label: 'בידור', icon: 'fun' },
+    { href: '/parasha/', label: 'פרשת השבוע', short: 'פרשה', icon: 'torah' },   // short: the phone's tab bar
     { href: '/songs/', label: 'שירון', icon: 'music' },
     { href: '/tools/', label: 'כלים', icon: 'tools', also: ['/mail/', '/pc/'] },
   ];
@@ -306,7 +307,7 @@
       // (day and night: the sun and moon's orbit on the home page is the switch; elsewhere the app follows the sun)
       el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, hidden: true }, '…'));
     const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) =>
-      el('a', { href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'tab-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, icon(n.icon), el('span', {}, n.label))));
+      el('a', { href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'tab-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, icon(n.icon), el('span', {}, n.short || n.label))));
     document.body.prepend(bar);
     document.body.append(tabs);
     me().then((r) => {

@@ -602,6 +602,8 @@
     more.remove();
     for (const c of s.cards.values()) if (!c.data.image) drawCard(c);
     updateHeader();
+    // the search failed with nothing found (no AI credit, the AI busy or down): the open recipe database instead
+    if (!s.cards.size && failed) { grid.remove(); return runMealDbSearch(q); }
     if (!s.cards.size) {
       grid.replaceWith(el('div', {}, el('p', {}, failed || `לא נמצאו מתכונים ל"${q}". נסו לנסח אחרת, למשל שם המנה ומרכיב עיקרי.`), el('p', {}, googleLink(q))));
     } else if (failed) toast(failed);
@@ -685,8 +687,10 @@
       recipe.notes ? el('p', { class: 'r-notes' }, recipe.notes) : null,
       parts.ingSlot,
       el('h4', {}, 'אופן ההכנה'),
-      el('ol', { class: 'steps he' }, recipe.steps.map((s) => el('li', {}, s))),
-      el('p', {}, el('a', { href: recipe.source_url, target: '_blank', rel: 'noopener' }, '🔗 המתכון המקורי')),
+      el('ol', { class: 'steps he' }, recipe.steps.map((s) => el('li', { dir: 'auto' }, s))),
+      el('p', {}, el('a', { href: recipe.source_url, target: '_blank', rel: 'noopener' }, '🔗 המתכון המקורי'),
+        // opened without AI, in its own language: Google's translation of the page
+        recipe.meta?.untranslated && recipe.meta.translate ? [' · ', el('a', { href: recipe.meta.translate, target: '_blank', rel: 'noopener' }, '🌐 הדף בעברית ב־Google Translate')] : null),
     ]);
   }
 

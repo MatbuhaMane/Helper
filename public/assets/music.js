@@ -710,6 +710,38 @@
       toast(r ? 'לא מצאתי את המילים המדויקות, הנה חיפוש בשירון' : 'השירון לא ענה כרגע, נסו שוב');
     }
   }
+  /* a gentle word from the side (vision batch 4, item 10): it slides in from the screen's edge, stays a few seconds and
+     slides back out; a tap on its button acts, ✕ or a swipe lets it go. Still for whoever asked for less motion. */
+  let peekEl = null;
+  function peek(text, label, act) {
+    peekEl?.remove();
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // it sits at the inline end (the left in Hebrew), and comes in from that edge
+    const side = getComputedStyle(document.documentElement).direction === 'rtl' ? -1 : 1;
+    let gone = false, timer = 0;
+    const out = () => {
+      if (gone) return; gone = true; clearTimeout(timer);
+      const node = box;
+      if (still) { node.remove(); return; }
+      node.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${side * 110}%)`, opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.4,0,1,1)' }).onfinish = () => node.remove();
+    };
+    const box = el('div', { class: 'mu-peek', role: 'status', 'aria-live': 'polite',
+      style: 'position:fixed;z-index:60;inset-inline-end:12px;inset-block-end:calc(var(--tabbar-h, 64px) + 16px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;max-inline-size:min(340px, calc(100vw - 24px));padding:10px 10px 10px 14px;border-radius:14px;background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow)' },
+      el('span', { style: 'flex:1;font-size:.92rem' }, '🎵 ', text),
+      el('button', { class: 'btn small primary', type: 'button', onclick: () => { out(); act(); } }, label),
+      el('button', { class: 'btn small ghost', type: 'button', 'aria-label': 'סגירה', onclick: out }, '✕'));
+    // a swipe toward the edge sends it away
+    let x0 = null;
+    box.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+    box.addEventListener('pointerup', (e) => { if (x0 !== null && Math.abs(e.clientX - x0) > 40) out(); x0 = null; });
+    box.addEventListener('pointerenter', () => clearTimeout(timer));
+    box.addEventListener('pointerleave', () => { clearTimeout(timer); timer = setTimeout(out, 2500); });
+    document.body.append(box);
+    peekEl = box;
+    if (!still) box.animate([{ transform: `translateX(${side * 110}%)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    timer = setTimeout(out, 6000);
+  }
+
   // a new song: the open window turns to its words; otherwise a small offer (only for songs the songbook knows)
   let lastSong = null, songTimer = 0;
   painters.push((st) => {
@@ -725,7 +757,7 @@
       const hit = r && (r.lyrics || r.chords);
       if (!hit || lastSong !== key) return;
       if (songwin && !songwin.hidden && songFollow) songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title);
-      else toast(`המילים של "${hit.title}" בשירון`, 'להציג', () => { songFollow = true; songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title); });
+      else peek(`המילים של "${hit.title}" בשירון`, 'להציג', () => { songFollow = true; songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title); });
     }, 2500);
   });
 

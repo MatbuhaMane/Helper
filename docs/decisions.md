@@ -40,6 +40,23 @@ Vision's spec v1 (`docs/vision/research.md`), step 1 of 4. In `/tools/research/`
   from notes with citations; ✨ summaries, directions and drafts); 3, shared research (roles, history); 4, the toolkit and
   the field packs.
 Status: done (on `ai-features`).
+## 2026-11-13 – The research assistant: order, one engine, and the open sources' terms (master)
+
+- **Order (ai-features):** goals part 1 is live; the research assistant v1 comes next; goals part 2 (the social layer) waits
+  for a design proposal, since it needs the friends/approval and under-12 rules.
+- **One engine:** `server/research.ts` becomes a shared core (sources, search, citations); the Torah researcher is one source
+  pack (Sefaria), the academic researcher another. PDFs to Drive use the same incremental `drive.file` grant as notes.
+  "Share to הָאֹהֶל" from the phone: ai-features builds a receiving page (`/capture/`, GET title/text/url), then the master
+  adds `share_target` to `manifest.json`.
+- **The sources' terms (checked by the master):** OpenAlex (CC0, polite pool with a contact email) is the backbone; Crossref and
+  PubMed metadata are free, but abstracts are publishers' copyright – shown, not stored in bulk; PubMed: `tool` and `email`,
+  3 requests/s without a key; arXiv: metadata CC0, one request per 3 s, their acknowledgment shown; Unpaywall: an email
+  parameter, CC0. **Semantic Scholar is not used:** its API licence allows non-commercial research only (commercial needs an
+  expanded licence from AI2), and the public version will be paid. **CSL styles** are CC BY-SA 3.0; **citeproc-js** is
+  CPAL/AGPL (copyleft) and is not adopted without the master – the few styles needed (APA, MLA, Chicago, Hebrew) are
+  formatted by our own code from CSL data.
+- **Open with the owner:** which contact email the APIs get (not the owner's private address); a setting holds it until then.
+Status: Decided (master), the email open.
 
 ## 2026-11-13 – Goal management v1, the first part (ai-features → master, design, vision)
 
@@ -158,6 +175,22 @@ Built on `ai-features` (each commit names its item):
   `npm test`. Restaurants: a proposal for the owner in `docs/ai/restaurants.md`; nothing built.
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
+
+## 2026-11-13 – ניהול מטרות: the look, the prototype and the embroidered badges (design → ai-features)
+
+For the goal-management spec v1 (vision, approved by the owner). Design's part is ready for ai-features to build on:
+- `public/tools/tasks/goals.css` – every screen: the dashboard (each goal a filling ring and a path of stations on a
+  thread, the forgiving week "4 מתוך 6" with the rest day as a candle), a goal's page with a checklist per process,
+  today's 2–3 big steps, the why coming back, "נתקעתי", the weekly review, the five-step new goal (write or record,
+  length, processes, first steps, rhythm), and the badge wall with a glass card for the way to each badge.
+- `docs/design/prototype/goals.html` – all of it working, with the owner's first goal (the tent) as the example;
+  `docs/design/goals.md` – the markup for each part (ai-features copies it), and how to show a badge earned, in
+  progress, secret or just earned.
+- The badges: 15 of 23 embroidered so far with the image tool ($1.03); the other 8 after the tool's daily cap resets
+  (listed in goals.md; `secret.webp` stands in meanwhile). The secret badge's real picture has an unguessable name, to
+  be sent only once earned.
+For ai-features: the page (`public/tools/tasks/index.html` and its JS) needs `<link rel="stylesheet" href="/tools/tasks/goals.css">`.
+Status: done (design's part); ai-features builds the logic.
 
 ## 2026-11-12 – Vision batch 4, design's part: done; what ai-features can now drop or switch (design → ai-features, master)
 
@@ -581,6 +614,89 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-13 – The research assistant (עוזר מחקר), spec v1: approved for building (vision, the owner)
+
+The owner specced the research assistant with the vision session and approved it ("add formatting and academic writing,
+then send"). Full spec: `docs/vision/research.md`, section "האפיון, גרסה 1".
+
+**Purpose:** real research, academic or personal, helping where researchers get stuck: organising accumulated knowledge
+and linking it, open threads, writing, and persistence. It shares one engine with goal management, because a research is
+a kind of goal.
+
+**Units:**
+- **A research** has a purpose (article, book, lecture, post, coursework, personal knowledge, family history), a citation
+  style and an export target.
+- **A note** is one unit of knowledge with its sources. One note can belong to several researches (the same note, not a
+  copy), with links and backlinks.
+- **A question or thread** has a status: open, answered or parked. One screen shows all open threads.
+- **A source** holds its metadata, a PDF in the user's Drive, highlights and quotes, and a reliability mark.
+
+**Flow:**
+- Capture from anywhere ("share to הָאֹהֶל") into an inbox.
+- Sort into notes and questions.
+- A knowledge map in the forest's visual language.
+- An outline built from notes, with citations and bibliography automatic.
+- Export to Word, Google Docs, LaTeX/BibTeX, Markdown, PDF or slides.
+- CSL citation styles; BibTeX and RIS import and export, so it works alongside Zotero and Mendeley.
+
+**Persistence:** goal management's daily steps, plus "one thread a day" on Today; the weekly review; "נתקעתי"; the "why";
+a research journal; and badges (including "גשש").
+
+**Shared research:**
+- Roles per research: owner, editor, contributor and reader.
+- An edit history, with restore.
+- A private note linked into a shared research asks every time whether to share it. If not, the collaborators see only
+  a reference.
+- The existing rules apply: friends connect only with approval; no one outside the family for children under 12.
+
+**Toolkit:**
+- **Core:**
+  - add a source by DOI, ISBN or link;
+  - a PDF reader whose highlights become notes;
+  - finding an open-access copy;
+  - the citation chain;
+  - alerts on new publications;
+  - a literature-review matrix;
+  - a glossary;
+  - a timeline;
+  - a quote collection;
+  - source reliability and retraction checks;
+  - exporting the whole research as an archive.
+- **Domain packs:**
+  - language: root search, concordance, textual witnesses, dictionaries, IPA;
+  - social research: qualitative coding, data and descriptive statistics, ethics;
+  - biology: PubMed, taxonomy, databases, formulas;
+  - translation;
+  - **academic formatting and writing:** templates (journal article, seminar paper, thesis, research proposal), IMRaD,
+    numbering and cross-references, footnotes, length limits, mixed right-to-left and left-to-right text, and style
+    (checklists without AI; ✨ language editing and abstracts).
+
+**Without AI:** open, free sources:
+- OpenAlex, Crossref, PubMed, arXiv, Semantic Scholar, Unpaywall;
+- Sefaria, Wiktionary;
+- web search opening in an ordinary search engine.
+
+**With AI (✨), through the user's own AI or credits:** focused search, summaries and comparison, directions and tasks,
+drafts from notes, and translation.
+
+**Before building:**
+- check each open source's terms and licence;
+- settle with the master how the Torah researcher (`server/research.ts`) and this tool share an engine.
+
+**Suggested build order:**
+1. The core: shared notes, questions, sources by DOI, capture, basic export.
+2. Persistence and writing.
+3. Shared research.
+4. The toolkit and the domain packs.
+
+**Affects:**
+- **ai-features:** the module, tables and routes (appended and logged), the sources, and the page.
+- **Design:** the screens, the knowledge map, the PDF reader, and the writing view.
+- **The master:** scheduling, the shared engine with `research.ts`, the Drive scope for PDFs, and the share target in
+  `manifest.json`.
+
 Status: Decided (the owner).
 
 ## 2026-11-13 – Goal management, spec v1: approved for building (vision, the owner)

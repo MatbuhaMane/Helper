@@ -35,6 +35,10 @@ Only items the owner agreed to go here. Business and vision talk with the owner,
 
 ### design
 
+Nothing tonight: the look of research step 2 is done (1a680b2, for the morning merge), and the last 8 badges come from
+design's own job after the image quota resets. Send design no order.
+
+(Done, kept for the record:)
 1. The look of research step 2: one thread a day, the weekly summary, the journal, the גשש badge, and the writing skeleton.
    Build it on the core prototype (a02f779), and fit it to ai-features' live markup (6d9a822 on ai-features: drafts,
    the journal, a research as a goal, ✨ directions and first draft).

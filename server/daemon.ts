@@ -279,7 +279,7 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
 
 function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: string; label: string }[], where: string) {
   const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-  return `<state>time: ${now} (Israel). person: ${u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
+  return `<state>time: ${now} (Israel). person: ${u.he_name || u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
     `${d.name ? `they call you: ${d.name}` : 'they call you by your own name'}. you are: ${where}. ` +
     `on screen: ${landmarks.length ? landmarks.map((l) => `${l.key} (${l.label})`).join(', ') : 'nothing listed'}.</state>`;
 }

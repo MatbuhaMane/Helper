@@ -14,7 +14,8 @@
 .fun-tab:hover .icon { transform: translateY(-2px) rotate(-5deg); }
 .fun-tab.on { background: color-mix(in srgb, var(--tint) 35%, var(--card)); border-color: color-mix(in srgb, var(--tint) 80%, var(--line)); font-weight: 600; }
 .fun-tab:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
-.fun-stamp { margin: 0; font-size: .82rem; }
+.fun-stamp { margin: 0; font-size: .82rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-block-size: 32px; }
+.fun-refresh { display: inline-flex; align-items: center; gap: 4px; }
 
 .fun-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; align-items: start; }
 .fun-card { display: grid; border-radius: 26px; overflow: hidden; background: var(--card); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); box-shadow: 0 10px 28px -18px rgba(46, 42, 30, .35); }
@@ -70,3 +71,16 @@ a.fun-svc:hover { border-color: var(--primary); }
 .fun-pic img { display: block; inline-size: 100%; max-block-size: 640px; object-fit: contain; background: color-mix(in srgb, var(--text) 4%, transparent); }
 .fun-flag { background: color-mix(in srgb, #fff0b3 70%, transparent) !important; }
 .fun-i h3, .fun-v h3 { font-size: 1.02rem; }
+
+/* pull to refresh (touch): the page keeps the gesture for itself instead of reloading */
+html:has(.fun) { overscroll-behavior-y: contain; }
+.fun-pull { position: fixed; inset-inline-start: 50%; inset-block-start: calc(var(--appbar-h) + env(safe-area-inset-top)); z-index: 11; translate: 50% calc(var(--pull, 0) * 1px - 52px);
+  inline-size: 40px; block-size: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--text); border: 1px solid var(--line-strong);
+  box-shadow: var(--lift, 0 6px 18px rgba(0, 0, 0, .18)); opacity: 0; pointer-events: none; transition: opacity .15s; font-size: 1.25rem; }
+.fun-pull span { rotate: var(--turn, 0deg); }
+.fun-pull.on { opacity: 1; transition: none; }
+.fun-pull.ready { color: var(--primary); }
+.fun-pull.spin { opacity: 1; translate: 50% 18px; transition: translate .2s; }
+.fun-pull.spin span { animation: fun-pull-spin .8s linear infinite; }
+@keyframes fun-pull-spin { to { rotate: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .fun-pull.spin span { animation: none; } }

@@ -50,8 +50,20 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 /* members (owner) */
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
-  const { results } = await ctx.env.DB.prepare('SELECT email, name, household, role FROM members ORDER BY household, email').all();
+  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role FROM members ORDER BY household, email').all();
   return json({ members: results });
+});
+/** The Hebrew name the helper calls someone by: set by the family's owner (on the admin page). */
+const heName = (v: unknown) => {
+  const s = String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  if (s && !/^[\u0590-\u05FF'"׳״\- ]+$/.test(s)) throw new HttpError(400, 'השם צריך להיות באותיות עבריות');
+  return s || null;
+};
+route('PUT', '/api/members/:email/name', async (ctx) => {
+  requireOwner(ctx);
+  const name = heName((await body<{ he_name?: string }>(ctx.req)).he_name);
+  await ctx.env.DB.prepare('UPDATE members SET he_name = ? WHERE email = ?').bind(name, decodeURIComponent(ctx.params.email).toLowerCase()).run();
+  return json({ ok: true, he_name: name });
 });
 route('POST', '/api/members', async (ctx) => {
   requireOwner(ctx);

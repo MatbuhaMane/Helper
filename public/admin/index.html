@@ -13,6 +13,7 @@
     th { color: var(--muted); font-weight: 500; }
     .addm { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; padding: 12px; }
     @media (max-width: 600px) { .addm { grid-template-columns: 1fr; } }
+    .he-name { inline-size: 9em; font: inherit; padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--text); }
   </style>
 </head>
 <body>
@@ -24,7 +25,7 @@
       <input id="household" type="text" placeholder="בית" value="family" dir="ltr">
       <button class="btn primary">הוספה</button>
     </form>
-    <div class="card" style="overflow-x:auto"><table><thead><tr><th>שם</th><th>אימייל</th><th>בית</th><th>תפקיד</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="card" style="overflow-x:auto"><table><thead><tr><th>שם</th><th>שם בעברית</th><th>אימייל</th><th>בית</th><th>תפקיד</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
   </main>
   <script src="/assets/common.js"></script>
   <script>
@@ -38,7 +39,10 @@
       const rows = document.getElementById('rows');
       rows.textContent = '';
       for (const m of members) rows.append(el('tr', {},
-        el('td', {}, m.name || '—'), el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household),
+        el('td', {}, m.name || '—'),
+        el('td', {}, el('input', { type: 'text', value: m.he_name || '', placeholder: 'למשל מישאל', 'aria-label': 'השם בעברית של ' + (m.name || m.email), class: 'he-name',
+          onchange: async (e) => { try { await api('/api/members/' + encodeURIComponent(m.email) + '/name', { method: 'PUT', body: { he_name: e.target.value } }); toast('נשמר'); } catch (err) { toast(err.message); } } })),
+        el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household),
         el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר'),
         el('td', {}, m.email === user.email ? '' : el('button', { class: 'mini danger', title: 'הסרה', onclick: async () => {
           if (!confirm(`להסיר את ${m.email}?`)) return;

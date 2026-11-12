@@ -258,6 +258,26 @@ route('GET', '/api/music/spotify/search', music.search);
 route('GET', '/api/music/spotify/playlists', music.playlists);
 route('GET', '/api/music/youtube/search', music.youtubeSearch);
 
+/* the family tree, stage 2 (ai-features, docs/family-forest.md): heads, links between trees, privacy, the joined trees */
+route('GET', '/api/vault/roles', vault.roles);
+route('PUT', '/api/vault/roles', vault.roleSave);
+route('PUT', '/api/vault/household', vault.householdSave);
+route('PUT', '/api/vault/people/:id/privacy', vault.privacySave);
+route('GET', '/api/vault/bridges', vault.bridges);
+route('POST', '/api/vault/bridges', vault.bridgeAsk);
+route('POST', '/api/vault/bridges/:id/approve', vault.bridgeApprove);
+route('POST', '/api/vault/bridges/:id/consent', vault.bridgeConsent);
+route('POST', '/api/vault/bridges/:id/decline', vault.bridgeDecline);
+route('DELETE', '/api/vault/bridges/:id', vault.bridgeRevoke);
+route('GET', '/api/vault/forest', vault.forest);
+route('GET', '/api/vault/related', vault.related);
+
+/* the calendar as a live link for Google, Apple or Outlook (ai-features) */
+route('GET', '/api/calendar/feed', calendar.feedStatus);
+route('POST', '/api/calendar/feed', calendar.feedCreate);
+route('DELETE', '/api/calendar/feed', calendar.feedRevoke);
+route('GET', '/api/calendar/feed/:token', calendar.feed);
+
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
   // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,

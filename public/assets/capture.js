@@ -46,7 +46,7 @@
     // where it came from: the page, or (inside the songbook window) the songbook
     const top = (() => { try { return window.top.location.href; } catch (_) { return location.href; } })();
     const src = { url: location.href.replace(/([?&])embed=1&?/, '$1').replace(/[?&]$/, ''), title: document.title || '' };
-    if (top !== location.href && !src.title) src.title = 'העוזר';
+    if (top !== location.href && !src.title) src.title = 'האוהל';
     try {
       const r = await api('/api/notes', { body: { body, source: src } });
       toast(`נשמר בפתקים: "${r.note.title}"`, 'לפתק', () => { (window.top || window).location.href = '/tools/notes/?open=' + r.note.id; });

@@ -16,6 +16,12 @@
     file_too_large: 'הקובץ גדול מ־25MB.', sign_in_again: 'צריך להיכנס שוב עם Google.', no_passkey: 'עוד אין מפתח גישה במכשיר הזה.', name_required: 'צריך שם.',
     vault_not_configured: 'הכספת עוד לא הוגדרה בשרת (VAULT_KEY).', passkey_not_verified: 'המכשיר לא אישר את זהותך.', passkey_bad_signature: 'המפתח לא אושר.',
     passkey_algorithm_not_supported: 'המכשיר הזה לא תומך בסוג המפתח.', challenge_expired: 'עבר יותר מדי זמן. נסו שוב.',
+    // stage 2: heads, links between trees, privacy
+    head_only_member: 'רק ראש משק הבית מחבר כרטיס למשתמש אחר. אפשר לכתוב כאן רק את הכתובת שלך.', only_a_head: 'רק ראש משק הבית יכול לעשות את זה.',
+    only_the_person: 'רק האדם עצמו קובע את הפרטיות שלו.', only_the_owner: 'רק בעל האוהל ממנה את הנהלת השבט.', not_yours: 'רק מי שביקש, ראשי המשפחות, האדם עצמו או הנהלת השבט יכולים לנתק.',
+    bad_email: 'כתובת המייל לא נראית תקינה.', same_household: 'הכתובת הזו שייכת למשק הבית שלנו.', note_required: 'כתבו לצד השני מי זה או זו.',
+    already_asked: 'כבר נשלחה בקשה כזו, והיא עוד מחכה.', already_linked: 'השניים כבר מקושרים.', two_in_one_tree: 'אותו אדם כבר מופיע בעץ הזה בכרטיס אחר.',
+    different_people: 'לשני הכרטיסים כתובות מייל שונות – אלה שני אנשים.', gone: 'הכרטיס בצד השני כבר לא קיים.', not_member: 'אין משתמש בכתובת הזו.', title_required: 'צריך שם למשפחה.',
   };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
   const call = async (path, opts = {}) => {
@@ -98,7 +104,10 @@
   /* ---------- open: עץ המשפחה ---------- */
   async function open() {
     const [t, st] = await Promise.all([call('/api/vault/tree'), call('/api/vault/status')]);
-    S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until;
+    S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until; S.roles = t.roles || {};
+    // what waits for me in the links between trees (a request to approve, my own consent)
+    const inbox = await call('/api/vault/bridges').catch(() => null);
+    const waiting = inbox ? inbox.incoming.length + inbox.consent.length : 0;
     S.owner = (await H.me()).user?.role === 'owner';
     S.mine = S.people.find((p) => p.member === S.me)?.id || null;          // "me" in the tree, for "how are we related"
     if (!S.focus) { try { S.focus = localStorage.getItem('fv-focus'); } catch (_) { /* fine */ } }
@@ -115,6 +124,7 @@
       clock,
       el('button', { class: 'btn small primary', onclick: () => personForm() }, '+ בן משפחה'),
       el('button', { class: 'btn small ghost', onclick: relatedTool }, 'איך אנחנו קשורים?'),
+      el('button', { class: 'btn small ghost', onclick: linksTool }, waiting ? `עצים מקושרים (${waiting} מחכים)` : 'עצים מקושרים'),
       el('button', { class: 'btn small ghost', onclick: activity }, 'יומן פעילות'),
       el('button', { class: 'btn small ghost', onclick: keys }, 'מפתחות גישה'),
       S.owner ? el('button', { class: 'btn small ghost', onclick: backups }, 'גיבויים') : null,
@@ -220,18 +230,40 @@
     }
     return words.reverse().join(' של ');
   }
-  function relatedTool() {
+  /** how are we related – inside our tree here in the page; with someone from a linked tree, on the server */
+  async function relatedTool() {
+    let f = null;
+    try { f = await call('/api/vault/forest'); touched(); } catch (_) { /* our tree alone */ }
+    const mine = new Set(S.people.map((p) => p.id));
+    // a record in another tree that is one of ours is already in the list as ours
+    const dup = new Set();
+    for (const [x, y] of f?.same || []) { if (mine.has(x)) dup.add(y); else if (mine.has(y)) dup.add(x); else dup.add(y); }
+    const others = (f?.people || []).filter((p) => p.household !== 'mine' && !dup.has(p.id) && !p.anonymous && !p.hidden.includes('identity'));
+    const houses = (f?.households || []).filter((h) => h.id !== 'mine');
+    const foreign = new Map(others.map((p) => [p.id, p]));
+    const nameOf = (id) => byId(id)?.name || foreign.get(id)?.name || 'קרוב/ת משפחה';
+    const sexOfAny = (id) => byId(id)?.sex || foreign.get(id)?.sex || '';
+    const gAny = (id, m, w, both) => (sexOfAny(id) === 'm' ? m : sexOfAny(id) === 'f' ? w : both);
     const opts = (sel) => S.people.map((p) => el('option', { value: p.id, selected: p.id === sel }, p.name));
-    const a = el('select', { 'aria-label': 'מ' }, opts(S.mine || S.focus)), b = el('select', { 'aria-label': 'אל' }, opts(S.focus !== (S.mine || S.focus) ? S.focus : S.people.find((p) => p.id !== a.value)?.id));
-    const out = el('div', { class: 'fv-rel-out' });
-    const run = () => {
-      const r = pathBetween(a.value, b.value), name = relationName(a.value, b.value);
-      out.replaceChildren(!r ? el('p', { class: 'muted' }, 'אין ביניהם קשר בעץ (עדיין).') :
-        el('div', {}, el('p', { class: 'fv-rel-name' }, `${byId(b.value).name} ${g(b.value, 'הוא', 'היא', 'הוא/היא')} ${name} של ${byId(a.value).name}`),
-          el('ol', { class: 'fv-rel-path' }, r.nodes.map((id) => el('li', {}, byId(id).name)))));
+    const a = el('select', { 'aria-label': 'מ' }, opts(S.mine || S.focus));
+    const firstOther = S.focus !== (S.mine || S.focus) ? S.focus : S.people.find((p) => p.id !== a.value)?.id;
+    const b = el('select', { 'aria-label': 'אל' },
+      houses.length ? el('optgroup', { label: 'העץ שלנו' }, opts(firstOther)) : opts(firstOther),
+      houses.map((h) => { const ps = others.filter((p) => p.household === h.id); return ps.length ? el('optgroup', { label: h.title }, ps.map((p) => el('option', { value: p.id }, p.name))) : null; }));
+    const out = el('div', { class: 'fv-rel-out', 'aria-live': 'polite' });
+    const show = (r, name) => out.replaceChildren(!r || !name ? el('p', { class: 'muted' }, 'אין ביניהם קשר בעצים (עדיין).') :
+      el('div', {}, el('p', { class: 'fv-rel-name' }, `${nameOf(b.value)} ${gAny(b.value, 'הוא', 'היא', 'הוא/היא')} ${name} של ${nameOf(a.value)}`),
+        el('ol', { class: 'fv-rel-path' }, r.nodes.map((n) => el('li', {}, n.name ?? nameOf(n))))));
+    const run = async () => {
+      if (mine.has(b.value)) return show(pathBetween(a.value, b.value), relationName(a.value, b.value));
+      try {
+        const r = await call(`/api/vault/related?from=${encodeURIComponent(a.value)}&to=${encodeURIComponent(b.value)}`);
+        show(r.path.length ? { nodes: r.path } : null, r.name);
+      } catch (e) { say(e); }
     };
     a.addEventListener('change', run); b.addEventListener('change', run);
-    H.modal(el('div', { class: 'fv-form' }, el('h2', {}, 'איך אנחנו קשורים?'), el('div', { class: 'fv-two' }, el('label', {}, 'מ־', a), el('label', {}, 'אל', b)), out));
+    H.modal(el('div', { class: 'fv-form' }, el('h2', {}, 'איך אנחנו קשורים?'), el('div', { class: 'fv-two' }, el('label', {}, 'מ־', a), el('label', {}, 'אל', b)),
+      houses.length ? el('p', { class: 'muted small' }, 'גם עם מי שבעצים המקושרים, לפי מה שכל אחד הרשה לראות ממנו.') : null, out));
     run();
   }
 
@@ -254,11 +286,25 @@
     try { localStorage.setItem('fv-focus', id); } catch (_) { /* fine */ }
     draw();
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const anims = [];
     for (const c of board.querySelectorAll('.fv-card')) {
       const was = before.get(c.dataset.id), now = c.getBoundingClientRect();
-      if (was) c.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' });
-      else c.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' });
+      if (was) anims.push(c.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }));
+      else anims.push(c.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' }));
     }
+    // the lines were measured while the cards were still gliding: draw them again where the cards came to rest
+    Promise.allSettled(anims.map((a) => a.finished)).then(() => redrawLines(board));
+  }
+  /** the lines on the board as it is now (the layer is made anew by every drawing) */
+  function redrawLines(board) {
+    const svg = board.querySelector('.fv-lines');
+    if (svg && S.links) connect(board, svg);            // (after a lock the tree is gone from memory)
+  }
+  /** redraw the lines when the board changes size – once per board, finding the current layer each time */
+  function watchSize(board) {
+    if (board.dataset.watch) return;
+    board.dataset.watch = '1';
+    new ResizeObserver(() => redrawLines(board)).observe(board);
   }
   /** the nuclear family around the person in the centre: grandparents, parents, the person with siblings and partners, children */
   function drawFamily(board) {
@@ -281,7 +327,7 @@
       grandkids.length ? el('p', { class: 'fv-more muted' }, `ועוד ${grandkids.length} ${grandkids.length === 1 ? 'נכד/ה' : 'נכדים'} – לחצו על אחד הילדים כדי לרדת בענף`) : null,
     ].filter(Boolean));
     requestAnimationFrame(() => connect(board, lines));
-    if (!board.dataset.watch) { board.dataset.watch = '1'; new ResizeObserver(() => connect(board, lines)).observe(board); }
+    watchSize(board);
   }
   /** generations from the parent links (partners share a row) – the zoomed-out view until the forest comes */
   function generations() {
@@ -313,7 +359,7 @@
     lines.setAttribute('class', 'fv-lines'); lines.setAttribute('aria-hidden', 'true');
     board.replaceChildren(lines, ...generations().map((row) => el('div', { class: 'fv-row' }, row.map((p) => card(p, p.id === S.focus ? 'focus' : '')))));
     requestAnimationFrame(() => connect(board, lines));
-    if (!board.dataset.watch) { board.dataset.watch = '1'; new ResizeObserver(() => connect(board, lines)).observe(board); }
+    watchSize(board);
   }
   function card(p, role = '') {
     if (!p) return null;
@@ -346,7 +392,9 @@
     const b = board.getBoundingClientRect();
     svg.setAttribute('width', b.width); svg.setAttribute('height', b.height);
     const box = (id) => { const c = board.querySelector(`.fv-card[data-id="${CSS.escape(id)}"]`); if (!c) return null; const r = c.getBoundingClientRect(); return { x: r.left - b.left + r.width / 2, top: r.top - b.top, bottom: r.bottom - b.top, l: r.left - b.left, r: r.right - b.left, mid: r.top - b.top + r.height / 2 }; };
-    let d = '', dash = '';
+    let d = '', dash = '', lineage = '';
+    // the line of descent of the person in the centre: from their grandparents to their parents, and from their parents to them
+    const upLine = new Set(S.focus ? [S.focus, ...parentsOf(S.focus)] : []);
     for (const l of S.links) if (l.type === 'partner') {
       const x = box(l.a), y = box(l.b);
       if (!x || !y) continue;
@@ -359,17 +407,20 @@
       const ps = parentsOf(p.id).map(box).filter(Boolean);
       if (!a || !ps.length) continue;
       const from = ps.length >= 2 ? (ps[0].x + ps[1].x) / 2 : ps[0].x, y0 = Math.max(...ps.map((x) => x.bottom)), ym = (y0 + a.top) / 2;
-      d += `M${from},${ps.length >= 2 ? ps[0].mid : y0} V${ym} H${a.x} V${a.top} `;
+      const seg = `M${from},${ps.length >= 2 ? ps[0].mid : y0} V${ym} H${a.x} V${a.top} `;
+      if (upLine.has(p.id)) lineage += seg; else d += seg;
     }
-    svg.innerHTML = `<path d="${d}"/><path class="ended" d="${dash}"/>`;
+    svg.innerHTML = `<path d="${d}"/><path class="ended" d="${dash}"/><path class="lineage" d="${lineage}"/>`;
   }
 
   /* ---------- adding or editing a person ---------- */
   /** rel (adding only): { as: 'child' | 'parent' | 'partner', of: id } – the new person is the child / parent / partner of `of` */
   function personForm(p, rel) {
     const d = p?.details || {};
-    const name = el('input', { type: 'text', value: p?.name || '', maxlength: 80, required: true, 'aria-label': 'שם', placeholder: 'שם מלא' });
-    const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש בעוזר)', 'aria-label': 'כתובת Gmail' });
+    // what the server did not send me (kept private by the person or the head): not shown, and kept as it is on save
+    const hid = new Set(p?.hidden || []);
+    const name = el('input', { type: 'text', value: p?.name || '', maxlength: 80, required: true, 'aria-label': 'שם', placeholder: 'שם מלא', disabled: hid.has('identity') });
+    const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש באוהל)', 'aria-label': 'כתובת Gmail' });
     const sex = el('select', { 'aria-label': 'מין' }, [['', '—'], ['m', 'זכר'], ['f', 'נקבה']].map(([v, t]) => el('option', { value: v, selected: (d.sex || '') === v }, t)));
     const born = el('input', { type: 'date', value: d.born || '', 'aria-label': 'תאריך לידה' });
     const bornLate = el('input', { type: 'checkbox', checked: !!d.bornAfterSunset, 'aria-label': 'אחרי השקיעה' });
@@ -398,13 +449,14 @@
     const title = p ? 'עריכת ' + p.name : rel ? { child: `ילד/ה של ${of}`, parent: `הורה של ${of}`, partner: `בן/בת זוג של ${of}` }[rel.as] : 'בן משפחה חדש';
     H.modal(el('form', { class: 'fv-form', onsubmit: save },
       el('h2', {}, title),
-      el('div', { class: 'fv-two' }, el('label', {}, 'שם', name), el('label', {}, 'מין (לניסוח העברי)', sex)),
-      el('div', { class: 'fv-two' }, el('label', {}, 'תאריך לידה', born), el('label', { class: 'fv-check' }, bornLate, ' נולד/ה אחרי השקיעה')),
-      el('div', { class: 'fv-two' }, el('label', {}, 'תאריך פטירה', died), el('label', { class: 'fv-check' }, diedLate, ' נפטר/ה אחרי השקיעה')),
-      el('div', { class: 'fv-two' }, el('label', {}, 'מקום לידה', place), el('label', {}, 'יום ההולדת לפי', by)),
-      el('label', {}, 'הערות', notes),
-      el('label', {}, 'משתמש בעוזר', member),
-      el('label', { class: 'fv-check' }, inCal, ' בלוח השנה המשפחתי (יום הולדת, ואחרי פטירה – יום השנה)'),
+      hid.has('identity') ? el('p', { class: 'muted small' }, 'השם של בן המשפחה הזה פרטי, ולכן לא מוצג כאן.') : el('div', { class: 'fv-two' }, el('label', {}, 'שם', name), el('label', {}, 'מין (לניסוח העברי)', sex)),
+      ...(hid.has('dates') ? [el('p', { class: 'muted small' }, 'התאריכים והמקומות פרטיים, ולכן לא מוצגים כאן.')] : [
+        el('div', { class: 'fv-two' }, el('label', {}, 'תאריך לידה', born), el('label', { class: 'fv-check' }, bornLate, ' נולד/ה אחרי השקיעה')),
+        el('div', { class: 'fv-two' }, el('label', {}, 'תאריך פטירה', died), el('label', { class: 'fv-check' }, diedLate, ' נפטר/ה אחרי השקיעה')),
+        el('div', { class: 'fv-two' }, el('label', {}, 'מקום לידה', place), el('label', {}, 'יום ההולדת לפי', by))]),
+      hid.has('notes') ? el('p', { class: 'muted small' }, 'ההערות פרטיות.') : el('label', {}, 'הערות', notes),
+      hid.has('identity') ? null : el('label', {}, S.roles?.head ? 'משתמש באוהל' : 'משתמש באוהל (רק ראש משק הבית מחבר כתובת של מישהו אחר)', member),
+      hid.has('dates') ? null : el('label', { class: 'fv-check' }, inCal, ' בלוח השנה המשפחתי (יום הולדת, ואחרי פטירה – יום השנה)'),
       el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'שמירה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
     setTimeout(() => name.focus(), 50);
   }
@@ -493,9 +545,12 @@
       tab = t;
       const items = list.items.filter((x) => x.kind === t);
       body.replaceChildren(...[
-        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null),
+        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
+            el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת באוהל – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת באוהל – ראש משק הבית מנהל את הפרטים')),
           el('span', { class: 'spacer' }), el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה')),
         relationsBox(p, () => draw(tab)),
+        treesBox(p),
+        privacyBox(p),
         el('nav', { class: 'fv-tabs', role: 'tablist' }, TABS.map(([k, label]) => el('button', { role: 'tab', 'aria-selected': String(k === t), class: k === t ? 'on' : '', onclick: () => draw(k) }, label, el('small', {}, String(list.items.filter((x) => x.kind === k).length))))),
         adder(t),
         t === 'photo' ? el('div', { class: 'fv-photos' }, items.map(photoTile)) : el('ul', { class: 'fv-list' }, items.map(row)),
@@ -604,15 +659,140 @@
     } catch (e) { say(e); }
   }
 
+  /* ---------- stage 2: privacy, links between trees, heads (the server decides everything; docs/family-forest.md) ---------- */
+  const LEVEL_NAMES = (user) => ({ private: user ? 'רק האדם עצמו' : 'רק ראשי משק הבית', household: 'משק הבית שלנו', linked: 'גם המשפחות המקושרות', forest: 'כל השבט' });
+  const GROUPS = [['identity', 'שם ומין'], ['dates', 'תאריכים ומקומות'], ['notes', 'הערות'], ['files', 'מסמכים ותמונות']];
+  /** who sees what of this person – for the one who decides: the person (a user) or a head (someone who is not) */
+  function privacyBox(p) {
+    if (!p.may?.privacy) return p.hidden?.length ? el('p', { class: 'muted small' }, 'חלק מהפרטים כאן פרטיים.') : null;
+    const names = LEVEL_NAMES(p.user);
+    const sels = Object.fromEntries(GROUPS.map(([g, label]) => {
+      const opts = g === 'files' ? ['private', 'household'] : ['private', 'household', 'linked', 'forest'];   // files stay at home
+      return [g, el('select', { 'aria-label': label }, opts.map((v) => el('option', { value: v, selected: p.privacy[g] === v }, names[v])))];
+    }));
+    const anon = el('input', { type: 'checkbox', checked: !!p.anonymous, 'aria-label': 'אנונימי מחוץ למשק הבית' });
+    const save = async () => {
+      try {
+        const r = await call(`/api/vault/people/${p.id}/privacy`, { method: 'PUT', body: { privacy: Object.fromEntries(Object.entries(sels).map(([g, s]) => [g, s.value])), anonymous: anon.checked } });
+        p.privacy = r.privacy; p.anonymous = r.anonymous; touched(); toast('נשמר');
+      } catch (e) { say(e); }
+    };
+    for (const x of [...Object.values(sels), anon]) x.addEventListener('change', save);
+    return el('section', { class: 'fv-privacy' },
+      el('h3', {}, 'מי רואה'),
+      el('p', { class: 'muted small' }, p.user ? 'את הכרטיס שלך רק את/ה קובע/ת, בכל עץ שבו הוא מופיע.' : 'בשביל מי שלא משתמש באוהל, ראש משק הבית קובע. מסמכים ותמונות לא יוצאים ממשק הבית.'),
+      el('div', { class: 'fv-two' }, GROUPS.map(([g, label]) => el('label', {}, label, sels[g]))),
+      el('label', { class: 'fv-check' }, anon, ' אנונימי מחוץ למשק הבית: רק "קרוב/ת משפחה", בלי שם ובלי פרטים (אבל הקשר המשפחתי נשמר)'));
+  }
+  const BRIDGE_STATUS = { pending: 'בקשה נשלחה אל', awaiting_person: 'מחכה להסכמה של האדם עצמו:', confirmed: 'גם בעץ של' };
+  /** this person in other households' trees */
+  function treesBox(p) {
+    const rows = (p.bridges || []).map((b) => el('li', { class: 'fv-relrow' },
+      el('span', {}, `${BRIDGE_STATUS[b.status] || ''} ${b.other}`),
+      el('button', { class: 'btn small ghost danger', onclick: async () => {
+        if (!confirm(b.status === 'confirmed' ? 'לנתק את הקישור? הכרטיס נשאר בשני העצים, רק הקישור ביניהם נעלם.' : 'לבטל את הבקשה?')) return;
+        try { await call('/api/vault/bridges/' + b.id, { method: 'DELETE' }); toast('נותק'); H.sheet.close(); panel(p.id); } catch (e) { say(e); }
+      } }, b.status === 'confirmed' ? 'ניתוק' : 'ביטול')));
+    return el('section', { class: 'fv-trees' },
+      el('h3', {}, 'בעצים של משפחות אחרות'),
+      rows.length ? el('ul', { class: 'fv-rel-list' }, rows)
+        : el('p', { class: 'muted small' }, `אם ${p.name} מופיע/ה גם בעץ של משפחה אחרת (למשל כלה, שמופיעה גם בעץ של ההורים שלה), אפשר לקשר את שני העצים דרכו/ה.`),
+      el('div', { class: 'fv-acts-row' }, el('button', { class: 'btn small', onclick: () => linkAsk(p) }, '+ קישור לעץ של משפחה אחרת')));
+  }
+  /** ask another household to link their tree to ours through this person: only the note goes with it */
+  function linkAsk(p) {
+    const email = el('input', { type: 'email', dir: 'ltr', required: true, placeholder: 'name@gmail.com', 'aria-label': 'המייל של מישהו מהמשפחה השנייה' });
+    const note = el('textarea', { rows: 3, maxlength: 300, required: true, 'aria-label': 'מי זה או זו', placeholder: `למשל: ${p.name}, הבת של רינה ויוסי` });
+    H.modal(el('form', { class: 'fv-form', onsubmit: async (e) => {
+      e.preventDefault();
+      try { await call('/api/vault/bridges', { body: { person: p.id, email: email.value.trim(), note: note.value.trim() } }); H.closeModal(); toast('הבקשה נשלחה. ראש משק הבית בצד השני יאשר אותה.'); }
+      catch (err) { say(err); }
+    } },
+      el('h2', {}, `קישור לעץ אחר דרך ${p.name}`),
+      el('p', { class: 'muted small' }, 'הבקשה תגיע לראש משק הבית של המשפחה השנייה. הוא יבדוק את הקשר ויבחר את אותו אדם בעץ שלהם. מהעץ שלנו לא נשלח דבר מלבד מה שתכתבו כאן, וכל צד יכול לנתק בכל רגע.'),
+      el('label', {}, 'המייל של מישהו מהמשפחה השנייה', email),
+      el('label', {}, 'מי זה או זו, במילים שלכם', note),
+      el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'שליחת הבקשה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
+    setTimeout(() => email.focus(), 50);
+  }
+  /** the links of our tree: requests to approve, my own consent, what we asked, the linked trees, the heads */
+  async function linksTool() {
+    let b, r;
+    try { [b, r] = await Promise.all([call('/api/vault/bridges'), call('/api/vault/roles')]); } catch (e) { return say(e); }
+    touched();
+    const when = (t) => (t ? new Date(t).toLocaleDateString('he-IL') : '');
+    const again = () => { H.closeModal(); linksTool(); };
+    /** a button that does `fn` and shows the window again (after asking `sure`, if given) */
+    const act = (label, fn, cls = 'btn small', sure) => el('button', { class: cls, type: 'button', onclick: async () => {
+      if (sure && !confirm(sure)) return;
+      try { await fn(); again(); } catch (e) { say(e); }
+    } }, label);
+    const nameOf = (id) => byId(id)?.name || '?';
+    const part = (title, ...body) => el('section', { class: 'fv-links-part' }, el('h3', {}, title), ...body);
+    const parts = [];
+    if (b.consent.length) parts.push(part('מחכה להסכמה שלך', el('ul', { class: 'fv-list' }, b.consent.map((c) => el('li', { class: 'fv-item' },
+      el('p', {}, `${c.from} ו${c.to} רוצים לקשר את העצים שלהם דרכך.`), el('p', { class: 'muted small' }, `"${c.note}"`),
+      el('div', { class: 'fv-acts-row' },
+        act('מסכים/ה', () => call(`/api/vault/bridges/${c.id}/consent`, { method: 'POST' }), 'btn small primary'),
+        act('לא מסכים/ה', () => call(`/api/vault/bridges/${c.id}/decline`, { method: 'POST' }), 'btn small ghost')))))));
+    if (b.incoming.length) parts.push(part('בקשות לקשר את העץ שלנו',
+      el('p', { class: 'muted small' }, 'בדקו שהקשר המשפחתי נכון, ובחרו את אותו אדם בעץ שלנו. אם הוא עוד לא בעץ, הוסיפו אותו קודם.'),
+      el('ul', { class: 'fv-list' }, b.incoming.map((q) => {
+        const who = el('select', { 'aria-label': 'אותו אדם בעץ שלנו' }, el('option', { value: '' }, 'בחרו מהעץ שלנו…'), S.people.map((p) => el('option', { value: p.id }, p.name)));
+        return el('li', { class: 'fv-item' },
+          el('p', {}, `${q.by || 'מישהו'} מ${q.from}: "${q.note}"`), el('small', { class: 'muted' }, when(q.at)),
+          el('label', {}, 'אותו אדם אצלנו', who),
+          el('div', { class: 'fv-acts-row' },
+            act('אישור', async () => {
+              if (!who.value) throw new Error('בחרו את אותו אדם בעץ שלנו');
+              const x = await call(`/api/vault/bridges/${q.id}/approve`, { body: { person: who.value } });
+              toast(x.status === 'confirmed' ? 'העצים קושרו' : 'אושר. מחכה עכשיו להסכמה של האדם עצמו.');
+            }, 'btn small primary'),
+            act('דחייה', () => call(`/api/vault/bridges/${q.id}/decline`, { method: 'POST' }), 'btn small ghost', 'לדחות את הבקשה?')));
+      }))));
+    parts.push(part('העצים שמקושרים אלינו', b.linked.length
+      ? el('ul', { class: 'fv-list' }, b.linked.map((l) => el('li', { class: 'fv-item' },
+        el('span', {}, `${l.other}, דרך ${nameOf(l.person)}`), el('small', { class: 'muted' }, ' ' + when(l.at)),
+        act('ניתוק', () => call(`/api/vault/bridges/${l.id}`, { method: 'DELETE' }), 'btn small ghost danger', `לנתק את העץ של ${l.other}? הכרטיסים נשארים, רק הקישור נעלם.`))))
+      : el('p', { class: 'muted small' }, 'עוד אין. פתחו את הכרטיס של מי שמופיע גם בעץ של משפחה אחרת, ובחרו "קישור לעץ של משפחה אחרת".')));
+    const OUT = { pending: 'מחכה לאישור', awaiting_person: 'מחכה להסכמה של האדם עצמו', declined: 'נדחתה' };
+    if (b.outgoing.length) parts.push(part('בקשות ששלחנו', el('ul', { class: 'fv-list' }, b.outgoing.map((o) => el('li', { class: 'fv-item' },
+      el('span', {}, `${nameOf(o.person)} ← `, el('span', { dir: 'ltr' }, o.to)), el('small', { class: 'muted' }, ` ${OUT[o.status] || o.status} · ${when(o.at)}`),
+      o.status === 'declined' ? null : act('ביטול', () => call(`/api/vault/bridges/${o.id}`, { method: 'DELETE' }), 'btn small ghost', 'לבטל את הבקשה?'))))));
+    if (b.tribe.length) parts.push(part('הנהלת השבט: כל הקישורים בשבט', el('ul', { class: 'fv-list' }, b.tribe.map((t) => el('li', { class: 'fv-item' },
+      el('span', {}, `${t.a} ↔ ${t.b}`),
+      act('ניתוק', () => call(`/api/vault/bridges/${t.id}`, { method: 'DELETE' }), 'btn small ghost danger', `לנתק את ${t.a} מ${t.b}?`))))));
+    // the household: its name for the others, its heads, the tribe head
+    const title = el('input', { type: 'text', maxlength: 60, value: r.title || '', placeholder: 'למשל: משפחת לוי', 'aria-label': 'שם המשפחה', disabled: !r.me.head });
+    const tribeEmail = el('input', { type: 'email', dir: 'ltr', placeholder: 'name@gmail.com', 'aria-label': 'המייל של הנהלת השבט' });
+    parts.push(part('משק הבית שלנו',
+      el('label', {}, 'השם שהמשפחות האחרות רואות', title),
+      r.me.head ? el('div', { class: 'fv-acts-row' }, act('שמירת השם', () => call('/api/vault/household', { method: 'PUT', body: { title: title.value } }))) : null,
+      el('p', { class: 'muted small' }, 'ראש משק הבית מאשר קישורים לעצים אחרים, ומנהל את הפרטים והפרטיות של מי שלא משתמש באוהל.'),
+      el('ul', { class: 'fv-list' }, r.members.map((m) => el('li', { class: 'fv-item' },
+        el('b', {}, m.name || m.email), el('small', { class: 'muted' }, m.head ? ' · ראש משק הבית' : ''),
+        r.me.head && !m.owner ? act(m.head ? 'הסרה מהראשות' : 'מינוי לראש משק הבית', () => call('/api/vault/roles', { method: 'PUT', body: { email: m.email, role: 'head', on: !m.head } }), 'btn small ghost') : null))),
+      el('p', { class: 'small' }, r.tribe.length ? 'הנהלת השבט: ' + r.tribe.map((t) => `${t.name} (${t.household})`).join(', ') : 'לשבט עוד אין הנהלה.'),
+      r.me.owner ? el('div', { class: 'fv-acts-row' }, el('label', {}, 'מינוי להנהלת השבט', tribeEmail),
+        act('מינוי', () => call('/api/vault/roles', { method: 'PUT', body: { email: tribeEmail.value.trim(), role: 'tribe', on: true } })),
+        act('הסרה', () => call('/api/vault/roles', { method: 'PUT', body: { email: tribeEmail.value.trim(), role: 'tribe', on: false } }), 'btn small ghost')) : null));
+    H.modal(el('div', { class: 'fv-form fv-links' },
+      el('h2', {}, 'עצים מקושרים'),
+      el('p', { class: 'muted small' }, 'כשאותו אדם מופיע בעץ שלנו ובעץ של משפחה אחרת, אפשר לקשר את שני העצים דרכו, בהסכמה של שני הצדדים. כל אחד מחליט מה רואים ממנו מחוץ למשק הבית.'),
+      ...parts));
+  }
+
   /* ---------- the audit log, and the passkeys ---------- */
-  const ACT = { unlock: 'פתח את הכספת', lock: 'נעל', view: 'צפה', add: 'הוסיף', edit: 'ערך', delete: 'מחק', restore: 'שחזר', passkey: 'מפתח גישה' };
-  const KIND = { tree: 'באילן', person: 'בבן משפחה', doc: 'מסמך', photo: 'תמונה', info: 'פרט', google: 'עם Google', 'passkey': 'עם מפתח גישה', add: 'נוסף', remove: 'הוסר' };
+  const ACT = { unlock: 'פתח את הכספת', lock: 'נעל', view: 'צפה', add: 'הוסיף', edit: 'ערך', delete: 'מחק', restore: 'שחזר', passkey: 'מפתח גישה',
+    ask: 'ביקש', approve: 'אישר', consent: 'הסכים ל', decline: 'דחה', revoke: 'ניתק', remove: 'הסיר' };
+  const KIND = { tree: 'באילן', person: 'בבן משפחה', doc: 'מסמך', photo: 'תמונה', info: 'פרט', google: 'עם Google', 'passkey': 'עם מפתח גישה', add: 'נוסף', remove: 'הוסר',
+    bridge: 'קישור לעץ אחר', privacy: 'פרטיות', household: 'שם המשפחה', role: 'תפקיד', forest: 'בעצים המקושרים', related: 'בקשר בין שני אנשים', link: 'קשר' };
   async function activity() {
     try {
       const { events } = await call('/api/vault/audit');
       const names = new Map(S.people.map((p) => [p.id, p.name]));
       H.modal(el('div', { class: 'fv-form fv-log' }, el('h2', {}, 'יומן פעילות'), el('p', { class: 'muted small' }, 'כל פתיחה, צפייה, הוספה ומחיקה נרשמות כאן. פעולות של אחרים על הפריטים הפרטיים שלהם לא מוצגות.'),
-        el('ul', {}, events.map((e) => { const [a, k] = e.action.split(':'); return el('li', {}, el('b', {}, e.email === S.me ? 'אני' : e.email.split('@')[0]), ' ', ACT[a] || a, ' ', KIND[k] || k || '', e.person_id && names.get(e.person_id) ? ` · ${names.get(e.person_id)}` : '', el('small', { class: 'muted' }, ' ' + new Date(e.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }))); }))));
+        el('ul', {}, events.map((e) => { const [a, k, x] = e.action.split(':'); return el('li', {}, el('b', {}, e.email === S.me ? 'אני' : e.email.split('@')[0]), ' ', ACT[a] || a, ' ', KIND[k] || k || '', x === 'from-outside' ? ' (ממשפחה אחרת)' : x === 'tribe' ? ' (הנהלת השבט)' : '', e.person_id && names.get(e.person_id) ? ` · ${names.get(e.person_id)}` : '', el('small', { class: 'muted' }, ' ' + new Date(e.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }))); }))));
     } catch (e) { say(e); }
   }
   async function keys() {

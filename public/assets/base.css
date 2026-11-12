@@ -48,41 +48,41 @@
   --end: 0%;
   color-scheme: light;
 }
-/* Night: a deep, desaturated navy (dark and low in light), warm off-white text (no pure white: less blue light, less glare),
-   contrast about 11:1 rather than the full white-on-black that tires the eyes at night. */
+/* Night: the night sky – a navy so deep it is almost black, the cards a shade above it; warm off-white text, a touch softer
+   than by day (no pure white: less blue light, less glare), so the deeper ground does not make it harsh. */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #111a2c;
-    --card: #18233a;
-    --text: #e7e1d3;
+    --bg: #070b14;
+    --card: #0e1422;
+    --text: #dfd9cb;
     --muted: #a9afbd;
-    --line: #25314a;
-    --line-strong: #34415e;
+    --line: #1a2335;
+    --line-strong: #28344c;
     --primary: #a8c28c;
-    --primary-ink: #111a2c;
+    --primary-ink: #070b14;
     --danger: #e79a85;
     --ok: #a8c28c;
-    --glass: rgba(24, 35, 58, 0.86);
+    --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
-    --tint: #22344f;
+    --tint: #14203a;
     --olive-ink: var(--olive);
     color-scheme: dark;
   } }
 :root[data-theme="dark"] {
-    --bg: #111a2c;
-    --card: #18233a;
-    --text: #e7e1d3;
+    --bg: #070b14;
+    --card: #0e1422;
+    --text: #dfd9cb;
     --muted: #a9afbd;
-    --line: #25314a;
-    --line-strong: #34415e;
+    --line: #1a2335;
+    --line-strong: #28344c;
     --primary: #a8c28c;
-    --primary-ink: #111a2c;
+    --primary-ink: #070b14;
     --danger: #e79a85;
     --ok: #a8c28c;
-    --glass: rgba(24, 35, 58, 0.86);
+    --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
-    --tint: #22344f;
+    --tint: #14203a;
     --olive-ink: var(--olive);
     color-scheme: dark;
   }
@@ -123,9 +123,13 @@ main.wide { max-width: 1200px; }
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); text-decoration: none; font-weight: 500; font-size: 1.05rem; white-space: nowrap; }
 .brand-mark { block-size: 22px; inline-size: calc(22px * 1082 / 340); flex: none; color: var(--text); }
+/* the name, הָאֹ֔הֶל: short, so it can be big; room above and below for its vowels and its accent */
+.brand-text { font-size: 1.7rem; font-weight: 600; line-height: 1.3; padding-block: 2px 4px; }
 .appbar .page-title { display: none; font-weight: 500; font-size: 1.05rem; margin: 0; }
 .topnav { display: flex; gap: 22px; margin-inline-start: 12px; }
-.topnav a { color: var(--text); text-decoration: none; font-size: .98rem; padding-block: 6px; }
+.topnav a { color: var(--text); text-decoration: none; font-size: .98rem; padding-block: 6px; white-space: nowrap; }
+/* nine entries on a narrow PC window: a little tighter, so the names stay on one line */
+@media (min-width: 900px) and (max-width: 1099px) { .topnav { gap: 14px; margin-inline-start: 4px; } .topnav a { font-size: .92rem; } }
 .ink-nav {
   background-image: linear-gradient(var(--primary), var(--primary));
   background-repeat: no-repeat; background-position: var(--end) 100%; background-size: 0% 2px;

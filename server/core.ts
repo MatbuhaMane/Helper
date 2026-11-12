@@ -371,7 +371,7 @@ export async function desktopApprove(ctx: Ctx): Promise<Response> {
     ctx.env.DB.prepare('INSERT INTO sessions (id, email, expires_at) VALUES (?, ?, ?)').bind(id, ctx.user.email, Date.now() + SESSION_DAYS * 86400_000),
     ctx.env.DB.prepare('UPDATE desktop_codes SET sid = ? WHERE code = ?').bind(id, code),
   ]);
-  return new Response('<meta charset="utf-8"><body dir="rtl" style="font-family:system-ui;padding:40px;background:#efeee6;color:#2e2a1e"><h2>מחובר ✓</h2><p>אפשר לסגור את החלון ולחזור לתוכנה. העוזר כבר בדרך לשולחן העבודה.</p></body>', { headers: { 'content-type': 'text/html; charset=utf-8' } });
+  return new Response('<meta charset="utf-8"><body dir="rtl" style="font-family:system-ui;padding:40px;background:#efeee6;color:#2e2a1e"><h2>מחובר ✓</h2><p>אפשר לסגור את החלון ולחזור לתוכנה. האוהל כבר בדרך לשולחן העבודה.</p></body>', { headers: { 'content-type': 'text/html; charset=utf-8' } });
 }
 
 export async function desktopPoll(ctx: Ctx): Promise<Response> {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#efeee6">
-  <title>העוזר המשפחתי</title>
+  <title>הָאֹ֔הֶל</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon-180.png">
@@ -14,19 +14,16 @@
        you can spin forever. No straight lines: the orbit, the ground and the bubbles are all round. */
     .home { display: grid; justify-items: center; padding-block: 12px 24px; gap: 2px; }
     @media (min-width: 900px) { .home { padding-block: 30px 40px; } }
-    /* the greeting stands on the right, out of the sun's way (the orbit also bends under it, see geometry()) */
+    /* the greeting on top, on its own; under it the sky has a room of its own (about a sun high), where the sun and the moon
+       arc over the tent; the horizon runs across the tent (see orbitGeometry()) */
+    .home { --sky-room: 132px; }
+    @media (max-width: 999px) { .home { --sky-room: 108px; } }
+    @media (max-width: 599px) { .home { --sky-room: 84px; } }
     .greet { text-align: start; justify-self: start; padding-inline-start: 8px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; }
-    /* where the right side is not out of the orbit's way (phones, tablets, short windows – measured in geometry()), the
-       greeting comes just under the tent, as one line: below the horizon the sun is never seen */
-    .home.greet-under > .camp { order: -1; margin-block-start: 64px; }   /* the sky above the tent keeps its room */
-    .home.greet-under > .greet { margin-block: 2px 4px; }
-    @media (max-width: 599px) {
-      .home.greet-under > .greet { padding-inline-start: 2px; }
-      .home.greet-under > .greet h1 { font-size: 1.75rem; }
-    }
+    @media (max-width: 599px) { .greet { padding-inline-start: 2px; } }
     .greet h1 { font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.2rem); line-height: 1.15; margin: 0 0 2px; --swell-color: var(--primary); }
 
-    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 495px) * 1.76)); margin-block-start: 4px; }
+    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 495px) * 1.76)); margin-block-start: var(--sky-room); }
     @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 405px) * 1.76)); } }
     .camp::before { content: ''; position: absolute; inset-inline: 2% 2%; inset-block-end: -4%; block-size: 34%; border-radius: 50%;
       background: radial-gradient(closest-side, color-mix(in srgb, var(--olive) 34%, transparent), transparent); pointer-events: none; }
@@ -147,8 +144,8 @@
     .sky { position: absolute; inset-inline: 0; inset-block-start: 0; z-index: 0; overflow: hidden; pointer-events: none;
       background: linear-gradient(to bottom, var(--sky-top, transparent), transparent 70%), radial-gradient(60% 55% at var(--sun-x, 50%) var(--sun-y, 100%), var(--sky-glow, transparent), transparent 70%);
       transition: background 2s;
-      /* no hard horizon line: the sky (and a setting sun) fade out toward the ground */
-      -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent); mask-image: linear-gradient(to bottom, #000 78%, transparent); }
+      /* the sky ends at the horizon (across the tent): a setting sun sinks into it through a short soft edge */
+      -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
     main#root { position: relative; z-index: 1; pointer-events: none; }
     main#root > :not(.home) { pointer-events: auto; }   /* (the sign-in card) */
     /* the empty parts of the page let a click reach the sun behind them */
@@ -157,6 +154,10 @@
     /* the greeting lets the sun through, except its letters (they swell under the pointer) */
     .home > .greet { pointer-events: none; }
     .greet .swell { pointer-events: auto; }
+    /* the tent's picture is a rectangle with open sky around the roof: a tap there reaches the sun or the moon behind it,
+       while what stands on the tent (the music corner, the companion's wake) still takes its own taps */
+    .home > .camp, .home > .camp > img { pointer-events: none; }
+    .home > .camp > :not(img):not(.dock) { pointer-events: auto; }
     .sun { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--sun-size, 120px); block-size: var(--sun-size, 120px); margin: calc(var(--sun-size, 120px) / -2) 0 0 calc(var(--sun-size, 120px) / -2);
       padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .85; -webkit-tap-highlight-color: transparent;
       filter: var(--sun-tint, none); transition: filter 2s, opacity .8s; }
@@ -206,7 +207,7 @@
     .orbit-path ellipse { stroke: color-mix(in srgb, var(--text) 35%, transparent); }
     .sky.turning .orbit-path { opacity: 1; }
     /* the night: stars that twinkle slowly, and moonlight round the moon */
-    .stars { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s; }
+    .stars { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s; -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent); mask-image: linear-gradient(to bottom, #000 70%, transparent); }   /* fewer, fainter near the horizon */
     .sky.night .stars { opacity: 1; }
     .stars i { position: absolute; inline-size: 2px; block-size: 2px; border-radius: 50%; background: #f3f0e4; opacity: var(--o); box-shadow: 0 0 4px rgba(243, 240, 228, .6);
       animation: twinkle var(--tw) ease-in-out var(--d) infinite; }
@@ -257,7 +258,7 @@
       const next = qs.get('next') || '/';
       const err = qs.get('error');
       root.append(el('div', { class: 'card login' },
-        el('h1', {}, 'העוזר המשפחתי'),
+        el('h1', {}, 'הָאֹ֔הֶל'),
         el('p', {}, 'רשימת קניות משותפת, מתכונים, חדשות וסידור המייל – לכל המשפחה.'),
         err === 'not_invited' ? el('p', { class: 'notice warn' }, `החשבון ${qs.get('email') || ''} עוד לא הוזמן. בקשו ממנהל המשפחה להוסיף אתכם.`) : null,
         el('a', { class: 'gbtn', href: '/api/auth/login?next=' + encodeURIComponent(next) },
@@ -435,35 +436,20 @@
       const camp = document.querySelector('.camp');
 
       let geo = null;
-      /** The orbit, and where the greeting stands: on the right if the arc can pass it untouched, otherwise under the tent. */
-      function geometry() {
-        const home = document.querySelector('.home');
-        home?.classList.remove('greet-under');
-        let g = orbitGeometry();
-        if (g.squeezed && home) { home.classList.add('greet-under'); g = orbitGeometry(); }
-        return g;
-      }
+      const geometry = () => orbitGeometry();
+      /** The orbit: centred on the tent, its ends a little beyond the tent's sides; its top under the greeting (in the sky's own
+          room above the tent), and the horizon across the tent – where the sky ends, and the sun and the moon set. */
       function orbitGeometry() {
         const r = camp.getBoundingClientRect(), campTop = r.top + scrollY;
         const size = innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124;
         const appbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--appbar-h')) || 56;
-        // the horizon: the ground at the tent's back pegs; the orbit's ends: between each back peg and the tent's wall
-        const cy = campTop + r.height * 0.655;
-        const left = r.left + r.width * 0.06, right = r.left + r.width * 0.94;
-        const top = appbar + size * 0.62;
-        const cx = (left + right) / 2, rx = (right - left) / 2;
-        let ry = cy - top, squeezed = false;
-        // the greeting is never crossed: where the arc passes over its span (with the sun's radius), it runs below it
+        const cy = campTop + r.height * 0.465;   // the horizon: across the tent, at the height of its eaves
+        const edge = size / 2 + 8;
+        const left = Math.max(edge, r.left - r.width * 0.12), right = Math.min(innerWidth - edge, r.right + r.width * 0.12);
         const g = document.querySelector('.home > .greet')?.getBoundingClientRect();
-        if (g && g.width && g.top + scrollY < cy) {   // (on a phone it stands under the tent, below the horizon)
-          const rad = size / 2 + 8;
-          const near = g.left - rad > cx ? g.left - rad : g.right + rad < cx ? g.right + rad : cx;   // its point nearest the apex
-          const u = Math.abs(near - cx) / rx;
-          const fit = u < 1 ? (cy - (g.bottom + scrollY + rad)) / Math.sqrt(1 - u * u) : Infinity;
-          if (fit < ry * 0.97) squeezed = true;   // the arc would have to sink toward the tent
-          ry = Math.min(ry, fit);
-        }
-        return { size, cx, cy, rx, ry: Math.max(60, ry), campTop, height: cy + size * 0.12, squeezed };
+        const top = (g && g.height ? g.bottom + scrollY : appbar) + size * 0.5 + 6;   // the highest point: just under the greeting
+        const cx = (left + right) / 2, rx = (right - left) / 2;
+        return { size, cx, cy, rx, ry: Math.max(60, cy - top), campTop, height: cy + 2 };
       }
       const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
 

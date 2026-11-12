@@ -101,14 +101,20 @@ export async function readWithFailover(env: Env, item: { id: string; store: stri
 /** base64 in slices (a whole snapshot spread into one call would overflow the stack) */
 function toB64(u: Uint8Array) { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode(...u.subarray(i, i + 0x8000)); return btoa(s); }
 async function snapshot(env: Env) {
-  const [people, items] = await Promise.all([
-    env.DB.prepare('SELECT * FROM family_people').all(),
-    env.DB.prepare('SELECT * FROM vault_items WHERE deleted_at IS NULL').all(),
+  // the tree's own tables may not exist yet on a database that never opened the tree: an empty list then
+  const all = (sql: string) => env.DB.prepare(sql).all().then((r) => r.results).catch(() => [] as unknown[]);
+  const [people, items, links, bridges, roles, households] = await Promise.all([
+    all('SELECT * FROM family_people'),
+    all('SELECT * FROM vault_items WHERE deleted_at IS NULL'),
+    all('SELECT * FROM family_links'),          // the relationships (parents, partners) – the tree itself
+    all('SELECT * FROM family_bridges'),        // links between households' trees
+    all('SELECT * FROM family_roles'),          // heads of households, the tribe head
+    all('SELECT * FROM family_households'),     // households' names
   ]);
   // the rows are already sealed (names, titles) or wrapped (keys); the whole snapshot is encrypted once more on top
   const day = new Date().toISOString().slice(0, 10);
   const id = `snapshot-${day}`;
-  const plain = new TextEncoder().encode(JSON.stringify({ version: 1, at: Date.now(), people: people.results, items: items.results }));
+  const plain = new TextEncoder().encode(JSON.stringify({ version: 2, at: Date.now(), people, items, links, bridges, roles, households }));
   const k = await newDataKey(env, id);
   const body = await encryptFile(k.key, plain, id);
   const blob = new TextEncoder().encode(JSON.stringify({ id, dek: k.wrapped, data: toB64(body) }));

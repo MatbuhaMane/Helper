@@ -13,10 +13,11 @@ import { decryptFile, encryptFile, fingerprint, newDataKey, openDataKey, seal, u
 import { defaultStore, store, StoreName } from './store';
 import { challenge, verifyAssertion, verifyRegistration } from './webauthn';
 import { backupStatus, driveDelete, nightly, readWithFailover, replicate, setState } from './backup';
+import * as K from './kin';
 
 const IDLE = 15 * 60e3, MAX = 2 * 3600e3, FRESH = 10 * 60e3, KEEP_DELETED = 30 * 864e5;
 const MAX_FILE = 25 * 1024 * 1024;
-const NAME = 'העוזר המשפחתי';
+const NAME = 'הָאֹ֔הֶל';
 
 /* ---------------- small helpers ---------------- */
 
@@ -36,9 +37,13 @@ export async function rateLimit(ctx: Ctx, key: string, max: number, windowMs: nu
 }
 
 async function audit(ctx: Ctx, u: Member, action: string, target: string | null, personId: string | null, priv = false) {
+  return auditAt(ctx, u.household, u, action, target, personId, priv);
+}
+/** the same, in another household's log: what someone from outside saw or did there */
+async function auditAt(ctx: Ctx, household: string, u: Member, action: string, target: string | null, personId: string | null, priv = false) {
   const ip = ctx.req.headers.get('cf-connecting-ip') || '';
   ctx.waitUntil(ctx.env.DB.prepare('INSERT INTO vault_audit (household, email, action, target, person_id, private, ip, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(u.household, u.email, action, target, personId, priv ? 1 : 0, ip ? await fingerprint(ctx.env, ip) : null, Date.now()).run().then(() => {}));
+    .bind(household, u.email, action, target, personId, priv ? 1 : 0, ip ? await fingerprint(ctx.env, ip) : null, Date.now()).run().then(() => {}));
 }
 
 async function sessionAge(ctx: Ctx): Promise<number> {
@@ -181,7 +186,7 @@ export async function unlockPasskey(ctx: Ctx) {
 
 /* ---------------- the tree ---------------- */
 
-interface PersonRow { id: string; name_enc: string; details_enc: string; parent1: string | null; parent2: string | null; partner: string | null; member_email: string | null; photo_item: string | null; updated_at: number }
+export interface PersonRow { id: string; household: string; name_enc: string; details_enc: string; parent1: string | null; parent2: string | null; partner: string | null; member_email: string | null; photo_item: string | null; privacy: string | null; anonymous: number | null; updated_at: number }
 
 async function person(ctx: Ctx, u: Member, id: string): Promise<PersonRow> {
   const p = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND household = ? AND deleted_at IS NULL').bind(id, u.household).first<PersonRow>();
@@ -193,17 +198,23 @@ export async function tree(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
   // the deleted files whose 30 days have passed go for good (their ciphertext too)
   ctx.waitUntil(purge(ctx));
+  const v = await viewerOf(ctx, u);
   const { results } = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE household = ? AND deleted_at IS NULL ORDER BY created_at').bind(u.household).all<PersonRow>();
   const links = await linksOf(ctx, u.household, results);
   const counts = await ctx.env.DB.prepare(`SELECT person_id, kind, COUNT(*) AS n FROM vault_items WHERE household = ? AND deleted_at IS NULL AND (private = 0 OR owner_email = ?) GROUP BY person_id, kind`)
     .bind(u.household, u.email).all<{ person_id: string; kind: string; n: number }>();
-  const people = await Promise.all(results.map(async (p) => ({
-    id: p.id, name: await unseal(ctx.env, p.name_enc, `person:${p.id}:name`),
-    member: p.member_email, photo: p.photo_item, sex: (JSON.parse((await unseal(ctx.env, p.details_enc, `person:${p.id}:details`)) || '{}').sex) || '',
-    counts: Object.fromEntries(counts.results.filter((c) => c.person_id === p.id).map((c) => [c.kind, c.n])),
-  })));
+  // how many other trees each of ours is linked to
+  const linked = new Map<string, number>();
+  for (const b of v.bridges) for (const [h, id] of [[b.house_a, b.person_a], [b.house_b, b.person_b]]) if (h === u.household) linked.set(id, (linked.get(id) || 0) + 1);
+  const people = await Promise.all(results.map(async (p) => {
+    const s = K.view(await cardOf(ctx, p), 'household', whoFor(v, p))!;
+    return {
+      id: p.id, name: s.name, member: s.member, photo: s.photo, sex: s.sex, user: isUser(v, p), linked: linked.get(p.id) || 0,
+      counts: s.hidden.includes('files') ? {} : Object.fromEntries(counts.results.filter((c) => c.person_id === p.id).map((c) => [c.kind, c.n])),
+    };
+  }));
   await audit(ctx, u, 'view:tree', null, null);
-  return json({ people, links, me: u.email });
+  return json({ people, links, me: u.email, roles: v.roles });
 }
 
 const clean = (s: unknown, n: number) => String(s ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
@@ -211,9 +222,16 @@ const clean = (s: unknown, n: number) => String(s ?? '').replace(/[\u0000-\u001f
 export async function personGet(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
   const p = await person(ctx, u, ctx.params.id);
-  const details = JSON.parse((await unseal(ctx.env, p.details_enc, `person:${p.id}:details`)) || '{}');
+  const v = await viewerOf(ctx, u), who = whoFor(v, p), card = await cardOf(ctx, p);
+  const s = K.view(card, 'household', who)!;
+  // a user sets their own privacy; for someone who is not, a head of this household (or the tribe head)
+  const may = { privacy: isUser(v, p) ? who.self : who.keeper, member: v.roles.head };
   await audit(ctx, u, 'view:person', null, p.id);
-  return json({ id: p.id, name: await unseal(ctx.env, p.name_enc, `person:${p.id}:name`), details, parent1: p.parent1, parent2: p.parent2, partner: p.partner, member: p.member_email, photo: p.photo_item });
+  return json({
+    id: p.id, name: s.name, details: s.details, hidden: s.hidden, member: s.member, photo: s.photo, user: isUser(v, p), may,
+    privacy: may.privacy ? card.privacy : undefined, anonymous: may.privacy ? card.anonymous : undefined,
+    parent1: p.parent1, parent2: p.parent2, partner: p.partner, bridges: await bridgesOfPerson(ctx, u, p.id),
+  });
 }
 
 async function relation(ctx: Ctx, u: Member, id: unknown) {
@@ -227,13 +245,25 @@ export async function personSave(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
   const b = await body<{ name?: string; details?: Record<string, string>; parent1?: string; parent2?: string; partner?: string; child?: string; member?: string }>(ctx.req);
   const id = ctx.params.id || uid();
-  const existing = ctx.params.id ? await person(ctx, u, id) : null;
-  const name = clean(b.name, 80);
+  const v = await viewerOf(ctx, u);
+  const existing = ctx.params.id ? await editable(ctx, v, id) : null;
+  let name = clean(b.name, 80);
+  let details: Record<string, unknown> = Object.fromEntries(Object.entries(b.details || {}).slice(0, 30).map(([k, x]) => [clean(k, 40), clean(x, 2000)]));
+  let member = b.member ? clean(b.member, 120).toLowerCase() : null;
+  if (existing) {
+    // what the editor could not see stays as it was (they were sent "קרוב/ת משפחה", not the name)
+    const card = await cardOf(ctx, existing);
+    const seen = K.view(card, existing.household === u.household ? 'household' : K.distance(u.household, existing.household, v.bridges), whoFor(v, existing))!;
+    details = K.keepHidden(card.details, details, seen.hidden);
+    if (seen.hidden.includes('identity')) { name = card.name; member = existing.member_email; }
+    if (existing.household !== u.household) member = existing.member_email;      // the tribe head never makes a card a user's
+  }
   if (!name) throw new HttpError(400, 'name_required');
-  const details = Object.fromEntries(Object.entries(b.details || {}).slice(0, 30).map(([k, v]) => [clean(k, 40), clean(v, 2000)]));
+  // a user's email on a card gives that user the say over it: only a head puts someone else's email there
+  const before = existing?.member_email || null;
+  if (member !== before && !v.roles.head && member !== u.email && !(member === null && before === u.email)) throw new HttpError(403, 'head_only_member');
   const [p1, p2, pa] = existing ? [null, null, null] : await Promise.all([relation(ctx, u, b.parent1), relation(ctx, u, b.parent2), relation(ctx, u, b.partner)]);
   const child = existing || !b.child ? null : await relation(ctx, u, b.child);
-  const member = b.member ? clean(b.member, 120).toLowerCase() : null;
   const now = Date.now();
   const nameEnc = await seal(ctx.env, name, `person:${id}:name`), detEnc = await seal(ctx.env, JSON.stringify(details), `person:${id}:details`);
   if (existing) {
@@ -242,12 +272,13 @@ export async function personSave(ctx: Ctx) {
   } else {
     await ctx.env.DB.prepare('INSERT INTO family_people (id, household, name_enc, details_enc, member_email, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, u.household, nameEnc, detEnc, member, u.email, now, now).run();
-    // the relationship it was added with
+    // the relationship it was added with (never the tribe head's cross-household edit: that one only changes a card)
     for (const par of [p1, p2]) if (par) await addLink(ctx, u, { type: 'parent', a: par, b: id, kind: 'bio' });
     if (pa) await addLink(ctx, u, { type: 'partner', a: pa, b: id, kind: 'married', status: 'together' });
     if (child) await addLink(ctx, u, { type: 'parent', a: id, b: child, kind: 'bio' });
   }
   await audit(ctx, u, existing ? 'edit:person' : 'add:person', null, id);
+  if (existing && existing.household !== u.household) await auditAt(ctx, existing.household, u, 'edit:person:tribe', null, id);
   return json({ id });
 }
 
@@ -256,6 +287,9 @@ export async function personDelete(ctx: Ctx) {
   const p = await person(ctx, u, ctx.params.id);
   await ctx.env.DB.prepare('UPDATE family_people SET deleted_at = ? WHERE id = ?').bind(Date.now(), p.id).run();
   await ctx.env.DB.prepare('DELETE FROM family_links WHERE household = ? AND (a = ? OR b = ?)').bind(u.household, p.id, p.id).run();
+  // a person who leaves the tree leaves its links to other trees too
+  await ctx.env.DB.prepare(`UPDATE family_bridges SET status = 'revoked', decided_by = ?, decided_at = ? WHERE status IN ('pending', 'awaiting_person', 'confirmed') AND ((house_a = ? AND person_a = ?) OR (house_b = ? AND person_b = ?))`)
+    .bind(u.email, Date.now(), u.household, p.id, u.household, p.id).run();
   await audit(ctx, u, 'delete:person', null, p.id);
   return json({ ok: true });
 }
@@ -371,6 +405,7 @@ const view = async (ctx: Ctx, it: ItemRow) => ({
 export async function items(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
   const p = await person(ctx, u, ctx.params.id);
+  if (await filesHidden(ctx, u, p)) return json({ items: [], hidden: true });
   const trash = ctx.url.searchParams.get('trash') === '1';
   const { results } = await ctx.env.DB.prepare(`SELECT * FROM vault_items WHERE person_id = ? AND household = ? AND deleted_at IS ${trash ? 'NOT NULL' : 'NULL'} AND (private = 0 OR owner_email = ?) ORDER BY created_at DESC`)
     .bind(p.id, u.household, u.email).all<ItemRow>();
@@ -416,6 +451,8 @@ export async function itemFile(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
   const it = await item(ctx, u, ctx.params.id);
   if (!it.object_key || !it.dek) throw new HttpError(404, 'no_file');
+  const owner = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND household = ?').bind(it.person_id, u.household).first<PersonRow>();
+  if (owner && await filesHidden(ctx, u, owner)) throw new HttpError(404, 'not_found');
   const key = await openDataKey(ctx.env, it.dek, it.id);
   const bytes = await decryptFile(key, await readWithFailover(ctx.env, { id: it.id, store: it.store, object_key: it.object_key }), it.id);
   await audit(ctx, u, 'view:' + it.kind, it.id, it.person_id, !!it.private);
@@ -502,4 +539,357 @@ export async function auditLog(ctx: Ctx) {
   const { results } = await ctx.env.DB.prepare(`SELECT email, action, target, person_id, at FROM vault_audit WHERE household = ? AND (private = 0 OR email = ?) ORDER BY at DESC LIMIT 200`)
     .bind(u.household, u.email).all();
   return json({ events: results });
+}
+
+/* ---------------- stage 2: heads, links between trees, privacy (docs/family-forest.md, rules in kin.ts) ---------------- */
+
+type Confirmed = K.Bridge & { id: string };
+interface Roles { owner: boolean; head: boolean; tribe: boolean }
+interface Viewer { u: Member; roles: Roles; bridges: Confirmed[]; tribe: Set<string>; users: Set<string> }
+interface BridgeRow {
+  id: string; house_a: string; person_a: string; to_email: string; note_enc: string | null; house_b: string | null; person_b: string | null;
+  status: string; consent_email: string | null; asked_by: string; decided_by: string | null; created_at: number; decided_at: number | null;
+}
+const OPEN = "('pending', 'awaiting_person', 'confirmed')";
+const NO_TITLE = 'משפחה בלי שם';
+
+async function confirmedBridges(ctx: Ctx): Promise<Confirmed[]> {
+  const { results } = await ctx.env.DB.prepare("SELECT id, house_a, person_a, house_b, person_b FROM family_bridges WHERE status = 'confirmed'").all<Confirmed>();
+  return results;
+}
+/** the app owners head their own household; others are named heads; the tribe head is named by the app owner */
+export async function rolesOf(ctx: Ctx, u: Member): Promise<Roles> {
+  const { results } = await ctx.env.DB.prepare('SELECT household, role FROM family_roles WHERE email = ?').bind(u.email).all<{ household: string; role: string }>();
+  return { owner: u.role === 'owner', head: u.role === 'owner' || results.some((r) => r.role === 'head' && r.household === u.household), tribe: results.some((r) => r.role === 'tribe') };
+}
+async function viewerOf(ctx: Ctx, u: Member): Promise<Viewer> {
+  const [roles, bridges, users] = await Promise.all([rolesOf(ctx, u), confirmedBridges(ctx), ctx.env.DB.prepare('SELECT email FROM members').all<{ email: string }>()]);
+  return { u, roles, bridges, tribe: K.tribe(u.household, bridges), users: new Set(users.results.map((r) => r.email)) };
+}
+/** a card belongs to a user when its email is a member of the helper */
+const isUser = (v: Viewer, p: PersonRow) => !!p.member_email && v.users.has(p.member_email);
+function whoFor(v: Viewer, p: PersonRow): K.Who {
+  const self = !!p.member_email && p.member_email === v.u.email;
+  const keeper = !isUser(v, p) && ((v.roles.head && p.household === v.u.household) || (v.roles.tribe && v.tribe.has(p.household)));
+  return { self, keeper };
+}
+async function cardOf(ctx: Ctx, p: PersonRow): Promise<K.Card> {
+  return {
+    id: p.id, household: p.household, name: await unseal(ctx.env, p.name_enc, `person:${p.id}:name`),
+    details: JSON.parse((await unseal(ctx.env, p.details_enc, `person:${p.id}:details`)) || '{}'),
+    member: p.member_email, photo: p.photo_item, privacy: K.parsePrivacy(p.privacy), anonymous: !!p.anonymous,
+  };
+}
+async function filesHidden(ctx: Ctx, u: Member, p: PersonRow) {
+  if (!p.privacy) return false;                        // the default (household) shows them to the household
+  const v = await viewerOf(ctx, u);
+  return !K.sees(K.parsePrivacy(p.privacy).files, 'household', whoFor(v, p), 'files');
+}
+/** a card the viewer may change: in their household, or (the tribe head) a non-user's anywhere in the tribe */
+async function editable(ctx: Ctx, v: Viewer, id: string): Promise<PersonRow> {
+  const p = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND deleted_at IS NULL').bind(id).first<PersonRow>();
+  if (p && (p.household === v.u.household || (v.roles.tribe && v.tribe.has(p.household) && !isUser(v, p)))) return p;
+  throw new HttpError(404, 'not_found');
+}
+async function titles(ctx: Ctx): Promise<Map<string, string>> {
+  const { results } = await ctx.env.DB.prepare('SELECT id, title FROM family_households').all<{ id: string; title: string }>();
+  return new Map(results.map((r) => [r.id, r.title]));
+}
+const titleIn = (t: Map<string, string>, h: string | null) => (h && t.get(h)) || NO_TITLE;
+async function householdOf(ctx: Ctx, email: string): Promise<string | null> {
+  return (await ctx.env.DB.prepare('SELECT household FROM members WHERE email = ?').bind(email).first<{ household: string }>())?.household ?? null;
+}
+async function names(ctx: Ctx): Promise<Map<string, string>> {
+  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name FROM members').all<{ email: string; name: string | null; he_name: string | null }>();
+  return new Map(results.map((r) => [r.email, r.he_name || r.name || r.email.split('@')[0]]));
+}
+/** where each record in the links lives (enough for kin.bridgeProblem) */
+const housesIn = (bridges: K.Bridge[], more: [string, string][] = []) => {
+  const m = new Map<string, string>(more);
+  for (const b of bridges) { m.set(b.person_a, b.house_a); m.set(b.person_b, b.house_b); }
+  return (id: string) => m.get(id);
+};
+/** a person's links to other trees, for their panel */
+async function bridgesOfPerson(ctx: Ctx, u: Member, id: string) {
+  const { results } = await ctx.env.DB.prepare(`SELECT * FROM family_bridges WHERE status IN ${OPEN} AND ((house_a = ? AND person_a = ?) OR (house_b = ? AND person_b = ?)) ORDER BY created_at`)
+    .bind(u.household, id, u.household, id).all<BridgeRow>();
+  const t = await titles(ctx);
+  return results.map((r) => ({ id: r.id, status: r.status, other: r.status === 'pending' ? r.to_email : titleIn(t, r.house_a === u.household ? r.house_b : r.house_a) }));
+}
+async function bridgeRow(ctx: Ctx, id: string) {
+  const r = await ctx.env.DB.prepare('SELECT * FROM family_bridges WHERE id = ?').bind(id).first<BridgeRow>();
+  if (!r) throw new HttpError(404, 'not_found');
+  return r;
+}
+const rowById = (ctx: Ctx, id: string | null) => (id ? ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND deleted_at IS NULL').bind(id).first<PersonRow>() : Promise.resolve(null));
+
+/* ---- roles and the household's name ---- */
+
+export async function roles(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u), n = await names(ctx), t = await titles(ctx);
+  const { results: people } = await ctx.env.DB.prepare('SELECT email, role FROM members WHERE household = ? ORDER BY email').bind(u.household).all<{ email: string; role: string }>();
+  const { results: rs } = await ctx.env.DB.prepare('SELECT r.household, r.email, r.role, m.household AS home FROM family_roles r LEFT JOIN members m ON m.email = r.email').all<{ household: string; email: string; role: string; home: string | null }>();
+  const heads = new Set([...people.filter((m) => m.role === 'owner').map((m) => m.email), ...rs.filter((r) => r.role === 'head' && r.household === u.household).map((r) => r.email)]);
+  return json({
+    me: v.roles, title: t.get(u.household) || '',
+    members: people.map((m) => ({ email: m.email, name: n.get(m.email), head: heads.has(m.email), owner: m.role === 'owner' })),
+    // the tribe heads of this tribe: their names only
+    tribe: rs.filter((r) => r.role === 'tribe' && r.home && v.tribe.has(r.home)).map((r) => ({ name: n.get(r.email), household: titleIn(t, r.home) })),
+  });
+}
+export async function roleSave(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u);
+  const b = await body<{ email?: string; role?: string; on?: boolean }>(ctx.req);
+  const email = clean(b.email, 120).toLowerCase();
+  const home = await householdOf(ctx, email);
+  if (!home) throw new HttpError(404, 'not_member');
+  let household: string;
+  if (b.role === 'head') {
+    if (!(u.role === 'owner' || (v.roles.head && home === u.household))) throw new HttpError(403, 'only_a_head');
+    household = home;
+  } else if (b.role === 'tribe') {
+    if (u.role !== 'owner') throw new HttpError(403, 'only_the_owner');
+    household = '';
+  } else throw new HttpError(400, 'bad_role');
+  if (b.on) await ctx.env.DB.prepare('INSERT OR IGNORE INTO family_roles (household, email, role, named_by, created_at) VALUES (?, ?, ?, ?, ?)').bind(household, email, b.role, u.email, Date.now()).run();
+  else await ctx.env.DB.prepare('DELETE FROM family_roles WHERE household = ? AND email = ? AND role = ?').bind(household, email, b.role).run();
+  await auditAt(ctx, home, u, `${b.on ? 'add' : 'remove'}:role:${b.role}`, email, null);
+  return json({ ok: true });
+}
+export async function householdSave(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  if (!(await rolesOf(ctx, u)).head) throw new HttpError(403, 'only_a_head');
+  const title = clean((await body<{ title?: string }>(ctx.req)).title, 60);
+  if (!title) throw new HttpError(400, 'title_required');
+  await ctx.env.DB.prepare('INSERT INTO family_households (id, title, updated_by, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET title = excluded.title, updated_by = excluded.updated_by, updated_at = excluded.updated_at')
+    .bind(u.household, title, u.email, Date.now()).run();
+  await audit(ctx, u, 'edit:household', title, null);
+  return json({ ok: true });
+}
+
+/* ---- privacy ---- */
+
+/** PUT /api/vault/people/:id/privacy {privacy: {identity, dates, notes, files}, anonymous} */
+export async function privacySave(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u);
+  const b = await body<{ privacy?: unknown; anonymous?: unknown }>(ctx.req);
+  const p = await rowById(ctx, ctx.params.id);
+  if (!p || !v.tribe.has(p.household)) throw new HttpError(404, 'not_found');
+  const who = whoFor(v, p);
+  let targets: PersonRow[];
+  if (isUser(v, p)) {
+    // a user decides for themself, on every card that carries their email
+    if (!who.self) throw new HttpError(403, 'only_the_person');
+    targets = (await ctx.env.DB.prepare('SELECT * FROM family_people WHERE member_email = ? AND deleted_at IS NULL').bind(u.email).all<PersonRow>()).results;
+  } else {
+    if (!who.keeper) throw new HttpError(403, 'only_a_head');
+    targets = [p];
+  }
+  for (const t of targets) {
+    const next = K.mergePrivacy(K.parsePrivacy(t.privacy), b.privacy);
+    const anon = typeof b.anonymous === 'boolean' ? (b.anonymous ? 1 : 0) : (t.anonymous || 0);
+    await ctx.env.DB.prepare('UPDATE family_people SET privacy = ?, anonymous = ?, updated_at = ? WHERE id = ?').bind(JSON.stringify(next), anon, Date.now(), t.id).run();
+    await auditAt(ctx, t.household, u, 'edit:privacy', null, t.id);
+  }
+  return json({ ok: true, privacy: K.mergePrivacy(K.parsePrivacy(p.privacy), b.privacy), anonymous: typeof b.anonymous === 'boolean' ? b.anonymous : !!p.anonymous });
+}
+
+/* ---- links between trees ---- */
+
+/** POST /api/vault/bridges {person, email, note}: any member asks; nothing of the tree goes with it but the note */
+export async function bridgeAsk(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  await rateLimit(ctx, 'bridge:' + u.email, 20, 864e5);
+  const b = await body<{ person?: string; email?: string; note?: string }>(ctx.req);
+  const p = await person(ctx, u, String(b.person || ''));
+  const email = clean(b.email, 120).toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, 'bad_email');
+  if ((await householdOf(ctx, email)) === u.household) throw new HttpError(400, 'same_household');
+  const note = clean(b.note, 300);
+  if (!note) throw new HttpError(400, 'note_required');
+  const open = await ctx.env.DB.prepare("SELECT id FROM family_bridges WHERE house_a = ? AND person_a = ? AND to_email = ? AND status IN ('pending', 'awaiting_person')").bind(u.household, p.id, email).first();
+  if (open) throw new HttpError(409, 'already_asked');
+  const id = uid();
+  await ctx.env.DB.prepare('INSERT INTO family_bridges (id, house_a, person_a, to_email, note_enc, status, asked_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, u.household, p.id, email, await seal(ctx.env, note, `bridge:${id}:note`), 'pending', u.email, Date.now()).run();
+  await audit(ctx, u, 'ask:bridge', id, p.id);
+  // the same answer whether or not the email is a member yet: nobody learns who is registered
+  return json({ id });
+}
+
+/** GET /api/vault/bridges: what waits for me, what we asked, our links, and (the tribe head) the tribe's links */
+export async function bridges(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u), t = await titles(ctx), n = await names(ctx);
+  const { results } = await ctx.env.DB.prepare(`SELECT b.*, m.household AS to_house FROM family_bridges b LEFT JOIN members m ON m.email = b.to_email
+    WHERE b.status IN ('pending', 'awaiting_person', 'confirmed', 'declined') AND (b.house_a = ? OR b.house_b = ? OR m.household = ? OR b.consent_email = ?) ORDER BY b.created_at DESC LIMIT 200`)
+    .bind(u.household, u.household, u.household, u.email).all<BridgeRow & { to_house: string | null }>();
+  const note = (r: BridgeRow) => unseal(ctx.env, r.note_enc, `bridge:${r.id}:note`);
+  const incoming = [], outgoing = [], consent = [], linked = [];
+  for (const r of results) {
+    if (r.status === 'pending' && r.to_house === u.household && r.house_a !== u.household && v.roles.head)
+      incoming.push({ id: r.id, from: titleIn(t, r.house_a), by: n.get(r.asked_by) || '', note: await note(r), at: r.created_at });
+    if (r.house_a === u.household && r.status !== 'confirmed')
+      outgoing.push({ id: r.id, person: r.person_a, to: r.to_email, status: r.status, at: r.created_at, mine: r.asked_by === u.email });
+    if (r.status === 'awaiting_person' && r.consent_email === u.email)
+      consent.push({ id: r.id, from: titleIn(t, r.house_a), to: titleIn(t, r.house_b), note: await note(r), at: r.decided_at });
+    if (r.status === 'confirmed' && (r.house_a === u.household || r.house_b === u.household))
+      linked.push({ id: r.id, person: r.house_a === u.household ? r.person_a : r.person_b, other: titleIn(t, r.house_a === u.household ? r.house_b : r.house_a), at: r.decided_at });
+  }
+  const tribe = v.roles.tribe ? v.bridges.filter((b) => v.tribe.has(b.house_a)).map((b) => ({ id: b.id, a: titleIn(t, b.house_a), b: titleIn(t, b.house_b) })) : [];
+  return json({ incoming, outgoing, consent, linked, tribe, head: v.roles.head });
+}
+
+/** the person's own say: needed when they are a user and neither asked nor approved */
+function consentNeeded(v: Viewer, x: PersonRow, y: PersonRow, asker: string, approver: string): string | null {
+  const emails = [...new Set([x.member_email, y.member_email].filter((e): e is string => !!e && v.users.has(e)))];
+  if (emails.length > 1) throw new HttpError(409, 'different_people');
+  const e = emails[0];
+  return e && e !== asker && e !== approver ? e : null;
+}
+
+/** POST /api/vault/bridges/:id/approve {person}: a head of the household the request was sent to */
+export async function bridgeApprove(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u);
+  const r = await bridgeRow(ctx, ctx.params.id);
+  if (r.status !== 'pending' || (await householdOf(ctx, r.to_email)) !== u.household) throw new HttpError(404, 'not_found');
+  if (!v.roles.head) throw new HttpError(403, 'only_a_head');
+  const y = await person(ctx, u, String((await body<{ person?: string }>(ctx.req)).person || ''));
+  const x = await rowById(ctx, r.person_a);
+  if (!x) throw new HttpError(410, 'gone');
+  const problem = K.bridgeProblem({ id: x.id, household: r.house_a }, { id: y.id, household: u.household }, v.bridges, housesIn(v.bridges, [[x.id, r.house_a], [y.id, u.household]]));
+  if (problem) throw new HttpError(409, problem);
+  const waitFor = consentNeeded(v, x, y, r.asked_by, u.email);
+  const status = waitFor ? 'awaiting_person' : 'confirmed';
+  await ctx.env.DB.prepare('UPDATE family_bridges SET house_b = ?, person_b = ?, status = ?, consent_email = ?, decided_by = ?, decided_at = ? WHERE id = ?')
+    .bind(u.household, y.id, status, waitFor, u.email, Date.now(), r.id).run();
+  await audit(ctx, u, 'approve:bridge', r.id, y.id);
+  await auditAt(ctx, r.house_a, u, 'approve:bridge', r.id, x.id);
+  return json({ status });
+}
+/** POST /api/vault/bridges/:id/consent: the person themself */
+export async function bridgeConsent(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u);
+  const r = await bridgeRow(ctx, ctx.params.id);
+  if (r.status !== 'awaiting_person' || r.consent_email !== u.email || !r.house_b || !r.person_b) throw new HttpError(404, 'not_found');
+  const problem = K.bridgeProblem({ id: r.person_a, household: r.house_a }, { id: r.person_b, household: r.house_b }, v.bridges, housesIn(v.bridges, [[r.person_a, r.house_a], [r.person_b, r.house_b]]));
+  if (problem) throw new HttpError(409, problem);
+  await ctx.env.DB.prepare("UPDATE family_bridges SET status = 'confirmed', decided_at = ? WHERE id = ?").bind(Date.now(), r.id).run();
+  for (const h of [r.house_a, r.house_b]) await auditAt(ctx, h, u, 'consent:bridge', r.id, null);
+  return json({ status: 'confirmed' });
+}
+/** POST /api/vault/bridges/:id/decline: a head where it was sent, or the person whose consent it waits for */
+export async function bridgeDecline(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const r = await bridgeRow(ctx, ctx.params.id);
+  const mayDecline = r.status === 'pending' ? (await householdOf(ctx, r.to_email)) === u.household && (await rolesOf(ctx, u)).head : r.status === 'awaiting_person' && r.consent_email === u.email;
+  if (!mayDecline) throw new HttpError(404, 'not_found');
+  await ctx.env.DB.prepare("UPDATE family_bridges SET status = 'declined', decided_by = ?, decided_at = ? WHERE id = ?").bind(u.email, Date.now(), r.id).run();
+  for (const h of new Set([r.house_a, r.house_b || u.household])) await auditAt(ctx, h, u, 'decline:bridge', r.id, null);
+  return json({ ok: true });
+}
+/** DELETE /api/vault/bridges/:id: whoever asked, a head of either side, the person, or the tribe head; it ends at once */
+export async function bridgeRevoke(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u);
+  const r = await bridgeRow(ctx, ctx.params.id);
+  if (!['pending', 'awaiting_person', 'confirmed'].includes(r.status)) throw new HttpError(404, 'not_found');
+  const [x, y] = await Promise.all([rowById(ctx, r.person_a), rowById(ctx, r.person_b)]);
+  const sides = [r.house_a, r.house_b].filter((h): h is string => !!h);
+  const may = r.asked_by === u.email || (v.roles.head && sides.includes(u.household)) || [x?.member_email, y?.member_email].includes(u.email)
+    || (v.roles.tribe && sides.some((h) => v.tribe.has(h)));
+  if (!may) throw new HttpError(403, 'not_yours');
+  await ctx.env.DB.prepare("UPDATE family_bridges SET status = 'revoked', decided_by = ?, decided_at = ? WHERE id = ?").bind(u.email, Date.now(), r.id).run();
+  for (const h of sides) await auditAt(ctx, h, u, 'revoke:bridge', r.id, null);
+  return json({ ok: true });
+}
+
+/* ---- the joined trees, as this viewer may see them ---- */
+
+type ForestPerson = K.Seen & { pid: string; root: string };
+interface Forest {
+  people: ForestPerson[];
+  links: K.KinLink[];                                // between records (real ids)
+  root: (id: string) => string;
+  pidOf: Map<string, string>; idOf: Map<string, string>;
+  houses: Set<string>;
+}
+/** every household of the viewer's tribe: its people as the viewer may see them, and its links */
+async function forestOf(ctx: Ctx, v: Viewer): Promise<Forest> {
+  const houses = [...v.tribe];
+  const marks = houses.map(() => '?').join(', ');
+  const [{ results: rows }, { results: links }] = await Promise.all([
+    ctx.env.DB.prepare(`SELECT * FROM family_people WHERE household IN (${marks}) AND deleted_at IS NULL`).bind(...houses).all<PersonRow>(),
+    ctx.env.DB.prepare(`SELECT type, a, b, kind, status FROM family_links WHERE household IN (${marks})`).bind(...houses).all<K.KinLink>(),
+  ]);
+  const cards = new Map<string, K.Card>(), rowOf = new Map(rows.map((r) => [r.id, r]));
+  for (const r of rows) cards.set(r.id, await cardOf(ctx, r));
+  const root = K.sameness(v.bridges);
+  // outside its household a person shows by kin.outside: the user's own levels, or the strictest of all their records
+  const byRoot = new Map<string, { privacy: K.Privacy; anonymous: boolean; user: boolean }[]>();
+  for (const c of cards.values()) {
+    const r = root(c.id), entry = { privacy: c.privacy, anonymous: c.anonymous, user: isUser(v, rowOf.get(c.id)!) };
+    (byRoot.get(r) || byRoot.set(r, []).get(r)!).push(entry);
+  }
+  const pidOf = new Map<string, string>(), idOf = new Map<string, string>();
+  const people: ForestPerson[] = [];
+  for (const c of cards.values()) {
+    // records outside the viewer's household go by an opaque id that means nothing elsewhere
+    const pid = c.household === v.u.household ? c.id : 'f' + (await fingerprint(ctx.env, `forest:${v.u.household}:${c.id}`));
+    pidOf.set(c.id, pid); idOf.set(pid, c.id);
+    const s = K.view(c, K.distance(v.u.household, c.household, v.bridges), whoFor(v, rowOf.get(c.id)!), K.outside(byRoot.get(root(c.id))!));
+    if (s) people.push({ ...s, pid, root: root(c.id) });
+  }
+  const alive = new Set(cards.keys());
+  return { people, links: links.filter((l) => alive.has(l.a) && alive.has(l.b)), root, pidOf, idOf, houses: v.tribe };
+}
+async function auditForest(ctx: Ctx, u: Member, houses: Set<string>, action: string) {
+  for (const h of houses) await auditAt(ctx, h, u, h === u.household ? action : action + ':from-outside', null, null);
+}
+/** households outside the viewer's go by a label that means nothing elsewhere */
+const houseLabel = (u: Member, houses: Set<string>) => { const sorted = [...houses].sort(); return (h: string) => (h === u.household ? 'mine' : 'h' + sorted.indexOf(h)); };
+
+/** GET /api/vault/forest: the tribe's households, their people (as the viewer may see them), the links, and who is the same person */
+export async function forest(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u), f = await forestOf(ctx, v), t = await titles(ctx);
+  const pid = (id: string) => f.pidOf.get(id)!, label = houseLabel(u, f.houses);
+  const out = {
+    households: [...f.houses].map((h) => ({ id: label(h), title: titleIn(t, h), distance: K.distance(u.household, h, v.bridges) })),
+    people: f.people.map((p) => ({ id: p.pid, household: label(p.household), name: p.name, sex: p.sex, anonymous: p.anonymous, details: p.details, hidden: p.hidden })),
+    links: f.links.map((l) => ({ ...l, a: pid(l.a), b: pid(l.b) })),
+    same: v.bridges.filter((b) => f.houses.has(b.house_a)).map((b) => [pid(b.person_a), pid(b.person_b)]),
+  };
+  if (f.houses.size > 1) await auditForest(ctx, u, f.houses, 'view:forest');
+  return json(out);
+}
+
+/** GET /api/vault/related?from=&to=: how two people are related over the joined trees, named in Hebrew */
+export async function related(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const v = await viewerOf(ctx, u), f = await forestOf(ctx, v);
+  const from = f.idOf.get(ctx.url.searchParams.get('from') || ''), to = f.idOf.get(ctx.url.searchParams.get('to') || '');
+  if (!from || !to) throw new HttpError(404, 'not_found');
+  // one node per person: shown by the viewer's own record if there is one, else the most visible record
+  const score = (x: ForestPerson) => (x.household === u.household ? 2 : x.hidden.includes('identity') ? 0 : 1);
+  const best = new Map<string, ForestPerson>();
+  for (const p of f.people) { const cur = best.get(p.root); if (!cur || score(p) > score(cur)) best.set(p.root, p); }
+  const k = K.kin(K.mergeLinks(f.links, f.root), (id) => best.get(id)?.sex || '');
+  const a = f.root(from), b = f.root(to);
+  const r = k.pathBetween(a, b);
+  const at = (id: string) => { const p = best.get(id)!; return { id: p.pid, name: p.name, mine: p.household === u.household }; };
+  const touched = new Set(f.people.filter((p) => r?.nodes.includes(p.root)).map((p) => p.household));
+  if (touched.size > 1) await auditForest(ctx, u, touched, 'view:related');
+  return json({ name: k.relationName(a, b), steps: r?.steps ?? null, path: r ? r.nodes.map(at) : [], from: at(a), to: at(b) });
+}
+
+/** for other modules (the family calendar): the household's cards as this member may see them inside the household */
+export async function seenAtHome(ctx: Ctx, u: Member, rows: PersonRow[]): Promise<K.Seen[]> {
+  const v = await viewerOf(ctx, u);
+  return Promise.all(rows.map(async (p) => K.view(await cardOf(ctx, p), 'household', whoFor(v, p))!));
 }

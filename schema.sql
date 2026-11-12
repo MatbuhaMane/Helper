@@ -491,3 +491,51 @@ CREATE TABLE IF NOT EXISTS family_links (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS family_links_house ON family_links(household);
+
+-- עץ המשפחה, stage 2 (docs/family-forest.md): one person in two households' trees, linked with consent.
+-- Asked by a member of house_a about person_a, sent to the email of a member of the other household. A head there
+-- approves by picking person_b. If the person is a user, their own consent may be needed (consent_email).
+CREATE TABLE IF NOT EXISTS family_bridges (
+  id            TEXT PRIMARY KEY,
+  house_a       TEXT NOT NULL,
+  person_a      TEXT NOT NULL,
+  to_email      TEXT NOT NULL,
+  note_enc      TEXT,                       -- who it is, in the asker's words (sealed)
+  house_b       TEXT,
+  person_b      TEXT,
+  status        TEXT NOT NULL,              -- pending | awaiting_person | confirmed | declined | revoked
+  consent_email TEXT,
+  asked_by      TEXT NOT NULL,
+  decided_by    TEXT,
+  created_at    INTEGER NOT NULL,
+  decided_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS family_bridges_status ON family_bridges(status);
+
+-- who heads what: role head = a head of the household, role tribe = the tribe head (household is empty)
+CREATE TABLE IF NOT EXISTS family_roles (
+  household  TEXT NOT NULL,
+  email      TEXT NOT NULL,
+  role       TEXT NOT NULL,
+  named_by   TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (household, email, role)
+);
+
+-- a household's name as other households see it ("משפחת כהן"), set by a head (not in households, whose rows mean the groceries were seeded)
+CREATE TABLE IF NOT EXISTS family_households (
+  id         TEXT PRIMARY KEY,
+  title      TEXT NOT NULL,
+  updated_by TEXT,
+  updated_at INTEGER NOT NULL
+);
+
+-- לוח שנה: each person's private link for subscribing to the calendar from Google, Apple or Outlook (only its hash is kept)
+CREATE TABLE IF NOT EXISTS calendar_feeds (
+  token_hash TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  tree       INTEGER NOT NULL DEFAULT 1,      -- with the birthdays and memorial days from the family tree
+  created_at INTEGER NOT NULL,
+  used_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS calendar_feeds_email ON calendar_feeds(email);

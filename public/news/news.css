@@ -9,8 +9,8 @@ body.news {
   --rule: #cfc9b6;
   --serif: 'Frank Ruhl Libre', 'Rubik', serif;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.news { --paper: #151f33; --paper-edge: #25314a; --newsink: #e7e1d3; --rule: #34415e; } }
-:root[data-theme="dark"] body.news { --paper: #151f33; --paper-edge: #25314a; --newsink: #e7e1d3; --rule: #34415e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.news { --paper: #0c1220; --paper-edge: #1a2335; --newsink: #e7e1d3; --rule: #28344c; } }
+:root[data-theme="dark"] body.news { --paper: #0c1220; --paper-edge: #1a2335; --newsink: #e7e1d3; --rule: #28344c; }
 
 .shell { display: grid; grid-template-columns: 270px minmax(0, 1fr); align-items: start; max-inline-size: 1320px; margin-inline: auto; }
 

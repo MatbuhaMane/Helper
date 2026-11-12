@@ -36,7 +36,7 @@
       if (st.spotify.connected) { poll(); if (st.spotify.stream && canHost) drmOk().then((ok) => { st.spotify.noDrm = !ok; emit(); if (ok) loadSdk(); }); }
     }
 
-    /* ---- Spotify played right here (a computer's browser becomes a Spotify device, "העוזר המשפחתי") ----
+    /* ---- Spotify played right here (a computer's browser becomes a Spotify device, "האוהל") ----
        Phones keep the remote way: Spotify's own app plays in the background, a browser tab doesn't. */
     const canHost = !matchMedia('(pointer: coarse)').matches && !/Electron/.test(navigator.userAgent);
     let sdk = null, sdkLoad = null;
@@ -50,7 +50,7 @@
       sdkLoad ||= new Promise((resolve) => {
         window.onSpotifyWebPlaybackSDKReady = () => {
           sdk = new Spotify.Player({
-            name: 'העוזר המשפחתי',
+            name: 'האוהל',
             getOAuthToken: (cb) => api('/api/music/spotify/token', { noRedirect: true }).then((r) => cb(r.token)).catch(() => {}),
             volume: (st.volume || 70) / 100,
           });
@@ -62,7 +62,7 @@
             const t = s.track_window?.current_track;
             st.source = 'spotify'; st.playing = !s.paused; st.progress = s.position; st.at = Date.now(); st.duration = s.duration;
             if (t) { st.title = t.name; st.artist = (t.artists || []).map((a) => a.name).join(', '); st.art = t.album?.images?.[0]?.url || ''; st.uri = t.uri; }
-            st.device = { id: st.here, name: 'העוזר המשפחתי', type: 'Computer' };
+            st.device = { id: st.here, name: 'האוהל', type: 'Computer' };
             emit();
           });
           for (const ev of ['initialization_error', 'authentication_error', 'account_error']) sdk.addListener(ev, ({ message }) => { console.warn('Spotify player', ev, message); st.here = ''; emit(); resolve(null); });
@@ -551,8 +551,8 @@
   function spotifyTab(body) {
     const s = E.st.spotify;
     if (!s.configured) {
-      body.append(el('div', { class: 'mu-note' }, el('b', {}, 'ספוטיפיי עוד לא הוגדר בעוזר.'),
-        el('p', {}, 'מנהל המשפחה צריך לרשום פעם אחת את העוזר אצל ספוטיפיי (Client ID). אחרי זה כל אחד מחבר את החשבון שלו בלחיצה.')));
+      body.append(el('div', { class: 'mu-note' }, el('b', {}, 'ספוטיפיי עוד לא הוגדר באוהל.'),
+        el('p', {}, 'מנהל המשפחה צריך לרשום פעם אחת את האוהל אצל ספוטיפיי (Client ID). אחרי זה כל אחד מחבר את החשבון שלו בלחיצה.')));
       return;
     }
     if (!s.connected) {
@@ -563,11 +563,11 @@
     }
     if (s.stream && s.noDrm) {
       body.append(el('div', { class: 'mu-note' }, el('b', {}, 'הדפדפן הזה לא יכול לנגן ספוטיפיי בעצמו'),
-        el('p', {}, 'חסר בו רכיב ההגנה (Widevine) שספוטיפיי דורש. פתחו את העוזר בכרום או באדג׳ וזה ינגן כאן, או פתחו את אפליקציית ספוטיפיי ושלטו בה מכאן.')));
+        el('p', {}, 'חסר בו רכיב ההגנה (Widevine) שספוטיפיי דורש. פתחו את האוהל בכרום או באדג׳ וזה ינגן כאן, או פתחו את אפליקציית ספוטיפיי ושלטו בה מכאן.')));
     }
     if (!s.stream && !matchMedia('(pointer: coarse)').matches) {
       body.append(el('div', { class: 'mu-note' }, el('b', {}, 'לנגן ישירות כאן, בלי לפתוח את ספוטיפיי?'),
-        el('p', {}, 'חברו מחדש פעם אחת ואשרו את ההרשאה החדשה: העוזר יהפוך בעצמו לנגן ספוטיפיי במחשב הזה.'),
+        el('p', {}, 'חברו מחדש פעם אחת ואשרו את ההרשאה החדשה: האוהל יהפוך בעצמו לנגן ספוטיפיי במחשב הזה.'),
         el('a', { class: 'btn primary small', href: '/api/music/spotify/login?next=' + encodeURIComponent(location.pathname) }, 'חיבור מחדש')));
     }
     const sb = searchBox('שיר, אמן או פלייליסט בספוטיפיי', async (q, out) => {
@@ -579,7 +579,7 @@
     });
     const mine = el('div', { class: 'mu-results' }, el('p', { class: 'muted mu-wait' }, 'טוען את הפלייליסטים שלכם…'));
     body.append(sb.node, el('h3', {}, 'הפלייליסטים שלי'), mine,
-      el('p', { class: 'mu-foot' }, el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('לנתק את ספוטיפיי מהעוזר?')) return; await api('/api/music/spotify/disconnect', { method: 'POST' }); E.st.spotify.connected = false; E.status(); panel.showTab('spotify'); } }, 'ניתוק ספוטיפיי')));
+      el('p', { class: 'mu-foot' }, el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('לנתק את ספוטיפיי מהאוהל?')) return; await api('/api/music/spotify/disconnect', { method: 'POST' }); E.st.spotify.connected = false; E.status(); panel.showTab('spotify'); } }, 'ניתוק ספוטיפיי')));
     api('/api/music/spotify/playlists', { noRedirect: true }).then((r) => mine.replaceChildren(...(r.playlists.length ? r.playlists.map((p) => row(p, `${p.count} שירים`, () => E.playSpotify(p))) : [el('p', { class: 'muted' }, 'אין פלייליסטים')])))
       .catch(() => mine.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לטעון את הפלייליסטים')));
   }
@@ -630,7 +630,7 @@
     if (!r.devices.length) return showNoDevice();
     // this computer first (when it is a player), then everything else
     r.devices.sort((a, b) => (b.id === E.st.here) - (a.id === E.st.here));
-    const list = el('div', { class: 'mu-results' }, r.devices.map((d) => row({ title: d.id === E.st.here ? 'כאן, במחשב הזה' : d.name }, d.active ? 'מתנגן עכשיו' : d.id === E.st.here ? 'העוזר מנגן בעצמו' : typeLabel(d.type), async () => {
+    const list = el('div', { class: 'mu-results' }, r.devices.map((d) => row({ title: d.id === E.st.here ? 'כאן, במחשב הזה' : d.name }, d.active ? 'מתנגן עכשיו' : d.id === E.st.here ? 'האוהל מנגן בעצמו' : typeLabel(d.type), async () => {
       H.closeModal();
       const ok = pending ? await E.spCmd(pending.action, { ...pending.extra, device: d.id }) : await E.spCmd('transfer', { device: d.id });
       E.st.pending = null;
@@ -748,7 +748,7 @@
     if (!shell) {
       // everything of this page steps aside except the player's own parts; the next screen loads in a full frame
       for (const n of document.body.children) if (!n.matches('.mu-video, .mu-float, .mu-panel, .toast, script')) n.classList.add('mu-away');
-      shell = el('iframe', { class: 'mu-shell', title: 'העוזר' });
+      shell = el('iframe', { class: 'mu-shell', title: 'האוהל' });
       document.body.append(shell);
       document.body.classList.add('mu-shelled');
       shell.addEventListener('load', () => {
@@ -776,7 +776,7 @@
     // back from Spotify's sign-in
     const m = new URLSearchParams(location.search).get('music');
     if (m) {
-      const msg = { connected: 'ספוטיפיי מחובר! עכשיו אפשר לבחור מה לשמוע', denied: 'החיבור לספוטיפיי בוטל', expired: 'החיבור לקח יותר מדי זמן, נסו שוב', failed: 'ספוטיפיי לא אישר את החיבור, נסו שוב', not_configured: 'ספוטיפיי עוד לא הוגדר בעוזר' }[m];
+      const msg = { connected: 'ספוטיפיי מחובר! עכשיו אפשר לבחור מה לשמוע', denied: 'החיבור לספוטיפיי בוטל', expired: 'החיבור לקח יותר מדי זמן, נסו שוב', failed: 'ספוטיפיי לא אישר את החיבור, נסו שוב', not_configured: 'ספוטיפיי עוד לא הוגדר באוהל' }[m];
       if (msg) toast(msg);
       history.replaceState(null, '', location.pathname + location.hash);
       if (m === 'connected') E.status().then(() => openPanel('spotify'));

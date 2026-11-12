@@ -1,4 +1,6 @@
-# Helper – העוזר המשפחתי
+# Helper – הָאֹהֶל (האוהל)
+
+The app is called **הָאֹהֶל** (in sentences "האוהל": משתמש באוהל); the AI inside it is still העוזר החכם. The code and the repo keep the name Helper.
 
 A hub for all the useful tools the family uses day to day: groceries, recipes and ketosis, news, songbook,
 mail organizer, a PC guide, and the daemon companion who works the apps for you. See README.md for setup
@@ -68,7 +70,8 @@ A file has one owner. Other sessions propose changes to it (in `docs/decisions.m
   `public/assets/` (not `common.js`), `public/figures/`, `figures/`, the figure skills in `.claude/skills/`, `docs/design/`.
 - **business**: `docs/business/`.
 - **ai-features**: `server/` feature modules (AI, news, recipes, keto, calendar, daemon, voice, mail, music…), the family tree
-  logic in `server/vault/index.ts`, each page's JavaScript (`public/*/*.js`, `public/tools/*/*.js`), `docs/ai/`, `docs/family-forest.md`.
+  logic in `server/vault/index.ts` and `server/vault/kin.ts` (with `test-kin.mjs`), the Hebrew dates in `server/hebdate.ts`
+  (with `test-hebdate.mjs`), each page's JavaScript (`public/*/*.js`, `public/tools/*/*.js`), `docs/ai/`, `docs/family-forest.md`.
 - **master** (shared files): `functions/api/[[path]].ts`, `schema.sql`, `server/schema.ts`, `server/core.ts`, `server/ai.ts`,
   `server/meter.ts`, `server/prices.ts`, the vault's security (`server/vault/crypto.ts`, `webauthn.ts`, `store.ts`, `backup.ts`),
   `src/`, `wrangler.toml`, `package.json`, `package-lock.json`, `public/sw.js`, `public/_headers`, `public/manifest.json`,
@@ -87,7 +90,7 @@ Exception: an area may **append** a route line to `functions/api/[[path]].ts`, a
 4. A change that affects another area (a shared file, an API another area uses, a design token, a price) gets an entry
    in `docs/decisions.md` and is flagged to the master.
 5. Only the master merges area branches into `main`, after reviewing the diff (`git diff main...design`), checking for
-   conflicts, and running `npm run typecheck`, `npm run test:vault`, `npm run test:meter` and the page audit.
+   conflicts, and running `npm run typecheck`, `npm test` (vault, meter, forest, calendar) and the page audit.
 6. **A push to `main` deploys the live site.** The master pushes `main` only with the owner's approval. Area branches are
    pushed only with the owner's approval; a pushed branch gets its own preview address with its own database.
 7. Never delete, force-push, rewrite history or discard someone's uncommitted work.

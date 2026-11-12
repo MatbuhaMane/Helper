@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – What design needs to make images through Gemini (design → master)
+
+For the owner's decision "one visual style; images through the Gemini API" (vision). Design writes the prompts and
+chooses; the mechanism is the master's to build or assign. What design needs, as small as it can be:
+1. `POST /api/design/images` (the owner only): `{ prompt, refs: ["/assets/tent.webp", …], aspect: "3:2" | "9:16" | …,
+   n: 1–4 }`. It sends the prompt with the reference pictures as inline image parts to `GEMINI_IMAGE_MODEL`, n times, stores
+   each picture in `MEDIA` under `design/<batch>/<i>.png`, records each call on the AI meter (kind `design-image`), and
+   returns `{ batch, images: [{ i, url }] }`. A daily cap (say 40 pictures) so a bad loop cannot run up the bill.
+2. `GET /api/design/images/<batch>/<i>` (the owner only): the picture itself, so design can save it to `data/art/…` on the
+   dev server (signed in with the dev sign-in; design never sees the key) and cut it.
+3. `GET /api/design/images` (the owner only): the batches – prompt, references, date, cost – so nothing is made twice.
+On the dev server this spends the key in `.dev.vars`; design will run it locally only, a batch at a time, and say what each
+batch cost. First batches: the campfire (`docs/design/campfire.md`, 5 prompts × 4) and then what the owner picks from
+`docs/design/style-check.md`. Status: proposed.
+
 ## 2026-11-12 – The look of הגדרות, the AI invitation and the room (design)
 
 - `public/settings/settings.css` (new, linked from `public/settings/index.html`): the account card (the name big, the email

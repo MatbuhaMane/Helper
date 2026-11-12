@@ -99,7 +99,7 @@
 .rx-notefull { display: grid; gap: 14px; padding: 22px 24px; }
 .rx-notefull h1 { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2rem); }
 .rx-note-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; font-size: .84rem; color: var(--muted); }
-.rx-private { display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 999px; font-size: .76rem; font-weight: 600; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+.rx-lock { display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 999px; font-size: .76rem; font-weight: 600; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 .rx-body { font-size: 1.05rem; line-height: 1.85; }
 .rx-body p { margin: 0 0 12px; }
 .rx-body p:last-child { margin: 0; }
@@ -287,3 +287,37 @@
 .rx-checks li.ok { color: var(--muted); background: color-mix(in srgb, var(--primary) 7%, transparent); }
 .rx-checks li.todo { color: var(--text); background: color-mix(in srgb, var(--rx-open) 9%, transparent); font-weight: 500; }
 @media (max-width: 520px) { .rx-toolbar { position: static; } }   /* on a phone the many tools wrap: they stay in place rather than cover the page */
+
+/* ===================== step 3 (9376809): research together ===================== */
+/* invitations on the home screen: a warm card that asks, never pushes */
+.rx .rx-invites { padding: 16px 18px; display: grid; gap: 10px; background: color-mix(in srgb, var(--olive) 10%, var(--card)); border-color: color-mix(in srgb, var(--olive) 40%, var(--line)); }
+.rx-invites li { padding: 10px 12px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+/* a role, as a small pill; the owner's in the vine */
+.rx-role { display: inline-flex; align-items: center; padding: 0 9px !important; border-radius: 999px; font-size: .76rem; font-weight: 600; white-space: nowrap; cursor: help;
+  border: 0 !important; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+/* "👥 של X · role" on a research card */
+.rx-shared { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+/* the sharing panel: members in rows, the invite row under them */
+.rx .rx-sharing { padding: 14px 18px; display: grid; gap: 10px; }
+.rx-sharing > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 8px; }
+.rx-sharing > summary::-webkit-details-marker { display: none; }
+.rx-sharing > summary::after { content: "▾"; margin-inline-start: auto; color: var(--muted); transition: transform var(--dur-quick) var(--ease-river); }
+.rx-sharing[open] > summary::after { transform: rotate(180deg); }
+.rx-sharing ul > li { padding: 8px 10px; border-radius: 12px; align-items: center !important; }
+.rx-sharing ul > li:nth-child(odd) { background: color-mix(in srgb, var(--text) 3.5%, transparent); }
+.rx-sharing input[type="email"] { flex: 1 1 12rem; min-inline-size: 0; }
+/* a note its author kept private: only its name, behind a lock */
+.rx .rx-note.rx-private { border-style: dashed; box-shadow: none; background: color-mix(in srgb, var(--text) 3%, var(--card)); }
+/* comments: speech bubbles, the author's name bold above */
+.rx-comments > ul > .rx-comment { padding: 12px 14px; border-radius: 18px 18px 18px 6px; display: grid; gap: 4px; box-shadow: none; }
+:root[dir="rtl"] .rx-comments > ul > .rx-comment { border-radius: 18px 18px 6px 18px; }
+.rx-comment > p { line-height: 1.55; }
+.rx-comments > textarea { border-radius: 16px; min-block-size: 64px; }
+/* the history: a quiet log, restore at the end of a line */
+.rx .rx-history { padding: 14px 18px; display: grid; gap: 10px; }
+.rx-history > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.rx-history > summary::-webkit-details-marker { display: none; }
+.rx-history > summary::after { content: "▾"; margin-inline-start: auto; transition: transform var(--dur-quick) var(--ease-river); }
+.rx-history[open] > summary::after { transform: rotate(180deg); }
+.rx-history ul > li { padding: 6px 4px; border-block-end: 1px dashed var(--line); align-items: center !important; font-size: .92rem; }
+.rx-history ul > li > small:first-child { font-variant-numeric: tabular-nums; }

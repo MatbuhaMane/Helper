@@ -295,6 +295,11 @@ textarea { width: 100%; resize: vertical; }
 .btn.accent { background: var(--accent); color: var(--accent-ink); }
 .btn.accent:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
 .btn.ghost { border-color: var(--line-strong); }
+/* a plain button (no primary, accent, ghost or ✨): a soft fill and a quiet edge, so a secondary action reads as a button
+   and not as bare text – by day and at night (it used to be transparent with no edge) */
+.btn:where(:not(.primary, .accent, .ghost, .ai-up)) { background: color-mix(in srgb, var(--text) 6%, var(--card)); border-color: color-mix(in srgb, var(--text) 14%, transparent); }
+.btn:where(:not(.primary, .accent, .ghost, .ai-up)):hover { background: color-mix(in srgb, var(--text) 10%, var(--card)); border-color: var(--primary); }
+.btn:where(:not(.primary, .accent, .ghost, .ai-up)):disabled { opacity: .55; }
 .btn.ghost:hover { border-color: var(--primary); color: var(--primary); }
 .btn.small { padding: 6px 12px; font-size: .88rem; }
 .btn:disabled { opacity: .55; cursor: default; }

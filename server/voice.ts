@@ -4,15 +4,20 @@
 
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
 
-export const DEFAULT_VOICE = 'Sadaltager';
+export const DEFAULT_VOICE = 'Algenib';   // the owner's choice: deep and a little gravelly
 const DAILY_CHARS = 30000;
-const SAMPLE = 'שלום, אני אבן עזרא. במה אוכל לעזור לכם היום?';
-// A brisk, lively pace (the person asked for him to read faster; the client can speed playback further, prefs.rate).
-const STYLE = 'Read this aloud in Hebrew at a brisk, lively conversational pace, warmly, like a wise, kind old scholar with a hint of a smile:';
+// the sample has ח and ע in it, so the accent can be heard
+const SAMPLE = 'שלום וברכה, אני אבן עזרא, ושמח לעזור לכם. מה נחפש יחד היום?';
+// An old man's voice with the Hebrew of the Jews of the East: ח and ע from the throat, as Ibn Ezra himself said them.
+// The pace stays lively (the person asked for faster reading; the client can speed playback further, prefs.rate).
+const STYLE = 'Read this aloud in Hebrew as a very old, wise and kind Mizrahi Jewish sage of about eighty: a deep, slightly gravelly, ' +
+  'aged voice with warmth and a hint of a smile, at an easy conversational pace. Use the traditional Mizrahi (Yemenite/Iraqi) ' +
+  'pronunciation: say every ח (Het) as a strong pharyngeal [ħ], never like כ or a Western "ch", and every ע (Ayin) as a ' +
+  'clear pharyngeal [ʕ] from the throat, never silent like א. Read:';
 
 // Gemini's prebuilt voices: name, gender, character (in Hebrew, for the picker)
 const VOICES: [string, 'male' | 'female', string][] = [
-  ['Sadaltager', 'male', 'בקיא'], ['Charon', 'male', 'מסביר'], ['Algenib', 'male', 'צרוד'], ['Iapetus', 'male', 'צלול'],
+  ['Algenib', 'male', 'צרוד'], ['Sadaltager', 'male', 'בקיא'], ['Charon', 'male', 'מסביר'], ['Iapetus', 'male', 'צלול'],
   ['Rasalgethi', 'male', 'מסביר'], ['Schedar', 'male', 'שקול'], ['Orus', 'male', 'תקיף'], ['Alnilam', 'male', 'תקיף'],
   ['Algieba', 'male', 'חלק'], ['Enceladus', 'male', 'נושם'], ['Umbriel', 'male', 'נינוח'], ['Achird', 'male', 'ידידותי'],
   ['Zubenelgenubi', 'male', 'יומיומי'], ['Puck', 'male', 'עליז'], ['Fenrir', 'male', 'נלהב'], ['Sadachbia', 'male', 'תוסס'],

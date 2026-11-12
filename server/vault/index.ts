@@ -194,15 +194,16 @@ export async function tree(ctx: Ctx) {
   // the deleted files whose 30 days have passed go for good (their ciphertext too)
   ctx.waitUntil(purge(ctx));
   const { results } = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE household = ? AND deleted_at IS NULL ORDER BY created_at').bind(u.household).all<PersonRow>();
+  const links = await linksOf(ctx, u.household, results);
   const counts = await ctx.env.DB.prepare(`SELECT person_id, kind, COUNT(*) AS n FROM vault_items WHERE household = ? AND deleted_at IS NULL AND (private = 0 OR owner_email = ?) GROUP BY person_id, kind`)
     .bind(u.household, u.email).all<{ person_id: string; kind: string; n: number }>();
   const people = await Promise.all(results.map(async (p) => ({
     id: p.id, name: await unseal(ctx.env, p.name_enc, `person:${p.id}:name`),
-    parent1: p.parent1, parent2: p.parent2, partner: p.partner, member: p.member_email, photo: p.photo_item,
+    member: p.member_email, photo: p.photo_item, sex: (JSON.parse((await unseal(ctx.env, p.details_enc, `person:${p.id}:details`)) || '{}').sex) || '',
     counts: Object.fromEntries(counts.results.filter((c) => c.person_id === p.id).map((c) => [c.kind, c.n])),
   })));
   await audit(ctx, u, 'view:tree', null, null);
-  return json({ people, me: u.email });
+  return json({ people, links, me: u.email });
 }
 
 const clean = (s: unknown, n: number) => String(s ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
@@ -224,27 +225,28 @@ async function relation(ctx: Ctx, u: Member, id: unknown) {
 
 export async function personSave(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
-  const b = await body<{ name?: string; details?: Record<string, string>; parent1?: string; parent2?: string; partner?: string; member?: string }>(ctx.req);
+  const b = await body<{ name?: string; details?: Record<string, string>; parent1?: string; parent2?: string; partner?: string; child?: string; member?: string }>(ctx.req);
   const id = ctx.params.id || uid();
   const existing = ctx.params.id ? await person(ctx, u, id) : null;
   const name = clean(b.name, 80);
   if (!name) throw new HttpError(400, 'name_required');
   const details = Object.fromEntries(Object.entries(b.details || {}).slice(0, 30).map(([k, v]) => [clean(k, 40), clean(v, 2000)]));
-  const [p1, p2, pa] = await Promise.all([relation(ctx, u, b.parent1), relation(ctx, u, b.parent2), relation(ctx, u, b.partner)]);
-  if ([p1, p2, pa].includes(id)) throw new HttpError(400, 'self_relation');
+  const [p1, p2, pa] = existing ? [null, null, null] : await Promise.all([relation(ctx, u, b.parent1), relation(ctx, u, b.parent2), relation(ctx, u, b.partner)]);
+  const child = existing || !b.child ? null : await relation(ctx, u, b.child);
   const member = b.member ? clean(b.member, 120).toLowerCase() : null;
   const now = Date.now();
   const nameEnc = await seal(ctx.env, name, `person:${id}:name`), detEnc = await seal(ctx.env, JSON.stringify(details), `person:${id}:details`);
   if (existing) {
-    await ctx.env.DB.prepare('UPDATE family_people SET name_enc = ?, details_enc = ?, parent1 = ?, parent2 = ?, partner = ?, member_email = ?, updated_at = ? WHERE id = ?')
-      .bind(nameEnc, detEnc, p1, p2, pa, member, now, id).run();
+    await ctx.env.DB.prepare('UPDATE family_people SET name_enc = ?, details_enc = ?, member_email = ?, updated_at = ? WHERE id = ?')
+      .bind(nameEnc, detEnc, member, now, id).run();
   } else {
-    await ctx.env.DB.prepare('INSERT INTO family_people (id, household, name_enc, details_enc, parent1, parent2, partner, member_email, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(id, u.household, nameEnc, detEnc, p1, p2, pa, member, u.email, now, now).run();
+    await ctx.env.DB.prepare('INSERT INTO family_people (id, household, name_enc, details_enc, member_email, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(id, u.household, nameEnc, detEnc, member, u.email, now, now).run();
+    // the relationship it was added with
+    for (const par of [p1, p2]) if (par) await addLink(ctx, u, { type: 'parent', a: par, b: id, kind: 'bio' });
+    if (pa) await addLink(ctx, u, { type: 'partner', a: pa, b: id, kind: 'married', status: 'together' });
+    if (child) await addLink(ctx, u, { type: 'parent', a: id, b: child, kind: 'bio' });
   }
-  // partners point at each other (and a former partner no longer points here)
-  if (existing?.partner && existing.partner !== pa) await ctx.env.DB.prepare('UPDATE family_people SET partner = NULL WHERE id = ? AND partner = ? AND household = ?').bind(existing.partner, id, u.household).run();
-  if (pa) await ctx.env.DB.prepare('UPDATE family_people SET partner = ? WHERE id = ? AND household = ?').bind(id, pa, u.household).run();
   await audit(ctx, u, existing ? 'edit:person' : 'add:person', null, id);
   return json({ id });
 }
@@ -253,7 +255,85 @@ export async function personDelete(ctx: Ctx) {
   const u = await requireUnlocked(ctx);
   const p = await person(ctx, u, ctx.params.id);
   await ctx.env.DB.prepare('UPDATE family_people SET deleted_at = ? WHERE id = ?').bind(Date.now(), p.id).run();
+  await ctx.env.DB.prepare('DELETE FROM family_links WHERE household = ? AND (a = ? OR b = ?)').bind(u.household, p.id, p.id).run();
   await audit(ctx, u, 'delete:person', null, p.id);
+  return json({ ok: true });
+}
+
+/* ---------------- relationships (family_links) ---------------- */
+
+const PARENT_KINDS = new Set(['bio', 'adopt', 'step', 'foster']);
+const PARTNER_KINDS = new Set(['married', 'partner', 'engaged']);
+const PARTNER_STATUS = new Set(['together', 'divorced', 'widowed', 'separated']);
+const isoDay = (s: unknown) => (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null);
+interface Link { id: string; type: 'parent' | 'partner'; a: string; b: string; kind: string | null; status: string | null; since: string | null; until: string | null }
+
+/** The household's relationships; the first time, the old parent1/parent2/partner columns are read into them. */
+async function linksOf(ctx: Ctx, household: string, people: PersonRow[]): Promise<Link[]> {
+  let { results } = await ctx.env.DB.prepare('SELECT id, type, a, b, kind, status, since, until FROM family_links WHERE household = ?').bind(household).all<Link>();
+  if (!results.length && people.some((p) => p.parent1 || p.parent2 || p.partner)) {
+    const ids = new Set(people.map((p) => p.id)), now = Date.now(), done = new Set<string>();
+    const add: Link[] = [];
+    for (const p of people) {
+      for (const par of [p.parent1, p.parent2]) if (par && ids.has(par)) add.push({ id: uid(), type: 'parent', a: par, b: p.id, kind: 'bio', status: null, since: null, until: null });
+      if (p.partner && ids.has(p.partner)) {
+        const [x, y] = [p.id, p.partner].sort(); const k = x + y;
+        if (!done.has(k)) { done.add(k); add.push({ id: uid(), type: 'partner', a: x, b: y, kind: 'married', status: 'together', since: null, until: null }); }
+      }
+    }
+    if (add.length) await ctx.env.DB.batch(add.map((l) => ctx.env.DB.prepare('INSERT INTO family_links (id, household, type, a, b, kind, status, since, until, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(l.id, household, l.type, l.a, l.b, l.kind, l.status, null, null, 'migration', now)));
+    results = add;
+  }
+  const alive = new Set(people.map((p) => p.id));
+  return results.filter((l) => alive.has(l.a) && alive.has(l.b));
+}
+
+async function addLink(ctx: Ctx, u: Member, b: { type: string; a: string; b: string; kind?: string; status?: string; since?: unknown; until?: unknown }) {
+  if (b.type !== 'parent' && b.type !== 'partner') throw new HttpError(400, 'bad_link');
+  if (b.a === b.b) throw new HttpError(400, 'self_relation');
+  await person(ctx, u, b.a); await person(ctx, u, b.b);
+  const [a, c] = b.type === 'partner' ? [b.a, b.b].sort() : [b.a, b.b];
+  const kind = b.type === 'parent' ? (PARENT_KINDS.has(b.kind || '') ? b.kind! : 'bio') : (PARTNER_KINDS.has(b.kind || '') ? b.kind! : 'married');
+  const status = b.type === 'partner' ? (PARTNER_STATUS.has(b.status || '') ? b.status! : 'together') : null;
+  const { results } = await ctx.env.DB.prepare('SELECT type, a, b FROM family_links WHERE household = ?').bind(u.household).all<{ type: string; a: string; b: string }>();
+  if (results.some((l) => l.type === b.type && ((l.a === a && l.b === c) || (b.type === 'partner' && l.a === c && l.b === a)))) throw new HttpError(409, 'link_exists');
+  if (b.type === 'parent') {
+    // nobody is their own ancestor: the child may not be an ancestor of the parent
+    const up = new Map<string, string[]>();
+    for (const l of results) if (l.type === 'parent') (up.get(l.b) || up.set(l.b, []).get(l.b)!).push(l.a);
+    const seen = new Set<string>(), stack = [a];
+    while (stack.length) { const x = stack.pop()!; if (x === c) throw new HttpError(400, 'circular_family'); if (seen.has(x)) continue; seen.add(x); stack.push(...(up.get(x) || [])); }
+    if (results.filter((l) => l.type === 'parent' && l.b === c).length >= 6) throw new HttpError(400, 'too_many_parents');
+  }
+  const id = uid();
+  await ctx.env.DB.prepare('INSERT INTO family_links (id, household, type, a, b, kind, status, since, until, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, u.household, b.type, a, c, kind, status, isoDay(b.since), isoDay(b.until), u.email, Date.now()).run();
+  await audit(ctx, u, 'add:link', id, c);
+  return id;
+}
+
+export async function linkAdd(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const b = await body<{ type: string; a: string; b: string; kind?: string; status?: string; since?: string; until?: string }>(ctx.req);
+  return json({ id: await addLink(ctx, u, b) });
+}
+export async function linkSave(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  const l = await ctx.env.DB.prepare('SELECT * FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).first<Link>();
+  if (!l) throw new HttpError(404, 'not_found');
+  const b = await body<{ kind?: string; status?: string; since?: string; until?: string }>(ctx.req);
+  const kind = l.type === 'parent' ? (PARENT_KINDS.has(b.kind || '') ? b.kind : l.kind) : (PARTNER_KINDS.has(b.kind || '') ? b.kind : l.kind);
+  const status = l.type === 'partner' ? (PARTNER_STATUS.has(b.status || '') ? b.status : l.status) : null;
+  await ctx.env.DB.prepare('UPDATE family_links SET kind = ?, status = ?, since = ?, until = ? WHERE id = ?')
+    .bind(kind, status, b.since === undefined ? l.since : isoDay(b.since), b.until === undefined ? l.until : isoDay(b.until), l.id).run();
+  await audit(ctx, u, 'edit:link', l.id, l.b);
+  return json({ ok: true });
+}
+export async function linkDelete(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  await ctx.env.DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).run();
+  await audit(ctx, u, 'delete:link', ctx.params.id, null);
   return json({ ok: true });
 }
 

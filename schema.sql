@@ -475,3 +475,19 @@ CREATE TABLE IF NOT EXISTS ai_usage (
   image_out   INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS ai_usage_at ON ai_usage(at);
+
+-- עץ המשפחה: relationships as records of their own (docs/family-forest.md). parent: a is the parent of b; partner: a < b.
+CREATE TABLE IF NOT EXISTS family_links (
+  id         TEXT PRIMARY KEY,
+  household  TEXT NOT NULL,
+  type       TEXT NOT NULL,
+  a          TEXT NOT NULL,
+  b          TEXT NOT NULL,
+  kind       TEXT,
+  status     TEXT,
+  since      TEXT,
+  until      TEXT,
+  created_by TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS family_links_house ON family_links(household);

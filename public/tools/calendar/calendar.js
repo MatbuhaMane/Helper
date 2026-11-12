@@ -227,7 +227,7 @@
       ev.length || par || times.length || fam.length ? el('ul', { class: 'cal-events' },
         fam.map((e) => el('li', { class: 'k-family' }, el('i'), el('div', {}, el('b', {}, familyLabel(e, sel)),
           el('p', {}, `${(FAMILY[e.kind] || FAMILY.other)[1]} · ${e.recur === 'hebrew' ? 'לפי התאריך העברי' : e.recur === 'gregorian' ? 'לפי התאריך הלועזי' : 'פעם אחת'}${e.note ? ' · ' + e.note : ''}`),
-          el('button', { class: 'cal-link', onclick: () => editFamily(e) }, 'עריכה')))),
+          e.from === 'tree' ? el('a', { class: 'cal-link', href: '/family/' }, 'בעץ המשפחה ›') : el('button', { class: 'cal-link', onclick: () => editFamily(e) }, 'עריכה')))),
         ev.map((i) => el('li', { class: 'k-' + kindOf(i) }, el('i'), el('div', {}, el('b', {}, plain(i.title)), i.memo ? el('p', {}, plain(i.memo)) : ''))),
         par ? el('li', { class: 'k-par' }, el('i'), el('div', {}, el('b', {}, plain(par.title)), el('p', {}, el('a', { href: '/parasha/' }, 'לעיון בפרשה ›')))) : '',
         times.map((i) => el('li', { class: 'k-time' }, el('i'), el('div', {}, el('b', {}, plain(i.hebrew || i.title).replace(/:.*/, '')), ' ', time(i.date), i.memo ? el('p', {}, plain(i.memo)) : '')))) :

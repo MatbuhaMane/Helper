@@ -4,6 +4,7 @@
 
 import { z } from 'zod';
 import { Ctx, HttpError, body, json, requireUser, uid } from './core';
+import { unseal } from './vault/crypto';
 
 const Event = z.object({
   title: z.string().trim().min(1).max(80),
@@ -20,8 +21,25 @@ const out = (r: Row) => ({ id: r.id, title: r.title, kind: r.kind, date: r.date,
 export async function list(ctx: Ctx) {
   const u = requireUser(ctx);
   const { results } = await ctx.env.DB.prepare("SELECT * FROM family_events WHERE deleted = 0 AND COALESCE(household, 'family') = ? ORDER BY date").bind(u.household).all<Row>();
-  return json({ events: results.map(out) });
+  return json({ events: [...results.map(out), ...(await fromTree(ctx, u.household).catch(() => []))] });
 }
+
+/** The family tree's days (docs/family-forest.md): each person's birthday and, for those who passed away, the yahrzeit.
+    Read-only here – they are changed in עץ המשפחה. A person whose "in the calendar" switch is off is left out. */
+async function fromTree(ctx: Ctx, household: string) {
+  const { results } = await ctx.env.DB.prepare('SELECT id, name_enc, details_enc FROM family_people WHERE household = ? AND deleted_at IS NULL').bind(household).all<{ id: string; name_enc: string; details_enc: string }>();
+  const out: ReturnType<typeof outTree>[] = [];
+  for (const p of results) {
+    const d = JSON.parse((await unseal(ctx.env, p.details_enc, `person:${p.id}:details`)) || '{}');
+    if (d.calendar === false || (!d.born && !d.died)) continue;
+    const name = await unseal(ctx.env, p.name_enc, `person:${p.id}:name`);
+    if (d.born && !d.died) out.push(outTree(p.id + ':born', name, 'birthday', d.born, !!d.bornAfterSunset, d.birthdayBy === 'hebrew' ? 'hebrew' : 'gregorian'));
+    if (d.died) out.push(outTree(p.id + ':died', name, 'yahrzeit', d.died, !!d.diedAfterSunset, 'hebrew'));
+  }
+  return out;
+}
+const outTree = (id: string, title: string, kind: string, date: string, after: boolean, recur: string) =>
+  ({ id: 'tree:' + id, title, kind, date, after_sunset: after, recur, note: '', by: 'tree', from: 'tree', updated_at: 0 });
 
 /** POST /api/calendar/events */
 export async function create(ctx: Ctx) {

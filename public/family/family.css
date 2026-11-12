@@ -80,3 +80,34 @@
 
 /* a person's dates and place, under the name */
 .fv-life { margin: 2px 0 0; font-size: .88rem; }
+
+/* עץ המשפחה: the views, the search, the generations around the person in the centre */
+.fv-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block: 4px 6px; }
+.fv-views { display: inline-flex; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, transparent); }
+.fv-views button { font: inherit; font-size: .9rem; border: 0; background: none; color: var(--muted); padding: 6px 14px; border-radius: 999px; cursor: pointer; }
+.fv-views button[aria-selected="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); font-weight: 500; }
+.fv-find { flex: 1 1 180px; max-inline-size: 280px; font: inherit; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
+.fv-gen { position: relative; display: grid; gap: 6px; justify-items: center; }
+.fv-gen-label { font-size: .75rem; color: var(--muted); letter-spacing: .02em; }
+.fv-card.r-focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent), 0 6px 22px rgba(0, 0, 0, .12); transform: scale(1.06); }
+.fv-card.r-focus:hover { transform: scale(1.06) translateY(-2px); }
+.fv-card.r-partner { border-style: dashed; }
+.fv-card.r-sib { opacity: .92; }
+.fv-relname { color: var(--primary); font-size: .78rem; font-weight: 500; text-align: center; margin: 0; }
+.fv-ph .fv-relname { font-size: .9rem; text-align: start; }
+.fv-lines path.ended { stroke-dasharray: 5 5; opacity: .7; }
+.fv-more { text-align: center; margin: 0; font-size: .85rem; }
+.fv-check { display: flex !important; align-items: center; gap: 8px; color: var(--text) !important; align-self: end; }
+.fv-check input { inline-size: 18px; block-size: 18px; }
+/* relationships in a person's panel */
+.fv-rels { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.fv-rels h3 { margin: 0; font-size: 1rem; }
+.fv-rel-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.fv-relrow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.fv-rel-who { font: inherit; font-weight: 500; background: none; border: 0; color: var(--primary); cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 3px; }
+.fv-relopts { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.fv-mini { font: inherit; font-size: .8rem; padding: 3px 6px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
+/* how are we related */
+.fv-rel-name { font-size: 1.15rem; font-weight: 500; margin: 6px 0; }
+.fv-rel-path { margin: 0; padding-inline-start: 20px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; }
+@media (prefers-reduced-motion: reduce) { .fv-card.r-focus { transform: none; } }

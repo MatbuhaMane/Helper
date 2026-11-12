@@ -726,8 +726,8 @@
       node.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${side * 110}%)`, opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.4,0,1,1)' }).onfinish = () => node.remove();
     };
     const box = el('div', { class: 'mu-peek', role: 'status', 'aria-live': 'polite',
-      style: 'position:fixed;z-index:60;inset-inline-end:12px;inset-block-end:calc(var(--tabbar-h, 64px) + 16px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:8px;max-inline-size:min(340px, calc(100vw - 24px));padding:10px 10px 10px 14px;border-radius:14px;background:var(--card);color:var(--text);border:1px solid var(--line);box-shadow:var(--shadow)' },
-      el('span', { style: 'flex:1;font-size:.92rem' }, '🎵 ', text),
+    },
+      el('span', { class: 'mu-peek-text' }, '🎵 ', text),
       el('button', { class: 'btn small primary', type: 'button', onclick: () => { out(); act(); } }, label),
       el('button', { class: 'btn small ghost', type: 'button', 'aria-label': 'סגירה', onclick: out }, '✕'));
     // a swipe toward the edge sends it away

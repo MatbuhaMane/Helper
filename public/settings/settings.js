@@ -20,20 +20,21 @@
   const D = H.SETTINGS_DEFAULTS;
   const access = H.prefs('access', D.access), look = H.prefs('look', D.look), me = H.prefs('me', D.me);
   /** save one namespace, and let every listener on this page (apply.js) know */
-  const keep = (ns) => { H.savePrefs(ns); dispatchEvent(new CustomEvent('helper:prefs', { detail: ns })); };
+  const keep = (ns) => {
+    H.savePrefs(ns);
+    dispatchEvent(new CustomEvent('helper:prefs', { detail: ns }));
+    // sent now, and so that it arrives even if the page is left at once (common.js batches its saves a moment later)
+    fetch('/api/prefs/' + ns, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ data: H.prefs(ns), at: Date.now() }), keepalive: true }).catch(() => {});
+  };
 
   /* ---------- small controls ---------- */
   let uid = 0;
-  const ROW = 'display:flex;flex-wrap:wrap;gap:6px;margin-block:6px';
-  const GRID = 'display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));align-items:start';
   /** a row of choices (a radio group drawn as buttons) */
   function choices(label, options, value, onPick) {
     const name = 'st-' + ++uid;
-    // (the layout of these rows, until design styles .st-choices, .st-jump and .st-services-grid in settings.css)
-    const group = el('div', { class: 'st-choices', role: 'radiogroup', 'aria-label': label, style: ROW });
+    const group = el('div', { class: 'st-choices', role: 'radiogroup', 'aria-label': label });
     const draw = (v) => group.replaceChildren(...options.map(([val, text, opts = {}]) => el('button', {
-      type: 'button', role: 'radio', class: 'chip', name, 'aria-checked': String(val === v), disabled: !!opts.soon,
-      style: 'white-space:nowrap' + (val === v ? ';background:var(--vine);border-color:var(--vine);color:var(--chalk-raised,#f7f6f0)' : ''),   // (the chosen one, as in the songbook)
+      type: 'button', role: 'radio', class: 'chip', name, 'aria-checked': String(val === v), disabled: !!opts.soon, 'data-swatch': opts.swatch ?? null,
       title: opts.title || null, onclick: () => { onPick(val); draw(val); },
     }, text, opts.soon ? el('small', { class: 'st-soon' }, ' · בקרוב') : null)));
     draw(value);
@@ -116,13 +117,13 @@
       // amounts only for whoever bought credit or got a gift (the owner's decision); on the trial, only when it ran out
       ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : 'הקרדיט נגמר. חברו שירות משלכם, או הוסיפו קרדיט.')
         : ai.out ? el('p', { class: 'small' }, 'כדי להמשיך עם העוזר החכם, חברו שירות משלכם, או הוסיפו קרדיט.') : null,
-      el('div', { class: 'st-services-grid', style: GRID },
+      el('div', { class: 'st-services-grid' },
         ...PROVIDERS.map(row),
         el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
         el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט'))),
       el('h3', {}, 'שירותים אחרים'),
-      el('div', { class: 'st-services-grid', style: GRID },
+      el('div', { class: 'st-services-grid' },
         spotify ? link('Spotify', spotify.connected ? (spotify.stream ? 'מחובר, ומנגן באוהל' : 'מחובר') : spotify.configured ? 'לא מחובר' : 'לא זמין כרגע', spotify.connected,
           spotify.configured ? (spotify.connected ? '/' : '/api/music/spotify/login?next=/settings/%23services') : null, spotify.connected ? 'לנגן' : 'חיבור') : null,
         mail ? link('Gmail', mail.connected ? 'מחובר לסידור המייל' : 'לא מחובר', mail.connected, '/mail/', mail.connected ? 'לסידור המייל' : 'חיבור') : null,
@@ -152,9 +153,9 @@
   }
 
   /* ---------- 5. colour themes (design's palettes; the default until they arrive) ---------- */
-  const PALETTES = [['', 'אבן ובזלת · ברירת המחדל']];
+  const PALETTES = [['', 'אבן ובזלת'], ['sea', 'ים התיכון'], ['desert', 'מדבר'], ['vineyard', 'כרם'], ['dusk', 'בין הערביים']];
   const palettes = () => section('palette', 'ערכות צבעים',
-    choices('ערכת הצבעים', [...PALETTES, ['soon', 'ערכות נוספות', { soon: true }]], look.palette || '', (v) => { look.palette = v; keep('look'); }),
+    choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); }),
     el('p', { class: 'muted small' }, 'התאמת הצבעים חינמית לכולם.'));
 
   /* ---------- 6. religion and language ---------- */
@@ -169,13 +170,13 @@
     'בית שמש', 'מודיעין', 'כפר סבא', 'הרצליה', 'רעננה', 'אשקלון', 'בת ים', 'טבריה', 'צפת', 'עכו', 'נצרת', 'אילת', 'אריאל', 'מעלה אדומים', 'ביתר עילית', 'אלעד'];
   function myPlace() {
     const city = el('input', { type: 'text', value: me.city || '', list: 'st-cities', dir: 'auto', maxlength: 60, placeholder: 'למשל: ירושלים', 'aria-label': 'העיר שלי',
-      style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text);max-inline-size:320px' });
+    });
     let t = 0;
     city.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { me.city = city.value.trim(); keep('me'); }, 600); });
     city.addEventListener('change', () => { clearTimeout(t); me.city = city.value.trim(); keep('me'); toast(me.city ? 'נשמר: ' + me.city : 'העיר נמחקה'); });
     return section('place', 'המקום שלי',
       el('datalist', { id: 'st-cities' }, CITIES.map((c) => el('option', { value: c }))),
-      el('div', { class: 'st-field' }, el('label', { style: 'display:grid;gap:4px' }, el('span', { class: 'st-label' }, 'העיר שלי'), city)),
+      el('div', { class: 'st-field' }, el('label', {}, el('span', { class: 'st-label' }, 'העיר שלי'), city)),
       el('p', { class: 'muted small' }, 'משמשת לחיפוש מסעדות בסביבה, ובהמשך לזמני שבת ולמזג האוויר. המיקום המדויק של המכשיר לא נשמר: הוא נשאל רק כשמבקשים "לידי עכשיו".'));
   }
 
@@ -211,9 +212,9 @@
 
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
   const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
-  root.replaceChildren(el('section', { class: 'st', style: 'grid-template-columns:minmax(0,1fr)' },
+  root.replaceChildren(el('section', { class: 'st' },
     el('h1', {}, 'הגדרות'),
-    el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות', style: ROW }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id, style: 'white-space:nowrap' }, name))),
+    el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id }, name))),
     dayNight(), accessibility(), servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },

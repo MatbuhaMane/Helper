@@ -29,22 +29,20 @@
     filter === 'all' || (filter === 'fav' && r.fav) || (filter === 'kosher' && (r.kosher === 'kosher' || r.kosher === 'mehadrin'))
     || (filter === 'missed' && r.visitedAt && Date.now() - r.visitedAt >= 30 * 864e5) || (filter === 'never' && !r.visitedAt)));
 
-  const chips = el('div', { class: 'rs-filters', role: 'radiogroup', 'aria-label': 'סינון', style: 'display:flex;flex-wrap:wrap;gap:6px' });
+  const chips = el('div', { class: 'rs-filters', role: 'radiogroup', 'aria-label': 'סינון' });
   const search = el('input', { type: 'search', placeholder: 'חיפוש לפי שם, מקום או סוג', 'aria-label': 'חיפוש מסעדה', dir: 'auto',
-    style: 'inline-size:100%;padding:10px 14px;font:inherit;border-radius:999px;border:1px solid var(--line-strong);background:var(--card);color:var(--text)',
     oninput: (e) => { q = e.target.value.trim(); drawList(); } });
-  const listBox = el('div', { class: 'rs-list', role: 'list', style: 'display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))' });
+  const listBox = el('div', { class: 'rs-list', role: 'list' });
 
   function draw() {
     chips.replaceChildren(...FILTERS.map(([id, name]) => el('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': String(filter === id),
-      style: filter === id ? 'background:var(--vine);border-color:var(--vine);color:var(--chalk-raised,#f7f6f0)' : null,
       onclick: () => { filter = id; draw(); } }, name)));
     drawList();
   }
   function drawList() {
     const rs = shown();
     if (!list.length) {
-      listBox.replaceChildren(el('div', { class: 'card rs-empty', style: 'padding:22px;text-align:center' },
+      listBox.replaceChildren(el('div', { class: 'card rs-empty' },
         el('p', {}, 'עוד אין כאן מסעדות.'),
         el('p', { class: 'muted' }, 'הוסיפו את המקומות שאתם אוהבים, ואת אלה שרוצים לנסות. כל המשפחה רואה את אותה רשימה.'),
         el('button', { class: 'btn primary', type: 'button', onclick: () => edit() }, '+ מסעדה')));
@@ -69,18 +67,17 @@
         });
       } catch (_) { toast('לא נשמר – בדקו את החיבור'); await load(); }
     } }, 'היינו היום');
-    const node = el('article', { class: 'card rs-card' + (r.id === want ? ' rs-wanted' : ''), id: 'r-' + r.id, role: 'listitem',
-      style: 'display:grid;gap:8px;padding:16px;align-content:start' + (r.id === want ? ';outline:3px solid var(--vine);outline-offset:2px' : '') },
-      el('div', { style: 'display:flex;align-items:start;gap:8px' },
-        el('div', { style: 'flex:1;min-inline-size:0' },
-          el('h3', { dir: 'auto', style: 'margin:0;font-size:1.1rem' }, r.name),
+    const node = el('article', { class: 'card rs-card' + (r.id === want ? ' rs-wanted' : ''), id: 'r-' + r.id, role: 'listitem' },
+      el('div', {},
+        el('div', {},
+          el('h3', { dir: 'auto' }, r.name),
           el('small', { class: 'muted' }, [r.place, r.cuisine].filter(Boolean).join(' · ') || ' ')),
         heart),
-      el('div', { class: 'rs-tags', style: 'display:flex;flex-wrap:wrap;gap:6px;font-size:.85rem' },
-        r.kosher ? el('span', { class: 'rs-kosher ' + r.kosher, style: 'padding:2px 10px;border-radius:999px;border:1px solid var(--line-strong)' }, KOSHER[r.kosher]) : null,
+      el('div', { class: 'rs-tags' },
+        r.kosher ? el('span', { class: 'rs-kosher ' + r.kosher }, KOSHER[r.kosher]) : null,
         el('span', { class: 'muted' }, r.visitedAt ? `היינו ${ago(r.visitedAt)}` : 'עוד לא היינו')),
-      r.note ? el('p', { dir: 'auto', style: 'margin:0;white-space:pre-line' }, r.note) : null,
-      el('div', { class: 'rs-acts', style: 'display:flex;flex-wrap:wrap;gap:6px' },
+      r.note ? el('p', { dir: 'auto' }, r.note) : null,
+      el('div', { class: 'rs-acts' },
         went,
         el('a', { class: 'btn small ghost', href: mapsLink(r), target: '_blank', rel: 'noopener' }, r.link ? '🔗 קישור' : '🗺 במפה'),
         r.phone ? el('a', { class: 'btn small ghost', href: 'tel:' + r.phone.replace(/[^\d+]/g, '') }, '📞 ' + r.phone) : null,
@@ -90,25 +87,24 @@
 
   /** a new restaurant, or one to change (and to delete) */
   function edit(r = null, from = null, onSaved = null) {
-    const f = (label, input) => el('label', { style: 'display:grid;gap:4px' }, el('span', { class: 'small muted' }, label), input);
-    const inp = (v, o = {}) => el('input', { type: 'text', value: v || '', dir: 'auto', style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)', ...o });
+    const f = (label, input) => el('label', { class: 'field' }, el('span', {}, label), input);
+    const inp = (v, o = {}) => el('input', { type: 'text', value: v || '', dir: 'auto', ...o });
     const name = inp(r?.name, { required: true, maxlength: 120, placeholder: 'למשל: חומוס אבו שוקרי' });
     const place = inp(r?.place, { maxlength: 160, placeholder: 'עיר, שכונה או כתובת' });
     const cuisine = inp(r?.cuisine, { maxlength: 60, list: 'rs-cuisines', placeholder: 'למשל: חומוסיה' });
-    const kosher = el('select', { style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)' },
+    const kosher = el('select', {},
       Object.entries(KOSHER).map(([v, t]) => el('option', { value: v, selected: (r?.kosher || '') === v }, t)));
     // from a search: a link to the place by its ID (a plain URL, nothing of Google's content)
     const link = inp(r?.link ?? (from ? `https://www.google.com/maps/place/?q=place_id:${from.id}` : ''), { type: 'url', dir: 'ltr', maxlength: 500, placeholder: 'https://… (אתר, תפריט או מפה)' });
-    const phone = inp(r?.phone, { type: 'tel', dir: 'ltr', maxlength: 30, placeholder: '02-1234567' });
-    const note = el('textarea', { rows: 3, dir: 'auto', maxlength: 1000, placeholder: 'מה הזמנו, מה כדאי, למי זה מתאים…',
-      style: 'font:inherit;padding:8px 12px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)' }, r?.note || '');
+    const phone = inp(r?.phone, { inputmode: 'tel', autocomplete: 'tel', dir: 'ltr', maxlength: 30, placeholder: '02-1234567' });
+    const note = el('textarea', { rows: 3, dir: 'auto', maxlength: 1000, placeholder: 'מה הזמנו, מה כדאי, למי זה מתאים…' }, r?.note || '');
     const fav = el('input', { type: 'checkbox', checked: !!r?.fav });
-    H.modal(el('h2', {}, r ? 'עריכת מסעדה' : from ? 'להוסיף לרשימה שלנו' : 'מסעדה חדשה'),
+    H.modal(...[el('h2', {}, r ? 'עריכת מסעדה' : from ? 'להוסיף לרשימה שלנו' : 'מסעדה חדשה'),
       el('datalist', { id: 'rs-cuisines' }, CUISINES.map((c) => el('option', { value: c }))),
-      from ? el('div', { class: 'rs-from card', style: 'padding:10px 12px;display:grid;gap:2px' },
+      from ? el('div', { class: 'rs-from card' },
         el('small', { class: 'muted' }, 'ב־Google Maps:'), el('b', { dir: 'auto' }, from.name), el('small', { class: 'muted', dir: 'auto' }, [from.kind, from.address].filter(Boolean).join(' · ')),
         el('small', { class: 'muted' }, 'כתבו את השם במילים שלכם. מ־Google נשמר רק הקישור למקום.')) : null,
-      el('form', { style: 'display:grid;gap:10px', onsubmit: async (e) => {
+      el('form', { onsubmit: async (e) => {
         e.preventDefault();
         const b = e.target.querySelector('button[type=submit]'); b.disabled = true;
         try {
@@ -119,19 +115,19 @@
         } catch (err) { toast(err.message || 'לא נשמר'); b.disabled = false; }
       } },
         f('שם', name), f('איפה', place), f('איזה אוכל', cuisine), f('כשרות', kosher), f('קישור (לא חובה)', link), f('טלפון (לא חובה)', phone), f('הערה', note),
-        el('label', { style: 'display:flex;align-items:center;gap:8px' }, fav, '❤ מהאהובות שלנו'),
-        el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' },
+        el('label', {}, fav, '❤ מהאהובות שלנו'),
+        el('div', {},
           el('button', { class: 'btn primary', type: 'submit' }, 'שמירה'),
           r ? el('button', { class: 'btn ghost', type: 'button', onclick: async () => {
             if (!confirm(`למחוק את "${r.name}" מהרשימה?`)) return;
             try { await api(`/api/restaurants/${r.id}`, { method: 'DELETE' }); H.closeModal(); toast('נמחק'); await load(); } catch (err) { toast(err.message); }
-          } }, 'מחיקה') : null)));
+          } }, 'מחיקה') : null))].filter(Boolean));
     setTimeout(() => name.focus(), 50);
   }
 
   /* ---------- מה יש בסביבה: Google Places, on request ---------- */
-  const near = el('details', { class: 'card rs-near', style: 'padding:14px 16px' }, el('summary', { style: 'cursor:pointer;font-weight:600' }, '🔎 מה יש בסביבה'));
-  const nearOut = el('div', { class: 'rs-near-out', style: 'display:grid;gap:8px' });
+  const near = el('details', { class: 'card rs-near' }, el('summary', {}, '🔎 מה יש בסביבה'));
+  const nearOut = el('div', { class: 'rs-near-out' });
   const ERR = { places_quota: 'נגמרו החיפושים שלך לחודש הזה. הם יתחדשו בתחילת החודש הבא.', places_month_full: 'החיפוש ב־Google נח עד תחילת החודש הבא.',
     places_not_configured: 'החיפוש ב־Google עוד לא הוגדר באוהל.', no_city: 'בחרו עיר בהגדרות, או חפשו לידכם.', places_error: 'Google לא ענה כרגע. נסו שוב בעוד רגע.' };
   async function drawNear() {
@@ -148,7 +144,7 @@
         if (r.left !== null && r.left !== undefined) left.textContent = `נשארו לך ${r.left} חיפושים החודש`;
         nearOut.replaceChildren(...(r.places.length ? r.places.map(placeCard) : [el('p', { class: 'muted' }, 'לא נמצאו מסעדות.')]),
           // Google's terms: its content is marked as Google Maps', apart from ours
-          el('p', { class: 'rs-attrib small muted', dir: 'ltr', style: 'margin:0;text-align:end' }, 'Google Maps'));
+          el('p', { class: 'rs-attrib small muted', dir: 'ltr' }, 'Google Maps'));
       } catch (e) { nearOut.replaceChildren(el('p', {}, ERR[e.code] || e.message || 'החיפוש לא הצליח')); }
       btn.disabled = false;
     };
@@ -162,24 +158,24 @@
         () => { b.disabled = false; toast('צריך לאשר לדפדפן לדעת איפה אתם'); }, { timeout: 15000, maximumAge: 300000 });
     } }, '📍 לידי עכשיו');
     near.replaceChildren(
-      el('summary', { style: 'cursor:pointer;font-weight:600' }, '🔎 מה יש בסביבה'),
-      !st?.configured ? el('p', { class: 'muted' }, ERR.places_not_configured) : el('div', { style: 'display:grid;gap:10px;margin-block-start:10px' },
-        el('div', { style: 'display:flex;flex-wrap:wrap;align-items:center;gap:8px' }, cityBtn, hereBtn,
-          el('label', { style: 'display:flex;align-items:center;gap:6px' }, kosherOnly, 'רק כשרות (בחיפוש לפי עיר)')),
-        !city ? el('p', { class: 'small muted', style: 'margin:0' }, 'כדי לחפש לפי עיר, ', el('a', { href: '/settings/#place' }, 'בחרו עיר בהגדרות'), '.') : null,
+      el('summary', {}, '🔎 מה יש בסביבה'),
+      !st?.configured ? el('p', { class: 'muted' }, ERR.places_not_configured) : el('div', {},
+        el('div', {}, cityBtn, hereBtn,
+          el('label', {}, kosherOnly, 'רק כשרות (בחיפוש לפי עיר)')),
+        !city ? el('p', { class: 'small muted' }, 'כדי לחפש לפי עיר, ', el('a', { href: '/settings/#place' }, 'בחרו עיר בהגדרות'), '.') : null,
         left, nearOut));
   }
-  const placeCard = (p) => el('div', { class: 'rs-place', style: 'display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:14px' },
-    el('div', { style: 'flex:1;min-inline-size:12rem' }, el('b', { dir: 'auto' }, p.name), el('br'), el('small', { class: 'muted', dir: 'auto' }, [p.kind, p.address].filter(Boolean).join(' · '))),
+  const placeCard = (p) => el('div', { class: 'rs-place' },
+    el('div', {}, el('b', { dir: 'auto' }, p.name), el('br'), el('small', { class: 'muted', dir: 'auto' }, [p.kind, p.address].filter(Boolean).join(' · '))),
     p.maps ? el('a', { class: 'btn small ghost', href: p.maps, target: '_blank', rel: 'noopener' }, '🗺 ב־Google Maps') : null,
     list.some((r) => r.placeId === p.id) ? el('small', { class: 'muted' }, '✓ ברשימה שלנו')
       : el('button', { class: 'btn small', type: 'button', onclick: (e) => { const b = e.currentTarget; edit(null, p, () => b.replaceWith(el('small', { class: 'muted' }, '✓ ברשימה שלנו'))); } }, '+ לרשימה שלנו'));
   near.addEventListener('toggle', () => { if (near.open && !near.dataset.drawn) { near.dataset.drawn = '1'; drawNear(); } });
 
-  root.append(el('div', { class: 'rs', style: 'max-inline-size:1100px;margin:0 auto;padding-block:14px 40px;display:grid;gap:12px' },
+  root.append(el('div', { class: 'rs' },
     el('a', { class: 'folder-back', href: '/food/' }, '‹ אוכל'),
-    el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px' },
-      el('h1', { style: 'margin:0' }, 'מסעדות שלנו'),
+    el('div', {},
+      el('h1', {}, 'מסעדות שלנו'),
       el('button', { class: 'btn primary', type: 'button', onclick: () => edit() }, '+ מסעדה')),
     near, search, chips, listBox));
   try { await load(); } catch (_) { listBox.replaceChildren(el('p', {}, 'הרשימה לא נטענה. נסו שוב בעוד רגע.')); return; }

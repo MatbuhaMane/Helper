@@ -12,8 +12,7 @@ export const PER_PERSON = 20;          // searches a month for someone with a li
 export const SITE_MONTH = 4500;        // the whole site, a month (Google's free tier for these searches is 5,000)
 const FIELDS = 'places.id,places.displayName,places.formattedAddress,places.googleMapsUri,places.primaryTypeDisplayName';   // the "Pro" fields only
 
-type Key = Env & { GOOGLE_MAPS_API_KEY?: string };
-const keyOf = (env: Env) => (env as Key).GOOGLE_MAPS_API_KEY || '';
+const keyOf = (env: Env) => env.GOOGLE_MAPS_API_KEY || '';
 export const month = (t = Date.now()) => new Date(t).toISOString().slice(0, 7);
 
 /** may this search go: the person's own count and the site's, against the limits */

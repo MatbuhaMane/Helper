@@ -506,7 +506,7 @@
         if (used !== words) card.querySelector('.rs-fine').textContent = 'חיפוש במקורות: ' + used.join(' ');
         list.replaceChildren(...(d.count ? [
           el('p', { class: 'rs-fine' }, `${d.capped ? 'יותר מ־' : ''}${d.count.toLocaleString('he-IL')} מקומות. הנה הראשונים:`),
-          ...d.hits.map((h) => el('a', { class: 'rs-plain-hit', href: sefariaUrl(h.ref), target: '_blank', rel: 'noopener', style: 'display:block;padding:6px 0;text-decoration:none;color:inherit;border-block-end:1px solid var(--line)' },
+          ...d.hits.map((h) => el('a', { class: 'rs-plain-hit', href: sefariaUrl(h.ref), target: '_blank', rel: 'noopener' },
             el('b', {}, h.heRef), el('br'), el('span', { lang: 'he', html: h.snip })))]
           : [el('p', {}, 'לא נמצאו מקורות למילים האלה. נסו מילה אחרת, או "✨ שאלה לחוקר".')]));
       } catch (_) { list.replaceChildren(el('p', {}, 'ספריא לא ענתה כרגע. נסו שוב בעוד רגע.')); }

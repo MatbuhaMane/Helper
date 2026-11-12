@@ -23,11 +23,15 @@ function createOverlay() {
   win.setVisibleOnAllWorkspaces(true);
   win.setIgnoreMouseEvents(true, { forward: true });
   win.loadURL(`${SITE}/overlay/`);
-  // links from the companion (the mail screen, recipes, sources) open in the normal browser
-  win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
+  // links from the companion (the mail screen, recipes, sources) open in the normal browser – web links only
+  // (never file:, or a scheme some other program registered: a page must not be able to launch things on the computer)
+  const openOutside = (url) => { try { if (['https:', 'http:'].includes(new URL(url).protocol)) shell.openExternal(url); } catch (_) { /* not a URL */ } };
+  win.webContents.setWindowOpenHandler(({ url }) => { openOutside(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (e, url) => {
-    if (!url.startsWith(`${SITE}/overlay`)) { e.preventDefault(); shell.openExternal(url); }
+    if (!url.startsWith(`${SITE}/overlay`)) { e.preventDefault(); openOutside(url); }
   });
+  // no camera, microphone or other device without a reason: only the microphone, for speaking to the companion
+  win.webContents.session.setPermissionRequestHandler((_wc, permission, done) => done(['media', 'clipboard-sanitized-write'].includes(permission)));
   screen.on('display-metrics-changed', () => {
     const a = screen.getPrimaryDisplay().workArea;
     win?.setBounds(a);

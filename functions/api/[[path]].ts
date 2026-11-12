@@ -22,6 +22,7 @@ import * as sefaria from '../../server/sefaria';
 import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
+import * as vault from '../../server/vault';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -197,6 +198,29 @@ route('POST', '/api/news/verify', newsAi.verify);
 route('GET', '/api/news/websearch', newsAi.webSearch);
 route('POST', '/api/news/find-sources', newsAi.findSources);
 
+/* the family vault (server/vault): unlock, the tree, documents and pictures, the audit log */
+route('GET', '/api/vault/status', vault.status);
+route('POST', '/api/vault/lock', vault.lock);
+route('POST', '/api/vault/unlock/fresh', vault.unlockFresh);
+route('POST', '/api/vault/unlock/options', vault.unlockOptions);
+route('POST', '/api/vault/unlock', vault.unlockPasskey);
+route('POST', '/api/vault/passkeys/options', vault.passkeyOptions);
+route('POST', '/api/vault/passkeys', vault.passkeyAdd);
+route('GET', '/api/vault/passkeys', vault.passkeyList);
+route('DELETE', '/api/vault/passkeys/:id', vault.passkeyRemove);
+route('GET', '/api/vault/tree', vault.tree);
+route('POST', '/api/vault/people', vault.personSave);
+route('GET', '/api/vault/people/:id', vault.personGet);
+route('PUT', '/api/vault/people/:id', vault.personSave);
+route('DELETE', '/api/vault/people/:id', vault.personDelete);
+route('GET', '/api/vault/people/:id/items', vault.items);
+route('POST', '/api/vault/items', vault.itemAdd);
+route('GET', '/api/vault/items/:id/file', vault.itemFile);
+route('PUT', '/api/vault/items/:id', vault.itemSave);
+route('DELETE', '/api/vault/items/:id', vault.itemDelete);
+route('POST', '/api/vault/items/:id/restore', vault.itemRestore);
+route('GET', '/api/vault/audit', vault.auditLog);
+
 /* mail organizer */
 route('GET', '/api/mail/status', mail.mailStatus);
 route('POST', '/api/mail/disconnect', mail.disconnect);
@@ -224,10 +248,12 @@ route('GET', '/api/music/youtube/search', music.youtubeSearch);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
-  // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies).
+  // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,
+  // and where a browser sends no Origin, its Fetch Metadata must not say the request came from another site.
   if (!['GET', 'HEAD'].includes(request.method)) {
     const origin = request.headers.get('origin');
-    if (origin && origin !== url.origin) return json({ error: 'Bad origin' }, 403);
+    const site = request.headers.get('sec-fetch-site');
+    if (origin ? origin !== url.origin : site === 'cross-site' || site === 'same-site') return json({ error: 'Bad origin' }, 403);
   }
   for (const [method, re, keys, h] of routes) {
     if (method !== request.method) continue;

@@ -4,19 +4,19 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#efeee6">
+  <meta name="referrer" content="no-referrer">
   <title>ניהול משפחה</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/base.css">
-  <link rel="stylesheet" href="/assets/launcher.css">
+  <link rel="stylesheet" href="/assets/sheet.css">
+  <link rel="stylesheet" href="/family/family.css">
 </head>
-<body>
+<!-- the family vault: no player, no capture, no companion – nothing from outside runs next to the documents (data-vault) -->
+<body data-vault="1" data-daemon="off">
   <main class="wide"></main>
   <script src="/assets/common.js"></script>
-  <script src="/assets/launcher.js"></script>
-  <script>
-  H.soonPage({ title: 'ניהול משפחה', ic: 'family', c1: '#e8c9a0', c2: '#8a5a32', back: { href: '/', label: 'בחזרה לבית' },
-    text: 'אילן היוחסין של המשפחה: חלונית לכל אחד, עם המסמכים החשובים, המידע והתמונות שלו – משותף לכל המשפחה, ופרטי למה שכל אחד בוחר. בבנייה.' });
-  </script>
+  <script src="/assets/sheet.js"></script>
+  <script src="/family/family.js"></script>
 </body>
 </html>

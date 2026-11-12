@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev --port 8788",
+    "test:vault": "node tools/test-vault.mjs",
     "db:local": "wrangler d1 execute helper-db --local --file schema.sql",
     "db:remote": "wrangler d1 execute helper-db --remote --file schema.sql",
     "typecheck": "tsc --noEmit",

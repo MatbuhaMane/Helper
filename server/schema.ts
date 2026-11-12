@@ -19,6 +19,9 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['news_state', 'folder', 'TEXT'],    // the folder of a saved article (the folders themselves are in the person's prefs)
   ['music_tokens', 'scope', 'TEXT'],   // what the person allowed (streaming = the helper can play Spotify itself)
   ['members', 'he_name', 'TEXT'],      // the Hebrew name the helper calls the person by (Google gives names in English)
+  ['sessions', 'created_at', 'INTEGER'], // when the session began (the vault wants a fresh sign-in for some steps)
+  ['family_events', 'household', 'TEXT'], // whose calendar (older rows: the family's)
+  ['fridges', 'household', 'TEXT'],       // whose fridge (older rows: the family's)
 ];
 
 let ready: Promise<void> | null = null;

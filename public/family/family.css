@@ -1,0 +1,78 @@
+/* ניהול משפחה – the family vault: the lock, the tree, a person's panel */
+
+/* the lock */
+.fv-lock { max-inline-size: 520px; margin: 40px auto; padding: 32px 24px; text-align: center; display: grid; justify-items: center; gap: 10px; border-radius: 24px; }
+.fv-lock h1 { margin: 6px 0 0; }
+.fv-lock-ic svg { inline-size: 64px; block-size: 64px; fill: none; stroke: var(--primary); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.fv-lock-ic { display: grid; place-items: center; inline-size: 104px; block-size: 104px; border-radius: 32px; background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.fv-lock-acts { display: grid; gap: 10px; inline-size: min(100%, 360px); margin-block-start: 8px; }
+.fv-lock-acts .btn { inline-size: 100%; justify-content: center; min-block-size: 46px; }
+.fv-lock-foot { font-size: .85rem; margin-block-start: 6px; }
+.small { font-size: .88rem; }
+
+/* the bar */
+.fv-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block: 14px 8px; }
+.fv-bar h1 { margin: 0; font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem); }
+.fv-bar .spacer { flex: 1; }
+.fv-clock { font-size: .82rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 599px) { .fv-bar h1 { inline-size: 100%; } .fv-bar .spacer { display: none; } }
+
+/* the tree */
+.fv-tree { position: relative; display: grid; gap: 44px; padding: 18px 4px 40px; overflow-x: auto; }
+.fv-lines { position: absolute; inset-block-start: 0; inset-inline-start: 0; pointer-events: none; overflow: visible; }
+.fv-lines path { fill: none; stroke: color-mix(in srgb, var(--text) 30%, transparent); stroke-width: 1.6; stroke-linejoin: round; }
+.fv-row { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 18px 28px; }
+.fv-card { position: relative; display: grid; justify-items: center; gap: 4px; inline-size: 132px; padding: 12px 8px 10px; border-radius: 20px; border: 1px solid var(--line);
+  background: var(--card); color: var(--text); font: inherit; cursor: pointer; box-shadow: 0 2px 10px rgba(0, 0, 0, .05); transition: transform var(--dur-quick, .15s), border-color var(--dur-quick, .15s); }
+.fv-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+.fv-card b { font-weight: 500; line-height: 1.25; text-align: center; overflow-wrap: anywhere; }
+.fv-card small { font-size: .74rem; text-align: center; }
+.fv-pic { display: grid; place-items: center; inline-size: 64px; block-size: 64px; border-radius: 50%; overflow: hidden; font-weight: 600; font-size: 1.2rem;
+  background: color-mix(in srgb, var(--primary) 16%, var(--card)); color: var(--primary); }
+.fv-pic img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.fv-pic.big { inline-size: 72px; block-size: 72px; flex: none; }
+.fv-empty { max-inline-size: 520px; margin: 24px auto; text-align: center; padding: 28px 22px; border-radius: 22px; }
+@media (max-width: 599px) { .fv-card { inline-size: 104px; } .fv-pic { inline-size: 52px; block-size: 52px; } .fv-row { gap: 14px 16px; } .fv-tree { gap: 36px; } }
+
+/* forms */
+.fv-form { display: grid; gap: 12px; min-inline-size: min(440px, 80vw); }
+.fv-form h2 { margin: 0; }
+.fv-form label { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.fv-form input, .fv-form select, .fv-form textarea, .fv-add input[type="text"], .fv-add textarea {
+  font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; padding: 9px 12px; min-inline-size: 0; }
+.fv-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.fv-acts { display: flex; gap: 8px; }
+.fv-log ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; max-block-size: 60vh; overflow: auto; }
+.fv-log li { font-size: .9rem; }
+
+/* a person's panel */
+.fv-panel { display: grid; gap: 14px; padding: 6px 4px 30px; }
+.fv-ph { display: flex; align-items: center; gap: 14px; }
+.fv-ph h2 { margin: 0; }
+.fv-ph .spacer { flex: 1; }
+.fv-tabs { display: flex; gap: 6px; border-block-end: 1px solid var(--line); overflow-x: auto; }
+.fv-tabs button { font: inherit; background: none; border: 0; padding: 10px 14px; color: var(--muted); cursor: pointer; border-block-end: 2px solid transparent; display: inline-flex; gap: 6px; align-items: baseline; flex: none; }
+.fv-tabs button.on { color: var(--primary); border-block-end-color: var(--primary); font-weight: 500; }
+.fv-tabs small { font-size: .75rem; color: var(--muted); }
+.fv-add { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-radius: 16px; background: color-mix(in srgb, var(--primary) 6%, transparent); border: 1px dashed var(--line-strong); }
+.fv-add input[type="text"] { flex: 1 1 200px; }
+.fv-add textarea { flex: 1 1 100%; }
+.fv-add input[type="file"] { flex: 1 1 220px; font: inherit; font-size: .85rem; color: var(--muted); min-inline-size: 0; max-inline-size: 100%; }
+.fv-priv { display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; color: var(--muted); }
+.fv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fv-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); display: grid; gap: 6px; }
+.fv-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+.fv-item-head b { font-weight: 500; overflow-wrap: anywhere; }
+.fv-note { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.fv-acts-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.fv-acts-row .danger { color: var(--danger, #b3261e); }
+.fv-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.fv-photo { margin: 0; display: grid; gap: 6px; padding: 8px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); min-inline-size: 0; }
+.fv-photo img, .fv-ph-wait { inline-size: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 10px; cursor: zoom-in; background: color-mix(in srgb, var(--text) 6%, transparent); display: block; }
+.fv-photo figcaption { font-size: .85rem; overflow-wrap: anywhere; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-block-size: 32px; }
+.fv-more { padding: 2px 10px; font-size: 1.1rem; line-height: 1; }
+.fv-none { margin: 0; }
+.fv-trash { justify-self: start; }
+.fv-full { max-inline-size: min(92vw, 1100px); max-block-size: 80vh; border-radius: 12px; display: block; }
+.fv-lockbadge { font-size: .85rem; }
+@media (max-width: 599px) { .fv-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fv-two { grid-template-columns: minmax(0, 1fr); } }

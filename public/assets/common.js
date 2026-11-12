@@ -318,8 +318,10 @@
       const chip = document.getElementById('userchip');
       chip.hidden = false;
       chip.textContent = r.user.he_name || (r.user.name || r.user.email).split(' ')[0];
-      if (!r.offline && !embedded) loadMusic();
-      if (!r.offline) loadCapture();
+      // the family vault (data-vault): no player, no capture – nothing from outside runs next to the documents
+      const vault = document.body.dataset.vault === '1';
+      if (!r.offline && !embedded && !vault) loadMusic();
+      if (!r.offline && !vault) loadCapture();
     });
     return bar;
   }

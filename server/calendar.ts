@@ -7,6 +7,7 @@ import { Ctx, HttpError, Member, body, json, requireUser, uid } from './core';
 import { PersonRow, rateLimit, seenAtHome } from './vault';
 import { prefsFor } from './prefs';
 import * as HD from './hebdate';
+import { forCalendar } from './gather';
 
 const Event = z.object({
   title: z.string().trim().min(1).max(80),
@@ -23,7 +24,7 @@ const out = (r: Row) => ({ id: r.id, title: r.title, kind: r.kind, date: r.date,
 export async function list(ctx: Ctx) {
   const u = requireUser(ctx);
   const { results } = await ctx.env.DB.prepare("SELECT * FROM family_events WHERE deleted = 0 AND COALESCE(household, 'family') = ? ORDER BY date").bind(u.household).all<Row>();
-  return json({ events: [...results.map(out), ...(await fromTree(ctx, u).catch(() => []))] });
+  return json({ events: [...results.map(out), ...(await fromTree(ctx, u).catch(() => [])), ...(await forCalendar(ctx, u).catch(() => []))] });
 }
 
 /** The family tree's days (docs/family-forest.md): each person's birthday and, for those who passed away, the yahrzeit.

@@ -5,6 +5,7 @@ import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll,
 import * as daemon from '../../server/daemon';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
+import * as gather from '../../server/gather';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
@@ -277,6 +278,26 @@ route('GET', '/api/calendar/feed', calendar.feedStatus);
 route('POST', '/api/calendar/feed', calendar.feedCreate);
 route('DELETE', '/api/calendar/feed', calendar.feedRevoke);
 route('GET', '/api/calendar/feed/:token', calendar.feed);
+
+/* the family gathering (ai-features, docs/business/gathering.md): the host's side, and the invitation (no sign-in) */
+route('GET', '/api/gather', gather.list);
+route('POST', '/api/gather', gather.create);
+route('GET', '/api/gather/ideas', gather.ideasList);
+route('GET', '/api/gather/:id', gather.get);
+route('PUT', '/api/gather/:id', gather.save);
+route('POST', '/api/gather/:id/cancel', gather.cancel);
+route('POST', '/api/gather/:id/reopen', gather.reopen);
+route('POST', '/api/gather/:id/items', gather.itemAdd);
+route('DELETE', '/api/gather/:id/items/:item', gather.itemDelete);
+route('DELETE', '/api/gather/:id/comments/:comment', gather.commentDelete);
+route('GET', '/api/gather/invite/:token', gather.invite);
+route('POST', '/api/gather/invite/:token/rsvp', gather.rsvp);
+route('POST', '/api/gather/invite/:token/items', gather.inviteItemAdd);
+route('POST', '/api/gather/invite/:token/items/:item/:action', gather.inviteItemTake);
+route('POST', '/api/gather/invite/:token/comments', gather.inviteComment);
+route('DELETE', '/api/gather/invite/:token/comments/:comment', gather.inviteCommentDelete);
+route('GET', '/api/gather/invite/:token/ics', gather.inviteIcs);
+route('POST', '/api/gather/invite/:token/event', gather.inviteEvent);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

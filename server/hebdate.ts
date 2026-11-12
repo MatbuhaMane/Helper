@@ -131,7 +131,7 @@ export function nameOf(items: HebcalItem[]) {
 
 const esc = (s: string) => String(s).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
 /** a content line folded at 75 octets, as RFC 5545 asks (Hebrew is 2 bytes a letter, emoji 4) */
-function fold(line: string) {
+export function fold(line: string) {
   const enc = new TextEncoder(), out: string[] = [];
   let cur = '', size = 0;
   for (const ch of line) {

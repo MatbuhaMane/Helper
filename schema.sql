@@ -539,3 +539,69 @@ CREATE TABLE IF NOT EXISTS calendar_feeds (
   used_at    INTEGER
 );
 CREATE INDEX IF NOT EXISTS calendar_feeds_email ON calendar_feeds(email);
+
+-- המפגש המשפחתי (docs/business/gathering.md): a gathering, who answered, what to bring, the comments, and anonymous
+-- counts for the beta. The invitation link is a key: only its hash (to find it) and a sealed copy (for the host) are kept.
+CREATE TABLE IF NOT EXISTS gatherings (
+  id           TEXT PRIMARY KEY,
+  household    TEXT NOT NULL,
+  host_email   TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  date         TEXT NOT NULL,
+  time         TEXT,
+  place        TEXT,
+  map          TEXT,
+  note         TEXT,
+  food         TEXT NOT NULL DEFAULT '',      -- '' | kosher | halal
+  invitees_enc TEXT,                          -- the host's list of whom to invite (sealed)
+  token_hash   TEXT NOT NULL,
+  token_enc    TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'active',
+  expires_at   INTEGER NOT NULL,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS gatherings_token ON gatherings(token_hash);
+CREATE INDEX IF NOT EXISTS gatherings_house ON gatherings(household);
+CREATE TABLE IF NOT EXISTS gathering_rsvps (
+  id         TEXT PRIMARY KEY,
+  gathering  TEXT NOT NULL,
+  guest_hash TEXT,                            -- a guest's key (hashed), or
+  email      TEXT,                            -- a member signed in
+  name       TEXT NOT NULL,
+  coming     TEXT NOT NULL,                   -- yes | no | maybe
+  count      INTEGER NOT NULL DEFAULT 1,
+  note       TEXT,
+  at         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS gathering_rsvps_g ON gathering_rsvps(gathering);
+CREATE TABLE IF NOT EXISTS gathering_items (
+  id            TEXT PRIMARY KEY,
+  gathering     TEXT NOT NULL,
+  title         TEXT NOT NULL,
+  kind          TEXT,                         -- meat | dairy | parve, for a kosher gathering
+  taker         TEXT,                         -- the answer (gathering_rsvps.id) of whoever brings it
+  grocery_house TEXT,                         -- where it was put on a grocery list, to take it off again
+  grocery_src   TEXT,
+  added_by      TEXT,
+  at            INTEGER NOT NULL,
+  deleted       INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS gathering_items_g ON gathering_items(gathering);
+CREATE TABLE IF NOT EXISTS gathering_comments (
+  id        TEXT PRIMARY KEY,
+  gathering TEXT NOT NULL,
+  rsvp      TEXT,
+  name      TEXT NOT NULL,
+  text      TEXT NOT NULL,
+  at        INTEGER NOT NULL,
+  deleted   INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS gathering_comments_g ON gathering_comments(gathering);
+CREATE TABLE IF NOT EXISTS gathering_stats (
+  gathering TEXT NOT NULL,
+  kind      TEXT NOT NULL,                    -- open | rsvp | signin
+  day       TEXT NOT NULL,
+  n         INTEGER NOT NULL,
+  PRIMARY KEY (gathering, kind, day)
+);

@@ -454,4 +454,21 @@
   else setTimeout(autoDaemon);
 
   window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+
+  /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
+     page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then
+     apply.js loads and owns them from there (H.applySettings, H.reducedMotion, H.vibrate, H.soundsOn), re-applying when
+     the prefs change on another device. Keep this early copy in step with apply.js. */
+  (function earlySettings() {
+    const d = prefStore.data || {}, a = d.access || {}, l = d.look || {}, m = d.me || {}, root = document.documentElement;
+    const text = Math.min(1.6, Math.max(0.85, Number(a.text) || 1));
+    if (text !== 1) root.style.fontSize = `${Math.round(text * 100)}%`;
+    if (a.spacing === 'wide') root.dataset.spacing = 'wide';
+    if (a.font === 'readable') root.dataset.font = 'readable';
+    if (a.contrast === 'high') root.dataset.contrast = 'high';
+    if (a.motion === 'reduce') root.dataset.motion = 'reduce';
+    if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;
+    if (/^[a-z]{1,16}$/.test(m.religion || '')) root.dataset.religion = m.religion;
+  })();
+  if (!embedded) loadOnce('/settings/apply.js').catch(() => { /* the early marks stay */ });
 })();

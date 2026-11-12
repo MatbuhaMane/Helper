@@ -56,7 +56,7 @@
       const g = fmtDay(n.createdAt); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(n);
     }
     listBox.replaceChildren(...[...groups].map(([g, ns]) => el('section', { class: 'nt-group' }, el('h3', {}, g),
-      ns.map((n) => el('div', { class: 'nt-row', style: 'display:flex;align-items:flex-start;gap:4px' },   // (design styles .nt-row and .nt-star)
+      ns.map((n) => el('div', { class: 'nt-row' },
         el('button', { type: 'button', class: 'nt-item' + (open?.note === n ? ' on' : ''), onclick: () => edit(n) },
           el('b', { dir: 'auto' }, n.title || 'פתק'),
           el('span', { class: 'nt-snip', dir: 'auto' }, n.body.replace(/\s+/g, ' ').slice(0, 120)),
@@ -133,7 +133,7 @@
     drawStar = () => starSlot.replaceChildren(starBtn(n));
 
     editor.replaceChildren(
-      el('div', { class: 'nt-ed-head', style: 'flex-wrap:wrap' },   // (on a phone the buttons go to a second line; design styles it)
+      el('div', { class: 'nt-ed-head' },
         el('button', { class: 'btn ghost small nt-back', type: 'button', onclick: () => leave() }, '‹ כל הפתקים'),
         starSlot, el('span', { class: 'spacer' }), state, saveBtn,
         n.id ? el('button', { class: 'btn ghost small nt-drive', type: 'button', title: n.drive ? 'נשמר ב־Drive. שמירה נוספת מעדכנת את אותו קובץ.' : 'שמירה כקובץ ב־Google Drive שלך',

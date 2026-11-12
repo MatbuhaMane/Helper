@@ -66,7 +66,7 @@
   }
   /** the heart's burst over a card (the same gesture as the recipe book) */
   function burst(node) {
-    const h = el('span', { class: 'heart-burst', 'aria-hidden': 'true', style: 'position:absolute;inset:0;display:grid;place-items:center;font-size:4.5rem;color:#e0245e;pointer-events:none;z-index:2' }, '❤');
+    const h = el('span', { class: 'heart-burst', 'aria-hidden': 'true' }, '❤');
     if (getComputedStyle(node).position === 'static') node.style.position = 'relative';
     node.append(h);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setTimeout(() => h.remove(), 500); return; }
@@ -259,7 +259,7 @@
   const bodyOf = () => sheet.body.querySelector('.rbody');
   function openReader(head, body, tools = [], from) {
     if (from) readerFrom = from;
-    const content = el('div', { class: 'sreader-in', 'data-guide': 'song-reader', 'data-guide-label': 'השיר הפתוח', style: 'display:flex;flex-direction:column;block-size:100%' },
+    const content = el('div', { class: 'sreader-in', 'data-guide': 'song-reader', 'data-guide-label': 'השיר הפתוח' },
       el('div', { class: 'rbar' },
         el('div', { class: 'rtitle' }, head),
         el('span', { class: 'spacer' }),

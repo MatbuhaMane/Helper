@@ -240,6 +240,7 @@
   <main class="wide" id="root"></main>
   <script src="/assets/common.js"></script>
   <script src="/assets/campfire.js"></script>
+  <script src="/assets/apps.js"></script>
   <script>
   (async () => {
     const { el } = H;
@@ -267,16 +268,6 @@
     // greeted by the Hebrew name (Google gives English names): the one set in the helper, or a Google name already in Hebrew
     const heFirst = (s) => (s && /[\u0590-\u05FF]/.test(s) ? s.trim().split(/\s+/)[0] : '');
     const first = u.he_name?.trim() || heFirst(u.name);
-    const apps = [
-      // each app is a cushion in its own weave (c2: the colour its letters glow in when they swell)
-      { href: '/food/', ic: 'food', name: 'אוכל', sub: 'רשימת קניות, ספר מתכונים, דיאטה והמקרר', pillow: 'p13', c2: '#2f7d4a' },
-      { href: '/news/', ic: 'news', name: 'חדשות', sub: 'כל האתרים, מישראל ומהעולם, במקום אחד', pillow: 'p11', c2: '#3557a8' },
-      { href: '/fun/', ic: 'fun', name: 'בידור', sub: 'מה שווה לראות, לשמוע ולשחק – ואיפה', pillow: 'p05', c2: '#b8457a' },
-      { href: '/songs/', ic: 'music', name: 'שירון', sub: 'מילים, אקורדים לגיטרה ולפסנתר, וזמירות שבת', pillow: 'p03', c2: '#d2601a' },
-      { href: '/parasha/', ic: 'torah', name: 'פרשת השבוע', sub: 'הפרשה, הקריאה וזמני השבת', pillow: 'p02', c2: '#8e2435' },
-      { href: '/tools/', ic: 'tools', name: 'כלים', sub: 'סידור המייל, סידור המחשב, משימות ומזג אוויר', pillow: 'p09', c2: '#c27c12' },
-    ];
-    apps.push({ href: '/family/', ic: 'family', name: 'עץ המשפחה', sub: 'המשפחה שלנו, הקשרים, המסמכים והתמונות', pillow: 'p15', c2: '#8a5a32' });
 
     /* The moon's drawings, one for each of the eight phases (tools/moon-art.py cuts them from the artwork). */
     const MOON_ART = '/assets/moon/';
@@ -315,7 +306,9 @@
     }
     const greeting = () => el('div', { class: 'greet' }, el('h1', {}, swell(first ? `${hello()} ${first}` : hello())));
     const dock = el('span', { class: 'dock', 'aria-hidden': 'true' });
-    const wheel = appWheel(apps);
+    // the ring round the fire: עץ המשפחה, כלים and הגדרות always, and what this person pinned from the tools page (apps.js;
+    // read here, after the sign-in, when the person's preferences have arrived)
+    const wheel = appWheel(H.ringApps());
     root.append(el('div', { class: 'home' },
       greeting(),
       el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של ראב"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
@@ -744,7 +737,7 @@
       const prev = el('button', { class: 'spin prev', type: 'button', 'aria-label': 'האפליקציה הקודמת' }, arrow('M9 5l7 7-7 7'));
       const next = el('button', { class: 'spin next', type: 'button', 'aria-label': 'האפליקציה הבאה' }, arrow('M15 5l-7 7 7 7'));
       const items = list.map((a, i) => el('a', { class: 'wheel-item', href: a.href, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name, style: `--c2:${a.c2}`, draggable: 'false' },
-        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async' }), el('span', { class: 'badge' }, H.icon(a.ic))),
+        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async' }), el('span', { class: 'badge' }, H.appIcon(a.ic))),
         el('b', { class: 'label' }, swell(a.name))));
       const root = el('nav', { class: 'wheel', 'aria-label': 'האפליקציות', 'aria-roledescription': 'גלגל' }, orbit, campfire(), ...items, prev, next);
       // off: how far the cushion's centre sits above the item box's centre (the ring passes through the cushions' centres)

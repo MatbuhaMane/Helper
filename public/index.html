@@ -24,6 +24,7 @@
       background: radial-gradient(closest-side, color-mix(in srgb, var(--olive) 34%, transparent), transparent); pointer-events: none; }
     .camp > img { position: relative; display: block; inline-size: 100%; block-size: auto; aspect-ratio: 1400 / 794; filter: drop-shadow(0 14px 18px rgba(46, 42, 30, .16)); animation: camp-in .9s var(--ease-river) both; }
     /* His spot: the patterned orange rug at the tent's entrance (65.5% from the image's left, 78% down; the image is not mirrored in RTL). */
+    .camp .wake { position: absolute; inset-inline-start: 26%; inset-block-start: 66%; }
     .camp .dock { position: absolute; inset-inline-start: 34.5%; inset-block-start: 78%; inline-size: 2px; block-size: 2px; pointer-events: none; }
     @keyframes camp-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
 
@@ -270,7 +271,16 @@
     sky();
     swellPointer();
     // Ibn Ezra lives here: he stands on the rug at his tent's entrance (unless he was asked to come along with the person).
-    H.loadDaemon().then((d) => d.mount(null, { dock }));
+    const meetHim = () => H.loadDaemon().then((d) => d.mount(null, { dock }));
+    const camp = dock.parentElement;
+    if (navigator.connection?.saveData) {
+      const hint = el('button', { class: 'btn ghost small wake', onclick: () => { hint.remove(); meetHim(); } }, 'להעיר את ראב"ע');
+      camp.append(hint);
+    } else {
+      // after the page and its pictures have loaded, when the browser is idle
+      const later = () => ('requestIdleCallback' in window ? requestIdleCallback(meetHim, { timeout: 1500 }) : setTimeout(meetHim, 300));
+      if (document.readyState === 'complete') later(); else addEventListener('load', later, { once: true });
+    }
 
     /* ---------- letters that swell ---------- */
     function swell(text) {

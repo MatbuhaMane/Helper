@@ -9,7 +9,7 @@ main.songs-main { max-width: 1200px; padding-top: 18px; }
 .chip[aria-pressed="true"] { background: var(--vine); border-color: var(--vine); color: var(--chalk-raised, #f7f6f0); }
 
 .csec { margin-top: 18px; }
-.csec > h2 { font-size: 1.05rem; font-weight: 500; color: var(--vine); margin: 0 0 10px; }
+.csec > h2 { font-size: 1.05rem; font-weight: 500; color: var(--primary); margin: 0 0 10px; }
 .secacts { margin: -4px 0 10px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
 @media (max-width: 520px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
@@ -52,21 +52,21 @@ body.reading { overflow: hidden; }
 .rbody { flex: 1; overflow: auto; padding: 18px clamp(16px, 5vw, 56px) 60px; font-size: calc(1.05rem * var(--fs, 1)); -webkit-overflow-scrolling: touch; }
 .lyrics .stanza { line-height: 1.85; margin: 0 0 1.2em; }
 .zemer p { margin: 0 0 .35em; line-height: 1.9; font-size: 1.08em; }
-.zemer p.refrain { color: var(--vine); font-style: italic; margin-inline-start: 1.2em; }
+.zemer p.refrain { color: var(--primary); font-style: italic; margin-inline-start: 1.2em; }
 
 .sheet { line-height: 1.3; }
 .sheet .pl { margin-top: .45em; padding-top: 1.3em; }
 .sheet .sg { position: relative; display: inline-block; }
-.sheet .ch { position: absolute; inset-block-end: 100%; font-weight: 600; color: var(--vine); font-size: .92em; line-height: 1.3; white-space: nowrap; }
+.sheet .ch { position: absolute; inset-block-end: 100%; font-weight: 600; color: var(--primary); font-size: .92em; line-height: 1.3; white-space: nowrap; }
 .sheet[dir="rtl"] .ch { right: 0; }
 .sheet[dir="ltr"] .ch { left: 0; }
 .sheet .tx { white-space: pre; }
-.sheet .crow { display: flex; flex-wrap: wrap; gap: .5em 1.1em; margin: .5em 0 .2em; color: var(--vine); }
+.sheet .crow { display: flex; flex-wrap: wrap; gap: .5em 1.1em; margin: .5em 0 .2em; color: var(--primary); }
 .sheet .crow b { font-weight: 600; }
 .sheet .crow span { color: var(--muted); }
 .sheet .ly { white-space: pre-wrap; }
 .sheet .gap { height: 1em; }
-.sheet .sec { font-weight: 500; color: var(--vine); margin: 1em 0 .2em; }
+.sheet .sec { font-weight: 500; color: var(--primary); margin: 1em 0 .2em; }
 .sheet .tab { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85em; margin: .2em 0; overflow-x: auto; color: var(--text); }
 .sheet .cdef { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--muted); font-size: .85em; }
 .diagrams { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; padding-bottom: 14px; border-block-end: 1px solid var(--line); direction: ltr; justify-content: flex-end; }
@@ -75,7 +75,7 @@ body.reading { overflow: hidden; }
 .chord-svg .cn { font: 600 11px Rubik, sans-serif; fill: var(--text); }
 .chord-svg .str, .chord-svg .fr { stroke: color-mix(in srgb, var(--text) 55%, transparent); stroke-width: 1; }
 .chord-svg .nut { stroke: var(--text); stroke-width: 3; }
-.chord-svg .dot { fill: var(--vine); }
+.chord-svg .dot { fill: var(--primary); }
 .chord-svg .open { fill: none; stroke: var(--text); stroke-width: 1.2; }
 .chord-svg .xo { font: 11px sans-serif; fill: var(--muted); }
 .chord-svg .pos { font: 9px sans-serif; fill: var(--muted); }
@@ -101,4 +101,4 @@ body.reading { overflow: hidden; }
 
 /* versions of the same song (different artists) */
 .vpick { font: inherit; font-size: .9rem; max-width: 46vw; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
-.cfoot .vers { color: var(--vine); font-weight: 500; }
+.cfoot .vers { color: var(--primary); font-weight: 500; }

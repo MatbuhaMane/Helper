@@ -33,7 +33,7 @@
 .cal-cell.shabbat { background: color-mix(in srgb, var(--primary) 7%, transparent); }
 .cal-cell.yomtov { background: color-mix(in srgb, #f6c177 22%, transparent); }
 .cal-cell.out { opacity: .42; }
-.cal-cell.today .g { background: var(--primary); color: #fff; }
+.cal-cell.today .g { background: var(--primary); color: var(--primary-ink); }
 .cal-cell.sel { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) inset; }
 .cal-cell:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
 .cal-cell .g { justify-self: start; min-inline-size: 30px; block-size: 30px; padding-inline: 6px; border-radius: 999px; display: grid; place-items: center; font-size: 1.05rem; font-weight: 600; font-variant-numeric: tabular-nums; }

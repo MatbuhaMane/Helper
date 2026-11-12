@@ -241,7 +241,7 @@ textarea.r-title-input:focus, textarea.r-sub-input:focus { box-shadow: none; bor
 .wcard .wcard-img > img, .wcard .wcard-img > .ph { inline-size: 100%; aspect-ratio: 4/3; object-fit: cover; display: grid; place-items: center; background: var(--bg); font-size: 2.2rem; }
 .wcard.waiting .wcard-body b { color: var(--muted); }
 .tstate { position: absolute; inset-block-end: 8px; inset-inline-start: 8px; display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; padding: 3px 9px; border-radius: 999px; background: rgba(247, 246, 240, .92); color: #2e2a1e; box-shadow: 0 1px 3px rgba(46, 42, 30, .15); }
-.tstate.ready { color: #55622f; }
+.tstate.ready { color: var(--ok); }
 .tstate.failed { color: #9a3b2a; }
 .wcard.more { display: grid; place-items: center; align-content: center; gap: 12px; min-block-size: 220px; padding: 16px; text-align: center; color: var(--muted); font-size: .9rem; cursor: default; border-style: dashed; animation: none; }
 .spinner.big { inline-size: 36px; block-size: 36px; border-width: 3px; }

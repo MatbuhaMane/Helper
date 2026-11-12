@@ -65,7 +65,7 @@
       } }, img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'));
     }
     return el('article', { class: 'fun-card fun-i' }, media, el('div', { class: 'fun-body' },
-      el('div', { class: 'fun-tags' }, flag), el('h3', { dir: 'auto' }, v.title), el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, ' · Reddit ↗')));
+      el('div', { class: 'fun-tags' }, flag), el('h3', { dir: 'auto' }, v.title), el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, /^Lemmy/.test(v.source) ? ' ↗' : ' · Reddit ↗')));
   }
 
   const keep = (cat, d) => { try { localStorage.setItem('fun-' + cat, JSON.stringify(d)); } catch (_) { /* full */ } };

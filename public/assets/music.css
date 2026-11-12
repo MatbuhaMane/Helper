@@ -185,7 +185,7 @@ body.mu-drop-left::before, body.mu-drop-right::after { inline-size: 26px; backgr
 /* voice search: the mic glows and pulses while it listens */
 .mu-mic { color: var(--muted); }
 .mu-mic:hover { color: var(--primary); }
-.mu-mic.on { color: #fff; background: var(--danger); animation: mu-listen 1.2s ease-in-out infinite; }
+.mu-mic.on { color: var(--primary-ink); background: var(--danger); animation: mu-listen 1.2s ease-in-out infinite; }
 @keyframes mu-listen { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); } 50% { box-shadow: 0 0 0 7px transparent; } }
 @media (prefers-reduced-motion: reduce) { .mu-mic.on { animation: none; } }
 

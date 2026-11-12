@@ -11,6 +11,14 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The food menu's window: א2, the set table; all six pictures kept (design, the owner's choice; vision item 11)
+
+The owner chose א2 · השולחן הערוך and asked to keep all six for later. `H.folder({ hero: { src, small, alt } })` in
+`public/assets/launcher.js` gives a folder a window on top (the picture in a rounded frame, the title and its line on it;
+`launcher.css`), and `public/food/index.html` uses it with `public/assets/food/portal.webp` (`portal-800.webp` on a phone).
+The six originals, with the idea, the version and the full prompt of each, are in `figures/art/library/food/` (README).
+For the master: `/assets/food/portal.webp` and `portal-800.webp` could join the sw pre-cache with `/food/`. Status: done (on `design`).
+
 ## 2026-11-12 – The family tree on a trusted device: built (ai-features, to the master's spec below)
 
 - `server/vault/access.ts`: the one table of each vault route's level – 'tree' (open on a trusted device, no idle lock)

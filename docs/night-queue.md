@@ -27,17 +27,17 @@ Only items the owner agreed to go here. Business and vision talk with the owner,
 
 ### ai-features
 
-1. The research assistant, step 2. The owner put it next, and the vision session sent the details (persistence: one
-   thread a day on "היום", a weekly summary, נתקעתי, a research journal, the גשש badge; writing: the skeleton…; ✨).
-   Follow that message and `docs/vision/` on the vision branch (a015aef).
-2. Design changed the goals look (design's commit bcd1d08: badge files renamed to the server's ids, design's class names
-   moved off yours). After merging main, check your goals markup against it.
-3. If budget remains: the "without AI" list, the vision session's next order.
+(Research step 2 is already done: 6d9a822, waiting for the morning merge together with 8ecf53b.)
+1. Link design's new style sheets in your pages: /tools/tasks/goals.css, /tools/research/research.css and
+   /capture/capture.css (design's 3368bdf). Don't merge design into your branch: read them with
+   `git show design:<path>`. Keep the inline stopgaps until the morning merge brings the files into main.
+2. The "without AI" list, the vision session's next order.
 
 ### design
 
 1. The look of research step 2: one thread a day, the weekly summary, the journal, the גשש badge, and the writing skeleton.
-   Build it on the core prototype (a02f779), and fit it to ai-features' markup once that lands.
+   Build it on the core prototype (a02f779), and fit it to ai-features' live markup (6d9a822 on ai-features: drafts,
+   the journal, a research as a goal, ✨ directions and first draft).
 2. Any badge redraws the owner asked for that are still open.
 
 ## Log

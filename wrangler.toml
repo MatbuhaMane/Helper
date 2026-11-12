@@ -32,3 +32,24 @@ bucket_name = "helper-media"
 GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleusercontent.com"
 GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
+# The Spotify app's client id (public: the sign-in uses PKCE, there is no client secret)
+SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"
+
+# Previews: every branch other than main is built by Workers Builds with `npx wrangler preview`, which needs this block.
+# A preview has its own database and bucket – never the family's – so code that is not merged yet cannot touch real
+# family data. The tables are created on first use from schema.sql, as in production.
+# Secrets for previews are set apart: `npx wrangler preview secret put <NAME>` (or in the dashboard).
+[[previews.d1_databases]]
+binding = "DB"
+database_name = "helper-db-preview"
+database_id = "21e71744-f18f-436c-8b5f-44637d6c91b8"
+
+[[previews.r2_buckets]]
+binding = "MEDIA"
+bucket_name = "helper-media-preview"
+
+[previews.vars]
+GOOGLE_CLIENT_ID = "846556847660-jd2jghcnr6i759bsa1togqskhn2oid81.apps.googleusercontent.com"
+GEMINI_MODEL = "gemini-3.8-flash"
+GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
+SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"

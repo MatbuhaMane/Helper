@@ -7,6 +7,7 @@ import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
 import * as mail from '../../server/mail';
+import * as music from '../../server/music';
 import * as news from '../../server/news';
 import * as newsAi from '../../server/newsai';
 import * as prefs from '../../server/prefs';
@@ -147,6 +148,19 @@ route('POST', '/api/mail/plans/:id/step', mail.applyStep);
 route('POST', '/api/mail/plans/:id/undo', mail.undo);
 route('POST', '/api/mail/plans/:id/cancel', mail.cancelPlan);
 route('GET', '/api/mail/history', mail.history);
+
+/* music: Spotify as a remote for the person's own Spotify app; YouTube search */
+route('GET', '/api/music/status', music.status);
+route('GET', '/api/music/spotify/login', music.login);
+route('GET', '/api/music/spotify/callback', music.callback);
+route('POST', '/api/music/spotify/disconnect', music.disconnect);
+route('GET', '/api/music/spotify/state', music.state);
+route('GET', '/api/music/spotify/token', music.playerToken);
+route('GET', '/api/music/spotify/devices', music.devices);
+route('POST', '/api/music/spotify/cmd', music.command);
+route('GET', '/api/music/spotify/search', music.search);
+route('GET', '/api/music/spotify/playlists', music.playlists);
+route('GET', '/api/music/youtube/search', music.youtubeSearch);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

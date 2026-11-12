@@ -16,6 +16,8 @@ export interface Env {
   GEMINI_BASE_URL?: string;     // dev/test only
   SONGS_MOCK_URL?: string;      // dev/test only
   GEMINI_TTS_MODEL?: string;    // optional: the speech model (default gemini-2.5-flash-preview-tts)
+  SPOTIFY_CLIENT_ID?: string;   // the Spotify app's client id (public; sign-in uses PKCE, so there is no secret)
+  YOUTUBE_API_KEY?: string;     // optional: YouTube Data API key for search (else search goes through Gemini with Google Search)
 }
 
 export interface Member {
@@ -261,7 +263,7 @@ async function aesKey(env: Env): Promise<CryptoKey> {
     base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
 
-async function encrypt(env: Env, plain: string): Promise<string> {
+export async function encrypt(env: Env, plain: string): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await aesKey(env), new TextEncoder().encode(plain)));
   const all = new Uint8Array(iv.length + ct.length);
@@ -270,7 +272,7 @@ async function encrypt(env: Env, plain: string): Promise<string> {
   return btoa(String.fromCharCode(...all));
 }
 
-async function decrypt(env: Env, enc: string): Promise<string> {
+export async function decrypt(env: Env, enc: string): Promise<string> {
   const all = Uint8Array.from(atob(enc), (c) => c.charCodeAt(0));
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, await aesKey(env), all.slice(12));
   return new TextDecoder().decode(pt);

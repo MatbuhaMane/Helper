@@ -270,3 +270,16 @@ CREATE TABLE IF NOT EXISTS songs (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS songs_household ON songs (household, updated_at);
+
+-- Music: a person's Spotify connection (the refresh token encrypted like the Gmail one), and the sign-in in progress
+CREATE TABLE IF NOT EXISTS music_tokens (
+  email      TEXT NOT NULL,
+  provider   TEXT NOT NULL,            -- 'spotify'
+  refresh    TEXT,                     -- encrypted
+  access     TEXT,
+  expires_at INTEGER,
+  pkce       TEXT,                     -- the code verifier while signing in
+  state      TEXT,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (email, provider)
+);

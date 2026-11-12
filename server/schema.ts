@@ -17,6 +17,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['news_state', 'hidden', 'INTEGER'], // the person hid this article
   ['news_state', 'rating', 'INTEGER'], // the person's own reliability rating for this article (1-5)
   ['news_state', 'folder', 'TEXT'],    // the folder of a saved article (the folders themselves are in the person's prefs)
+  ['music_tokens', 'scope', 'TEXT'],   // what the person allowed (streaming = the helper can play Spotify itself)
 ];
 
 let ready: Promise<void> | null = null;

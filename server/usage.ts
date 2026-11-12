@@ -4,15 +4,17 @@
 
 import { Ctx, json, requireOwner } from './core';
 import { costOf, UsageRow } from './prices';
+import { requireAdmin } from './admin';
 
 interface Row extends UsageRow { email: string | null; feature: string; provider: string }
 
 export async function report(ctx: Ctx) {
   requireOwner(ctx);
+  await requireAdmin(ctx, 'own');            // and the owner's room is open, from their own account
   const days = Math.min(90, Math.max(1, Number(ctx.url.searchParams.get('days')) || 14));
   const since = Date.now() - days * 864e5;
   const [{ results }, names] = await Promise.all([
-    ctx.env.DB.prepare('SELECT at, email, feature, provider, model, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE at >= ? ORDER BY at LIMIT 100000').bind(since).all<Row>(),
+    ctx.env.DB.prepare('SELECT at, email, feature, provider, model, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE at >= ? AND COALESCE(own_key, 0) = 0 ORDER BY at LIMIT 100000').bind(since).all<Row>(),
     ctx.env.DB.prepare('SELECT email, he_name, name FROM members').all<{ email: string; he_name: string | null; name: string | null }>(),
   ]);
   const nameOf = new Map(names.results.map((m) => [m.email, m.he_name || m.name || m.email]));

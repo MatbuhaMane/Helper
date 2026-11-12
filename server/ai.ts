@@ -23,16 +23,19 @@ export async function aiJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): 
   const order: Provider[] = task.prefer === 'claude' ? ['claude', 'gemini'] : ['gemini', 'claude'];
   const available = order.filter((p) => (p === 'claude' ? env.ANTHROPIC_API_KEY : env.GEMINI_API_KEY));
   if (!available.length) throw new HttpError(503, 'ai_not_configured');
-  let lastErr: unknown;
+  let lastErr: unknown, credit: HttpError | null = null;
   for (const p of available) {
     try {
       return p === 'claude' ? await claudeJson(env, task) : await geminiJson(env, task);
     } catch (err) {
       lastErr = err;
+      // the allowance refused it (server/credits.ts): the page invites the person; the SDK wraps it in its own error
+      const c = err instanceof HttpError ? err : (err as { cause?: unknown })?.cause;
+      if (c instanceof HttpError && c.status === 402) credit = c;
       console.error(`AI provider ${p} failed:`, err instanceof Error ? err.message : err);
     }
   }
-  throw lastErr instanceof HttpError ? lastErr : new HttpError(502, 'ai_failed');
+  throw credit || (lastErr instanceof HttpError ? lastErr : new HttpError(502, 'ai_failed'));
 }
 
 async function claudeJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Promise<z.infer<T>> {

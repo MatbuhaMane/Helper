@@ -6,6 +6,8 @@ import * as daemon from '../../server/daemon';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
+import * as admin from '../../server/admin';
+import * as credits from '../../server/credits';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
@@ -55,11 +57,13 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 /* members (owner) */
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role FROM members ORDER BY household, email').all();
   return json({ members: results });
 });
 route('PUT', '/api/members/:email/name', async (ctx) => {
   requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const name = heName((await body<{ he_name?: string }>(ctx.req)).he_name);
   await ctx.env.DB.prepare('UPDATE members SET he_name = ? WHERE email = ?').bind(name, decodeURIComponent(ctx.params.email).toLowerCase()).run();
   return json({ ok: true, he_name: name });
@@ -72,6 +76,7 @@ const heName = (v: unknown) => {
 };
 route('POST', '/api/members', async (ctx) => {
   requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const b = await body<{ email: string; name?: string; he_name?: string; household?: string; role?: string }>(ctx.req);
   const he = heName(b.he_name);
   const email = (b.email || '').trim().toLowerCase();
@@ -86,6 +91,7 @@ route('POST', '/api/members', async (ctx) => {
 });
 route('DELETE', '/api/members/:email', async (ctx) => {
   const me = requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const email = decodeURIComponent(ctx.params.email).toLowerCase();
   if (email === me.email) throw new HttpError(400, 'You cannot remove yourself');
   await ctx.env.DB.batch([
@@ -298,6 +304,38 @@ route('POST', '/api/gather/invite/:token/comments', gather.inviteComment);
 route('DELETE', '/api/gather/invite/:token/comments/:comment', gather.inviteCommentDelete);
 route('GET', '/api/gather/invite/:token/ics', gather.inviteIcs);
 route('POST', '/api/gather/invite/:token/event', gather.inviteEvent);
+
+/* the owner's room (ai-features, server/admin.ts): entered with the owner's biometric; messages and features for everyone */
+route('GET', '/api/admin/status', admin.status);
+route('POST', '/api/admin/enter/options', admin.enterOptions);
+route('POST', '/api/admin/enter', admin.enter);
+route('POST', '/api/admin/leave', admin.leave);
+route('POST', '/api/admin/ping', admin.ping);
+route('POST', '/api/admin/stay', admin.stay);
+route('GET', '/api/admin/overview', admin.overview);
+route('POST', '/api/admin/ledger', admin.ledgerAdd);
+route('PUT', '/api/admin/ledger/:id', admin.ledgerSave);
+route('DELETE', '/api/admin/ledger/:id', admin.ledgerDelete);
+route('GET', '/api/admin/settings', admin.settingsList);
+route('PUT', '/api/admin/settings', admin.settingsSave);
+route('GET', '/api/admin/supers', admin.supersList);
+route('PUT', '/api/admin/supers', admin.supersSave);
+route('GET', '/api/admin/messages', admin.messagesList);
+route('POST', '/api/admin/messages', admin.messageSend);
+route('POST', '/api/admin/messages/:id/stop', admin.messageStop);
+route('GET', '/api/admin/features', admin.featuresList);
+route('PUT', '/api/admin/features', admin.featuresSave);
+route('GET', '/api/admin/audit', admin.auditList);
+route('GET', '/api/messages', admin.messagesForMe);
+route('POST', '/api/messages/:id/read', admin.messageRead);
+route('GET', '/api/me/features', admin.myFeatures);
+
+/* the AI allowance (ai-features, server/credits.ts): a person's own services, and the room's view of everyone's */
+route('GET', '/api/me/ai', credits.mine);
+route('PUT', '/api/me/ai/keys', credits.keySave);
+route('DELETE', '/api/me/ai/keys/:provider', credits.keyDelete);
+route('GET', '/api/admin/allowances', admin.allowances);
+route('PUT', '/api/admin/allowances', admin.allowanceSave);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

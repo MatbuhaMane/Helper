@@ -8,6 +8,7 @@ import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
 import * as admin from '../../server/admin';
 import * as credits from '../../server/credits';
+import * as designImages from '../../server/design-images';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
@@ -335,6 +336,11 @@ route('GET', '/api/me/ai', credits.mine);
 route('PUT', '/api/me/ai/keys', credits.keySave);
 route('DELETE', '/api/me/ai/keys/:provider', credits.keyDelete);
 route('GET', '/api/admin/allowances', admin.allowances);
+
+/* design's image tool (ai-features, server/design-images.ts): the owner only; pictures through Gemini, kept in MEDIA */
+route('GET', '/api/design/images', designImages.list);
+route('POST', '/api/design/images', designImages.make);
+route('GET', '/api/design/images/:batch/:i', designImages.picture);
 route('PUT', '/api/admin/allowances', admin.allowanceSave);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {

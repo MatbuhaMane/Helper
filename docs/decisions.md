@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Design's image tool, through Gemini (ai-features, design's request, assigned by the master)
+
+For the owner's decision "one visual style for everything; images are made through the Gemini API" (vision), as design
+asked: `POST /api/design/images {prompt, refs, aspect, n}` sends the prompt with our own pictures as inline references to
+`GEMINI_IMAGE_MODEL`, n times (1–4), keeps each result in `MEDIA` under `design/<batch>/<i>.<png|jpg|webp>`, and returns
+`{batch, images: [{i, url}], failed, left}`; `GET /api/design/images/<batch>/<i>` gives the picture; `GET /api/design/images`
+lists the batches (prompt, references, aspect, when, how many, and their cost from the meter, give or take batches made
+within a minute of each other) with today's count and the cap.
+- The owner only (`requireOwner`, not the room's passkey, so design can use it with the dev sign-in on its dev server).
+- References: only paths of our own public pictures (`/assets/…`, `/figures/…`; png, jpg, webp; no `..`, no outside
+  address), read through the Worker's own `ASSETS`, at most 6, 7 MB each.
+- Each image is metered as its own feature, `design-image`; a daily cap, the setting `design.images_per_day` (40).
+- **Appended**: table `design_images`; three routes; the setting. New files: `server/design-images.ts`,
+  `server/design-images-rules.ts` and `server/test-design-images.mjs` (28 tests).
+- **Not tried for real** (it spends the key): the call to Gemini itself and the picture it returns. Everything before the
+  call is checked on the local dev server. Design's first batch is the first real try.
+- **For the master** (proposed): `test:design-images` in `npm test`.
+Status: done on `ai-features`.
+
 ## 2026-11-12 – The owner's room locks itself (master, the owner's decision)
 
 The owner's words: "make an open/locked lock interface on the owner's room to lock it again when inside. if it stays open for

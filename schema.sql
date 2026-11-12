@@ -698,3 +698,20 @@ CREATE TABLE IF NOT EXISTS user_ai_keys (
   added_at INTEGER NOT NULL,
   PRIMARY KEY (email, provider)
 );
+
+-- Design's image tool (server/design-images.ts): each picture made through Gemini for design, kept in MEDIA under
+-- design/<batch>/<i>; the day counts toward the daily cap.
+CREATE TABLE IF NOT EXISTS design_images (
+  batch      TEXT NOT NULL,
+  i          INTEGER NOT NULL,
+  day        TEXT NOT NULL,
+  prompt     TEXT NOT NULL,
+  refs       TEXT,
+  aspect     TEXT,
+  mime       TEXT NOT NULL,
+  size       INTEGER,
+  by_email   TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (batch, i)
+);
+CREATE INDEX IF NOT EXISTS design_images_day ON design_images(day);

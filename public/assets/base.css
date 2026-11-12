@@ -87,6 +87,43 @@
     color-scheme: dark;
   }
 @media (max-width: 899px) { :root { --tabbar-h: 64px; --appbar-h: 54px; } }
+/* Colour themes (הגדרות › ערכות צבעים; settings/apply.js sets <html data-palette>). Each changes the two colours that carry
+   the hub: the active one (--primary: buttons, links, what is chosen) and the field (--olive: the "extra", the ring, the
+   tags), by day and at night; the stone and the basalt stay, so every page keeps its calm. Text contrast is checked
+   for each: the active colour on the page 5:1 and more, ink on the field 6:1 and more (as the default).
+     ''         אבן ובזלת      vine and olive (the default)
+     sea        ים התיכון      deep sea and sand
+     desert     מדבר           terracotta and dune gold
+     vineyard   כרם            wine and grape blossom
+     dusk       בין הערביים    indigo and lamp amber */
+:root[data-palette="sea"] { --vine: #1f5f7a; --primary: #1f5f7a; --olive: #8fc7d4; --tint: #d8ecf2; }
+:root[data-palette="desert"] { --vine: #9a4a24; --primary: #9a4a24; --olive: #e0a85a; --tint: #f5e4cf; }
+:root[data-palette="vineyard"] { --vine: #6b2a4a; --primary: #6b2a4a; --olive: #c9a0c0; --tint: #f0e0ea; }
+:root[data-palette="dusk"] { --vine: #3d4a8a; --primary: #3d4a8a; --olive: #e8b26a; --tint: #e2e5f5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="sea"] { --primary: #8cc4d8; --ok: #8cc4d8; --tint: #10283a; }
+  :root:not([data-theme="light"])[data-palette="desert"] { --primary: #e6a17a; --ok: #e6a17a; --tint: #2e1c14; }
+  :root:not([data-theme="light"])[data-palette="vineyard"] { --primary: #d9a0bf; --ok: #d9a0bf; --tint: #2a1624; }
+  :root:not([data-theme="light"])[data-palette="dusk"] { --primary: #a9b4ec; --ok: #a9b4ec; --tint: #161c3a; }
+}
+:root[data-theme="dark"][data-palette="sea"] { --primary: #8cc4d8; --ok: #8cc4d8; --tint: #10283a; }
+:root[data-theme="dark"][data-palette="desert"] { --primary: #e6a17a; --ok: #e6a17a; --tint: #2e1c14; }
+:root[data-theme="dark"][data-palette="vineyard"] { --primary: #d9a0bf; --ok: #d9a0bf; --tint: #2a1624; }
+:root[data-theme="dark"][data-palette="dusk"] { --primary: #a9b4ec; --ok: #a9b4ec; --tint: #161c3a; }
+
+/* Reading comfort (הגדרות › נגישות; settings/apply.js marks <html>): the text size is the root's font size (every rem grows
+   with it); these are the rest. */
+:root[data-spacing="wide"] body { line-height: 1.8; word-spacing: .14em; letter-spacing: .015em; }
+:root[data-spacing="wide"] :is(p, li, dd, label, small, .muted) { line-height: 1.8; }
+:root[data-font="readable"] body, :root[data-font="readable"] :is(button, input, select, textarea) { font-family: Arial, 'Segoe UI', system-ui, sans-serif; }
+:root[data-contrast="high"] { --text: #14120c; --muted: #3b3528; --line: #a9a28c; --line-strong: #77705b; }
+:root[data-contrast="high"][data-theme="dark"] { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; }
+@media (prefers-color-scheme: dark) { :root[data-contrast="high"]:not([data-theme="light"]) { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; } }
+:root[data-contrast="high"] :is(.card, .btn, input, select, textarea) { border-width: 1.5px; }
+/* less motion than the device asks for: as prefers-reduced-motion does, for whoever chose it here */
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; background: var(--bg); overflow-x: clip; }

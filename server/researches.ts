@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 import * as C from './research-cite';
 import * as S from './research-share';
+import { plainTitle } from './notes-plain';
 import { setting } from './settings';
 
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
@@ -269,7 +270,7 @@ export async function addNote(ctx: Ctx) {
     if (!(d.title || '').trim() && !(d.body || '').trim()) throw new HttpError(400, 'Empty note');
     noteId = uid();
     await db.prepare('INSERT INTO notes (email, id, title, body, source_url, source_title, created_at, updated_at, deleted) VALUES (?, ?, ?, ?, NULL, NULL, ?, ?, 0)')
-      .bind(a.me, noteId, (d.title || '').trim() || (d.body || '').trim().split(/\s+/).slice(0, 7).join(' ').slice(0, 60), (d.body || '').trim(), now, now).run();
+      .bind(a.me, noteId, (d.title || '').trim() || plainTitle(d.body || ''), (d.body || '').trim(), now, now).run();
   }
   await db.batch([
     db.prepare('INSERT OR IGNORE INTO research_notes (email, research_id, note_id, sort, added_at, note_email, shared) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(a.owner, a.r.id, noteId, now, now, a.me, shared ? 1 : 0),

@@ -4,13 +4,15 @@
    spoiled by accident. Closing with changes asks "לבטל את השינויים?", leaving the page asks too, and until then the draft
    is kept on this device. A new note reaches the server only when it is first saved. A star puts a note first.
    "☁ ל־Drive" saves a note as a Google Doc in the person's own Drive (drive.file: the helper sees only what it made);
-   the first time, Google asks them, and they come back to the same note with the save done. */
+   the first time, Google asks them, and they come back to the same note with the save done.
+   Without AI (docs/ai/without-ai.md #12): a #word in a note is a tag (the server finds them); the tags are chips above the
+   list, and one filters it. The title is the note's first line when no AI writes one. */
 (async () => {
   const { el, api, toast } = H;
   await H.requireLogin();
   H.header('פתקים');
   const root = document.querySelector('main');
-  let notes = [], open = null, q = '', onlyStars = false;
+  let notes = [], open = null, q = '', onlyStars = false, tag = null;
 
   const fmtDay = (t) => {
     const d = new Date(t), today = new Date(); today.setHours(0, 0, 0, 0);
@@ -31,6 +33,18 @@
   const starFilter = el('button', { type: 'button', class: 'btn ghost small nt-starfilter', 'aria-pressed': 'false', title: 'רק הפתקים שסימנתם בכוכב',
     onclick: () => { onlyStars = !onlyStars; starFilter.setAttribute('aria-pressed', String(onlyStars)); starFilter.textContent = onlyStars ? '★ רק מסומנים' : '☆ מסומנים'; drawList(); } }, '☆ מסומנים');
   const listBox = el('div', { class: 'nt-list' });
+  // the tags of all the notes, most used first; one picked filters the list
+  const tagBox = el('div', { class: 'nt-tags', role: 'group', 'aria-label': 'תגיות', style: 'display:flex;flex-wrap:wrap;gap:6px' });
+  function drawTags() {
+    const count = new Map();
+    for (const n of notes) for (const t of n.tags || []) count.set(t, (count.get(t) || 0) + 1);
+    if (tag && !count.has(tag)) tag = null;
+    tagBox.hidden = !count.size;
+    tagBox.replaceChildren(...[...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'he')).slice(0, 24).map(([t, k]) =>
+      el('button', { type: 'button', class: 'chip nt-tag', 'aria-pressed': String(tag === t), title: `${k} פתקים`,
+        // (the picked one stands out until design's notes.css has .nt-tag[aria-pressed="true"])
+        style: tag === t ? 'background:var(--primary);border-color:var(--primary);color:var(--primary-ink)' : null, onclick: () => { tag = tag === t ? null : t; drawTags(); drawList(); } }, '#' + t)));
+  }
   const editor = el('section', { class: 'nt-editor card', hidden: true, 'aria-label': 'הפתק' });
 
   async function toggleStar(n) {
@@ -45,9 +59,9 @@
     onclick: (e) => { e.stopPropagation(); toggleStar(n); } }, n.starred ? '★' : '☆');
 
   function drawList() {
-    const shown = notes.filter((n) => n.id && (!q || norm(n.title + ' ' + n.body).includes(norm(q))) && (!onlyStars || n.starred));
+    const shown = notes.filter((n) => n.id && (!q || norm(n.title + ' ' + n.body).includes(norm(q))) && (!onlyStars || n.starred) && (!tag || (n.tags || []).includes(tag)));
     if (!notes.some((n) => n.id)) { listBox.replaceChildren(el('div', { class: 'nt-empty' }, el('p', {}, 'עוד אין פתקים.'), el('p', { class: 'muted' }, 'סמנו טקסט בכל מקום באתר – כתבה, מתכון, שיר – ולחצו "שמירה כפתק". או כתבו פתק חדש.'))); return; }
-    if (!shown.length) { listBox.replaceChildren(el('p', { class: 'muted nt-none' }, onlyStars && !q ? 'עוד אין פתקים מסומנים בכוכב.' : 'לא נמצא פתק כזה.')); return; }
+    if (!shown.length) { listBox.replaceChildren(el('p', { class: 'muted nt-none' }, onlyStars && !q && !tag ? 'עוד אין פתקים מסומנים בכוכב.' : 'לא נמצא פתק כזה.')); return; }
     const groups = new Map();
     const starred = shown.filter((n) => n.starred);
     if (starred.length && !onlyStars) groups.set('★ מסומנים', starred);
@@ -60,7 +74,7 @@
         el('button', { type: 'button', class: 'nt-item' + (open?.note === n ? ' on' : ''), onclick: () => edit(n) },
           el('b', { dir: 'auto' }, n.title || 'פתק'),
           el('span', { class: 'nt-snip', dir: 'auto' }, n.body.replace(/\s+/g, ' ').slice(0, 120)),
-          el('small', {}, new Date(n.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }), n.source ? ' · ' + (n.source.title || 'מהאתר') : '')),
+          el('small', {}, new Date(n.createdAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }), n.source ? ' · ' + (n.source.title || 'מהאתר') : '', n.tags?.length ? ' · ' + n.tags.map((t) => '#' + t).join(' ') : '')),
         starBtn(n))))));
   }
 
@@ -91,7 +105,7 @@
   function edit(n, draft) {
     if (open && open.note !== n) { if (!leave(() => edit(n, draft))) return; }
     const title = el('input', { class: 'nt-title', value: draft?.title ?? n.title, 'aria-label': 'כותרת', dir: 'auto', placeholder: 'כותרת (תיכתב לבד אם תשאירו ריק)' });
-    const text = el('textarea', { class: 'nt-body', 'aria-label': 'הפתק', dir: 'auto', placeholder: 'כתבו כאן…' });
+    const text = el('textarea', { class: 'nt-body', 'aria-label': 'הפתק', dir: 'auto', placeholder: 'כתבו כאן… (#מילה היא תגית)' });
     text.value = draft?.body ?? n.body;
     const state = el('small', { class: 'nt-state', role: 'status', 'aria-live': 'polite' });
     const saveBtn = el('button', { class: 'btn primary small', type: 'button', onclick: () => save() }, 'שמירה');
@@ -116,7 +130,7 @@
         if (!notes.includes(n)) notes.unshift(n);
         title.value = n.title;                                   // a title the helper wrote
         notes.sort((a, b) => b.updatedAt - a.updatedAt);
-        paint(); drawList(); drawMeta();
+        paint(); drawTags(); drawList(); drawMeta();
         return true;
       } catch (_) { state.textContent = 'לא נשמר – בדקו את החיבור'; saveBtn.disabled = false; return false; }
     }
@@ -141,7 +155,7 @@
         n.id ? el('button', { class: 'btn ghost small', type: 'button', onclick: async () => {
           if (!confirm('למחוק את הפתק?')) return;
           await api(`/api/notes/${n.id}`, { method: 'DELETE' });
-          notes = notes.filter((x) => x !== n); keepDraft(null); close(); toast('הפתק נמחק');
+          notes = notes.filter((x) => x !== n); keepDraft(null); drawTags(); close(); toast('הפתק נמחק');
         } }, 'מחיקה') : null,
         el('button', { class: 'btn ghost small nt-close', type: 'button', 'aria-label': 'סגירת הפתק', title: 'סגירה', onclick: () => leave() }, '✕')),
       title, meta, text);
@@ -177,9 +191,9 @@
   root.append(el('div', { class: 'nt' },
     el('a', { class: 'folder-back', href: '/tools/' }, '‹ כלים'),
     el('div', { class: 'nt-head' }, el('h1', {}, 'פתקים'), el('button', { class: 'btn primary', type: 'button', onclick: newNote }, '+ פתק חדש')),
-    el('div', { class: 'nt-cols' }, el('div', { class: 'nt-side' }, el('div', { class: 'nt-search' }, search, starFilter), listBox), editor)));
+    el('div', { class: 'nt-cols' }, el('div', { class: 'nt-side' }, el('div', { class: 'nt-search' }, search, starFilter), tagBox, listBox), editor)));
   try { notes = (await api('/api/notes')).notes; } catch (_) { listBox.replaceChildren(el('p', {}, 'הפתקים לא נטענו.')); return; }
-  drawList();
+  drawTags(); drawList();
   // a draft left on this device (the tab closed before saving): open it again, as it was
   const draft = readDraft();
   const want = new URLSearchParams(location.search).get('open');

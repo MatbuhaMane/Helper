@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#efeee6">
+  <title>דיאטה</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/launcher.css">
+</head>
+<body>
+  <main class="wide"></main>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/launcher.js"></script>
+  <script>
+  // Diet: the ways of eating the family follows; ketosis is the first (its dashboard lives in the groceries app).
+  H.folder({ title: 'דיאטה', sub: 'מעקב ותכנון לפי הדרך שבה אוכלים', back: { href: '/food/', label: 'אוכל' }, apps: [
+    { href: '/groceries/#keto', ic: 'keto', name: 'קטוזיס', c1: '#6fe0d0', c2: '#1f8f8a' },
+    { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', c1: '#ffb07a', c2: '#e0533d' },
+  ] });
+  </script>
+</body>
+</html>

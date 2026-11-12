@@ -3,6 +3,11 @@
 import { aiStatus } from '../../server/ai';
 import { Ctx, Env, HttpError, body, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
 import * as daemon from '../../server/daemon';
+import * as calc from '../../server/calc';
+import * as calendar from '../../server/calendar';
+import * as fridge from '../../server/fridge';
+import * as fun from '../../server/fun';
+import * as notes from '../../server/notes';
 import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
@@ -12,6 +17,8 @@ import * as news from '../../server/news';
 import * as newsAi from '../../server/newsai';
 import * as prefs from '../../server/prefs';
 import * as recipeCheck from '../../server/recipecheck';
+import * as research from '../../server/research';
+import * as sefaria from '../../server/sefaria';
 import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
@@ -80,6 +87,7 @@ route('GET', '/api/daemon/form/:slug', daemon.formImage);
 /* songbook */
 route('GET', '/api/songs/search', songs.search);
 route('GET', '/api/songs/page', songs.page);
+route('GET', '/api/songs/lookup', songs.lookup);
 route('GET', '/api/songs/health', songs.health);
 route('GET', '/api/songs', songs.list);
 route('POST', '/api/songs', songs.save);
@@ -105,6 +113,43 @@ route('GET', '/api/recipes/world', world.search);
 route('GET', '/api/recipes/world/stream', world.searchStream);
 route('POST', '/api/recipes/world/open', world.open);
 route('POST', '/api/recipes/check', recipeCheck.checkRecipe);
+
+/* notes (each person's own) */
+route('GET', '/api/notes', notes.list);
+route('POST', '/api/notes', notes.create);
+route('PUT', '/api/notes/:id', notes.update);
+route('DELETE', '/api/notes/:id', notes.remove);
+
+/* בידור: recommendations by medium, with where to watch */
+route('GET', '/api/fun/picks', fun.picks);
+route('GET', '/api/fun/logo/:domain', fun.logo);
+
+/* the family's days in the calendar (shared) */
+route('GET', '/api/calendar/events', calendar.list);
+route('POST', '/api/calendar/events', calendar.create);
+route('PUT', '/api/calendar/events/:id', calendar.update);
+route('DELETE', '/api/calendar/events/:id', calendar.remove);
+
+/* Sefaria, through our own lasting copy */
+route('GET', '/api/sefaria/.+', sefaria.proxy);
+
+/* the Torah researcher of פרשת השבוע */
+route('POST', '/api/research/ask', research.ask);
+route('POST', '/api/research/search', research.search);
+route('POST', '/api/research/translate', research.translate);
+route('POST', '/api/research/word', research.word);
+
+/* the smart calculator */
+route('POST', '/api/calc/solve', calc.solve);
+
+/* fridges (shared by the whole family) */
+route('GET', '/api/fridges', fridge.listFridges);
+route('POST', '/api/fridges', fridge.createFridge);
+route('PUT', '/api/fridges/:id', fridge.renameFridge);
+route('DELETE', '/api/fridges/:id', fridge.deleteFridge);
+route('GET', '/api/fridges/:id/items', fridge.listItems);
+route('POST', '/api/fridges/:id/ops', fridge.applyOps);
+route('GET', '/api/fridges/:id/history', fridge.history);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);
@@ -157,6 +202,7 @@ route('POST', '/api/music/spotify/disconnect', music.disconnect);
 route('GET', '/api/music/spotify/state', music.state);
 route('GET', '/api/music/spotify/token', music.playerToken);
 route('GET', '/api/music/spotify/devices', music.devices);
+route('GET', '/api/music/spotify/queue', music.queue);
 route('POST', '/api/music/spotify/cmd', music.command);
 route('GET', '/api/music/spotify/search', music.search);
 route('GET', '/api/music/spotify/playlists', music.playlists);

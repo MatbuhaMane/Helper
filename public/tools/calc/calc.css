@@ -1,0 +1,142 @@
+/* מחשבון */
+.cx { max-inline-size: 1100px; margin: 0 auto; padding-block: 14px 40px; display: grid; gap: 12px; }
+.folder-back { color: var(--muted); text-decoration: none; font-size: .95rem; }
+.folder-back:hover { color: var(--primary); }
+.cx-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.cx-head h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); }
+.cx-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
+.cx-tabs button { font: inherit; padding: 7px 16px; border: 0; border-radius: 999px; background: none; color: var(--muted); cursor: pointer; }
+.cx-tabs button[aria-selected="true"] { background: var(--card); color: var(--text); font-weight: 500; box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+.cx section[hidden] { display: none; }
+
+/* the calculator */
+.cx-calc { display: grid; gap: 12px; }
+.cx-screen { padding: 14px 16px; display: grid; gap: 6px; }
+.cx-expr { font: 500 1.5rem/1.3 ui-monospace, 'Cascadia Mono', Consolas, monospace; border: 0; background: none; color: var(--text); outline: none; inline-size: 100%; text-align: left; }
+.cx-pretty { min-block-size: 1.6em; color: var(--muted); font-size: 1.05rem; text-align: left; overflow-x: auto; }
+.cx-result { font: 600 1.7rem/1.3 ui-monospace, Consolas, monospace; text-align: left; min-block-size: 1.3em; color: var(--primary); overflow-wrap: anywhere; }
+.cx-result.fx { color: var(--muted); font-size: 1rem; font-family: inherit; }
+.cx-result.err { color: var(--danger); font-size: .95rem; font-family: inherit; }
+.cx-calc-cols { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 860px) { .cx-calc-cols { grid-template-columns: 1fr; } }
+.cx-keys { display: grid; gap: 8px; }
+.cx-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.cx-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.cx-key { block-size: 54px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); color: var(--text); font: 500 1.2rem/1 inherit; cursor: pointer; transition: transform .08s, background .2s; }
+.cx-key:active { transform: scale(.95); }
+.cx-key.fn { font-size: 1rem; background: color-mix(in srgb, var(--text) 5%, var(--card)); }
+.cx-key.op { background: color-mix(in srgb, var(--primary) 12%, var(--card)); color: var(--primary); font-size: 1.35rem; }
+.cx-key.eq { background: var(--primary); color: var(--primary-ink); font-size: 1.4rem; border-color: transparent; }
+.cx-key.mode { font-size: .85rem; font-weight: 600; letter-spacing: .04em; }
+.cx-side { display: grid; gap: 12px; }
+.cx-tools small, .cx-histbox small, .cx-past small { color: var(--muted); font-size: .82rem; }
+.cx-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-block-start: 6px; }
+.cx-chip { font: inherit; font-size: .88rem; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cx-chip:hover { border-color: var(--primary); color: var(--primary); }
+.cx-plot { padding: 10px 12px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.cx-plot[hidden] { display: none; }
+.cx-plot-head { display: flex; align-items: center; gap: 6px; margin-block-end: 6px; }
+.cx-plot-head .spacer { flex: 1; }
+.cx-svg { inline-size: 100%; block-size: 240px; display: block; }
+.cx-svg .axis { stroke: var(--line-strong); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.cx-svg .curve { fill: none; stroke: var(--primary); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.cx-plot-axis { display: flex; justify-content: space-between; color: var(--muted); font-size: .78rem; }
+.cx-hist { display: grid; gap: 4px; margin-block-start: 6px; }
+.cx-h { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 10px; border: 0; background: none; color: var(--text); font: .92rem ui-monospace, Consolas, monospace; cursor: pointer; text-align: left; }
+.cx-h:hover { background: color-mix(in srgb, var(--text) 6%, transparent); }
+.cx-h span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.cx-h b { color: var(--primary); white-space: nowrap; }
+
+/* the smart calculator */
+.cx-smart { display: grid; gap: 12px; }
+.cx-ask { padding: 14px 16px; display: grid; gap: 10px; }
+.cx-ask-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cx-modes, .cx-subjects { display: flex; flex-wrap: wrap; gap: 6px; }
+.cx-mode, .cx-subj { font: inherit; font-size: .9rem; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; }
+.cx-mode[aria-checked="true"], .cx-subj[aria-selected="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--card)); box-shadow: inset 0 0 0 1px var(--primary); }
+.cx-subj { font-size: .84rem; padding: 4px 10px; }
+.cx-bubbles { display: flex; gap: 8px; overflow-x: auto; padding-block: 2px 8px; scrollbar-width: thin; }
+.cx-bubble { flex-shrink: 0; display: grid; gap: 4px; justify-items: center; padding: 8px 12px; border-radius: 18px; border: 1px solid var(--line); background: color-mix(in srgb, var(--primary) 6%, var(--card)); color: var(--text); cursor: pointer; font: inherit; max-inline-size: 320px; }
+.cx-bubble:hover { border-color: var(--primary); }
+.cx-bubble small { color: var(--muted); font-size: .76rem; }
+.cx-bubble .f { font-size: .95rem; }
+.cx-problem { font: inherit; line-height: 1.6; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); resize: vertical; min-block-size: 110px; }
+.cx-problem:focus { outline: none; border-color: var(--primary); }
+.cx-preview:empty { display: none; }
+.cx-preview { padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 4%, transparent); }
+.cx-img { display: flex; align-items: center; gap: 10px; }
+.cx-img[hidden] { display: none; }
+.cx-img img { max-block-size: 140px; max-inline-size: 60%; border-radius: 10px; border: 1px solid var(--line); }
+.cx-ask-acts { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cx-ask-acts .spacer { flex: 1; }
+.cx-go { padding-inline: 22px; }
+.cx-wait { display: flex; align-items: center; gap: 12px; padding: 14px 16px; color: var(--muted); }
+.cx-wait .dots { inline-size: 34px; block-size: 10px; background: radial-gradient(circle, var(--primary) 3px, transparent 3.5px) 0 50% / 12px 10px repeat-x; animation: cx-dots 1s linear infinite; }
+@keyframes cx-dots { to { background-position: 12px 50%; } }
+.cx-err { padding: 14px 16px; }
+.cx-answer { padding: 16px 18px; display: grid; gap: 12px; }
+.cx-ans-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cx-ans-head h3 { margin: 0; font-size: 1.15rem; }
+.cx-ans-head .spacer { flex: 1; }
+.cx-ans-head .by { color: var(--muted); font-size: .75rem; }
+.cx-verdict { padding: 3px 12px; border-radius: 999px; font-size: .88rem; font-weight: 600; }
+.cx-verdict.yes { background: color-mix(in srgb, var(--primary) 18%, transparent); color: var(--primary); }
+.cx-verdict.no { background: color-mix(in srgb, var(--danger) 18%, transparent); color: var(--danger); }
+.cx-verdict.maybe { background: color-mix(in srgb, #e0a83a 20%, transparent); color: #b7781a; }
+.cx-problem-shown { padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--text) 4%, transparent); }
+.cx-problem-shown small, .cx-final small { color: var(--muted); font-size: .8rem; }
+.cx-steps { margin: 0; padding-inline-start: 22px; display: grid; gap: 12px; }
+.cx-steps li::marker { color: var(--primary); font-weight: 600; }
+.cx-steps b { display: block; margin-block-end: 2px; }
+.cx-rich p { margin: 0 0 6px; line-height: 1.7; }
+.cx-rich p:last-child { margin: 0; }
+.cx-rich ul { margin: 0 0 6px; padding-inline-start: 20px; }
+.cx-rich .katex-display { margin: .5em 0; overflow-x: auto; overflow-y: hidden; padding-block: 2px; }
+.cx-final { padding: 12px 16px; border-radius: 14px; border: 2px solid color-mix(in srgb, var(--primary) 55%, transparent); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.cx-check summary { cursor: pointer; color: var(--muted); }
+.cx-used { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; color: var(--muted); }
+.cx-used .cx-rich p { margin: 0; }
+.cx-ans-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.cx-more { font: inherit; padding: 10px 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); }
+.cx-past { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+/* math inside Hebrew text: each formula is its own left-to-right island (otherwise its parts reverse, and ∈ shows as ∋) */
+.cx .katex, .cx .katex-display { direction: ltr; unicode-bidi: isolate; }
+.cx .katex-display { text-align: center; }
+
+/* the calculation note (a floating card above the history) and the history */
+.cx-stack { display: grid; gap: 12px; align-content: start; }
+@media (min-width: 861px) { .cx-stack { position: sticky; inset-block-start: calc(var(--appbar-h) + 12px); } }
+.cx-card-head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cx-card-head b { font-weight: 500; }
+.cx-card-head .spacer { flex: 1; }
+.cx-pad { padding: 10px 12px; display: grid; gap: 8px; box-shadow: var(--lift); border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); animation: cx-pop .3s var(--ease-river) both; }
+.cx-pad[hidden] { display: none; }
+.cx-pad-state { color: var(--muted); font-size: .76rem; }
+.cx-pad-state.warn { color: #c46a12; }
+:root[data-theme="dark"] .cx-pad-state.warn { color: #f0a868; }
+.cx-pad-text { min-block-size: 130px; max-block-size: 40vh; resize: vertical; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: var(--bg); color: var(--text);
+  font: .98rem/1.7 ui-monospace, 'Cascadia Mono', Consolas, monospace; outline: none; }
+.cx-pad-text:focus { border-color: var(--primary); }
+.cx-pad-auto { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; }
+.cx-padbtn[hidden] { display: none; }
+.cx-padbtn { justify-self: start; }
+.cx-histcard { padding: 10px 12px; display: grid; gap: 6px; }
+.cx-hist { max-block-size: 320px; overflow-y: auto; display: grid; gap: 2px; padding-inline-end: 4px; scrollbar-width: thin; overscroll-behavior: contain; }
+.cx-hist-empty { margin: 6px 4px; font-size: .9rem; }
+.cx-h { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; border-radius: 10px; }
+.cx-h:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.cx-h-main { display: flex; justify-content: space-between; gap: 10px; min-inline-size: 0; padding: 6px 8px; border: 0; background: none; color: var(--text); font: .92rem ui-monospace, Consolas, monospace; cursor: pointer; text-align: left; }
+.cx-h-main .e { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.cx-h-main b { color: var(--primary); white-space: nowrap; }
+.cx-h-at { color: var(--muted); font-size: .72rem; white-space: nowrap; }
+.cx-h-up { font: inherit; font-size: .74rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.cx-h-up:hover { color: var(--primary); border-color: var(--primary); }
+.cx-modal-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-block-start: 12px; }
+@keyframes cx-pop { from { opacity: 0; transform: translateY(8px); } }
+
+/* the intuitive explanation: warmer, with a bulb */
+.cx-answer.intuition { border-color: color-mix(in srgb, #e0a83a 45%, var(--line)); background: color-mix(in srgb, #e0a83a 6%, var(--card)); }
+.cx-answer.intuition .cx-steps li::marker { color: #c98a1c; }
+.cx-answer.intuition .cx-final { border-color: color-mix(in srgb, #e0a83a 60%, transparent); background: color-mix(in srgb, #e0a83a 10%, transparent); }
+.cx-bulb { font-size: 1.3rem; }

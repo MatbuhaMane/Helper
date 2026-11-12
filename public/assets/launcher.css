@@ -1,0 +1,54 @@
+/* A folder of apps, the way a phone shows them: rounded squares in colour, the name underneath. */
+.folder { max-inline-size: 640px; margin: 0 auto; padding-block: 28px 40px; }
+.folder-head { text-align: center; margin-block-end: 26px; }
+.folder-back { display: inline-block; margin-block-end: 6px; color: var(--muted); text-decoration: none; font-size: .95rem; }
+.folder-back:hover { color: var(--primary); }
+.folder-head h1 { margin: 0; font-size: clamp(1.8rem, 1.2rem + 2vw, 2.4rem); line-height: 1.15; }
+.folder-head p { margin: 4px 0 0; color: var(--muted); font-size: 1.05rem; }
+.apps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 26px 14px; justify-items: center; }
+@media (max-width: 420px) { .apps-grid { grid-template-columns: repeat(3, 1fr); gap: 22px 8px; } }
+.app { position: relative; display: grid; justify-items: center; gap: 9px; inline-size: 104px; text-decoration: none; color: var(--text); -webkit-tap-highlight-color: transparent; }
+.app .ic { position: relative; inline-size: 76px; block-size: 76px; border-radius: 22px; display: grid; place-items: center; color: #fff;
+  background: radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, .38), transparent 55%), linear-gradient(150deg, var(--c1), var(--c2));
+  box-shadow: 0 10px 18px -8px color-mix(in srgb, var(--c2) 75%, transparent), inset 0 -3px 8px rgba(0, 0, 0, .12);
+  transition: transform .3s var(--ease-river), box-shadow .3s var(--ease-river); }
+.app .ic .icon { inline-size: 36px; block-size: 36px; stroke-width: 1.9; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+.app .name { font-size: .98rem; font-weight: 500; text-align: center; line-height: 1.25; }
+.app:hover .ic, .app:focus-visible .ic { transform: translateY(-3px) scale(1.04); box-shadow: 0 16px 24px -10px color-mix(in srgb, var(--c2) 80%, transparent), inset 0 -3px 8px rgba(0, 0, 0, .12); }
+.app:active .ic { transform: scale(.93); }
+.app:focus-visible { outline: none; }
+.app:focus-visible .ic { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--primary); }
+.app .soon { position: absolute; inset-block-start: -6px; inset-inline-end: 4px; padding: 1px 8px; border-radius: 999px; font-size: .72rem; font-weight: 500;
+  background: var(--card); color: var(--muted); border: 1px solid var(--line-strong); box-shadow: 0 2px 6px rgba(0, 0, 0, .12); }
+.app.later .ic { filter: saturate(.75); }
+.apps-grid .app { animation: app-in .45s var(--ease-river) both; animation-delay: calc(var(--n, 0) * 45ms); }
+@keyframes app-in { from { opacity: 0; transform: translateY(10px) scale(.96); } }
+@media (prefers-reduced-motion: reduce) { .apps-grid .app { animation: none; } }
+
+/* an app that is still to come */
+.soon-page { max-inline-size: 460px; margin: 10vh auto 0; text-align: center; padding: 30px 24px; }
+.soon-page .ic { margin: 0 auto 16px; inline-size: 96px; block-size: 96px; border-radius: 28px; display: grid; place-items: center; color: #fff;
+  background: radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, .38), transparent 55%), linear-gradient(150deg, var(--c1), var(--c2)); box-shadow: 0 14px 24px -10px var(--c2); }
+.soon-page .ic .icon { inline-size: 46px; block-size: 46px; stroke-width: 1.8; }
+.soon-page h1 { margin: 0 0 6px; }
+.soon-page p { color: var(--muted); margin: 0 0 18px; }
+
+/* a folder whose apps are drawn tools (כלים): each a silhouette in a flat pastel fill with one even ink outline (the #tool-ink
+   SVG filter from launcher.js), drawn in the text colour like the line icons of אוכל: dark by day, light at night */
+.ink-defs { position: absolute; inline-size: 0; block-size: 0; overflow: hidden; }
+.ink-defs .ink { flood-color: var(--icon-ink); }
+.app .ic.art { background: none; box-shadow: none; border-radius: 0; overflow: visible; filter: url(#tool-ink); }
+.app .ic.art .shape { display: block; inline-size: 100%; block-size: 100%; background: var(--tint);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;
+  transform: rotate(-38deg) scale(1.32); transition: transform .35s var(--ease-river); }
+.app:hover .ic.art, .app:focus-visible .ic.art { transform: translateY(-3px); }
+.app:hover .ic.art .shape { transform: rotate(-28deg) scale(1.4); }
+.app:focus-visible .ic.art { box-shadow: none; outline: 3px solid var(--primary); outline-offset: 4px; border-radius: 18px; }
+
+/* a folder of line icons with no tile (אוכל): the icon itself, large, its shapes filled with a pastel tint and drawn in ink */
+.apps-grid.flat .app .ic { background: none; box-shadow: none; border-radius: 18px; color: var(--icon-ink); inline-size: 84px; block-size: 84px; }
+.apps-grid.flat .app .ic .icon { inline-size: 72px; block-size: 72px; stroke-width: 1.5; filter: none;
+  fill: var(--tint, color-mix(in srgb, var(--c1) 55%, #fff)); stroke-linejoin: round; stroke-linecap: round; transition: transform .35s var(--ease-river); }
+.apps-grid.flat .app:hover .ic, .apps-grid.flat .app:focus-visible .ic { box-shadow: none; transform: translateY(-3px); }
+.apps-grid.flat .app:hover .ic .icon { transform: rotate(-6deg) scale(1.06); }
+.apps-grid.flat .app:focus-visible .ic { outline: 3px solid var(--primary); outline-offset: 4px; }

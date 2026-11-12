@@ -115,7 +115,7 @@ What you never do: act behind their back on anything important. You cannot send,
 Each message from the person starts with a <state> note (time, page, the name they call you, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or ראב"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 8;
+const PROMPT_VERSION = 9;
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -159,11 +159,14 @@ const TOOLS: BetaToolUnion[] = [
   tool('propose_mail_plan', "Prepare a plan for tidying the person's Gmail from their request. Nothing changes: the plan opens in the mail screen, where they review the counts and examples and approve it themselves.", {
     request: str('What they want, in their own words'),
   }),
-  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['groceries', 'recipes', 'news', 'songs', 'mail', 'computer', 'home'] } }),
+  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['food', 'groceries', 'recipes', 'keto', 'news', 'songs', 'tools', 'mail', 'computer', 'home'] } }),
 ];
 
 const APP_LINKS: Record<string, { href: string; label: string }> = {
+  food: { href: '/food/', label: '🍲 לאוכל' },
   groceries: { href: '/groceries/', label: '🛒 לרשימת הקניות' },
+  keto: { href: '/groceries/#keto', label: '🥑 לקטוזיס' },
+  tools: { href: '/tools/', label: '🧰 לכלים' },
   recipes: { href: '/groceries/#book', label: '📖 לספר המתכונים' },
   news: { href: '/news/', label: '📰 לחדשות' },
   songs: { href: '/songs/', label: '🎵 לשירון' },

@@ -18,13 +18,13 @@
     .greet h1 { font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.2rem); line-height: 1.15; margin: 0 0 2px; --swell-color: var(--primary); }
     .greet p { margin: 0; color: var(--muted); font-size: 1.15rem; }
 
-    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 495px) * 1.84)); margin-block-start: 4px; }
-    @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 405px) * 1.84)); } }
+    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 495px) * 1.76)); margin-block-start: 4px; }
+    @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 405px) * 1.76)); } }
     .camp::before { content: ''; position: absolute; inset-inline: 2% 2%; inset-block-end: -4%; block-size: 34%; border-radius: 50%;
       background: radial-gradient(closest-side, color-mix(in srgb, var(--olive) 34%, transparent), transparent); pointer-events: none; }
-    .camp img { position: relative; display: block; inline-size: 100%; block-size: auto; aspect-ratio: 1200 / 651; filter: drop-shadow(0 14px 18px rgba(46, 42, 30, .16)); animation: camp-in .9s var(--ease-river) both; }
-    /* His spot: the patterned rug at the tent's entrance (63% from the image's left, 83% down; the image is not mirrored in RTL). */
-    .camp .dock { position: absolute; inset-inline-start: 37%; inset-block-start: 83%; inline-size: 2px; block-size: 2px; pointer-events: none; }
+    .camp > img { position: relative; display: block; inline-size: 100%; block-size: auto; aspect-ratio: 1400 / 794; filter: drop-shadow(0 14px 18px rgba(46, 42, 30, .16)); animation: camp-in .9s var(--ease-river) both; }
+    /* His spot: the patterned orange rug at the tent's entrance (65.5% from the image's left, 78% down; the image is not mirrored in RTL). */
+    .camp .dock { position: absolute; inset-inline-start: 34.5%; inset-block-start: 78%; inline-size: 2px; block-size: 2px; pointer-events: none; }
     @keyframes camp-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
 
     /* The apps ring: cushions sitting around a small campfire; spinning the ring carries them round the fire. */
@@ -38,8 +38,14 @@
     .wheel-item { position: absolute; inset: 0; margin: auto; inline-size: 180px; block-size: 178px; display: grid; justify-items: center; align-content: start; gap: 6px;
       text-decoration: none; color: var(--text); -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; will-change: transform, opacity; }
     .wheel-item:focus-visible { outline: none; }
-    .wheel-item:focus-visible .pillow { filter: drop-shadow(0 0 0 var(--primary)) drop-shadow(0 0 6px var(--primary)); }
-    .wheel-item .pillow { display: block; inline-size: 124px; block-size: 124px; overflow: visible; filter: drop-shadow(0 10px 9px rgba(30, 16, 8, .34)); transition: transform .35s var(--ease-river); }
+    .wheel-item:focus-visible .pillow img { outline: 3px solid var(--primary); outline-offset: 4px; border-radius: 16px; }
+    .wheel-item .pillow { position: relative; display: grid; place-items: center; inline-size: 132px; block-size: 124px; transition: transform .35s var(--ease-river); }
+    .wheel-item .pillow img { max-inline-size: 100%; max-block-size: 100%; filter: drop-shadow(0 10px 8px rgba(30, 16, 8, .32)); -webkit-user-drag: none; }
+    /* the app's sign: a small round badge sewn on the cushion's lower edge, so the weave stays in view */
+    /* the app's sign on the cushion: just the drawn icon, light with a dark edge so it reads on any weave */
+    .wheel-item .badge { position: absolute; inset-block-end: 16%; inset-inline-start: calc(50% - 19px); inline-size: 38px; block-size: 38px; display: grid; place-items: center; color: #fffaf0; pointer-events: none; }
+    .wheel-item .badge .icon { inline-size: 32px; block-size: 32px; stroke-width: 2.4;
+      filter: drop-shadow(0 0 1.5px rgba(20, 10, 4, .95)) drop-shadow(0 0 1px rgba(20, 10, 4, .95)) drop-shadow(0 2px 4px rgba(0, 0, 0, .55)); }
     .wheel-item.front .pillow { animation: plump 3.4s ease-in-out infinite; }
     .wheel-item:active .pillow { transform: scale(.93, .88); }
     .wheel-item .label { font-size: 1.45rem; font-weight: 600; line-height: 1.15; text-align: center; white-space: nowrap; --swell-color: var(--c2); transition: opacity .3s; }
@@ -53,26 +59,33 @@
     .wheel .spin svg { inline-size: 22px; block-size: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .wheel-caption { min-block-size: 2.6em; margin: 0; color: var(--muted); font-size: 1.05rem; text-align: center; max-inline-size: 34ch; }
 
-    /* The campfire at the centre of the ring (cushions in front of it pass before the flames, those behind pass behind). */
-    .fire { position: absolute; inset: 0; margin: auto; inline-size: 92px; block-size: 92px; z-index: 50; pointer-events: none; transform: translateY(calc(var(--cy) - 26px)); }
-    .fire svg { inline-size: 100%; block-size: 100%; overflow: visible; }
-    .fire .flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flick 1.1s ease-in-out infinite alternate; }
-    .fire .f2 { animation-duration: .8s; animation-delay: -.3s; }
-    .fire .f3 { animation-duration: .95s; animation-delay: -.6s; }
-    .fire .spark { animation: spark 2.2s linear infinite; opacity: 0; }
-    .fire .spark:nth-of-type(2) { animation-delay: -.7s; } .fire .spark:nth-of-type(3) { animation-delay: -1.4s; }
-    .fire .halo { animation: halo 1.6s ease-in-out infinite alternate; transform-box: fill-box; transform-origin: 50% 50%; }
-    @keyframes flick { 0% { transform: scale(1, 1) skewX(0); } 35% { transform: scale(.94, 1.08) skewX(3deg); } 70% { transform: scale(1.05, .93) skewX(-3deg); } 100% { transform: scale(.97, 1.04) skewX(1.5deg); } }
-    @keyframes spark { 0% { opacity: 0; transform: translate(0, 0); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--sx, 6px), -46px); } }
-    @keyframes halo { to { opacity: .65; transform: scale(1.08); } }
+    /* The campfire at the centre of the ring (cushions in front of it pass before the flames, those behind pass behind):
+       16 drawn frames played as a strip, over a glow that flickers with them and warms the ground. */
+    .fire { --fw: 140px; position: absolute; inset: 0; margin: auto; inline-size: var(--fw); block-size: calc(var(--fw) * 240 / 263); z-index: 50; pointer-events: none;
+      transform: translateY(calc(var(--cy) - 18px)); }
+    .fire .flames { position: absolute; inset: 0; background: url(/assets/campfire-strip.webp) 0 0 / calc(var(--fw) * 16) 100% no-repeat; animation: fire-run 1.5s steps(16) infinite; }
+    @keyframes fire-run { to { background-position-x: calc(var(--fw) * -16); } }
+    .fire .glow, .fire .core, .fire .ground { position: absolute; border-radius: 50%; pointer-events: none; }
+    /* the light on the ground and the cushions around */
+    .fire .ground { inset: auto -150% -32%; block-size: 120%; background: radial-gradient(closest-side, rgba(255, 150, 50, .34), rgba(255, 120, 30, .14) 45%, transparent 75%); animation: flicker 2.3s ease-in-out infinite; }
+    /* the warm halo around the flames, and their hot heart */
+    .fire .glow { inset: -55% -45% 5%; background: radial-gradient(closest-side, rgba(255, 190, 90, .55), rgba(255, 120, 30, .2) 55%, transparent); filter: blur(6px); animation: flicker 1.7s ease-in-out infinite reverse; }
+    .fire .core { inset: 18% 30% 30%; background: radial-gradient(closest-side, rgba(255, 245, 190, .75), rgba(255, 190, 80, .25) 60%, transparent); filter: blur(4px); animation: flicker .9s ease-in-out infinite; }
+    @keyframes flicker { 0% { opacity: .85; transform: scale(1); } 23% { opacity: 1; transform: scale(1.06, 1.03); } 41% { opacity: .74; transform: scale(.97); }
+      63% { opacity: .95; transform: scale(1.04, .98); } 82% { opacity: .8; transform: scale(1.01); } 100% { opacity: .85; transform: scale(1); } }
+    :root:not([data-theme="light"]) .fire .glow { mix-blend-mode: screen; }
+    @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .fire .glow { opacity: .8; } }
+    :root[data-theme="dark"] .fire .ground, :root[data-theme="dark"] .fire .glow { mix-blend-mode: screen; }
 
     @media (max-width: 599px) {
       .wheel { --cy: -26px; block-size: 236px; }
       .wheel-item { inline-size: 150px; block-size: 146px; }
-      .wheel-item .pillow { inline-size: 100px; block-size: 100px; }
+      .wheel-item .pillow { inline-size: 108px; block-size: 100px; }
+      .wheel-item .badge { inline-size: 32px; block-size: 32px; inset-inline-start: calc(50% - 16px); }
+      .wheel-item .badge .icon { inline-size: 27px; block-size: 27px; }
       .wheel-item .label { font-size: 1.28rem; }
       .wheel .spin { display: none; }   /* on a phone the ring is spun with a finger */
-      .fire { inline-size: 74px; block-size: 74px; transform: translateY(calc(var(--cy) - 20px)); }
+      .fire { --fw: 104px; transform: translateY(calc(var(--cy) - 14px)); }
     }
 
     /* Letters that swell: each one grows toward the pointer (or ripples in a wave on a long press). */
@@ -85,8 +98,119 @@
     .swell.wave .ch { animation: wave 1.1s var(--ease-river) calc(var(--i) * 55ms) both; }
     @keyframes wave { 35% { transform: translateY(-.28em) scale(1.55); color: var(--swell-color, var(--primary)); } }
 
+    /* The music corner beside the tent: a stump with a guitar, a record leaning on it (the player), a cushion (the songbook). */
+    .corner { position: absolute; z-index: 2; inset-block-end: -2%; inset-inline-end: -34%; inline-size: 40%; aspect-ratio: 1.25; }
+    @media (max-width: 1199px) { .corner { inset-inline-end: -6%; inline-size: 34%; inset-block-end: -6%; } }
+    @media (max-width: 599px) { .corner { inset-inline-end: -1%; inline-size: 44%; inset-block-end: -10%; } }
+    /* on a dark ground the dark cushions keep a faint edge of light */
+    :root[data-theme="dark"] .wheel-item .pillow img, :root[data-theme="dark"] .corner .song img { filter: drop-shadow(0 0 1px rgba(255, 236, 210, .45)) drop-shadow(0 10px 8px rgba(0, 0, 0, .45)); }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wheel-item .pillow img, :root:not([data-theme="light"]) .corner .song img { filter: drop-shadow(0 0 1px rgba(255, 236, 210, .45)) drop-shadow(0 10px 8px rgba(0, 0, 0, .45)); } }
+    /* (positions follow the drawing, which is not mirrored in RTL: stump on the left, guitar on its right; inset-inline-end = from the left here) */
+    .corner .stump { position: absolute; inset-inline-end: 22%; inset-block-end: 0; inline-size: 62%; block-size: auto; filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .28)); pointer-events: none; -webkit-user-drag: none; }
+    .corner button { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .corner button:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; border-radius: 12px; }
+    .corner .tip { position: absolute; inset-block-start: 100%; inset-inline-start: 50%; transform: translateX(50%); margin-block-start: 4px; white-space: nowrap; font-size: .85rem; font-weight: 500;
+      color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+    .corner button:hover .tip, .corner button:focus-visible .tip { opacity: 1; }
+    /* the record leans on the stump's side, its label the cover of what's playing */
+    .corner .rec { inset-inline-end: -6%; inset-block-end: 2%; inline-size: 34%; aspect-ratio: 1; }
+    .corner .record { display: block; inline-size: 100%; block-size: 100%; border-radius: 50%; transform: rotate(-14deg);
+      background: radial-gradient(circle, #111 0 4%, transparent 4.5%), radial-gradient(circle, transparent 0 30%, rgba(255, 255, 255, .0) 30%),
+        var(--art, radial-gradient(circle, #d2601a 0 30%, transparent 30.5%)) center / 60% 60% no-repeat,
+        conic-gradient(from 30deg, rgba(255, 255, 255, .14), transparent 12%, transparent 45%, rgba(255, 255, 255, .1) 55%, transparent 65%),
+        repeating-radial-gradient(circle, #1b1916 0 1.6px, #2a2723 1.6px 3px);
+      box-shadow: 0 6px 10px rgba(0, 0, 0, .35), inset 0 0 0 2px #0c0b0a; transition: transform .4s var(--ease-river); }
+    .corner .record::after { content: ''; position: absolute; inset: 35%; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .35); }
+    .corner .rec:hover .record { transform: rotate(-4deg) translateY(-4px); }
+    .corner .rec.playing .record { animation: rec-spin 3.5s linear infinite; }
+    @keyframes rec-spin { from { transform: rotate(-14deg); } to { transform: rotate(346deg); } }
+    /* the songbook: a cushion on the ground in front of the stump */
+    .corner .song { inset-inline-end: 16%; inset-block-end: -10%; inline-size: 44%; }
+    .corner .song img { inline-size: 100%; display: block; filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .3)); transition: transform .35s var(--ease-river); -webkit-user-drag: none; }
+    .corner .song:hover img { transform: translateY(-4px) rotate(-2deg); }
+    .corner .song .badge { position: absolute; inset-block-end: 22%; inset-inline-start: calc(50% - 15px); inline-size: 30px; block-size: 30px; display: grid; place-items: center; color: #fffaf0; pointer-events: none; }
+    .corner .song .badge .icon { inline-size: 26px; block-size: 26px; stroke-width: 2.4;
+      filter: drop-shadow(0 0 1.5px rgba(20, 10, 4, .95)) drop-shadow(0 0 1px rgba(20, 10, 4, .95)) drop-shadow(0 2px 4px rgba(0, 0, 0, .55)); }
+
+
+    /* The sky behind the camp: the sun crosses it with the real clock (rising on the east, the left, and setting
+       on the west, behind the camp). Kept quiet: a soft tint by day, warm colour around the sun at dawn and dusk. */
+    .sky { position: absolute; inset-inline: 0; inset-block-start: 0; z-index: 0; overflow: hidden; pointer-events: none;
+      background: linear-gradient(to bottom, var(--sky-top, transparent), transparent 70%), radial-gradient(60% 55% at var(--sun-x, 50%) var(--sun-y, 100%), var(--sky-glow, transparent), transparent 70%);
+      transition: background 2s;
+      /* no hard horizon line: the sky (and a setting sun) fade out toward the ground */
+      -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent); mask-image: linear-gradient(to bottom, #000 78%, transparent); }
+    main#root { position: relative; z-index: 1; pointer-events: none; }
+    main#root > :not(.home) { pointer-events: auto; }   /* (the sign-in card) */
+    /* the empty parts of the page let a click reach the sun behind them */
+    .home { pointer-events: none; }
+    .home > * { pointer-events: auto; }
+    /* the greeting lets the sun through, except its letters (they swell under the pointer) */
+    .home > .greet { pointer-events: none; }
+    .greet .swell { pointer-events: auto; }
+    .sun { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--sun-size, 120px); block-size: var(--sun-size, 120px); margin: calc(var(--sun-size, 120px) / -2) 0 0 calc(var(--sun-size, 120px) / -2);
+      padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .85; -webkit-tap-highlight-color: transparent;
+      filter: var(--sun-tint, none); transition: filter 2s, opacity .8s; }
+    .sun:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
+    /* the ball (the drawing's core), with a soft halo of light around it */
+    .sun .ball { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; -webkit-user-drag: none; pointer-events: none; transition: scale .5s var(--ease-river), filter .5s; }
+    .sun .halo { position: absolute; inset: -55%; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(closest-side, rgba(255, 196, 92, var(--halo, .42)), rgba(255, 160, 60, calc(var(--halo, .42) * .35)) 48%, transparent 72%);
+      animation: sun-breathe 7s ease-in-out infinite; transition: scale .6s var(--ease-river); }
+    .sun:hover .halo, .sun:focus-visible .halo { scale: 1.12; }
+    .sun:hover .ball { filter: brightness(1.05); }
+    .sun:active .ball { scale: .94; }
+    .sun.flash .halo { animation: sun-flash .9s var(--ease-river); }
+    @keyframes sun-breathe { 50% { scale: 1.06; opacity: .85; } }
+    @keyframes sun-flash { 35% { scale: 1.35; } 100% { scale: 1; } }
+    /* in night colours (chosen by day) the sun keeps its light low */
+    :root[data-theme="dark"] .sun { opacity: .6; --halo: .14; }
+    @media (prefers-reduced-motion: reduce) { .sun .halo { animation: none; } }
+
+    /* The moon: the sun's drawing in moonlight, with tonight's real phase as a shadow over its face. It crosses the
+       night sky on the sun's path (rising on the right, setting behind the tent's left side). */
+    .moon { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--moon-size, 100px); block-size: var(--moon-size, 100px); margin: calc(var(--moon-size, 100px) / -2) 0 0 calc(var(--moon-size, 100px) / -2);
+      padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .92; -webkit-tap-highlight-color: transparent; transition: opacity 1.2s; }
+    .moon:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
+    .moon img, .moon svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; -webkit-user-drag: none; }
+    .moon .halo { position: absolute; inset: -45%; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(214, 226, 255, var(--mhalo, .2)), transparent 70%); animation: sun-breathe 9s ease-in-out infinite; transition: scale .6s var(--ease-river); }
+    .moon:hover .halo { scale: 1.12; }
+    .moon:active img { scale: .95; }
+    .sun, .moon { touch-action: none; cursor: grab; }
+    .sun.held, .moon.held { cursor: grabbing; z-index: 2; }
+    .sun.held .halo, .moon.held .halo { scale: 1.18; }
+    .sun.under, .moon.under { pointer-events: none; }
+    /* the orbit itself: a faint dotted ellipse, only while it is being turned */
+    .orbit-path { position: absolute; inset-block-start: 0; left: 0; pointer-events: none; opacity: 0; transition: opacity .35s; overflow: visible; }
+    .orbit-path ellipse { stroke: color-mix(in srgb, var(--text) 35%, transparent); }
+    .sky.turning .orbit-path { opacity: 1; }
+    /* the night: stars that twinkle slowly, and moonlight round the moon */
+    .stars { position: absolute; inset: 0; opacity: 0; transition: opacity 1.6s; }
+    .sky.night .stars { opacity: 1; }
+    .stars i { position: absolute; inline-size: 2px; block-size: 2px; border-radius: 50%; background: #f3f0e4; opacity: var(--o); box-shadow: 0 0 4px rgba(243, 240, 228, .6);
+      animation: twinkle var(--tw) ease-in-out var(--d) infinite; }
+    .stars i.big { inline-size: 3px; block-size: 3px; box-shadow: 0 0 6px rgba(220, 232, 255, .8); }
+    @keyframes twinkle { 50% { opacity: calc(var(--o) * .35); } }
+    .sky.night .moon { --mhalo: .3; }
+    .sky-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 12px; }
+    .sky-acts .btn { display: inline-flex; align-items: center; gap: 6px; }
+    .sky-acts img { inline-size: 18px; block-size: 18px; }
+    @media (prefers-reduced-motion: reduce) { .stars i { animation: none; } }
+    :root[data-theme="light"] .moon { opacity: .75; --mhalo: .08; }
+
+    /* what the sun opens: the day's sun times, and (soon) the weather */
+    .sun-card { position: fixed; z-index: 39; inline-size: min(300px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: var(--radius-lg); background: var(--glass); border: 1px solid var(--glass-border);
+      -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: var(--lift); animation: camp-in .3s var(--ease-river) both; }
+    .sun-card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .sun-card .times { display: flex; gap: 14px; font-variant-numeric: tabular-nums; }
+    .sun-card .times span { display: grid; }
+    .sun-card .times small { color: var(--muted); font-size: .78rem; }
+    .sun-card .times b { font-weight: 500; font-size: 1.15rem; }
+    .sun-card p { margin: 10px 0 0; color: var(--muted); font-size: .88rem; }
+    .sun-card .x { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; }
+
     body[data-daemon="hero"]:has(.dm-stage) main { padding-block-end: 32px; }
-    @media (prefers-reduced-motion: reduce) { .camp img, .wheel-item.front .pillow, .swell.wave .ch, .fire *, .wheel .orbit { animation: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .camp img, .wheel-item.front .pillow, .swell.wave .ch, .fire *, .wheel .orbit, .corner .record { animation: none !important; } }
 
     .login { max-width: 460px; margin: 10vh auto; padding: 32px 28px; text-align: center; }
     .login h1 { font-size: 2rem; margin: 0 0 8px; }
@@ -100,7 +224,6 @@
 <body data-daemon="hero">
   <main class="wide" id="root"></main>
   <script src="/assets/common.js"></script>
-  <script src="/assets/pillows.js"></script>
   <script>
   (async () => {
     const { el } = H;
@@ -127,22 +250,24 @@
     const first = (u.name || u.email).split(' ')[0];
     const apps = [
       // each app is a cushion in its own weave (c2: the colour its letters glow in when they swell)
-      { href: '/groceries/', ic: 'cart', name: 'קניות ומתכונים', sub: 'רשימה משותפת לבית וספר מתכונים', palette: 'tatreez', weave: 'tatreez', c2: '#d8283f' },
-      { href: '/news/', ic: 'news', name: 'חדשות', sub: 'כל האתרים, מישראל ומהעולם, במקום אחד', palette: 'indigo', weave: 'arrows', c2: '#4a63b8' },
-      { href: '/songs/', ic: 'music', name: 'שירון', sub: 'מילים, אקורדים לגיטרה ולפסנתר, וזמירות שבת', palette: 'kilim', weave: 'zigzag', c2: '#e2711d' },
-      { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'מסבירים במילים, מאשרים, וזה מסתדר', palette: 'teal', weave: 'stripes', c2: '#2c7c78' },
-      { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'קבצים ותיקיות, תמיד עם גיבוי', palette: 'rust', weave: 'grid', c2: '#c0562b' },
+      { href: '/food/', ic: 'food', name: 'אוכל', sub: 'רשימת קניות, ספר מתכונים, דיאטה והמקרר', pillow: 'p13', c2: '#2f7d4a' },
+      { href: '/news/', ic: 'news', name: 'חדשות', sub: 'כל האתרים, מישראל ומהעולם, במקום אחד', pillow: 'p11', c2: '#3557a8' },
+      { href: '/fun/', ic: 'fun', name: 'בידור', sub: 'מה שווה לראות, לשמוע ולשחק – ואיפה', pillow: 'p05', c2: '#b8457a' },
+      { href: '/songs/', ic: 'music', name: 'שירון', sub: 'מילים, אקורדים לגיטרה ולפסנתר, וזמירות שבת', pillow: 'p03', c2: '#d2601a' },
+      { href: '/parasha/', ic: 'torah', name: 'פרשת השבוע', sub: 'הפרשה, הקריאה וזמני השבת', pillow: 'p02', c2: '#8e2435' },
+      { href: '/tools/', ic: 'tools', name: 'כלים', sub: 'סידור המייל, סידור המחשב, משימות ומזג אוויר', pillow: 'p09', c2: '#c27c12' },
     ];
-    if (u.role === 'owner') apps.push({ href: '/admin/', ic: 'family', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר', palette: 'wine', weave: 'tatreez', c2: '#3f8150' });
+    if (u.role === 'owner') apps.push({ href: '/admin/', ic: 'family', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר', pillow: 'p15', c2: '#8a5a32' });
 
     const dock = el('span', { class: 'dock', 'aria-hidden': 'true' });
     const wheel = appWheel(apps);
     root.append(el('div', { class: 'home' },
       el('div', { class: 'greet' }, el('h1', {}, swell(`שלום ${first}`)), el('p', {}, 'במה נתחיל היום?')),
-      el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של ראב"ע', width: 1200, height: 651, fetchpriority: 'high' }), dock),
+      el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של ראב"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
       wheel.root, wheel.caption,
       el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     wheel.start();
+    sky();
     swellPointer();
     // Ibn Ezra lives here: he stands on the rug at his tent's entrance (unless he was asked to come along with the person).
     H.loadDaemon().then((d) => d.mount(null, { dock }));
@@ -212,26 +337,246 @@
       clearTimeout(w._wave); w._wave = setTimeout(() => w.classList.remove('wave'), 1100 + w.querySelectorAll('.ch').length * 55);
     }
 
+    /* ---------- the sky: one orbit round the tent, the sun and the moon on opposite ends of it ----------
+       The orbit is an ellipse round the tent; its lower half runs under the ground, so when one is up the other is down.
+       Both come up on the right and go down behind the tent, between its back-left peg and its wall. The real clock turns
+       it; the person can turn it too – drag the sun or the moon along it – and that is the app's day/night switch: let go
+       with the moon up and it is night, with the sun up and it is day (until the next real sunrise or sunset). */
+    function sky() {
+      const sun = el('button', { class: 'sun', type: 'button', 'aria-label': 'השמש – לחיצה: זמני היום; גרירה: מעבר ללילה' },
+        el('span', { class: 'halo' }), el('img', { class: 'ball', src: '/assets/sun-core.webp', alt: '' }));
+      const moonShade = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      moonShade.setAttribute('viewBox', '-1 -1 2 2'); moonShade.setAttribute('aria-hidden', 'true');
+      const moon = el('button', { class: 'moon', type: 'button', 'aria-label': 'הירח – לחיצה: המופע; גרירה: מעבר ליום' },
+        el('span', { class: 'halo' }), el('img', { src: '/assets/moon.webp', alt: '' }), moonShade);
+      // the path itself, shown faintly only while it is being turned
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      path.setAttribute('class', 'orbit-path'); path.setAttribute('aria-hidden', 'true');
+      path.innerHTML = '<ellipse fill="none" stroke-width="2" stroke-dasharray="3 9" stroke-linecap="round"/>';
+      // a quiet night sky: a few stars, each twinkling at its own pace
+      const stars = el('div', { class: 'stars', 'aria-hidden': 'true' });
+      let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+      for (let i = 0; i < 46; i++) {
+        const big = rnd() < 0.18;
+        stars.append(el('i', { class: big ? 'big' : '', style: `left:${(rnd() * 100).toFixed(2)}%;top:${(rnd() * 88).toFixed(2)}%;--tw:${(3 + rnd() * 5).toFixed(1)}s;--d:${(-rnd() * 6).toFixed(1)}s;--o:${(0.35 + rnd() * 0.55).toFixed(2)}` }));
+      }
+      const box = el('div', { class: 'sky' }, stars, path, moon, sun);
+      document.body.prepend(box);
+      const camp = document.querySelector('.camp');
+
+      let geo = null;
+      function geometry() {
+        const r = camp.getBoundingClientRect(), campTop = r.top + scrollY;
+        const size = innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124;
+        const appbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--appbar-h')) || 56;
+        // the horizon: the ground at the tent's back pegs; the orbit's ends: between each back peg and the tent's wall
+        const cy = campTop + r.height * 0.655;
+        const left = r.left + r.width * 0.06, right = r.left + r.width * 0.94;
+        const top = appbar + size * 0.62;
+        return { size, cx: (left + right) / 2, cy, rx: (right - left) / 2, ry: Math.max(60, cy - top), campTop, height: cy + size * 0.12 };
+      }
+      const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
+
+      /* the angle of the sun on the orbit: 0 rising (right), π setting (left); the moon is always half an orbit away */
+      let A = 0, tween = null, held = null;
+      const dark = () => document.documentElement.dataset.theme === 'dark';
+      function nightQ(s, now) {
+        const y1 = H.sunTimes(new Date(now - 864e5)), t1 = H.sunTimes(new Date(now + 864e5));
+        const dusk = now < s.rise ? y1.set : s.set, dawn = now < s.rise ? s.rise : t1.rise;
+        return (now - dusk) / (dawn - dusk);
+      }
+      /** Where the orbit should stand now: the real sky, or – when the person chose the other half of the day – the
+          other body in this one's place (so a day chosen as night shows the moon where the sun would be). */
+      function targetA() {
+        const s = H.sunNow(), now = Date.now();
+        const real = dark() === !s.day;
+        let f = s.day ? s.progress : nightQ(s, now);
+        if (!real) f = Math.max(0.14, Math.min(0.86, f));
+        return Math.PI * f + (dark() ? Math.PI : 0);
+      }
+      function paint() {
+        const g = geo, size = g.size, ms = Math.round(size * 0.9);
+        const S = at(A), M = at(A + Math.PI);
+        sun.style.transform = `translate(${S.x.toFixed(1)}px, ${S.y.toFixed(1)}px)`;
+        moon.style.transform = `translate(${M.x.toFixed(1)}px, ${M.y.toFixed(1)}px)`;
+        const sinS = Math.sin(A);
+        sun.classList.toggle('under', sinS < -0.12);
+        moon.classList.toggle('under', -sinS < -0.12);
+        // the light in the sky follows whichever is up
+        const up = sinS >= 0 ? S : M;
+        box.style.setProperty('--sun-x', ((up.x / innerWidth) * 100).toFixed(1) + '%');
+        box.style.setProperty('--sun-y', ((up.y / g.height) * 100).toFixed(1) + '%');
+      }
+      function place() {
+        geo = geometry();
+        const g = geo;
+        box.style.blockSize = g.height + 'px';
+        box.style.setProperty('--sun-size', g.size + 'px');
+        box.style.setProperty('--moon-size', Math.round(g.size * 0.9) + 'px');
+        const e = path.firstChild;
+        path.setAttribute('width', innerWidth); path.setAttribute('height', g.height);
+        e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('rx', g.rx); e.setAttribute('ry', g.ry);
+        const s = H.sunNow(), now = Date.now(), night = dark();
+        const real = night === !s.day;
+        const tw = real && !night ? Math.max(0, 1 - Math.min(Math.abs(now - s.rise), Math.abs(now - s.set)) / (50 * 60e3)) : 0;
+        sun.style.setProperty('--sun-tint', tw > 0 ? `saturate(${1 + tw * 0.35}) hue-rotate(${-14 * tw}deg)` : 'none');
+        box.classList.toggle('night', night);
+        box.style.setProperty('--sky-glow', night ? 'rgba(150, 182, 255, .15)' : tw > 0 ? `rgba(255, 128, 72, ${(0.22 * tw).toFixed(3)})` : 'rgba(255, 214, 140, .10)');
+        box.style.setProperty('--sky-top', night ? 'rgba(4, 8, 22, .45)' : `rgba(130, 178, 222, ${(0.14 * (1 - tw)).toFixed(3)})`);
+        paintPhase(moonPhase(now));
+        if (!held) turnTo(targetA(), tween ? 900 : 0);
+        else paint();
+      }
+      /** Turn the orbit to an angle (the nearest way round), easing out. */
+      function turnTo(goal, ms) {
+        while (goal - A > Math.PI) goal -= 2 * Math.PI;
+        while (A - goal > Math.PI) goal += 2 * Math.PI;
+        if (!ms) { A = goal; paint(); return; }
+        const from = A, t0 = performance.now();
+        cancelAnimationFrame(tween?.raf);
+        tween = { raf: 0 };
+        const step = (t) => {
+          const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3);
+          A = from + (goal - from) * e; paint();
+          if (k < 1) tween.raf = requestAnimationFrame(step); else tween = null;
+        };
+        tween.raf = requestAnimationFrame(step);
+      }
+      function paintPhase(m) {
+        // the dark part of the face: half the disc on the unlit side, closed by the terminator (an ellipse)
+        const f = 0.817;   // the face's radius inside the drawing (inside the cream ring)
+        const waxing = m.age < 0.5;
+        const c = Math.cos(2 * Math.PI * (waxing ? m.age : 1 - m.age));   // 1 at new moon, -1 at full
+        const rx = Math.abs(c) * f;
+        const d = `M0,${-f} A${f},${f} 0 0 0 0,${f} A${rx.toFixed(4)},${f} 0 0 ${c > 0 ? 0 : 1} 0,${-f} Z`;
+        moonShade.innerHTML = m.lit > 0.985 ? '' : `<path d="${d}" fill="rgba(13, 19, 36, .8)" transform="${waxing ? '' : 'scale(-1,1)'}"/>`;
+        moon.title = m.name;
+      }
+
+      /* turning it by hand: the body under the finger follows along the orbit; let go and it settles into day or night */
+      for (const body of [sun, moon]) {
+        body.addEventListener('pointerdown', (e) => {
+          if (e.button > 0) return;
+          document.querySelector('.sun-card')?.remove();
+          const x0 = e.clientX, y0 = e.clientY;
+          const ang = (ev) => Math.atan2((geo.cy - (ev.clientY + scrollY)) / geo.ry, (ev.clientX - geo.cx) / geo.rx);
+          let moved = false, last = ang(e), unwrapped = last;
+          const own = body === sun ? 0 : Math.PI;
+          const off = (A + own) - last;
+          const mv = (ev) => {
+            if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
+            if (!moved) { moved = true; held = body; cancelAnimationFrame(tween?.raf); tween = null; box.classList.add('turning'); body.classList.add('held'); try { body.setPointerCapture(ev.pointerId); } catch (_) { /* ignore */ } }
+            const a2 = ang(ev);
+            let d = a2 - last; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
+            last = a2; unwrapped += d;
+            A = unwrapped + off - own;
+            paint();
+          };
+          const up = () => {
+            removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+            if (!moved) return;
+            held = null; body.classList.remove('held'); box.classList.remove('turning');
+            body.justTurned = true; setTimeout(() => { body.justTurned = false; }, 60);
+            const wantNight = Math.sin(A) < 0;     // the moon is the one up
+            if (wantNight !== dark()) H.chooseTheme(wantNight);   // the observer below turns it into place
+            else turnTo(targetA(), 700);
+          };
+          addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+        });
+      }
+
+      /* a tap: the details, a switch to the other half of the day, and (when it isn't the real one) a way back */
+      function addControls(card) {
+        const s = H.sunNow(), night = dark(), real = night === !s.day;
+        const row = el('div', { class: 'sky-acts' },
+          el('button', { class: 'btn small', type: 'button', onclick: () => { card.remove(); H.chooseTheme(!night); } }, night ? 'מעבר ליום' : 'מעבר ללילה'),
+          real ? null : el('button', { class: 'btn small primary', type: 'button', title: 'בחזרה ליום או ללילה של השעה הזאת', onclick: () => { card.remove(); H.chooseTheme(!s.day); } },
+            el('img', { src: s.day ? '/assets/sun-core.webp' : '/assets/moon.webp', alt: '', width: 18, height: 18 }), 'חזרה למצב האמיתי'));
+        card.append(row);
+      }
+      sun.addEventListener('click', () => { if (sun.justTurned) return; sun.classList.remove('flash'); void sun.offsetWidth; sun.classList.add('flash'); if (H.weather?.open) return H.weather.open(sun); sunCard(sun); addControls(document.querySelector('.sun-card')); });
+      moon.addEventListener('click', () => { if (moon.justTurned) return; moonCard(moon); addControls(document.querySelector('.sun-card')); });
+
+      place();
+      setInterval(() => { tween = tween || { raf: 0 }; place(); }, 60e3);
+      addEventListener('resize', () => { tween = null; place(); });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') place(); });
+      // day ↔ night (by the person, or by the real sun at sunrise and sunset): the orbit turns into its new place
+      new MutationObserver(() => { tween = tween || { raf: 0 }; place(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      camp.querySelector('img').addEventListener('load', () => { tween = null; place(); });
+    }
+    /** The moon's age in the month (0 new, .5 full), how much of it is lit, and the phase's Hebrew name. */
+    function moonPhase(now = Date.now()) {
+      const SYN = 29.530588853, NEW = Date.UTC(2000, 0, 6, 18, 14);
+      const age = ((((now - NEW) / 864e5) % SYN) + SYN) % SYN / SYN;
+      const lit = (1 - Math.cos(2 * Math.PI * age)) / 2;
+      const name = age < 0.034 || age > 0.966 ? 'מולד' : age < 0.22 ? 'סהר מתמלא' : age < 0.28 ? 'רבע ראשון' : age < 0.47 ? 'ירח מתמלא'
+        : age < 0.53 ? 'ירח מלא' : age < 0.72 ? 'ירח מתמעט' : age < 0.78 ? 'רבע אחרון' : 'סהר מתמעט';
+      const toFull = ((0.5 - age + 1) % 1) * SYN, toNew = ((1 - age) % 1) * SYN;
+      return { age, lit, name, toFull, toNew };
+    }
+    function moonCard(moon) {
+      document.querySelector('.sun-card')?.remove();
+      const m = moonPhase();
+      const day = (n) => (n < 1 ? 'היום' : n < 1.5 ? 'מחר' : `בעוד ${Math.round(n)} ימים`);
+      const heb = new Intl.DateTimeFormat('he-u-ca-hebrew', { day: 'numeric', month: 'long' }).format(new Date());
+      const card = el('div', { class: 'sun-card', role: 'dialog', 'aria-label': 'הירח הלילה' },
+        el('button', { class: 'btn ghost small x', type: 'button', 'aria-label': 'סגירה', onclick: () => card.remove() }, '✕'),
+        el('h3', {}, m.name),
+        el('div', { class: 'times' }, el('span', {}, el('small', {}, 'מואר'), el('b', {}, Math.round(m.lit * 100) + '%')), el('span', {}, el('small', {}, 'היום בלוח העברי'), el('b', {}, heb))),
+        el('p', {}, m.age < 0.5 ? `ירח מלא ${day(m.toFull)}.` : `מולד ${day(m.toNew)}.`));
+      document.body.append(card);
+      const r = moon.getBoundingClientRect();
+      card.style.left = Math.max(12, Math.min(innerWidth - card.offsetWidth - 12, r.left + r.width / 2 - card.offsetWidth / 2)) + 'px';
+      card.style.top = Math.min(innerHeight - card.offsetHeight - 12, r.bottom + 8) + 'px';
+      const off = (e) => { if (!card.contains(e.target) && !moon.contains(e.target)) { card.remove(); document.removeEventListener('pointerdown', off); } };
+      setTimeout(() => document.addEventListener('pointerdown', off), 0);
+    }
+    function sunCard(sun) {
+      document.querySelector('.sun-card')?.remove();
+      const s = H.sunNow();
+      const t = (ms) => new Date(ms).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+      const left = Math.max(0, s.set - Date.now()), mins = Math.round(left / 60e3);
+      const card = el('div', { class: 'sun-card', role: 'dialog', 'aria-label': 'השמש היום' },
+        el('button', { class: 'mu-btn x btn ghost small', type: 'button', 'aria-label': 'סגירה', onclick: () => card.remove() }, '✕'),
+        el('h3', {}, s.day ? 'יום' : 'לילה'),
+        el('div', { class: 'times' }, el('span', {}, el('small', {}, 'זריחה'), el('b', {}, t(s.rise))), el('span', {}, el('small', {}, 'צהריים'), el('b', {}, t(s.noon))), el('span', {}, el('small', {}, 'שקיעה'), el('b', {}, t(s.set)))),
+        el('p', {}, s.day && left ? `עוד ${mins >= 60 ? Math.floor(mins / 60) + ' שעות ו־' : ''}${mins % 60} דקות עד השקיעה.` : 'השמש תזרח שוב ב־' + t(s.next) + '.'),
+        el('p', {}, el('a', { href: '/tools/weather/' }, 'תחזית מזג האוויר'), ' – בקרוב, בכלים.'));
+      document.body.append(card);
+      const r = sun.getBoundingClientRect();
+      card.style.left = Math.max(12, Math.min(innerWidth - card.offsetWidth - 12, r.left + r.width / 2 - card.offsetWidth / 2)) + 'px';
+      card.style.top = Math.min(innerHeight - card.offsetHeight - 12, r.bottom + 8) + 'px';
+      const off = (e) => { if (!card.contains(e.target) && !sun.contains(e.target)) { card.remove(); document.removeEventListener('pointerdown', off); } };
+      setTimeout(() => document.addEventListener('pointerdown', off), 0);
+      card.addEventListener('keydown', (e) => { if (e.key === 'Escape') card.remove(); });
+    }
+
+    /* ---------- the music corner ---------- */
+    function musicCorner() {
+      const rec = el('button', { class: 'rec', type: 'button', title: 'נגן המוזיקה', 'aria-label': 'לפתוח את נגן המוזיקה', onclick: () => H.music?.float() },
+        el('span', { class: 'record' }), el('span', { class: 'tip' }, 'נגן'));
+      const song = el('button', { class: 'song', type: 'button', title: 'השירון', 'aria-label': 'לפתוח את השירון בחלון צף', onclick: () => songWindow() },
+        el('img', { src: '/assets/pillows/p05.webp', alt: '', draggable: 'false' }), el('span', { class: 'badge' }, H.icon('music')));
+      // the record shows what's playing (the player loads a moment after the page)
+      const watch = () => {
+        if (!H.music) return setTimeout(watch, 400);
+        H.music.engine.on((st) => {
+          rec.classList.toggle('playing', !!st.playing);
+          rec.firstChild.style.setProperty('--art', st.art ? `url("${st.art}")` : '');
+          rec.title = st.title ? `${st.title} – ${st.artist}` : 'נגן המוזיקה';
+        });
+      };
+      watch();
+      return el('div', { class: 'corner' }, el('img', { class: 'stump', src: '/assets/stump-guitar.webp', alt: '', width: 700, height: 698, draggable: 'false' }), song, rec);
+    }
+
+    /** The songbook in a window over the home page (the player's songbook window; it loads a moment after the page). */
+    function songWindow() { if (H.music?.songbook) H.music.songbook('/songs/?embed=1', 'שירון'); else location.href = '/songs/'; }
+
     /* ---------- the campfire in the middle of the ring ---------- */
     function campfire() {
-      return el('div', { class: 'fire', 'aria-hidden': 'true', html: `<svg viewBox="0 0 100 100">
-        <defs>
-          <radialGradient id="fireHalo"><stop offset="0" stop-color="#ffb347" stop-opacity=".55"/><stop offset="1" stop-color="#ff7b00" stop-opacity="0"/></radialGradient>
-          <linearGradient id="flameOut" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#e2420e"/><stop offset=".6" stop-color="#f7801c"/><stop offset="1" stop-color="#ffb43a"/></linearGradient>
-          <linearGradient id="flameIn" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff9a1f"/><stop offset="1" stop-color="#fff1a6"/></linearGradient>
-        </defs>
-        <ellipse class="halo" cx="50" cy="80" rx="46" ry="20" fill="url(#fireHalo)"/>
-        <g fill="#6f6a60" stroke="#4a463f" stroke-width="1.2">
-          <ellipse cx="22" cy="84" rx="7" ry="4.5"/><ellipse cx="34" cy="89" rx="7" ry="4.5"/><ellipse cx="50" cy="91" rx="7.5" ry="4.5"/>
-          <ellipse cx="66" cy="89" rx="7" ry="4.5"/><ellipse cx="78" cy="84" rx="7" ry="4.5"/>
-        </g>
-        <g stroke-linecap="round"><path d="M28 86 L70 70" stroke="#5a3620" stroke-width="8"/><path d="M72 86 L30 70" stroke="#7a4a2a" stroke-width="8"/>
-          <circle cx="70" cy="70" r="3.4" fill="#d9a46a"/><circle cx="30" cy="70" r="3.4" fill="#e3b27a"/></g>
-        <path class="flame f1" d="M50 18 C62 36 72 46 66 64 C62 76 38 76 34 64 C28 48 44 40 50 18Z" fill="url(#flameOut)"/>
-        <path class="flame f2" d="M38 40 C44 50 50 56 46 68 C42 74 32 72 32 63 C31 54 36 50 38 40Z" fill="url(#flameOut)" opacity=".9"/>
-        <path class="flame f3" d="M51 38 C58 50 62 56 58 66 C55 72 45 72 43 65 C41 56 48 50 51 38Z" fill="url(#flameIn)"/>
-        <circle class="spark" cx="48" cy="34" r="1.6" fill="#ffd27a" style="--sx:-8px"/><circle class="spark" cx="54" cy="30" r="1.3" fill="#ffe7a3" style="--sx:9px"/><circle class="spark" cx="50" cy="38" r="1.2" fill="#ffc45e" style="--sx:3px"/>
-      </svg>` });
+      return el('div', { class: 'fire', 'aria-hidden': 'true' }, el('span', { class: 'ground' }), el('span', { class: 'glow' }), el('span', { class: 'flames' }), el('span', { class: 'core' }));
     }
 
     /* ---------- the apps ring: spin it with a finger, the mouse, the arrows; it never ends ---------- */
@@ -244,7 +589,8 @@
       const prev = el('button', { class: 'spin prev', type: 'button', 'aria-label': 'האפליקציה הקודמת' }, arrow('M9 5l7 7-7 7'));
       const next = el('button', { class: 'spin next', type: 'button', 'aria-label': 'האפליקציה הבאה' }, arrow('M15 5l-7 7 7 7'));
       const items = list.map((a, i) => el('a', { class: 'wheel-item', href: a.href, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name, style: `--c2:${a.c2}`, draggable: 'false' },
-        el('span', { html: H.pillow({ palette: a.palette, weave: a.weave, icon: H.icon(a.ic).innerHTML, id: 'pw' + i }) }).firstElementChild, el('b', { class: 'label' }, swell(a.name))));
+        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async' }), el('span', { class: 'badge' }, H.icon(a.ic))),
+        el('b', { class: 'label' }, swell(a.name))));
       const root = el('nav', { class: 'wheel', 'aria-label': 'האפליקציות', 'aria-roledescription': 'גלגל' }, orbit, campfire(), ...items, prev, next);
       // off: how far the cushion's centre sits above the item box's centre (the ring passes through the cushions' centres)
       let rot = reduced ? 0 : -1.6, vel = 0, goal = 0, rx = 300, ry = 60, cy = 0, off = 0, raf = 0, last = 0, drag = null, front = -1;

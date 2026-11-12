@@ -179,6 +179,12 @@ export async function command(ctx: Ctx) {
   return json({ ok: true });
 }
 
+/** What plays now and what comes next (Spotify's own queue: the rest of the album or playlist, and what was added). */
+export async function queue(ctx: Ctx) {
+  const q = await spotify(ctx, '/me/player/queue');
+  return json({ now: trackOut(q?.currently_playing), next: (q?.queue || []).slice(0, 30).map(trackOut).filter(Boolean) });
+}
+
 export async function search(ctx: Ctx) {
   const q = (ctx.url.searchParams.get('q') || '').trim().slice(0, 120);
   if (!q) return json({ tracks: [], playlists: [] });

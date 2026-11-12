@@ -283,3 +283,72 @@ CREATE TABLE IF NOT EXISTS music_tokens (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (email, provider)
 );
+
+-- Fridges: the family's fridges (shared by all members) and what's in each
+CREATE TABLE IF NOT EXISTS fridges (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  sort       INTEGER NOT NULL DEFAULT 0,
+  created_by TEXT,
+  created_at INTEGER NOT NULL,
+  deleted    INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS fridge_items (
+  fridge     TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  cat        TEXT,
+  qty        REAL NOT NULL DEFAULT 1,
+  unit       TEXT,
+  expires    TEXT,                 -- YYYY-MM-DD, when it goes off (optional)
+  note       TEXT,
+  added_by   TEXT,
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT,
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (fridge, id)
+);
+CREATE INDEX IF NOT EXISTS fridge_items_changed ON fridge_items(fridge, updated_at);
+
+-- Notes (פתקים): each person's own, dated; a title is written for them when none was given
+CREATE TABLE IF NOT EXISTS notes (
+  email        TEXT NOT NULL,
+  id           TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  body         TEXT NOT NULL DEFAULT '',
+  source_url   TEXT,
+  source_title TEXT,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  deleted      INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, id)
+);
+
+-- the Torah researcher (פרשת השבוע): answers kept per (passage, focus, question) for a month
+CREATE TABLE IF NOT EXISTS research_answers (
+  key TEXT PRIMARY KEY,
+  answer TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+-- our copy of what the study room read from Sefaria (texts, links, dictionaries, manuscripts), by request
+CREATE TABLE IF NOT EXISTS sefaria_cache (
+  key TEXT PRIMARY KEY,
+  body TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+-- the family's own days in the calendar (shared by everyone): birthdays, memorial days, anniversaries
+CREATE TABLE IF NOT EXISTS family_events (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  date TEXT NOT NULL,
+  after_sunset INTEGER NOT NULL DEFAULT 0,
+  recur TEXT NOT NULL,
+  note TEXT NOT NULL DEFAULT '',
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0
+);

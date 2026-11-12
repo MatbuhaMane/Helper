@@ -246,6 +246,11 @@ export async function listItems(ctx: Ctx) {
 type Feed = ReturnType<typeof withInfo>;
 type Parsed = { title: string; items: Omit<NewsItem, 'id' | 'feedId' | 'feed'>[] };
 
+/** The items of one source that is not one of the person's feeds (the entertainment board uses this), cached like a feed. */
+export async function sourceItems(ctx: Ctx, src: { id: string; title: string; url: string; lang: string }): Promise<NewsItem[]> {
+  return cachedFeed(ctx, withInfo({ ...src, kind: 'web', quality: 4, country: null, category: null, folder: '', position: 0 } as any));
+}
+
 async function cachedFeed(ctx: Ctx, f: Feed): Promise<NewsItem[]> {
   const cache = (caches as any).default as Cache;
   const key = new Request(`https://feed-cache.helper/v4/${encodeURIComponent(f.url)}`);

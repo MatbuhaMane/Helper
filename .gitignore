@@ -2,3 +2,6 @@ node_modules/
 .wrangler/
 .dev.vars
 __pycache__/
+
+# the downloaded sources of the witnesses and the concordance (tools/build-*.py fetch them again)
+data/witnesses/sources/

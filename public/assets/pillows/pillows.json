@@ -1,0 +1,20 @@
+{
+  "about": "Bedouin cushions for the home page's menu (drawn, transparent webp, up to 420px wide). Each menu item takes one; the free ones are kept for items added later. In public/index.html: { pillow: 'pNN', c2: '<the colour its letters glow in>' }.",
+  "pillows": [
+    { "id": "p01", "look": "maroon tatreez, square, an eight-point star", "glow": "#8e2435", "used": null },
+    { "id": "p02", "look": "maroon tatreez, wide, tassels", "glow": "#8e2435", "used": "parasha (ring)" },
+    { "id": "p03", "look": "orange-red kilim, wide, zigzags round a blue diamond", "glow": "#d2601a", "used": "songs (ring)" },
+    { "id": "p04", "look": "maroon bolster, a cream diamond", "glow": "#7b1d2c", "used": null },
+    { "id": "p05", "look": "black tatreez, square, a red star, tassels", "glow": "#9c2a2a", "used": "songbook (music corner)" },
+    { "id": "p06", "look": "black tatreez, wide, tassels", "glow": "#9c2a2a", "used": null },
+    { "id": "p07", "look": "red kilim, square, a blue diamond on cream", "glow": "#c0402a", "used": null },
+    { "id": "p08", "look": "navy and mustard bolster", "glow": "#c98a1c", "used": null },
+    { "id": "p09", "look": "mustard kilim, a navy diamond", "glow": "#c27c12", "used": "tools (ring)" },
+    { "id": "p10", "look": "white tatreez, a purple star, red flowers", "glow": "#9c2a2a", "used": null },
+    { "id": "p11", "look": "blue tatreez, a red star", "glow": "#3557a8", "used": "news (ring)" },
+    { "id": "p12", "look": "red-orange kilim, long, stripes and a diamond", "glow": "#c4501e", "used": null },
+    { "id": "p13", "look": "green tatreez, a red star", "glow": "#2f7d4a", "used": "food (ring)" },
+    { "id": "p14", "look": "red kilim, long, an orange diamond", "glow": "#b8402a", "used": null },
+    { "id": "p15", "look": "a pair: a deer and a diamond, sand colours", "glow": "#8a5a32", "used": "family admin (ring)" }
+  ]
+}

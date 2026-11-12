@@ -18,7 +18,7 @@
     passkey_algorithm_not_supported: 'המכשיר הזה לא תומך בסוג המפתח.', challenge_expired: 'עבר יותר מדי זמן. נסו שוב.',
     // stage 2: heads, links between trees, privacy
     head_only_member: 'רק ראש משק הבית מחבר כרטיס למשתמש אחר. אפשר לכתוב כאן רק את הכתובת שלך.', only_a_head: 'רק ראש משק הבית יכול לעשות את זה.',
-    only_the_person: 'רק האדם עצמו קובע את הפרטיות שלו.', only_the_owner: 'רק בעל העוזר ממנה את הנהלת השבט.', not_yours: 'רק מי שביקש, ראשי המשפחות, האדם עצמו או הנהלת השבט יכולים לנתק.',
+    only_the_person: 'רק האדם עצמו קובע את הפרטיות שלו.', only_the_owner: 'רק בעל האוהל ממנה את הנהלת השבט.', not_yours: 'רק מי שביקש, ראשי המשפחות, האדם עצמו או הנהלת השבט יכולים לנתק.',
     bad_email: 'כתובת המייל לא נראית תקינה.', same_household: 'הכתובת הזו שייכת למשק הבית שלנו.', note_required: 'כתבו לצד השני מי זה או זו.',
     already_asked: 'כבר נשלחה בקשה כזו, והיא עוד מחכה.', already_linked: 'השניים כבר מקושרים.', two_in_one_tree: 'אותו אדם כבר מופיע בעץ הזה בכרטיס אחר.',
     different_people: 'לשני הכרטיסים כתובות מייל שונות – אלה שני אנשים.', gone: 'הכרטיס בצד השני כבר לא קיים.', not_member: 'אין משתמש בכתובת הזו.', title_required: 'צריך שם למשפחה.',
@@ -420,7 +420,7 @@
     // what the server did not send me (kept private by the person or the head): not shown, and kept as it is on save
     const hid = new Set(p?.hidden || []);
     const name = el('input', { type: 'text', value: p?.name || '', maxlength: 80, required: true, 'aria-label': 'שם', placeholder: 'שם מלא', disabled: hid.has('identity') });
-    const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש בעוזר)', 'aria-label': 'כתובת Gmail' });
+    const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש באוהל)', 'aria-label': 'כתובת Gmail' });
     const sex = el('select', { 'aria-label': 'מין' }, [['', '—'], ['m', 'זכר'], ['f', 'נקבה']].map(([v, t]) => el('option', { value: v, selected: (d.sex || '') === v }, t)));
     const born = el('input', { type: 'date', value: d.born || '', 'aria-label': 'תאריך לידה' });
     const bornLate = el('input', { type: 'checkbox', checked: !!d.bornAfterSunset, 'aria-label': 'אחרי השקיעה' });
@@ -455,7 +455,7 @@
         el('div', { class: 'fv-two' }, el('label', {}, 'תאריך פטירה', died), el('label', { class: 'fv-check' }, diedLate, ' נפטר/ה אחרי השקיעה')),
         el('div', { class: 'fv-two' }, el('label', {}, 'מקום לידה', place), el('label', {}, 'יום ההולדת לפי', by))]),
       hid.has('notes') ? el('p', { class: 'muted small' }, 'ההערות פרטיות.') : el('label', {}, 'הערות', notes),
-      hid.has('identity') ? null : el('label', {}, S.roles?.head ? 'משתמש בעוזר' : 'משתמש בעוזר (רק ראש משק הבית מחבר כתובת של מישהו אחר)', member),
+      hid.has('identity') ? null : el('label', {}, S.roles?.head ? 'משתמש באוהל' : 'משתמש באוהל (רק ראש משק הבית מחבר כתובת של מישהו אחר)', member),
       hid.has('dates') ? null : el('label', { class: 'fv-check' }, inCal, ' בלוח השנה המשפחתי (יום הולדת, ואחרי פטירה – יום השנה)'),
       el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'שמירה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
     setTimeout(() => name.focus(), 50);
@@ -546,7 +546,7 @@
       const items = list.items.filter((x) => x.kind === t);
       body.replaceChildren(...[
         el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
-            el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת בעוזר – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת בעוזר – ראש משק הבית מנהל את הפרטים')),
+            el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת באוהל – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת באוהל – ראש משק הבית מנהל את הפרטים')),
           el('span', { class: 'spacer' }), el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה')),
         relationsBox(p, () => draw(tab)),
         treesBox(p),
@@ -680,7 +680,7 @@
     for (const x of [...Object.values(sels), anon]) x.addEventListener('change', save);
     return el('section', { class: 'fv-privacy' },
       el('h3', {}, 'מי רואה'),
-      el('p', { class: 'muted small' }, p.user ? 'את הכרטיס שלך רק את/ה קובע/ת, בכל עץ שבו הוא מופיע.' : 'בשביל מי שלא משתמש בעוזר, ראש משק הבית קובע. מסמכים ותמונות לא יוצאים ממשק הבית.'),
+      el('p', { class: 'muted small' }, p.user ? 'את הכרטיס שלך רק את/ה קובע/ת, בכל עץ שבו הוא מופיע.' : 'בשביל מי שלא משתמש באוהל, ראש משק הבית קובע. מסמכים ותמונות לא יוצאים ממשק הבית.'),
       el('div', { class: 'fv-two' }, GROUPS.map(([g, label]) => el('label', {}, label, sels[g]))),
       el('label', { class: 'fv-check' }, anon, ' אנונימי מחוץ למשק הבית: רק "קרוב/ת משפחה", בלי שם ובלי פרטים (אבל הקשר המשפחתי נשמר)'));
   }
@@ -768,7 +768,7 @@
     parts.push(part('משק הבית שלנו',
       el('label', {}, 'השם שהמשפחות האחרות רואות', title),
       r.me.head ? el('div', { class: 'fv-acts-row' }, act('שמירת השם', () => call('/api/vault/household', { method: 'PUT', body: { title: title.value } }))) : null,
-      el('p', { class: 'muted small' }, 'ראש משק הבית מאשר קישורים לעצים אחרים, ומנהל את הפרטים והפרטיות של מי שלא משתמש בעוזר.'),
+      el('p', { class: 'muted small' }, 'ראש משק הבית מאשר קישורים לעצים אחרים, ומנהל את הפרטים והפרטיות של מי שלא משתמש באוהל.'),
       el('ul', { class: 'fv-list' }, r.members.map((m) => el('li', { class: 'fv-item' },
         el('b', {}, m.name || m.email), el('small', { class: 'muted' }, m.head ? ' · ראש משק הבית' : ''),
         r.me.head && !m.owner ? act(m.head ? 'הסרה מהראשות' : 'מינוי לראש משק הבית', () => call('/api/vault/roles', { method: 'PUT', body: { email: m.email, role: 'head', on: !m.head } }), 'btn small ghost') : null))),

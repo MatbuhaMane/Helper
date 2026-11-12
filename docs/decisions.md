@@ -352,7 +352,8 @@ The owner approved all fifteen recommendations from the business session's self-
 6. **Purchases per user (credits, companion packs) or per family (the family's own companion, the album).**
    - Why: every user is an endpoint, and shared things belong to the family.
    - Affects: ai-features, design.
-   - Status: Decided.
+   - Status: Decided. **Superseded in part on 2026-11-13** (vision, the owner, "Companion figures"): companion packs
+     are free, and the family's own companion became a personal figure bought by a user. The album is unchanged.
 7. **Storage: files in the user's Drive or iCloud, small encrypted family text on our server.**
    - Why: no storage cost for the owner, and family sharing stays simple.
    - Affects: master, ai-features.

@@ -25,32 +25,10 @@ Only items the owner agreed to go here. Business and vision talk with the owner,
 
 ## Tonight (2026-11-13)
 
-### ai-features
-
-(Research step 2 is already done: 6d9a822, waiting for the morning merge together with 8ecf53b.)
-1. Link design's new style sheets in your pages: /tools/tasks/goals.css, /tools/research/research.css and
-   /capture/capture.css (design's 3368bdf). Don't merge design into your branch: read them with
-   `git show design:<path>`. Keep the inline stopgaps until the morning merge brings the files into main.
-2. The "without AI" list, the vision session's next order.
-
-### Master, after the morning merge (with the owner's OK to go live)
-
-- Add `test:research-pack` (server/test-research-pack.mjs, 20 tests) to package.json and to `npm test`.
-- Review `saveToDrive` in server/notes.ts, which notes and drafts now share (same drive.file grant).
-- Ready on ai-features: 6d9a822 + 2144965. Ready on design: up to 1a680b2.
-- After design's goals.css (bcd1d08) reaches main, tell ai-features to link it, since the old .gl-step rules clash with
-  its markup.
-
-### design
-
-Nothing tonight: the look of research step 2 is done (1a680b2, for the morning merge), and the last 8 badges come from
-design's own job after the image quota resets. Send design no order.
-
-(Done, kept for the record:)
-1. The look of research step 2: one thread a day, the weekly summary, the journal, the גשש badge, and the writing skeleton.
-   Build it on the core prototype (a02f779), and fit it to ai-features' live markup (6d9a822 on ai-features: drafts,
-   the journal, a research as a goal, ✨ directions and first draft).
-2. Any badge redraws the owner asked for that are still open.
+Dispatched by the master at 01:20, because the 5-hour window renewed early (it now resets at 06:10). Nothing is left
+for the 03:30 conductor tonight.
+- design (up to dc77eae) and ai-features step 2 (up to da57855) went live as cache v48, with test:research-pack added.
+- ai-features step 3 (b24e1c1, sharing) was not merged: sharing private notes needs its own review with the owner.
 
 ## Log
-
+- 2026-11-13 01:20: master dispatched ai-features (link goals/research/capture css, then the without-AI list); 5h 0% at start, weekly 62%, caps 95% / 85%.

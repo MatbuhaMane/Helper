@@ -227,7 +227,7 @@
     b.addEventListener('click', () => chooseTheme(!isDark()));
     // a long press (or right click) goes back to following the sun
     let t;
-    b.addEventListener('pointerdown', () => { t = setTimeout(() => { uiPrefs.theme = 'auto'; delete uiPrefs.until; savePrefs('ui'); fadeTheme(applyTheme); toast('היום והלילה של העוזר ילכו עכשיו לפי השמש'); t = 'done'; }, 700); });
+    b.addEventListener('pointerdown', () => { t = setTimeout(() => { uiPrefs.theme = 'auto'; delete uiPrefs.until; savePrefs('ui'); fadeTheme(applyTheme); toast('היום והלילה באוהל ילכו עכשיו לפי השמש'); t = 'done'; }, 700); });
     b.addEventListener('pointerup', () => clearTimeout(t));
     b.addEventListener('pointerleave', () => clearTimeout(t));
     b.addEventListener('contextmenu', (e) => { e.preventDefault(); });
@@ -301,7 +301,7 @@
     const here = location.pathname.replace(/index\.html$/, '');
     const current = (href) => (href === '/' ? here === '/' : here.startsWith(href) || !!NAV.find((n) => n.href === href)?.also?.some((a) => here.startsWith(a)));
     const bar = el('header', { class: 'appbar' },
-      el('a', { class: 'brand', href: '/', 'aria-label': 'העוזר המשפחתי, לדף הבית' }, el('span', { html: BRAND }), el('span', { class: 'brand-text' }, 'העוזר המשפחתי')),
+      el('a', { class: 'brand', href: '/', 'aria-label': 'הָאֹ֔הֶל, לדף הבית' }, el('span', { html: BRAND }), el('span', { class: 'brand-text' }, 'הָאֹ֔הֶל')),
       title ? el('h1', { class: 'page-title' }, title) : null,
       el('nav', { class: 'topnav', 'aria-label': 'ניווט ראשי', hidden: true }, NAV.map((n) =>
         el('a', { class: 'ink-nav', href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'nav-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, n.label))),
@@ -328,7 +328,7 @@
   }
 
   async function userMenu() {
-    if (!confirm('להתנתק מהעוזר?')) return;
+    if (!confirm('להתנתק מהאוהל?')) return;
     await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
     try { localStorage.removeItem('helper.me'); localStorage.removeItem(PREFS_CACHE); } catch (_) { /* ignore */ }
     location.href = '/';

@@ -86,13 +86,13 @@ async function signOut() {
 function buildTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, 'build', 'tray.png'));
   tray = new Tray(icon);
-  tray.setToolTip('העוזר המשפחתי');
+  tray.setToolTip('הָאֹ֔הֶל');
   const refresh = async () => {
     const inNow = await signedIn();
     const auto = app.getLoginItemSettings().openAtLogin;
     tray.setContextMenu(Menu.buildFromTemplate([
-      { label: win?.isVisible() ? 'הסתרת העוזר' : 'הצגת העוזר', click: () => { win?.isVisible() ? win.hide() : win.show(); refresh(); } },
-      { label: 'פתיחת העוזר בדפדפן', click: () => shell.openExternal(SITE) },
+      { label: win?.isVisible() ? 'הסתרת האוהל' : 'הצגת האוהל', click: () => { win?.isVisible() ? win.hide() : win.show(); refresh(); } },
+      { label: 'פתיחת האוהל בדפדפן', click: () => shell.openExternal(SITE) },
       { type: 'separator' },
       inNow ? { label: 'התנתקות', click: async () => { await signOut(); refresh(); } } : { label: 'התחברות', click: async () => { await signIn(); refresh(); } },
       { label: 'הפעלה עם Windows', type: 'checkbox', checked: auto, click: () => { app.setLoginItemSettings({ openAtLogin: !auto }); refresh(); } },

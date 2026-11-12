@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The app is called הָאֹ֔הֶל (design, at the owner's request)
+
+The owner renamed the app from העוזר המשפחתי to **הָאֹ֔הֶל**, everywhere in the app. Design made the change across areas:
+- The name itself, with its vowels: the top bar and its label, the home page's title and heading, `manifest.json` (`name`
+  and `short_name`), the privacy page, the overlay's title, the desktop tray's tooltip, the passkey's display name
+  (`NAME` in `server/vault/index.ts`; existing passkeys are not affected, only the name shown when one is made).
+- In running text, plain **האוהל** with its prepositions (מהאוהל, באוהל, לאוהל): logout, the theme toast, the desktop
+  menu, "connected" page in `server/core.ts`, music, mail, calendar, notes, admin, the family tree's "משתמש באוהל".
+- In other apps (the Spotify device, the exported calendar's name) also plain **האוהל**: vowel marks may not show there.
+- Not renamed: העוזר החכם (the AI), the companion ("לחצו על העוזר"), and the docs (`CLAUDE.md`, `README.md`: master's call).
+ai-features: your stage 2 strings on `ai-features` (e.g. "משתמש/ת בעוזר" in `.fv-user`) need the same change. Master: the
+Google sign-in screen shows the name set in the Google Cloud console – the owner changes it there. Status: done (on `design`).
+
 ## 2026-11-12 – עץ המשפחה in the main menu (design, at the owner's request)
 
 The owner asked design directly to put the family tree in the main menu. One line in `public/assets/common.js` (the

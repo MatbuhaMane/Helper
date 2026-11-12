@@ -369,7 +369,7 @@
   function personForm(p, rel) {
     const d = p?.details || {};
     const name = el('input', { type: 'text', value: p?.name || '', maxlength: 80, required: true, 'aria-label': 'שם', placeholder: 'שם מלא' });
-    const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש בעוזר)', 'aria-label': 'כתובת Gmail' });
+    const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש באוהל)', 'aria-label': 'כתובת Gmail' });
     const sex = el('select', { 'aria-label': 'מין' }, [['', '—'], ['m', 'זכר'], ['f', 'נקבה']].map(([v, t]) => el('option', { value: v, selected: (d.sex || '') === v }, t)));
     const born = el('input', { type: 'date', value: d.born || '', 'aria-label': 'תאריך לידה' });
     const bornLate = el('input', { type: 'checkbox', checked: !!d.bornAfterSunset, 'aria-label': 'אחרי השקיעה' });
@@ -403,7 +403,7 @@
       el('div', { class: 'fv-two' }, el('label', {}, 'תאריך פטירה', died), el('label', { class: 'fv-check' }, diedLate, ' נפטר/ה אחרי השקיעה')),
       el('div', { class: 'fv-two' }, el('label', {}, 'מקום לידה', place), el('label', {}, 'יום ההולדת לפי', by)),
       el('label', {}, 'הערות', notes),
-      el('label', {}, 'משתמש בעוזר', member),
+      el('label', {}, 'משתמש באוהל', member),
       el('label', { class: 'fv-check' }, inCal, ' בלוח השנה המשפחתי (יום הולדת, ואחרי פטירה – יום השנה)'),
       el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'שמירה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
     setTimeout(() => name.focus(), 50);

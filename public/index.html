@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#efeee6">
-  <title>העוזר המשפחתי</title>
+  <title>הָאֹ֔הֶל</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon-180.png">
@@ -257,7 +257,7 @@
       const next = qs.get('next') || '/';
       const err = qs.get('error');
       root.append(el('div', { class: 'card login' },
-        el('h1', {}, 'העוזר המשפחתי'),
+        el('h1', {}, 'הָאֹ֔הֶל'),
         el('p', {}, 'רשימת קניות משותפת, מתכונים, חדשות וסידור המייל – לכל המשפחה.'),
         err === 'not_invited' ? el('p', { class: 'notice warn' }, `החשבון ${qs.get('email') || ''} עוד לא הוזמן. בקשו ממנהל המשפחה להוסיף אתכם.`) : null,
         el('a', { class: 'gbtn', href: '/api/auth/login?next=' + encodeURIComponent(next) },

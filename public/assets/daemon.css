@@ -95,7 +95,7 @@ body.dm-folded main { padding-block-end: 0; }
 @media (prefers-reduced-motion: reduce) { .dm-stage *, .dm-zz, .dm-zz * { animation: none !important; } }
 
 /* voice picker */
-.dm-voices h3 { margin: 18px 0 6px; font-size: 15px; color: var(--vine, #55622f); }
+.dm-voices h3 { margin: 18px 0 6px; font-size: 15px; color: var(--primary, #55622f); }
 .dm-voice { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, currentColor 10%, transparent); }
 .dm-voice .name { flex: 1; font-weight: 500; }
 .dm-voice .name small { font-size: 11px; color: var(--olive, #c2b04e); font-weight: 700; }

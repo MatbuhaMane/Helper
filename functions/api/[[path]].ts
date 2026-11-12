@@ -14,6 +14,7 @@ import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
 import * as food from '../../server/food';
+import * as restaurants from '../../server/restaurants';
 import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
@@ -182,6 +183,12 @@ route('GET', '/api/fridges/:id/items', fridge.listItems);
 route('POST', '/api/fridges/:id/ops', fridge.applyOps);
 route('GET', '/api/fridges/:id/history', fridge.history);
 route('GET', '/api/food/highlights', food.highlights);
+route('GET', '/api/restaurants', restaurants.list);
+route('POST', '/api/restaurants', restaurants.save);
+route('PUT', '/api/restaurants/:id', restaurants.save);
+route('DELETE', '/api/restaurants/:id', restaurants.remove);
+route('POST', '/api/restaurants/:id/fav', restaurants.fav);
+route('POST', '/api/restaurants/:id/visit', restaurants.visit);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);

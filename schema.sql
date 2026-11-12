@@ -725,3 +725,24 @@ CREATE TABLE IF NOT EXISTS invite_joins (
   exp        INTEGER NOT NULL,
   used       INTEGER NOT NULL DEFAULT 0
 );
+
+-- מסעדות שלנו: the household's own list of restaurants (server/restaurants.ts)
+CREATE TABLE IF NOT EXISTS restaurants (
+  household  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  place      TEXT,
+  cuisine    TEXT,
+  kosher     TEXT,             -- '' (not known), kosher, mehadrin, no
+  link       TEXT,
+  phone      TEXT,
+  note       TEXT,
+  fav        INTEGER NOT NULL DEFAULT 0,
+  visited_at INTEGER,
+  visited_by TEXT,
+  created_by TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (household, id)
+);

@@ -1,6 +1,6 @@
 /* The food portal's slider (vision batch 4, item 11), under the header: what is about to go off in the family's fridges,
    and the family's own recipes that use it first, then the ones cooked lately (server/food.ts – no AI, no cost).
-   Restaurants join it once the owner chooses their source. The look of .food-slider is design's; the few inline rules
+   Then the family's own restaurants (מסעדות שלנו): favourites not visited for a while, and new ones. The look of .food-slider is design's; the few inline rules
    here only keep it a row that scrolls sideways until then. */
 (async () => {
   const { el, api } = H;
@@ -12,7 +12,12 @@
   const when = (d) => (d < 0 ? (d === -1 ? 'פג אתמול' : `פג לפני ${-d} ימים`) : d === 0 ? 'פג היום' : d === 1 ? 'פג מחר' : `פג בעוד ${d} ימים`);
   const letter = (t) => el('span', { class: 'fs-letter', 'aria-hidden': 'true', style: 'display:grid;place-items:center;block-size:96px;font-size:2.2rem;border-radius:12px;background:color-mix(in srgb, var(--olive, #7a8a45) 22%, var(--card))' }, (t.replace(/[^א-תa-z]/gi, '')[0] || '🍲'));
   const ITEM = 'flex:0 0 auto;inline-size:min(220px, 62vw);scroll-snap-align:start;display:grid;gap:6px;align-content:start;padding:12px;border-radius:16px;text-decoration:none;color:inherit';
-  const item = (s) => s.kind === 'fridge'
+  const item = (s) => s.kind === 'restaurant'
+    ? el('a', { class: 'fs-item fs-restaurant card', href: '/food/restaurants/?open=' + encodeURIComponent(s.id), role: 'listitem', style: ITEM },
+      el('small', { class: 'fs-kind muted' }, s.why === 'new' ? '🍽 חדש ברשימה' : '🍽 מזמן לא הייתם'),
+      el('b', { dir: 'auto' }, s.name),
+      el('span', { class: 'fs-when small' }, [s.place, s.why === 'missed' ? (s.days === null ? 'מהאהובות, עוד לא הייתם' : `הייתם לפני ${s.days} ימים`) : ''].filter(Boolean).join(' · ')))
+    : s.kind === 'fridge'
     ? el('a', { class: 'fs-item fs-fridge card' + (s.days < 0 ? ' gone' : s.days <= 1 ? ' soon' : ''), href: '/food/fridge/', role: 'listitem', style: ITEM },
       el('small', { class: 'fs-kind muted' }, '🧊 מהמקרר · ' + s.fridgeName),
       el('b', { dir: 'auto' }, s.name),

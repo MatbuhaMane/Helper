@@ -1,9 +1,11 @@
 // The food portal's slider (vision batch 4, item 11): what is worth seeing now, without AI and at no cost –
 // what in the household's fridges is about to go off (or has), and the household's own recipes that use it first,
-// then the ones cooked lately. Restaurants come later, from a source the owner chooses (docs/ai/restaurants.md).
+// then the ones cooked lately; and from the family's own restaurants (מסעדות שלנו), the favourites not visited for a
+// while and the new ones (docs/ai/restaurants.md).
 // Tests: node server/test-food.mjs
 
 import { Ctx, json, requireUser } from './core';
+import { listRestaurants, restaurantSlides } from './restaurants';
 
 export interface FridgeItem { id: string; name: string; fridge: string; fridgeName: string; expires: string | null; qty: number; unit: string | null }
 export interface RecipeLite { id: string; title: string; image: string | null; ingredients: { name: string }[]; updated_at: number }
@@ -42,11 +44,12 @@ export function pickSlides(items: FridgeItem[], recipes: RecipeLite[], today: st
 export async function highlights(ctx: Ctx) {
   const u = requireUser(ctx);
   const db = ctx.env.DB;
-  const [items, recipes] = await Promise.all([
+  const [items, recipes, places] = await Promise.all([
     db.prepare(`SELECT i.id, i.name, i.fridge, f.name AS fridgeName, i.expires, i.qty, i.unit FROM fridge_items i JOIN fridges f ON f.id = i.fridge
       WHERE i.deleted = 0 AND f.deleted = 0 AND COALESCE(f.household, 'family') = ? AND i.expires IS NOT NULL`).bind(u.household).all<FridgeItem>(),
     db.prepare('SELECT id, title, image, ingredients, updated_at FROM recipes WHERE household = ? ORDER BY updated_at DESC LIMIT 200').bind(u.household)
       .all<{ id: string; title: string; image: string | null; ingredients: string; updated_at: number }>(),
+    listRestaurants(ctx.env, u.household).catch(() => []),   // (before its table exists: none)
   ]);
   const list: RecipeLite[] = recipes.results.map((r) => {
     let ingredients: { name: string }[] = [];
@@ -55,5 +58,7 @@ export async function highlights(ctx: Ctx) {
   });
   // "today" where the family is (Israel), so a thing that goes off today says so after midnight there too
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date());
-  return json({ slides: pickSlides(items.results, list, today), today });   // (never cached: what was just put in the fridge shows at once)
+  // the fridge and the recipes first, then the restaurants (at most four), so a full fridge does not hide them all
+  const food = pickSlides(items.results, list, today, 3, 10);
+  return json({ slides: [...food, ...restaurantSlides(places, Date.now())], today });   // (never cached: what was just put in the fridge shows at once)
 }

@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Night is a deeper blue, almost black (design, at the owner's request)
+
+The owner did not like the night colours and asked for a darker blue, nearly black, like the night. The night tokens in
+`public/assets/base.css` changed (both dark blocks): `--bg` #111a2c → #070b14, `--card` #18233a → #0e1422, `--line`
+#25314a → #1a2335, `--line-strong` #34415e → #28344c, `--primary-ink` → #070b14, `--glass` → rgba(14, 20, 34, .88),
+`--tint` #22344f → #14203a, and `--text` #e7e1d3 → #dfd9cb (a touch softer, so the deeper ground does not glare).
+The two hard-coded copies follow: the night paper in `public/news/news.css`, and the browser bar's colour (`theme-color`)
+in `public/assets/common.js` (master's file). Any area that hard-codes the old night navy should use the tokens. The page
+audit at night (9 main pages, 375 and 1280 px) is clean. Status: done (on `design`).
+
 ## 2026-11-12 – בידור: a recommendation flips open into the whole page (design, at the owner's request)
 
 The owner asked for the בידור cards to flip and grow into a large window, as the recipe book's cards do. Design used the

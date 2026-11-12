@@ -36,7 +36,7 @@
 a.fun-svc:hover { border-color: var(--primary); }
 .fun-svc small { color: var(--muted); font-size: .74rem; }
 .fun-svc-logo { inline-size: 22px; block-size: 22px; border-radius: 6px; object-fit: contain; background: #fff; }
-.fun-svc-dot { inline-size: 22px; block-size: 22px; border-radius: 6px; display: grid; place-items: center; font-size: .72rem; font-weight: 700; background: color-mix(in srgb, var(--tint) 70%, var(--card)); }
+.fun-svc-dot { inline-size: 22px; block-size: 22px; border-radius: 6px; display: grid; place-items: center; font-size: .72rem; font-weight: 700; background: color-mix(in srgb, var(--tint) 70%, var(--card)); color: var(--icon-ink); }
 .fun-svc-name { font-weight: 500; }
 .fun-src { font-size: .8rem; color: var(--muted); text-decoration: none; justify-self: start; }
 .fun-src:hover { color: var(--primary); }

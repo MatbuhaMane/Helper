@@ -197,7 +197,7 @@
     const dark = isDark();
     root.dataset.theme = dark ? 'dark' : 'light';
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.content = dark ? '#111a2c' : '#efeee6';
+    if (meta) meta.content = dark ? '#070b14' : '#efeee6';
     document.querySelectorAll('.theme-switch').forEach((b) => { b.setAttribute('aria-checked', String(dark)); b.title = (dark ? 'מעבר למצב יום' : 'מעבר למצב לילה') + ' (עד הזריחה או השקיעה הבאה; לחיצה ארוכה: לפי השמש)'; });
     // the next sunrise or sunset changes it by itself (checked every few minutes, so a sleeping laptop catches up)
     clearTimeout(themeTimer);

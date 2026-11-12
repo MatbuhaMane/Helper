@@ -48,41 +48,41 @@
   --end: 0%;
   color-scheme: light;
 }
-/* Night: a deep, desaturated navy (dark and low in light), warm off-white text (no pure white: less blue light, less glare),
-   contrast about 11:1 rather than the full white-on-black that tires the eyes at night. */
+/* Night: the night sky – a navy so deep it is almost black, the cards a shade above it; warm off-white text, a touch softer
+   than by day (no pure white: less blue light, less glare), so the deeper ground does not make it harsh. */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-    --bg: #111a2c;
-    --card: #18233a;
-    --text: #e7e1d3;
+    --bg: #070b14;
+    --card: #0e1422;
+    --text: #dfd9cb;
     --muted: #a9afbd;
-    --line: #25314a;
-    --line-strong: #34415e;
+    --line: #1a2335;
+    --line-strong: #28344c;
     --primary: #a8c28c;
-    --primary-ink: #111a2c;
+    --primary-ink: #070b14;
     --danger: #e79a85;
     --ok: #a8c28c;
-    --glass: rgba(24, 35, 58, 0.86);
+    --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
-    --tint: #22344f;
+    --tint: #14203a;
     --olive-ink: var(--olive);
     color-scheme: dark;
   } }
 :root[data-theme="dark"] {
-    --bg: #111a2c;
-    --card: #18233a;
-    --text: #e7e1d3;
+    --bg: #070b14;
+    --card: #0e1422;
+    --text: #dfd9cb;
     --muted: #a9afbd;
-    --line: #25314a;
-    --line-strong: #34415e;
+    --line: #1a2335;
+    --line-strong: #28344c;
     --primary: #a8c28c;
-    --primary-ink: #111a2c;
+    --primary-ink: #070b14;
     --danger: #e79a85;
     --ok: #a8c28c;
-    --glass: rgba(24, 35, 58, 0.86);
+    --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
     --lift: 0 10px 30px rgba(0, 0, 0, .45);
-    --tint: #22344f;
+    --tint: #14203a;
     --olive-ink: var(--olive);
     color-scheme: dark;
   }

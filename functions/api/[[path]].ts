@@ -348,6 +348,10 @@ route('PUT', '/api/admin/allowances', admin.allowanceSave);
 route('GET', '/api/admin/gifts', admin.gifts);
 route('POST', '/api/admin/gifts', admin.giftAdd);
 
+/* the family tree on a trusted device (ai-features, server/vault/access.ts): the person's recognized devices */
+route('GET', '/api/vault/devices', vault.devices);
+route('DELETE', '/api/vault/devices/:id', vault.deviceRevoke);
+
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
   // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,

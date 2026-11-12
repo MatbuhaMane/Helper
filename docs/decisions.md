@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The family tree on a trusted device: built (ai-features, to the master's spec below)
+
+- `server/vault/access.ts`: the one table of each vault route's level – 'tree' (open on a trusted device, no idle lock)
+  or 'fresh' (a fresh unlock every time, then the 15-minute window) – and the device's coarse name ("Chrome · Windows",
+  never the User-Agent). Every handler in `server/vault/index.ts` calls `need(ctx, ACCESS.<name>)`; the tests check the
+  table route by route and that no handler bypasses it (`server/vault/test-access.mjs`, 165 tests).
+- An unlock makes the session trusted for 30 days, renewed on every tree use (`sessions.vault_trust_until`, `…_since`,
+  `…_used`, `…_label`, COLUMNS); trusting and revoking are written to the vault's activity log.
+- Beyond the spec, both to the safe side – please confirm: **appointing household heads** (`roleSave`, a change of rights)
+  and **viewing the activity log** (`auditLog`) need a fresh unlock; the **"נעילה" button ends this device's trust**
+  (an explicit lock), while the page's own lock after five minutes away (`/api/vault/lock?keep=1`) closes only the
+  documents' unlock and keeps the device trusted.
+- The page: a trusted device opens straight into the tree ("מכשיר מוכר" in place of the countdown); a person's documents
+  wait behind "פתיחת המסמכים"; any special step asks there and then (a passkey, or Google again) and carries on; a picture
+  on a card that needs the unlock stays initials. Settings: "מכשירים מוכרים" – each device, since when, last used, "this
+  device", remove, or remove and sign out. Routes `GET /api/vault/devices`, `DELETE /api/vault/devices/:id`.
+- **For the master**: `test:access` (node server/vault/test-access.mjs) in `npm test`.
+Status: done on `ai-features`, for the master's security review.
+
 ## 2026-11-12 – The family tree on a trusted device; special actions still ask (master, the owner approved)
 
 Vision's batch 2 item 4 ("the family tree opens freely after the first sign-in"), made safe and approved by the owner.

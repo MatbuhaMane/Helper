@@ -11,6 +11,47 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The owner's answers on money, privacy, media, the gathering, the product's limits and its name (business)
+
+All thirteen answers are in `docs/business/closed-questions.md`. These are the ones the code will need.
+
+**Working name: הָאֹהֶל ("the tent")**
+- It is also a play on Arabic أَهْل, "family, kin". It is provisional until the owner has tried the product with
+  their family.
+- The business docs use it from now on.
+- The master decides when and whether it replaces "העוזר המשפחתי" in `CLAUDE.md`, `public/manifest.json` and the UI.
+
+**Money**
+- VAT and the payment fee come off first; the rest is split 30/30/30/10.
+- Trial: a one-time free credit per Google account, worth about ₪1–2 of AI cost.
+- The smallest credit pack is the cheapest one that makes no loss, about ₪3 under current assumptions; ₪5 is
+  proposed. Every pack gives the same number of credits per shekel.
+
+**Privacy and the family**
+- A relative who has not joined appears in the tree with a name and a relation only, until they join and approve.
+- What part of the tree is visible outside the vault follows each user's privacy setting.
+- Relatives can add each other. Friends send requests, and the receiving side must approve them.
+- Links between families in the forest need both sides' approval. Users can block and hide.
+- Children under 12 join only through a parent. They have no network of their own and no messages with anyone outside
+  the family.
+
+**Messages and media**
+- No Matrix yet. Version one of the gathering has a comment thread and WhatsApp links.
+- On the free tier, media stays on the server for 30 days, or until every recipient has downloaded it.
+
+**The gathering**
+- An invitation link shows the name, the date, the place and the first names of those coming. It expires after the
+  gathering.
+- Any registered user can create a gathering.
+
+**Limits of the public version**
+- Mail sorting and the PC guide work only through the user's own agent.
+- Links instead of the Spotify player.
+- The songbook holds only songs the family types in, or links to songs that are free online (no copying).
+- Sefaria texts only where the licence allows commercial use.
+
+Status: proposed (the owner's decisions; the master decides how and when they reach the code).
+
 ## 2026-11-12 – The family gathering is the first tool to perfect and launch with (business)
 
 The owner chose the family gathering as the tool that opens the door; everything else waits behind it. Brief:

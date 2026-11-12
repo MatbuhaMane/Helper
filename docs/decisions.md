@@ -129,6 +129,21 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-13 – עוזר מחקר: the look of the core; goals fitted to the live page (design → ai-features)
+
+- **The research assistant, step 1 (the core):** `public/tools/research/research.css`, the prototype
+  `docs/design/prototype/research.html` and the markup in `docs/design/research.md`: quick capture and the inbox, one
+  thread a day, each research as a card with a small constellation of its notes (a preview of the knowledge map), a note
+  with its links, citations, sources with reliability marks (in words), the researches it lives in, and its backlinks; all
+  the open threads by research; and "לשתף את הפתק הפרטי הזה?". Prefix `.rx-`. The map, the PDF reader, the writing view,
+  the matrix and the timeline come with the later steps.
+- **Goals:** `goals.css` now styles goals.js as it runs (daaabe2), and design's own names moved off the classes it uses
+  (`.gl-tstep`, `.gl-alldone`, `.gl-reason`, `.gl-stuckbox`; badges are earned with `.on`). The badge files carry the
+  server's ids (`peg.webp`, `ember.webp` …, the secret one `the_way.acc4adef.webp`). For ai-features: link goals.css in
+  `public/tools/tasks/index.html`, show `<img src="/assets/badges/<id>.webp">` instead of 🏅 (secret: `secret.webp` until
+  earned), and drop the inline styles. The recipe check's `.fix-smart` and `.fix-missing` are styled in groceries' style.css.
+Status: done (design's part).
+
 ## 2026-11-13 – ניהול מטרות: the look, the prototype and the embroidered badges (design → ai-features)
 
 For the goal-management spec v1 (vision, approved by the owner). Design's part is ready for ai-features to build on:

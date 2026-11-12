@@ -36,6 +36,18 @@ export function mayJoin(o: { sameHousehold: boolean; inviteeChild?: boolean; own
   return { ok: true, outside: !o.sameHousehold };
 }
 
+/** an invitation for now (the owner's decision, decisions.md): only someone of the owner's own household. Whoever is
+    not – not in הָאֹהֶל at all, or of another household – gets the very same answer, so an invitation never tells
+    whether an address is registered. (mayJoin above is for later, when partners outside join on their approval.) */
+export function inviteCheck(o: { exists: boolean; sameHousehold: boolean }): { ok: boolean; why?: 'not_same_household' } {
+  return o.exists && o.sameHousehold ? { ok: true } : { ok: false, why: 'not_same_household' };
+}
+
+/** a member as the others see them: by name; the address only for the research's owner (who manages them), and "me" */
+export function memberView(m: { email: string; name: string }, viewer: string, viewerIsOwner: boolean) {
+  return { name: m.name, me: m.email === viewer, ...(viewerIsOwner ? { email: m.email } : {}) };
+}
+
 /** a draft's history keeps a version at most every ten minutes per person (it saves itself as one types) */
 export const snapshotDue = (lastAt: number | null, now: number, by: string, lastBy: string | null) => !lastAt || by !== lastBy || now - lastAt >= 10 * 60e3;
 

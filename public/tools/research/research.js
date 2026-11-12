@@ -135,14 +135,14 @@
     const role = el('select', { 'aria-label': 'בתור', style: INPUT }, roles.map((x) => el('option', { value: x, selected: x === (owner ? 'contributor' : 'reader') }, ROLE[x])));
     const help = el('small', { class: 'muted' }, ROLE_HELP[role.value]);
     role.onchange = () => { help.textContent = ROLE_HELP[role.value]; };
-    const WHY = { not_a_member: 'הכתובת הזו עוד לא באוהל. מזמינים רק מי שכבר נכנס לאוהל.', already_in: 'הוא כבר במחקר, או שכבר הוזמן.', child_outside_family: 'ילדים עובדים רק עם המשפחה: אי אפשר לצרף ילד מחוץ לבית.' };
+    const WHY = { not_same_household: 'בינתיים משתפים רק עם בני הבית שלך שכבר נכנסו לאוהל.', already_in: 'הוא כבר במחקר, או שכבר הוזמן.' };
     const send = async () => {
       if (!email.value.trim()) return email.focus();
       try { const x = await api(`/api/research/r/${r.id}/members`, { body: { email: email.value.trim(), role: role.value } }); toast(x.outside ? 'ההזמנה נשלחה. הוא לא מבני הבית, אז יצטרף רק אם יאשר.' : 'ההזמנה נשלחה: הוא יראה אותה בעוזר המחקר'); route(); }
       catch (e) { toast(WHY[e.code] || 'ההזמנה לא נשלחה'); }
     };
     const memberRow = (m) => {
-      const me = m.email === R.me;
+      const me = m.me;
       const pick = owner && m.role !== 'owner' ? el('select', { 'aria-label': `התפקיד של ${m.name}`, style: INPUT + ';padding-block:4px', onchange: async (e) => { await api(`/api/research/r/${r.id}/members/${encodeURIComponent(m.email)}`, { method: 'PUT', body: { role: e.target.value } }); toast('התפקיד עודכן'); route(); } },
         ['editor', 'contributor', 'reader'].map((x) => el('option', { value: x, selected: x === m.role }, ROLE[x]))) : badge(m.roleName, ROLE_HELP[m.role]);
       return el('li', { style: ROW },
@@ -152,7 +152,7 @@
         pick,
         m.role !== 'owner' && (owner || me) ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': me ? 'לעזוב את המחקר' : `להסיר את ${m.name}`, onclick: async () => {
           if (!confirm(me ? 'לעזוב את המחקר? אפשר לחזור רק בהזמנה חדשה.' : `להסיר את ${m.name} מהמחקר?`)) return;
-          await api(`/api/research/r/${r.id}/members/${encodeURIComponent(m.email)}`, { method: 'DELETE' });
+          await api(`/api/research/r/${r.id}/members/${me ? 'me' : encodeURIComponent(m.email)}`, { method: 'DELETE' });
           if (me) go(null); else route();
         } }, me ? 'לעזוב' : '✕') : null);
     };
@@ -161,7 +161,7 @@
       el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:6px' }, R.members.map(memberRow)),
       R.can.invite ? el('div', { style: 'display:grid;gap:6px' },
         el('div', { style: ROW }, email, role, el('button', { class: 'btn small primary', type: 'button', onclick: send }, 'להזמין')), help,
-        el('small', { class: 'muted' }, 'המוזמן מצטרף רק כשהוא מאשר. מי שמחוץ לבית הוא שותף מבחוץ, וילדים עובדים רק עם המשפחה.')) : null,
+        el('small', { class: 'muted' }, 'בינתיים משתפים רק עם בני הבית. המוזמן מצטרף רק כשהוא מאשר.')) : null,
       owner ? el('small', { class: 'muted' }, 'פתק פרטי שלך שמצטרף למחקר משותף: תישאל בכל פעם אם לשתף אותו.') : null);
   }
 
@@ -457,7 +457,7 @@
         el('small', { class: 'rx-status' }, STATUS[t.status])),
       withResearch ? el('button', { type: 'button', class: 'linklike small', style: 'background:none;border:0;padding:0;color:var(--primary);cursor:pointer;font:inherit;text-align:start', onclick: () => go(t.research) }, '↩ ' + (t.researchTitle || '')) : null,
       t.answer ? el('small', { dir: 'auto' }, 'תשובה: ' + t.answer) : null,
-      !withResearch && t.by && t.createdBy !== R?.me && R?.shared ? el('small', { class: 'muted' }, 'מאת ' + t.by) : null,
+      !withResearch && t.by && !t.mine && R?.shared ? el('small', { class: 'muted' }, 'מאת ' + t.by) : null,
       t.mayEdit === false ? (withResearch ? null : el('div', { style: ROW }, R.shared ? commentOn('thread', t.id) : null)) : el('div', { style: ROW },
         t.status !== 'answered' ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => { const a = prompt('התשובה (קצרה):', t.answer || ''); if (a !== null) setStatus('answered', a); } }, '✓ נענתה') : el('button', { class: 'btn ghost small', type: 'button', onclick: () => setStatus('open') }, 'לפתוח שוב'),
         t.status === 'open' ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => setStatus('parked') }, '⏸ להשהות') : t.status === 'parked' ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => setStatus('open') }, '▶ להמשיך') : null,
@@ -516,7 +516,7 @@
           s.oa ? el('a', { class: 'small', href: s.oa, target: '_blank', rel: 'noopener' }, '📄 גרסה פתוחה') : null,
           s.doi ? sparkle('✨ סיכום', () => summarize(s)) : null,
           el('button', { class: 'btn ghost small', type: 'button', onclick: () => { navigator.clipboard?.writeText(s.cite.replace(/\*/g, '')); toast('הועתק'); } }, 'העתקה'),
-          R.shared && s.by && s.createdBy !== R.me ? el('small', { class: 'muted' }, 'הוסיף: ' + s.by) : null,
+          R.shared && s.by && !s.mine ? el('small', { class: 'muted' }, 'הוסיף: ' + s.by) : null,
           R.shared ? commentOn('source', s.id) : null,
           s.mayEdit ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'הסרת המקור', onclick: async () => { if (confirm('להסיר את המקור מהמחקר?')) { await api(`/api/research/sources/${s.id}`, { method: 'DELETE' }); route(); } } }, '✕') : null))))
         : el('p', { class: 'muted', style: 'margin:0' }, 'עוד אין מקורות. הדביקו DOI או חפשו מאמר; הביבליוגרפיה נבנית לבד, בסגנון שבחרתם.'));

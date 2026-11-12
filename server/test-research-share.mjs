@@ -35,6 +35,16 @@ eq('a child is never added from outside the family', S.mayJoin({ sameHousehold: 
 eq('nor a child\'s research opened to outsiders', S.mayJoin({ sameHousehold: false, ownerChild: true }).ok, false);
 eq('a child within the family is fine', S.mayJoin({ sameHousehold: true, inviteeChild: true }).ok, true);
 
+/* ---- inviting, for now: the household only, and nothing told about an address ---- */
+eq('the same household: invited', S.inviteCheck({ exists: true, sameHousehold: true }), { ok: true });
+eq('another household: refused', S.inviteCheck({ exists: true, sameHousehold: false }), { ok: false, why: 'not_same_household' });
+eq('not registered: the very same answer', JSON.stringify(S.inviteCheck({ exists: false, sameHousehold: false })), JSON.stringify(S.inviteCheck({ exists: true, sameHousehold: false })));
+
+/* ---- members by name; the address only for the owner ---- */
+eq('another member sees a name', S.memberView({ email: 'a@x', name: 'אבי' }, 'b@x', false), { name: 'אבי', me: false });
+eq('the owner sees the address', S.memberView({ email: 'a@x', name: 'אבי' }, 'o@x', true), { name: 'אבי', me: false, email: 'a@x' });
+eq('me', S.memberView({ email: 'b@x', name: 'בת' }, 'b@x', false).me, true);
+
 /* ---- the history of a draft ---- */
 const t0 = 1e12;
 eq('a draft\'s first version is kept', S.snapshotDue(null, t0, 'a', null), true);

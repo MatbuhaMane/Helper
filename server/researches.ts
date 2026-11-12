@@ -124,7 +124,7 @@ async function names(ctx: Ctx, emails: string[]) {
   const list = [...new Set(emails.filter(Boolean))];
   if (!list.length) return new Map<string, string>();
   const { results } = await ctx.env.DB.prepare(`SELECT email, name, he_name FROM members WHERE email IN (${list.map(() => '?').join(',')})`).bind(...list).all<any>();
-  return new Map(results.map((m) => [m.email, m.he_name || m.name || m.email.split('@')[0]]));
+  return new Map(results.map((m) => [m.email, m.he_name || m.name || 'בן משפחה']));
 }
 const isShared = async (ctx: Ctx, a: Access) => !!(await ctx.env.DB.prepare('SELECT 1 FROM research_members WHERE owner = ? AND research_id = ? LIMIT 1').bind(a.owner, a.r.id).first());
 
@@ -155,19 +155,19 @@ export async function list(ctx: Ctx) {
       db.prepare("SELECT * FROM research_threads WHERE email = ? AND research_id = ? AND status = 'open' ORDER BY updated_at DESC LIMIT 50").bind(r.email, r.id).all<any>(),
     ]);
     counts.set(r.email + '|' + r.id, c);
-    threads.push(...t.results.map((x) => ({ ...x, research: r.title, may: S.mayEdit(r.role, x.created_by || null, u.email) })));
+    threads.push(...t.results.map((x) => ({ ...x, research: r.title, may: S.mayEdit(r.role, x.created_by || null, u.email), mine: (x.created_by || r.email) === u.email })));
   }
   const who = await names(ctx, [...shared.results.map((r) => r.email), ...invites.results.map((i) => i.invited_by)]);
   return json({
     researches: all.map((r) => { const c = counts.get(r.email + '|' + r.id) || {}; return { id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, updatedAt: r.updated_at, done: !!r.done_at,
       role: r.role, owner: r.email === u.email ? null : who.get(r.email) || '', notes: c.notes || 0, sources: c.sources || 0, open: c.open || 0, members: c.members || 0 }; }),
-    invitations: invites.results.map((i) => ({ id: i.id, title: i.title, role: i.role, roleName: S.ROLE_NAME[i.role as S.Role], from: who.get(i.invited_by) || i.invited_by, outside: !!i.outside })),
+    invitations: invites.results.map((i) => ({ id: i.id, title: i.title, role: i.role, roleName: S.ROLE_NAME[i.role as S.Role], from: who.get(i.invited_by) || '', outside: !!i.outside })),
     threads: threads.sort((a, b) => b.updated_at - a.updated_at).slice(0, 200).map(threadOut),
     inbox: inbox.results.map((n) => ({ id: n.id, title: n.title, body: n.body, source: n.source_url ? { url: n.source_url, title: n.source_title || '' } : null, createdAt: n.created_at })),
     styles: C.STYLES,
   });
 }
-const threadOut = (t: any) => ({ id: t.id, research: t.research_id, researchTitle: t.research || null, text: t.text, status: t.status, answer: t.answer || '', noteId: t.note_id || null, createdBy: t.created_by || null, createdAt: t.created_at, updatedAt: t.updated_at, ...(t.may !== undefined ? { mayEdit: t.may } : {}) });
+const threadOut = (t: any) => ({ id: t.id, research: t.research_id, researchTitle: t.research || null, text: t.text, status: t.status, answer: t.answer || '', noteId: t.note_id || null, createdAt: t.created_at, updatedAt: t.updated_at, ...(t.may !== undefined ? { mayEdit: t.may, mine: !!t.mine } : {}) });
 
 /** POST /api/research/new */
 export async function create(ctx: Ctx) {
@@ -212,26 +212,29 @@ export async function get(ctx: Ctx) {
   const out = new Map<string, string[]>(), back = new Map<string, string[]>();
   for (const n of seen) for (const t of C.linksIn(n.body)) { const to = byTitle.get(t); if (!to || to === n.id) continue; (out.get(n.id) || out.set(n.id, []).get(n.id)!).push(to); (back.get(to) || back.set(to, []).get(to)!).push(n.id); }
   const ref = (id: string) => ({ id, title: titleOf.get(id) || '' });
+  const owner = a.role === 'owner';
   const by = (e: string | null) => (e ? who.get(e) || e.split('@')[0] : null);
   const r = a.r;
   return json({
     research: { id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, goalId: a.role === 'owner' ? r.goal_id || null : null, doneAt: r.done_at || null },
     role: a.role, roleName: S.ROLE_NAME[a.role], me: a.me, shared: members.results.length > 0,
     can: { add: S.can(a.role, 'add'), editAny: S.can(a.role, 'editAny'), restore: S.can(a.role, 'restore'), manage: S.can(a.role, 'manage'), invite: S.can(a.role, 'invite', { inviteAs: 'reader' }) },
-    members: [{ email: a.owner, name: by(a.owner), role: 'owner', roleName: S.ROLE_NAME.owner, status: 'active', outside: false },
-      ...members.results.map((m) => ({ email: m.email, name: by(m.email), role: m.role, roleName: S.ROLE_NAME[m.role as S.Role], status: m.status, outside: !!m.outside }))],
-    notes: notes.map((n) => ({ ...n, links: n.hidden ? [] : (out.get(n.id) || []).map(ref), backlinks: n.hidden ? [] : (back.get(n.id) || []).map(ref), mayEdit: S.mayEdit(a.role, n.author, a.me) })),
-    threads: threads.results.map((t) => ({ ...threadOut(t), by: by(t.created_by), mayEdit: S.mayEdit(a.role, t.created_by || null, a.me) })),
-    sources: sources.results.map((s) => ({ ...sourceOut(s, r.style), by: by(s.created_by), mayEdit: S.mayEdit(a.role, s.created_by || null, a.me) })),
+    // members by name; their addresses only for the research's owner, who manages them (decisions.md)
+    members: [{ ...S.memberView({ email: a.owner, name: by(a.owner) || '' }, a.me, owner), role: 'owner', roleName: S.ROLE_NAME.owner, status: 'active', outside: false },
+      ...members.results.map((m) => ({ ...S.memberView({ email: m.email, name: by(m.email) || '' }, a.me, owner), role: m.role, roleName: S.ROLE_NAME[m.role as S.Role], status: m.status, outside: !!m.outside }))],
+    notes: notes.map(({ author, ...n }) => ({ ...n, links: n.hidden ? [] : (out.get(n.id) || []).map(ref), backlinks: n.hidden ? [] : (back.get(n.id) || []).map(ref), mayEdit: S.mayEdit(a.role, author, a.me) })),
+    threads: threads.results.map((t) => ({ ...threadOut(t), by: by(t.created_by), mine: (t.created_by || a.owner) === a.me, mayEdit: S.mayEdit(a.role, t.created_by || null, a.me) })),
+    sources: sources.results.map((s) => ({ ...sourceOut(s, r.style), by: by(s.created_by), mine: (s.created_by || a.owner) === a.me, mayEdit: S.mayEdit(a.role, s.created_by || null, a.me) })),
     comments: comments.results.map((c) => ({ id: c.id, on: c.on_kind, onId: c.on_id, by: by(c.by), mine: c.by === a.me, text: c.text, at: c.created_at })),
-    history: history.results.map((h) => ({ id: h.id, at: h.at, by: by(h.by), kind: h.kind, itemId: h.item_id, action: h.action })),
+    // (a member's entry is keyed by their address: kept from all but the owner)
+    history: history.results.map((h) => ({ id: h.id, at: h.at, by: by(h.by), kind: h.kind, itemId: h.kind === 'member' && !owner ? null : h.item_id, action: h.action })),
     styles: C.STYLES,
   });
 }
 const sourceOut = (s: any, style: C.Style) => {
   const csl = JSON.parse(s.csl || '{}') as C.Csl;
   return { id: s.id, csl, doi: s.doi || null, oa: s.oa_url || null, retracted: !!s.retracted, cited: s.cited ?? null, note: s.note || '', reliability: s.reliability || null,
-    cite: C.format(csl, style), inText: C.inText(csl, style), createdBy: s.created_by || null };
+    cite: C.format(csl, style), inText: C.inText(csl, style) };
 };
 
 /** PUT /api/research/r/:id {title?, purpose?, aim?, style?} (the owner) · DELETE (kept as deleted; its notes stay in פתקים) */
@@ -416,8 +419,9 @@ export async function removeSource(ctx: Ctx) {
 /* ---------------- members: invite, accept, roles ---------------- */
 
 /** POST /api/research/r/:id/members {email, role} – the owner invites anyone (but another owner), an editor invites readers.
-    Someone who is not in הָאֹהֶל cannot be invited (no mail goes out); a child is never added from outside the family; the
-    invited person joins only by accepting it. */
+    For now only someone of the owner's own household (the owner's decision, decisions.md); whoever is not – not in
+    הָאֹהֶל at all, or of another household – gets the very same 403 not_same_household, so nothing tells whether an
+    address is registered. No mail goes out; the invited person joins only by accepting it. */
 export async function invite(ctx: Ctx) {
   const a0 = await access(ctx, ctx.params.id);
   const d = await read(ctx, z.object({ email: z.string().trim().toLowerCase().email().max(200), role: z.enum(['editor', 'contributor', 'reader']) }));
@@ -428,10 +432,10 @@ export async function invite(ctx: Ctx) {
     db.prepare('SELECT email, household FROM members WHERE email = ?').bind(d.email).first<{ email: string; household: string }>(),
     db.prepare('SELECT household FROM members WHERE email = ?').bind(a0.owner).first<{ household: string }>(),
   ]);
-  if (!who) throw new HttpError(404, 'not_a_member');
-  // (the members' age is not kept yet: when it is, inviteeChild and ownerChild come from there)
-  const j = S.mayJoin({ sameHousehold: !!owner && who.household === owner.household, inviteeChild: false, ownerChild: false });
-  if (!j.ok) throw new HttpError(403, j.why || 'not_allowed');
+  const check = S.inviteCheck({ exists: !!who, sameHousehold: !!who && !!owner && who.household === owner.household });
+  if (!check.ok) throw new HttpError(403, check.why!);
+  // (later, partners from outside the household: S.mayJoin, with the children's rule once the members' age is kept)
+  const j = { outside: false };
   const had = await db.prepare('SELECT status FROM research_members WHERE owner = ? AND research_id = ? AND email = ?').bind(a0.owner, a0.r.id, d.email).first<{ status: string }>();
   if (had) throw new HttpError(409, 'already_in');
   await db.prepare('INSERT INTO research_members (owner, research_id, email, role, status, outside, invited_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
@@ -461,7 +465,8 @@ export async function setRole(ctx: Ctx) {
 }
 export async function removeMember(ctx: Ctx) {
   const a = await access(ctx, ctx.params.id);
-  const email = decodeURIComponent(ctx.params.email).toLowerCase();
+  // "me": a member leaving (the others' addresses are not shown to them)
+  const email = ctx.params.email === 'me' ? a.me : decodeURIComponent(ctx.params.email).toLowerCase();
   if (email !== a.me && !S.can(a.role, 'manage')) throw new HttpError(403, 'not_allowed');
   await ctx.env.DB.prepare('DELETE FROM research_members WHERE owner = ? AND research_id = ? AND email = ?').bind(a.owner, a.r.id, email).run();
   await log(ctx, a, 'member', email, 'remove', null, null);

@@ -54,7 +54,7 @@ The owner's scope for step 2 (vision): beyond 6d9a822, now also
 - **The academic formatting and writing pack** (`server/research-pack.ts`, 20 tests in `server/test-research-pack.mjs`):
   draft templates (IMRaD, a seminar paper, an essay, a talk, a post) with their sections and a length to aim for;
   numbered headings and cross-references (`{#label}` on a heading, `[ref:label]` → "סעיף 2.1"); footnotes `^[…]` (with
-  citations inside them; LaTeX `ootnote`); a word count against the target; a checklist before handing in (the
+  citations inside them; LaTeX `\footnote`); a word count against the target; a checklist before handing in (the
   template's sections, the length, citations that point nowhere, places still to complete, the abstract, broken
   references); Hebrew and English kept in order in HTML (`dir="auto"` paragraphs, `<bdi>` for English runs).
 - **Export:** a real **.docx** written here with no library (a stored zip with its CRC; checked with a zip reader and an

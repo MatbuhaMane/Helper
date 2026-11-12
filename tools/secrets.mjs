@@ -47,10 +47,14 @@ const CATALOG = [
 const only = process.argv.slice(2);
 const list = only.length ? CATALOG.filter((c) => only.includes(c.name) || only.includes(c.label)) : CATALOG;
 
-const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
-let hidden = false;
-rl._writeToOutput = function (s) { if (!hidden || s.includes('\n') || s.includes('\r')) rl.output.write(hidden ? s.replace(/[^\r\n]/g, '') : s); };
-const ask = (q, hide = false) => new Promise((res) => { rl.output.write(q); hidden = hide; rl.question('', (a) => { hidden = false; if (hide) rl.output.write('\n'); res(a.trim()); }); });
+/** A question; with hide, what is typed is not shown (the question itself is – readline draws it as the prompt). */
+function ask(q, hide = false) {
+  return new Promise((res) => {
+    const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: !!process.stdin.isTTY });
+    if (hide) rl._writeToOutput = (s) => { if (s.startsWith(q)) rl.output.write(q); else if (/[\r\n]/.test(s)) rl.output.write('\n'); };
+    rl.question(q, (a) => { rl.close(); res(a.trim()); });
+  });
+}
 
 function wrangler(args, value) {
   return new Promise((resolve) => {
@@ -120,4 +124,3 @@ for (const c of list) {
   await send(c, value);
 }
 console.log('\nDone. Once the site works with the new keys, delete the old ones at Anthropic, Google and YouTube.\n');
-rl.close();

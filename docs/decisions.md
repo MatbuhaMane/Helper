@@ -11,6 +11,15 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The family gathering merged and live; guests stay without accounts (master)
+
+Merged ai-features' gathering (07c4511) after review: the invitation routes answer without a session, keyed by the link
+(see `docs/security.md`). Done for its proposals: `test:gather` in `npm test`; a מפגש משפחתי tile in `public/tools/index.html`
+(next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
+invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
+would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
 ## 2026-11-12 – A fifth area: Vision & conversation, חזון ודיבור (master, at the owner's request)
 
 A session for flowing conversation with the owner about the project. When a decision takes shape, it confirms it with the
@@ -88,6 +97,38 @@ The owner approved all fifteen recommendations from the business session's self-
     - Status: Provisional. Exempt dealer, licensed dealer or a company is decided at the meeting.
 
 Also decided: store ratings and download counts are not researched for now (the owner).
+
+## 2026-11-12 – The family gathering, version one (ai-features)
+
+Built from business's brief (`docs/business/gathering.md`, the owner's answers 8–11 in `closed-questions.md`): a member
+makes a gathering (date, hour, place and map link, a note, the food rule: kosher or halal); one link goes to WhatsApp;
+whoever opens it, with no sign-in, sees only the gathering, the first names of who is coming, what they bring, and the
+comments. They answer (yes, maybe, no, with how many), take or add something to bring – a member finds it in their own
+grocery list (`kitchen.addGroceries`, source "מפגש: …", taken off again if they give it back) – and add it to Google, Apple
+or Outlook (a link, or an .ics with reminders a day and two hours before). The page warns of Shabbat, a holiday or a fast
+(Hebcal for that day, with the host's city's times) and of meat and dairy together at a kosher gathering. The host can
+draw the invitees from the tree (with the vault open; the tree's privacy applies; the list stays the host's), sees
+ideas from the family's round days, and the beta's anonymous counts (opened, answered, signed in from an invitation).
+The link ends the day after the gathering, or when the host closes it; gatherings show in the family calendar.
+- **Appended**: tables `gatherings`, `gathering_rsvps`, `gathering_items`, `gathering_comments`, `gathering_stats` in
+  `schema.sql`; eighteen routes `/api/gather…` at the end of `functions/api/[[path]].ts` (the `/api/gather/invite/:token…`
+  ones answer without a session: the link is a 32-character key, after the `#` so it stays out of logs; only its hash and a
+  sealed copy for the host are stored; guests' writes are rate-limited by a fingerprint of their address).
+- New files: `server/gather.ts`, `server/gather-rules.ts` and its tests `server/test-gather.mjs` (37 tests), pages
+  `public/gather/` (the host) and `public/gather/invite/` (the guest; no app bar, no companion).
+- **For the master** (proposed):
+  1. a `test:gather` script in `npm test`;
+  2. a tile for מפגש משפחתי in the hub (the tools folder, `public/tools/index.html`, or the home page's ring) – for now it
+     is reached from לוח השנה ("🎉 מפגש משפחתי ביום הזה") and `/gather/`;
+  3. **sign-up from an invitation does not work yet**: `admitMember` lets in only invited members, so a guest who taps
+     "כניסה עם Google" is turned away. Business counts sign-ups from invitations as the viral metric – the owner should
+     decide whether an invitation admits its guests (e.g. as members of a new household of their own).
+- **For design**: the pages use `.card`, `.btn`, `.notice` and new unstyled classes – `.ga`, `.ga-head`, `.ga-row`, `.ga-list`,
+  `.ga-ideas`, `.ga-share`, `.ga-coming`, `.ga-invitees`, `.ga-chips` (`li.on` = answered), `.ga-items`, `.ga-list-items`,
+  `.ga-kind`, `.ga-comments`, `.ga-inline`, `.ga-acts`, `.ga-two`, `.ga-form`, `.ga-pick`, `.ga-check`, `.ga-notes`,
+  `.ga-invite`, `.ga-rsvp`, `.ga-count`, `.ga-total`, `.ga-cal`, `.ga-join`, `.ga-fine`, `.ga-stats`. Checked at 375 px and
+  desktop, light and dark: no overflow, no nameless controls, no text under 3:1 – but it looks plain.
+Status: done on `ai-features`.
 
 ## 2026-11-12 – Merged into main: ai-features (stage 2, the calendar link) and design (master)
 

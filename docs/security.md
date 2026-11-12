@@ -64,6 +64,15 @@ Read this before changing sign-in, the API, the family vault, or the headers.
   unlocked**, and the subscribing service (Google, Apple, Microsoft) keeps a copy. The calendar page itself shows the tree's days to
   signed-in members of the household, also without an unlock.
 
+- `/api/gather/invite/:token…` (the family gathering's invitation) also answers **without a session**. The key is 24 random bytes
+  carried after the `#` of the link (so it never reaches a server log on page load); only its hash (to find it) and a sealed copy
+  (for the host) are stored. A guest sees only that gathering: its title, day and place, the first names of who is coming, what
+  they bring, and the comments – never the tree or anything else of the household. A guest's own answers are tied to a second
+  random key kept on their device (hashed on the server). Guests' writes are rate-limited by a keyed fingerprint of the address.
+  The link stops working the day after the gathering, or when the host cancels it. The page sends no referrer and asks not to be
+  indexed. An invitation does **not** admit anyone into the app: a guest who signs in with Google from it is turned away unless
+  already invited (the owner's decision, until AI limits or credits exist).
+
 ### The desktop program (`desktop/main.js`)
 - Context isolation and the sandbox are on; navigation is locked to the app; links open in the browser only if they are http(s);
   device permissions are refused except the microphone.

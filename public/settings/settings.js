@@ -41,7 +41,9 @@
         el('p', { class: 'muted' }, me.limited
           ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים. או להוסיף קרדיט.'
           : 'ה־AI של האוהל פתוח לך בלי הגבלה. אם תרצה, אפשר לחבר גם שירות משלך, והבקשות שלך ילכו דרכו.'),
-        me.limited && me.left_ils !== null ? el('p', { class: 'small' }, me.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${me.left_ils}.` : 'הקרדיט נגמר. חברו שירות משלכם, או הוסיפו קרדיט.') : null,
+        // amounts only for whoever bought credit or got a gift (the owner's decision); on the trial, only when it ran out
+        me.left_ils !== null ? el('p', { class: 'small' }, me.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${me.left_ils}.` : 'הקרדיט נגמר. חברו שירות משלכם, או הוסיפו קרדיט.')
+          : me.out ? el('p', { class: 'small' }, 'כדי להמשיך עם העוזר החכם, חברו שירות משלכם, או הוסיפו קרדיט.') : null,
         ...PROVIDERS.map(row),
         el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
         el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),

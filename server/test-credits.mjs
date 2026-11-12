@@ -75,5 +75,11 @@ eq('the hint shows only the end', C.keyHint('sk-ant-api03-secretsecret1234'), 'â
   eq('a Request to Claude: their key', c.headers.get('x-api-key'), 'sk-ant-mine');
 }
 
+/* ---- who sees amounts ---- */
+ok('the trial alone: no amounts', !C.showsAmounts([{ source: 'trial' }]));
+ok('after a gift: amounts', C.showsAmounts([{ source: 'trial' }, { source: 'gift' }]));
+ok('after a purchase: amounts', C.showsAmounts([{ source: 'purchase' }]));
+ok('no grants: no amounts', !C.showsAmounts([]));
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

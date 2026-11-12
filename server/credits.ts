@@ -80,11 +80,15 @@ export async function setLimited(env: Env, email: string, limited: boolean, by: 
 export async function mine(ctx: Ctx) {
   const u = requireUser(ctx);
   const { results } = await ctx.env.DB.prepare('SELECT provider, hint, added_at FROM user_ai_keys WHERE email = ?').bind(u.email).all<{ provider: string; hint: string; added_at: number }>();
-  const a = await allowanceOf(ctx.env, u.email);
+  const a = await allowanceOf(ctx.env, u.email) as { limited: boolean; total?: number };
   const rate = await setting<number>(ctx.env, 'money.usd_ils');
+  // amounts only for an account that bought credit or got a gift; on the trial alone, nothing but whether it ran out
+  const { results: grants } = await ctx.env.DB.prepare('SELECT source FROM ai_credits WHERE email = ?').bind(u.email).all<{ source: string }>();
+  const shows = a.limited && R.showsAmounts(grants);
   return json({
     keys: Object.fromEntries(results.map((r) => [r.provider, { hint: r.hint, added: r.added_at }])),
-    limited: a.limited, left_ils: a.limited ? Math.max(0, Math.round(((a as { total: number }).total || 0) * rate * 100) / 100) : null,
+    limited: a.limited, out: a.limited && (a.total || 0) <= 0,
+    left_ils: shows ? Math.max(0, Math.round((a.total || 0) * rate * 100) / 100) : null,
     buy: false,                                                            // no payment flow yet
   });
 }

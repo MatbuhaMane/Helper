@@ -48,6 +48,9 @@ service or buy credit in the app's settings, "חיבור לשירותים"; the 
   `/assets/ai-invite.js`), so every AI button invites instead of erroring; the user menu could open `/settings/` (it has
   logout too); `admitMember` for invitation guests calls `startTrial`; `test:credits` in `npm test`.
 - **For design**: `.st`, `.st-account`, `.st-services`, `.st-service`, `.st-key`, and `.ai-invite` (the modal) – unstyled.
+- **Who sees amounts** (the owner, via business): only an account that bought credit or got a gift sees its balance, a
+  cost estimate, or a gift's note (`credits-rules.showsAmounts`); on the trial alone the settings page says nothing until
+  it runs out, and then only invites. The estimate and the gift's note follow this rule when they are built.
 Status: done on `ai-features`; the gifts in the room come after guest sign-up opens.
 
 ## 2026-11-12 – החדר של האוהל: the owner's room, entered with the owner's biometric (ai-features, at the owner's request)

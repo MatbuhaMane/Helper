@@ -11,6 +11,12 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The companion stays as it is: the one deliberate exception to one style (design, the owner)
+
+Asked in `docs/design/style-check.md`, the owner chose to leave the companion figures (Ibn Ezra, Montefiore, the elephant)
+as they are: 3D figures in the vinyl-collectible style of the `figure-style` skill, the "toy" that lives on the screen.
+No outline, no redraw; their faces (`ibn-ezra-face.webp`) stay too. Everything else keeps to the tent's style. Status: done.
+
 ## 2026-11-12 – What design needs to make images through Gemini (design → master)
 
 For the owner's decision "one visual style; images through the Gemini API" (vision). Design writes the prompts and

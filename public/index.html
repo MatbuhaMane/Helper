@@ -457,11 +457,18 @@
       let A = 0, tween = null, held = null, sink = 0;
 
       /* The moon's secret (the owner's way to the members' admin): the moon is held on the horizon facing the sun – left,
-         left, right, left – a second each time (between two lefts it is lifted off the horizon and brought back). The sky
-         answers with 1, 1, 2 and 3 beats; then both sink and the eclipse rises. Anyone else just turns the sky. */
+         left, right, left – a moment each time (between two lefts it is lifted off the horizon and brought back). The sky
+         answers with 1, 1, 2 and 3 beats; then the written word is asked, and if it is right both sink and the eclipse rises.
+         Forgiving on purpose: a wide band around the horizon, a short hold at the right end and a longer one before a wrong
+         end counts, twenty seconds between steps, and the finger may be lifted between them (the moon stays put).
+         Anyone else just turns the sky. The members' admin itself is open only to the owner, on the server. */
       const SECRET = [['L', 1], ['L', 1], ['R', 2], ['L', 3]];
-      const egg = { step: 0, side: null, since: 0, last: 0, done: null, timer: 0, finale: false };
-      const sideNow = () => (Math.abs(Math.sin(A)) < 0.22 ? (Math.cos(A) > 0 ? 'L' : 'R') : null);   // where the moon stands on the horizon
+      const HOLD = 600, WRONG_HOLD = 1500, PAUSE = 20000, BAND = 0.45;   // BAND: |sin| under it is "on the horizon" (about ±27°)
+      const WORD = '8ee90bf8e52e145a37a14dc95c61ffe9b36d2b988ed39fbe8e22d5f382ec9265';   // SHA-256 of "haohel-moon:" + the word
+      const egg = { step: 0, side: null, since: 0, last: 0, done: null, timer: 0, finale: false, asking: false, back: 0 };
+      const sideNow = () => (Math.abs(Math.sin(A)) < BAND ? (Math.cos(A) > 0 ? 'L' : 'R') : null);   // where the moon stands on the horizon
+      /** the secret is under way: the moon is not turned back to its place while the owner is between two steps */
+      const eggBusy = () => isOwner && !egg.finale && (egg.asking || (egg.step > 0 && performance.now() - egg.last < PAUSE));
       function beat(n) {
         for (let i = 0; i < n; i++) setTimeout(() => {
           for (const b of [sun, moon]) { b.classList.remove('egg-beat'); void b.offsetWidth; b.classList.add('egg-beat'); }
@@ -471,15 +478,40 @@
       function eggTick() {
         if (!isOwner || held !== moon || egg.finale) return;
         const now = performance.now();
-        if (egg.step && now - egg.last > 10000) { egg.step = 0; egg.done = null; }      // too long: start again
+        if (egg.asking) return;
+        if (egg.step && now - egg.last > PAUSE) { egg.step = 0; egg.done = null; }      // too long: start again
         const side = sideNow();
         if (side !== egg.side) { egg.side = side; egg.since = now; if (side !== egg.done) egg.done = null; return; }
-        if (!side || side === egg.done || now - egg.since < 1000) return;
-        egg.done = side;                                   // counted once per visit to that end
+        if (!side || side === egg.done) return;
         const [want, beats] = SECRET[egg.step];
+        if (now - egg.since < (side === want ? HOLD : WRONG_HOLD)) return;   // a wrong end must be held longer to count
+        egg.done = side;                                   // counted once per visit to that end
         if (side !== want) { egg.step = side === SECRET[0][0] ? 1 : 0; egg.last = now; if (egg.step) beat(SECRET[0][1]); return; }   // a wrong end: from the start
         egg.step++; egg.last = now; beat(beats);
-        if (egg.step === SECRET.length) { egg.finale = true; setTimeout(finale, (beats - 1) * 380 + 260 + 500); }
+        if (egg.step === SECRET.length) { egg.step = 0; egg.done = null; egg.asking = true; setTimeout(askWord, (beats - 1) * 380 + 260 + 300); }
+      }
+      /** the moon's part is done: the written word, then the eclipse */
+      function askWord() {
+        clearInterval(egg.timer);
+        const word = el('input', { type: 'password', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', 'aria-label': 'הסיסמה' });
+        const done = (ok) => {
+          egg.asking = false;
+          if (ok) { egg.finale = true; H.closeModal(); finale(); }
+          else if (!held) turnTo(targetA(), 700);
+        };
+        H.modal(el('form', { class: 'egg-word', onsubmit: async (e) => {
+          e.preventDefault();
+          const v = word.value.replace(/[\u0591-\u05C7]/g, '').trim();   // with or without vowels
+          const h = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('haohel-moon:' + v)))].map((b) => b.toString(16).padStart(2, '0')).join('');
+          if (h === WORD) done(true);
+          else { word.value = ''; word.focus(); H.toast('זו לא הסיסמה'); }
+        } }, el('h2', {}, 'ועכשיו במילים'), el('label', {}, 'הסיסמה', word),
+          el('div', { class: 'sky-acts' }, el('button', { class: 'btn primary' }, 'כניסה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
+        // closed in any way (cancel, ✕, Escape, outside) without the word: back to the sky as it was
+        const m = document.getElementById('modal');
+        const watch = new MutationObserver(() => { if (m.hidden) { watch.disconnect(); if (!egg.finale) done(false); } });
+        watch.observe(m, { attributes: true, attributeFilter: ['hidden'] });
+        setTimeout(() => word.focus(), 60);
       }
       function finale() {
         // both stand still at the two ends of the horizon, sink slowly behind the tent, and the eclipse rises in their place
@@ -546,7 +578,7 @@
         box.style.setProperty('--sky-glow', night ? 'rgba(150, 182, 255, .15)' : tw > 0 ? `rgba(255, 128, 72, ${(0.22 * tw).toFixed(3)})` : 'rgba(255, 214, 140, .10)');
         box.style.setProperty('--sky-top', night ? 'rgba(4, 8, 22, .45)' : `rgba(130, 178, 222, ${(0.14 * (1 - tw)).toFixed(3)})`);
         paintPhase(moonPhase(now), now);
-        if (!held) turnTo(targetA(), tween ? 900 : 0);
+        if (!held && !eggBusy()) turnTo(targetA(), tween ? 900 : 0);
         else paint();
       }
       /** Turn the orbit to an angle (the nearest way round), easing out. */
@@ -611,6 +643,11 @@
             if (!moved || egg.finale) return;
             held = null; body.classList.remove('held'); box.classList.remove('turning');
             body.justTurned = true; setTimeout(() => { body.justTurned = false; }, 60);
+            if (body === moon && eggBusy()) {
+              clearTimeout(egg.back);
+              egg.back = setTimeout(() => { if (!held && !eggBusy()) turnTo(targetA(), 900); }, PAUSE + 200);
+              return;
+            }
             const wantNight = Math.sin(A) < 0;     // the moon is the one up
             if (wantNight !== dark()) H.chooseTheme(wantNight);   // the observer below turns it into place
             else turnTo(targetA(), 700);

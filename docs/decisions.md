@@ -42,6 +42,17 @@ The owner's easter egg behind the moon (`/admin/`), rebuilt as the back door to 
 - **For design**: the room's styles are inline in `public/admin/index.html` (`.ad*`); it is checked at 375 px and desktop.
 Status: done on `ai-features`.
 
+## 2026-11-12 – The family gathering's look (design)
+
+`public/gather/gather.css` (new, design's), linked from `public/gather/index.html` and `public/gather/invite/index.html` (one
+line each). The invitation, phone first: a card you could hold – the tent drawn on top, the day and the place as chips,
+who is coming on a soft olive field – then one clear answer (a round − n + stepper, "מגיע/ה" full width), what each one
+brings as rows with their own button, a reminder, and the comments as speech bubbles; on a PC the same column in the
+middle. The host's page: the same cards, the share buttons, the invitees as chips (✓ for those who answered), the form
+with labels above even fields. Only the hub's tokens; checked at 375 and 1280 px, by day and at night, audit clean.
+For ai-features (optional): a `data-kind` on `.ga-kind` would let meat, dairy and parve each have their own colour.
+Status: done (on `design`).
+
 ## 2026-11-12 – The family gathering merged and live; guests stay without accounts (master)
 
 Merged ai-features' gathering (07c4511) after review: the invitation routes answer without a session, keyed by the link

@@ -387,6 +387,11 @@ Status: Decided (the owner).
 - **Paid:** only a personal, custom figure, made like our Ibn Ezra but of the user's choosing, including someone they know.
   It is either a paid feature or a bonus in a "free for life" track for people who invested in the app.
 - **Ibn Ezra is unique** and belongs only to the owner's family. Other families do not get him.
+- **How the free figures are made:** they must be far cheaper to make than Ibn Ezra, and still dynamic and smoothly
+  animated.
+  - **Style:** 2D, in the tent's style (the one-style decision). The owner's choice over a simplified 3D vinyl.
+  - **Making them:** drawn through the image tool and split into layers; animated in code (breathing, blinking,
+    nodding, a talking mouth, a response to touch). There is no 3D or Blender pipeline for them.
 - **This replaces "companion packs"** as a paid item. The earlier decisions listed them as a paid extra and per-user
   purchase: the entry "Product direction", item "The core is free for everyone", and business decision 6.
 

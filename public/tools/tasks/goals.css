@@ -359,3 +359,6 @@ li.gl-step.small { background: var(--gl-ember-soft); }
 .gl-badge .how { display: block; }
 .gl-badge.soon:not(.on) img, .gl-badge.soon:not(.on) > span { opacity: .5; }
 @media (prefers-reduced-motion: reduce) { .btn.gl-mic[aria-pressed="true"] { animation: none; } }
+/* the research thread of the day, at the foot of "היום" (research step 2) */
+.gl-thread { display: block; text-decoration: none; color: inherit; border-block-start: 1px dashed var(--line); padding-block-start: 8px; border-radius: 0 0 10px 10px; transition: color var(--dur-quick); }
+.gl-thread:hover { color: var(--primary); }

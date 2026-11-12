@@ -11,6 +11,18 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Recipe import works without AI; the AI only on ✨ (ai-features → master)
+
+The first tool of `docs/ai/without-ai.md`. `POST /api/recipes/import {url}` now reads the page without AI
+(`server/recipe-parse.ts`): its schema.org JSON-LD, its microdata, or the lists under headings like "מצרכים" and
+"אופן ההכנה" (Hebrew and English). Nothing found: `method: 'draft'`, the page's title and picture, to complete by hand.
+The AI reads the page only with `{url, ai: true}`. The import dialog in `public/groceries/app.js` follows design's
+markup: "ייבוא" (plain) and "✨ ייבוא ותרגום" (`.ai-up`, `offer` → the AI invitation when a limited account has no
+credit and no key of its own); a recipe the AI read is marked with `.ai-note` and its "ביטול" removes it.
+The translate path (`/api/recipes/world/open`) also hands the AI the plain reader's lists when the page has them.
+For the master: add `node server/test-recipe-parse.mjs` to `npm test` (and `"test:recipe-parse"`) in `package.json`.
+No route, table or shared file changed. Status: done (on `ai-features`).
+
 ## 2026-11-12 – The family tree on a trusted device: built (ai-features, to the master's spec below)
 
 - `server/vault/access.ts`: the one table of each vault route's level – 'tree' (open on a trusted device, no idle lock)

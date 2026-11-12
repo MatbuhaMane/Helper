@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The tools menu's arrange mode, and the ring's three fixed items plus pins (design, vision batch 2, items 6 and 12)
+
+As the master assigned:
+- `public/assets/apps.js` (new): the catalogue of every menu (each with its cushion and glow colour for the ring),
+  `H.ringApps()` – עץ המשפחה, the person's pins, כלים, הגדרות – and `H.isPinned` / `H.togglePin`. Pins are
+  `H.prefs('home').pins`; until someone changes them they are the five parts the ring always had (אוכל, חדשות, בידור,
+  שירון, פרשת השבוע), so nothing disappears for anyone. Also `H.appIcon(name)`: `H.icon` with a gear for `settings`.
+- `public/assets/launcher.js`: `H.folder({ …, arrange: 'tools' })` – the person's order (`H.prefs('tools').order`); a long
+  press, a right click, or the "סידור" button opens the arrange mode: tiles wiggle, a finger or the mouse drags them (the
+  others glide aside on transform only), the arrows move a focused tile, Escape or "סיום" ends it; each tile that can go
+  on the ring has a 📌. `H.prefs('tools').locked` turns the long press, the right click and the button off. Styles in
+  `launcher.css`.
+- `public/tools/index.html`: arrangeable, loads `apps.js`, and holds every part of the tent too (אוכל, חדשות, בידור, שירון).
+- `public/index.html` (the ring's part only): the ring is built from `H.ringApps()` after the sign-in; badges via `H.appIcon`.
+**For ai-features:** the switch "נעילת סידור התפריט" in הגדרות sets `H.prefs('tools').locked` (and `H.savePrefs('tools')`).
+**For the master:** a `settings` (gear) icon in the shared icons would replace the fallback in `apps.js`; the new top bar can use
+it too. Checked at 375 and 1280 px, by day and at night, the audit clean (the tools page also in the arrange mode).
+Status: done (on `design`).
+
 ## 2026-11-12 – The new campfire on the home page: fire ג, with flicking tips (design, the owner's choice)
 
 The owner chose fire ג (curling tongues) and asked for a playful flick at the tips. The tongues are now drawn on canvases in

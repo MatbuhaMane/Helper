@@ -37,15 +37,22 @@ The owner set the direction (details in `docs/business/vision.md`):
 - **A button for an AI ability never looks broken when no AI is connected.** It invites the user instead, for example
   "Connect your Claude, ChatGPT or Gemini to import a recipe from a link", and also offers credits. For ai-features
   and design.
-- **Credits on our server, at a token margin, for users who do not want their own AI.** The proposed mechanism
-  (`docs/business/pricing.md` 6a):
-  - one credit is a fixed amount of real AI cost, for example $0.01;
+- **Credits on our server for users who do not want their own AI.** Credits never expire (the owner). The proposed
+  mechanism (`docs/business/pricing.md` 6a–6d):
+  - one credit is a fixed amount of real AI cost;
   - each action deducts credits by its metered cost (`costOf` in `server/prices.ts`), with an estimate shown before
-    an expensive action;
-  - the margin is about 10% and the smallest pack about $3–5;
-  - credits do not expire.
+    an expensive action.
+- **The owner's pricing model for everything paid: 30% materials, 30% labour, 30% profit, 10% tithe.** This is a
+  working assumption.
+  - **Proposed:** VAT and the payment fee come off first, and only what remains is split.
+  - **For credits:** the shopper's price is about 4.1× the AI cost on the web and 4.6–5.6× in an app store.
+- **A free trial and packs from a few shekels.**
+  - **Trial:** a one-time free credit per Google account, proposed at about ₪1–2 of AI cost.
+  - **Packs:** for example ₪5 / 10 / 20 / 50, priced in shekels.
+  - **Store vs web:** the same price everywhere, with bonus credits on the web; relevant only once the app is in the
+    stores.
 
-  Still to be set: the margin, the pack sizes, and whether a store price may differ from the web price.
+  Still to be set: the trial amount, the pack sizes, and the payment provider (Bit for small sums?).
 - **The core is free for everyone.** Paid extras only: features that cost the owner money (server AI), family photos,
   a companion figure unique to the family, and companion packs.
 

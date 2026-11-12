@@ -30,6 +30,7 @@ const Input = z.object({
   title: z.string().max(200).optional(), body: z.string().max(50000).optional(),
   source: z.object({ url: z.string().max(1000), title: z.string().max(300).optional() }).nullable().optional(),
   starred: z.boolean().optional(),
+  inbox: z.boolean().optional(),   // captured from anywhere (/capture/): waits in the research assistant's inbox
 });
 export async function create(ctx: Ctx) {
   const u = requireUser(ctx);
@@ -38,8 +39,8 @@ export async function create(ctx: Ctx) {
   const text = (p.data.body || '').trim();
   const title = (p.data.title || '').trim() || (text ? await titleFor(ctx, text) : 'פתק חדש');
   const now = Date.now(), id = uid();
-  await ctx.env.DB.prepare('INSERT INTO notes (email, id, title, body, source_url, source_title, created_at, updated_at, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)')
-    .bind(u.email, id, title, text, p.data.source?.url || null, p.data.source?.title || null, now, now).run();
+  await ctx.env.DB.prepare('INSERT INTO notes (email, id, title, body, source_url, source_title, created_at, updated_at, deleted, inbox) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)')
+    .bind(u.email, id, title, text, p.data.source?.url || null, p.data.source?.title || null, now, now, p.data.inbox ? 1 : 0).run();
   return json({ note: { id, title, body: text, source: p.data.source || null, createdAt: now, updatedAt: now } });
 }
 

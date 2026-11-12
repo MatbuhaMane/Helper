@@ -11,6 +11,37 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – החדר של האוהל: the owner's room, entered with the owner's biometric (ai-features, at the owner's request)
+
+The owner's easter egg behind the moon (`/admin/`), rebuilt as the back door to the app's settings:
+- **Entering**: on any device, with whoever is signed in there, the owner proves who they are with their own passkey
+  (fingerprint, face, Windows Hello; on someone else's device the browser offers the owner's phone through a QR code).
+  The entry is bound to that device's session: 15 minutes from the last action, 2 hours at most. The owners are the
+  emails in `OWNER_EMAIL` (never written in code). The moon's written word (moon-secret branch) is replaced by this.
+- **From the owner's own account**: a dashboard on top (income, expenses with the metered AI, net, a month now; the app's
+  numbers), money (income and expenses by hand, once or monthly, in ₪ or $), the app's settings, members, messages to
+  everyone, special features per person, הרשאת־על (a member who may enter with their own passkey: all but naming
+  supers), the AI's cost and the room's own log. **From someone else's account**: only that person's special features,
+  a message to everyone, and the app's numbers – no money, settings or members.
+- **Appended**: tables `admin_entries`, `admin_audit`, `admin_ledger`, `app_settings`, `admin_supers`, `admin_messages`,
+  `message_reads`, `user_features`; 21 routes (`/api/admin/…`, `/api/messages…`, `/api/me/features`).
+- New files: `server/admin.ts`, `server/admin-rules.ts` + `server/test-admin.mjs` (24 tests), `server/settings.ts`
+  (`setting(env, key)`: any module may read one), `public/admin/admin.js`, `public/assets/messages.js`. `public/admin/index.html`
+  is rewritten (a page with no owner in the table; its inline styles stay until design gives it a stylesheet).
+  `server/vault/index.ts` exports `newChallenge` and `takeChallenge`. Settings already wired: whether gatherings may be
+  made and how long their link lives, whether calendar links answer, an AI monthly budget (a warning), the dollar's rate.
+- **For the master** (proposed):
+  1. `common.js`: load `/assets/messages.js` after sign-in, so the owner's messages show on every page;
+  2. an entry "from any page": e.g. a long press on the logo in the app bar opens `/admin/` (the room asks for the
+     biometric itself) – in `common.js`;
+  3. `/api/members` and `/api/usage` still need only `requireOwner`; they could also require the room to be open
+     (`requireAdmin` from `server/admin.ts`);
+  4. `server/ai.ts` could read `setting()` – the models (`ai.claude_model`, `ai.gemini_model`) and a hard stop at the
+     monthly budget – I will add those settings when you agree;
+  5. `test:admin` in `npm test`; the moon-secret branch is updated (no written word; straight to the room).
+- **For design**: the room's styles are inline in `public/admin/index.html` (`.ad*`); it is checked at 375 px and desktop.
+Status: done on `ai-features`.
+
 ## 2026-11-12 – The family gathering merged and live; guests stay without accounts (master)
 
 Merged ai-features' gathering (07c4511) after review: the invitation routes answer without a session, keyed by the link

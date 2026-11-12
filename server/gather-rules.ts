@@ -15,10 +15,10 @@ export const isTime = (s: unknown): s is string => typeof s === 'string' && /^([
 /** a link to a map, or nothing: only http(s), so nothing else runs from it */
 export const mapUrl = (s: unknown) => { const v = clean(s, 500); try { const u = new URL(v); return u.protocol === 'https:' || u.protocol === 'http:' ? u.href : ''; } catch { return ''; } };
 
-/** the invitation link works until the end of the day after the gathering (Israel's midnight, give or take an hour) */
-export function expiresAt(date: string) {
+/** the invitation link works until the end of the day after the gathering – or `daysAfter` days (Israel's midnight, give or take an hour) */
+export function expiresAt(date: string, daysAfter = 1) {
   const d = HD.fromIso(date);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 2) - 2 * 3600e3;
+  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1 + daysAfter) - 2 * 3600e3;
 }
 
 const WEEK = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];

@@ -605,3 +605,68 @@ CREATE TABLE IF NOT EXISTS gathering_stats (
   n         INTEGER NOT NULL,
   PRIMARY KEY (gathering, kind, day)
 );
+
+-- The owner's room (/admin/, server/admin.ts): who opened it on which session (after the owner's biometric), what it did,
+-- the project's income and expenses entered by hand, the app's settings, who else may enter, messages to everyone,
+-- and special features for a person.
+CREATE TABLE IF NOT EXISTS admin_entries (
+  sid_hash   TEXT PRIMARY KEY,
+  by_email   TEXT NOT NULL,                   -- whose passkey opened it
+  as_email   TEXT NOT NULL,                   -- whose account the device was signed in to
+  created_at INTEGER NOT NULL,
+  last_at    INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS admin_audit (
+  at       INTEGER NOT NULL,
+  by_email TEXT NOT NULL,
+  as_email TEXT NOT NULL,
+  action   TEXT NOT NULL,
+  detail   TEXT
+);
+CREATE INDEX IF NOT EXISTS admin_audit_at ON admin_audit(at);
+CREATE TABLE IF NOT EXISTS admin_ledger (
+  id         TEXT PRIMARY KEY,
+  kind       TEXT NOT NULL,                   -- income | expense
+  title      TEXT NOT NULL,
+  amount     REAL NOT NULL,
+  currency   TEXT NOT NULL,                   -- ILS | USD
+  date       TEXT NOT NULL,
+  monthly    INTEGER NOT NULL DEFAULT 0,
+  until      TEXT,
+  by_email   TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS app_settings (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,                   -- JSON
+  updated_by TEXT,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS admin_supers (
+  email      TEXT PRIMARY KEY,
+  by_email   TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS admin_messages (
+  id         TEXT PRIMARY KEY,
+  text       TEXT NOT NULL,
+  level      TEXT NOT NULL,                   -- info | warn | party
+  link       TEXT,
+  by_email   TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  ends_at    INTEGER NOT NULL,
+  active     INTEGER NOT NULL DEFAULT 1
+);
+CREATE TABLE IF NOT EXISTS message_reads (
+  message TEXT NOT NULL,
+  email   TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  PRIMARY KEY (message, email)
+);
+CREATE TABLE IF NOT EXISTS user_features (
+  email      TEXT NOT NULL,
+  feature    TEXT NOT NULL,
+  by_email   TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, feature)
+);

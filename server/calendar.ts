@@ -8,6 +8,7 @@ import { PersonRow, rateLimit, seenAtHome } from './vault';
 import { prefsFor } from './prefs';
 import * as HD from './hebdate';
 import { forCalendar } from './gather';
+import { setting } from './settings';
 
 const Event = z.object({
   title: z.string().trim().min(1).max(80),
@@ -123,6 +124,7 @@ async function hebcal(hy: number): Promise<HD.HebcalItem[]> {
 export async function feed(ctx: Ctx) {
   const token = String(ctx.params.token || '').replace(/\.ics$/, '');
   if (!/^[A-Za-z0-9_-]{24,64}$/.test(token)) throw new HttpError(404, 'Not found');
+  if (!(await setting<boolean>(ctx.env, 'calendar.feed'))) throw new HttpError(503, 'Paused');      // the owner paused the links
   const hash = await hashOf(token);
   const f = await ctx.env.DB.prepare('SELECT f.*, m.name, m.he_name, m.household, m.role FROM calendar_feeds f JOIN members m ON m.email = f.email WHERE f.token_hash = ?')
     .bind(hash).first<FeedRow & Member>();

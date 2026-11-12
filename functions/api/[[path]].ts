@@ -6,6 +6,7 @@ import * as daemon from '../../server/daemon';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
+import * as admin from '../../server/admin';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
@@ -298,6 +299,29 @@ route('POST', '/api/gather/invite/:token/comments', gather.inviteComment);
 route('DELETE', '/api/gather/invite/:token/comments/:comment', gather.inviteCommentDelete);
 route('GET', '/api/gather/invite/:token/ics', gather.inviteIcs);
 route('POST', '/api/gather/invite/:token/event', gather.inviteEvent);
+
+/* the owner's room (ai-features, server/admin.ts): entered with the owner's biometric; messages and features for everyone */
+route('GET', '/api/admin/status', admin.status);
+route('POST', '/api/admin/enter/options', admin.enterOptions);
+route('POST', '/api/admin/enter', admin.enter);
+route('POST', '/api/admin/leave', admin.leave);
+route('GET', '/api/admin/overview', admin.overview);
+route('POST', '/api/admin/ledger', admin.ledgerAdd);
+route('PUT', '/api/admin/ledger/:id', admin.ledgerSave);
+route('DELETE', '/api/admin/ledger/:id', admin.ledgerDelete);
+route('GET', '/api/admin/settings', admin.settingsList);
+route('PUT', '/api/admin/settings', admin.settingsSave);
+route('GET', '/api/admin/supers', admin.supersList);
+route('PUT', '/api/admin/supers', admin.supersSave);
+route('GET', '/api/admin/messages', admin.messagesList);
+route('POST', '/api/admin/messages', admin.messageSend);
+route('POST', '/api/admin/messages/:id/stop', admin.messageStop);
+route('GET', '/api/admin/features', admin.featuresList);
+route('PUT', '/api/admin/features', admin.featuresSave);
+route('GET', '/api/admin/audit', admin.auditList);
+route('GET', '/api/messages', admin.messagesForMe);
+route('POST', '/api/messages/:id/read', admin.messageRead);
+route('GET', '/api/me/features', admin.myFeatures);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

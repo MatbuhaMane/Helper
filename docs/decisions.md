@@ -35,6 +35,17 @@ streamline בלי הודעה שהם עובדים על קרדיט ... לגבי ב
 
 **Status:** Decided (the owner).
 
+**Refined by the owner (relayed by the master, same day):**
+1. **Nobody is marked "unlimited" yet.**
+   - A per-member "unlimited" switch in the owner's room lets the owner mark people later.
+   - The limit applies only to accounts created from now on. Accounts that exist today are not limited.
+2. **"חיבור לשירותים" in this round:**
+   - Connecting one's own Claude or Gemini API key works for real. This is pricing.md's option ב, BYOK.
+   - Buying credits stays a placeholder.
+
+   The MCP connector (`docs/business/integrations.md`) is still the later path for people who have a subscription but
+   no API key.
+
 **One interaction for the owner to settle:** business decision 2 shows an estimate before an expensive AI action, and the
 gift decision sends the recipient a note. The proposal is that both apply only once a user has bought credits or
 received a gift. Trial users see nothing until their credits run out.

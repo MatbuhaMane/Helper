@@ -45,3 +45,53 @@
 .st-key > p { grid-column: 1 / -1; margin: 0; line-height: 1.5; }
 .st-key bdi { font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; font-size: .85em; }
 @media (max-width: 520px) { .st .card { padding: 16px 14px; border-radius: 20px; } }
+
+/* ---------- the detailed settings (vision batch 4, item 6): a row of shortcuts, then each part in the owner's order ---------- */
+/* the shortcuts stay under the bar while the page scrolls; on a phone they scroll sideways */
+.st-jump { position: sticky; inset-block-start: calc(var(--appbar-h) + 8px); z-index: 5; display: flex; flex-wrap: nowrap !important; /* (over a temporary inline wrap) */ gap: 6px; overflow-x: auto; scrollbar-width: none;
+  padding: 6px; margin-inline: -6px; border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.st-jump::-webkit-scrollbar { display: none; }
+.st-jump .chip { white-space: nowrap; text-decoration: none; flex: none; }
+/* each part: its title, its fields; a hairline between parts, and a jump lands under the bar */
+.st-sec { display: grid; gap: 14px; min-inline-size: 0; scroll-margin-block-start: calc(var(--appbar-h) + 72px); }
+.st-sec + .st-sec { border-block-start: 1px solid var(--line); padding-block-start: 20px; }
+.st-sec > p { margin: 0; line-height: 1.55; }
+.st-field { display: grid; gap: 7px; min-inline-size: 0; }
+.st-field > p { margin: 0; }
+.st-label { font-size: .84rem; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+/* a row of choices: the chosen one filled with the active colour (it follows the colour theme) */
+.st-choices { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.st-choices .chip { white-space: nowrap; min-block-size: 36px; padding: 6px 14px; display: inline-flex; align-items: center; gap: 6px;
+  transition: background-color var(--dur-quick), border-color var(--dur-quick), color var(--dur-quick); }
+.st-choices .chip[aria-checked="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.st-choices .chip:disabled { opacity: .6; cursor: default; border-style: dashed; }
+.st-choices .chip:disabled:hover { color: var(--text); border-color: var(--line-strong); }
+.st-soon { font-size: .8em; color: var(--muted); font-weight: 400; }
+/* a colour theme shows its two colours before its name (data-swatch on the chip: '', sea, desert, vineyard, dusk) */
+.chip[data-swatch]::before { content: ""; inline-size: 18px; block-size: 18px; border-radius: 50%; flex: none;
+  background: linear-gradient(135deg, var(--sw1) 0 50%, var(--sw2) 50% 100%); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .14); }
+.chip[data-swatch=""] { --sw1: #55622f; --sw2: #c2b04e; }
+.chip[data-swatch="sea"] { --sw1: #1f5f7a; --sw2: #8fc7d4; }
+.chip[data-swatch="desert"] { --sw1: #9a4a24; --sw2: #e0a85a; }
+.chip[data-swatch="vineyard"] { --sw1: #6b2a4a; --sw2: #c9a0c0; }
+.chip[data-swatch="dusk"] { --sw1: #3d4a8a; --sw2: #e8b26a; }
+/* a switch: the checkbox drawn as a sliding knob (transform only) */
+.st-switch { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; line-height: 1.4; }
+.st-switch input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0; inline-size: 44px; block-size: 26px; border-radius: 999px;
+  background: var(--line-strong); cursor: pointer; transition: background-color var(--dur-quick); }
+.st-switch input[type="checkbox"]::before { content: ""; position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 20px; block-size: 20px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: transform var(--dur-quick) var(--ease-river); }
+.st-switch input[type="checkbox"]:checked { background: var(--primary); }
+.st-switch input[type="checkbox"]:checked::before { transform: translateX(18px); }
+:root[dir="rtl"] .st-switch input[type="checkbox"]:checked::before { transform: translateX(-18px); }
+.st-switch input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+/* how the text will look, as the reading choices change */
+.st .st-sample { margin: 0; padding: 14px 18px; font-size: 1.05rem; line-height: inherit; background: color-mix(in srgb, var(--olive) 10%, var(--card)); box-shadow: none; }
+/* the services, the assistant's figures and the devices: cards in a grid */
+.st-services-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; align-items: start; }
+.st-skins { display: flex; flex-wrap: wrap; gap: 10px; }
+.st .st-skin { display: grid; gap: 2px; padding: 14px 18px; box-shadow: none; }
+.st .st-skin[aria-current="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+.st-devices ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .st-switch input[type="checkbox"], .st-switch input[type="checkbox"]::before, .st-choices .chip { transition: none; } }

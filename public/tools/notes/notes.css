@@ -27,7 +27,25 @@
 .nt-body { font: inherit; line-height: 1.7; min-block-size: 50vh; resize: vertical; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: var(--bg); color: var(--text); outline: none; }
 .nt-body:focus { border-color: var(--primary); }
 .nt-back { display: none; }
+/* stars, closing, Drive (vision batch 4, item 5): a note's row is the note and its star beside it; the editor's head wraps
+   onto a second line on a phone, with ✕ always at the end of the first */
+.nt-row { display: flex; align-items: flex-start; gap: 4px; margin-block-end: 6px; }
+.nt-row .nt-item { flex: 1; min-inline-size: 0; margin: 0; }
+.nt-star { flex: none; inline-size: 36px; min-block-size: 36px; padding: 0; justify-content: center; border-radius: 50%; border-color: transparent; font-size: 1.15rem; line-height: 1; color: var(--muted); }
+.nt-star:hover { color: #a86a0c; border-color: var(--line); }
+.nt-star.on, .nt-star[aria-pressed="true"] { color: #a86a0c; }
+:root[data-theme="dark"] :is(.nt-star.on, .nt-star[aria-pressed="true"], .nt-star:hover) { color: #f2c46a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.nt-star.on, .nt-star[aria-pressed="true"], .nt-star:hover) { color: #f2c46a; } }
+.nt-starfilter[aria-pressed="true"] { border-color: color-mix(in srgb, #e0a83a 60%, var(--line)); background: color-mix(in srgb, #e0a83a 14%, var(--card)); }
+.nt-ed-head { flex-wrap: wrap; row-gap: 6px; }
+.nt-close { inline-size: 34px; padding-inline: 0; justify-content: center; }
+.nt-state:empty { display: none; }
 @media (max-width: 760px) {
+  /* two lines: ‹ and ✕ on the first, the star, the state and the actions on the second */
+  .nt-ed-head .nt-back { order: -3; }
+  .nt-ed-head .nt-close { order: -2; margin-inline-start: auto; }
+  .nt-ed-head .spacer { order: -1; flex-basis: 100%; block-size: 0; }
+
   .nt-cols { grid-template-columns: 1fr; }
   .nt-back { display: inline-flex; }
   body.nt-editing .nt-side, body.nt-editing .nt-head { display: none; }

@@ -163,6 +163,14 @@
   background: linear-gradient(225deg, color-mix(in srgb, var(--olive) 30%, var(--card)) 0 14px, transparent 14px), color-mix(in srgb, var(--olive) 12%, var(--card)); }
 .strip-card.kind-fridge .strip-body { padding: 14px 14px 14px; gap: 5px; }
 .strip-card.kind-fridge .strip-kicker { color: var(--text); font-size: .8rem; }
+/* what is urgent: about to go off (amber), already gone off (the danger colour) */
+.strip-card.tone-soon { border-color: color-mix(in srgb, #e0a83a 65%, var(--line)); }
+.strip-card.tone-soon .strip-kicker { color: #8a5a0c; }
+.strip-card.tone-gone { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
+.strip-card.tone-gone .strip-kicker { color: var(--danger); }
+:root[data-theme="dark"] .strip-card.tone-soon .strip-kicker { color: #f0c47c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .strip-card.tone-soon .strip-kicker { color: #f0c47c; } }
+.strip-pic.emoji { color: var(--olive-ink); font-weight: 600; }
 /* while the page fetches: quiet cards that breathe */
 .strip-card.waiting { cursor: default; pointer-events: none; }
 .strip-card.waiting .strip-pic { background: color-mix(in srgb, var(--text) 6%, var(--card)); }

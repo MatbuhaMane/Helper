@@ -104,3 +104,7 @@ body.reading { overflow: hidden; }
 /* versions of the same song (different artists) */
 .vpick { font: inherit; font-size: .9rem; max-width: 46vw; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
 .cfoot .vers { color: var(--primary); font-weight: 500; }
+
+/* a heart on a double tap (vision batch 4, item 10): songs.js plays it (transform and opacity); its look is here */
+.heart-burst { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; pointer-events: none;
+  font-size: 4.5rem; line-height: 1; color: #e0245e; text-shadow: 0 6px 18px rgba(224, 36, 94, .35); }

@@ -54,7 +54,7 @@
      follows them (H.prefs). In the same mode each tile has a pin: pinned ones sit on the home page's ring round the fire
      (H.togglePin, apps.js). "נעילת סידור התפריט" in הגדרות (P.locked) turns the long press and the right click off. */
   function arrangeable(folderEl, grid, P, ns) {
-    const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
     const tiles = () => [...grid.querySelectorAll('.app')];
     const pinnable = (href) => !!H.APPS?.some((a) => a.href === href && !a.fixed);
     let on = false, drag = null, press = null;
@@ -187,11 +187,12 @@
      The look is design's; what goes in it is the page's:
        H.strip({ title: 'מה מבשלים היום', more?: { href, label },
                  items: [...] | Promise<[...]>,        // while a promise waits, three quiet placeholder cards
-                 [{ href?, onclick?, kind?: 'recipe' | 'place' | 'fridge', kicker?, title, sub?, img?, emoji? }] })
-     kind colours the kicker (and a fridge note is a paper note, not a picture card); img is a picture (4:3), emoji stands in
-     for one. An empty list removes the strip. Arrows on a computer; a finger or a trackpad on a phone. */
+                 [{ href?, onclick?, kind?: 'recipe' | 'place' | 'fridge', tone?: 'soon' | 'gone', kicker?, title, sub?, img?, emoji? }] })
+     kind colours the kicker (and a fridge note is a paper note, not a picture card); tone marks what is urgent ("פג מחר",
+     "פג אתמול"); img is a picture (4:3) – if it fails, emoji (or the title's first letter) stands in for it. An empty list
+     hides the strip. Arrows on a computer; a finger or a trackpad on a phone. */
   function strip({ title, items, more }) {
-    const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
     const track = el('div', { class: 'strip-track', role: 'list', tabindex: '-1' });
     const step = (dir) => track.scrollBy({ left: dir * -Math.max(220, track.clientWidth * 0.8), behavior: reduce() ? 'auto' : 'smooth' });   // RTL: onward is to the left
     const prev = el('button', { class: 'strip-arrow', type: 'button', 'aria-label': 'הקודמים', onclick: () => step(-1) }, '›');
@@ -207,10 +208,13 @@
         el('span', { class: 'strip-arrows' }, prev, next)),
       track);
     const card = (it) => {
-      const kind = it.kind ? ' kind-' + it.kind : '';
+      const kind = (it.kind ? ' kind-' + it.kind : '') + (it.tone ? ' tone-' + it.tone : '');
+      const stand = () => it.emoji || (String(it.title || '').replace(/[^א-תa-z]/gi, '')[0] || '🍽️');
+      const emojiPic = () => el('span', { class: 'strip-pic emoji', 'aria-hidden': 'true' }, stand());
       const pic = it.kind === 'fridge' ? null
-        : it.img ? el('span', { class: 'strip-pic' }, el('img', { src: it.img, alt: '', loading: 'lazy', decoding: 'async' }))
-          : el('span', { class: 'strip-pic emoji', 'aria-hidden': 'true' }, it.emoji || '🍽️');
+        : it.img ? el('span', { class: 'strip-pic' }, el('img', { src: it.img, alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer',
+          onerror: (e) => e.target.parentElement?.replaceWith(emojiPic()) }))
+          : emojiPic();
       const body = [pic, el('span', { class: 'strip-body' },
         it.kicker ? el('span', { class: 'strip-kicker' }, it.kind === 'fridge' && it.emoji ? it.emoji + ' ' : '', it.kicker) : null,
         el('b', { class: 'strip-title' }, it.title), it.sub ? el('span', { class: 'strip-sub' }, it.sub) : null)];

@@ -376,6 +376,49 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-13 – Companion figures: the free list and the paid list (vision, the owner)
+
+This updates the entry below: there are also certain paid figures, not only the personal one. The owner's lists:
+
+**Free:**
+- Ibn Sina (Avicenna);
+- the Rambam;
+- Newton;
+- Juha (ג'וחא);
+- Hershele Ostropoler;
+- Scheherazade;
+- Ali Baba;
+- Peter Pan;
+- every animal in our own design;
+- every holiday figure.
+
+**Paid, inside the app:**
+- the user's own personal figure (or the "free for life" bonus);
+- Mary Shelley;
+- Leonardo da Vinci;
+- Cleopatra and Dracula. The owner asked for them "extra sexy"; how far that goes is still open with the owner. See below.
+- sports-team figures, and figures from popular video games, films and series. These are to be checked against
+  partnerships, keeping copyright and the law in every case.
+
+**Rules that apply:**
+- 2D, in the tent's style. Ibn Ezra stays the family's 3D exception.
+- Draw from the original source, never from a known adaptation (Disney's Peter Pan, Universal's Dracula).
+- The `historic-figures` skill: long-dead people only, and respectful depictions.
+- **Licences:** team names and logos are trademarks, and games, films and series are copyrighted, so each of these
+  needs a licence or a partnership before it is sold.
+- **Peter Pan:** the United Kingdom has a special perpetual right; to be checked.
+
+**Open with the owner:** the app is for families with children, and children under 12 join through a parent. How
+"sexy" Cleopatra and Dracula may be, and who sees them, is not decided.
+
+**Affects:**
+- **Design:** the figures.
+- **ai-features:** which figures are free and which paid, and the purchase.
+- **Business:** the paid catalogue (this partly reverses the business change de719b4: not only the personal figure
+  is paid), licensing and partnerships, and the risks.
+
+Status: Decided (the owner), except for the open point.
+
 ## 2026-11-13 – Companion figures: everything to choose from is free; only a personal figure is paid; Ibn Ezra belongs to the owner's family (vision, the owner)
 
 **Decided:**

@@ -1,31 +1,176 @@
 /* Folders of apps (Food, Tools) and the page of an app that is still to come.
-   H.folder({ title, sub, back?: { href, label }, look?: 'flat', apps: [{ href, ic, name, c1, c2, soon?, owner?, art?, tint?, line? }] })
+   H.folder({ title, sub, back?: { href, label }, look?: 'flat', arrange?: 'tools', hero?: { src, small?, alt }, apps: [{ href, ic, name, c1, c2, soon?, owner?, art?, tint?, line? }] })
+   (arrange: the person may reorder the tiles and pin them to the home page's ring – kept under H.prefs(arrange))
    (art: a silhouette picture used as the icon, filled with tint and outlined with line;
     look 'flat': the line icon itself, large, filled with the app's pastel tint, with no tile behind it)
    H.soonPage({ title, ic, c1, c2, back: { href, label }, text }) */
 (() => {
   const { el } = H;
-  async function folder({ title, sub, apps, back, look }) {
+  async function folder({ title, sub, apps, back, look, arrange, hero }) {
     const r = await H.requireLogin();
     H.header(title);
     const root = document.querySelector('main');
-    const list = apps.filter((a) => !a.owner || r.user.role === 'owner');
+    let list = apps.filter((a) => !a.owner || r.user.role === 'owner');
+    // the person's own order (an arrangeable folder): the apps they placed, then any new ones in their usual place
+    const P = arrange ? H.prefs(arrange, { order: [], locked: false }) : null;
+    if (P?.order?.length) {
+      const at = (a) => { const k = P.order.indexOf(a.href); return k < 0 ? 1e3 + list.indexOf(a) : k; };
+      list = list.slice().sort((a, b) => at(a) - at(b));
+    }
     // drawn tools get one even ink outline (an SVG filter: dilate the shape, fill the ring in the text colour) – flat, like the line icons
     if (list.some((a) => a.art) && !document.getElementById('tool-ink')) {
       document.body.insertAdjacentHTML('beforeend', '<svg class="ink-defs" aria-hidden="true" focusable="false"><filter id="tool-ink" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">'
         + '<feMorphology in="SourceAlpha" operator="dilate" radius="1.8" result="d"/><feFlood class="ink"/><feComposite in2="d" operator="in" result="o"/>'
         + '<feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>');
     }
-    root.append(el('div', { class: 'folder' },
+    const icon = (n) => (H.appIcon ? H.appIcon(n) : H.icon(n));
+    const grid = el('nav', { class: 'apps-grid' + (look ? ' ' + look : ''), 'aria-label': title }, list.map((a, i) =>
+      el('a', { class: 'app' + (a.soon ? ' later' : ''), href: a.href, 'data-href': a.href, style: `--c1:${a.c1};--c2:${a.c2};--n:${i}${a.tint ? ';--tint:' + a.tint : ''}`, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name },
+        a.art
+          // a drawn tool (a silhouette): pastel fill, a soft rounded outline
+          ? el('span', { class: 'ic art', style: `--tint:${a.tint};--line:${a.line}` }, el('span', { class: 'shape', style: `-webkit-mask-image:url(${a.art});mask-image:url(${a.art})` }))
+          : el('span', { class: 'ic' }, icon(a.ic)),
+        el('span', { class: 'name' }, a.name), a.soon ? el('span', { class: 'soon' }, 'בקרוב') : null)));
+    // the head: the title and its line – or, with a hero picture, a window in the tent's style with the title on it
+    const head = hero
+      ? el('div', { class: 'folder-hero' },
+        el('img', { src: hero.src, srcset: hero.small ? `${hero.small} 800w, ${hero.src} 1376w` : null, sizes: hero.small ? '(max-width: 700px) 100vw, 860px' : null,
+          alt: hero.alt || '', decoding: 'async', fetchpriority: 'high', width: 1376, height: 768 }),
+        el('div', { class: 'folder-head folder-hero-cap' }, el('h1', {}, title), sub ? el('p', {}, sub) : null))
+      : el('div', { class: 'folder-head' }, el('h1', {}, title), sub ? el('p', {}, sub) : null);
+    const folderEl = el('div', { class: 'folder' + (hero ? ' with-hero' : '') },
       back ? el('a', { class: 'folder-back', href: back.href }, '‹ ', back.label) : null,
-      el('div', { class: 'folder-head' }, el('h1', {}, title), sub ? el('p', {}, sub) : null),
-      el('nav', { class: 'apps-grid' + (look ? ' ' + look : ''), 'aria-label': title }, list.map((a, i) =>
-        el('a', { class: 'app' + (a.soon ? ' later' : ''), href: a.href, style: `--c1:${a.c1};--c2:${a.c2};--n:${i}${a.tint ? ';--tint:' + a.tint : ''}`, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name },
-          a.art
-            // a drawn tool (a silhouette): pastel fill, a soft rounded outline
-            ? el('span', { class: 'ic art', style: `--tint:${a.tint};--line:${a.line}` }, el('span', { class: 'shape', style: `-webkit-mask-image:url(${a.art});mask-image:url(${a.art})` }))
-            : el('span', { class: 'ic' }, H.icon(a.ic)),
-          el('span', { class: 'name' }, a.name), a.soon ? el('span', { class: 'soon' }, 'בקרוב') : null)))));
+      head,
+      grid);
+    root.append(folderEl);
+    if (arrange) arrangeable(folderEl, grid, P, arrange);
+  }
+
+  /* The arrange mode (an arrangeable folder, e.g. כלים): a long press on a phone, or a right click on a computer (or the
+     "סידור" button), and the tiles can be dragged into a new order – the order is the person's, kept on the server so it
+     follows them (H.prefs). In the same mode each tile has a pin: pinned ones sit on the home page's ring round the fire
+     (H.togglePin, apps.js). "נעילת סידור התפריט" in הגדרות (P.locked) turns the long press and the right click off. */
+  function arrangeable(folderEl, grid, P, ns) {
+    const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tiles = () => [...grid.querySelectorAll('.app')];
+    const pinnable = (href) => !!H.APPS?.some((a) => a.href === href && !a.fixed);
+    let on = false, drag = null, press = null;
+    const bar = el('div', { class: 'arrange-bar', role: 'status', hidden: true },
+      el('span', {}, el('b', {}, 'סידור התפריט'), ' · גררו אריח כדי לשנות את הסדר', H.APPS ? ' · 📌 מצמיד אותו למדורה בדף הבית' : ''),
+      el('button', { class: 'btn small primary', type: 'button', onclick: () => leave() }, 'סיום'));
+    const editBtn = el('button', { class: 'btn small ghost arrange-open', type: 'button', onclick: () => enter() }, 'סידור');
+    folderEl.querySelector('.folder-head').append(editBtn);
+    grid.before(bar);
+    const syncLock = () => { editBtn.hidden = !!P.locked || on; };
+    syncLock();
+    addEventListener('helper:prefs', (e) => { if (e.detail === ns) syncLock(); });
+
+    function pins() {
+      for (const t of tiles()) {
+        t.querySelector('.app-pin')?.remove();
+        if (!on || !pinnable(t.dataset.href)) continue;
+        const pinned = H.isPinned(t.dataset.href), name = t.querySelector('.name')?.textContent || '';
+        const b = el('button', { class: 'app-pin', type: 'button', 'aria-pressed': String(pinned), 'aria-label': (pinned ? 'הסרה מהמדורה: ' : 'הצמדה למדורה: ') + name, title: pinned ? 'מוצמד למדורה' : 'להצמיד למדורה' }, '📌');
+        b.addEventListener('pointerdown', (e) => e.stopPropagation());
+        b.addEventListener('click', (e) => {
+          e.preventDefault(); e.stopPropagation();
+          const now = H.togglePin(t.dataset.href);
+          H.toast?.(now ? `${name} הוצמד למדורה בדף הבית` : `${name} הוסר מהמדורה`);
+          pins();
+        });
+        t.append(b);
+      }
+    }
+    function enter() {
+      if (on || P.locked) return;
+      on = true; grid.classList.add('arranging'); bar.hidden = false; syncLock();
+      tiles().forEach((t) => { t.setAttribute('aria-roledescription', 'אריח שאפשר להזיז'); t.setAttribute('draggable', 'false'); });
+      pins();
+      navigator.vibrate?.(12);
+      bar.querySelector('.btn').focus({ preventScroll: true });
+    }
+    function leave() {
+      if (!on) return;
+      on = false; grid.classList.remove('arranging'); bar.hidden = true; syncLock();
+      tiles().forEach((t) => t.removeAttribute('aria-roledescription'));
+      pins();
+    }
+    const save = () => { P.order = tiles().map((t) => t.dataset.href); H.savePrefs(ns); };
+    /** move a tile to another place in the grid, the others gliding to theirs (FLIP: transform only) */
+    function moveTo(tile, index) {
+      const all = tiles(), from = all.indexOf(tile);
+      if (index === from || index < 0 || index >= all.length) return false;
+      const before = new Map(all.map((t) => [t, t.getBoundingClientRect()]));
+      const ref = all[index > from ? index + 1 : index] || null;
+      grid.insertBefore(tile, ref);
+      if (!reduce()) for (const t of tiles()) {
+        if (t === tile && drag) continue;
+        const a = before.get(t), b = t.getBoundingClientRect();
+        const dx = a.left - b.left, dy = a.top - b.top;
+        if (dx || dy) t.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }], { duration: 260, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+      }
+      return true;
+    }
+
+    // a long press (a finger, or a held mouse button) opens the mode; a right click on a computer too
+    grid.addEventListener('pointerdown', (e) => {
+      if (on || P.locked || e.button > 0) return;
+      const t = e.target.closest('.app'); if (!t) return;
+      press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => { press = null; grid.dataset.justEntered = '1'; enter(); }, 520) };
+    });
+    const cancelPress = (e) => { if (press && (!e || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8)) { clearTimeout(press.timer); press = null; } };
+    grid.addEventListener('pointermove', cancelPress);
+    grid.addEventListener('pointerup', () => cancelPress()); grid.addEventListener('pointercancel', () => cancelPress());
+    folderEl.addEventListener('contextmenu', (e) => { if (P.locked) return; e.preventDefault(); if (on) leave(); else enter(); });
+    // while arranging, a tile is not a link; the tap that ends a long press does not open it either
+    grid.addEventListener('click', (e) => {
+      if (!on && !grid.dataset.justEntered) return;
+      if (e.target.closest('.app') && !e.target.closest('.app-pin')) e.preventDefault();
+      delete grid.dataset.justEntered;
+    }, true);
+
+    // dragging a tile
+    grid.addEventListener('pointerdown', (e) => {
+      if (!on || e.button > 0 || e.target.closest('.app-pin')) return;
+      const t = e.target.closest('.app'); if (!t) return;
+      e.preventDefault();
+      const r0 = t.getBoundingClientRect();
+      drag = { t, id: e.pointerId, sx: e.clientX, sy: e.clientY, gx: e.clientX - r0.left, gy: e.clientY - r0.top, moved: false };
+      try { t.setPointerCapture(e.pointerId); } catch (_) { /* fine */ }
+    });
+    const follow = (t, e) => { t.style.transform = 'none'; const b = t.getBoundingClientRect(); t.style.transform = `translate(${(e.clientX - drag.gx - b.left).toFixed(1)}px, ${(e.clientY - drag.gy - b.top).toFixed(1)}px) scale(1.06)`; };
+    grid.addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      const { t } = drag;
+      if (!drag.moved) { if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return; drag.moved = true; t.classList.add('dragging'); }
+      follow(t, e);
+      // the tile under the finger's point gives up its place
+      let best = -1, bd = Infinity;
+      tiles().forEach((o, i) => { if (o === t) return; const b = o.getBoundingClientRect(); const d = Math.hypot(b.left + b.width / 2 - e.clientX, b.top + b.height / 2 - e.clientY); if (d < bd) { bd = d; best = i; } });
+      if (best >= 0 && bd < 56 && moveTo(t, best)) follow(t, e);
+    });
+    const drop = (e) => {
+      if (!drag || (e && e.pointerId !== drag.id)) return;
+      const { t, moved } = drag; drag = null;
+      t.classList.remove('dragging');
+      if (!moved) return;
+      const cur = t.style.transform;
+      t.style.transform = '';
+      if (!reduce() && cur && cur !== 'none') t.animate([{ transform: cur }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
+      save();
+    };
+    grid.addEventListener('pointerup', drop); grid.addEventListener('pointercancel', drop);
+
+    // the keyboard: in the mode, the arrows move the focused tile (in Hebrew, right is earlier); Escape ends the mode
+    grid.addEventListener('keydown', (e) => {
+      if (!on) return;
+      const t = e.target.closest('.app'); if (!t) return;
+      const rtl = getComputedStyle(grid).direction === 'rtl';
+      const k = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1, ArrowUp: -1, ArrowDown: 1 }[e.key];
+      if (k) { e.preventDefault(); if (moveTo(t, tiles().indexOf(t) + k)) { t.focus(); save(); } }
+      else if (e.key === 'Enter' || e.key === ' ') e.preventDefault();
+    });
+    document.addEventListener('keydown', (e) => { if (on && e.key === 'Escape') leave(); });
   }
   async function soonPage({ title, ic, c1, c2, back, text }) {
     await H.requireLogin();

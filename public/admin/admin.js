@@ -16,7 +16,7 @@
   };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
   const call = (path, opts = {}) => api(path, { ...opts, noRedirect: true });
-  const ils = (n) => '₪' + Math.round(n).toLocaleString('he-IL');
+  const ils = (n) => '₪' + (Math.abs(n) < 100 ? Math.round(n * 100) / 100 : Math.round(n)).toLocaleString('he-IL');   // small amounts (gifts) to the agora
   const usd = (n) => (n >= 1 ? '$' + n.toFixed(2) : n >= 0.01 ? '$' + n.toFixed(3) : n > 0 ? '$' + n.toFixed(4) : '$0');
   const day = (t) => new Date(t).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' });
   const section = (id, title, ...body) => el('section', { class: 'card', id }, el('h2', {}, title), ...body);
@@ -95,14 +95,14 @@
       el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל.')),
       el('span', { class: 'spacer' }), stay, lock);
     const parts = st.own
-      ? [['dash', 'לוח'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
+      ? [['dash', 'לוח'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ...(st.level === 'owner' ? [['gifts', 'מתנות']] : []), ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
       : [['dash', 'מצב האוהל'], ['features', `התכונות של ${st.as.name}`]];
     const nav = el('nav', { class: 'ad-nav', 'aria-label': 'חלקי החדר' }, parts.map(([id, n]) => el('a', { href: '#' + id }, n)));
     const boxes = Object.fromEntries(parts.map(([id]) => [id, el('div', { id })]));
     root.replaceChildren(el('section', { class: 'ad' }, bar, nav, ...parts.map(([id]) => boxes[id])));
     dash(boxes.dash);
     features(boxes.features);
-    if (st.own) { messages(boxes.messages); settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); }
+    if (st.own) { messages(boxes.messages); settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); if (boxes.gifts) gifts(boxes.gifts); }
   }
 
   /* ---------- the dashboard, and the money ---------- */
@@ -196,6 +196,35 @@
       } }, el('label', {}, 'אימייל', email), el('label', {}, 'שם בעברית', he), el('label', {}, 'משק בית', house), el('button', { class: 'btn primary' }, 'הוספה'))));
   }
 
+  /* ---------- credit gifts (the owner only): spent first, never expire; above ₪20 the room asks again ---------- */
+  async function gifts(box) {
+    const [g, { members: list }, { allowances: ai }] = await Promise.all([call('/api/admin/gifts'), call('/api/members'), call('/api/admin/allowances')]);
+    const who = el('select', { 'aria-label': 'למי', required: true }, el('option', { value: '' }, 'למי…'),
+      list.map((m) => el('option', { value: m.email }, `${m.he_name || m.name || m.email}${ai[m.email]?.limited ? ` · מוגבל, נשאר ₪${ai[m.email].left_ils}` : ' · בלי הגבלה ממילא'}`)));
+    const amount = el('input', { type: 'number', min: '0.5', max: '500', step: '0.5', required: true, 'aria-label': 'כמה (₪ של AI)', style: 'inline-size:7em' });
+    const note = el('input', { type: 'text', maxlength: 200, 'aria-label': 'מילה אישית (לא חובה)', placeholder: 'למשל: יום הולדת שמח!' });
+    const give = async (confirm) => {
+      const r = await call('/api/admin/gifts', { body: { email: who.value, ils: amount.value, note: note.value, confirm } });
+      toast(`ניתנה מתנה של ₪${r.ils}`); gifts(box); dash(document.getElementById('dash'));
+    };
+    box.replaceChildren(section('gifts-s', 'מתנות קרדיט',
+      el('p', { class: 'muted small' }, `קרדיט ל־AI במתנה, בשקלים של עלות אמיתית. נוצל לפני כל קרדיט אחר, לא פג ולא מועבר. המקבל רואה הודעה אישית. מעל ₪${g.confirm_above} – אישור נוסף.`),
+      el('div', { class: 'ad-tiles' },
+        el('div', { class: 'ad-tile' }, el('small', {}, 'ניתן החודש'), el('b', {}, ils(g.month.given_ils))),
+        el('div', { class: 'ad-tile' }, el('small', {}, 'נוצל בפועל מהמתנות'), el('b', {}, ils(g.month.used_ils))),
+        el('div', { class: 'ad-tile' }, el('small', {}, 'מתנות החודש'), el('b', {}, g.month.count))),
+      el('form', { class: 'ad-form', onsubmit: async (e) => {
+        e.preventDefault();
+        try { await give(false); }
+        catch (err) {
+          if (err.status === 409 && confirm(`מתנה של ₪${amount.value} – יותר מ־₪${g.confirm_above}. לתת?`)) { try { await give(true); } catch (e2) { say(e2); } }
+          else if (err.status !== 409) say(err);
+        }
+      } }, el('label', {}, 'למי', who), el('label', {}, 'כמה (₪)', amount), el('label', {}, 'מילה אישית', note), el('button', { class: 'btn primary' }, 'מתנה')),
+      g.gifts.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ['מתי', 'למי', 'כמה', 'נוצל מכל המתנות שלו', ''].map((h, i) => el('th', { class: i === 2 || i === 3 ? 'num' : '' }, h)))),
+        el('tbody', {}, g.gifts.map((x) => el('tr', {}, el('td', { class: 'num' }, day(x.at)), el('td', {}, x.name), el('td', { class: 'num' }, ils(x.ils)), el('td', { class: 'num' }, ils(g.used[x.email] || 0)), el('td', { class: 'muted small' }, x.note || '')))))) : el('p', { class: 'muted small' }, 'עוד אין מתנות החודש.')));
+  }
+
   /* ---------- messages to everyone ---------- */
   async function messages(box) {
     const { messages: list, members: n } = await call('/api/admin/messages');
@@ -269,7 +298,7 @@
   /* ---------- the room's own log ---------- */
   async function log(box) {
     const { log: list } = await call('/api/admin/audit');
-    const ACT = { 'stay:on': 'השאיר פתוח לעבודה', 'stay:off': 'ביטל השארה פתוחה', 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
+    const ACT = { gift: 'נתן מתנה', 'stay:on': 'השאיר פתוח לעבודה', 'stay:off': 'ביטל השארה פתוחה', 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
       'feature:on': 'פתח תכונה', 'feature:off': 'סגר תכונה', 'super:add': 'נתן הרשאת־על', 'super:remove': 'ביטל הרשאת־על' };
     box.replaceChildren(section('log-s', 'יומן החדר',
       list.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('tbody', {}, list.map((r) => el('tr', {},

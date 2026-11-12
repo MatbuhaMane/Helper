@@ -52,5 +52,14 @@ eq('blocked', D.imageOf({ promptFeedback: { blockReason: 'SAFETY' } }), { why: '
 eq('no image', D.imageOf({ candidates: [{ content: { parts: [{ text: 'sorry' }] }, finishReason: 'STOP' }] }), { why: 'STOP' });
 eq('extensions', [D.extOf('image/png'), D.extOf('image/jpeg'), D.extOf('image/webp')], ['png', 'jpg', 'webp']);
 
+/* ---- a batch's own cost ---- */
+const u = D.usageOf('img-model', 5, { modelVersion: 'gemini-x-image', usageMetadata: { promptTokenCount: 1300, candidatesTokenCount: 1290, candidatesTokensDetails: [{ modality: 'IMAGE', tokenCount: 1290 }] } });
+eq('usage: the image tokens apart', [u.model, u.input, u.output, u.image_out, u.at], ['gemini-x-image', 1300, 0, 1290, 5]);
+eq('usage: thinking counts as output', D.usageOf('m', 1, { usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 1300, thoughtsTokenCount: 50, candidatesTokensDetails: [{ modality: 'IMAGE', tokenCount: 1290 }] } }).output, 60);
+eq('usage: an empty answer', D.usageOf('m', 1, {}).input, 0);
+const starts = [{ batch: 'a', start: 100 }, { batch: 'b', start: 130 }, { batch: 'c', start: 200 }];
+eq('a call goes to the batch that had started last', [D.batchOf(110, starts), D.batchOf(135, starts), D.batchOf(500, starts)], ['a', 'b', 'c']);
+eq('never to two batches, never before the first', [D.batchOf(130, starts), D.batchOf(99, starts)], ['b', null]);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

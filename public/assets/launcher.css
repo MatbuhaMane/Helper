@@ -69,3 +69,42 @@
 /* the tools themselves; the rail in soil, over the colours */
 .folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head::after {
   background: linear-gradient(var(--soil), var(--soil)) 0 0 / 100% 3px no-repeat, linear-gradient(to right, #ffc062 0px 28px, #8cc4f5 28px 56px, #ff9ab8 56px 84px, #ffd65c 84px 112px, #86d9a0 112px 140px, #b9a3ff 140px 168px, #ffb68a 168px 196px); }
+/* The arrange mode (launcher.js): a long press, a right click or "סידור" – the tiles wiggle a little to say they can move,
+   a finger drags them (the page does not scroll under it), and each has a pin for the home page's ring */
+.apps-grid .app { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.folder-head .arrange-open { margin-block-start: 10px; } .folder-head .arrange-open[hidden] { display: none; }
+.arrange-bar { position: sticky; inset-block-start: calc(var(--appbar-h) + 8px); z-index: 6; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 8px 12px; margin-block-end: 18px; padding: 10px 12px 10px 16px; border-radius: 16px; background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: var(--lift); font-size: .9rem; line-height: 1.5; }
+.arrange-bar[hidden] { display: none; }
+.apps-grid.arranging .app { touch-action: none; cursor: grab; animation: app-wiggle .9s ease-in-out infinite; animation-delay: calc(var(--n, 0) * -137ms); }
+.apps-grid.arranging .app:nth-child(even) { animation-direction: reverse; }
+@keyframes app-wiggle { 0%, 100% { rotate: -1.2deg; } 50% { rotate: 1.2deg; } }
+.apps-grid .app.dragging { z-index: 10; cursor: grabbing; animation: none; }
+.apps-grid .app.dragging .ic { box-shadow: 0 18px 30px -12px rgba(46, 42, 30, .45); }
+.apps-grid.arranging .app:focus-visible { outline: 3px solid var(--primary); outline-offset: 6px; border-radius: 18px; }
+/* the pin: faint when the tile is not on the ring, bright when it is */
+.app-pin { position: absolute; inset-block-start: -8px; inset-inline-start: 0; z-index: 2; inline-size: 32px; block-size: 32px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .95rem; line-height: 1; cursor: pointer; border: 1px solid var(--line-strong); background: var(--card); box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .35);
+  filter: grayscale(1); opacity: .6; transition: opacity .2s, filter .2s, transform .2s var(--ease-river); touch-action: manipulation; }
+.app-pin[aria-pressed="true"] { filter: none; opacity: 1; border-color: color-mix(in srgb, var(--olive) 70%, var(--line)); background: color-mix(in srgb, var(--olive) 22%, var(--card)); }
+.app-pin:hover { opacity: 1; transform: scale(1.08); }
+.app-pin:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .apps-grid.arranging .app { animation: none; } }
+/* A folder's hero window (H.folder({ hero })): a picture in the tent's style in a rounded frame, the title on it over a soft
+   shade, the apps under it; it settles in with a slow, slight zoom (transform only) */
+.folder.with-hero { max-inline-size: 860px; }
+.folder-hero { position: relative; margin-block-end: 28px; border-radius: 28px; overflow: hidden; aspect-ratio: 16 / 9; isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); box-shadow: 0 22px 46px -26px rgba(46, 42, 30, .6); background: color-mix(in srgb, var(--olive) 20%, var(--card)); }
+.folder-hero img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: 50% 62%; animation: hero-in 1.6s var(--ease-river) both; }
+@keyframes hero-in { from { transform: scale(1.06); opacity: .6; } }
+.folder-hero::after { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(to top, rgba(30, 20, 10, .62), rgba(30, 20, 10, .18) 38%, transparent 58%); }
+.folder-hero .folder-hero-cap { position: absolute; z-index: 2; inset-inline: 22px; inset-block-end: 18px; margin: 0; text-align: start; display: grid; gap: 2px;
+  color: #fff8ec; text-shadow: 0 2px 10px rgba(0, 0, 0, .45); }
+.folder-hero .folder-hero-cap h1 { color: inherit; font-size: clamp(2rem, 1.3rem + 2.6vw, 3rem); }
+.folder-hero .folder-hero-cap p { color: inherit; opacity: .94; font-size: clamp(.95rem, .85rem + .4vw, 1.1rem); }
+/* at night the daylit picture is dimmed a little, so it does not glare */
+:root[data-theme="dark"] .folder-hero img { filter: brightness(.86) saturate(.92); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .folder-hero img { filter: brightness(.86) saturate(.92); } }
+@media (max-width: 600px) { .folder-hero { aspect-ratio: 4 / 3; border-radius: 22px; margin-block-end: 22px; } .folder-hero .folder-hero-cap { inset-inline: 16px; inset-block-end: 14px; } }
+@media (prefers-reduced-motion: reduce) { .folder-hero img { animation: none; } }

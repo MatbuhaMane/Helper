@@ -1,25 +1,29 @@
 /* The shared sheet: a card (a recipe, an article) flips over and grows into a panel or the whole page; closing flips it back
    into the card. Slow and soft on purpose (about a second, gentle easing, deep perspective); with reduced motion it simply opens.
-   sheet.js sets where it opens: --tx/--ty/--tw/--th (the whole page, a reading panel or a large panel). */
+   Smooth on a phone: the sheet stands where it opens (sheet.js sets its place), and only its transform moves – folded
+   onto the card (--dx/--dy/--sx/--sy), then turned over – so nothing is laid out again while it moves. */
 .rsheet { position: fixed; inset: 0; z-index: 40; perspective: 2600px; }
 .rsheet[hidden] { display: none; }
 .rs-shade { position: absolute; inset: 0; background: rgba(46, 42, 30, .34); opacity: 0; transition: opacity 900ms cubic-bezier(.4, 0, .2, 1); }
 .rsheet.open .rs-shade { opacity: 1; }
-.rs-flip { position: absolute; inset-inline-start: var(--x, 0); inset-block-start: var(--y, 0); inline-size: var(--w, 100vw); block-size: var(--h, 100dvh);
-  transform-style: preserve-3d; transform: rotateY(0deg);
-  transition: inset-inline-start 1050ms cubic-bezier(.45, .05, .2, 1), inset-block-start 1050ms cubic-bezier(.45, .05, .2, 1),
-    inline-size 1050ms cubic-bezier(.45, .05, .2, 1), block-size 1050ms cubic-bezier(.45, .05, .2, 1), transform 1050ms cubic-bezier(.45, .05, .2, 1); }
-.rsheet.open .rs-flip { inset-inline-start: var(--tx, 0); inset-block-start: var(--ty, 0); inline-size: var(--tw, 100%); block-size: var(--th, 100dvh); transform: rotateY(180deg); }
+.rs-flip { position: absolute; left: 0; top: 0; width: 100vw; height: 100dvh; transform-style: preserve-3d; transform-origin: 50% 50%;
+  transform: translate(var(--dx, 0px), var(--dy, 0px)) scale(var(--sx, 1), var(--sy, 1)) rotateY(0deg);
+  transition: transform 1050ms cubic-bezier(.45, .05, .2, 1); }
+.rsheet.open .rs-flip { transform: translate(0px, 0px) scale(1, 1) rotateY(180deg); }
+.rsheet.moving .rs-flip { will-change: transform; }
 /* growing from a panel to the large panel (already flipped): a little quicker */
 .rsheet.open.sized .rs-flip { transition-duration: 900ms; }
 .rsheet.instant .rs-flip, .rsheet.instant .rs-shade { transition: none; }
 .rs-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 18px 50px rgba(46, 42, 30, .18); }
 .rs-front { background: var(--card); }
-.rs-front > * { inline-size: 100%; block-size: 100%; margin: 0; pointer-events: none; }
-/* The copy of the card must not animate or carry its own transform: that would lift it onto its own layer, and it would
-   show through the back of the sheet once it has turned. */
-.rs-front, .rs-front * { animation: none !important; transition: none !important; }
-.rs-front * { transform: none !important; }
+.rs-front { overflow: hidden; }
+/* the card's copy at the card's own size, scaled up with the face (--fx/--fy), so it does not reflow on the way */
+.rs-copy { position: absolute; left: 0; top: 0; width: var(--w, 100%); height: var(--h, 100%); transform-origin: 0 0; transform: scale(var(--fx, 1), var(--fy, 1)); pointer-events: none; }
+.rs-copy > * { inline-size: 100%; block-size: 100%; margin: 0; }
+/* The copy's insides must not animate or carry their own transform: that would lift them onto their own layer, and they
+   would show through the back of the sheet once it has turned. */
+.rs-copy, .rs-copy * { animation: none !important; transition: none !important; }
+.rs-copy * { transform: none !important; }
 .rs-back { transform: rotateY(180deg); background: var(--card); display: flex; flex-direction: column; border-radius: 0; }
 .rsheet:not(.open) .rs-back, .rsheet.sized .rs-back { border-radius: var(--radius-lg); }
 /* overflow-anchor: none – a picture that loads above must not push the reader down past it */

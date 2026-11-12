@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, Env, HttpError, body, json, requireUser, uid } from './core';
 import { fetchPage, readable } from './web';
+import { draftFromPage, recipeFromJsonLd, recipeFromPage } from './recipe-parse';
 
 /* ---------------- groceries ---------------- */
 
@@ -140,14 +141,18 @@ export async function deleteRecipe(ctx: Ctx) {
   return json({ ok: true });
 }
 
-/** Import a recipe from any web page: schema.org JSON-LD first (most recipe sites have it), AI extraction as fallback. */
+/** Import a recipe from any web page (docs/ai/without-ai.md #1). Without AI first: the page's structured recipe
+    (JSON-LD), its microdata, or the lists under its "מצרכים" and "אופן ההכנה" headings (recipe-parse.ts). Nothing found:
+    a draft to fill in by hand (its title and picture). The AI reads the page only when asked ({ai: true}, the ✨ button)
+    and nothing else found it – and like every AI call it may answer 402 when someone's credit ran out. */
 export async function importRecipe(ctx: Ctx) {
   requireUser(ctx);
-  const { url } = await body<{ url: string }>(ctx.req);
+  const { url, ai } = await body<{ url: string; ai?: boolean }>(ctx.req);
   if (!/^https?:\/\//.test(url || '')) throw new HttpError(400, 'Invalid URL');
   const page = await fetchPage(url);
-  const fromLd = recipeFromJsonLd(page.html, url);
-  if (fromLd) return json({ recipe: fromLd, method: 'json-ld' });
+  const found = recipeFromJsonLd(page.html, url) || recipeFromPage(page.html, url);
+  if (found) return json({ recipe: { ...found, image: found.image || page.image }, method: 'page' });
+  if (!ai) return json({ recipe: { ...draftFromPage(page.html, url), image: page.image }, method: 'draft' });
 
   const art = readable(page.html, url);
   const text = (art?.textContent || '').replace(/\s+\n/g, '\n').slice(0, 30000);
@@ -166,56 +171,6 @@ export async function importRecipe(ctx: Ctx) {
   if (!extracted.title || !extracted.ingredients.length) throw new HttpError(422, 'no_recipe_found');
   const recipe: Recipe = { ...extracted, image: page.image || null, source_url: url, tags: [] };
   return json({ recipe, method: 'ai' });
-}
-
-export function recipeFromJsonLd(html: string, url: string): Recipe | null {
-  const blocks = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
-  for (const b of blocks) {
-    let data: any;
-    try { data = JSON.parse(b[1].trim()); } catch { continue; }
-    const nodes: any[] = [];
-    const walk = (n: any) => {
-      if (!n || typeof n !== 'object') return;
-      if (Array.isArray(n)) return n.forEach(walk);
-      nodes.push(n);
-      if (n['@graph']) walk(n['@graph']);
-    };
-    walk(data);
-    const r = nodes.find((n) => [].concat(n['@type'] || []).some((t: string) => /recipe/i.test(t)));
-    if (!r) continue;
-    const ingredients = [].concat(r.recipeIngredient || r.ingredients || []).map((s: string) => splitIngredient(clean(s)));
-    const steps: string[] = [];
-    const addStep = (s: any) => {
-      if (!s) return;
-      if (typeof s === 'string') steps.push(...clean(s).split(/\n+/).filter(Boolean));
-      else if (Array.isArray(s)) s.forEach(addStep);
-      else if (s.itemListElement) addStep(s.itemListElement);
-      else if (s.text) steps.push(clean(s.text));
-    };
-    addStep(r.recipeInstructions);
-    const img = Array.isArray(r.image) ? r.image[0] : r.image;
-    return {
-      title: clean(r.name || 'מתכון'),
-      image: typeof img === 'string' ? img : img?.url || null,
-      source_url: url,
-      ingredients,
-      steps,
-      notes: r.description ? clean(r.description) : null,
-      tags: [],
-    };
-  }
-  return null;
-}
-
-function clean(s: string): string {
-  return String(s).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'").replace(/[ \t]+/g, ' ').trim();
-}
-
-/** "2 כוסות קמח" -> { measure: "2 כוסות", name: "קמח" }; best-effort, keeps the whole text when unsure. */
-function splitIngredient(s: string) {
-  const m = s.match(/^([\d½¼¾⅓⅔.,/\s-]+(?:כוסות|כוס|כפות|כף|כפיות|כפית|גרם|ג'|ק"ג|קילו|מ"ל|ליטר|יחידות|יחידה|חבילה|חבילות|שיני|שן|קורט|קופסה|קופסת|פחית|cups?|tbsp|tsp|g|kg|ml|l|oz|lb)?\.?)\s+(.+)$/i);
-  return m ? { measure: m[1].trim(), name: m[2].trim() } : { measure: '', name: s };
 }
 
 /* ---------------- helpers for the daemon ---------------- */

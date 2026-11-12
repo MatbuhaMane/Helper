@@ -11,6 +11,125 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Recipe import works without AI; the AI only on ✨ (ai-features → master)
+
+The first tool of `docs/ai/without-ai.md`. `POST /api/recipes/import {url}` now reads the page without AI
+(`server/recipe-parse.ts`): its schema.org JSON-LD, its microdata, or the lists under headings like "מצרכים" and
+"אופן ההכנה" (Hebrew and English). Nothing found: `method: 'draft'`, the page's title and picture, to complete by hand.
+The AI reads the page only with `{url, ai: true}`. The import dialog in `public/groceries/app.js` follows design's
+markup: "ייבוא" (plain) and "✨ ייבוא ותרגום" (`.ai-up`, `offer` → the AI invitation when a limited account has no
+credit and no key of its own); a recipe the AI read is marked with `.ai-note` and its "ביטול" removes it.
+The translate path (`/api/recipes/world/open`) also hands the AI the plain reader's lists when the page has them.
+For the master: add `node server/test-recipe-parse.mjs` to `npm test` (and `"test:recipe-parse"`) in `package.json`.
+No route, table or shared file changed. Status: done (on `ai-features`).
+
+## 2026-11-12 – The food menu's window: א2, the set table; all six pictures kept (design, the owner's choice; vision item 11)
+
+The owner chose א2 · השולחן הערוך and asked to keep all six for later. `H.folder({ hero: { src, small, alt } })` in
+`public/assets/launcher.js` gives a folder a window on top (the picture in a rounded frame, the title and its line on it;
+`launcher.css`), and `public/food/index.html` uses it with `public/assets/food/portal.webp` (`portal-800.webp` on a phone).
+The six originals, with the idea, the version and the full prompt of each, are in `figures/art/library/food/` (README).
+For the master: `/assets/food/portal.webp` and `portal-800.webp` could join the sw pre-cache with `/food/`. Status: done (on `design`).
+
+## 2026-11-12 – The family tree on a trusted device: built (ai-features, to the master's spec below)
+
+- `server/vault/access.ts`: the one table of each vault route's level – 'tree' (open on a trusted device, no idle lock)
+  or 'fresh' (a fresh unlock every time, then the 15-minute window) – and the device's coarse name ("Chrome · Windows",
+  never the User-Agent). Every handler in `server/vault/index.ts` calls `need(ctx, ACCESS.<name>)`; the tests check the
+  table route by route and that no handler bypasses it (`server/vault/test-access.mjs`, 165 tests).
+- An unlock makes the session trusted for 30 days, renewed on every tree use (`sessions.vault_trust_until`, `…_since`,
+  `…_used`, `…_label`, COLUMNS); trusting and revoking are written to the vault's activity log.
+- Beyond the spec, both to the safe side – please confirm: **appointing household heads** (`roleSave`, a change of rights)
+  and **viewing the activity log** (`auditLog`) need a fresh unlock; the **"נעילה" button ends this device's trust**
+  (an explicit lock), while the page's own lock after five minutes away (`/api/vault/lock?keep=1`) closes only the
+  documents' unlock and keeps the device trusted.
+- The page: a trusted device opens straight into the tree ("מכשיר מוכר" in place of the countdown); a person's documents
+  wait behind "פתיחת המסמכים"; any special step asks there and then (a passkey, or Google again) and carries on; a picture
+  on a card that needs the unlock stays initials. Settings: "מכשירים מוכרים" – each device, since when, last used, "this
+  device", remove, or remove and sign out. Routes `GET /api/vault/devices`, `DELETE /api/vault/devices/:id`.
+- **For the master**: `test:access` (node server/vault/test-access.mjs) in `npm test`.
+Status: done on `ai-features`, for the master's security review.
+
+## 2026-11-12 – The family tree on a trusted device; special actions still ask (master, the owner approved)
+
+Vision's batch 2 item 4 ("the family tree opens freely after the first sign-in"), made safe and approved by the owner.
+The vault's encryption does not change (the key is a Worker secret; a passkey never decrypted anything – it is a gate).
+A session that unlocks the vault becomes a **trusted device for 30 days**, renewed on each use: the tree (people,
+relationships, roles, the forest), editing people and links, and non-private details open there without a touch.
+**Every time** a fresh unlock (passkey, or a Google sign-in from the last 10 minutes): documents and files, private items,
+changing privacy, linking trees, any delete, export. Settings get a "מכשירים מוכרים" list to revoke a device at once.
+Untrusted sessions are as before. Built by ai-features in `server/vault/index.ts`, reviewed by the master. Status: Decided (the owner), assigned.
+
+## 2026-11-12 – The tools menu's arrange mode, and the ring's three fixed items plus pins (design, vision batch 2, items 6 and 12)
+
+As the master assigned:
+- `public/assets/apps.js` (new): the catalogue of every menu (each with its cushion and glow colour for the ring),
+  `H.ringApps()` – עץ המשפחה, the person's pins, כלים, הגדרות – and `H.isPinned` / `H.togglePin`. Pins are
+  `H.prefs('home').pins`; until someone changes them they are the five parts the ring always had (אוכל, חדשות, בידור,
+  שירון, פרשת השבוע), so nothing disappears for anyone. Also `H.appIcon(name)`: `H.icon` with a gear for `settings`.
+- `public/assets/launcher.js`: `H.folder({ …, arrange: 'tools' })` – the person's order (`H.prefs('tools').order`); a long
+  press, a right click, or the "סידור" button opens the arrange mode: tiles wiggle, a finger or the mouse drags them (the
+  others glide aside on transform only), the arrows move a focused tile, Escape or "סיום" ends it; each tile that can go
+  on the ring has a 📌. `H.prefs('tools').locked` turns the long press, the right click and the button off. Styles in
+  `launcher.css`.
+- `public/tools/index.html`: arrangeable, loads `apps.js`, and holds every part of the tent too (אוכל, חדשות, בידור, שירון).
+- `public/index.html` (the ring's part only): the ring is built from `H.ringApps()` after the sign-in; badges via `H.appIcon`.
+**For ai-features:** the switch "נעילת סידור התפריט" in הגדרות sets `H.prefs('tools').locked` (and `H.savePrefs('tools')`).
+**For the master:** a `settings` (gear) icon in the shared icons would replace the fallback in `apps.js`; the new top bar can use
+it too. Checked at 375 and 1280 px, by day and at night, the audit clean (the tools page also in the arrange mode).
+Status: done (on `design`).
+
+## 2026-11-12 – The new campfire on the home page: fire ג, with flicking tips (design, the owner's choice)
+
+The owner chose fire ג (curling tongues) and asked for a playful flick at the tips. The tongues are now drawn on canvases in
+thin strips with a bend that grows toward the tip – a sway, a wave rising up the flame, and every 1.5–4 s a quick flick of
+the tip that springs back, with a stretch upward (`public/assets/campfire.js`). In `public/index.html` (the master's file,
+its fire part only, as approved): `campfire.css` and `campfire.js` are linked; the `.fire` rules now hold only its size,
+place and the warm light on the ground (the strip's `.flames`, `.glow` and `.core` rules are gone); `campfire()` mounts the
+fire with its five pictures in `public/assets/campfire/`. **For the master:** `public/sw.js` pre-caches
+`/assets/campfire-strip.webp` – please replace it in `ASSETS` with `/assets/campfire.css`, `/assets/campfire.js`,
+`/assets/campfire/base.webp` and `/assets/campfire/flame-1…4.webp`; design deletes the strip once that is live.
+Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the sw.js line proposed.
+
+## 2026-11-12 – The beta's three months start at the first real gathering (business)
+
+**Decision:** the clock for the three-month beta check (business decision 10) starts on the day the owner sends the first
+real gathering to the family. Test gatherings don't count. The check is three months after that day.
+
+**Why:** the beta measures real family use. The loop has been complete since today, but nothing real has been sent
+yet.
+
+**Affects:** none. When the first real gathering goes out, the owner tells the business session (or it reads the date
+from `gatherings`), and the check date is recorded here and in `docs/business/plan.md`.
+
+**Status:** Decided (the owner). The start date is still to come.
+
+## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
+
+The owner gives AI credit to chosen people from the room: the owner only (not a super), from the owner's own account,
+written to the room's log. A gift is a grant of the source "gift" in `ai_credits` – shekels of real AI cost turned into
+dollars at the room's rate, spent before any other credit, never expiring, never refunded or moved. Above ₪20 the server
+answers `409 {confirm: true}` and the room asks again. The recipient gets a personal note for a month ("🎁 קיבלת מתנה
+מהאוהל: קרדיט בשווי ₪…", with the owner's word if any, linking to הגדרות) – a gift's recipient is one of those who see
+amounts (`credits-rules.showsAmounts`), so nobody on the trial alone sees one. The room shows this month's gifts, what they
+come to, and how much of each person's gifts was really used (gifts go first, so it is what they spent, up to the gifts).
+- **Appended**: column `admin_messages.to_email` (COLUMNS: a message for one person; the list of messages to everyone
+  leaves those out); routes `GET/POST /api/admin/gifts`. Rules in `server/credits-rules.ts` (`giftIls`, `needsConfirm`,
+  `ilsToUsd`, `giftUsed`), 8 more tests (46).
+Status: done on `ai-features`.
+
+## 2026-11-12 – Guests join from an invitation, into a household of their own (master)
+
+The owner's decision (business's entry "Guests can join once new accounts are AI-limited"), now that the allowance exists:
+"כניסה עם Google" on an open invitation admits a new email into a new household of its own, with the trial credits
+(`startTrial`), silently. Built by the master in `server/join.ts` and `server/join-rules.ts` (17 tests, `npm run test:join`),
+`server/core.ts` (admitMember asks join.ts through a hook the router registers), a table `invite_joins` and a route
+`POST /api/gather/invite/:token/join`. In ai-features' files, small and marked: `inviteInfo` exported from `server/gather.ts`;
+the setting `gather.guest_signup` (on by default) in `server/settings.ts`; the join button in `public/gather/invite/invite.js`
+(the invitation's key stays in sessionStorage through the sign-in). For business: real sign-ups from invitations are now
+counted in `gathering_stats` as `signup` (alongside the click count `signin`), so the viral coefficient can return to the
+beta's check. Next, ai-features: the credit gifts in the room. Status: done.
+
 ## 2026-11-12 – Design's image tool, through Gemini (ai-features, design's request, assigned by the master)
 
 For the owner's decision "one visual style for everything; images are made through the Gemini API" (vision), as design
@@ -231,6 +350,9 @@ entry below). That makes the viral coefficient in business decision 10 unmeasura
    - Why: the original condition cannot be measured while guests have no accounts.
    - Affects: none (measurement only).
    - Status: Provisional. The viral coefficient (0.3 or more) returns to the condition once guests can join.
+     **Condition met 2026-11-12 (c892af5):** guests can now join from an invitation, and real sign-ups are counted in
+     `gathering_stats` as kind "signup". The viral coefficient is back in decision 10's check, alongside the RSVP rate and
+     gatherings per family.
 
 Details: `docs/business/gathering.md` section 7, `docs/business/plan.md` stage 4.
 

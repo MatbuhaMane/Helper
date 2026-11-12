@@ -783,7 +783,7 @@
   const autosize = (ta) => { ta.style.blockSize = 'auto'; ta.style.blockSize = ta.scrollHeight + 2 + 'px'; };
 
   /** Our recipe format, edited in place: name, where it came from, ingredients with amounts, steps one by one. Saves as you type. */
-  function openBookRecipe(r, origin) {
+  function openBookRecipe(r, origin, opts = {}) {
     const draft = structuredClone(r);
     let timer = null, dirty = false, saving = null;
     const status = el('span', { class: 'save-status', role: 'status', 'aria-live': 'polite' }, draft.id ? 'כל שינוי נשמר מעצמו' : 'המתכון יישמר כשתתנו לו שם');
@@ -929,6 +929,13 @@
     sheet.open(origin, [
       el('div', { class: 'r-hero' }, draft.image ? el('img', { src: draft.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.remove() }) : null),
       title, subtitle,
+      // a recipe the AI read: marked, with a way back (design's .ai-note)
+      opts.ai ? el('p', { class: 'ai-note' }, '✨ הוצע בעזרת העוזר החכם · ', el('button', { type: 'button', onclick: async () => {
+        clearTimeout(timer); dirty = false;
+        try { await api('/api/recipes/' + draft.id, { method: 'DELETE' }); } catch (e) { toast(e.message); return; }
+        book = (book || []).filter((x) => x.id !== draft.id);
+        closeSheet(); renderBook(); toast('הייבוא בוטל');
+      } }, 'ביטול')) : null,
       bstatus,
       metaChips(draft.meta),
       ketoSlot,
@@ -949,33 +956,56 @@
     runCheck();
   }
 
-  function importDialog() {
-    const url = el('input', { type: 'url', placeholder: 'הדבק קישור למתכון מכל אתר…', dir: 'ltr', style: 'width:100%' });
-    const go = el('button', { class: 'btn primary', onclick: async () => {
-      const link = url.value.trim();
-      if (!/^https?:\/\//.test(link)) return toast('הדבק קישור שמתחיל ב-https://');
-      go.disabled = true;
-      go.textContent = 'קורא ומתרגם…';
+  /* import from a link (docs/ai/without-ai.md #1): "ייבוא" reads the page without AI – its structured recipe, or the lists
+     under its headings, in the page's own language; nothing found: a draft with its title and picture. "✨ ייבוא ותרגום"
+     reads and translates with the AI. With no AI left, ✨ invites to connect one (design's .ai-pair / .ai-up.offer). */
+  async function importDialog() {
+    const url = el('input', { type: 'url', placeholder: 'הדבק קישור למתכון מכל אתר…', dir: 'ltr', style: 'width:100%', 'aria-label': 'קישור למתכון' });
+    let noAi = false;   // a limited account whose credit ran out, with no AI of its own
+    try { const me = await api('/api/me/ai'); noAi = !!me.out && !Object.keys(me.keys || {}).length; } catch (_) { /* as if there is AI: the server decides anyway */ }
+    const invite = () => (H.aiInvite ? Promise.resolve() : new Promise((ok, no) => document.head.append(el('script', { src: '/assets/ai-invite.js', onload: ok, onerror: no }))))
+      .then(() => H.aiInvite?.()).catch(() => toast('אפשר לחבר AI בהגדרות ← חיבור לשירותים'));
+    const link = () => { const v = url.value.trim(); if (!/^https?:\/\//.test(v)) { toast('הדבק קישור שמתחיל ב-https://'); return null; } return v; };
+    const busy = (b, on, label) => { plain.disabled = smart.disabled = on; b.textContent = on ? 'קורא…' : label; };
+    const keep = async (recipe, how, ai = false) => {
+      const r = await api('/api/recipes', { body: recipe });
+      await ensureBook();
+      const saved = { ...recipe, id: r.id };
+      book.unshift(saved);
+      closeModal();
+      renderBook();
+      openBookRecipe(saved, undefined, { ai });
+      toast(how);
+    };
+    const plain = el('button', { class: 'btn primary', type: 'button', onclick: async () => {
+      const v = link(); if (!v) return;
+      busy(plain, true);
+      try {
+        const res = await api('/api/recipes/import', { body: { url: v } });
+        const recipe = { ...res.recipe, subtitle: `מקור: ${new URL(v).hostname.replace(/^www\./, '')}` };
+        await keep(recipe, res.method === 'draft'
+          ? 'לא מצאתי מתכון בדף – שמרתי את השם והתמונה. אפשר להשלים, או לנסות ✨ ייבוא ותרגום.'
+          : 'המתכון נוסף לספר – אפשר לערוך ישר כאן');
+      } catch (e) { toast(e.message); busy(plain, false, 'ייבוא'); }
+    } }, 'ייבוא');
+    const smart = el('button', { class: 'btn ai-up' + (noAi ? ' offer' : ''), type: 'button', onclick: async () => {
+      if (noAi) return invite();
+      const v = link(); if (!v) return;
+      busy(smart, true);
       try {
         let recipe;
-        try { recipe = (await api('/api/recipes/world/open', { body: { url: link } })).recipe; } catch (e) {
+        try { recipe = (await api('/api/recipes/world/open', { body: { url: v } })).recipe; } catch (e) {
           if (e.code !== 'ai_not_configured') throw e;
-          recipe = (await api('/api/recipes/import', { body: { url: link } })).recipe;
-          recipe.subtitle = `מקור: ${new URL(link).hostname.replace(/^www\./, '')}`;
+          recipe = (await api('/api/recipes/import', { body: { url: v, ai: true } })).recipe;
+          recipe.subtitle = `מקור: ${new URL(v).hostname.replace(/^www\./, '')}`;
         }
-        const r = await api('/api/recipes', { body: recipe });
-        await ensureBook();
-        const saved = { ...recipe, id: r.id };
-        book.unshift(saved);
-        closeModal();
-        renderBook();
-        openBookRecipe(saved);
-        toast('המתכון נוסף לספר – אפשר לערוך ישר כאן');
-      } catch (e) { toast(e.message); go.disabled = false; go.textContent = 'ייבוא'; }
-    } }, 'ייבוא');
+        await keep(recipe, '✨ המתכון תורגם ונוסף לספר', true);
+      } catch (e) { if (e.code !== 'ai_credit_needed') toast(e.message); busy(smart, false, '✨ ייבוא ותרגום'); }
+    } }, '✨ ייבוא ותרגום');
     modal(el('h3', {}, '🔗 ייבוא מתכון מקישור'),
-      el('p', { class: 'muted' }, 'עובד עם אתרי מתכונים בכל שפה. המתכון יתורגם לעברית, יישמר בספר וייפתח לעריכה.'),
-      el('div', { class: 'row' }, url, go));
+      el('p', { class: 'muted' }, 'ייבוא קורא את המתכון מהדף כמו שהוא. ✨ גם מתרגם לעברית ומסדר. המתכון נשמר בספר ונפתח לעריכה.'),
+      url,
+      el('div', { class: 'ai-pair', style: 'margin-top:10px' }, plain, smart));
     url.focus();
   }
 

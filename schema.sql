@@ -715,3 +715,13 @@ CREATE TABLE IF NOT EXISTS design_images (
   PRIMARY KEY (batch, i)
 );
 CREATE INDEX IF NOT EXISTS design_images_day ON design_images(day);
+
+-- joining from a gathering's invitation (server/join.ts, master): a single-use ticket while the guest signs in with Google
+-- (twenty minutes); only the hash of the ticket is kept, and the guest's earlier answer (rsvp) to tie to the new member.
+CREATE TABLE IF NOT EXISTS invite_joins (
+  nonce_hash TEXT PRIMARY KEY,
+  gathering  TEXT NOT NULL,
+  rsvp       TEXT,
+  exp        INTEGER NOT NULL,
+  used       INTEGER NOT NULL DEFAULT 0
+);

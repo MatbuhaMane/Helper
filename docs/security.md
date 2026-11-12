@@ -70,8 +70,14 @@ Read this before changing sign-in, the API, the family vault, or the headers.
   they bring, and the comments – never the tree or anything else of the household. A guest's own answers are tied to a second
   random key kept on their device (hashed on the server). Guests' writes are rate-limited by a keyed fingerprint of the address.
   The link stops working the day after the gathering, or when the host cancels it. The page sends no referrer and asks not to be
-  indexed. An invitation does **not** admit anyone into the app: a guest who signs in with Google from it is turned away unless
-  already invited (the owner's decision, until AI limits or credits exist).
+  indexed.
+- **Joining from an invitation** (`server/join.ts`, the owner's decision once the AI allowance existed): "כניסה עם Google" on an
+  open invitation asks the server for a single-use ticket (20 minutes; only its hash is stored; rate-limited per address) kept
+  in an HttpOnly cookie on that device. When Google's sign-in returns, a valid ticket for a still-open gathering admits a new
+  email as a `member` of a **new household of its own** (never the inviting family's), with the one-time trial credits and no
+  other access; the guest's earlier answer becomes theirs. The invitation's key never travels in the sign-in address (the page
+  keeps it in sessionStorage). Without a ticket, only invited members get in, as before. The owner can turn it off in the room
+  (`gather.guest_signup`). Previews never admit guests.
 
 ### The owner's room (`server/admin.ts`, `public/admin/`)
 - Entered only with a passkey of an owner (the emails in `OWNER_EMAIL`) or a super the owner named, with user verification

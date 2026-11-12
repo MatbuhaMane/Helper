@@ -75,7 +75,8 @@ A file has one owner. Other sessions propose changes to it (in `docs/decisions.m
 - **ai-features**: `server/` feature modules (AI, news, recipes, keto, calendar, daemon, voice, mail, music…), the family tree
   logic in `server/vault/index.ts` and `server/vault/kin.ts` (with `test-kin.mjs`), the Hebrew dates in `server/hebdate.ts`
   (with `test-hebdate.mjs`), each page's JavaScript (`public/*/*.js`, `public/tools/*/*.js`), `docs/ai/`, `docs/family-forest.md`.
-- **master** (shared files): `functions/api/[[path]].ts`, `schema.sql`, `server/schema.ts`, `server/core.ts`, `server/ai.ts`,
+- **master** (shared files): `functions/api/[[path]].ts`, `schema.sql`, `server/schema.ts`, `server/core.ts`,
+  `server/join.ts` and `server/join-rules.ts` (joining from an invitation, with `test-join.mjs`), `server/ai.ts`,
   `server/meter.ts`, `server/prices.ts`, the vault's security (`server/vault/crypto.ts`, `webauthn.ts`, `store.ts`, `backup.ts`),
   `src/`, `wrangler.toml`, `package.json`, `package-lock.json`, `public/sw.js`, `public/_headers`, `public/manifest.json`,
   `public/assets/common.js`, `public/index.html`, `desktop/`, `tools/`, `.github/`, `.gitignore`, `README.md`, this file,

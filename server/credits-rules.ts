@@ -63,3 +63,22 @@ export function requestWithKey(provider: 'claude' | 'gemini', req: Request, key:
 /** may this account see amounts – its balance, a cost estimate before an expensive action, the note of a gift? Only once
     it bought credit or received a gift; on the trial alone it is used silently (the owner's decision) */
 export const showsAmounts = (grants: { source: string }[]) => grants.some((g) => g.source === 'purchase' || g.source === 'gift');
+
+/* ---------------- gifts from the owner (the room) ---------------- */
+
+/** above this many shekels of AI cost a gift needs a second confirmation (the owner's rule) */
+export const GIFT_CONFIRM_ILS = 20;
+/** a gift as the room sent it: shekels of AI cost, more than nothing and at most ₪500; null when it does not fit */
+export function giftIls(v: unknown): number | null {
+  const n = Math.round(Number(v) * 100) / 100;
+  return Number.isFinite(n) && n > 0 && n <= 500 ? n : null;
+}
+export const needsConfirm = (ils: number, confirmed: unknown) => ils > GIFT_CONFIRM_ILS && confirmed !== true;
+/** shekels of AI cost → dollars (the measure of the grants) */
+export const ilsToUsd = (ils: number, usdIls: number) => Math.round((ils / usdIls) * 1e6) / 1e6;
+
+/** how much of a person's gifts was really used: gifts are spent first, so it is what they spent, up to the gifts */
+export function giftUsed(grants: Grant[], spent: number) {
+  const gifts = grants.filter((g) => g.source === 'gift' && g.usd > 0).reduce((s, g) => s + g.usd, 0);
+  return Math.min(gifts, Math.max(0, spent));
+}

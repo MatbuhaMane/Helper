@@ -91,6 +91,91 @@ The owner's easter egg behind the moon (`/admin/`), rebuilt as the back door to 
 - **For design**: the room's styles are inline in `public/admin/index.html` (`.ad*`); it is checked at 375 px and desktop.
 Status: done on `ai-features`.
 
+## 2026-11-12 – The AI limit's scope: new accounts only, trial credits used silently, today's family unlimited (business)
+
+**Decision** (the owner, relayed by the master):
+- The AI limit applies to new accounts only.
+- A new account simply starts using AI on its trial credits, with no message that it is working on credit.
+- Connecting one's own AI service, or buying credits, lives in the app's settings under "חיבור לשירותים".
+- Today's family members, the first users, have no limit at all, at the owner's expense.
+
+The owner's words: "אני רוצה שמשתמשים חדשים באפליקציה פשוט יתחילו להשתמש בה על חשבון הקרדיט שקיבלו מתנה באופן
+streamline בלי הודעה שהם עובדים על קרדיט ... לגבי בני המשפחה שלי ... איני רוצה שתהיה הגבלת שימוש כלל, על חשבוני."
+
+**Why:**
+- New users get a smooth start.
+- The family is the beta, and the owner funds it.
+
+**Affects:**
+- ai-features: the allowance applies only to accounts created from now on, and nothing is shown while trial credits
+  last. When they run out, the inviting AI buttons (an earlier decision) point to "חיבור לשירותים".
+- design: the "חיבור לשירותים" section in settings.
+- master: the order of the work, which the master set as: the room merge, then the allowance and ledger, then guest
+  sign-up, then gifts.
+
+**Status:** Decided (the owner).
+
+**Refined by the owner (relayed by the master, same day):**
+1. **Nobody is marked "unlimited" yet.**
+   - A per-member "unlimited" switch in the owner's room lets the owner mark people later.
+   - The limit applies only to accounts created from now on. Accounts that exist today are not limited.
+2. **"חיבור לשירותים" in this round:**
+   - Connecting one's own Claude or Gemini API key works for real. This is pricing.md's option ב, BYOK.
+   - Buying credits stays a placeholder.
+
+   The MCP connector (`docs/business/integrations.md`) is still the later path for people who have a subscription but
+   no API key.
+
+**One interaction for the owner to settle:** business decision 2 shows an estimate before an expensive AI action, and the
+gift decision sends the recipient a note. The proposal is that both apply only once a user has bought credits or
+received a gift. Trial users see nothing until their credits run out.
+
+## 2026-11-12 – The owner can gift credits to chosen users from the admin page (business)
+
+**Decision:** an owner-only action on the admin page (the moon's secret, an easter egg) gives credits to a chosen user,
+at the owner's expense.
+- They are ordinary credits marked with the source "gift", spent before purchased ones. They never expire and cannot be
+  refunded or transferred.
+- The recipient gets a note, for example "קיבלת 200 קרדיטים מתנה מהאוהל".
+- A grant above ₪20 of AI cost asks for a second confirmation. The admin page shows this month's gifts and what they
+  really cost.
+- A gift costs the owner only the real AI cost. It is not revenue and stays outside 30/30/30/10 and the tithe.
+
+**Why:** the owner wants to treat chosen people; the confirmation and the monthly total protect against a typo.
+
+**Affects:**
+- ai-features: a credits ledger with a source on each grant (trial, purchase, gift), gift spent first, and the
+  recipient's note.
+- master: the owner-only admin action, written to the audit log.
+- design: only if the easter egg gets a look of its own.
+
+**Status:** Decided (the owner). It comes after the AI limit for new accounts, which creates the ledger. Details:
+`docs/business/pricing.md` 6a, "קרדיטים במתנה מהבעלים".
+
+## 2026-11-12 – Guests can join once new accounts are AI-limited; the beta's stop condition is updated (business)
+
+**What changed:** the owner decided that an invitation does not admit guests until AI limits or credits exist (master's
+entry below). That makes the viral coefficient in business decision 10 unmeasurable for now.
+
+1. **New accounts get no server AI beyond the one-time trial credits (about ₪1–2 of AI cost). Once that limit exists,
+   an invitation may admit guests.**
+   - Why: it is the fastest way to open the viral loop without waiting for purchases and packs. The free core has no
+     server AI anyway (the vision), so this only brings it forward.
+   - Affects:
+     - ai-features: a per-account AI allowance and trial credits, with no purchase flow needed yet; AI buttons invite
+       the user to connect their own AI or use credits.
+     - master: admitting invited guests when the limit is in place.
+   - Status: Decided (the owner). The order of the work is the master's call.
+2. **Update to business decision 10: until guests can join, the three-month check uses the RSVP rate and gatherings
+   per family instead of the viral coefficient.**
+   - The interim targets: at least 50% of opened links RSVP, and at least one gathering a month per active family.
+     Both are already counted in `gathering_stats`.
+   - Why: the original condition cannot be measured while guests have no accounts.
+   - Affects: none (measurement only).
+   - Status: Provisional. The viral coefficient (0.3 or more) returns to the condition once guests can join.
+
+Details: `docs/business/gathering.md` section 7, `docs/business/plan.md` stage 4.
+
 ## 2026-11-12 – The family gathering's look (design)
 
 `public/gather/gather.css` (new, design's), linked from `public/gather/index.html` and `public/gather/invite/index.html` (one
@@ -163,7 +248,8 @@ The owner approved all fifteen recommendations from the business session's self-
     - Why: prove the viral loop first, and earn trust in the second community properly.
     - Affects: master (translation timing), design.
     - Status: Provisional. Revisit after three months: stop and rethink if the viral coefficient is below 0.3 and fewer
-      than two members of an average family are active each week.
+      than two members of an average family are active each week. **Updated 2026-11-12:** until guests can join, the
+      RSVP rate and gatherings per family stand in for the viral coefficient (see the entry at the top).
 11. **The north-star metric is family members active each week, per family; the secondary one is gatherings
     coordinated.**
     - Why: it measures daily use and the owner's goal of meeting.

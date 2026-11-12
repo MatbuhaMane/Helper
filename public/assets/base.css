@@ -126,7 +126,9 @@ main.wide { max-width: 1200px; }
 /* the name, הָאֹ֔הֶל: short, so it can be big; room above and below for its vowels and its accent */
 .brand-text { font-size: 1.7rem; font-weight: 600; line-height: 1.3; padding-block: 2px 4px; }
 .appbar .page-title { display: none; font-weight: 500; font-size: 1.05rem; margin: 0; }
-.topnav { display: flex; gap: 22px; margin-inline-start: 12px; }
+.topnav { display: flex; align-items: center; gap: 22px; margin-inline-start: 12px; }
+/* "עץ המשפחה" on two lines, one word over the other (the owner: it looks better in the bar) */
+.topnav a.ink-nav[href="/family/"] { white-space: normal; inline-size: min-content; text-align: center; line-height: 1.08; padding-block: 2px 4px; }
 .topnav a { color: var(--text); text-decoration: none; font-size: .98rem; padding-block: 6px; white-space: nowrap; }
 /* nine entries on a narrow PC window: a little tighter, so the names stay on one line */
 @media (min-width: 900px) and (max-width: 1099px) { .topnav { gap: 14px; margin-inline-start: 4px; } .topnav a { font-size: .92rem; } }

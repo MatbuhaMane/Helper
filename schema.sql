@@ -529,3 +529,13 @@ CREATE TABLE IF NOT EXISTS family_households (
   updated_by TEXT,
   updated_at INTEGER NOT NULL
 );
+
+-- לוח שנה: each person's private link for subscribing to the calendar from Google, Apple or Outlook (only its hash is kept)
+CREATE TABLE IF NOT EXISTS calendar_feeds (
+  token_hash TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  tree       INTEGER NOT NULL DEFAULT 1,      -- with the birthdays and memorial days from the family tree
+  created_at INTEGER NOT NULL,
+  used_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS calendar_feeds_email ON calendar_feeds(email);

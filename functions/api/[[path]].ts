@@ -272,6 +272,12 @@ route('DELETE', '/api/vault/bridges/:id', vault.bridgeRevoke);
 route('GET', '/api/vault/forest', vault.forest);
 route('GET', '/api/vault/related', vault.related);
 
+/* the calendar as a live link for Google, Apple or Outlook (ai-features) */
+route('GET', '/api/calendar/feed', calendar.feedStatus);
+route('POST', '/api/calendar/feed', calendar.feedCreate);
+route('DELETE', '/api/calendar/feed', calendar.feedRevoke);
+route('GET', '/api/calendar/feed/:token', calendar.feed);
+
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
   // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,

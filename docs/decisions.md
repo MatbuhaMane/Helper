@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The calendar as a live link for Google Calendar (ai-features)
+
+At the owner's request (chosen over a two-way sync through Google's calendar API, which would need a new Google
+permission): each person can make a private link to their לוח שנה, which Google Calendar (or Apple's, or Outlook)
+subscribes to "from URL" and keeps up to date by itself. It holds the holidays (Hebcal, by the person's choices in the
+page), the family's days, and – if they choose – the birthdays and memorial days from the tree, with the tree's privacy
+for that person. Only a hash of the link is stored; a new link replaces the old one, and either can be cancelled.
+- **Appended**: table `calendar_feeds` in `schema.sql`; four routes at the end of `functions/api/[[path]].ts`:
+  `GET/POST/DELETE /api/calendar/feed` and `GET /api/calendar/feed/:token` (no sign-in: the link is the key; rate-limited).
+- New files: `server/hebdate.ts` (the Hebrew-date rules on the server, the same days as the page) and its tests
+  `server/test-hebdate.mjs` (36 tests, `node server/test-hebdate.mjs`, including a day-by-day check against the page's algorithm).
+- **For the master** (proposed): a `test:calendar` script and the merge checks; `docs/security.md` could note that
+  `/api/calendar/feed/:token` answers without a session (a 32-character random key, hashed in the database).
+  Building a feed takes about 6–10 ms of CPU, then it is cached until the data changes: fine on the paid Workers plan;
+  on the free plan (10 ms) the first build after a change could be cut off – which plan is the account on?
+- **For design**: `.cal-link` (the new card, after `.cal-sync`), `.cal-link-url` (the read-only link field), `.cal-check` – no styles yet.
+Status: done on `ai-features`.
+
 ## 2026-11-12 – The family tree, stage 2: heads, links between trees, privacy (ai-features)
 
 The owner's decisions are in `docs/family-forest.md` ("Stage 2"). What other areas need to know:

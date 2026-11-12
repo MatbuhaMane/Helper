@@ -83,15 +83,25 @@
         el('h3', { dir: 'auto' }, v.title), el('a', { class: 'fun-src', href: v.url, target: '_blank', rel: 'noopener' }, v.channel, ' · YouTube ↗')));
     }
     const img = el('img', { src: v.src, alt: v.title, loading: 'lazy', referrerpolicy: 'no-referrer', onerror: (e) => e.target.closest('.fun-card').remove() });
-    let media = el('div', { class: 'fun-pic' }, img);
+    // a picture opens large: it flips over into a big panel, as the recommendations do
+    let media = el('button', { class: 'fun-pic', type: 'button', 'aria-label': 'הגדלה: ' + v.title, 'aria-haspopup': 'dialog' }, img);
     if (v.video) {   // a video on Reddit: its picture, and a tap plays it in Reddit's own player
       media = el('button', { class: 'fun-play pic', 'aria-label': 'ניגון: ' + v.title, onclick: () => {
         const path = new URL(v.video).pathname;
         media.replaceWith(el('div', { class: 'fun-frame tall' }, el('iframe', { src: `https://www.redditmedia.com${path}?ref_source=embed&ref=share&embed=true&theme=${H.isDark?.() ? 'dark' : 'light'}`, title: v.title, allow: 'autoplay; encrypted-media; fullscreen', allowfullscreen: true, loading: 'lazy', sandbox: 'allow-scripts allow-same-origin allow-popups' })));
       } }, img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'));
     }
-    return el('article', { class: 'fun-card fun-i' }, media, el('div', { class: 'fun-body' },
-      el('div', { class: 'fun-tags' }, flag), el('h3', { dir: 'auto' }, v.title), el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, /^Lemmy/.test(v.source) ? ' ↗' : ' · Reddit ↗')));
+    const src = () => el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, /^Lemmy/.test(v.source) ? ' ↗' : ' · Reddit ↗');
+    const art = el('article', { class: 'fun-card fun-i' + (v.video ? '' : ' fun-pick') }, media, el('div', { class: 'fun-body' },
+      el('div', { class: 'fun-tags' }, flag), el('h3', { dir: 'auto' }, v.title), src()));
+    if (!v.video) art.addEventListener('click', (e) => {
+      if (e.target.closest('a') || getSelection().toString()) return;
+      H.sheet.open(art, el('figure', { class: 'fun-big' },
+        el('img', { src: v.src, alt: v.title, referrerpolicy: 'no-referrer' }),
+        el('figcaption', {}, el('div', { class: 'fun-tags' }, flag.cloneNode(true)), el('h2', { dir: 'auto' }, v.title), src())), { size: 'large' });
+      document.querySelector('.rsheet .rs-close')?.focus({ preventScroll: true });
+    });
+    return art;
   }
 
   const keep = (cat, d) => { try { localStorage.setItem('fun-' + cat, JSON.stringify(d)); } catch (_) { /* full */ } };

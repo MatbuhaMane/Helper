@@ -116,3 +116,11 @@ html:has(.fun) { overscroll-behavior-y: contain; }
 .fun-sheet-acts { display: flex; flex-wrap: wrap; gap: 8px; padding-block-start: 6px; }
 .fun-sheet-acts .btn { text-decoration: none; }
 @media (max-width: 520px) { .fun-sheet-img { border-radius: 16px; margin-block-start: 40px; } .fun-sheet-acts .btn { flex: 1 1 100%; justify-content: center; } }
+
+/* מצחיק: a picture is a button that opens it large */
+button.fun-pic { all: unset; display: block; inline-size: 100%; cursor: zoom-in; }
+button.fun-pic:focus-visible { outline: 3px solid var(--primary); outline-offset: -3px; }
+.fun-big { margin: 0; display: grid; gap: 12px; }
+.fun-big img { display: block; inline-size: 100%; max-block-size: 72vh; object-fit: contain; border-radius: 18px; background: color-mix(in srgb, var(--text) 5%, transparent); margin-block-start: 40px; }
+.fun-big figcaption { display: grid; gap: 8px; }
+.fun-big h2 { margin: 0; font-size: clamp(1.25rem, 1rem + 1vw, 1.7rem); line-height: 1.3; text-wrap: balance; }

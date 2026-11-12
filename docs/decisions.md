@@ -18,7 +18,8 @@ shared sheet (`/assets/sheet.js`, `sheet.css`, now loaded by `public/fun/index.h
 `card(p, tint, cat)` takes the tab; a tap anywhere on a recommendation (not on a link) or on its title (a button, for the
 keyboard) calls `openPick`, which opens the sheet with the big picture, the tags, what it is, "למה כדאי", where to find
 it, a YouTube search (trailer, listening or live clips by tab) and the full review. The picture on the card is no longer a
-link out. The viral tab (מצחיק) is unchanged: its videos play in the card. Styles in `fun.css`. Status: done (on `design`).
+link out. In the viral tab (מצחיק) a picture (not a video) is a button too and opens large in the sheet's `large` panel;
+its videos still play in the card. Styles in `fun.css`. Status: done (on `design`).
 
 ## 2026-11-12 – The app is called הָאֹ֔הֶל (design, at the owner's request)
 

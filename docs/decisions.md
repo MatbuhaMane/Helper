@@ -129,6 +129,22 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-13 – ניהול מטרות: the look, the prototype and the embroidered badges (design → ai-features)
+
+For the goal-management spec v1 (vision, approved by the owner). Design's part is ready for ai-features to build on:
+- `public/tools/tasks/goals.css` – every screen: the dashboard (each goal a filling ring and a path of stations on a
+  thread, the forgiving week "4 מתוך 6" with the rest day as a candle), a goal's page with a checklist per process,
+  today's 2–3 big steps, the why coming back, "נתקעתי", the weekly review, the five-step new goal (write or record,
+  length, processes, first steps, rhythm), and the badge wall with a glass card for the way to each badge.
+- `docs/design/prototype/goals.html` – all of it working, with the owner's first goal (the tent) as the example;
+  `docs/design/goals.md` – the markup for each part (ai-features copies it), and how to show a badge earned, in
+  progress, secret or just earned.
+- The badges: 15 of 23 embroidered so far with the image tool ($1.03); the other 8 after the tool's daily cap resets
+  (listed in goals.md; `secret.webp` stands in meanwhile). The secret badge's real picture has an unguessable name, to
+  be sent only once earned.
+For ai-features: the page (`public/tools/tasks/index.html` and its JS) needs `<link rel="stylesheet" href="/tools/tasks/goals.css">`.
+Status: done (design's part); ai-features builds the logic.
+
 ## 2026-11-12 – Vision batch 4, design's part: done; what ai-features can now drop or switch (design → ai-features, master)
 
 Done on `design` (each checked at 375 px and on desktop, light and dark, with the page audit): the calculator redesigned

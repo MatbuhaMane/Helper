@@ -13,6 +13,7 @@ import { addGroceries } from './kitchen';
 import { prefsFor } from './prefs';
 import * as HD from './hebdate';
 import * as R from './gather-rules';
+import { setting } from './settings';
 
 interface Row {
   id: string; household: string; host_email: string; title: string; date: string; time: string | null; place: string; map: string; note: string; food: string;
@@ -86,11 +87,13 @@ export async function list(ctx: Ctx) {
 export async function create(ctx: Ctx) {
   const u = requireUser(ctx);
   await rateLimit(ctx, 'gather-new:' + u.email, 30, 864e5);
+  if (!(await setting<boolean>(ctx.env, 'gather.enabled'))) throw new HttpError(503, 'gatherings_paused');
   const f = fields(await body<Record<string, unknown>>(ctx.req));
+  const days = await setting<number>(ctx.env, 'gather.link_days');
   const id = uid(), token = newKey(), now = Date.now();
   await ctx.env.DB.prepare(`INSERT INTO gatherings (id, household, host_email, title, date, time, place, map, note, food, token_hash, token_enc, status, expires_at, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
-    .bind(id, u.household, u.email, f.title, f.date, f.time, f.place, f.map, f.note, f.food, await sha('link', token), await seal(ctx.env, token, `gather:${id}:token`), R.expiresAt(f.date), now, now).run();
+    .bind(id, u.household, u.email, f.title, f.date, f.time, f.place, f.map, f.note, f.food, await sha('link', token), await seal(ctx.env, token, `gather:${id}:token`), R.expiresAt(f.date, days), now, now).run();
   return json({ id, url: inviteUrl(ctx, token) });
 }
 
@@ -126,9 +129,10 @@ export async function save(ctx: Ctx) {
   const g = await mine(ctx, u, ctx.params.id);
   const b = await body<Record<string, unknown>>(ctx.req);
   const f = fields(b, g);
+  const days = await setting<number>(ctx.env, 'gather.link_days');
   const invitees = Array.isArray(b.invitees) ? [...new Set(b.invitees.map((x) => R.clean(x, 60)).filter(Boolean))].slice(0, 300) : null;
   await ctx.env.DB.prepare('UPDATE gatherings SET title = ?, date = ?, time = ?, place = ?, map = ?, note = ?, food = ?, expires_at = ?, updated_at = ?' + (invitees ? ', invitees_enc = ?' : '') + ' WHERE id = ?')
-    .bind(f.title, f.date, f.time, f.place, f.map, f.note, f.food, R.expiresAt(f.date), Date.now(), ...(invitees ? [await seal(ctx.env, JSON.stringify(invitees), `gather:${g.id}:invitees`)] : []), g.id).run();
+    .bind(f.title, f.date, f.time, f.place, f.map, f.note, f.food, R.expiresAt(f.date, days), Date.now(), ...(invitees ? [await seal(ctx.env, JSON.stringify(invitees), `gather:${g.id}:invitees`)] : []), g.id).run();
   return json({ ok: true });
 }
 

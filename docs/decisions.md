@@ -21,6 +21,76 @@ after 30 idle seconds; a "stay unlocked" switch that lifts the idle limit, offer
 The master's addition: messages to everyone only from the owner's own account (a visit cannot send them). Built by
 ai-features in the room (`server/admin.ts`, `server/admin-rules.ts`, `public/admin/`). Status: Decided (the owner), in progress.
 
+## 2026-11-12 – The room's lock (ai-features, the owner's words; one point the master's)
+
+The owner: an open/locked lock in the room that locks it again at once; three idle minutes close it; a floating warning
+after 30 idle seconds; a "stay unlocked" switch for working sessions. So: `admin-rules.entryAlive` – 3 idle minutes for
+every entry, 2 hours at most from the owner's own account and 30 minutes on someone else's; "stay unlocked"
+(`admin_entries.stay`, COLUMNS) lifts only the idle limit, and only from the owner's own account (the master's
+suggestion: never on someone else's device). The page pings the server on any action (at most every 20 seconds), shows
+the warning with a countdown after 30 seconds (any action hides it), and a lock button (🔓 פתוח · נעילה) that ends the
+entry at once. Messages to everyone stay own-account only (the master's addition). Routes: `/api/admin/ping`,
+`/api/admin/stay`. Status: done on `ai-features`.
+
+## 2026-11-12 – The AI allowance: the family free, new accounts on an opening gift, own keys (ai-features, the owner's decision)
+
+The owner: new users simply use the app on the credit they were given, with no notice; they connect their own
+service or buy credit in the app's settings, "חיבור לשירותים"; the owner's family has no limit at all, on the owner.
+- **Who is limited**: only a row in `ai_allowance` with `limited = 1`. A member with no row – everyone invited until now,
+  and everyone the owner invites – is family. The room's members table has a switch per member (the owners cannot be
+  limited). A new account from an invitation is started with `startTrial(env, email)` (`server/credits.ts`): limited, with
+  a one-time trial grant of `credits.trial_ils` (a setting, ₪1.5) in dollars of real AI cost.
+- **Grants** (`ai_credits`): a source each – trial, purchase, gift; none expire; spent gift first, then trial, then purchase
+  (`server/credits-rules.ts`, 24 tests in `server/test-credits.mjs`). The balance is the grants less the real cost
+  (`costOf`) of what the account used since it started, not counting what went with its own key.
+- **Enforcement, in the master's files (small; please review every line)**: `server/meter.ts` – before each request to
+  Claude or Gemini, `gate()`: a limited account with nothing left gets `402 ai_credit_needed`; whoever connected their
+  own key has the request sent with it (`x-api-key`, `x-goog-api-key`) and the row marked `own_key`. `server/ai.ts` –
+  `aiJson` returns that 402 when any provider was refused for credit (the Anthropic SDK wraps it in its own error).
+- **Own keys** (`user_ai_keys`, sealed with the vault key): Claude and Gemini are real – checked with the provider (listing
+  the models, free) before they are kept. ChatGPT and buying credit are placeholders ("בקרוב"): no OpenAI path, no payments.
+- **Appended**: tables `ai_allowance`, `ai_credits`, `user_ai_keys`; column `ai_usage.own_key` (COLUMNS); five routes
+  (`/api/me/ai`, `/api/me/ai/keys`, `/api/admin/allowances`); a setting `credits.trial_ils`. The cost report and the room
+  leave out own-key rows (they cost the owner nothing).
+- New pages and files: `public/settings/` (הגדרות: the account, and "חיבור לשירותים", `#services`), `public/assets/ai-invite.js`
+  (`H.aiInvite()`: the invitation when the AI says no for credit).
+- **For the master** (proposed): `common.js` – in `api()`, on `402 ai_credit_needed` call `H.aiInvite()` (load
+  `/assets/ai-invite.js`), so every AI button invites instead of erroring; the user menu could open `/settings/` (it has
+  logout too); `admitMember` for invitation guests calls `startTrial`; `test:credits` in `npm test`.
+- **For design**: `.st`, `.st-account`, `.st-services`, `.st-service`, `.st-key`, and `.ai-invite` (the modal) – unstyled.
+Status: done on `ai-features`; the gifts in the room come after guest sign-up opens.
+
+## 2026-11-12 – החדר של האוהל: the owner's room, entered with the owner's biometric (ai-features, at the owner's request)
+
+The owner's easter egg behind the moon (`/admin/`), rebuilt as the back door to the app's settings:
+- **Entering**: on any device, with whoever is signed in there, the owner proves who they are with their own passkey
+  (fingerprint, face, Windows Hello; on someone else's device the browser offers the owner's phone through a QR code).
+  The entry is bound to that device's session: 15 minutes from the last action, 2 hours at most. The owners are the
+  emails in `OWNER_EMAIL` (never written in code). The moon's written word (moon-secret branch) is replaced by this.
+- **From the owner's own account**: a dashboard on top (income, expenses with the metered AI, net, a month now; the app's
+  numbers), money (income and expenses by hand, once or monthly, in ₪ or $), the app's settings, members, messages to
+  everyone, special features per person, הרשאת־על (a member who may enter with their own passkey: all but naming
+  supers), the AI's cost and the room's own log. **From someone else's account**: only that person's special features,
+  a message to everyone, and the app's numbers – no money, settings or members.
+- **Appended**: tables `admin_entries`, `admin_audit`, `admin_ledger`, `app_settings`, `admin_supers`, `admin_messages`,
+  `message_reads`, `user_features`; 21 routes (`/api/admin/…`, `/api/messages…`, `/api/me/features`).
+- New files: `server/admin.ts`, `server/admin-rules.ts` + `server/test-admin.mjs` (24 tests), `server/settings.ts`
+  (`setting(env, key)`: any module may read one), `public/admin/admin.js`, `public/assets/messages.js`. `public/admin/index.html`
+  is rewritten (a page with no owner in the table; its inline styles stay until design gives it a stylesheet).
+  `server/vault/index.ts` exports `newChallenge` and `takeChallenge`. Settings already wired: whether gatherings may be
+  made and how long their link lives, whether calendar links answer, an AI monthly budget (a warning), the dollar's rate.
+- **For the master** (proposed):
+  1. `common.js`: load `/assets/messages.js` after sign-in, so the owner's messages show on every page;
+  2. an entry "from any page": e.g. a long press on the logo in the app bar opens `/admin/` (the room asks for the
+     biometric itself) – in `common.js`;
+  3. `/api/members` and `/api/usage` still need only `requireOwner`; they could also require the room to be open
+     (`requireAdmin` from `server/admin.ts`);
+  4. `server/ai.ts` could read `setting()` – the models (`ai.claude_model`, `ai.gemini_model`) and a hard stop at the
+     monthly budget – I will add those settings when you agree;
+  5. `test:admin` in `npm test`; the moon-secret branch is updated (no written word; straight to the room).
+- **For design**: the room's styles are inline in `public/admin/index.html` (`.ad*`); it is checked at 375 px and desktop.
+Status: done on `ai-features`.
+
 ## 2026-11-12 – The family gathering's look (design)
 
 `public/gather/gather.css` (new, design's), linked from `public/gather/index.html` and `public/gather/invite/index.html` (one

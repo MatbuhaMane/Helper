@@ -102,13 +102,13 @@ export async function unlockFresh(ctx: Ctx) {
 
 /* ---------------- passkeys ---------------- */
 
-async function newChallenge(ctx: Ctx, email: string, kind: string) {
+export async function newChallenge(ctx: Ctx, email: string, kind: string) {
   const c = challenge(), id = uid();
   await ctx.env.DB.prepare('DELETE FROM webauthn_challenges WHERE expires_at < ?').bind(Date.now()).run();
   await ctx.env.DB.prepare('INSERT INTO webauthn_challenges (id, email, challenge, kind, expires_at) VALUES (?, ?, ?, ?, ?)').bind(id, email, c, kind, Date.now() + 5 * 60e3).run();
   return { id, c };
 }
-async function takeChallenge(ctx: Ctx, id: string, email: string, kind: string) {
+export async function takeChallenge(ctx: Ctx, id: string, email: string, kind: string) {
   const row = await ctx.env.DB.prepare('SELECT challenge FROM webauthn_challenges WHERE id = ? AND email = ? AND kind = ? AND expires_at > ?').bind(id, email, kind, Date.now()).first<{ challenge: string }>();
   await ctx.env.DB.prepare('DELETE FROM webauthn_challenges WHERE id = ?').bind(id).run();   // single use
   if (!row) throw new HttpError(400, 'challenge_expired');

@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The beta's three months start at the first real gathering (business)
+
+**Decision:** the clock for the three-month beta check (business decision 10) starts on the day the owner sends the first
+real gathering to the family. Test gatherings don't count. The check is three months after that day.
+
+**Why:** the beta measures real family use. The loop has been complete since today, but nothing real has been sent
+yet.
+
+**Affects:** none. When the first real gathering goes out, the owner tells the business session (or it reads the date
+from `gatherings`), and the check date is recorded here and in `docs/business/plan.md`.
+
+**Status:** Decided (the owner). The start date is still to come.
+
 ## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
 
 The owner gives AI credit to chosen people from the room: the owner only (not a super), from the owner's own account,

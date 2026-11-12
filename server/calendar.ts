@@ -100,7 +100,7 @@ export async function feedCreate(ctx: Ctx) {
   const token = b64u(crypto.getRandomValues(new Uint8Array(24)));
   await ctx.env.DB.batch([
     ctx.env.DB.prepare('DELETE FROM calendar_feeds WHERE email = ?').bind(u.email),
-    ctx.env.DB.prepare('INSERT INTO calendar_feeds (token_hash, email, tree, created_at) VALUES (?, ?, ?, ?)').bind(await hashOf(token), u.email, b?.tree === false ? 0 : 1, Date.now()),
+    ctx.env.DB.prepare('INSERT INTO calendar_feeds (token_hash, email, tree, created_at) VALUES (?, ?, ?, ?)').bind(await hashOf(token), u.email, b?.tree === true ? 1 : 0, Date.now()),
   ]);
   return json({ url: feedUrl(ctx, token) });
 }

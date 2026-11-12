@@ -142,3 +142,33 @@
 .fv-rel-name { font-size: 1.15rem; font-weight: 500; margin: 6px 0; }
 .fv-rel-path { margin: 0; padding-inline-start: 20px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 18px; }
 @media (prefers-reduced-motion: reduce) { .fv-card.r-focus { transform: none; } }
+/* stage 2: who sees what, this person in other families' trees, and the linked trees – each its own quiet box in the panel,
+   like the relationships box */
+.fv-privacy, .fv-trees { display: grid; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); }
+.fv-privacy h3, .fv-trees h3, .fv-links-part h3 { margin: 0; font-size: 1rem; }
+.fv-privacy > p, .fv-trees > p { margin: 0; line-height: 1.5; }
+.fv-privacy .fv-two { gap: 10px 12px; }
+.fv-privacy .fv-two label { display: grid; gap: 4px; font-size: .86rem; color: var(--muted); min-inline-size: 0; }
+.fv-privacy select { font: inherit; font-size: .95rem; color: var(--text); background: var(--bg); border: 1px solid var(--line-strong); border-radius: 12px;
+  padding: 8px 10px; inline-size: 100%; min-inline-size: 0; box-sizing: border-box; }
+.fv-privacy select:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; border-color: var(--primary); }
+/* the anonymity switch: the box first, the words beside it, on a faint field */
+.fv-privacy .fv-check { display: grid !important; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px; align-self: stretch;
+  font-size: .9rem; line-height: 1.5; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.fv-privacy .fv-check input { margin: 3px 0 0; accent-color: var(--primary); }
+.fv-trees .fv-relrow { justify-content: space-between; padding-block: 4px; border-block-end: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.fv-trees .fv-relrow:last-child { border-block-end: 0; }
+.fv-trees .fv-acts-row .btn:not(.ghost):not(.primary), .fv-links .fv-acts-row .btn:not(.ghost):not(.primary) { border-color: var(--line-strong); background: var(--bg); }
+.fv-trees .fv-acts-row .btn:not(.ghost):not(.primary):hover, .fv-links .fv-acts-row .btn:not(.ghost):not(.primary):hover { border-color: var(--primary); color: var(--primary); }
+/* under the name: a member of the helper or not */
+.fv-user { margin: 2px 0 0; line-height: 1.4; }
+
+/* the linked trees window: one section after another, each under a hairline */
+.fv-links { gap: 14px; max-inline-size: 620px; }
+.fv-links > p { margin: 0; line-height: 1.5; }
+.fv-links-part { display: grid; gap: 8px; padding-block-start: 14px; border-block-start: 1px solid var(--line); }
+.fv-links-part > p { margin: 0; line-height: 1.5; }
+.fv-links-part .fv-item > p { margin: 0; line-height: 1.5; }
+.fv-links-part .fv-item select { inline-size: 100%; box-sizing: border-box; }
+.fv-links-part .fv-acts-row { align-items: end; }
+.fv-links-part .fv-acts-row > label { flex: 1 1 220px; }

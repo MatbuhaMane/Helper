@@ -212,3 +212,8 @@ body.mu-drop-left::before, body.mu-drop-right::after { inline-size: 26px; backgr
   border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-border); box-shadow: var(--lift); color: var(--text);
   -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); touch-action: pan-y; }
 .mu-peek > span { flex: 1; font-size: .92rem; line-height: 1.4; min-inline-size: 0; }
+
+/* moods: a row of chips (a tap searches for it) */
+.mu-moods { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 8px; }
+.mu-moods .chip { white-space: nowrap; }
+@media (max-width: 520px) { .mu-moods { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding-inline: 4px; } .mu-moods::-webkit-scrollbar { display: none; } }

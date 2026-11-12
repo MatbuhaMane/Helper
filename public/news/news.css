@@ -186,6 +186,12 @@ body.news {
 .note-box ul { margin: 6px 0 0; padding-inline-start: 20px; line-height: 1.7; }
 .note-box.amlek { border-inline-start: 4px solid var(--olive); }
 .note-box.translated { border-inline-start: 4px solid #2aa0d8; }
+/* without AI (docs/ai/without-ai.md #8): the plain box is whole on its own – a dashed edge, its ✨ upgrade beside its own action */
+.note-box.plain { border-style: dashed; border-inline-start-style: solid; border-inline-start-width: 4px; border-inline-start-color: var(--line-strong); background: color-mix(in srgb, var(--text) 3%, var(--card)); }
+.note-box.amlek.plain { border-inline-start-color: color-mix(in srgb, var(--olive) 60%, var(--line-strong)); }
+.note-box .row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-block-start: 10px; }
+.note-box.plain > small { display: block; margin-block-start: 8px; }
+.note-box.plain > small .btn { margin-inline-start: 6px; }
 .translated .tr-note { font-size: .8rem; color: var(--muted); margin: 0; }
 .translated .tr-title { font-family: var(--serif); font-weight: 700; font-size: 1.25rem; margin: 4px 0 10px; color: var(--newsink); }
 .verdict { border-inline-start: 4px solid var(--rule); }

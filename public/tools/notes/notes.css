@@ -55,3 +55,6 @@
   body.nt-editing .nt-side, body.nt-editing .nt-head { display: none; }
   .nt-editor { position: static; }
 }
+/* tags: a row of chips (a pressed one filters; base.css colours the pressed state) */
+.nt-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.nt-tags .chip.nt-tag { font-size: .82rem; padding: 3px 10px; }

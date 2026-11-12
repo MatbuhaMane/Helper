@@ -243,6 +243,9 @@ entry below). That makes the viral coefficient in business decision 10 unmeasura
    - Why: the original condition cannot be measured while guests have no accounts.
    - Affects: none (measurement only).
    - Status: Provisional. The viral coefficient (0.3 or more) returns to the condition once guests can join.
+     **Condition met 2026-11-12 (c892af5):** guests can now join from an invitation, and real sign-ups are counted in
+     `gathering_stats` as kind "signup". The viral coefficient is back in decision 10's check, alongside the RSVP rate and
+     gatherings per family.
 
 Details: `docs/business/gathering.md` section 7, `docs/business/plan.md` stage 4.
 

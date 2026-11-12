@@ -16,7 +16,7 @@
      glow breathing with the fire.
    It stops when the page is hidden or the fire is off screen; with reduced motion the tongues stand still. */
 (() => {
-  const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   /** smooth noise: a few sines of unrelated speeds, so no loop shows */
   const noise = (t, s) => (Math.sin(t * 1.13 + s) * 0.5 + Math.sin(t * 2.71 + s * 1.7) * 0.3 + Math.sin(t * 5.37 + s * 2.3) * 0.2);
   const STRIPS = 56, PAD = 0.32;   // strips per tongue; room on each side for the bend (a share of the tongue's width)

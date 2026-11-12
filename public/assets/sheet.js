@@ -8,7 +8,7 @@
 (() => {
   'use strict';
   const { el } = H;
-  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   let made = null;
 
   function make() {

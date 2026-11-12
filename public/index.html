@@ -24,8 +24,8 @@
     @media (max-width: 599px) { .greet { padding-inline-start: 2px; } }
     .greet h1 { font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.2rem); line-height: 1.15; margin: 0 0 2px; --swell-color: var(--primary); }
 
-    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 495px) * 1.76)); margin-block-start: var(--sky-room); }
-    @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 405px) * 1.76)); } }
+    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 517px) * 1.76)); margin-block-start: var(--sky-room); }
+    @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 427px) * 1.76)); } }
     .camp::before { content: ''; position: absolute; inset-inline: 2% 2%; inset-block-end: -4%; block-size: 34%; border-radius: 50%;
       background: radial-gradient(closest-side, color-mix(in srgb, var(--olive) 34%, transparent), transparent); pointer-events: none; }
     .camp > img { position: relative; display: block; inline-size: 100%; block-size: auto; aspect-ratio: 1400 / 794; filter: drop-shadow(0 14px 18px rgba(46, 42, 30, .16)); animation: camp-in .9s var(--ease-river) both; }
@@ -33,9 +33,25 @@
     .camp .wake { position: absolute; inset-inline-start: 26%; inset-block-start: 66%; }
     .camp .dock { position: absolute; inset-inline-start: 34.5%; inset-block-start: 78%; inline-size: 2px; block-size: 2px; pointer-events: none; }
     @keyframes camp-in { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+    /* The light of the sky on the tent: when the sun or the moon is low and near the tent (on a phone it passes right behind
+       it), a soft halo glows round the tent's outline on the source's side, and a gentle light falls on the canvas from there –
+       gold from the sun, silver from the moon (at dusk both, one on each side). Both are cut to the tent's own shape (its
+       picture is the mask); paint() in sky() sets --sun-lit/--moon-lit (0–1), where the source stands (--*-u, --*-v) and
+       which way the halo leans (--*-dx, --*-dy). No motion of its own: it only follows the sky. */
+    .camp > .tent-light { position: absolute; inset: 0; pointer-events: none; animation: camp-in .9s var(--ease-river) both; }
+    .camp > .tent-glow { filter: blur(11px); opacity: calc(var(--lit, 0) * .9); transform: translate(var(--dx, 0px), var(--dy, 0px)); will-change: opacity, transform; }
+    .camp > .tent-glow i, .camp > .tent-shine { -webkit-mask: url(/assets/tent.webp) 0 0 / 100% 100% no-repeat; mask: url(/assets/tent.webp) 0 0 / 100% 100% no-repeat; }
+    .camp > .tent-glow i { position: absolute; inset: 0; background: var(--glow); }
+    :root[data-theme="dark"] .camp > .tent-shine { opacity: .72; }   /* at night the canvas is dark, and the same light reads stronger */
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .camp > .tent-shine { opacity: .72; } }
+    .camp > .tent-glow.sun { --lit: var(--sun-lit); --dx: var(--sun-dx); --dy: var(--sun-dy); --glow: rgb(255, 184, 82); }
+    .camp > .tent-glow.moon { --lit: var(--moon-lit); --dx: var(--moon-dx); --dy: var(--moon-dy); --glow: rgb(196, 214, 255); }
+    .camp > .tent-shine { mix-blend-mode: screen;
+      background: radial-gradient(ellipse 58% 90% at var(--sun-u, -60%) var(--sun-v, 50%), rgb(255 188 92 / calc(var(--sun-lit, 0) * .56)), transparent 72%),
+                  radial-gradient(ellipse 58% 90% at var(--moon-u, 160%) var(--moon-v, 50%), rgb(198 214 255 / calc(var(--moon-lit, 0) * .48)), transparent 72%); }
 
     /* The apps ring: cushions sitting around a small campfire; spinning the ring carries them round the fire. */
-    .wheel { --cy: -14px; position: relative; isolation: isolate; inline-size: min(100%, 860px); block-size: 318px; margin-block-start: 0; touch-action: pan-y;
+    .wheel { --cy: -17px; position: relative; isolation: isolate; inline-size: min(100%, 860px); block-size: 340px; margin-block-start: 0; touch-action: pan-y;
       -webkit-user-select: none; user-select: none; cursor: grab; outline: none; }
     .wheel.dragging { cursor: grabbing; }
     .wheel .orbit { position: absolute; inset: 0; margin: auto; inline-size: calc(var(--rx) * 2px + 60px); block-size: calc(var(--ry) * 2px + 44px); border-radius: 50%;
@@ -77,7 +93,7 @@
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fire .ground { mix-blend-mode: screen; } }
 
     @media (max-width: 599px) {
-      .wheel { --cy: -26px; block-size: 236px; }
+      .wheel { --cy: -29px; block-size: 258px; }
       .wheel-item { inline-size: 150px; block-size: 146px; }
       .wheel-item .pillow { inline-size: 108px; block-size: 100px; }
       .wheel-item .badge { inline-size: 32px; block-size: 32px; inset-inline-start: calc(50% - 16px); }
@@ -150,7 +166,7 @@
     /* the tent's picture is a rectangle with open sky around the roof: a tap there reaches the sun or the moon behind it,
        while what stands on the tent (the music corner, the companion's wake) still takes its own taps */
     .home > .camp, .home > .camp > img { pointer-events: none; }
-    .home > .camp > :not(img):not(.dock) { pointer-events: auto; }
+    .home > .camp > :not(img):not(.dock):not(.tent-light) { pointer-events: auto; }
     .sun { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--sun-size, 120px); block-size: var(--sun-size, 120px); margin: calc(var(--sun-size, 120px) / -2) 0 0 calc(var(--sun-size, 120px) / -2);
       padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .85; -webkit-tap-highlight-color: transparent;
       filter: var(--sun-tint, none); transition: filter 2s, opacity .8s; }
@@ -225,7 +241,7 @@
     .sun-card .x { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; }
 
     body[data-daemon="hero"]:has(.dm-stage) main { padding-block-end: 32px; }
-    @media (prefers-reduced-motion: reduce) { .camp img, .wheel-item.front .pillow, .swell.wave .ch, .fire *, .wheel .orbit, .corner .record { animation: none !important; } }
+    @media (prefers-reduced-motion: reduce) { .camp img, .camp > .tent-light, .wheel-item.front .pillow, .swell.wave .ch, .fire *, .wheel .orbit, .corner .record { animation: none !important; } }
 
     .login { max-width: 460px; margin: 10vh auto; padding: 32px 28px; text-align: center; }
     .login h1 { font-size: 2rem; margin: 0 0 8px; }
@@ -421,6 +437,40 @@
       const box = el('div', { class: 'sky' }, stars, path, moon, sun);
       document.body.prepend(box);
       const camp = document.querySelector('.camp');
+      // the light of the sky on the tent: a halo behind its outline for each source, and the light on the canvas over it
+      const tentImg = camp.querySelector(':scope > img');
+      tentImg.before(el('span', { class: 'tent-light tent-glow sun', 'aria-hidden': 'true' }, el('i')), el('span', { class: 'tent-light tent-glow moon', 'aria-hidden': 'true' }, el('i')));
+      tentImg.after(el('span', { class: 'tent-light tent-shine', 'aria-hidden': 'true' }));
+      /* the tent's outline in the picture (fractions of its width and height, measured from its alpha): the roof's peak, its
+         slopes, the eaves, the walls and the ground line */
+      const TENT = [[0.46, 0.03], [0.535, 0.03], [0.83, 0.3], [0.91, 0.465], [0.955, 0.6], [0.93, 0.86], [0.03, 0.86], [0.03, 0.6], [0.085, 0.465], [0.145, 0.3]];
+      /** how far a point (page px) is from the tent's outline: 0 inside it */
+      function tentDistance(x, y, t) {
+        const P = TENT.map(([u, v]) => [t.left + u * t.width, t.top + v * t.height]);
+        let inside = false, d = Infinity;
+        for (let i = 0, j = P.length - 1; i < P.length; j = i++) {
+          const [xi, yi] = P[i], [xj, yj] = P[j];
+          if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+          const ex = xi - xj, ey = yi - yj, k = Math.max(0, Math.min(1, ((x - xj) * ex + (y - yj) * ey) / (ex * ex + ey * ey || 1)));
+          d = Math.min(d, Math.hypot(x - (xj + k * ex), y - (yj + k * ey)));
+        }
+        return inside ? 0 : d;
+      }
+      const clamp01 = (n) => Math.max(0, Math.min(1, n));
+      /** the light one source casts on the tent: strong when it is low and near (or behind) the tent, none high in the sky
+          or a little after it has set */
+      function tentLight(who, P, up, r) {
+        const t = geo.tent; if (!t) return;
+        const near = clamp01(1 - Math.max(0, tentDistance(P.x, P.y, t) - r) / (r * 3)) ** 2;
+        const low = clamp01((1 - up) * 1.3) * clamp01(1 + up / 0.22);
+        const lit = near * low;
+        const u = (P.x - t.left) / t.width, v = (P.y - t.top) / t.height;
+        const dx = u - 0.5, dy = v - 0.55, n = Math.hypot(dx, dy) || 1;
+        const cs = camp.style;
+        cs.setProperty(`--${who}-lit`, lit.toFixed(3));
+        cs.setProperty(`--${who}-u`, (u * 100).toFixed(1) + '%'); cs.setProperty(`--${who}-v`, (v * 100).toFixed(1) + '%');
+        cs.setProperty(`--${who}-dx`, ((dx / n) * 7).toFixed(1) + 'px'); cs.setProperty(`--${who}-dy`, ((dy / n) * 7).toFixed(1) + 'px');
+      }
 
       let geo = null;
       const geometry = () => orbitGeometry();
@@ -436,7 +486,8 @@
         const g = document.querySelector('.home > .greet')?.getBoundingClientRect();
         const top = (g && g.height ? g.bottom + scrollY : appbar) + size * 0.5 + 6;   // the highest point: just under the greeting
         const cx = (left + right) / 2, rx = (right - left) / 2;
-        return { size, cx, cy, rx, ry: Math.max(60, cy - top), campTop, height: cy + 2 };
+        const tent = { left: r.left + scrollX, top: campTop, width: r.width, height: r.width * (794 / 1400) };   // (the camp's box: the picture itself may still be settling in)
+        return { size, cx, cy, rx, ry: Math.max(60, cy - top), campTop, height: cy + 2, tent };
       }
       const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
 
@@ -516,6 +567,8 @@
         sun.style.transform = `translate(${S.x.toFixed(1)}px, ${(S.y + sink).toFixed(1)}px)`;
         moon.style.transform = `translate(${M.x.toFixed(1)}px, ${(M.y + sink).toFixed(1)}px)`;
         const sinS = Math.sin(A);
+        tentLight('sun', { x: S.x, y: S.y + sink }, sinS, size / 2);
+        tentLight('moon', { x: M.x, y: M.y + sink }, -sinS, ms / 2);
         sun.classList.toggle('under', sinS < -0.12);
         moon.classList.toggle('under', -sinS < -0.12);
         // the light in the sky follows whichever is up
@@ -748,7 +801,7 @@
         const w = root.clientWidth;
         const small = w < 600;
         rx = Math.max(110, Math.min(small ? w / 2 - 58 : w / 2 - 120, 360));
-        ry = small ? 46 : 64;
+        ry = small ? 60 : 78;   // the cushions in front sit a little away from the fire (the owner: they were too close)
         cy = parseFloat(getComputedStyle(root).getPropertyValue('--cy')) || 0;
         const pil = items[0].querySelector('.pillow');
         const ph = parseFloat(getComputedStyle(pil).height) || 100;   // (an SVG has no offsetHeight)

@@ -129,6 +129,50 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-12 – Vision batch 4, design's part: done; what ai-features can now drop or switch (design → ai-features, master)
+
+Done on `design` (each checked at 375 px and on desktop, light and dark, with the page audit): the calculator redesigned
+(2); the light of the sun and the moon on the tent and the cushions farther from the fire (3, 4 – in `public/index.html`,
+the master's); "עץ המשפחה" on two lines in the bar (9 – base.css only, NAV unchanged); the food header and `H.strip` (11);
+smoother card motion (7: transform-only lifts everywhere, the gathering's whole card opens it, and the list and a gathering
+crossfade with `@view-transition` in gather.css); the palettes and the reading marks (6); styles for the notes, the
+settings, the songbook's heart and the song popup (5, 6, 10), written against ai-features' branch at 62b7751.
+For ai-features – the looks are in place, so the stopgaps can go:
+- **The food slider** (`public/food/slider.js`): hand the slides to `H.strip` instead of building the row, e.g.
+  `H.strip({ title: 'עכשיו במטבח', items: api('/api/food/highlights').then((r) => r.slides.map(card)) })`, placed with
+  `H.folder({ ..., under: thatStrip })`, where a fridge slide is `{ kind: 'fridge', emoji: '🧊', kicker: 'מהמקרר · ' + fridgeName,
+  title: name, sub: when(days), tone: days < 0 ? 'gone' : days <= 1 ? 'soon' : null, href: '/food/fridge/' }` and a recipe is
+  `{ kind: 'recipe', img: image, kicker: '🍳 כדאי לבשל עכשיו' | '📖 מהספר שלנו', title, sub: 'משתמש ב…', href }` (a broken
+  picture falls back to the title's first letter by itself). No inline styles are needed.
+- **Settings**: the palettes are `[['', 'אבן ובזלת'], ['sea', 'ים התיכון'], ['desert', 'מדבר'], ['vineyard', 'כרם'], ['dusk', 'בין הערביים']]`
+  (drop the "בקרוב" one); give each palette chip `data-swatch="<id>"` and it shows its two colours. The inline `style`s on
+  `.st-choices`, the chosen chip (it painted `--vine`; settings.css fills the chosen one with `--primary`), `.st-jump`
+  and the grids can go.
+- **Notes** (`.nt-row`, `.nt-ed-head`), **the heart** (`.heart-burst`: keep the `animate()`, drop the style) and **the
+  song popup** (`.mu-peek` in music.css: keep the slide, drop the style): the inline styles can go.
+- **The gathering**: for the real flip, open a gathering from its card in `H.sheet.open(card, content)` as the recipe
+  book does; until then the crossfade carries it.
+- `H.reducedMotion()` (apply.js) is used by the fire, the sheet and the arranging when it is there.
+For the master: `public/index.html` changed (the tent's light, the ring's depth), and `common.js` should call
+`H.applySettings()` (ai-features' note in apply.js). Status: done (design); the switches above are ai-features'.
+
+## 2026-11-12 – The food window: a full-width header, and `H.strip` for the slider under it (design → ai-features)
+
+Vision batch 4, item 11. The food folder's picture (`H.folder({ hero })`) is now a header from edge to edge that fades
+into the page's background, with the title in the fade; nothing changes in `public/food/index.html` for it.
+The slider under it is a ready component in `public/assets/launcher.js`; its look is design's, what goes in it is
+ai-features':
+```
+H.folder({ ..., hero: {...}, under: H.strip({
+  title: 'מה מבשלים היום', more: { href: '/groceries/#book', label: 'לספר המתכונים' },   // more: optional
+  items: api('/api/...').then(toCards),    // an array, or a promise of one: three placeholder cards wait meanwhile
+}) })
+// a card: { href? | onclick?, kind: 'recipe' | 'place' | 'fridge', kicker: 'מתכון מומלץ', title, sub?, img? (4:3), emoji? }
+```
+`kind: 'fridge'` is a small paper note with no picture (its emoji goes before the kicker): "החלב פג מחר", "נשארו 2
+ביצים". An empty list (or a failed promise) hides the strip. The calculator was also redesigned (batch 4, item 2), in
+`calc.css` only, with every class calc.js uses kept. Status: done (design), waiting for ai-features' content.
+
 ## 2026-11-12 – The calculator without AI: percentages, currencies, fractions, equations (ai-features → master, design)
 
 The second tool of `docs/ai/without-ai.md`. The calculator reads "15% מ-80", "100 דולר בשקלים" / "$50 + 20 €" (today's
@@ -507,6 +551,86 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-13 – Goal management, spec v1: approved for building (vision, the owner)
+
+The owner specced the goal-management tool (ניהול מטרות, `public/tools/tasks/`) with the vision session, answer by answer, and
+said "summarize and send". The full spec is in `docs/vision/goals.md`, section "האפיון, גרסה 1".
+
+**Purpose:** consistency and motivation, not just planning. The test is whether people come back to it tomorrow.
+
+**Structure:**
+- A goal (the "why"), then processes (each with a checklist), then small daily steps.
+- Goals by length: short (under a day), regular, and long-term (over a year).
+
+**Screens:**
+- A dashboard of goals and their path is the entry point.
+- **New goal:**
+  1. Write or record the goal and its "why".
+  2. Choose the length and an optional deadline.
+  3. The tool analyses the goal into processes, from a template by goal type, or with AI (✨). It can be edited.
+  4. The first three steps of the first process.
+  5. The rhythm: days and time, including the rest day.
+- **Today:** two or three small steps.
+
+**Motivation:**
+- Visible progress: a checklist per process, and the whole goal filling up.
+- Forgiving consistency ("4 of 7 this week").
+- A rest day by each user's tradition, which never breaks a streak and is rewarded.
+- A one-minute weekly review on the day before the rest day.
+- A "נתקעתי" button that breaks a step down to a 5-minute version.
+- The "why" comes back after two days with no step, with no scolding.
+
+**Badges:** the owner's list, in the spec.
+- Embroidered patches in the tent's style.
+- How to earn each one shows on hover or tap; secret badges show only a silhouette.
+- Each tradition gets a parallel rest-day badge with its own name.
+
+**Family and friends:**
+- Goals are private by default, and sharing is always a choice.
+- Following a friend's journey; advice with likes.
+- Shared family goals with roles.
+- Family templates: a finished goal's path is shared as a template.
+- The existing rules apply: friends connect only with approval; no messages outside the family under 12.
+
+**Hub links:** a step can become a calendar event, a shopping item, a research or a gathering.
+
+**Without AI:** templates, guided questions, and speech-to-text in the browser.
+**With AI (✨):** analysis, better transcription, "stuck" suggestions and adjusting the plan.
+
+**Data and first use:**
+- Goals are stored per user on the server.
+- The first goal is הָאֹהֶל itself (dogfooding).
+
+**Affects:**
+- **ai-features:** the server module, the tables and routes, appended and logged here, and the page's JavaScript.
+- **Design:** the dashboard, Today, the new-goal flow, the badges' art (through the image tool), the patches, the silhouettes.
+- **The master:** schedules the work; notifications or push, if they need the shell.
+
+Not in v1: the research assistant, specced next in vision.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – A new tool, "עוזר מחקר", alongside goal management (vision, the owner)
+
+**Decided:** a new tool, the research assistant (עוזר מחקר). It offers:
+- focused web search;
+- saved notes;
+- research projects that are kept in progress;
+- suggestions for directions to continue and help with tasks.
+
+It goes alongside goal management, and the owner and the vision session spec both tools together (`docs/vision/goals.md`).
+Nothing is built before the owner confirms the spec.
+
+It is a general tool, unlike the Torah researcher (`server/research.ts`), but the two may share an engine.
+
+By the rule "Every AI tool also has a useful version without AI", its plain version is a research folder (notes, saved
+links, progress, and search that opens in an ordinary search engine). Focused search and suggestions are the ✨ upgrade,
+through the user's own AI or credits.
+
+**Affects:** vision (the spec) now; ai-features and design once the spec is confirmed.
+
 Status: Decided (the owner).
 
 ## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)

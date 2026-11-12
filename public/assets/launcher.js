@@ -1,12 +1,14 @@
 /* Folders of apps (Food, Tools) and the page of an app that is still to come.
-   H.folder({ title, sub, back?: { href, label }, look?: 'flat', arrange?: 'tools', hero?: { src, small?, alt }, apps: [{ href, ic, name, c1, c2, soon?, owner?, art?, tint?, line? }] })
+   H.folder({ title, sub, back?: { href, label }, look?: 'flat', arrange?: 'tools', hero?: { src, small?, alt }, under?: node, apps: [{ href, ic, name, c1, c2, soon?, owner?, art?, tint?, line? }] })
+   (under: something placed between the head and the apps, e.g. an H.strip)
    (arrange: the person may reorder the tiles and pin them to the home page's ring – kept under H.prefs(arrange))
    (art: a silhouette picture used as the icon, filled with tint and outlined with line;
     look 'flat': the line icon itself, large, filled with the app's pastel tint, with no tile behind it)
-   H.soonPage({ title, ic, c1, c2, back: { href, label }, text }) */
+   H.soonPage({ title, ic, c1, c2, back: { href, label }, text })
+   H.strip({ title, items, more? }) → a sideways slider of cards (see below) */
 (() => {
   const { el } = H;
-  async function folder({ title, sub, apps, back, look, arrange, hero }) {
+  async function folder({ title, sub, apps, back, look, arrange, hero, under }) {
     const r = await H.requireLogin();
     H.header(title);
     const root = document.querySelector('main');
@@ -41,6 +43,7 @@
     const folderEl = el('div', { class: 'folder' + (hero ? ' with-hero' : '') },
       back ? el('a', { class: 'folder-back', href: back.href }, '‹ ', back.label) : null,
       head,
+      under || null,
       grid);
     root.append(folderEl);
     if (arrange) arrangeable(folderEl, grid, P, arrange);
@@ -51,7 +54,7 @@
      follows them (H.prefs). In the same mode each tile has a pin: pinned ones sit on the home page's ring round the fire
      (H.togglePin, apps.js). "נעילת סידור התפריט" in הגדרות (P.locked) turns the long press and the right click off. */
   function arrangeable(folderEl, grid, P, ns) {
-    const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
     const tiles = () => [...grid.querySelectorAll('.app')];
     const pinnable = (href) => !!H.APPS?.some((a) => a.href === href && !a.fixed);
     let on = false, drag = null, press = null;
@@ -180,5 +183,59 @@
       el('p', {}, text || 'האפליקציה הזו עוד בבנייה. נאפיין ונבנה אותה בקרוב.'),
       back ? el('a', { class: 'btn', href: back.href }, back.label) : null));
   }
-  Object.assign(H, { folder, soonPage });
+  /* A slider of cards under a folder's head (the food window: recommended recipes, restaurants, notes from the fridge).
+     The look is design's; what goes in it is the page's:
+       H.strip({ title: 'מה מבשלים היום', more?: { href, label },
+                 items: [...] | Promise<[...]>,        // while a promise waits, three quiet placeholder cards
+                 [{ href?, onclick?, kind?: 'recipe' | 'place' | 'fridge', tone?: 'soon' | 'gone', kicker?, title, sub?, img?, emoji? }] })
+     kind colours the kicker (and a fridge note is a paper note, not a picture card); tone marks what is urgent ("פג מחר",
+     "פג אתמול"); img is a picture (4:3) – if it fails, emoji (or the title's first letter) stands in for it. An empty list
+     hides the strip. Arrows on a computer; a finger or a trackpad on a phone. */
+  function strip({ title, items, more }) {
+    const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const track = el('div', { class: 'strip-track', role: 'list', tabindex: '-1' });
+    const step = (dir) => track.scrollBy({ left: dir * -Math.max(220, track.clientWidth * 0.8), behavior: reduce() ? 'auto' : 'smooth' });   // RTL: onward is to the left
+    const prev = el('button', { class: 'strip-arrow', type: 'button', 'aria-label': 'הקודמים', onclick: () => step(-1) }, '›');
+    const next = el('button', { class: 'strip-arrow', type: 'button', 'aria-label': 'הבאים', onclick: () => step(1) }, '‹');
+    const ends = () => {
+      const max = track.scrollWidth - track.clientWidth, at = Math.abs(track.scrollLeft);
+      prev.disabled = at < 4; next.disabled = at > max - 4;
+      box.classList.toggle('at-start', at < 4); box.classList.toggle('at-end', at > max - 4);
+    };
+    const box = el('section', { class: 'strip at-start', 'aria-label': title },
+      el('div', { class: 'strip-head' }, el('h2', {}, title), el('span', { class: 'spacer' }),
+        more ? el('a', { class: 'strip-more', href: more.href }, more.label || 'הכול') : null,
+        el('span', { class: 'strip-arrows' }, prev, next)),
+      track);
+    const card = (it) => {
+      const kind = (it.kind ? ' kind-' + it.kind : '') + (it.tone ? ' tone-' + it.tone : '');
+      const stand = () => it.emoji || (String(it.title || '').replace(/[^א-תa-z]/gi, '')[0] || '🍽️');
+      const emojiPic = () => el('span', { class: 'strip-pic emoji', 'aria-hidden': 'true' }, stand());
+      const pic = it.kind === 'fridge' ? null
+        : it.img ? el('span', { class: 'strip-pic' }, el('img', { src: it.img, alt: '', loading: 'lazy', decoding: 'async', referrerpolicy: 'no-referrer',
+          onerror: (e) => e.target.parentElement?.replaceWith(emojiPic()) }))
+          : emojiPic();
+      const body = [pic, el('span', { class: 'strip-body' },
+        it.kicker ? el('span', { class: 'strip-kicker' }, it.kind === 'fridge' && it.emoji ? it.emoji + ' ' : '', it.kicker) : null,
+        el('b', { class: 'strip-title' }, it.title), it.sub ? el('span', { class: 'strip-sub' }, it.sub) : null)];
+      return it.href
+        ? el('a', { class: 'strip-card' + kind, href: it.href, role: 'listitem' }, ...body)
+        : el('button', { class: 'strip-card' + kind, type: 'button', role: 'listitem', onclick: it.onclick }, ...body);
+    };
+    const fill = (list) => {
+      if (!list?.length) { box.hidden = true; return; }
+      track.replaceChildren(...list.map(card));
+      requestAnimationFrame(ends);
+    };
+    track.addEventListener('scroll', ends, { passive: true });
+    addEventListener('resize', ends, { passive: true });
+    if (Array.isArray(items)) fill(items);
+    else {
+      track.replaceChildren(...[0, 1, 2].map(() => el('span', { class: 'strip-card waiting', 'aria-hidden': 'true' }, el('span', { class: 'strip-pic' }), el('span', { class: 'strip-body' }, el('i'), el('i')))));
+      box.setAttribute('aria-busy', 'true');
+      Promise.resolve(items).then((l) => { box.removeAttribute('aria-busy'); fill(l); }, () => { box.hidden = true; });
+    }
+    return box;
+  }
+  Object.assign(H, { folder, soonPage, strip });
 })();

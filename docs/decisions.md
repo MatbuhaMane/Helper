@@ -21,6 +21,9 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - The owner approved that design may make images itself through the Gemini API (the project's key, a few cents per
   image), with `public/assets/tent.webp` as the style reference, instead of the owner generating them by hand.
   The owner chooses between the versions.
+- Split, at the master's note: design writes the prompts and owns the style and the choice of versions. The
+  mechanism that calls Gemini's image API spends AI on the owner's key and touches the server (an endpoint, the meter),
+  so it is built by ai-features or the master, as the master assigns.
 
 **Why:** the app is shown to the family only when it is ready and looks good. A photographed fire or a flat line drawing
 would clash with the painted scene.

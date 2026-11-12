@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The family gathering is the first tool to perfect and launch with (business)
+
+The owner chose the family gathering as the tool that opens the door; everything else waits behind it. Brief:
+`docs/business/gathering.md`.
+
+**What it does:** an event with a date and place, an invitation by WhatsApp link, and RSVP with a headcount, with no
+sign-in. It also has a "who brings what" list that feeds each person's own grocery list, an ICS add-to-calendar link, a
+reminder, invitees suggested from the tree, and culture-aware notes (Shabbat and holidays, fasts, kosher or halal). The
+gathering itself is always free.
+
+**What the master and ai-features need to look at:**
+- **A gathering crosses households.** Today everything is per `household`, so this needs guest access by link and an
+  extended family.
+- **Suggesting invitees needs part of the tree.** Names and relations would have to be available outside the vault,
+  without unlocking it. Which parts is the master's decision, since it owns the vault's security.
+- **Anonymous counts for the beta metrics:** link opened, RSVP, and sign-up from an invitation.
+
+**The proposed order:** build it on the current Worker, and move to local-first later (`docs/business/plan.md`,
+stage 3). The design of the invitation and the RSVP page belongs to design.
+
+Status: proposed.
+
 ## 2026-11-12 – Product direction: a free core, a family social network, a culture per user (business)
 
 The owner set the direction (details in `docs/business/vision.md`):

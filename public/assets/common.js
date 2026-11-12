@@ -290,7 +290,7 @@
   const PARTS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];
   const NAV = [
     { href: '/', label: 'בית', icon: 'home' },
-    { href: '/family/', label: 'עץ המשפחה', short: 'משפחה', icon: 'family' },
+    { href: '/family/', label: 'עץ המשפחה', lines: ['עץ', 'המשפחה'], short: 'משפחה', icon: 'family' },   // lines: two lines on PC (the owner's choice)
     { menu: 'parts', label: 'ניווט', icon: 'compass', also: [...PARTS, '/groceries/'] },
     { menu: 'tools', href: '/tools/', label: 'כלים', icon: 'tools', also: ['/tools/', '/mail/', '/pc/', '/gather/'] },
     { href: '/settings/', label: 'הגדרות', icon: 'settings', tab: true },   // on PC: the gear with the person's name
@@ -342,7 +342,7 @@
         'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'פתיחת ' + n.label, onclick: (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, n.menu, phone); } },
         phone ? icon(n.icon) : null, el('span', {}, n.short || n.label), phone ? null : el('span', { class: 'nav-caret', 'aria-hidden': 'true' }, '▾'))
       : el('a', { class: phone ? null : 'ink-nav', href: n.href, 'aria-current': current(n) ? 'page' : null, 'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'מעבר ל' + n.label },
-        phone ? icon(n.icon) : null, phone ? el('span', {}, n.short || n.label) : n.label);
+        phone ? icon(n.icon) : null, phone ? el('span', {}, n.short || n.label) : n.lines ? el('span', { class: 'nav-two' }, el('span', {}, n.lines[0]), ' ', el('span', {}, n.lines[1])) : n.label);
     const bar = el('header', { class: 'appbar' },
       el('a', { class: 'brand', href: '/', 'aria-label': 'הָאֹ֔הֶל, לדף הבית' }, el('span', { html: BRAND }), el('span', { class: 'brand-text' }, 'הָאֹ֔הֶל')),
       title ? el('h1', { class: 'page-title' }, title) : null,

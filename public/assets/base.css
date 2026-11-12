@@ -189,6 +189,7 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
 .topnav .nav-menu { font: inherit; font-size: .98rem; color: var(--text); background-color: transparent; border: 0; padding: 6px 0; cursor: pointer; white-space: nowrap;
   display: inline-flex; align-items: center; gap: 5px; }
 .topnav .nav-menu[aria-expanded="true"] { color: var(--primary); }
+.topnav .nav-two { display: inline-grid; line-height: 1.05; text-align: center; font-size: .92em; }   /* עץ המשפחה on two lines (the master; design may refine) */
 .nav-caret { display: inline-block; font-size: .7em; opacity: .7; transition: transform .25s var(--ease-river); }
 .nav-menu[aria-expanded="true"] .nav-caret { transform: rotate(180deg); opacity: 1; }
 .navmenu { position: fixed; z-index: 40; min-inline-size: 240px; max-inline-size: min(340px, calc(100vw - 32px)); max-block-size: min(72vh, 540px); overflow: auto;

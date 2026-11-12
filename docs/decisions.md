@@ -32,6 +32,20 @@ The owner set the direction (details in `docs/business/vision.md`):
   - **Proposals** (`docs/business/integrations.md`) for the master and ai-features: a remote MCP connector so the
     user's own Claude, ChatGPT or Gemini works on the family's data at no AI cost to the owner; an ICS calendar feed;
     WhatsApp share links; Google Photos Picker; Gmail only through the user's own agent, which may avoid CASA.
+- **The app works without AI, in a simpler version.** Connecting the services a user subscribes to unlocks the rest.
+  Most everyday tools already work without AI today (checked in `server/`, see `docs/business/integrations.md` 3a).
+- **A button for an AI ability never looks broken when no AI is connected.** It invites the user instead, for example
+  "Connect your Claude, ChatGPT or Gemini to import a recipe from a link", and also offers credits. For ai-features
+  and design.
+- **Credits on our server, at a token margin, for users who do not want their own AI.** The proposed mechanism
+  (`docs/business/pricing.md` 6a):
+  - one credit is a fixed amount of real AI cost, for example $0.01;
+  - each action deducts credits by its metered cost (`costOf` in `server/prices.ts`), with an estimate shown before
+    an expensive action;
+  - the margin is about 10% and the smallest pack about $3–5;
+  - credits do not expire.
+
+  Still to be set: the margin, the pack sizes, and whether a store price may differ from the web price.
 - **The core is free for everyone.** Paid extras only: features that cost the owner money (server AI), family photos,
   a companion figure unique to the family, and companion packs.
 

@@ -9,6 +9,7 @@
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon-180.png">
   <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/campfire.css">
   <style>
     /* The home page is a small camp: a greeting, Ibn Ezra's tent (he stands on its front rug), and the apps on a ring
        you can spin forever. No straight lines: the orbit, the ground and the bubbles are all round. */
@@ -66,22 +67,14 @@
     .wheel-caption { min-block-size: 2.6em; margin: 0; color: var(--muted); font-size: 1.05rem; text-align: center; max-inline-size: 34ch; }
 
     /* The campfire at the centre of the ring (cushions in front of it pass before the flames, those behind pass behind):
-       16 drawn frames played as a strip, over a glow that flickers with them and warms the ground. */
-    .fire { --fw: 140px; position: absolute; inset: 0; margin: auto; inline-size: var(--fw); block-size: calc(var(--fw) * 240 / 263); z-index: 50; pointer-events: none;
-      transform: translateY(calc(var(--cy) - 18px)); }
-    .fire .flames { position: absolute; inset: 0; background: url(/assets/campfire-strip.webp) 0 0 / calc(var(--fw) * 16) 100% no-repeat; animation: fire-run 1.5s steps(16) infinite; }
-    @keyframes fire-run { to { background-position-x: calc(var(--fw) * -16); } }
-    .fire .glow, .fire .core, .fire .ground { position: absolute; border-radius: 50%; pointer-events: none; }
-    /* the light on the ground and the cushions around */
-    .fire .ground { inset: auto -150% -32%; block-size: 120%; background: radial-gradient(closest-side, rgba(255, 150, 50, .34), rgba(255, 120, 30, .14) 45%, transparent 75%); animation: flicker 2.3s ease-in-out infinite; }
-    /* the warm halo around the flames, and their hot heart */
-    .fire .glow { inset: -55% -45% 5%; background: radial-gradient(closest-side, rgba(255, 190, 90, .55), rgba(255, 120, 30, .2) 55%, transparent); filter: blur(6px); animation: flicker 1.7s ease-in-out infinite reverse; }
-    .fire .core { inset: 18% 30% 30%; background: radial-gradient(closest-side, rgba(255, 245, 190, .75), rgba(255, 190, 80, .25) 60%, transparent); filter: blur(4px); animation: flicker .9s ease-in-out infinite; }
-    @keyframes flicker { 0% { opacity: .85; transform: scale(1); } 23% { opacity: 1; transform: scale(1.06, 1.03); } 41% { opacity: .74; transform: scale(.97); }
-      63% { opacity: .95; transform: scale(1.04, .98); } 82% { opacity: .8; transform: scale(1.01); } 100% { opacity: .85; transform: scale(1); } }
-    :root:not([data-theme="light"]) .fire .glow { mix-blend-mode: screen; }
-    @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .fire .glow { opacity: .8; } }
-    :root[data-theme="dark"] .fire .ground, :root[data-theme="dark"] .fire .glow { mix-blend-mode: screen; }
+       drawn in the tent's style, its flames moving in code (/assets/campfire.js and campfire.css), and the warm light it
+       casts on the ground around it, breathing with the flames (--cf-heat). */
+    .fire { --fw: 168px; position: absolute; inset: 0; margin: auto; inline-size: var(--fw); block-size: calc(var(--fw) * 403 / 640); z-index: 50; pointer-events: none;
+      transform: translateY(calc(var(--cy) - 2px)); }
+    .fire .ground { position: absolute; inset: auto -110% -55%; block-size: 150%; border-radius: 50%; pointer-events: none; z-index: -1;
+      background: radial-gradient(closest-side, rgba(255, 150, 50, calc(.2 + var(--cf-heat, .5) * .16)), rgba(255, 120, 30, .1) 45%, transparent 75%); }
+    :root[data-theme="dark"] .fire .ground { mix-blend-mode: screen; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fire .ground { mix-blend-mode: screen; } }
 
     @media (max-width: 599px) {
       .wheel { --cy: -26px; block-size: 236px; }
@@ -91,7 +84,7 @@
       .wheel-item .badge .icon { inline-size: 27px; block-size: 27px; }
       .wheel-item .label { font-size: 1.28rem; }
       .wheel .spin { display: none; }   /* on a phone the ring is spun with a finger */
-      .fire { --fw: 104px; transform: translateY(calc(var(--cy) - 14px)); }
+      .fire { --fw: 124px; transform: translateY(calc(var(--cy) - 2px)); }
     }
 
     /* Letters that swell: each one grows toward the pointer (or ripples in a wave on a long press). */
@@ -246,6 +239,7 @@
 <body data-daemon="hero">
   <main class="wide" id="root"></main>
   <script src="/assets/common.js"></script>
+  <script src="/assets/campfire.js"></script>
   <script>
   (async () => {
     const { el } = H;
@@ -732,7 +726,12 @@
 
     /* ---------- the campfire in the middle of the ring ---------- */
     function campfire() {
-      return el('div', { class: 'fire', 'aria-hidden': 'true' }, el('span', { class: 'ground' }), el('span', { class: 'glow' }), el('span', { class: 'flames' }), el('span', { class: 'core' }));
+      const box = el('div', { class: 'fire', 'aria-hidden': 'true' }, el('span', { class: 'ground' }));
+      // fire ג (the owner's choice): the stones and logs, and four curling tongues whose tips flick (docs/design/campfire.md)
+      window.Campfire?.mount(box, { base: '/assets/campfire/base.webp', anchor: 54, flames: [
+        { src: '/assets/campfire/flame-1.webp', x: -4, h: 55, z: 0.1 }, { src: '/assets/campfire/flame-2.webp', x: 13, h: 42, z: 0.4 },
+        { src: '/assets/campfire/flame-3.webp', x: -15, h: 34, z: 0.6 }, { src: '/assets/campfire/flame-4.webp', x: 3, h: 27, z: 0.9 }] });
+      return box;
     }
 
     /* ---------- the apps ring: spin it with a finger, the mouse, the arrows; it never ends ---------- */

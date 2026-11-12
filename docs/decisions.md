@@ -11,6 +11,18 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The new campfire on the home page: fire ג, with flicking tips (design, the owner's choice)
+
+The owner chose fire ג (curling tongues) and asked for a playful flick at the tips. The tongues are now drawn on canvases in
+thin strips with a bend that grows toward the tip – a sway, a wave rising up the flame, and every 1.5–4 s a quick flick of
+the tip that springs back, with a stretch upward (`public/assets/campfire.js`). In `public/index.html` (the master's file,
+its fire part only, as approved): `campfire.css` and `campfire.js` are linked; the `.fire` rules now hold only its size,
+place and the warm light on the ground (the strip's `.flames`, `.glow` and `.core` rules are gone); `campfire()` mounts the
+fire with its five pictures in `public/assets/campfire/`. **For the master:** `public/sw.js` pre-caches
+`/assets/campfire-strip.webp` – please replace it in `ASSETS` with `/assets/campfire.css`, `/assets/campfire.js`,
+`/assets/campfire/base.webp` and `/assets/campfire/flame-1…4.webp`; design deletes the strip once that is live.
+Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the sw.js line proposed.
+
 ## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
 
 The owner gives AI credit to chosen people from the room: the owner only (not a super), from the owner's own account,

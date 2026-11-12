@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The home page's sky: a horizon across the tent, and the sky's own room (design, at the owner's request)
+
+In `public/index.html` (master's file), as the owner asked: the greeting stands alone on top; under it the sky has its own
+room (`--sky-room`: 132 px on a PC, 108 on a tablet, 84 on a phone) and then the tent, at its old size (the page is a
+little longer). The horizon is now across the tent at the height of its eaves (46.5% of the picture): the sky ends there
+with a short soft edge, the stars are only above it and thin out toward it, and the sun and the moon sink into it instead
+of sliding down behind the tent. The orbit reaches 12% of the tent's width beyond each side, and its top is just under the
+greeting, so at noon the sun passes over the tent's peak. The old "greet-under" layout (the greeting moved under the tent
+when the arc could not pass it) is gone. Status: done (on `design`).
+
 ## 2026-11-12 – Night is a deeper blue, almost black (design, at the owner's request)
 
 The owner did not like the night colours and asked for a darker blue, nearly black, like the night. The night tokens in

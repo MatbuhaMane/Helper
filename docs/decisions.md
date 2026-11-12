@@ -254,6 +254,31 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-12 – The family tree opens freely after the first sign-in; the ring and the top bar are rebuilt (vision, the owner)
+
+Three decisions, confirmed by the owner one sentence at a time. The rest of the owner's notes from the same list are
+instructions, sent in the vision session's batch 2 (`docs/vision/batch.md`).
+
+1. **The family tree opens without asking again.** After the first sign-in on a device, the family tree opens without a
+   passkey. Only special actions ask each time: opening sealed vault documents, changing privacy, linking trees, deleting
+   and exporting.
+   - Affects: the master (the vault's security: where the key lives, and the trade-off; explain it to the owner and
+     propose a safe way) and ai-features (`family.js`, `server/vault/index.ts`).
+2. **The home page's ring around the campfire has only three fixed items:** the family tree, tools and settings.
+   Everything else is pinned to the ring by each user with a long press in the tools box, which holds every menu. The
+   choice is saved per user (`H.prefs`).
+   - Affects: ai-features (pinning and saving), design, the master (`public/index.html`).
+3. **The top bar keeps five items:**
+   - בית;
+   - עץ המשפחה;
+   - ניווט: a dropdown to the site's parts;
+   - כלים: a dropdown to every tool;
+   - הגדרות: a gear icon.
+   - Open: whether the phone's bottom tab bar follows the same five. Asked of the owner.
+   - Affects: the master (`NAV` in `common.js`) and design.
+
+Status: Decided (the owner).
+
 ## 2026-11-12 – One visual style for everything; images are made through the Gemini API (vision, the owner)
 
 **Decided:**

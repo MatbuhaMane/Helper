@@ -306,6 +306,8 @@ route('GET', '/api/admin/status', admin.status);
 route('POST', '/api/admin/enter/options', admin.enterOptions);
 route('POST', '/api/admin/enter', admin.enter);
 route('POST', '/api/admin/leave', admin.leave);
+route('POST', '/api/admin/ping', admin.ping);
+route('POST', '/api/admin/stay', admin.stay);
 route('GET', '/api/admin/overview', admin.overview);
 route('POST', '/api/admin/ledger', admin.ledgerAdd);
 route('PUT', '/api/admin/ledger/:id', admin.ledgerSave);

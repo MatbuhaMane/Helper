@@ -60,13 +60,14 @@ export function cleanEntry(b: Record<string, unknown>): Entry {
 
 /* ---------------- entering the room ---------------- */
 
-export const IDLE = 15 * 60e3, MAX = 2 * 3600e3;
-/** a visit (the owner's biometric on someone else's account): shorter, since the owner may walk away from that device */
-export const VISIT_IDLE = 5 * 60e3, VISIT_MAX = 30 * 60e3;
-/** an entry lasts a quarter of an hour from the last action, two hours at most; a visit five minutes, half an hour at most */
-export const entryAlive = (s: { created_at: number; last_at: number; by_email?: string; as_email?: string }, now = Date.now()) => {
+/** the owner's rule: three idle minutes close the room, on any device; two hours at most from the owner's own account,
+    half an hour on someone else's. "Stay unlocked" (for a working session, from the owner's own account only) lifts the
+    idle limit, never the maximum. The page warns after 30 idle seconds. */
+export const IDLE = 3 * 60e3, WARN = 30e3, MAX = 2 * 3600e3, VISIT_MAX = 30 * 60e3;
+export const entryAlive = (s: { created_at: number; last_at: number; by_email?: string; as_email?: string; stay?: number | boolean | null }, now = Date.now()) => {
   const visit = !!s.by_email && s.by_email !== s.as_email;
-  return now - s.last_at < (visit ? VISIT_IDLE : IDLE) && now - s.created_at < (visit ? VISIT_MAX : MAX);
+  const stay = !!s.stay && !visit;
+  return (stay || now - s.last_at < IDLE) && now - s.created_at < (visit ? VISIT_MAX : MAX);
 };
 
 /* ---------------- settings ---------------- */

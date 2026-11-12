@@ -34,6 +34,8 @@
     open();
   }
   function gate() {
+    if (st) st.open = false;
+    document.querySelector('.ad-warn')?.setAttribute('hidden', '');
     const can = !!window.PublicKeyCredential && !!navigator.credentials;
     root.replaceChildren(el('section', { class: 'ad' }, el('div', { class: 'card ad-gate' },
       el('div', { class: 'big', 'aria-hidden': 'true' }, '🌒'),
@@ -45,20 +47,53 @@
   }
 
   /* ---------- the room ---------- */
-  let st, lockTimer;
+  /* ---------- the lock (the owner's rule): 3 idle minutes close the room, a warning after 30 idle seconds, a lock that
+     closes it at once, and "stay unlocked" for a working session (own account only; 2 hours at most) ---------- */
+  let st, tick = 0, last = Date.now(), pinged = 0;
+  const warnBox = el('div', { class: 'ad-warn', role: 'alert', hidden: true });
+  document.body.append(warnBox);
+  const mmss = (ms) => { const s = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  async function lockNow() {
+    clearInterval(tick); warnBox.hidden = true;
+    await call('/api/admin/leave', { method: 'POST' }).catch(() => {});
+    gate();
+  }
+  /** any action keeps the room open: here at once, and on the server at most every 20 seconds */
+  function active() {
+    if (!st?.open) return;
+    last = Date.now();
+    warnBox.hidden = true;
+    if (Date.now() - pinged > 20e3) { pinged = Date.now(); call('/api/admin/ping', { method: 'POST' }).catch((e) => { if (e?.code === 'admin_locked') { clearInterval(tick); gate(); } }); }
+  }
+  for (const ev of ['pointerdown', 'keydown', 'wheel', 'touchstart', 'scroll']) addEventListener(ev, active, { capture: true, passive: true });
+  function watch() {
+    clearInterval(tick);
+    last = Date.now(); pinged = Date.now();
+    tick = setInterval(() => {
+      if (!st?.open) return clearInterval(tick);
+      if (Date.now() >= st.ends) { lockNow(); return; }                     // the two hours (half an hour on a visit) are up
+      if (st.stay) { warnBox.hidden = true; return; }
+      const idleFor = Date.now() - last, left = st.idle - idleFor;
+      if (left <= 0) { lockNow(); return; }
+      if (idleFor >= st.warn) {
+        warnBox.replaceChildren(el('b', {}, '🔒 החדר ייסגר בעוד ' + mmss(left)), el('span', {}, ' · כל פעולה משאירה אותו פתוח'),
+          el('button', { class: 'btn small', type: 'button', onclick: active }, 'אני כאן'));
+        warnBox.hidden = false;
+      } else warnBox.hidden = true;
+    }, 500);
+  }
   async function open() {
     try { st = await call('/api/admin/status'); } catch (e) { return say(e); }
     if (!st.open) return gate();
-    clearInterval(lockTimer);
-    const clock = el('small', { class: 'muted' });
-    let last = Date.now();
-    const idle = (st.own ? 15 : 5) * 60e3;                // a visit locks sooner (server/admin-rules.ts)
-    lockTimer = setInterval(() => { const s = Math.max(0, Math.round((last + idle - Date.now()) / 1000)); clock.textContent = `ננעל בעוד ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; if (!s) { clearInterval(lockTimer); gate(); } }, 1000);
-    document.addEventListener('click', () => { last = Date.now(); }, { capture: true });
+    watch();
+    const lock = el('button', { class: 'btn small ad-lock', type: 'button', 'aria-label': 'החדר פתוח – לחיצה נועלת אותו', title: 'נעילה מיד', onclick: lockNow }, '🔓 פתוח · נעילה');
+    const stay = st.own ? el('label', { class: 'ad-stay small' },
+      el('input', { type: 'checkbox', checked: !!st.stay, 'aria-label': 'להשאיר פתוח לעבודה', onchange: async (e) => {
+        try { const r = await call('/api/admin/stay', { method: 'POST', body: { on: e.target.checked } }); st.stay = r.stay; active(); toast(r.stay ? 'נשאר פתוח לעבודה (עד שעתיים)' : 'נסגר שוב אחרי 3 דקות בלי פעולה'); } catch (err) { say(err); e.target.checked = !!st.stay; }
+      } }), ' להשאיר פתוח לעבודה') : null;
     const bar = el('div', { class: 'card ad-bar' },
-      el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל. ננעל אחרי 5 דקות.')),
-      el('span', { class: 'spacer' }), clock,
-      btn('נעילה', async () => { await call('/api/admin/leave', { method: 'POST' }); clearInterval(lockTimer); gate(); }, 'btn small ghost'));
+      el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל.')),
+      el('span', { class: 'spacer' }), stay, lock);
     const parts = st.own
       ? [['dash', 'לוח'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
       : [['dash', 'מצב האוהל'], ['features', `התכונות של ${st.as.name}`]];
@@ -234,7 +269,7 @@
   /* ---------- the room's own log ---------- */
   async function log(box) {
     const { log: list } = await call('/api/admin/audit');
-    const ACT = { 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
+    const ACT = { 'stay:on': 'השאיר פתוח לעבודה', 'stay:off': 'ביטל השארה פתוחה', 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
       'feature:on': 'פתח תכונה', 'feature:off': 'סגר תכונה', 'super:add': 'נתן הרשאת־על', 'super:remove': 'ביטל הרשאת־על' };
     box.replaceChildren(section('log-s', 'יומן החדר',
       list.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('tbody', {}, list.map((r) => el('tr', {},

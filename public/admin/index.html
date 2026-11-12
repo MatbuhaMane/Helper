@@ -39,6 +39,12 @@
     .ad-bars { display: flex; align-items: flex-end; gap: 3px; block-size: 70px; margin-block: 6px; }
     .ad-bars i { flex: 1; background: color-mix(in srgb, var(--primary) 70%, transparent); border-radius: 3px 3px 0 0; min-block-size: 2px; }
     .small { font-size: .88rem; }
+    .ad-lock { white-space: nowrap; }
+    .ad-stay { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+    .ad-warn { position: fixed; inset-inline: 16px; inset-block-end: calc(var(--tabbar-h, 64px) + 16px); z-index: 50; display: flex; flex-wrap: wrap;
+      align-items: center; gap: 6px 10px; padding: 12px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--line-strong);
+      border-inline-start: 4px solid var(--danger, #b42318); box-shadow: var(--lift, 0 8px 24px rgba(0, 0, 0, .25)); }
+    .ad-warn[hidden] { display: none; }
   </style>
 </head>
 <!-- the owner's room: no player, no companion – nothing else runs next to it -->

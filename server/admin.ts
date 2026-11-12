@@ -7,8 +7,10 @@
 //   * opened from the owner's own account: everything – the dashboard, money, settings, members, messages, features,
 //     and who else may enter (הרשאת-על, a "super" with their own passkey: everything but naming supers).
 //   * opened from someone else's account: only what fits a visit – this user's special features and how the app is
-//     doing; no money, settings, members or messages to all on a device that is not the owner's. A visit locks after
-//     five idle minutes, half an hour at most (the owner may walk away from that device).
+//     doing; no money, settings, members or messages to all on a device that is not the owner's.
+// The lock (the owner's rule): three idle minutes close it on any device (the page warns after 30 seconds and shows an
+// open/locked lock that closes it at once); two hours at most, half an hour on someone else's. "Stay unlocked", for a
+// working session from the owner's own account only, lifts the idle limit but not the maximum.
 // Who is "the owner": the emails in OWNER_EMAIL (never written in the code). Every action is written to admin_audit.
 
 import { Ctx, Env, HttpError, Member, body, getCookie, json, requireUser, uid } from './core';
@@ -34,8 +36,8 @@ async function supers(env: Env): Promise<Set<string>> {
 }
 async function mayEnter(env: Env) { return new Set([...owners(env), ...(await supers(env))]); }
 
-interface Entry { sid_hash: string; by_email: string; as_email: string; created_at: number; last_at: number }
-export interface Admin { by: string; as: string; own: boolean; level: 'owner' | 'super' }
+interface Entry { sid_hash: string; by_email: string; as_email: string; created_at: number; last_at: number; stay: number | null }
+export interface Admin { by: string; as: string; own: boolean; level: 'owner' | 'super'; stay: boolean; created: number; sid: string }
 async function log(ctx: Ctx, a: Admin, action: string, detail = '') {
   ctx.waitUntil(ctx.env.DB.prepare('INSERT INTO admin_audit (at, by_email, as_email, action, detail) VALUES (?, ?, ?, ?, ?)').bind(Date.now(), a.by, a.as, action, detail.slice(0, 300)).run().then(() => {}));
 }
@@ -47,7 +49,7 @@ export async function requireAdmin(ctx: Ctx, need: 'own' | 'any' = 'own'): Promi
   if (!e || !R.entryAlive(e) || e.as_email !== u.email) throw new HttpError(403, 'admin_locked');
   const level = owners(ctx.env).has(e.by_email) ? 'owner' : (await supers(ctx.env)).has(e.by_email) ? 'super' : null;
   if (!level) throw new HttpError(403, 'admin_locked');                // a super whose permission was taken away
-  const a: Admin = { by: e.by_email, as: e.as_email, own: e.by_email === e.as_email, level };
+  const a: Admin = { by: e.by_email, as: e.as_email, own: e.by_email === e.as_email, level, stay: !!e.stay && e.by_email === e.as_email, created: e.created_at, sid: e.sid_hash };
   if (need === 'own' && !a.own) throw new HttpError(403, 'own_account_only');
   await ctx.env.DB.prepare('UPDATE admin_entries SET last_at = ? WHERE sid_hash = ?').bind(Date.now(), e.sid_hash).run();
   return a;
@@ -82,10 +84,10 @@ export async function enter(ctx: Ctx) {
   await ctx.env.DB.batch([
     ctx.env.DB.prepare('UPDATE passkeys SET sign_count = ?, last_used = ? WHERE id = ?').bind(count, now, b.id),
     ctx.env.DB.prepare('DELETE FROM admin_entries WHERE last_at < ?').bind(now - R.MAX),
-    ctx.env.DB.prepare('INSERT INTO admin_entries (sid_hash, by_email, as_email, created_at, last_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(sid_hash) DO UPDATE SET by_email = excluded.by_email, as_email = excluded.as_email, created_at = excluded.created_at, last_at = excluded.last_at')
+    ctx.env.DB.prepare('INSERT INTO admin_entries (sid_hash, by_email, as_email, created_at, last_at, stay) VALUES (?, ?, ?, ?, ?, 0) ON CONFLICT(sid_hash) DO UPDATE SET by_email = excluded.by_email, as_email = excluded.as_email, created_at = excluded.created_at, last_at = excluded.last_at, stay = 0')
       .bind(sh, row.email, u.email, now, now),
   ]);
-  const a: Admin = { by: row.email, as: u.email, own: row.email === u.email, level: owners(ctx.env).has(row.email) ? 'owner' : 'super' };
+  const a: Admin = { by: row.email, as: u.email, own: row.email === u.email, level: owners(ctx.env).has(row.email) ? 'owner' : 'super', stay: false, created: now, sid: sh };
   await log(ctx, a, 'enter', a.own ? '' : 'from another account');
   return json({ ok: true, own: a.own });
 }
@@ -95,10 +97,24 @@ export async function status(ctx: Ctx) {
   try {
     const a = await requireAdmin(ctx, 'any');
     const n = await ctx.env.DB.prepare('SELECT he_name, name FROM members WHERE email = ?').bind(a.as).first<{ he_name: string | null; name: string | null }>();
-    return json({ open: true, own: a.own, level: a.level, as: { email: a.as, name: n?.he_name || n?.name || a.as.split('@')[0] }, main: owners(ctx.env).has(a.by) });
+    return json({ open: true, own: a.own, level: a.level, as: { email: a.as, name: n?.he_name || n?.name || a.as.split('@')[0] }, main: owners(ctx.env).has(a.by),
+      stay: a.stay, idle: R.IDLE, warn: R.WARN, ends: a.created + (a.own ? R.MAX : R.VISIT_MAX) });
   } catch {
     return json({ open: false, member: u.email });
   }
+}
+/** POST /api/admin/ping – the page says the owner is still there (any action), so the three idle minutes start again */
+export async function ping(ctx: Ctx) {
+  await requireAdmin(ctx, 'any');
+  return json({ ok: true });
+}
+/** POST /api/admin/stay {on} – "stay unlocked" for a working session: no idle limit (two hours at most); own account only */
+export async function stay(ctx: Ctx) {
+  const a = await requireAdmin(ctx, 'own');
+  const on = !!(await body<{ on?: boolean }>(ctx.req)).on;
+  await ctx.env.DB.prepare('UPDATE admin_entries SET stay = ? WHERE sid_hash = ?').bind(on ? 1 : 0, a.sid).run();
+  await log(ctx, a, on ? 'stay:on' : 'stay:off');
+  return json({ ok: true, stay: on });
 }
 export async function leave(ctx: Ctx) {
   requireUser(ctx);

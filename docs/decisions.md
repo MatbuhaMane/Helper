@@ -11,6 +11,17 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The room's lock (ai-features, the owner's words; one point the master's)
+
+The owner: an open/locked lock in the room that locks it again at once; three idle minutes close it; a floating warning
+after 30 idle seconds; a "stay unlocked" switch for working sessions. So: `admin-rules.entryAlive` – 3 idle minutes for
+every entry, 2 hours at most from the owner's own account and 30 minutes on someone else's; "stay unlocked"
+(`admin_entries.stay`, COLUMNS) lifts only the idle limit, and only from the owner's own account (the master's
+suggestion: never on someone else's device). The page pings the server on any action (at most every 20 seconds), shows
+the warning with a countdown after 30 seconds (any action hides it), and a lock button (🔓 פתוח · נעילה) that ends the
+entry at once. Messages to everyone stay own-account only (the master's addition). Routes: `/api/admin/ping`,
+`/api/admin/stay`. Status: done on `ai-features`.
+
 ## 2026-11-12 – The AI allowance: the family free, new accounts on an opening gift, own keys (ai-features, the owner's decision)
 
 The owner: new users simply use the app on the credit they were given, with no notice; they connect their own

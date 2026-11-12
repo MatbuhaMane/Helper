@@ -456,3 +456,22 @@ CREATE TABLE IF NOT EXISTS handoff_nonces (
   n   TEXT PRIMARY KEY,
   exp INTEGER NOT NULL
 );
+
+-- The AI meter (server/meter.ts): one row per call to Claude or Gemini – quantities only; prices are applied when read.
+CREATE TABLE IF NOT EXISTS ai_usage (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  at          INTEGER NOT NULL,
+  email       TEXT,
+  feature     TEXT NOT NULL,
+  provider    TEXT NOT NULL,
+  model       TEXT NOT NULL,
+  input       INTEGER NOT NULL DEFAULT 0,
+  output      INTEGER NOT NULL DEFAULT 0,
+  cache_write INTEGER NOT NULL DEFAULT 0,
+  cache_read  INTEGER NOT NULL DEFAULT 0,
+  searches    INTEGER NOT NULL DEFAULT 0,
+  grounded    INTEGER NOT NULL DEFAULT 0,
+  audio_out   INTEGER NOT NULL DEFAULT 0,
+  image_out   INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS ai_usage_at ON ai_usage(at);

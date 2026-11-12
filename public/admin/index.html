@@ -13,6 +13,19 @@
     th { color: var(--muted); font-weight: 500; }
     .addm { display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr auto; gap: 8px; padding: 12px; }
     @media (max-width: 600px) { .addm { grid-template-columns: 1fr; } }
+    .ai-cost { margin-block: 28px 40px; }
+    .ai-head { display: flex; align-items: center; gap: 10px; } .ai-head h2 { margin: 0; } .ai-head .spacer { flex: 1; }
+    .ai-head select { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
+    .ai-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-block: 12px; }
+    .ai-tile { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); }
+    .ai-tile b { display: block; font-size: 1.4rem; font-variant-numeric: tabular-nums; } .ai-tile small { color: var(--muted); }
+    .ai-cost h3 { margin: 18px 0 6px; font-size: 1rem; }
+    .ai-cost table { inline-size: 100%; border-collapse: collapse; font-size: .9rem; }
+    .ai-cost td, .ai-cost th { padding: 6px 8px; border-block-end: 1px solid var(--line); text-align: start; }
+    .ai-cost td.num, .ai-cost th.num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ai-bars { display: flex; align-items: flex-end; gap: 3px; block-size: 70px; margin-block: 6px; }
+    .ai-bars i { flex: 1; background: color-mix(in srgb, var(--primary) 70%, transparent); border-radius: 3px 3px 0 0; min-block-size: 2px; }
+    .small { font-size: .88rem; }
     .he-name { inline-size: 9em; font: inherit; padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--text); }
   </style>
 </head>
@@ -27,6 +40,13 @@
       <button class="btn primary">הוספה</button>
     </form>
     <div class="card" style="overflow-x:auto"><table><thead><tr><th>שם</th><th>שם בעברית</th><th>אימייל</th><th>בית</th><th>תפקיד</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    <!-- what the AI costs: by person, feature, model and day (server/meter.ts records, server/prices.ts prices) -->
+    <section class="ai-cost">
+      <div class="ai-head"><h2>עלויות ה־AI</h2><span class="spacer"></span>
+        <select id="aiDays" aria-label="תקופה"><option value="7">7 ימים</option><option value="14" selected>14 ימים</option><option value="30">30 ימים</option><option value="90">90 ימים</option></select></div>
+      <p class="muted small">כל קריאה ל־Claude ול־Gemini נרשמת: מי, מאיזה כלי, באיזה מודל וכמה. המחירים הם הערכה לפי מחירון היצרנים (server/prices.ts), לפני הנחות ומכסות חינם.</p>
+      <div id="aiCost"></div>
+    </section>
   </main>
   <script src="/assets/common.js"></script>
   <script>
@@ -61,6 +81,38 @@
       } catch (err) { toast(err.message); }
     });
     load();
+
+    /* what the AI costs */
+    const usd = (n) => (n >= 1 ? '$' + n.toFixed(2) : n >= 0.01 ? '$' + n.toFixed(3) : n > 0 ? '$' + n.toFixed(4) : '$0');
+    const FEATURES = { 'research/ask': 'החוקר', 'research/word': 'פירוש מילה', 'research/translate': 'תרגום', 'research/search': 'חיפוש במקורות', 'daemon/chat': 'ראב"ע – שיחה',
+      'voice/speak': 'ראב"ע – קול', 'voice/sample/:id': 'ראב"ע – דוגמת קול', 'fun/picks': 'בידור – המלצות', 'calc/solve': 'מחשבון',
+      'news/verify': 'חדשות – אימות', 'news/corroborate': 'חדשות – הצלבה', 'news/summary': 'חדשות – סיכום', 'news/translate': 'חדשות – תרגום', 'news/titles': 'חדשות – כותרות',
+      'recipes/import': 'מתכונים – ייבוא', 'recipes/world/open': 'מתכונים מהעולם', 'recipes/check': 'מתכונים – בדיקה' };
+    async function cost() {
+      const box = document.getElementById('aiCost');
+      try {
+        const d = await api('/api/usage?days=' + document.getElementById('aiDays').value);
+        const max = Math.max(...d.daily.map((x) => x.cost), 0.0001);
+        const table = (head, rows) => el('div', { style: 'overflow-x:auto' }, el('table', {}, el('thead', {}, el('tr', {}, head.map((h, i) => el('th', { class: i ? 'num' : '' }, h)))), el('tbody', {}, rows)));
+        box.replaceChildren(...[
+          el('div', { class: 'ai-tiles' },
+            el('div', { class: 'ai-tile' }, el('small', {}, `סך הכול, ${d.days} ימים`), el('b', {}, usd(d.total.cost))),
+            el('div', { class: 'ai-tile' }, el('small', {}, 'קריאות'), el('b', {}, d.total.calls.toLocaleString('he-IL'))),
+            el('div', { class: 'ai-tile' }, el('small', {}, 'לקריאה, בממוצע'), el('b', {}, usd(d.total.calls ? d.total.cost / d.total.calls : 0))),
+            el('div', { class: 'ai-tile' }, el('small', {}, 'לחודש, בקצב הזה'), el('b', {}, usd(d.total.perMonth || 0)))),
+          d.daily.length ? el('div', { class: 'ai-bars', role: 'img', 'aria-label': 'עלות לפי יום' }, d.daily.map((x) => el('i', { style: `block-size:${Math.max(3, (x.cost / max) * 100)}%`, title: `${x.day}: ${usd(x.cost)} · ${x.calls} קריאות` }))) : null,
+          el('h3', {}, 'לפי אדם'),
+          table(['מי', 'קריאות', 'עלות', 'לחודש בקצב הזה'], d.users.map((u) => el('tr', {}, el('td', {}, u.name), el('td', { class: 'num' }, u.calls), el('td', { class: 'num' }, usd(u.cost)), el('td', { class: 'num' }, usd(u.perMonth))))),
+          el('h3', {}, 'לפי כלי'),
+          table(['כלי', 'קריאות', 'עלות'], d.features.map((f) => el('tr', {}, el('td', {}, FEATURES[f.key] || f.key), el('td', { class: 'num' }, f.calls), el('td', { class: 'num' }, usd(f.cost))))),
+          el('h3', {}, 'לפי מודל'),
+          table(['מודל', 'קריאות', 'עלות'], d.models.map((m) => el('tr', {}, el('td', { dir: 'ltr' }, m.key + (m.unpriced ? ' (אין מחיר)' : '')), el('td', { class: 'num' }, m.calls), el('td', { class: 'num' }, usd(m.cost))))),
+          d.total.unpriced ? el('p', { class: 'muted small' }, `${d.total.unpriced} קריאות למודלים שאין להם מחיר בטבלה – לא נספרו בסכום.`) : null].filter(Boolean));   // (null would print as text)
+        if (!d.total.calls) box.append(el('p', { class: 'muted' }, 'עוד אין קריאות בתקופה הזו. המדידה התחילה עכשיו.'));
+      } catch (err) { box.replaceChildren(el('p', { class: 'muted' }, err.message)); }
+    }
+    document.getElementById('aiDays').addEventListener('change', cost);
+    cost();
   })();
   </script>
 </body>

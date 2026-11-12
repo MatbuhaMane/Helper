@@ -23,6 +23,8 @@ import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
 import * as vault from '../../server/vault';
+import * as usage from '../../server/usage';
+import { featureOf, metered } from '../../server/meter';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -221,6 +223,9 @@ route('PUT', '/api/vault/items/:id', vault.itemSave);
 route('DELETE', '/api/vault/items/:id', vault.itemDelete);
 route('POST', '/api/vault/items/:id/restore', vault.itemRestore);
 route('GET', '/api/vault/audit', vault.auditLog);
+
+/* the AI cost report (owner) */
+route('GET', '/api/usage', usage.report);
 route('GET', '/api/vault/backups', vault.backups);
 route('POST', '/api/vault/backups/run', vault.backupsRun);
 route('POST', '/api/vault/backups/drive/disconnect', vault.driveDisconnect);
@@ -267,7 +272,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil })
     try {
       await ensureSchema(env);
       const user = await loadUser(env, request);
-      return await h({ req: request, env, url, params, user, waitUntil });
+      // every AI call made while answering is metered: who, from which feature (server/meter.ts)
+      return await metered({ env, email: user?.email || null, feature: featureOf(url.pathname), waitUntil }, () => h({ req: request, env, url, params, user, waitUntil }));
     } catch (err) {
       if (err instanceof HttpError) return json({ error: err.message }, err.status);
       console.error('API error', url.pathname, err instanceof Error ? err.stack || err.message : err);

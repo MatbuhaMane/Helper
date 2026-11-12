@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 
-const toNote = (r: any) => ({ id: r.id, title: r.title, body: r.body, source: r.source_url ? { url: r.source_url, title: r.source_title || '' } : null, createdAt: r.created_at, updatedAt: r.updated_at });
+const toNote = (r: any) => ({ id: r.id, title: r.title, body: r.body, source: r.source_url ? { url: r.source_url, title: r.source_title || '' } : null, starred: !!r.starred, createdAt: r.created_at, updatedAt: r.updated_at });
 
 /** A short title for a note: by the AI when it can (a few words, in the note's language), else its first words. */
 async function titleFor(ctx: Ctx, text: string): Promise<string> {
@@ -29,6 +29,7 @@ export async function list(ctx: Ctx) {
 const Input = z.object({
   title: z.string().max(200).optional(), body: z.string().max(50000).optional(),
   source: z.object({ url: z.string().max(1000), title: z.string().max(300).optional() }).nullable().optional(),
+  starred: z.boolean().optional(),
 });
 export async function create(ctx: Ctx) {
   const u = requireUser(ctx);
@@ -48,6 +49,11 @@ export async function update(ctx: Ctx) {
   if (!p.success) throw new HttpError(400, 'Invalid note');
   const row = await ctx.env.DB.prepare('SELECT * FROM notes WHERE email = ? AND id = ? AND deleted = 0').bind(u.email, ctx.params.id).first<any>();
   if (!row) throw new HttpError(404, 'Not found');
+  // a star alone (vision batch 4, item 5): the note itself and its date stay as they were
+  if (p.data.starred !== undefined && p.data.body === undefined && p.data.title === undefined) {
+    await ctx.env.DB.prepare('UPDATE notes SET starred = ? WHERE email = ? AND id = ?').bind(p.data.starred ? 1 : 0, u.email, ctx.params.id).run();
+    return json({ note: toNote({ ...row, starred: p.data.starred }) });
+  }
   const text = p.data.body ?? row.body;
   let title = p.data.title ?? row.title;
   // a note that had no words yet gets its title once it has some

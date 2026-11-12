@@ -33,6 +33,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['sessions', 'vault_trust_since', 'INTEGER'], // when this device became trusted
   ['sessions', 'vault_trust_used', 'INTEGER'],  // when it last opened the tree
   ['sessions', 'vault_trust_label', 'TEXT'],    // a coarse name for the list ("Chrome · Windows"), never the whole User-Agent
+  ['notes', 'starred', 'INTEGER'],              // 1: the person starred this note (shown first)
 ];
 
 let ready: Promise<void> | null = null;

@@ -16,10 +16,10 @@ A round embroidered patch badge, drawn in exactly the same illustrated style as 
 - **rest_return** (fire): two lit Shabbat candles in simple candlesticks, side by side, soft glow around the flames
 - **rest_seven** (fire): two lit Shabbat candlesticks in the centre surrounded by a ring of seven small eight-pointed stars
 - **pole** (path): a single tall wooden tent pole standing upright with two taut ropes pegged to the ground
-- **standing** (path): a whole black Bedouin goat-hair tent standing proudly, its front open, two ropes and pegs
+- **standing** (path), redrawn on 2026-11-13 at the owner's word, with the tent's picture (`/assets/tent.webp`) as a second reference: a wide, low black Bedouin goat-hair tent like ours, its flat roof gently sagging between several poles (not a triangle), its front open on a woven striped interior, ropes out to pegs on both sides.
 - **journey** (path): a winding trail of small footprints climbing over gentle hills toward a little star
 - **tracker** (path): a magnifying glass over a line of footprints in the sand, a tracker reading the trail
-- **dawn** (path): the sun rising over two rounded hills with rays, the morning star still above
+- **dawn** (path), redrawn on 2026-11-13 at the owner's word: a half sun with straight rays rising from behind a clear horizon line of two wide, low, rounded desert hills (plainly hills of earth and sand, nothing like leaves), the morning star still above. *Edited by hand:* the model stitched the star as a cross; it was covered with the patch's own fabric and re-stitched as an eight-pointed star of gold cross-stitches.
 - **night** (path): a crescent moon and stars above a small glowing oil lantern
 - **traveller** (path): a camel walking over dunes with a small travel bundle on its back, a long road behind it
 - **gifts** (kin): three small tied cloth gift pouches with ribbons, one larger in the middle

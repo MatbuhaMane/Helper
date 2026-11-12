@@ -11,6 +11,43 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Vision batch 4 on ai-features: what was built, and what others are asked (ai-features → master, design)
+
+Built on `ai-features` (each commit names its item):
+- **(1, 8) תנועה ותזונה**: the folder "דיאטה" is renamed (its address `/food/diet/` stays), with הקפדה first; הקפדה
+  is in the tools box too; the food portal's subtitle follows. **For the master:** `public/assets/apps.js` still says
+  `name: 'דיאטה', sub: 'קטוזיס, הקפדה, ומה מתאים'` (and `'… דיאטה והמקרר'` for אוכל). Proposed: `'תנועה ותזונה'` /
+  `'הקפדה, קטוזיס, ומה מתאים'` / `'רשימת קניות, ספר מתכונים, תנועה ותזונה והמקרר'`, and a הקפדה entry
+  (`/food/diet/hakpada/`, ic `target`) so it can be pinned to the ring.
+- **(5) Notes**: saved only on "שמירה" (or Ctrl+S); closing with changes asks "לבטל את השינויים?"; a ✕; a star.
+  Column `notes.starred`. **Drive**: "☁ ל־Drive" makes a Google Doc in "האוהל · פתקים" through the existing
+  `/api/auth/login?drive=1` (drive.file, sealed in `google_tokens`). Routes appended: `GET /api/notes/drive`,
+  `POST /api/notes/:id/drive`; columns `notes.drive_id`, `notes.drive_at`. `mail.mailStatus` now counts Gmail as
+  connected only with the Gmail scope, since a Drive-only grant shares the row. **For the master:** a review of the
+  token use. It was not tried against Google (sign-in needs port 8788), and the Drive upload needs a test on a preview.
+- **(6) Settings**: in the owner's order, kept per person (prefs `ui`, `access`, `look`, `me`, `daemon`).
+  **For the master:** `public/settings/apply.js` defines `H.applySettings()`, `H.reducedMotion()`, `H.vibrate()`,
+  `H.soundsOn()`; please run it from `common.js` right after the prefs load (inline it, or `loadOnce` it early), so
+  every page gets the text size and the marks before it paints. **For design:** CSS for `:root[data-spacing="wide"]`,
+  `[data-font="readable"]`, `[data-contrast="high"]`, `[data-motion="reduce"]`, `[data-palette="…"]` (the palettes'
+  ids go in `PALETTES` in settings.js); in `settings.css`, `.st-sec`, `.st-choices` / `.st-jump` (rows of `.chip`, the
+  chosen one `aria-checked="true"`), `.st-services-grid`, `.st-field`, `.st-skins`, `.st-soon`. The inline rules in
+  settings.js only hold the layout until then.
+- **(10) Songbook**: the reader is the hub's flip sheet (`H.sheet`, so `/songs/` loads `sheet.css` and `sheet.js`; the
+  old `#reader` section is gone, and the guide's `song-reader` mark moved to the sheet's content); ❤ on a double tap or
+  ♡ (prefs `songs.favs`, links only); "🎸 אני מנגן" (prefs `songs.plays`); delete from the reader. In
+  `public/assets/music.js`, "the words are in the songbook" is a side popup `.mu-peek` that slides in and out (inline
+  styles until design). **For design:** `.scard .fav`, `.chip.plays`, `.heart-burst`, `.mu-peek`, `.songs-sheet`.
+  Shared songbooks are not built: they need a sharing model (between households, by link?), which goes to the master
+  first.
+- **(11) The food portal's slider**: `GET /api/food/highlights` (route appended, `server/food.ts`, 11 tests in
+  `server/test-food.mjs`): what goes off within three days in the household's fridges, then its own recipes that use
+  it, then recent ones. `public/food/slider.js` puts it under the header. **For design:** `.food-slider`, `.fs-track`,
+  `.fs-item` (`.fs-fridge.soon`, `.gone`, `.fs-recipe`). **For the master:** add `node server/test-food.mjs` to
+  `npm test`. Restaurants: a proposal for the owner in `docs/ai/restaurants.md`; nothing built.
+- **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
+Status: done (on `ai-features`), except the items marked for others.
+
 ## 2026-11-12 – The calculator without AI: percentages, currencies, fractions, equations (ai-features → master, design)
 
 The second tool of `docs/ai/without-ai.md`. The calculator reads "15% מ-80", "100 דולר בשקלים" / "$50 + 20 €" (today's

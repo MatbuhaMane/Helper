@@ -13,6 +13,7 @@ import * as designImages from '../../server/design-images';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
+import * as food from '../../server/food';
 import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
@@ -180,6 +181,7 @@ route('DELETE', '/api/fridges/:id', fridge.deleteFridge);
 route('GET', '/api/fridges/:id/items', fridge.listItems);
 route('POST', '/api/fridges/:id/ops', fridge.applyOps);
 route('GET', '/api/fridges/:id/history', fridge.history);
+route('GET', '/api/food/highlights', food.highlights);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);

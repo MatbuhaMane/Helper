@@ -11,6 +11,30 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Guests can join once new accounts are AI-limited; the beta's stop condition is updated (business)
+
+**What changed:** the owner decided that an invitation does not admit guests until AI limits or credits exist (master's
+entry below). That makes the viral coefficient in business decision 10 unmeasurable for now.
+
+1. **New accounts get no server AI beyond the one-time trial credits (about ₪1–2 of AI cost). Once that limit exists,
+   an invitation may admit guests.**
+   - Why: it is the fastest way to open the viral loop without waiting for purchases and packs. The free core has no
+     server AI anyway (the vision), so this only brings it forward.
+   - Affects:
+     - ai-features: a per-account AI allowance and trial credits, with no purchase flow needed yet; AI buttons invite
+       the user to connect their own AI or use credits.
+     - master: admitting invited guests when the limit is in place.
+   - Status: Decided (the owner). The order of the work is the master's call.
+2. **Update to business decision 10: until guests can join, the three-month check uses the RSVP rate and gatherings
+   per family instead of the viral coefficient.**
+   - The interim targets: at least 50% of opened links RSVP, and at least one gathering a month per active family.
+     Both are already counted in `gathering_stats`.
+   - Why: the original condition cannot be measured while guests have no accounts.
+   - Affects: none (measurement only).
+   - Status: Provisional. The viral coefficient (0.3 or more) returns to the condition once guests can join.
+
+Details: `docs/business/gathering.md` section 7, `docs/business/plan.md` stage 4.
+
 ## 2026-11-12 – The family gathering merged and live; guests stay without accounts (master)
 
 Merged ai-features' gathering (07c4511) after review: the invitation routes answer without a session, keyed by the link
@@ -72,7 +96,8 @@ The owner approved all fifteen recommendations from the business session's self-
     - Why: prove the viral loop first, and earn trust in the second community properly.
     - Affects: master (translation timing), design.
     - Status: Provisional. Revisit after three months: stop and rethink if the viral coefficient is below 0.3 and fewer
-      than two members of an average family are active each week.
+      than two members of an average family are active each week. **Updated 2026-11-12:** until guests can join, the
+      RSVP rate and gatherings per family stand in for the viral coefficient (see the entry at the top).
 11. **The north-star metric is family members active each week, per family; the secondary one is gatherings
     coordinated.**
     - Why: it measures daily use and the owner's goal of meeting.

@@ -81,12 +81,13 @@
   /* ---------- 3. connections: every service in one place ---------- */
   const servicesBox = section('services', 'חיבור לשירותים');
   async function drawServices() {
-    let ai, spotify = null, mail = null, feed = null;
+    let ai, spotify = null, mail = null, feed = null, drive = null;
     try { ai = await api('/api/me/ai'); } catch (e) { return say(e); }
     await Promise.all([
       api('/api/music/status').then((r) => { spotify = r.spotify; }).catch(() => {}),
       api('/api/mail/status').then((r) => { mail = r; }).catch(() => {}),
       api('/api/calendar/feed').then((r) => { feed = r.feed; }).catch(() => {}),
+      api('/api/notes/drive').then((r) => { drive = r; }).catch(() => {}),
     ]);
     const row = (p) => {
       const has = ai.keys[p.id];
@@ -126,7 +127,7 @@
           spotify.configured ? (spotify.connected ? '/' : '/api/music/spotify/login?next=/settings/%23services') : null, spotify.connected ? 'לנגן' : 'חיבור') : null,
         mail ? link('Gmail', mail.connected ? 'מחובר לסידור המייל' : 'לא מחובר', mail.connected, '/mail/', mail.connected ? 'לסידור המייל' : 'חיבור') : null,
         link('לוח השנה בגוגל', feed ? 'יש קישור מנוי פעיל' : 'אין קישור מנוי', !!feed, '/tools/calendar/', feed ? 'ניהול' : 'יצירת קישור'),
-        link('Google Drive', 'בקרוב: שמירת פתקים ב־Drive שלך', false, null, null))].filter(Boolean));
+        drive ? link('Google Drive', drive.connected ? 'מחובר: פתקים נשמרים ב־Drive שלך' : 'לא מחובר. מתחברים בפעם הראשונה ששומרים פתק ב־Drive.', drive.connected, '/tools/notes/', 'לפתקים') : null)].filter(Boolean));
     if (location.hash === '#services') servicesBox.scrollIntoView({ block: 'start' });
   }
 

@@ -145,6 +145,8 @@ route('GET', '/api/notes', notes.list);
 route('POST', '/api/notes', notes.create);
 route('PUT', '/api/notes/:id', notes.update);
 route('DELETE', '/api/notes/:id', notes.remove);
+route('GET', '/api/notes/drive', notes.driveStatus);
+route('POST', '/api/notes/:id/drive', notes.toDrive);
 
 /* בידור: recommendations by medium, with where to watch */
 route('GET', '/api/fun/picks', fun.picks);

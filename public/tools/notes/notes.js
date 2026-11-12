@@ -2,7 +2,9 @@
    Text marked anywhere on the site comes here with "שמירה כפתק" (assets/capture.js), with a link back to where it was.
    Editing (vision batch 4, item 5): a note changes only when it is saved ("שמירה", or Ctrl+S), so an existing note is never
    spoiled by accident. Closing with changes asks "לבטל את השינויים?", leaving the page asks too, and until then the draft
-   is kept on this device. A new note reaches the server only when it is first saved. A star puts a note first. */
+   is kept on this device. A new note reaches the server only when it is first saved. A star puts a note first.
+   "☁ ל־Drive" saves a note as a Google Doc in the person's own Drive (drive.file: the helper sees only what it made);
+   the first time, Google asks them, and they come back to the same note with the save done. */
 (async () => {
   const { el, api, toast } = H;
   await H.requireLogin();
@@ -62,6 +64,28 @@
         starBtn(n))))));
   }
 
+  /** a note to the person's Drive: the first time, Google's own consent (drive.file), then back here to finish */
+  async function toDrive(n, btn) {
+    if (open?.note === n && open.changed() && !(await open.save())) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'שומר ב־Drive…'; }
+    try {
+      const r = await api(`/api/notes/${n.id}/drive`, { method: 'POST', body: {} });
+      n.drive = { at: Date.now() };
+      toast('נשמר ב־Drive שלך', 'לפתוח', () => window.open(r.url, '_blank', 'noopener'));
+    } catch (e) {
+      if (e.code === 'drive_not_connected') {
+        const back = `/tools/notes/?open=${encodeURIComponent(n.id)}&drive=1`;
+        H.modal(el('h2', {}, 'שמירה ב־Google Drive'),
+          el('p', {}, 'בפעם הראשונה Google ישאל אם לתת לאוהל גישה ל־Drive שלך.'),
+          el('p', { class: 'muted' }, 'הגישה היא רק לקבצים שהאוהל עצמו יוצר: הוא לא רואה שום דבר אחר ב־Drive. הפתקים יישמרו בתיקייה "האוהל · פתקים".'),
+          el('div', { class: 'nt-modal-acts' },
+            el('a', { class: 'btn primary', href: `/api/auth/login?drive=1&next=${encodeURIComponent(back)}` }, 'להמשיך ל־Google'),
+            el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו')));
+      } else toast('לא נשמר ב־Drive – נסו שוב בעוד רגע');
+    }
+    if (btn) { btn.disabled = false; btn.textContent = '☁ ל־Drive'; }
+  }
+
   let drawStar = null;
   /** open a note to edit; `draft` brings back what was typed and not saved (on this device) */
   function edit(n, draft) {
@@ -112,6 +136,8 @@
       el('div', { class: 'nt-ed-head', style: 'flex-wrap:wrap' },   // (on a phone the buttons go to a second line; design styles it)
         el('button', { class: 'btn ghost small nt-back', type: 'button', onclick: () => leave() }, '‹ כל הפתקים'),
         starSlot, el('span', { class: 'spacer' }), state, saveBtn,
+        n.id ? el('button', { class: 'btn ghost small nt-drive', type: 'button', title: n.drive ? 'נשמר ב־Drive. שמירה נוספת מעדכנת את אותו קובץ.' : 'שמירה כקובץ ב־Google Drive שלך',
+          onclick: (e) => toDrive(n, e.currentTarget) }, '☁ ל־Drive') : null,
         n.id ? el('button', { class: 'btn ghost small', type: 'button', onclick: async () => {
           if (!confirm('למחוק את הפתק?')) return;
           await api(`/api/notes/${n.id}`, { method: 'DELETE' });
@@ -162,5 +188,12 @@
     if (n) { edit(n, draft); toast('המשכתי מהטיוטה שלא נשמרה'); return; }
     keepDraft(null);
   }
-  if (want) { const n = notes.find((x) => x.id === want); if (n) edit(n); }
+  if (want) {
+    const n = notes.find((x) => x.id === want);
+    if (n) {
+      edit(n);
+      // back from Google's consent: finish the save it was for
+      if (new URLSearchParams(location.search).get('drive') === '1') { history.replaceState(null, '', '/tools/notes/'); toDrive(n, editor.querySelector('.nt-drive')); }
+    }
+  }
 })();

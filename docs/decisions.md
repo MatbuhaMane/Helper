@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The family tree on a trusted device; special actions still ask (master, the owner approved)
+
+Vision's batch 2 item 4 ("the family tree opens freely after the first sign-in"), made safe and approved by the owner.
+The vault's encryption does not change (the key is a Worker secret; a passkey never decrypted anything – it is a gate).
+A session that unlocks the vault becomes a **trusted device for 30 days**, renewed on each use: the tree (people,
+relationships, roles, the forest), editing people and links, and non-private details open there without a touch.
+**Every time** a fresh unlock (passkey, or a Google sign-in from the last 10 minutes): documents and files, private items,
+changing privacy, linking trees, any delete, export. Settings get a "מכשירים מוכרים" list to revoke a device at once.
+Untrusted sessions are as before. Built by ai-features in `server/vault/index.ts`, reviewed by the master. Status: Decided (the owner), assigned.
+
 ## 2026-11-12 – The tools menu's arrange mode, and the ring's three fixed items plus pins (design, vision batch 2, items 6 and 12)
 
 As the master assigned:
@@ -41,6 +51,19 @@ fire with its five pictures in `public/assets/campfire/`. **For the master:** `p
 `/assets/campfire-strip.webp` – please replace it in `ASSETS` with `/assets/campfire.css`, `/assets/campfire.js`,
 `/assets/campfire/base.webp` and `/assets/campfire/flame-1…4.webp`; design deletes the strip once that is live.
 Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the sw.js line proposed.
+
+## 2026-11-12 – The beta's three months start at the first real gathering (business)
+
+**Decision:** the clock for the three-month beta check (business decision 10) starts on the day the owner sends the first
+real gathering to the family. Test gatherings don't count. The check is three months after that day.
+
+**Why:** the beta measures real family use. The loop has been complete since today, but nothing real has been sent
+yet.
+
+**Affects:** none. When the first real gathering goes out, the owner tells the business session (or it reads the date
+from `gatherings`), and the check date is recorded here and in `docs/business/plan.md`.
+
+**Status:** Decided (the owner). The start date is still to come.
 
 ## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
 
@@ -312,6 +335,66 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)
+
+**Decided:**
+- Every tool that uses AI also has a version that is not smart but still useful, for users with no AI connection and no
+  credits. It can be built from templates, search, rules or forms.
+- The invitation to connect an AI or buy credits comes in addition to that version, never instead of it.
+
+This extends the earlier decisions: "The app works without AI, in a simpler version" and "A button for an AI ability
+never looks broken" (the entry "Product direction").
+
+**Affects:**
+- ai-features: every AI tool, existing and new, including the recipe book, the diets and the weather.
+- Design: how the two versions look side by side.
+- Vision: the goal-management spec.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The PC guide and the mail organizer: the simple path, through the user's own AI (vision, the owner)
+
+**Decided:**
+- Both tools are developed on the simple path that ai-features assessed, about half a day each.
+  - **The PC guide:** a copy button for the rules, a checklist with progress, a Mac variant, and a "how did it go" step.
+  - **A public mail organizer:** like the PC guide, it runs on the user's own Claude with its Gmail connector, under our
+    safety rules: label instead of delete, preview first, and an undo list.
+- The family's current mail tool (`server/mail.ts`, on the owner's keys) stays as it is.
+- Our own public Gmail tool is put off: it needs the restricted `gmail.modify` scope, Google's paid security assessment,
+  and our AI.
+
+**Why:** the owner's condition: "if it is simple, develop it; if it is very complex, keep it for later". It fits
+`closed-questions.md` 12 (in the public version, only through the user's own agent).
+
+**Affects:** ai-features.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The family tree opens freely after the first sign-in; the ring and the top bar are rebuilt (vision, the owner)
+
+Three decisions, confirmed by the owner one sentence at a time. The rest of the owner's notes from the same list are
+instructions, sent in the vision session's batch 2 (`docs/vision/batch.md`).
+
+1. **The family tree opens without asking again.** After the first sign-in on a device, the family tree opens without a
+   passkey. Only special actions ask each time: opening sealed vault documents, changing privacy, linking trees, deleting
+   and exporting.
+   - Affects: the master (the vault's security: where the key lives, and the trade-off; explain it to the owner and
+     propose a safe way) and ai-features (`family.js`, `server/vault/index.ts`).
+2. **The home page's ring around the campfire has only three fixed items:** the family tree, tools and settings.
+   Everything else is pinned to the ring by each user with a long press in the tools box, which holds every menu. The
+   choice is saved per user (`H.prefs`).
+   - Affects: ai-features (pinning and saving), design, the master (`public/index.html`).
+3. **The top bar keeps five items:**
+   - בית;
+   - עץ המשפחה;
+   - ניווט: a dropdown to the site's parts;
+   - כלים: a dropdown to every tool;
+   - הגדרות: a gear icon.
+   - The phone's bottom tab bar has the same five items (the owner).
+   - Affects: the master (`NAV` in `common.js`) and design.
+
 Status: Decided (the owner).
 
 ## 2026-11-12 – One visual style for everything; images are made through the Gemini API (vision, the owner)

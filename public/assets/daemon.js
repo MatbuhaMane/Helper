@@ -1455,8 +1455,7 @@
       return;
     }
     // a part of the tent
-    // (only when it is not there: loadOnce waits forever on a script the page loaded with its own <script> tag)
-    if (!H.APPS) try { await H.loadOnce('/assets/apps.js'); } catch (_) { /* the menu still has the tip */ }
+    try { await H.loadOnce('/assets/apps.js'); } catch (_) { /* the menu still has the tip */ }
     // its name and the words people use for it count twice its description; one word of a description is not enough
     const apps = (H.APPS || []).map((a) => [a, 2 * hits(said, wordsOf(`${a.name} ${SYN[a.href] || ''}`)) + hits(said, wordsOf(a.sub))]).sort((a, b) => b[1] - a[1]);
     let say, actions;

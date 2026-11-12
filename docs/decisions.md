@@ -11,6 +11,34 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The AI limit's scope: new accounts only, trial credits used silently, today's family unlimited (business)
+
+**Decision** (the owner, relayed by the master):
+- The AI limit applies to new accounts only.
+- A new account simply starts using AI on its trial credits, with no message that it is working on credit.
+- Connecting one's own AI service, or buying credits, lives in the app's settings under "חיבור לשירותים".
+- Today's family members, the first users, have no limit at all, at the owner's expense.
+
+The owner's words: "אני רוצה שמשתמשים חדשים באפליקציה פשוט יתחילו להשתמש בה על חשבון הקרדיט שקיבלו מתנה באופן
+streamline בלי הודעה שהם עובדים על קרדיט ... לגבי בני המשפחה שלי ... איני רוצה שתהיה הגבלת שימוש כלל, על חשבוני."
+
+**Why:**
+- New users get a smooth start.
+- The family is the beta, and the owner funds it.
+
+**Affects:**
+- ai-features: the allowance applies only to accounts created from now on, and nothing is shown while trial credits
+  last. When they run out, the inviting AI buttons (an earlier decision) point to "חיבור לשירותים".
+- design: the "חיבור לשירותים" section in settings.
+- master: the order of the work, which the master set as: the room merge, then the allowance and ledger, then guest
+  sign-up, then gifts.
+
+**Status:** Decided (the owner).
+
+**One interaction for the owner to settle:** business decision 2 shows an estimate before an expensive AI action, and the
+gift decision sends the recipient a note. The proposal is that both apply only once a user has bought credits or
+received a gift. Trial users see nothing until their credits run out.
+
 ## 2026-11-12 – The owner can gift credits to chosen users from the admin page (business)
 
 **Decision:** an owner-only action on the admin page (the moon's secret, an easter egg) gives credits to a chosen user,

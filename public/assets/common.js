@@ -398,8 +398,13 @@
   /** a script of our own, once per page */
   function loadOnce(src) {
     const had = document.querySelector(`script[src="${src}"]`);
-    if (had) return had.dataset.loaded ? Promise.resolve() : new Promise((ok, no) => { had.addEventListener('load', ok); had.addEventListener('error', no); });
-    return new Promise((ok, no) => { const s = el('script', { src }); s.addEventListener('load', () => { s.dataset.loaded = '1'; ok(); }); s.addEventListener('error', no); document.head.append(s); });
+    if (had) {
+      if (had.dataset.loaded) return Promise.resolve();
+      // a page's own <script> tag (not added here): it has run by the time the document is parsed (a "load" already passed)
+      if (!had.dataset.dyn) return document.readyState === 'loading' ? new Promise((ok) => document.addEventListener('DOMContentLoaded', () => ok(), { once: true })) : Promise.resolve();
+      return new Promise((ok, no) => { had.addEventListener('load', ok); had.addEventListener('error', no); });
+    }
+    return new Promise((ok, no) => { const s = el('script', { src, 'data-dyn': '1' }); s.addEventListener('load', () => { s.dataset.loaded = '1'; ok(); }); s.addEventListener('error', no); document.head.append(s); });
   }
 
   /* Glass modal shared by apps */

@@ -61,6 +61,7 @@
 .fv-priv { display: inline-flex; gap: 6px; align-items: center; font-size: .88rem; color: var(--muted); }
 .fv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .fv-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); display: grid; gap: 6px; }
+.fv-item > .btn { justify-self: start; }   /* a button in a card keeps its own width (a grid would stretch it) */
 .fv-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
 .fv-item-head b { font-weight: 500; overflow-wrap: anywhere; }
 .fv-note { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }

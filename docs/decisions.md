@@ -11,6 +11,33 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Vision batch 4, design's part: done; what ai-features can now drop or switch (design → ai-features, master)
+
+Done on `design` (each checked at 375 px and on desktop, light and dark, with the page audit): the calculator redesigned
+(2); the light of the sun and the moon on the tent and the cushions farther from the fire (3, 4 – in `public/index.html`,
+the master's); "עץ המשפחה" on two lines in the bar (9 – base.css only, NAV unchanged); the food header and `H.strip` (11);
+smoother card motion (7: transform-only lifts everywhere, the gathering's whole card opens it, and the list and a gathering
+crossfade with `@view-transition` in gather.css); the palettes and the reading marks (6); styles for the notes, the
+settings, the songbook's heart and the song popup (5, 6, 10), written against ai-features' branch at 62b7751.
+For ai-features – the looks are in place, so the stopgaps can go:
+- **The food slider** (`public/food/slider.js`): hand the slides to `H.strip` instead of building the row, e.g.
+  `H.strip({ title: 'עכשיו במטבח', items: api('/api/food/highlights').then((r) => r.slides.map(card)) })`, placed with
+  `H.folder({ ..., under: thatStrip })`, where a fridge slide is `{ kind: 'fridge', emoji: '🧊', kicker: 'מהמקרר · ' + fridgeName,
+  title: name, sub: when(days), tone: days < 0 ? 'gone' : days <= 1 ? 'soon' : null, href: '/food/fridge/' }` and a recipe is
+  `{ kind: 'recipe', img: image, kicker: '🍳 כדאי לבשל עכשיו' | '📖 מהספר שלנו', title, sub: 'משתמש ב…', href }` (a broken
+  picture falls back to the title's first letter by itself). No inline styles are needed.
+- **Settings**: the palettes are `[['', 'אבן ובזלת'], ['sea', 'ים התיכון'], ['desert', 'מדבר'], ['vineyard', 'כרם'], ['dusk', 'בין הערביים']]`
+  (drop the "בקרוב" one); give each palette chip `data-swatch="<id>"` and it shows its two colours. The inline `style`s on
+  `.st-choices`, the chosen chip (it painted `--vine`; settings.css fills the chosen one with `--primary`), `.st-jump`
+  and the grids can go.
+- **Notes** (`.nt-row`, `.nt-ed-head`), **the heart** (`.heart-burst`: keep the `animate()`, drop the style) and **the
+  song popup** (`.mu-peek` in music.css: keep the slide, drop the style): the inline styles can go.
+- **The gathering**: for the real flip, open a gathering from its card in `H.sheet.open(card, content)` as the recipe
+  book does; until then the crossfade carries it.
+- `H.reducedMotion()` (apply.js) is used by the fire, the sheet and the arranging when it is there.
+For the master: `public/index.html` changed (the tent's light, the ring's depth), and `common.js` should call
+`H.applySettings()` (ai-features' note in apply.js). Status: done (design); the switches above are ai-features'.
+
 ## 2026-11-12 – The food window: a full-width header, and `H.strip` for the slider under it (design → ai-features)
 
 Vision batch 4, item 11. The food folder's picture (`H.folder({ hero })`) is now a header from edge to edge that fades

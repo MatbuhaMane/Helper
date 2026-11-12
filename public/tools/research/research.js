@@ -2,6 +2,8 @@
    them on one screen; the inbox of what was captured from anywhere (/capture/); and a research's notes (the hub's own
    notes – one note in several researches, with [[links]] and backlinks), questions, sources (by DOI or a search of
    OpenAlex, with an open copy and a retraction warning) and export (Markdown, BibTeX). No AI in this step.
+   Step 3, shared research: invitations on the home screen, members and roles, comments and the history (with restore);
+   what a role may not do is not offered (the server checks it again).
    The server: /api/research/* (server/researches.ts). The look is design's (.rx-*); inline rules hold the layout until then. */
 (async () => {
   const { el, api, toast } = H;
@@ -19,6 +21,22 @@
   const snip = (s, n = 140) => String(s || '').replace(/\s+/g, ' ').slice(0, n);
   // a citation's *italics* as <i> (the text itself is never HTML)
   const cite = (s) => el('span', { dir: 'ltr', class: 'rx-cite' }, ...String(s).split(/\*([^*]+)\*/).map((p, i) => (i % 2 ? el('i', {}, p) : p)));
+  const badge = (text, title) => el('small', { class: 'rx-role', title: title || '', style: 'border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;white-space:nowrap' }, text);
+  const when = (t) => new Date(t).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  /** one of my notes into a research; in a shared research a private note asks first whether the others may see it */
+  async function addExisting(researchId, noteId) {
+    try { await api(`/api/research/r/${researchId}/notes`, { body: { noteId } }); return true; }
+    catch (e) {
+      if (e.code !== 'ask_share') throw e;
+      const share = await new Promise((done) => H.modal(el('h2', {}, 'לשתף את הפתק?'),
+        el('p', {}, 'המחקר משותף. אם הפתק ישותף, כל מי שבמחקר יראה אותו. אם לא, הם יראו רק שיש כאן פתק פרטי שלך.'),
+        el('div', { style: ROW },
+          el('button', { class: 'btn primary', type: 'button', onclick: () => { H.closeModal(); done(true); } }, 'לשתף'),
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => { H.closeModal(); done(false); } }, 'להשאיר פרטי'))));
+      await api(`/api/research/r/${researchId}/notes`, { body: { noteId, share } });
+      return true;
+    }
+  }
 
   async function route() {
     openId = new URLSearchParams(location.search).get('r') || openId;
@@ -39,10 +57,12 @@
       el('a', { class: 'folder-back', href: '/tools/' }, '‹ כלים'),
       el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap' },
         el('h1', { style: 'margin:0' }, 'עוזר מחקר'), el('button', { class: 'btn primary', type: 'button', onclick: () => newResearch() }, '+ מחקר חדש')),
+      L.invitations.length ? invitationsCard() : null,
       L.inbox.length ? inboxCard() : null,
       el('h2', { style: 'margin:4px 0 0' }, 'המחקרים שלי'),
       L.researches.length ? el('div', { class: 'rx-list', style: GRID }, L.researches.map((r) => el('button', { type: 'button', class: 'card rx-item', style: CARD + ';text-align:start;font:inherit;color:inherit;cursor:pointer', onclick: () => go(r.id) },
         el('b', { dir: 'auto', style: 'font-size:1.05rem' }, r.title), el('small', { class: 'muted' }, PURPOSE[r.purpose] || ''),
+        r.role !== 'owner' ? el('small', { class: 'rx-shared' }, `👥 של ${r.owner} · `, badge(ROLE[r.role] || r.role)) : r.members ? el('small', { class: 'rx-shared muted' }, `👥 משותף עם ${r.members}`) : null,
         r.aim ? el('small', { dir: 'auto' }, snip(r.aim, 110)) : null,
         el('small', { class: 'muted' }, `${r.notes} פתקים · ${r.sources} מקורות · ${r.open} שאלות פתוחות`))))
         : el('div', { class: 'card rx-empty', style: CARD + ';text-align:center' }, el('p', { style: 'margin:0' }, 'עוד אין מחקרים.'),
@@ -53,12 +73,25 @@
         : el('p', { class: 'muted', style: 'margin:0' }, 'אין שאלות פתוחות. שאלה נפתחת בתוך מחקר, ומופיעה כאן עד שנענית.'),
       el('p', { class: 'small muted' }, '📥 אפשר לשמור לכאן מכל מקום: בטלפון "שיתוף" אל האוהל, או מהפתקים.')));
   }
+  const ROLE = { owner: 'בעלים', editor: 'עורך', contributor: 'תורם', reader: 'קורא' };
+  const ROLE_HELP = { editor: 'עורך: מוסיף ומתקן הכול, משחזר מההיסטוריה, מזמין קוראים', contributor: 'תורם: מוסיף פתקים, שאלות, מקורות וטיוטות, ומתקן רק את שלו', reader: 'קורא: רואה ומגיב' };
+  function invitationsCard() {
+    return el('section', { class: 'card rx-invites', style: CARD },
+      el('b', {}, `✉ הזמנות למחקרים (${L.invitations.length})`),
+      el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, L.invitations.map((i) => el('li', { style: 'display:grid;gap:4px' },
+        el('span', {}, `${i.from} מזמין אותך ל"`, el('b', { dir: 'auto' }, i.title), `" בתור ${i.roleName}`),
+        el('small', { class: 'muted' }, ROLE_HELP[i.role] || ''),
+        i.outside ? el('small', { class: 'muted' }, 'המזמין לא מבני הבית שלך: מצטרפים רק אם רוצים.') : null,
+        el('div', { style: ROW },
+          el('button', { class: 'btn small primary', type: 'button', onclick: async () => { await api(`/api/research/r/${i.id}/join`, { body: { accept: true } }); toast('הצטרפת למחקר'); go(i.id); } }, 'להצטרף'),
+          el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { await api(`/api/research/r/${i.id}/join`, { body: { accept: false } }); route(); } }, 'לא תודה'))))));
+  }
   function inboxCard() {
     return el('section', { class: 'card rx-inbox', style: CARD },
       el('b', {}, `📥 תיבת נכנסים (${L.inbox.length})`),
       el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, L.inbox.map((n) => {
-        const pick = el('select', { 'aria-label': 'לאיזה מחקר', style: INPUT }, el('option', { value: '' }, 'למחקר…'), L.researches.map((r) => el('option', { value: r.id }, r.title)));
-        pick.onchange = async () => { if (!pick.value) return; await api(`/api/research/r/${pick.value}/notes`, { body: { noteId: n.id } }); toast('נוסף למחקר'); route(); };
+        const pick = el('select', { 'aria-label': 'לאיזה מחקר', style: INPUT }, el('option', { value: '' }, 'למחקר…'), L.researches.filter((r) => r.role !== 'reader').map((r) => el('option', { value: r.id }, r.title)));
+        pick.onchange = async () => { if (!pick.value) return; await addExisting(pick.value, n.id); toast('נוסף למחקר'); route(); };
         return el('li', { class: 'rx-inbox-item', style: 'display:grid;gap:4px;padding-block-end:8px;border-block-end:1px solid var(--line)' },
           el('b', { dir: 'auto' }, n.title), n.body ? el('small', { dir: 'auto', class: 'muted' }, snip(n.body)) : null,
           n.source ? el('a', { href: n.source.url, target: '_blank', rel: 'noopener', class: 'small', dir: 'auto' }, '↗ ' + (n.source.title || n.source.url)) : null,
@@ -69,27 +102,107 @@
 
   /* ---------- a research ---------- */
   function drawResearch() {
-    const r = R.research;
+    const r = R.research, owner = R.role === 'owner';
     const style = el('select', { 'aria-label': 'סגנון הציטוט', style: INPUT, onchange: async () => { await api(`/api/research/r/${r.id}`, { method: 'PUT', body: { style: style.value } }); route(); } },
       R.styles.map(([v, n]) => el('option', { value: v, selected: v === r.style }, n)));
     root.replaceChildren(el('div', { class: 'rx rx-one', style: 'max-inline-size:1000px;margin:0 auto;padding-block:14px 40px;display:grid;gap:14px' },
       el('button', { class: 'folder-back', type: 'button', style: 'background:none;border:0;cursor:pointer;font:inherit;text-align:start', onclick: () => go(null) }, '‹ כל המחקרים'),
       el('div', { style: 'display:grid;gap:4px' },
         el('h1', { dir: 'auto', style: 'margin:0' }, r.title),
-        el('small', { class: 'muted' }, PURPOSE[r.purpose] || ''),
+        el('small', { class: 'muted' }, PURPOSE[r.purpose] || '', R.role !== 'owner' ? ' · ' : '', R.role !== 'owner' ? badge('אני ' + R.roleName, ROLE_HELP[R.role]) : null),
         r.aim ? el('p', { dir: 'auto', style: 'margin:0' }, r.aim) : null,
         el('div', { style: ROW },
-          el('button', { class: 'btn ghost small', type: 'button', onclick: () => newResearch(r) }, '✎ עריכה'),
-          el('label', { style: ROW }, el('span', { class: 'small muted' }, 'ציטוט:'), style),
+          owner ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => newResearch(r) }, '✎ עריכה') : null,
+          owner ? el('label', { style: ROW }, el('span', { class: 'small muted' }, 'ציטוט:'), style) : null,
           el('a', { class: 'btn ghost small', href: `/api/research/r/${r.id}/export?format=md`, download: '' }, '⬇ Markdown'),
           el('a', { class: 'btn ghost small', href: `/api/research/r/${r.id}/export?format=bib`, download: '' }, '⬇ BibTeX'),
-          el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm(`למחוק את המחקר "${r.title}"? הפתקים עצמם יישארו בפתקים.`)) return; await api(`/api/research/r/${r.id}`, { method: 'DELETE' }); go(null); } }, 'מחיקה'))),
-      el('div', { class: 'rx-persist', style: ROW },
+          owner ? el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm(`למחוק את המחקר "${r.title}"? הפתקים עצמם יישארו בפתקים.`)) return; await api(`/api/research/r/${r.id}`, { method: 'DELETE' }); go(null); } }, 'מחיקה') : null)),
+      sharingSection(),
+      owner ? el('div', { class: 'rx-persist', style: ROW },
         r.goalId ? el('a', { class: 'btn small', href: '/tools/tasks/' }, '🎯 המחקר במטרות שלי')
           : el('button', { class: 'btn small', type: 'button', title: 'צעדים יומיים, "היום", סיכום שבועי ו־badges – כמו כל מטרה', onclick: async () => { await api(`/api/research/r/${r.id}/goal`, { body: {} }); toast('המחקר הפך למטרה: הצעדים שלו יופיעו ב"היום"'); route(); } }, '🎯 להפוך למטרה'),
         r.doneAt ? el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { await api(`/api/research/r/${r.id}/done`, { body: { done: false } }); route(); } }, '✓ הסתיים · לפתוח שוב')
-          : el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('לסמן שהמחקר הסתיים?')) return; await api(`/api/research/r/${r.id}/done`, { body: { done: true } }); toast('🏅 גשש: סיימת מחקר'); route(); } }, '🏁 סיימתי את המחקר')),
-      directionsSection(), notesSection(), threadsSection(), sourcesSection(), draftsSection(), journalSection()));
+          : el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('לסמן שהמחקר הסתיים?')) return; await api(`/api/research/r/${r.id}/done`, { body: { done: true } }); toast('🏅 גשש: סיימת מחקר'); route(); } }, '🏁 סיימתי את המחקר')) : null,
+      directionsSection(), notesSection(), threadsSection(), sourcesSection(), draftsSection(), commentsSection(), journalSection(), historySection()));
+  }
+
+  /* ---------- sharing: the members and their roles ---------- */
+  function sharingSection() {
+    const r = R.research, owner = R.role === 'owner';
+    if (!R.shared && !owner && !R.can.invite) return null;
+    const email = el('input', { type: 'email', dir: 'ltr', placeholder: 'כתובת המייל שלו באוהל', 'aria-label': 'את מי להזמין', style: INPUT + ';flex:1;min-inline-size:12rem' });
+    const roles = owner ? ['editor', 'contributor', 'reader'] : ['reader'];
+    const role = el('select', { 'aria-label': 'בתור', style: INPUT }, roles.map((x) => el('option', { value: x, selected: x === (owner ? 'contributor' : 'reader') }, ROLE[x])));
+    const help = el('small', { class: 'muted' }, ROLE_HELP[role.value]);
+    role.onchange = () => { help.textContent = ROLE_HELP[role.value]; };
+    const WHY = { not_a_member: 'הכתובת הזו עוד לא באוהל. מזמינים רק מי שכבר נכנס לאוהל.', already_in: 'הוא כבר במחקר, או שכבר הוזמן.', child_outside_family: 'ילדים עובדים רק עם המשפחה: אי אפשר לצרף ילד מחוץ לבית.' };
+    const send = async () => {
+      if (!email.value.trim()) return email.focus();
+      try { const x = await api(`/api/research/r/${r.id}/members`, { body: { email: email.value.trim(), role: role.value } }); toast(x.outside ? 'ההזמנה נשלחה. הוא לא מבני הבית, אז יצטרף רק אם יאשר.' : 'ההזמנה נשלחה: הוא יראה אותה בעוזר המחקר'); route(); }
+      catch (e) { toast(WHY[e.code] || 'ההזמנה לא נשלחה'); }
+    };
+    const memberRow = (m) => {
+      const me = m.email === R.me;
+      const pick = owner && m.role !== 'owner' ? el('select', { 'aria-label': `התפקיד של ${m.name}`, style: INPUT + ';padding-block:4px', onchange: async (e) => { await api(`/api/research/r/${r.id}/members/${encodeURIComponent(m.email)}`, { method: 'PUT', body: { role: e.target.value } }); toast('התפקיד עודכן'); route(); } },
+        ['editor', 'contributor', 'reader'].map((x) => el('option', { value: x, selected: x === m.role }, ROLE[x]))) : badge(m.roleName, ROLE_HELP[m.role]);
+      return el('li', { style: ROW },
+        el('span', { style: 'flex:1;min-inline-size:8rem' }, m.name + (me ? ' (אני)' : '')),
+        m.status === 'invited' ? el('small', { class: 'muted' }, 'הוזמן, עוד לא הצטרף') : null,
+        m.outside ? el('small', { class: 'muted', title: 'לא מבני הבית' }, 'שותף מבחוץ') : null,
+        pick,
+        m.role !== 'owner' && (owner || me) ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': me ? 'לעזוב את המחקר' : `להסיר את ${m.name}`, onclick: async () => {
+          if (!confirm(me ? 'לעזוב את המחקר? אפשר לחזור רק בהזמנה חדשה.' : `להסיר את ${m.name} מהמחקר?`)) return;
+          await api(`/api/research/r/${r.id}/members/${encodeURIComponent(m.email)}`, { method: 'DELETE' });
+          if (me) go(null); else route();
+        } }, me ? 'לעזוב' : '✕') : null);
+    };
+    return el('details', { class: 'card rx-sharing', style: CARD },
+      el('summary', { style: 'cursor:pointer;font-weight:600' }, R.shared ? `👥 משותף · ${R.members.length} אנשים` : '👥 שיתוף המחקר'),
+      el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:6px' }, R.members.map(memberRow)),
+      R.can.invite ? el('div', { style: 'display:grid;gap:6px' },
+        el('div', { style: ROW }, email, role, el('button', { class: 'btn small primary', type: 'button', onclick: send }, 'להזמין')), help,
+        el('small', { class: 'muted' }, 'המוזמן מצטרף רק כשהוא מאשר. מי שמחוץ לבית הוא שותף מבחוץ, וילדים עובדים רק עם המשפחה.')) : null,
+      owner ? el('small', { class: 'muted' }, 'פתק פרטי שלך שמצטרף למחקר משותף: תישאל בכל פעם אם לשתף אותו.') : null);
+  }
+
+  /* ---------- comments: everyone in the research ---------- */
+  function commentsSection() {
+    const r = R.research;
+    if (!R.shared && !R.comments.length) return null;
+    const text = el('textarea', { rows: 2, dir: 'auto', placeholder: 'תגובה למחקר…', 'aria-label': 'תגובה', style: INPUT + ';inline-size:100%' });
+    const post = async () => { if (!text.value.trim()) return text.focus(); await api(`/api/research/r/${r.id}/comments`, { body: { on: 'research', text: text.value } }); route(); };
+    const what = (c) => c.on === 'note' ? R.notes.find((n) => n.id === c.onId)?.title : c.on === 'thread' ? R.threads.find((t) => t.id === c.onId)?.text : c.on === 'source' ? R.sources.find((s) => s.id === c.onId)?.csl?.title : null;
+    return el('section', { class: 'rx-comments', style: 'display:grid;gap:8px' },
+      el('h2', { style: 'margin:0' }, `💬 תגובות (${R.comments.length})`),
+      R.comments.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, R.comments.map((c) => el('li', { class: 'card rx-comment', style: CARD },
+        el('div', { style: ROW }, el('b', {}, c.by), el('small', { class: 'muted' }, when(c.at)), what(c) ? el('small', { class: 'muted', dir: 'auto' }, '· על ' + snip(what(c), 50)) : null,
+          c.mine || R.can.editAny ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'מחיקת התגובה', onclick: async () => { if (confirm('למחוק את התגובה?')) { await api(`/api/research/comments/${c.id}`, { method: 'DELETE' }); route(); } } }, '✕') : null),
+        el('p', { dir: 'auto', style: 'margin:0;white-space:pre-line' }, c.text)))) : null,
+      text, el('div', {}, el('button', { class: 'btn small primary', type: 'button', onclick: post }, 'שליחה')));
+  }
+  /** a comment on one thing in the research (a note, a question, a source) */
+  const commentOn = (on, onId) => el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'תגובה', onclick: async () => {
+    const t = prompt('תגובה:'); if (!t || !t.trim()) return;
+    await api(`/api/research/r/${R.research.id}/comments`, { body: { on, onId, text: t } }); toast('התגובה נוספה'); route();
+  } }, '💬');
+
+  /* ---------- the history: what changed, by whom; an editor restores ---------- */
+  const KIND = { note: 'פתק', thread: 'שאלה', source: 'מקור', draft: 'טיוטה', member: 'שותף' };
+  const ACTION = { add: 'הוסיף', edit: 'שינה', remove: 'הסיר', restore: 'שחזר' };
+  function historySection() {
+    if (!R.history.length) return null;
+    const restorable = (h) => R.can.restore && (h.action === 'remove' || h.action === 'edit') && h.kind !== 'member';
+    return el('details', { class: 'card rx-history', style: CARD },
+      el('summary', { style: 'cursor:pointer;font-weight:600' }, `🕓 היסטוריה (${R.history.length})`),
+      el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:6px' }, R.history.map((h) => el('li', { style: ROW },
+        el('small', { class: 'muted', style: 'min-inline-size:7.5em' }, when(h.at)),
+        el('span', { style: 'flex:1' }, `${h.by} ${ACTION[h.action] || h.action} ${KIND[h.kind] || h.kind}`),
+        restorable(h) ? el('button', { class: 'btn ghost small', type: 'button', title: 'להחזיר למה שהיה לפני השינוי הזה', onclick: async () => {
+          if (!confirm('להחזיר למה שהיה לפני השינוי הזה?')) return;
+          try { await api(`/api/research/history/${h.id}/restore`, { body: {} }); toast('שוחזר'); route(); }
+          catch (e) { toast(e.code === 'not_allowed' ? 'את השיתוף של פתק מחליט רק מי שכתב אותו' : 'לא הצלחתי לשחזר'); }
+        } }, '↶ שחזור') : null))),
+      R.can.restore ? null : el('small', { class: 'muted' }, 'עורך או בעלים יכולים לשחזר מכאן.'));
   }
 
   /* ---------- the AI: ✨, or an invitation when none is left ---------- */
@@ -146,7 +259,7 @@
     const create = async (body) => { const d = await api(`/api/research/r/${r.id}/drafts`, body); openDraft(d.id); };
     return el('section', { class: 'rx-drafts', style: 'display:grid;gap:10px' },
       el('h2', { style: 'margin:0' }, '✍ כתיבה'),
-      el('div', { class: 'ai-pair' },
+      !R.can.add ? null : el('div', { class: 'ai-pair' },
         el('button', { class: 'btn primary small', type: 'button', onclick: () => create({ body: { title: r.title, outline: true } }) }, 'שלד מהפתקים'),
         // the academic pack's templates: IMRaD, a seminar paper, an essay, a talk, a post (their sections, a length to aim for)
         (() => { const s = el('select', { 'aria-label': 'טיוטה מתבנית', style: INPUT, onchange: () => { if (s.value) create({ body: { title: r.title, template: s.value } }); } },
@@ -163,7 +276,8 @@
     const title = el('input', { type: 'text', value: d.title, dir: 'auto', 'aria-label': 'כותרת הטיוטה', style: INPUT + ';font-size:1.2rem;font-weight:600' });
     const text = el('textarea', { rows: 24, dir: 'auto', 'aria-label': 'הטיוטה', style: INPUT + ';inline-size:100%;line-height:1.7;font-size:1rem' });
     text.value = d.body;
-    const state = el('small', { class: 'muted', role: 'status' }, 'נשמר');
+    if (!d.mayEdit) { text.readOnly = true; title.readOnly = true; }
+    const state = el('small', { class: 'muted', role: 'status' }, d.mayEdit ? 'נשמר' : 'לקריאה בלבד');
     // the academic pack: a length to aim for, numbered headings, and a checklist before handing in
     const countWords = (s) => s.replace(/\[@[^\]]*\]|\^\[[^\]]*\]|\{#[^}]*\}|\[ref:[^\]]*\]|[#*>\-[\]()]/g, ' ').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
     const words = el('small', { class: 'rx-words muted' });
@@ -175,6 +289,7 @@
       el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:4px' }, list.map((c) => el('li', { class: c.ok ? 'ok' : 'todo' }, (c.ok ? '✓ ' : '○ ') + c.text)))); };
     let t = 0;
     const save = async () => {
+      if (!d.mayEdit) return;
       clearTimeout(t); state.textContent = 'שומר…';
       try {
         await api(`/api/research/drafts/${id}`, { method: 'PUT', body: { title: title.value.trim() || d.title, body: text.value, target: Number(target.value) || null, numbered: numbered.checked } });
@@ -206,7 +321,8 @@
     const later = () => { state.textContent = '…'; paintWords(); clearTimeout(t); t = setTimeout(save, 900); };
     title.oninput = later; text.oninput = later;
     const insert = (s) => { const a = text.selectionStart ?? text.value.length; text.value = text.value.slice(0, a) + s + text.value.slice(text.selectionEnd ?? a); text.focus(); text.setSelectionRange(a + s.length, a + s.length); later(); };
-    const preview = el('div', { class: 'rx-preview card', hidden: true, style: CARD });
+    // (no display in its inline style: an inline display would beat [hidden] and leave an empty box)
+    const preview = el('div', { class: 'rx-preview card', hidden: true, style: 'padding:14px 16px' });
     // the preview is the page itself as it exports (headings, lists, the citations written out, the bibliography)
     const showPreview = async () => {
       await save();
@@ -250,7 +366,7 @@
       text, preview,
       checks,
       el('div', { class: 'rx-export', style: ROW }, el('small', { class: 'muted' }, 'ייצוא:'), ex('md', 'Markdown'), ex('html', 'להדפסה / PDF'), ex('docx', 'Word (docx)'), ex('slides', 'שקפים'), ex('tex', 'LaTeX'), ex('bib', 'BibTeX'), toDrive,
-        el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('למחוק את הטיוטה?')) return; await api(`/api/research/drafts/${id}`, { method: 'DELETE' }); history.pushState(null, '', `?r=${d.research}`); route(); } }, 'מחיקה')),
+        d.mayEdit ? el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('למחוק את הטיוטה?')) return; await api(`/api/research/drafts/${id}`, { method: 'DELETE' }); history.pushState(null, '', `?r=${d.research}`); route(); } }, 'מחיקה') : null),
       el('p', { class: 'small muted', style: 'margin:0' }, 'כותבים ב־Markdown: # כותרת, **מודגש**, - רשימה. ציטוט [@…], הערת שוליים ^[…], תווית לכותרת {#שם} והפניה אליה [ref:שם]. "להדפסה / PDF" ו"שקפים" נפתחים בדפדפן (שומרים משם כ־PDF).')));
     drawChecks(D.checklist);
     paintWords();
@@ -281,19 +397,26 @@
         if (!title.value.trim() && !body.value.trim()) return title.focus();
         await api(`/api/research/r/${r.id}/notes`, { body: { title: title.value, body: body.value } }); route();
       } }, 'הוספה'))));
-    const existing = el('button', { class: 'btn ghost small', type: 'button', onclick: pickExisting }, '+ פתק קיים');
+    const existing = R.can.add ? el('button', { class: 'btn ghost small', type: 'button', onclick: pickExisting }, '+ פתק קיים') : null;
     return el('section', { class: 'rx-notes', style: 'display:grid;gap:10px' },
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, el('h2', { style: 'margin:0;flex:1' }, `📝 פתקים (${R.notes.length})`), existing),
-      add,
-      R.notes.length ? el('div', { style: GRID }, R.notes.map((n) => el('article', { class: 'card rx-note', style: CARD },
+      R.can.add ? add : null,
+      R.notes.length ? el('div', { style: GRID }, R.notes.map((n) => n.hidden ? el('article', { class: 'card rx-note rx-private', style: CARD },
+        el('b', { class: 'muted' }, '🔒 ' + n.title), el('small', { class: 'muted' }, 'הכותב לא שיתף את התוכן שלו.'))
+        : el('article', { class: 'card rx-note', style: CARD },
         el('b', { dir: 'auto' }, (n.starred ? '★ ' : '') + n.title),
+        R.shared && !n.mine ? el('small', { class: 'muted' }, 'מאת ' + n.authorName) : null,
         n.body ? el('p', { dir: 'auto', style: 'margin:0;white-space:pre-line' }, snip(n.body, 400)) : null,
         n.source ? el('a', { class: 'small', href: n.source.url, target: '_blank', rel: 'noopener' }, '↗ ' + (n.source.title || 'המקור')) : null,
         n.links.length ? el('small', { class: 'rx-links' }, '→ ', n.links.map((x) => x.title).join(' · ')) : null,
         n.backlinks.length ? el('small', { class: 'rx-backlinks muted' }, '← מצביעים לכאן: ', n.backlinks.map((x) => x.title).join(' · ')) : null,
         el('div', { style: ROW },
-          el('a', { class: 'btn ghost small', href: `/tools/notes/?open=${n.id}` }, 'פתיחה ועריכה'),
-          el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { await api(`/api/research/r/${r.id}/notes/${n.id}`, { method: 'DELETE' }); route(); } }, 'הסרה מהמחקר')))))
+          n.mine ? el('a', { class: 'btn ghost small', href: `/tools/notes/?open=${n.id}` }, 'פתיחה ועריכה') : n.mayEdit ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => editNote(n) }, '✎ עריכה') : null,
+          n.mine && (R.shared || R.role !== 'owner') ? el('button', { class: 'btn ghost small', type: 'button', title: n.shared ? 'כולם במחקר רואים את הפתק' : 'האחרים רואים רק שיש כאן פתק פרטי שלך', onclick: async () => {
+            await api(`/api/research/r/${r.id}/notes/${n.id}/share`, { method: 'PUT', body: { shared: !n.shared } }); toast(n.shared ? 'הפתק פרטי עכשיו' : 'הפתק משותף עכשיו'); route();
+          } }, n.shared ? '🔓 משותף' : '🔒 פרטי') : null,
+          R.shared ? commentOn('note', n.id) : null,
+          n.mayEdit ? el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { await api(`/api/research/r/${r.id}/notes/${n.id}`, { method: 'DELETE' }); route(); } }, 'הסרה מהמחקר') : null))))
         : el('p', { class: 'muted', style: 'margin:0' }, 'עוד אין פתקים במחקר. פתק יכול להיות גם בכמה מחקרים: זה אותו פתק, ותיקון בו מתעדכן בכולם.'));
   }
   async function pickExisting() {
@@ -301,9 +424,19 @@
     const q = el('input', { type: 'search', placeholder: 'חיפוש בפתקים', dir: 'auto', style: INPUT + ';inline-size:100%' });
     const list = el('div', { style: 'display:grid;gap:6px;max-block-size:50vh;overflow:auto' });
     const draw = () => list.replaceChildren(...all.filter((n) => !q.value || (n.title + ' ' + n.body).includes(q.value)).slice(0, 50).map((n) => el('button', { type: 'button', class: 'btn ghost', style: 'text-align:start;justify-content:start',
-      onclick: async () => { await api(`/api/research/r/${R.research.id}/notes`, { body: { noteId: n.id } }); H.closeModal(); route(); } }, n.title)));
+      onclick: async () => { H.closeModal(); await addExisting(R.research.id, n.id); route(); } }, n.title)));
     q.oninput = draw; draw();
     H.modal(el('h2', {}, 'פתק קיים למחקר'), el('p', { class: 'muted' }, 'אותו פתק, לא עותק: תיקון בו מתעדכן בכל מקום.'), q, list);
+  }
+
+  /** an editor fixes someone else's note in the research (it is the same note, in its writer's פתקים) */
+  function editNote(n) {
+    const title = el('input', { type: 'text', value: n.title, dir: 'auto', 'aria-label': 'כותרת', style: INPUT + ';inline-size:100%' });
+    const body = el('textarea', { rows: 10, dir: 'auto', 'aria-label': 'הפתק', style: INPUT + ';inline-size:100%' }); body.value = n.body;
+    H.modal(el('h2', {}, 'עריכת פתק'), el('p', { class: 'small muted' }, `הפתק של ${n.authorName}: התיקון יופיע גם אצלו, וההיסטוריה שומרת איך היה.`), title, body,
+      el('div', { style: ROW }, el('button', { class: 'btn primary', type: 'button', onclick: async () => {
+        await api(`/api/research/r/${R.research.id}/notes/${n.id}`, { method: 'PUT', body: { title: title.value.trim() || n.title, body: body.value } }); H.closeModal(); route();
+      } }, 'שמירה')));
   }
 
   function threadsSection() {
@@ -313,7 +446,7 @@
     q.addEventListener('keydown', (e) => { if (e.key === 'Enter') addQ(); });
     return el('section', { class: 'rx-threads-sec', style: 'display:grid;gap:10px' },
       el('h2', { style: 'margin:0' }, `🧵 שאלות וחוטים (${R.threads.filter((t) => t.status === 'open').length} פתוחות)`),
-      el('div', { style: ROW }, q, el('button', { class: 'btn small', type: 'button', onclick: addQ }, 'הוספה')),
+      R.can.add ? el('div', { style: ROW }, q, el('button', { class: 'btn small', type: 'button', onclick: addQ }, 'הוספה')) : null,
       R.threads.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, R.threads.map((t) => threadRow(t))) : null);
   }
   function threadRow(t, withResearch = false) {
@@ -324,9 +457,11 @@
         el('small', { class: 'rx-status', style: 'border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;white-space:nowrap' }, STATUS[t.status])),
       withResearch ? el('button', { type: 'button', class: 'linklike small', style: 'background:none;border:0;padding:0;color:var(--primary);cursor:pointer;font:inherit;text-align:start', onclick: () => go(t.research) }, '↩ ' + (t.researchTitle || '')) : null,
       t.answer ? el('small', { dir: 'auto' }, 'תשובה: ' + t.answer) : null,
-      el('div', { style: ROW },
+      !withResearch && t.by && t.createdBy !== R?.me && R?.shared ? el('small', { class: 'muted' }, 'מאת ' + t.by) : null,
+      t.mayEdit === false ? (withResearch ? null : el('div', { style: ROW }, R.shared ? commentOn('thread', t.id) : null)) : el('div', { style: ROW },
         t.status !== 'answered' ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => { const a = prompt('התשובה (קצרה):', t.answer || ''); if (a !== null) setStatus('answered', a); } }, '✓ נענתה') : el('button', { class: 'btn ghost small', type: 'button', onclick: () => setStatus('open') }, 'לפתוח שוב'),
         t.status === 'open' ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => setStatus('parked') }, '⏸ להשהות') : t.status === 'parked' ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => setStatus('open') }, '▶ להמשיך') : null,
+        !withResearch && R.shared ? commentOn('thread', t.id) : null,
         withResearch ? null : el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'מחיקת השאלה', onclick: async () => { if (confirm('למחוק את השאלה?')) { await api(`/api/research/threads/${t.id}`, { method: 'DELETE' }); route(); } } }, '✕')));
   }
 
@@ -362,8 +497,8 @@
     };
     return el('section', { class: 'rx-sources', style: 'display:grid;gap:10px' },
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, el('h2', { style: 'margin:0;flex:1' }, `📚 מקורות (${R.sources.length})`),
-        el('button', { class: 'btn ghost small', type: 'button', onclick: manualSource }, '+ מקור ידני')),
-      el('div', { style: ROW }, q, el('span', { class: 'ai-pair' }, el('button', { class: 'btn small primary', type: 'button', onclick: search }, 'חיפוש'),
+        R.can.add ? el('button', { class: 'btn ghost small', type: 'button', onclick: manualSource }, '+ מקור ידני') : null),
+      !R.can.add ? null : el('div', { style: ROW }, q, el('span', { class: 'ai-pair' }, el('button', { class: 'btn small primary', type: 'button', onclick: search }, 'חיפוש'),
         // ✨ focused search: the AI writes the searches from the research (or the words typed as a question)
         sparkle('✨ חיפוש ממוקד', async () => {
           out.replaceChildren(el('p', { class: 'muted' }, 'מנסח חיפושים ומחפש…'));
@@ -381,7 +516,9 @@
           s.oa ? el('a', { class: 'small', href: s.oa, target: '_blank', rel: 'noopener' }, '📄 גרסה פתוחה') : null,
           s.doi ? sparkle('✨ סיכום', () => summarize(s)) : null,
           el('button', { class: 'btn ghost small', type: 'button', onclick: () => { navigator.clipboard?.writeText(s.cite.replace(/\*/g, '')); toast('הועתק'); } }, 'העתקה'),
-          el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'הסרת המקור', onclick: async () => { if (confirm('להסיר את המקור מהמחקר?')) { await api(`/api/research/sources/${s.id}`, { method: 'DELETE' }); route(); } } }, '✕')))))
+          R.shared && s.by && s.createdBy !== R.me ? el('small', { class: 'muted' }, 'הוסיף: ' + s.by) : null,
+          R.shared ? commentOn('source', s.id) : null,
+          s.mayEdit ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'הסרת המקור', onclick: async () => { if (confirm('להסיר את המקור מהמחקר?')) { await api(`/api/research/sources/${s.id}`, { method: 'DELETE' }); route(); } } }, '✕') : null))))
         : el('p', { class: 'muted', style: 'margin:0' }, 'עוד אין מקורות. הדביקו DOI או חפשו מאמר; הביבליוגרפיה נבנית לבד, בסגנון שבחרתם.'));
   }
   /** ✨ a source in a few points, from its abstract (read live from OpenAlex, kept nowhere unless saved as a note) */

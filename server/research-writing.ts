@@ -14,17 +14,13 @@ import { dayOf, templateById } from './goals-logic';
 import { saveToDrive } from './notes';
 import * as C from './research-cite';
 import * as Pk from './research-pack';
-import { abstractOf, searchOpenAlex } from './researches';
+import { Access, abstractOf, access, log, researchItem, searchOpenAlex, visibleNotes } from './researches';
+import * as S from './research-share';
 
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
   const p = schema.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid request');
   return p.data;
-}
-async function ownResearch(ctx: Ctx, email: string, id: string) {
-  const r = await ctx.env.DB.prepare("SELECT * FROM researches WHERE email = ? AND id = ? AND status != 'deleted'").bind(email, id).first<any>();
-  if (!r) throw new HttpError(404, 'Not found');
-  return r;
 }
 
 /* ---------------- a research as a goal, and done ---------------- */
@@ -32,7 +28,7 @@ async function ownResearch(ctx: Ctx, email: string, id: string) {
 /** POST /api/research/r/:id/goal → the goal made for it (or the one it already has) */
 export async function asGoal(ctx: Ctx) {
   const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const { r } = await access(ctx, ctx.params.id, 'settings');
   if (r.goal_id) {
     const g = await ctx.env.DB.prepare("SELECT id FROM goals WHERE email = ? AND id = ? AND status != 'deleted'").bind(u.email, r.goal_id).first();
     if (g) return json({ ok: true, id: r.goal_id, existed: true });
@@ -48,7 +44,7 @@ export async function asGoal(ctx: Ctx) {
 /** POST /api/research/r/:id/done {done} – finished (its goal too, when it has one), or back to work */
 export async function setDone(ctx: Ctx) {
   const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const { r } = await access(ctx, ctx.params.id, 'settings');
   const { done } = await read(ctx, z.object({ done: z.boolean() }));
   const now = Date.now(), db = ctx.env.DB;
   const stmts = [db.prepare('UPDATE researches SET done_at = ?, updated_at = ? WHERE email = ? AND id = ?').bind(done ? now : null, now, u.email, r.id)];
@@ -62,14 +58,14 @@ export async function setDone(ctx: Ctx) {
 /** GET /api/research/r/:id/journal → the last 60 days' lines */
 export async function journal(ctx: Ctx) {
   const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const { r } = await access(ctx, ctx.params.id);   // (each person keeps their own lines about it)
   const { results } = await ctx.env.DB.prepare('SELECT day, text, updated_at FROM research_journal WHERE email = ? AND research_id = ? ORDER BY day DESC LIMIT 60').bind(u.email, r.id).all<any>();
   return json({ today: dayOf(Date.now()), entries: results.map((e) => ({ day: e.day, text: e.text, updatedAt: e.updated_at })) });
 }
 /** PUT /api/research/r/:id/journal {text, day?} – today's lines (or an earlier day's) */
 export async function writeJournal(ctx: Ctx) {
   const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const { r } = await access(ctx, ctx.params.id);
   const d = await read(ctx, z.object({ text: z.string().max(4000), day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }));
   const day = d.day || dayOf(Date.now());
   if (!d.text.trim()) await ctx.env.DB.prepare('DELETE FROM research_journal WHERE email = ? AND research_id = ? AND day = ?').bind(u.email, r.id, day).run();
@@ -80,52 +76,54 @@ export async function writeJournal(ctx: Ctx) {
 
 /* ---------------- drafts ---------------- */
 
-async function material(ctx: Ctx, email: string, researchId: string) {
-  const db = ctx.env.DB;
+/** what a draft is written from: the notes this person may see (not someone else's private note), the open questions
+    and the sources */
+async function material(ctx: Ctx, a: Access) {
+  const db = ctx.env.DB, email = a.owner, researchId = a.r.id;
   const [notes, threads, sources] = await Promise.all([
-    db.prepare('SELECT x.id, x.title, x.body FROM research_notes n JOIN notes x ON x.email = n.email AND x.id = n.note_id WHERE n.email = ? AND n.research_id = ? AND x.deleted = 0 ORDER BY n.sort, n.added_at').bind(email, researchId).all<{ id: string; title: string; body: string }>(),
+    visibleNotes(ctx, a).then((list) => ({ results: list.filter((n) => !n.hidden).map((n) => ({ id: n.id, title: n.title, body: n.body })) })),
     db.prepare("SELECT text FROM research_threads WHERE email = ? AND research_id = ? AND status != 'answered' ORDER BY created_at").bind(email, researchId).all<{ text: string }>(),
     db.prepare('SELECT id, csl FROM research_sources WHERE email = ? AND research_id = ? ORDER BY created_at').bind(email, researchId).all<{ id: string; csl: string }>(),
   ]);
   return { notes: notes.results, questions: threads.results.map((t) => t.text), sources: sources.results.map((s) => ({ id: s.id, csl: JSON.parse(s.csl || '{}') as C.Csl })) };
 }
-async function ownDraft(ctx: Ctx, email: string, id: string) {
-  const d = await ctx.env.DB.prepare('SELECT d.*, r.title AS research_title, r.style FROM research_drafts d JOIN researches r ON r.email = d.email AND r.id = d.research_id WHERE d.email = ? AND d.id = ?').bind(email, id).first<any>();
-  if (!d) throw new HttpError(404, 'Not found');
-  return d;
+/** a draft and its research as this person reaches it; `edit`: 403 unless they may change it (theirs, or as an editor) */
+async function draftOf(ctx: Ctx, id: string, edit = false) {
+  const { row, a, mayEdit } = await researchItem(ctx, 'research_drafts', id);
+  if (edit && !mayEdit) throw new HttpError(403, 'not_allowed');
+  return { d: { ...row, research_title: a.r.title, style: a.r.style }, a, mayEdit };
 }
 
 /** GET /api/research/r/:id/drafts → the research's drafts (titles) */
 export async function drafts(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
-  const { results } = await ctx.env.DB.prepare('SELECT id, title, updated_at, length(body) AS size FROM research_drafts WHERE email = ? AND research_id = ? ORDER BY updated_at DESC').bind(u.email, r.id).all<any>();
-  return json({ drafts: results.map((d) => ({ id: d.id, title: d.title, updatedAt: d.updated_at, size: d.size })) });
+  const a = await access(ctx, ctx.params.id);
+  const { results } = await ctx.env.DB.prepare('SELECT id, title, updated_at, created_by, length(body) AS size FROM research_drafts WHERE email = ? AND research_id = ? ORDER BY updated_at DESC').bind(a.owner, a.r.id).all<any>();
+  return json({ drafts: results.map((d) => ({ id: d.id, title: d.title, updatedAt: d.updated_at, size: d.size, mine: (d.created_by || a.owner) === a.me })) });
 }
 /** POST /api/research/r/:id/drafts {title, outline?, body?} – a new draft: empty, given, or an outline from the notes */
 export async function newDraft(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const a = await access(ctx, ctx.params.id, 'add'), r = a.r;
   const d = await read(ctx, z.object({ title: z.string().trim().max(200).default(''), outline: z.boolean().optional(), body: z.string().max(200000).optional(), template: z.string().max(20).nullable().optional() }));
   let text = d.body || '';
   const t = Pk.draftTemplate(d.template);
-  if (t) { const m = await material(ctx, u.email, r.id); text = Pk.fromTemplate(t, d.title || r.title, m.notes); }
-  else if (d.outline) { const m = await material(ctx, u.email, r.id); text = C.outlineFromNotes(d.title || r.title, m.notes, m.questions); }
+  if (t) { const m = await material(ctx, a); text = Pk.fromTemplate(t, d.title || r.title, m.notes); }
+  else if (d.outline) { const m = await material(ctx, a); text = C.outlineFromNotes(d.title || r.title, m.notes, m.questions); }
   const id = uid(), now = Date.now();
-  await ctx.env.DB.prepare('INSERT INTO research_drafts (email, id, research_id, title, body, template, target, numbered, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(u.email, id, r.id, d.title || r.title, text, t?.id || null, t?.words || null, t?.id === 'imrad' || t?.id === 'seminar' ? 1 : 0, now, now).run();
+  await ctx.env.DB.prepare('INSERT INTO research_drafts (email, id, research_id, title, body, template, target, numbered, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(a.owner, id, r.id, d.title || r.title, text, t?.id || null, t?.words || null, t?.id === 'imrad' || t?.id === 'seminar' ? 1 : 0, now, now, a.me).run();
+  await log(ctx, a, 'draft', id, 'add', null, { title: d.title || r.title });
   return json({ ok: true, id });
 }
 /** GET /api/research/drafts/:id → the draft, its research's sources (to cite) and notes, and how it reads with its citations */
 export async function getDraft(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const d = await ownDraft(ctx, u.email, ctx.params.id);
-  const m = await material(ctx, u.email, d.research_id);
+  const { d, a, mayEdit } = await draftOf(ctx, ctx.params.id);
+  const m = await material(ctx, a);
   const style = d.style as C.Style;
   const template = Pk.draftTemplate(d.template);
   return json({
     draft: { id: d.id, research: d.research_id, researchTitle: d.research_title, title: d.title, body: d.body, updatedAt: d.updated_at, driveId: d.drive_id || null, style,
-      template: template ? { id: template.id, name: template.name } : null, target: d.target || null, numbered: !!d.numbered, words: Pk.wordCount(d.body) },
+      template: template ? { id: template.id, name: template.name } : null, target: d.target || null, numbered: !!d.numbered, words: Pk.wordCount(d.body),
+      mayEdit, role: a.role, mine: (d.created_by || a.owner) === a.me },
     sources: m.sources.map((s) => ({ id: s.id, inText: C.inText(s.csl, style), title: s.csl.title || '' })),
     notes: m.notes.map((n) => ({ id: n.id, title: n.title, body: n.body })),
     checklist: Pk.checklist(d.body, { template, target: d.target, sourceIds: m.sources.map((s) => s.id) }),
@@ -134,8 +132,7 @@ export async function getDraft(ctx: Ctx) {
 }
 /** PUT /api/research/drafts/:id {title?, body?} · DELETE */
 export async function saveDraft(ctx: Ctx) {
-  const u = requireUser(ctx);
-  await ownDraft(ctx, u.email, ctx.params.id);
+  const { d: before, a } = await draftOf(ctx, ctx.params.id, true);
   const d = await read(ctx, z.object({ title: z.string().trim().min(1).max(200).optional(), body: z.string().max(200000).optional(),
     target: z.number().int().min(0).max(200000).nullable().optional(), numbered: z.boolean().optional(), template: z.string().max(20).nullable().optional() }));
   const sets: string[] = [], vals: unknown[] = [];
@@ -144,12 +141,22 @@ export async function saveDraft(ctx: Ctx) {
   if (d.target !== undefined) { sets.push('target = ?'); vals.push(d.target || null); }
   if (d.numbered !== undefined) { sets.push('numbered = ?'); vals.push(d.numbered ? 1 : 0); }
   if (d.template !== undefined) { sets.push('template = ?'); vals.push(Pk.draftTemplate(d.template)?.id || null); }
-  if (sets.length) await ctx.env.DB.prepare(`UPDATE research_drafts SET ${sets.join(', ')}, updated_at = ? WHERE email = ? AND id = ?`).bind(...vals, Date.now(), u.email, ctx.params.id).run();
+  if (!sets.length) return json({ ok: true, at: Date.now() });
+  // the history keeps how it was: a version at most every ten minutes per person (it saves itself as one types), at once
+  // when someone else writes
+  if (d.title !== undefined || d.body !== undefined) {
+    const last = await ctx.env.DB.prepare("SELECT at, by FROM research_history WHERE owner = ? AND research_id = ? AND kind = 'draft' AND item_id = ? AND action = 'edit' ORDER BY at DESC LIMIT 1")
+      .bind(a.owner, a.r.id, before.id).first<{ at: number; by: string }>();
+    if (S.snapshotDue(last?.at ?? null, Date.now(), a.me, last?.by ?? null)) await log(ctx, a, 'draft', before.id, 'edit', { title: before.title, body: before.body }, null);
+  }
+  await ctx.env.DB.prepare(`UPDATE research_drafts SET ${sets.join(', ')}, updated_at = ? WHERE email = ? AND id = ?`).bind(...vals, Date.now(), a.owner, before.id).run();
   return json({ ok: true, at: Date.now() });
 }
 export async function removeDraft(ctx: Ctx) {
-  const u = requireUser(ctx);
-  await ctx.env.DB.prepare('DELETE FROM research_drafts WHERE email = ? AND id = ?').bind(u.email, ctx.params.id).run();
+  const { d, a } = await draftOf(ctx, ctx.params.id, true);
+  await ctx.env.DB.prepare('DELETE FROM research_drafts WHERE email = ? AND id = ?').bind(a.owner, d.id).run();
+  const { research_title: _t, style: _s, ...row } = d;
+  await log(ctx, a, 'draft', d.id, 'remove', row, null);
   return json({ ok: true });
 }
 
@@ -178,9 +185,8 @@ function htmlPage(title: string, c: Composed) {
 
 /** GET /api/research/drafts/:id/export?format=md|html|doc|tex|bib */
 export async function exportDraft(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const d = await ownDraft(ctx, u.email, ctx.params.id);
-  const m = await material(ctx, u.email, d.research_id);
+  const { d, a } = await draftOf(ctx, ctx.params.id);
+  const m = await material(ctx, a);
   const style = d.style as C.Style, fmt = ctx.url.searchParams.get('format') || 'md';
   const c = compose({ body: d.body, numbered: d.numbered, style }, m.sources);
   const name = (d.title || 'draft').replace(/[^\p{L}\p{N} _-]+/gu, '').trim().slice(0, 60) || 'draft';
@@ -217,10 +223,12 @@ function latexBody(md: string, keys: Map<string, string>) {
 /** POST /api/research/drafts/:id/drive → { url } – the draft as a Google Doc (the same one again on each save) */
 export async function draftToDrive(ctx: Ctx) {
   const u = requireUser(ctx);
-  const d = await ownDraft(ctx, u.email, ctx.params.id);
-  const m = await material(ctx, u.email, d.research_id);
-  const f = await saveToDrive(ctx, u.email, { id: d.drive_id, name: d.title, content: htmlPage(d.title, compose({ body: d.body, numbered: d.numbered, style: d.style }, m.sources)), html: true, folder: 'האוהל · מחקרים' });
-  await ctx.env.DB.prepare('UPDATE research_drafts SET drive_id = ? WHERE email = ? AND id = ?').bind(f.id, u.email, d.id).run();
+  const { d, a } = await draftOf(ctx, ctx.params.id);
+  const m = await material(ctx, a);
+  // to the person's own Drive; the same Doc again only for the one whose Drive keeps it (the research's owner)
+  const mineDoc = a.me === a.owner;
+  const f = await saveToDrive(ctx, u.email, { id: mineDoc ? d.drive_id : null, name: d.title, content: htmlPage(d.title, compose({ body: d.body, numbered: d.numbered, style: d.style }, m.sources)), html: true, folder: 'האוהל · מחקרים' });
+  if (mineDoc) await ctx.env.DB.prepare('UPDATE research_drafts SET drive_id = ? WHERE email = ? AND id = ?').bind(f.id, a.owner, d.id).run();
   return json({ url: f.webViewLink, id: f.id });
 }
 
@@ -232,9 +240,8 @@ const brief = (m: Awaited<ReturnType<typeof material>>) =>
 const Directions = z.object({ questions: z.array(z.string()), steps: z.array(z.string()) });
 /** POST /api/research/r/:id/ai/directions → questions worth asking next, and small next steps */
 export async function aiDirections(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
-  const m = await material(ctx, u.email, r.id);
+  const a = await access(ctx, ctx.params.id), r = a.r;
+  const m = await material(ctx, a);
   const out = await aiJson(ctx.env, {
     prefer: 'gemini', fast: true, schema: Directions,
     system: 'You help a person move their research forward. In Hebrew. From their notes, open questions and sources: 3–5 questions worth asking next (specific to this material, not generic), and 3–5 small next steps (each 15–45 minutes, starting with a verb in the infinitive). Do not invent facts or sources. JSON only: {"questions": [""], "steps": [""]}',
@@ -246,9 +253,8 @@ export async function aiDirections(ctx: Ctx) {
 const Draft = z.object({ body: z.string() });
 /** POST /api/research/r/:id/ai/draft → a first draft in Markdown from the notes, citing the sources as [@id] */
 export async function aiDraft(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
-  const m = await material(ctx, u.email, r.id);
+  const a = await access(ctx, ctx.params.id), r = a.r;
+  const m = await material(ctx, a);
   if (!m.notes.length) throw new HttpError(400, 'no_notes');
   const out = await aiJson(ctx.env, {
     prefer: 'claude', schema: Draft,
@@ -263,10 +269,9 @@ const Queries = z.object({ queries: z.array(z.string()) });
 /** POST /api/research/r/:id/ai/search {question?} → works found by searches the AI writes from the research (or a question);
     the plain search (/api/research/find) takes the person's own words */
 export async function aiSearch(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const a = await access(ctx, ctx.params.id), r = a.r;
   const { question } = await read(ctx, z.object({ question: z.string().max(500).optional() }));
-  const m = await material(ctx, u.email, r.id);
+  const m = await material(ctx, a);
   const q = await aiJson(ctx.env, {
     prefer: 'gemini', fast: true, schema: Queries,
     system: 'You turn a research question into 2–3 short searches for OpenAlex, a database of scholarly works: in English (scholarly literature is mostly English), 2–6 key terms each, no boolean operators, different angles of the same question. JSON only: {"queries": [""]}',
@@ -284,9 +289,8 @@ const Summary = z.object({ points: z.array(z.string()), relevance: z.string() })
 /** POST /api/research/sources/:id/ai/summary → the source's abstract (from OpenAlex, live) in a few Hebrew points, and how
     it bears on the research. Nothing of it is stored; the person may keep it as a note. */
 export async function aiSummary(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const s = await ctx.env.DB.prepare('SELECT s.*, r.title AS rtitle, r.aim FROM research_sources s JOIN researches r ON r.email = s.email AND r.id = s.research_id WHERE s.email = ? AND s.id = ?').bind(u.email, ctx.params.id).first<any>();
-  if (!s) throw new HttpError(404, 'Not found');
+  const { row, a } = await researchItem(ctx, 'research_sources', ctx.params.id);
+  const s = { ...row, rtitle: a.r.title, aim: a.r.aim };
   const csl = JSON.parse(s.csl || '{}') as C.Csl;
   const abstract = s.doi ? await abstractOf(ctx, s.doi) : '';
   if (!abstract) throw new HttpError(422, 'no_abstract');
@@ -301,10 +305,9 @@ export async function aiSummary(ctx: Ctx) {
 /** POST /api/research/r/:id/ai/compare {sources: [id…]} → how two to five sources agree, differ and complement (from their
     abstracts), in Hebrew Markdown */
 export async function aiCompare(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const a = await access(ctx, ctx.params.id), r = a.r;
   const { sources } = await read(ctx, z.object({ sources: z.array(z.string().max(40)).min(2).max(5) }));
-  const rows = (await ctx.env.DB.prepare(`SELECT id, csl, doi FROM research_sources WHERE email = ? AND research_id = ? AND id IN (${sources.map(() => '?').join(',')})`).bind(u.email, r.id, ...sources).all<any>()).results;
+  const rows = (await ctx.env.DB.prepare(`SELECT id, csl, doi FROM research_sources WHERE email = ? AND research_id = ? AND id IN (${sources.map(() => '?').join(',')})`).bind(a.owner, r.id, ...sources).all<any>()).results;
   const items = await Promise.all(rows.map(async (s) => { const csl = JSON.parse(s.csl || '{}') as C.Csl; return { cite: C.inText(csl, 'apa'), title: csl.title || '', abstract: s.doi ? await abstractOf(ctx, s.doi) : '' }; }));
   const usable = items.filter((i) => i.abstract);
   if (usable.length < 2) throw new HttpError(422, 'no_abstract');
@@ -320,8 +323,7 @@ const Edit = z.object({ text: z.string(), notes: z.array(z.string()) });
 /** POST /api/research/drafts/:id/ai/edit {text?} → the draft (or a part of it) edited for language – clearer, correct Hebrew,
     the same content – with a few notes on what changed. The citation, link and footnote marks are kept as they are. */
 export async function aiEdit(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const d = await ownDraft(ctx, u.email, ctx.params.id);
+  const { d } = await draftOf(ctx, ctx.params.id, true);
   const { text } = await read(ctx, z.object({ text: z.string().max(60000).optional() }));
   const input = (text ?? d.body).trim();
   if (!input) throw new HttpError(400, 'Empty');

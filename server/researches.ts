@@ -154,7 +154,7 @@ export async function list(ctx: Ctx) {
       db.prepare("SELECT * FROM research_threads WHERE email = ? AND research_id = ? AND status = 'open' ORDER BY updated_at DESC LIMIT 50").bind(r.email, r.id).all<any>(),
     ]);
     counts.set(r.email + '|' + r.id, c);
-    threads.push(...t.results.map((x) => ({ ...x, research: r.title })));
+    threads.push(...t.results.map((x) => ({ ...x, research: r.title, may: S.mayEdit(r.role, x.created_by || null, u.email) })));
   }
   const who = await names(ctx, [...shared.results.map((r) => r.email), ...invites.results.map((i) => i.invited_by)]);
   return json({
@@ -166,7 +166,7 @@ export async function list(ctx: Ctx) {
     styles: C.STYLES,
   });
 }
-const threadOut = (t: any) => ({ id: t.id, research: t.research_id, researchTitle: t.research || null, text: t.text, status: t.status, answer: t.answer || '', noteId: t.note_id || null, createdBy: t.created_by || null, createdAt: t.created_at, updatedAt: t.updated_at });
+const threadOut = (t: any) => ({ id: t.id, research: t.research_id, researchTitle: t.research || null, text: t.text, status: t.status, answer: t.answer || '', noteId: t.note_id || null, createdBy: t.created_by || null, createdAt: t.created_at, updatedAt: t.updated_at, ...(t.may !== undefined ? { mayEdit: t.may } : {}) });
 
 /** POST /api/research/new */
 export async function create(ctx: Ctx) {
@@ -519,6 +519,10 @@ export async function restore(ctx: Ctx) {
     throw new HttpError(403, 'not_allowed');
   } else if (h.kind === 'note') {
     await db.prepare('UPDATE notes SET title = ?, body = ?, updated_at = ? WHERE email = ? AND id = ?').bind(before.title, before.body, Date.now(), before.author, h.item_id).run();
+  } else if (h.kind === 'draft' && h.action === 'remove') {
+    const d = before;
+    await db.prepare('INSERT OR IGNORE INTO research_drafts (email, id, research_id, title, body, template, target, numbered, created_at, updated_at, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(a.owner, d.id, a.r.id, d.title, d.body, d.template || null, d.target || null, d.numbered || 0, d.created_at, Date.now(), d.created_by || null).run();
   } else if (h.kind === 'draft') {
     await db.prepare('UPDATE research_drafts SET title = ?, body = ?, updated_at = ? WHERE email = ? AND id = ?').bind(before.title, before.body, Date.now(), a.owner, h.item_id).run();
   } else throw new HttpError(400, 'nothing_to_restore');

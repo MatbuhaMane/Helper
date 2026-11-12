@@ -254,6 +254,24 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-12 – The PC guide and the mail organizer: the simple path, through the user's own AI (vision, the owner)
+
+**Decided:**
+- Both tools are developed on the simple path that ai-features assessed, about half a day each.
+  - **The PC guide:** a copy button for the rules, a checklist with progress, a Mac variant, and a "how did it go" step.
+  - **A public mail organizer:** like the PC guide, it runs on the user's own Claude with its Gmail connector, under our
+    safety rules: label instead of delete, preview first, and an undo list.
+- The family's current mail tool (`server/mail.ts`, on the owner's keys) stays as it is.
+- Our own public Gmail tool is put off: it needs the restricted `gmail.modify` scope, Google's paid security assessment,
+  and our AI.
+
+**Why:** the owner's condition: "if it is simple, develop it; if it is very complex, keep it for later". It fits
+`closed-questions.md` 12 (in the public version, only through the user's own agent).
+
+**Affects:** ai-features.
+
+Status: Decided (the owner).
+
 ## 2026-11-12 – The family tree opens freely after the first sign-in; the ring and the top bar are rebuilt (vision, the owner)
 
 Three decisions, confirmed by the owner one sentence at a time. The rest of the owner's notes from the same list are

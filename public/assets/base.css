@@ -175,7 +175,28 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
   .tabbar a[aria-current="page"] { color: var(--primary); font-weight: 500; }
   .tabbar a[aria-current="page"]::before { content: ''; position: absolute; inset-block-start: 0; inset-inline: 28%; block-size: 2px; background: var(--primary); }
   .tabbar a:active { transform: translateY(1px); }
+  /* ניווט and כלים open a menu: buttons that look like the other tabs (the master's minimal styles; design may refine) */
+  .tabbar .tab-menu { display: grid; place-items: center; align-content: center; gap: 3px; color: var(--muted); font: inherit; font-size: .72rem; background: none; border: 0; padding: 0; cursor: pointer; position: relative; min-inline-size: 0; }
+  .tabbar .tab-menu span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 1px; }
+  .tabbar .tab-menu svg { inline-size: 24px; block-size: 24px; }
+  @media (max-width: 400px) { .tabbar .tab-menu { font-size: .64rem; } .tabbar .tab-menu svg { inline-size: 22px; block-size: 22px; } }
+  .tabbar .tab-menu[aria-current="page"], .tabbar .tab-menu[aria-expanded="true"] { color: var(--primary); font-weight: 500; }
+  .tabbar .tab-menu[aria-current="page"]::before { content: ''; position: absolute; inset-block-start: 0; inset-inline: 28%; block-size: 2px; background: var(--primary); }
 }
+/* the top bar's menus (ניווט, כלים): a button like the links, and its list under it – or above the tab bar on a phone */
+.topnav .nav-menu { font: inherit; font-size: .98rem; color: var(--text); background-color: transparent; border: 0; padding: 6px 0; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.topnav .nav-menu[aria-expanded="true"] { color: var(--primary); }
+.nav-caret { font-size: .7em; opacity: .7; }
+.navmenu { position: fixed; z-index: 40; min-inline-size: 220px; max-inline-size: min(320px, calc(100vw - 32px)); max-block-size: min(70vh, 520px); overflow: auto;
+  background: var(--card); color: var(--text); border: 1px solid var(--line-strong); border-radius: 14px; box-shadow: 0 14px 36px rgba(0, 0, 0, .18); padding: 6px; }
+.navmenu ul { list-style: none; margin: 0; padding: 0; }
+.navmenu a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--text); text-decoration: none; }
+.navmenu a:hover, .navmenu a:focus-visible { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); }
+.navmenu a[aria-current="page"] { color: var(--primary); font-weight: 500; }
+.navmenu .navmenu-all { justify-content: center; margin-block-start: 4px; border-block-start: 1px solid var(--line); border-radius: 0 0 10px 10px; font-size: .9rem; color: var(--muted); }
+.navmenu-phone { inset-inline: 16px; inset-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 8px); max-inline-size: none; }
+.userchip .icon { inline-size: 17px; block-size: 17px; }
+.userchip[aria-current="page"] { border-color: var(--primary); color: var(--primary); }
 .icon { inline-size: 20px; block-size: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
 .stats { color: var(--muted); font-size: .9rem; white-space: nowrap; }
@@ -317,3 +338,14 @@ html.embedded body { padding-block-end: 0; }
 .ai-invite p { margin: 0; line-height: 1.6; color: var(--muted); max-inline-size: 34ch; }
 .ai-invite .sky-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-block-start: 8px; inline-size: 100%; }
 .ai-invite .sky-acts .btn { flex: 1 1 140px; justify-content: center; min-block-size: 44px; }
+/* A tool without AI is a whole tool; the AI is an upgrade inside it (docs/design/ai-upgrade.md): the plain action and its
+   ✨ upgrade side by side, the upgrade quieter, in the olive field; with no AI it is an offer (a small "חדש"), never a lock;
+   and what the AI made is marked under it */
+.ai-pair { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.btn.ai-up { background: color-mix(in srgb, var(--accent) 22%, var(--card)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--text); }
+.btn.ai-up:hover { background: color-mix(in srgb, var(--accent) 34%, var(--card)); border-color: var(--accent); }
+.btn.ai-up.offer { position: relative; }
+.btn.ai-up.offer::after { content: "חדש"; position: absolute; inset-block-start: -8px; inset-inline-end: -6px; padding: 1px 7px; border-radius: 999px;
+  font-size: .68rem; font-weight: 600; background: var(--accent); color: var(--accent-ink); box-shadow: 0 2px 6px rgba(0, 0, 0, .15); }
+.ai-note { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 6px 0 0; font-size: .82rem; color: var(--muted); }
+.ai-note button { font: inherit; border: 0; background: none; padding: 0; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }

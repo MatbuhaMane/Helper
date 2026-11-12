@@ -40,6 +40,50 @@ relationships, roles, the forest), editing people and links, and non-private det
 changing privacy, linking trees, any delete, export. Settings get a "מכשירים מוכרים" list to revoke a device at once.
 Untrusted sessions are as before. Built by ai-features in `server/vault/index.ts`, reviewed by the master. Status: Decided (the owner), assigned.
 
+## 2026-11-12 – The tools menu's arrange mode, and the ring's three fixed items plus pins (design, vision batch 2, items 6 and 12)
+
+As the master assigned:
+- `public/assets/apps.js` (new): the catalogue of every menu (each with its cushion and glow colour for the ring),
+  `H.ringApps()` – עץ המשפחה, the person's pins, כלים, הגדרות – and `H.isPinned` / `H.togglePin`. Pins are
+  `H.prefs('home').pins`; until someone changes them they are the five parts the ring always had (אוכל, חדשות, בידור,
+  שירון, פרשת השבוע), so nothing disappears for anyone. Also `H.appIcon(name)`: `H.icon` with a gear for `settings`.
+- `public/assets/launcher.js`: `H.folder({ …, arrange: 'tools' })` – the person's order (`H.prefs('tools').order`); a long
+  press, a right click, or the "סידור" button opens the arrange mode: tiles wiggle, a finger or the mouse drags them (the
+  others glide aside on transform only), the arrows move a focused tile, Escape or "סיום" ends it; each tile that can go
+  on the ring has a 📌. `H.prefs('tools').locked` turns the long press, the right click and the button off. Styles in
+  `launcher.css`.
+- `public/tools/index.html`: arrangeable, loads `apps.js`, and holds every part of the tent too (אוכל, חדשות, בידור, שירון).
+- `public/index.html` (the ring's part only): the ring is built from `H.ringApps()` after the sign-in; badges via `H.appIcon`.
+**For ai-features:** the switch "נעילת סידור התפריט" in הגדרות sets `H.prefs('tools').locked` (and `H.savePrefs('tools')`).
+**For the master:** a `settings` (gear) icon in the shared icons would replace the fallback in `apps.js`; the new top bar can use
+it too. Checked at 375 and 1280 px, by day and at night, the audit clean (the tools page also in the arrange mode).
+Status: done (on `design`).
+
+## 2026-11-12 – The new campfire on the home page: fire ג, with flicking tips (design, the owner's choice)
+
+The owner chose fire ג (curling tongues) and asked for a playful flick at the tips. The tongues are now drawn on canvases in
+thin strips with a bend that grows toward the tip – a sway, a wave rising up the flame, and every 1.5–4 s a quick flick of
+the tip that springs back, with a stretch upward (`public/assets/campfire.js`). In `public/index.html` (the master's file,
+its fire part only, as approved): `campfire.css` and `campfire.js` are linked; the `.fire` rules now hold only its size,
+place and the warm light on the ground (the strip's `.flames`, `.glow` and `.core` rules are gone); `campfire()` mounts the
+fire with its five pictures in `public/assets/campfire/`. **For the master:** `public/sw.js` pre-caches
+`/assets/campfire-strip.webp` – please replace it in `ASSETS` with `/assets/campfire.css`, `/assets/campfire.js`,
+`/assets/campfire/base.webp` and `/assets/campfire/flame-1…4.webp`; design deletes the strip once that is live.
+Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the sw.js line proposed.
+
+## 2026-11-12 – The beta's three months start at the first real gathering (business)
+
+**Decision:** the clock for the three-month beta check (business decision 10) starts on the day the owner sends the first
+real gathering to the family. Test gatherings don't count. The check is three months after that day.
+
+**Why:** the beta measures real family use. The loop has been complete since today, but nothing real has been sent
+yet.
+
+**Affects:** none. When the first real gathering goes out, the owner tells the business session (or it reads the date
+from `gatherings`), and the check date is recorded here and in `docs/business/plan.md`.
+
+**Status:** Decided (the owner). The start date is still to come.
+
 ## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
 
 The owner gives AI credit to chosen people from the room: the owner only (not a super), from the owner's own account,
@@ -310,6 +354,66 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)
+
+**Decided:**
+- Every tool that uses AI also has a version that is not smart but still useful, for users with no AI connection and no
+  credits. It can be built from templates, search, rules or forms.
+- The invitation to connect an AI or buy credits comes in addition to that version, never instead of it.
+
+This extends the earlier decisions: "The app works without AI, in a simpler version" and "A button for an AI ability
+never looks broken" (the entry "Product direction").
+
+**Affects:**
+- ai-features: every AI tool, existing and new, including the recipe book, the diets and the weather.
+- Design: how the two versions look side by side.
+- Vision: the goal-management spec.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The PC guide and the mail organizer: the simple path, through the user's own AI (vision, the owner)
+
+**Decided:**
+- Both tools are developed on the simple path that ai-features assessed, about half a day each.
+  - **The PC guide:** a copy button for the rules, a checklist with progress, a Mac variant, and a "how did it go" step.
+  - **A public mail organizer:** like the PC guide, it runs on the user's own Claude with its Gmail connector, under our
+    safety rules: label instead of delete, preview first, and an undo list.
+- The family's current mail tool (`server/mail.ts`, on the owner's keys) stays as it is.
+- Our own public Gmail tool is put off: it needs the restricted `gmail.modify` scope, Google's paid security assessment,
+  and our AI.
+
+**Why:** the owner's condition: "if it is simple, develop it; if it is very complex, keep it for later". It fits
+`closed-questions.md` 12 (in the public version, only through the user's own agent).
+
+**Affects:** ai-features.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The family tree opens freely after the first sign-in; the ring and the top bar are rebuilt (vision, the owner)
+
+Three decisions, confirmed by the owner one sentence at a time. The rest of the owner's notes from the same list are
+instructions, sent in the vision session's batch 2 (`docs/vision/batch.md`).
+
+1. **The family tree opens without asking again.** After the first sign-in on a device, the family tree opens without a
+   passkey. Only special actions ask each time: opening sealed vault documents, changing privacy, linking trees, deleting
+   and exporting.
+   - Affects: the master (the vault's security: where the key lives, and the trade-off; explain it to the owner and
+     propose a safe way) and ai-features (`family.js`, `server/vault/index.ts`).
+2. **The home page's ring around the campfire has only three fixed items:** the family tree, tools and settings.
+   Everything else is pinned to the ring by each user with a long press in the tools box, which holds every menu. The
+   choice is saved per user (`H.prefs`).
+   - Affects: ai-features (pinning and saving), design, the master (`public/index.html`).
+3. **The top bar keeps five items:**
+   - בית;
+   - עץ המשפחה;
+   - ניווט: a dropdown to the site's parts;
+   - כלים: a dropdown to every tool;
+   - הגדרות: a gear icon.
+   - The phone's bottom tab bar has the same five items (the owner).
+   - Affects: the master (`NAV` in `common.js`) and design.
+
 Status: Decided (the owner).
 
 ## 2026-11-12 – One visual style for everything; images are made through the Gemini API (vision, the owner)

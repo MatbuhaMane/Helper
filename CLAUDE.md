@@ -56,6 +56,7 @@ so no two sessions edit the same working copy.
 | Design & graphics | `M:\Claude Code\Helper-design` | `design` | 8789 / 9230 | `docs/areas/design.md` |
 | Business modeling | `M:\Claude Code\Helper-business` | `business` | none (docs only) | `docs/areas/business.md` |
 | AI & feature mechanics | `M:\Claude Code\Helper-ai` | `ai-features` | 8790 / 9231 | `docs/areas/ai-features.md` |
+| Vision & conversation (חזון ודיבור) | `M:\Claude Code\Helper-vision` | `vision` | none (conversation) | `docs/areas/vision.md` |
 
 Run an area's dev server with `npm run dev -- --port 8789 --inspector-port 9230` (each worktree has its own
 untracked `.claude/launch.json` with its port). Each worktree has its own `node_modules`, its own `.dev.vars` (copied by the owner, never
@@ -69,6 +70,8 @@ A file has one owner. Other sessions propose changes to it (in `docs/decisions.m
 - **design**: `public/**/*.css` (including `public/assets/base.css`, the design tokens), images, icons and fonts under
   `public/assets/` (not `common.js`), `public/figures/`, `figures/`, the figure skills in `.claude/skills/`, `docs/design/`.
 - **business**: `docs/business/`.
+- **vision**: `docs/vision/`. It talks the project through with the owner and hands confirmed conclusions to the areas
+  (an entry in `docs/decisions.md` and a message to each affected session).
 - **ai-features**: `server/` feature modules (AI, news, recipes, keto, calendar, daemon, voice, mail, music…), the family tree
   logic in `server/vault/index.ts` and `server/vault/kin.ts` (with `test-kin.mjs`), the Hebrew dates in `server/hebdate.ts`
   (with `test-hebdate.mjs`), each page's JavaScript (`public/*/*.js`, `public/tools/*/*.js`), `docs/ai/`, `docs/family-forest.md`.

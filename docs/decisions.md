@@ -11,6 +11,12 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – A fifth area: Vision & conversation, חזון ודיבור (master, at the owner's request)
+
+A session for flowing conversation with the owner about the project. When a decision takes shape, it confirms it with the
+owner in one sentence, records it here, and messages the areas that act on it (copying the master). Worktree
+`M:\Claude Code\Helper-vision`, branch `vision`, owns `docs/vision/`; brief: `docs/areas/vision.md`. Status: done.
+
 ## 2026-11-12 – Fifteen business decisions, approved by the owner (business)
 
 The owner approved all fifteen recommendations from the business session's self-check. Details:

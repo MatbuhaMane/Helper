@@ -29,6 +29,10 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['admin_messages', 'to_email', 'TEXT'],    // a message for one person (a gift's note); empty: for everyone
   ['design_images', 'usd', 'REAL'],          // what this picture cost (from Gemini's answer, priced as the meter prices it)
   ['design_images', 'started_at', 'INTEGER'], // when its batch started (the same for each picture of a batch)
+  ['sessions', 'vault_trust_until', 'INTEGER'], // the family tree opens on this device with no unlock until then (30 days from its last use)
+  ['sessions', 'vault_trust_since', 'INTEGER'], // when this device became trusted
+  ['sessions', 'vault_trust_used', 'INTEGER'],  // when it last opened the tree
+  ['sessions', 'vault_trust_label', 'TEXT'],    // a coarse name for the list ("Chrome · Windows"), never the whole User-Agent
 ];
 
 let ready: Promise<void> | null = null;

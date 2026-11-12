@@ -3,6 +3,9 @@
 // what reviewers praise and families would enjoy (no gossip, scandal or crime), says in Hebrew what it is and why, and – checking
 // with Google Search – where in Israel it can be watched, heard, played or bought. Each "where" carries the service's logo.
 // A category's picks are kept for twelve hours (and refreshed in the background after that), so the board opens at once.
+// Without AI (docs/ai/without-ai.md #11): the board everyone shares is the cache; when there is none and no AI to choose,
+// the category's latest headlines from its own sites are shown as they are (marked plain, not kept, so an AI fills the
+// board when there is one).
 
 import { z } from 'zod';
 import { aiJson, geminiGrounded, jsonIn } from './ai';
@@ -67,6 +70,9 @@ const Pick = z.object({
 const Picks = z.object({ picks: z.array(Pick).default([]) });
 const KEEP = 12 * 3600e3;
 
+/** a headline's summary to one sentence (for the board without AI) */
+const firstSentence = (s: unknown) => { const t = String(s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(); return (t.match(/^.{20,220}?[.!?](?=\s|$)/) || [t.slice(0, 200)])[0]; };
+
 const PAGE = 30;   // headlines read for one page of picks (the board scrolls on: each page reads the next, older ones)
 async function choose(ctx: Ctx, cat: string, page = 0, already: string[] = []) {
   const c = CATEGORIES[cat];
@@ -88,7 +94,10 @@ ${already.length ? `Already on the board – do NOT pick these again, nor other 
   } catch (e) {
     // no search: Claude or Gemini choose, and say nothing about where (unverified)
     console.error('fun grounded', e instanceof Error ? e.message : e);
-    const r = await aiJson(ctx.env, { prefer: 'gemini', schema: Picks, system: system.replace(/For each pick use Google Search[\s\S]*?never guess\./, 'Leave "where" as an empty list.'), prompt: list });
+    const r = await aiJson(ctx.env, { prefer: 'gemini', schema: Picks, system: system.replace(/For each pick use Google Search[\s\S]*?never guess\./, 'Leave "where" as an empty list.'), prompt: list }).catch(() => null);
+    // no AI at all: the headlines themselves, unfiltered and said to be so
+    if (!r) return items.slice(0, 12).map((it) => ({ title: it.title, original: '', kind: 'כותרת', what: firstSentence(it.summary), why: '', rating: '', family: '',
+      link: it.link, image: it.image, source: it.feed, date: it.date, where: [] as { name: string; domain: string; note: string; url: string }[], plain: true }));
     picks = r.picks.map((p) => ({ ...p, where: [] }));
   }
   return picks.filter((p) => items[p.i]).slice(0, 8).map((p) => {
@@ -118,7 +127,7 @@ export async function picks(ctx: Ctx) {
       already = rows.results.flatMap((r) => { try { return (JSON.parse(r.answer) as any[]).flatMap((x) => [x.title, x.original].filter(Boolean)); } catch (_) { return []; } });
     }
     const list = (await choose(ctx, cat, page, already)).filter((x) => !already.includes(x.title) && !(x.original && already.includes(x.original)));
-    if (list.length) await ctx.env.DB.prepare('INSERT OR REPLACE INTO research_answers (key, answer, created_at) VALUES (?, ?, ?)').bind(key, JSON.stringify(list), Date.now()).run();
+    if (list.length && !(list[0] as { plain?: boolean }).plain) await ctx.env.DB.prepare('INSERT OR REPLACE INTO research_answers (key, answer, created_at) VALUES (?, ?, ?)').bind(key, JSON.stringify(list), Date.now()).run();
     return list;
   };
   if (row && !fresh) {

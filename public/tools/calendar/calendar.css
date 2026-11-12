@@ -103,7 +103,8 @@
 .k-family { --k: #ffb3a7; }
 .cal-add { font: inherit; justify-self: start; padding: 6px 14px; border-radius: 999px; border: 1px dashed var(--line-strong); background: none; color: var(--muted); cursor: pointer; }
 .cal-add:hover { color: var(--text); border-color: var(--primary); }
-.cal-link { font: inherit; font-size: .8rem; border: 0; background: none; color: var(--primary); cursor: pointer; padding: 2px 0 0; }
+/* (only the small links: the Google calendar box is a .cal-link section too) */
+a.cal-link, button.cal-link { font: inherit; font-size: .8rem; border: 0; background: none; color: var(--primary); cursor: pointer; padding: 2px 0 0; text-decoration: none; }
 .cal-form { display: grid; gap: 10px; min-inline-size: min(420px, 82vw); }
 .cal-form h3 { margin: 0 0 4px; }
 .cal-form label { display: grid; gap: 4px; font-size: .9rem; }
@@ -128,3 +129,10 @@
 .cal-sync h3 { margin: 0; font-size: 1rem; }
 .cal-tools.start { justify-content: flex-start; flex-wrap: wrap; }
 .cal-fine { margin: 0; font-size: .8rem; }
+/* the live link to Google Calendar: the address in a field that selects itself, and the choice to bring the tree's days */
+.cal-link-url { inline-size: 100%; box-sizing: border-box; font: inherit; font-size: .84rem; padding: 9px 12px; border-radius: 12px;
+  border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace; }
+.cal-link-url:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; border-color: var(--primary); }
+.cal-check { display: flex; align-items: center; gap: 8px; font-size: .92rem; cursor: pointer; }
+.cal-check input { inline-size: 18px; block-size: 18px; margin: 0; accent-color: var(--primary); flex: none; }
+.cal-sync > p { margin: 0; line-height: 1.55; }

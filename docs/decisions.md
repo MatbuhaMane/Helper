@@ -11,6 +11,78 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Fifteen business decisions, approved by the owner (business)
+
+The owner approved all fifteen recommendations from the business session's self-check. Details:
+`docs/business/closed-questions.md` (round two). Each item lists which areas it affects.
+
+1. **Credit packs ₪5 / 10 / 20 / 50, with the same credits per shekel in every pack.**
+   - Why: ₪5 is the safe no-loss minimum. An equal rate stops people buying many small packs.
+   - Affects: ai-features (the credits ledger), design (the pack picker).
+   - Status: Decided.
+2. **Credits are deducted by each action's metered cost (`costOf`), with an estimate before an expensive action.**
+   - Why: every use stays inside 30/30/30/10, and nobody is surprised.
+   - Affects: ai-features, master (`server/prices.ts`, `server/meter.ts`).
+   - Status: Decided.
+3. **App store vs web: the same price everywhere, with bonus credits on the web.**
+   - Why: it is simple to explain and steers buyers to the cheaper channel.
+   - Affects: none until the store stage.
+   - Status: Decided.
+4. **Free download from the stores, with in-app purchases.**
+   - Why: this is the standard model in both stores.
+   - Affects: master (store packaging, later).
+   - Status: Decided.
+5. **At launch, the web and PWA only, through an Israeli payment provider with cards and Bit; the stores come later.**
+   - Why: no store commission, and Bit suits small sums.
+   - Affects: master (the payment integration).
+   - Status: Provisional. The provider is chosen after comparing fees, the fixed fee per transaction above all.
+6. **Purchases per user (credits, companion packs) or per family (the family's own companion, the album).**
+   - Why: every user is an endpoint, and shared things belong to the family.
+   - Affects: ai-features, design.
+   - Status: Decided.
+7. **Storage: files in the user's Drive or iCloud, small encrypted family text on our server.**
+   - Why: no storage cost for the owner, and family sharing stays simple.
+   - Affects: master, ai-features.
+   - Status: Decided.
+8. **The gathering is built on the current Worker; local-first comes later.**
+   - Why: it is the fastest way to a beta.
+   - Affects: master, ai-features.
+   - Status: Decided.
+9. **The gathering's first version contains what `docs/business/gathering.md` section 3 lists.**
+   - Why: it is the smallest scope that delivers the first minute.
+   - Affects: ai-features, design.
+   - Status: Decided.
+10. **The beta is in Hebrew, in the owner's extended family; Arabic follows as a second wave with a partner from Arab
+    society.**
+    - Why: prove the viral loop first, and earn trust in the second community properly.
+    - Affects: master (translation timing), design.
+    - Status: Provisional. Revisit after three months: stop and rethink if the viral coefficient is below 0.3 and fewer
+      than two members of an average family are active each week.
+11. **The north-star metric is family members active each week, per family; the secondary one is gatherings
+    coordinated.**
+    - Why: it measures daily use and the owner's goal of meeting.
+    - Affects: ai-features (anonymous counts).
+    - Status: Decided.
+12. **Every price is based on the providers' 2027 prices.**
+    - Why: Gemini 3.8 Flash and its TTS double in price on 2027-01-01.
+    - Affects: master (`server/prices.ts` already holds them).
+    - Status: Decided.
+13. **A relative may add a relative without approval, with a name and a relation only; the added person can hide or
+    block.**
+    - Why: it keeps adding easy while protecting people who have not joined.
+    - Affects: ai-features (tree privacy).
+    - Status: Decided.
+14. **Matrix, on an Apache-2.0 homeserver, is the messaging base once the full network comes.**
+    - Why: it is mature and end-to-end encrypted, and its licence does not force us to publish our code.
+    - Affects: master, ai-features (later).
+    - Status: Provisional. Re-checked when the full network is started.
+15. **No business is registered during the beta; there is an accountant meeting before the first sale.**
+    - Why: the beta has no revenue.
+    - Affects: none.
+    - Status: Provisional. Exempt dealer, licensed dealer or a company is decided at the meeting.
+
+Also decided: store ratings and download counts are not researched for now (the owner).
+
 ## 2026-11-12 – Merged into main: ai-features (stage 2, the calendar link) and design (master)
 
 Merged with the owner's approval; the master's part of the proposals below is done:
@@ -157,7 +229,7 @@ All thirteen answers are in `docs/business/closed-questions.md`. These are the o
 - The songbook holds only songs the family types in, or links to songs that are free online (no copying).
 - Sefaria texts only where the licence allows commercial use.
 
-Status: proposed (the owner's decisions; the master decides how and when they reach the code).
+Status: Decided (the owner, 2026-11-12). How and when each item reaches the code is the master's call.
 
 ## 2026-11-12 – The family gathering is the first tool to perfect and launch with (business)
 
@@ -179,7 +251,7 @@ gathering itself is always free.
 **The proposed order:** build it on the current Worker, and move to local-first later (`docs/business/plan.md`,
 stage 3). The design of the invitation and the RSVP page belongs to design.
 
-Status: proposed.
+Status: Decided (the owner, 2026-11-12). The code gaps listed above are proposals for the master and ai-features.
 
 ## 2026-11-12 – Product direction: a free core, a family social network, a culture per user (business)
 
@@ -234,7 +306,7 @@ Proposals for the owner and the areas:
 - **ai-features:** a per-user culture setting, and family gatherings (calendar + invitations + who brings what + recipes).
 - **design:** a companion unique to a family, and companion packs as purchasable items.
 
-Status: proposed.
+Status: Decided (the owner, 2026-11-12). The work for each area is a proposal until the master schedules it.
 
 ## 2026-11-12 – The dev server's port lives in wrangler.toml (master)
 

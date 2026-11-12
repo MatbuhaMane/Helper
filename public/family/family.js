@@ -210,10 +210,18 @@
     const opts = (sel) => [el('option', { value: '' }, '—'), ...S.people.filter((x) => x.id !== p?.id).map((x) => el('option', { value: x.id, selected: x.id === sel }, x.name))];
     const p1 = el('select', { 'aria-label': 'הורה' }, opts(p?.parent1)), p2 = el('select', { 'aria-label': 'הורה נוסף' }, opts(p?.parent2)), pa = el('select', { 'aria-label': 'בן או בת זוג' }, opts(p?.partner));
     const member = el('input', { type: 'email', value: p?.member || '', dir: 'ltr', placeholder: 'כתובת Gmail (אם הוא משתמש בעוזר)', 'aria-label': 'כתובת Gmail' });
+    // the person's own details (kept sealed, like everything in the vault)
+    const d = p?.details || {};
+    const born = el('input', { type: 'date', value: d.born || '', 'aria-label': 'תאריך לידה' });
+    const died = el('input', { type: 'date', value: d.died || '', 'aria-label': 'תאריך פטירה' });
+    const place = el('input', { type: 'text', value: d.place || '', maxlength: 120, 'aria-label': 'מקום לידה', placeholder: 'עיר, ארץ' });
+    const notes = el('textarea', { rows: 3, maxlength: 2000, 'aria-label': 'הערות', placeholder: 'כינוי, שם בלידה, מקצוע, כל מה שכדאי לזכור' }, d.notes || '');
+    const sex = el('select', { 'aria-label': 'מין' }, [['', '—'], ['m', 'זכר'], ['f', 'נקבה']].map(([v, t]) => el('option', { value: v, selected: (d.sex || '') === v }, t)));
     const save = async (e) => {
       e.preventDefault();
       try {
-        const r = await call(p ? `/api/vault/people/${p.id}` : '/api/vault/people', { method: p ? 'PUT' : 'POST', body: { name: name.value, parent1: p1.value || null, parent2: p2.value || null, partner: pa.value || null, member: member.value || null, details: p?.details } });
+        const r = await call(p ? `/api/vault/people/${p.id}` : '/api/vault/people', { method: p ? 'PUT' : 'POST', body: { name: name.value, parent1: p1.value || null, parent2: p2.value || null, partner: pa.value || null, member: member.value || null,
+          details: { ...d, sex: sex.value, born: born.value, died: died.value, place: place.value.trim(), notes: notes.value.trim() } } });
         H.closeModal(); touched(); await open(); if (p) panel(r.id);
       } catch (err) { say(err); }
     };
@@ -223,8 +231,42 @@
       el('div', { class: 'fv-two' }, el('label', {}, 'הורה', p1), el('label', {}, 'הורה נוסף', p2)),
       el('label', {}, 'בן או בת זוג', pa),
       el('label', {}, 'משתמש בעוזר', member),
+      el('div', { class: 'fv-two' }, el('label', {}, 'תאריך לידה', born), el('label', {}, 'תאריך פטירה', died)),
+      el('div', { class: 'fv-two' }, el('label', {}, 'מקום לידה', place), el('label', {}, 'מין (לניסוח העברי)', sex)),
+      el('label', {}, 'הערות', notes),
       el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'שמירה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
     setTimeout(() => name.focus(), 50);
+  }
+
+  /** a number in Hebrew letters, with its geresh or gershayim: 27 → כ״ז, 745 → תשמ״ה */
+  function heNum(n) {
+    const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'], tens = ['', 'י', 'כ', 'ל', 'מ', 'נ', 'ס', 'ע', 'פ', 'צ'], hund = ['', 'ק', 'ר', 'ש', 'ת'];
+    let h = Math.floor(n / 100), out = '';
+    while (h > 4) { out += 'ת'; h -= 4; }
+    out += hund[h];
+    const r = n % 100;
+    out += r === 15 ? 'טו' : r === 16 ? 'טז' : tens[Math.floor(r / 10)] + ones[r % 10];
+    return out.length > 1 ? out.slice(0, -1) + '״' + out.slice(-1) : out + '׳';
+  }
+  /** a day as a Hebrew date in letters: "כ״ז באדר תשמ״ה" */
+  function heDate(t) {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-u-ca-hebrew', { day: 'numeric', year: 'numeric' }).formatToParts(t).map((x) => [x.type, x.value]));
+    return `${heNum(+p.day)} ב${new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { month: 'long' }).format(t)} ${heNum(+p.year % 1000)}`;
+  }
+  /** "נולד ב־20 במרץ 1985 (כ״ז באדר תשמ״ה) בירושלים · בן 41" – from the person's details, in the right gender */
+  function lifeLine(d = {}) {
+    const day = (iso) => { const t = new Date(iso + 'T12:00'); return isNaN(t) ? null : t; };
+    const b = d.born && day(d.born), x = d.died && day(d.died);
+    if (!b && !x && !d.place) return null;
+    const g = (m, f, both) => (d.sex === 'm' ? m : d.sex === 'f' ? f : both);
+    const greg = (t) => t.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const years = (from, to) => { let y = to.getFullYear() - from.getFullYear(); if (to < new Date(to.getFullYear(), from.getMonth(), from.getDate())) y--; return y; };
+    const parts = [];
+    if (b) parts.push(`${g('נולד', 'נולדה', 'נולד/ה')} ב־${greg(b)} (${heDate(b)})${d.place ? ' ב' + d.place : ''}`);
+    else if (d.place) parts.push('מ' + d.place);
+    if (x) parts.push(`${g('נפטר', 'נפטרה', 'נפטר/ה')} ב־${greg(x)} (${heDate(x)})`);
+    if (b) parts.push(x ? `${g('חי', 'חיה', 'חי/ה')} ${years(b, x)} שנים` : `${g('בן', 'בת', 'בן/בת')} ${years(b, new Date())}`);
+    return el('p', { class: 'fv-life muted' }, parts.join(' · '));
   }
 
   /* ---------- a person's panel ---------- */
@@ -239,7 +281,7 @@
       tab = t;
       const items = list.items.filter((x) => x.kind === t);
       body.replaceChildren(...[
-        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null),
+        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null),
           el('span', { class: 'spacer' }), el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה')),
         el('nav', { class: 'fv-tabs', role: 'tablist' }, TABS.map(([k, label]) => el('button', { role: 'tab', 'aria-selected': String(k === t), class: k === t ? 'on' : '', onclick: () => draw(k) }, label, el('small', {}, String(list.items.filter((x) => x.kind === k).length))))),
         adder(t),

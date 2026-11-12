@@ -37,7 +37,7 @@
 .edit-list input { flex: 1; min-width: 0; }
 .edit-list .m { flex: 0 0 34%; }
 .sync { font-size: .75rem; color: var(--muted); }
-.sync.off { color: var(--accent); }
+.sync.off { color: var(--olive-ink); }
 
 /* ================= ערכי תזונה: צבעים ================= */
 :root { --m-fat: #c2b04e; --m-protein: #9c7a55; --m-carbs: #5f8fa8; --m-fiber: #7f9a4a; --bad: #9a3b2a; }

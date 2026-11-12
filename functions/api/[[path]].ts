@@ -238,6 +238,10 @@ route('PUT', '/api/research/drafts/:id', writing.saveDraft);
 route('DELETE', '/api/research/drafts/:id', writing.removeDraft);
 route('GET', '/api/research/drafts/:id/export', writing.exportDraft);
 route('POST', '/api/research/drafts/:id/drive', writing.draftToDrive);
+route('POST', '/api/research/r/:id/ai/search', writing.aiSearch);
+route('POST', '/api/research/r/:id/ai/compare', writing.aiCompare);
+route('POST', '/api/research/sources/:id/ai/summary', writing.aiSummary);
+route('POST', '/api/research/drafts/:id/ai/edit', writing.aiEdit);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);

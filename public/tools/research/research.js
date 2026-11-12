@@ -148,6 +148,9 @@
       el('h2', { style: 'margin:0' }, '✍ כתיבה'),
       el('div', { class: 'ai-pair' },
         el('button', { class: 'btn primary small', type: 'button', onclick: () => create({ body: { title: r.title, outline: true } }) }, 'שלד מהפתקים'),
+        // the academic pack's templates: IMRaD, a seminar paper, an essay, a talk, a post (their sections, a length to aim for)
+        (() => { const s = el('select', { 'aria-label': 'טיוטה מתבנית', style: INPUT, onchange: () => { if (s.value) create({ body: { title: r.title, template: s.value } }); } },
+          el('option', { value: '' }, 'מתבנית…'), [['imrad', 'מאמר מחקר (IMRaD)'], ['seminar', 'עבודה סמינריונית'], ['essay', 'מאמר עיון'], ['talk', 'הרצאה'], ['post', 'פוסט']].map(([v, n]) => el('option', { value: v }, n))); return s; })(),
         el('button', { class: 'btn ghost small', type: 'button', onclick: () => create({ body: { title: r.title } }) }, 'טיוטה ריקה'),
         sparkle('✨ טיוטה מהפתקים', async () => { const a = await api(`/api/research/r/${r.id}/ai/draft`, { body: {} }); await create({ body: { title: r.title + ' · טיוטה', body: a.body } }); toast('✨ טיוטה ראשונה מוכנה. כדאי לבדוק כל משפט מול הפתקים'); })),
       box);
@@ -161,9 +164,46 @@
     const text = el('textarea', { rows: 24, dir: 'auto', 'aria-label': 'הטיוטה', style: INPUT + ';inline-size:100%;line-height:1.7;font-size:1rem' });
     text.value = d.body;
     const state = el('small', { class: 'muted', role: 'status' }, 'נשמר');
+    // the academic pack: a length to aim for, numbered headings, and a checklist before handing in
+    const countWords = (s) => s.replace(/\[@[^\]]*\]|\^\[[^\]]*\]|\{#[^}]*\}|\[ref:[^\]]*\]|[#*>\-[\]()]/g, ' ').split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
+    const words = el('small', { class: 'rx-words muted' });
+    const target = el('input', { type: 'number', min: '0', step: '100', value: d.target || '', 'aria-label': 'יעד מילים', style: INPUT + ';inline-size:7em' });
+    const numbered = el('input', { type: 'checkbox', checked: d.numbered });
+    const paintWords = () => { const n = countWords(text.value), goal = Number(target.value) || 0; words.textContent = goal ? `${n.toLocaleString('he-IL')} / ${goal.toLocaleString('he-IL')} מילים` : `${n.toLocaleString('he-IL')} מילים`; words.style.color = goal && n > goal * 1.1 ? 'var(--danger)' : ''; };
+    const checks = el('details', { class: 'rx-checks card', style: CARD }, el('summary', { style: 'cursor:pointer;font-weight:600' }, '✓ לפני הגשה'));
+    const drawChecks = (list) => { checks.replaceChildren(el('summary', { style: 'cursor:pointer;font-weight:600' }, `✓ לפני הגשה · ${list.filter((c) => c.ok).length}/${list.length}`),
+      el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:4px' }, list.map((c) => el('li', { class: c.ok ? 'ok' : 'todo' }, (c.ok ? '✓ ' : '○ ') + c.text)))); };
     let t = 0;
-    const save = async () => { clearTimeout(t); state.textContent = 'שומר…'; try { await api(`/api/research/drafts/${id}`, { method: 'PUT', body: { title: title.value.trim() || d.title, body: text.value } }); state.textContent = 'נשמר'; } catch (_) { state.textContent = 'לא נשמר – בדקו את החיבור'; } };
-    const later = () => { state.textContent = '…'; clearTimeout(t); t = setTimeout(save, 900); };
+    const save = async () => {
+      clearTimeout(t); state.textContent = 'שומר…';
+      try {
+        await api(`/api/research/drafts/${id}`, { method: 'PUT', body: { title: title.value.trim() || d.title, body: text.value, target: Number(target.value) || null, numbered: numbered.checked } });
+        state.textContent = 'נשמר';
+        api(`/api/research/drafts/${id}`).then((x) => drawChecks(x.checklist)).catch(() => {});
+      } catch (_) { state.textContent = 'לא נשמר – בדקו את החיבור'; }
+    };
+    target.oninput = () => { paintWords(); clearTimeout(t); t = setTimeout(save, 900); };
+    numbered.onchange = save;
+    const refTo = () => {
+      const labels = [...text.value.matchAll(/\{#([^}]+)\}/g)].map((m) => m[1]);
+      const label = prompt(labels.length ? `לאיזה סעיף? (${labels.join(', ')})` : 'אין עדיין תוויות. מוסיפים לכותרת {#שם}, למשל: ## רקע {#רקע}. לאיזו תווית להפנות?', labels[0] || '');
+      if (label && label.trim()) insert(`[ref:${label.trim()}]`);
+    };
+    /** ✨ language editing: the edited text is shown first, and replaces the draft only when the person agrees */
+    const editLanguage = async () => {
+      await save();
+      const sel = text.selectionEnd > text.selectionStart ? text.value.slice(text.selectionStart, text.selectionEnd) : null;
+      const x = await api(`/api/research/drafts/${id}/ai/edit`, { body: sel ? { text: sel } : {} });
+      const view = el('textarea', { rows: 14, dir: 'auto', readonly: true, style: INPUT + ';inline-size:100%' }); view.value = x.text;
+      H.modal(el('h2', {}, '✨ עריכה לשונית'), x.notes.length ? el('ul', {}, x.notes.map((n) => el('li', {}, n))) : null, view, aiNote(),
+        el('div', { style: ROW },
+          el('button', { class: 'btn primary', type: 'button', onclick: () => {
+            if (sel) { const a = text.selectionStart; text.value = text.value.slice(0, a) + x.text + text.value.slice(text.selectionEnd); } else text.value = x.text;
+            H.closeModal(); later(); toast('הטקסט הוחלף. אפשר לבטל ב־Ctrl+Z בתוך התיבה');
+          } }, sel ? 'להחליף את הקטע' : 'להחליף את הטיוטה'),
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול')));
+    };
+    const later = () => { state.textContent = '…'; paintWords(); clearTimeout(t); t = setTimeout(save, 900); };
     title.oninput = later; text.oninput = later;
     const insert = (s) => { const a = text.selectionStart ?? text.value.length; text.value = text.value.slice(0, a) + s + text.value.slice(text.selectionEnd ?? a); text.focus(); text.setSelectionRange(a + s.length, a + s.length); later(); };
     const preview = el('div', { class: 'rx-preview card', hidden: true, style: CARD });
@@ -180,7 +220,8 @@
       } }, `${s.inText} · ${s.title}`))) : el('p', {}, 'אין עדיין מקורות במחקר.'));
     const pickNote = () => H.modal(el('h2', {}, 'פתק לטיוטה'), el('div', { style: 'display:grid;gap:6px' }, D.notes.map((n) => el('button', { class: 'btn ghost', type: 'button', style: 'text-align:start;justify-content:start',
       onclick: () => { H.closeModal(); insert(`\n\n${n.body}\n\n`); } }, n.title))));
-    const ex = (fmt, label) => el('a', { class: 'btn ghost small', href: `/api/research/drafts/${id}/export?format=${fmt}`, target: fmt === 'html' ? '_blank' : null, download: fmt === 'html' ? null : '', onclick: () => save() }, label);
+    // the print view and the slides open in a tab; the rest download
+    const ex = (fmt, label) => { const view = fmt === 'html' || fmt === 'slides'; return el('a', { class: 'btn ghost small', href: `/api/research/drafts/${id}/export?format=${fmt}`, target: view ? '_blank' : null, download: view ? null : '', onclick: () => save() }, label); };
     const toDrive = el('button', { class: 'btn ghost small', type: 'button', onclick: async () => {
       await save(); toDrive.disabled = true;
       try { const x = await api(`/api/research/drafts/${id}/drive`, { body: {} }); toast('נשמר ב־Google Docs', 'לפתוח', () => window.open(x.url, '_blank', 'noopener')); }
@@ -197,12 +238,22 @@
       el('div', { class: 'rx-toolbar', style: ROW },
         el('button', { class: 'btn ghost small', type: 'button', onclick: pickCite }, '+ ציטוט'),
         el('button', { class: 'btn ghost small', type: 'button', onclick: pickNote }, '+ פתק'),
+        el('button', { class: 'btn ghost small', type: 'button', title: 'הערת שוליים: ^[הטקסט]', onclick: () => { const n = prompt('הערת השוליים:'); if (n && n.trim()) insert(`^[${n.trim()}]`); } }, '+ הערת שוליים'),
+        el('button', { class: 'btn ghost small', type: 'button', title: 'מוסיפים לכותרת {#שם}, ומפנים אליה [ref:שם]', onclick: refTo }, '+ הפניה לסעיף'),
         el('button', { class: 'btn ghost small', type: 'button', onclick: () => (preview.hidden ? showPreview() : (preview.hidden = true, text.hidden = false)) }, '👁 תצוגה'),
-        el('span', { style: 'flex:1' }), state),
+        el('span', { style: 'flex:1' }), words, state),
+      el('div', { class: 'rx-format', style: ROW },
+        el('label', { style: ROW }, numbered, 'כותרות ממוספרות'),
+        el('label', { style: ROW }, el('span', { class: 'small muted' }, 'יעד:'), target, el('span', { class: 'small muted' }, 'מילים')),
+        d.template ? el('small', { class: 'muted' }, 'תבנית: ' + d.template.name) : null,
+        el('span', { class: 'ai-pair' }, sparkle('✨ עריכה לשונית', editLanguage))),
       text, preview,
-      el('div', { class: 'rx-export', style: ROW }, el('small', { class: 'muted' }, 'ייצוא:'), ex('md', 'Markdown'), ex('html', 'להדפסה / PDF'), ex('doc', 'Word'), ex('tex', 'LaTeX'), ex('bib', 'BibTeX'), toDrive,
+      checks,
+      el('div', { class: 'rx-export', style: ROW }, el('small', { class: 'muted' }, 'ייצוא:'), ex('md', 'Markdown'), ex('html', 'להדפסה / PDF'), ex('docx', 'Word (docx)'), ex('slides', 'שקפים'), ex('tex', 'LaTeX'), ex('bib', 'BibTeX'), toDrive,
         el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('למחוק את הטיוטה?')) return; await api(`/api/research/drafts/${id}`, { method: 'DELETE' }); history.pushState(null, '', `?r=${d.research}`); route(); } }, 'מחיקה')),
-      el('p', { class: 'small muted', style: 'margin:0' }, 'כותבים ב־Markdown: # כותרת, **מודגש**, - רשימה. ציטוט: [@…] (מ"+ ציטוט"). "להדפסה / PDF" נפתח בדפדפן: שומרים משם כ־PDF.')));
+      el('p', { class: 'small muted', style: 'margin:0' }, 'כותבים ב־Markdown: # כותרת, **מודגש**, - רשימה. ציטוט [@…], הערת שוליים ^[…], תווית לכותרת {#שם} והפניה אליה [ref:שם]. "להדפסה / PDF" ו"שקפים" נפתחים בדפדפן (שומרים משם כ־PDF).')));
+    drawChecks(D.checklist);
+    paintWords();
     addEventListener('beforeunload', save, { once: true });
   }
 
@@ -312,7 +363,15 @@
     return el('section', { class: 'rx-sources', style: 'display:grid;gap:10px' },
       el('div', { style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, el('h2', { style: 'margin:0;flex:1' }, `📚 מקורות (${R.sources.length})`),
         el('button', { class: 'btn ghost small', type: 'button', onclick: manualSource }, '+ מקור ידני')),
-      el('div', { style: ROW }, q, el('button', { class: 'btn small', type: 'button', onclick: search }, 'חיפוש')),
+      el('div', { style: ROW }, q, el('span', { class: 'ai-pair' }, el('button', { class: 'btn small primary', type: 'button', onclick: search }, 'חיפוש'),
+        // ✨ focused search: the AI writes the searches from the research (or the words typed as a question)
+        sparkle('✨ חיפוש ממוקד', async () => {
+          out.replaceChildren(el('p', { class: 'muted' }, 'מנסח חיפושים ומחפש…'));
+          const d = await api(`/api/research/r/${r.id}/ai/search`, { body: q.value.trim() ? { question: q.value.trim() } : {} });
+          out.replaceChildren(el('small', { class: 'muted' }, 'חיפשתי: ' + d.queries.join(' · ')), ...(d.results.length ? d.results.map(foundRow) : [el('p', { class: 'muted' }, 'לא נמצאו מקורות.')]),
+            aiNote(), el('small', { class: 'muted' }, 'מקורות: OpenAlex (CC0).'));
+        }))),
+      R.sources.length > 1 ? el('div', { class: 'ai-pair' }, sparkle('✨ השוואה בין מקורות', compareSources)) : null,
       out,
       R.sources.length ? el('ol', { class: 'rx-bib', style: 'margin:0;padding-inline-start:1.4em;display:grid;gap:10px' }, R.sources.map((s) => el('li', { class: 'rx-source' + (s.retracted ? ' retracted' : '') },
         cite(s.cite),
@@ -320,10 +379,44 @@
           el('small', { class: 'muted', dir: 'ltr' }, s.inText),
           s.retracted ? el('small', { style: 'color:var(--danger)' }, '⚠ נמשך') : null,
           s.oa ? el('a', { class: 'small', href: s.oa, target: '_blank', rel: 'noopener' }, '📄 גרסה פתוחה') : null,
+          s.doi ? sparkle('✨ סיכום', () => summarize(s)) : null,
           el('button', { class: 'btn ghost small', type: 'button', onclick: () => { navigator.clipboard?.writeText(s.cite.replace(/\*/g, '')); toast('הועתק'); } }, 'העתקה'),
           el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'הסרת המקור', onclick: async () => { if (confirm('להסיר את המקור מהמחקר?')) { await api(`/api/research/sources/${s.id}`, { method: 'DELETE' }); route(); } } }, '✕')))))
         : el('p', { class: 'muted', style: 'margin:0' }, 'עוד אין מקורות. הדביקו DOI או חפשו מאמר; הביבליוגרפיה נבנית לבד, בסגנון שבחרתם.'));
   }
+  /** ✨ a source in a few points, from its abstract (read live from OpenAlex, kept nowhere unless saved as a note) */
+  async function summarize(s) {
+    let x;
+    try { x = await api(`/api/research/sources/${s.id}/ai/summary`, { body: {} }); }
+    catch (e) { if (e.code === 'no_abstract') return toast('אין למקור הזה תקציר פתוח לסכם'); throw e; }
+    const text = x.points.map((p) => '- ' + p).join('\n') + '\n\n' + x.relevance;
+    H.modal(el('h2', {}, '✨ סיכום · ' + x.cite), el('ul', {}, x.points.map((p) => el('li', { dir: 'auto' }, p))), el('p', { dir: 'auto' }, x.relevance), aiNote(),
+      el('div', { style: ROW }, el('button', { class: 'btn primary', type: 'button', onclick: async () => {
+        await api(`/api/research/r/${R.research.id}/notes`, { body: { title: 'סיכום: ' + (s.csl.title || x.cite).slice(0, 80), body: text + `\n\n[@${s.id}]` } });
+        H.closeModal(); toast('נשמר כפתק במחקר'); route();
+      } }, 'שמירה כפתק'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
+  }
+  /** ✨ two to five sources side by side: agree, differ, what each adds */
+  function compareSources() {
+    const picks = R.sources.filter((s) => s.doi).map((s) => ({ s, box: el('input', { type: 'checkbox' }) }));
+    if (picks.length < 2) { toast('להשוואה צריך לפחות שני מקורות עם DOI'); return; }
+    H.modal(el('h2', {}, '✨ השוואה'), el('p', { class: 'muted' }, 'בחרו שניים עד חמישה מקורות. ההשוואה נעשית מהתקצירים שלהם.'),
+      el('div', { style: 'display:grid;gap:6px' }, picks.map((p) => el('label', { style: ROW }, p.box, el('span', { dir: 'ltr' }, p.s.inText + ' ' + (p.s.csl.title || ''))))),
+      el('div', {}, el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
+        const ids = picks.filter((p) => p.box.checked).map((p) => p.s.id);
+        if (ids.length < 2 || ids.length > 5) return toast('שניים עד חמישה');
+        e.currentTarget.disabled = true; e.currentTarget.textContent = 'משווה…';
+        try {
+          const x = await api(`/api/research/r/${R.research.id}/ai/compare`, { body: { sources: ids } });
+          const view = el('textarea', { rows: 16, dir: 'auto', readonly: true, style: INPUT + ';inline-size:100%' }); view.value = x.body;
+          H.modal(el('h2', {}, '✨ השוואה'), x.missing.length ? el('p', { class: 'small muted' }, 'בלי תקציר, ולכן בחוץ: ' + x.missing.join(', ')) : null, view, aiNote(),
+            el('div', { style: ROW }, el('button', { class: 'btn primary', type: 'button', onclick: async () => {
+              await api(`/api/research/r/${R.research.id}/notes`, { body: { title: 'השוואה בין מקורות', body: x.body } }); H.closeModal(); toast('נשמר כפתק'); route();
+            } }, 'שמירה כפתק'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
+        } catch (err) { if (err.code === 'no_abstract') toast('לפחות לשניים מהם צריך תקציר פתוח'); else if (err.code !== 'ai_credit_needed') toast('ההשוואה לא הצליחה כרגע'); e.currentTarget.disabled = false; e.currentTarget.textContent = 'השוואה'; }
+      } }, 'השוואה')));
+  }
+
   function manualSource() {
     const t = el('input', { type: 'text', dir: 'auto', style: INPUT }), a = el('input', { type: 'text', dir: 'auto', placeholder: 'כהן, שרה; לוי, דוד', style: INPUT });
     const y = el('input', { type: 'text', inputmode: 'numeric', style: INPUT }), c = el('input', { type: 'text', dir: 'auto', placeholder: 'כתב העת, או ההוצאה של ספר', style: INPUT });

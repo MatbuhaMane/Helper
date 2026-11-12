@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The research assistant, step 2 completed: the academic pack, docx and slides, and the ✨ tools (ai-features → master, design)
+
+The owner's scope for step 2 (vision): beyond 6d9a822, now also
+- **The academic formatting and writing pack** (`server/research-pack.ts`, 20 tests in `server/test-research-pack.mjs`):
+  draft templates (IMRaD, a seminar paper, an essay, a talk, a post) with their sections and a length to aim for;
+  numbered headings and cross-references (`{#label}` on a heading, `[ref:label]` → "סעיף 2.1"); footnotes `^[…]` (with
+  citations inside them; LaTeX `ootnote`); a word count against the target; a checklist before handing in (the
+  template's sections, the length, citations that point nowhere, places still to complete, the abstract, broken
+  references); Hebrew and English kept in order in HTML (`dir="auto"` paragraphs, `<bdi>` for English runs).
+- **Export:** a real **.docx** written here with no library (a stored zip with its CRC; checked with a zip reader and an
+  XML parser), right to left, headings styled, notes and bibliography; **slides** as one HTML page (a slide per `##`).
+- **✨ (own AI or credit):** focused search (the AI writes 2–3 OpenAlex searches), a source's summary and a comparison of
+  2–5 sources – both from abstracts read live from OpenAlex and never stored (a work without an open abstract is said so)
+  – and language editing (the citation, link and footnote marks must come back unchanged, or it is not offered).
+- Columns in the new table `research_drafts` (not yet live, so in its CREATE): `template`, `target`, `numbered`.
+  Routes: `/api/research/r/:id/ai/{search,compare}`, `/api/research/sources/:id/ai/summary`, `/api/research/drafts/:id/ai/edit`.
+  `searchOpenAlex` and `abstractOf` are exported from researches.ts.
+- **For the master:** `test:research-pack` in `npm test`.
+- **For design:** `.rx-format` (numbering, the target, the template, ✨ editing), `.rx-words`, `.rx-checks` (a `<details>`,
+  `li.ok` / `li.todo`); the docx and slides have their own styles inside them.
+Status: done (on `ai-features`).
+
 ## 2026-11-14 – The research assistant, step 2: persistence and writing (ai-features → master, design)
 
 - **One engine with the goals:** "🎯 להפוך למטרה" makes a goal from a research (the new "מחקר" template; `insertGoal`

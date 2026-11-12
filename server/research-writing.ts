@@ -13,6 +13,8 @@ import { insertGoal } from './goals';
 import { dayOf, templateById } from './goals-logic';
 import { saveToDrive } from './notes';
 import * as C from './research-cite';
+import * as Pk from './research-pack';
+import { abstractOf, searchOpenAlex } from './researches';
 
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
   const p = schema.safeParse(await body(ctx.req));
@@ -104,12 +106,14 @@ export async function drafts(ctx: Ctx) {
 export async function newDraft(ctx: Ctx) {
   const u = requireUser(ctx);
   const r = await ownResearch(ctx, u.email, ctx.params.id);
-  const d = await read(ctx, z.object({ title: z.string().trim().max(200).default(''), outline: z.boolean().optional(), body: z.string().max(200000).optional() }));
+  const d = await read(ctx, z.object({ title: z.string().trim().max(200).default(''), outline: z.boolean().optional(), body: z.string().max(200000).optional(), template: z.string().max(20).nullable().optional() }));
   let text = d.body || '';
-  if (d.outline) { const m = await material(ctx, u.email, r.id); text = C.outlineFromNotes(d.title || r.title, m.notes, m.questions); }
+  const t = Pk.draftTemplate(d.template);
+  if (t) { const m = await material(ctx, u.email, r.id); text = Pk.fromTemplate(t, d.title || r.title, m.notes); }
+  else if (d.outline) { const m = await material(ctx, u.email, r.id); text = C.outlineFromNotes(d.title || r.title, m.notes, m.questions); }
   const id = uid(), now = Date.now();
-  await ctx.env.DB.prepare('INSERT INTO research_drafts (email, id, research_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(u.email, id, r.id, d.title || r.title, text, now, now).run();
+  await ctx.env.DB.prepare('INSERT INTO research_drafts (email, id, research_id, title, body, template, target, numbered, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(u.email, id, r.id, d.title || r.title, text, t?.id || null, t?.words || null, t?.id === 'imrad' || t?.id === 'seminar' ? 1 : 0, now, now).run();
   return json({ ok: true, id });
 }
 /** GET /api/research/drafts/:id → the draft, its research's sources (to cite) and notes, and how it reads with its citations */
@@ -118,21 +122,28 @@ export async function getDraft(ctx: Ctx) {
   const d = await ownDraft(ctx, u.email, ctx.params.id);
   const m = await material(ctx, u.email, d.research_id);
   const style = d.style as C.Style;
+  const template = Pk.draftTemplate(d.template);
   return json({
-    draft: { id: d.id, research: d.research_id, researchTitle: d.research_title, title: d.title, body: d.body, updatedAt: d.updated_at, driveId: d.drive_id || null, style },
+    draft: { id: d.id, research: d.research_id, researchTitle: d.research_title, title: d.title, body: d.body, updatedAt: d.updated_at, driveId: d.drive_id || null, style,
+      template: template ? { id: template.id, name: template.name } : null, target: d.target || null, numbered: !!d.numbered, words: Pk.wordCount(d.body) },
     sources: m.sources.map((s) => ({ id: s.id, inText: C.inText(s.csl, style), title: s.csl.title || '' })),
     notes: m.notes.map((n) => ({ id: n.id, title: n.title, body: n.body })),
-    rendered: C.renderDraft(d.body, m.sources, style),
+    checklist: Pk.checklist(d.body, { template, target: d.target, sourceIds: m.sources.map((s) => s.id) }),
+    templates: Pk.DRAFT_TEMPLATES.map((t) => ({ id: t.id, name: t.name, words: t.words })),
   });
 }
 /** PUT /api/research/drafts/:id {title?, body?} · DELETE */
 export async function saveDraft(ctx: Ctx) {
   const u = requireUser(ctx);
   await ownDraft(ctx, u.email, ctx.params.id);
-  const d = await read(ctx, z.object({ title: z.string().trim().min(1).max(200).optional(), body: z.string().max(200000).optional() }));
+  const d = await read(ctx, z.object({ title: z.string().trim().min(1).max(200).optional(), body: z.string().max(200000).optional(),
+    target: z.number().int().min(0).max(200000).nullable().optional(), numbered: z.boolean().optional(), template: z.string().max(20).nullable().optional() }));
   const sets: string[] = [], vals: unknown[] = [];
   if (d.title !== undefined) { sets.push('title = ?'); vals.push(d.title); }
   if (d.body !== undefined) { sets.push('body = ?'); vals.push(d.body); }
+  if (d.target !== undefined) { sets.push('target = ?'); vals.push(d.target || null); }
+  if (d.numbered !== undefined) { sets.push('numbered = ?'); vals.push(d.numbered ? 1 : 0); }
+  if (d.template !== undefined) { sets.push('template = ?'); vals.push(Pk.draftTemplate(d.template)?.id || null); }
   if (sets.length) await ctx.env.DB.prepare(`UPDATE research_drafts SET ${sets.join(', ')}, updated_at = ? WHERE email = ? AND id = ?`).bind(...vals, Date.now(), u.email, ctx.params.id).run();
   return json({ ok: true, at: Date.now() });
 }
@@ -142,13 +153,27 @@ export async function removeDraft(ctx: Ctx) {
   return json({ ok: true });
 }
 
-/** the draft as a whole HTML page: right to left, its citations written out and its bibliography at the end */
-function htmlPage(title: string, rendered: ReturnType<typeof C.renderDraft>) {
-  const bib = rendered.bibliography.length ? `<h2>ביבליוגרפיה</h2><ul class="bib">${rendered.bibliography.map((b) => `<li dir="ltr">${C.mdToHtml(b).replace(/^<p>|<\/p>$/g, '')}</li>`).join('')}</ul>` : '';
+/** a draft ready to export: its headings numbered (or plain, with cross-references by name), its footnotes collected,
+    and its citations – in the text and in the notes – written out in the style, with the bibliography of what is cited */
+function compose(d: { body: string; numbered: number | boolean; style: C.Style }, sources: C.DraftSource[]) {
+  const headed = d.numbered ? Pk.numberHeadings(d.body).md : Pk.plainHeadings(d.body);
+  const fn = Pk.footnotes(headed);
+  const main = C.renderDraft(fn.text, sources, d.style);
+  const notes = fn.notes.map((n) => C.renderDraft(n, sources, d.style));
+  const cited = [...new Set([...main.cited, ...notes.flatMap((n) => n.cited)])];
+  const bibliography = C.renderDraft(cited.map((id) => `[@${id}]`).join(' '), sources, d.style).bibliography;
+  return { text: main.text, notes: notes.map((n) => n.text), cited, bibliography, headed };
+}
+type Composed = ReturnType<typeof compose>;
+
+/** the draft as a whole HTML page: right to left (English kept in order), its notes and its bibliography at the end */
+function htmlPage(title: string, c: Composed) {
+  const notes = c.notes.length ? `<h2>הערות</h2><ol class="notes">${c.notes.map((n) => `<li>${C.mdToHtml(n).replace(/^<p>|<\/p>$/g, '')}</li>`).join('')}</ol>` : '';
+  const bib = c.bibliography.length ? `<h2>ביבליוגרפיה</h2><ul class="bib">${c.bibliography.map((b) => `<li dir="ltr">${C.mdToHtml(b).replace(/^<p>|<\/p>$/g, '')}</li>`).join('')}</ul>` : '';
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   return `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<style>body{font-family:"David","Frank Ruehl CLM","Times New Roman",serif;max-width:42em;margin:2em auto;line-height:1.7;font-size:13pt;padding:0 1em}h1{font-size:1.7em}h2{font-size:1.3em;margin-top:1.6em}blockquote{border-inline-start:3px solid #999;margin:1em 0;padding-inline-start:1em;color:#444}.bib li{margin:.4em 0;text-align:left}@media print{body{margin:0}}</style>
-</head><body>${C.mdToHtml(rendered.text)}${bib}</body></html>`;
+<style>body{font-family:"David","Frank Ruehl CLM","Times New Roman",serif;max-width:42em;margin:2em auto;line-height:1.7;font-size:13pt;padding:0 1em}h1{font-size:1.7em}h2{font-size:1.3em;margin-top:1.6em}blockquote{border-inline-start:3px solid #999;margin:1em 0;padding-inline-start:1em;color:#444}.bib li{margin:.4em 0;text-align:left}.notes{font-size:.92em}@media print{body{margin:0}}</style>
+</head><body>${Pk.bidiHtml(C.mdToHtml(c.text) + notes)}${bib}</body></html>`;
 }
 
 /** GET /api/research/drafts/:id/export?format=md|html|doc|tex|bib */
@@ -157,24 +182,36 @@ export async function exportDraft(ctx: Ctx) {
   const d = await ownDraft(ctx, u.email, ctx.params.id);
   const m = await material(ctx, u.email, d.research_id);
   const style = d.style as C.Style, fmt = ctx.url.searchParams.get('format') || 'md';
-  const rendered = C.renderDraft(d.body, m.sources, style);
+  const c = compose({ body: d.body, numbered: d.numbered, style }, m.sources);
   const name = (d.title || 'draft').replace(/[^\p{L}\p{N} _-]+/gu, '').trim().slice(0, 60) || 'draft';
-  const file = (ext: string, type: string, text: string) => new Response(text, { headers: { 'content-type': `${type}; charset=utf-8`, 'content-disposition': `attachment; filename*=UTF-8''${encodeURIComponent(name)}.${ext}` } });
-  if (fmt === 'html') return new Response(htmlPage(d.title, rendered), { headers: { 'content-type': 'text/html; charset=utf-8' } });   // shown, to print or save as PDF
-  // Word opens an HTML document saved as .doc, with its headings and lists (a real .docx would need a library)
-  if (fmt === 'doc') return file('doc', 'application/msword', htmlPage(d.title, rendered));
+  const disp = (ext: string) => `attachment; filename*=UTF-8''${encodeURIComponent(name)}.${ext}`;
+  const file = (ext: string, type: string, text: string) => new Response(text, { headers: { 'content-type': `${type}; charset=utf-8`, 'content-disposition': disp(ext) } });
+  if (fmt === 'html') return new Response(htmlPage(d.title, c), { headers: { 'content-type': 'text/html; charset=utf-8' } });   // shown, to print or save as PDF
+  // a real .docx, written here (research-pack.ts): headings, lists, the notes and the bibliography, right to left
+  if (fmt === 'docx') return new Response(Pk.docx(d.title, c.text, c.bibliography, c.notes), { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'content-disposition': disp('docx') } });
+  if (fmt === 'slides') return new Response(Pk.slidesHtml(d.title, c.text, C.mdToHtml), { headers: { 'content-type': 'text/html; charset=utf-8' } });
   const used = new Set<string>(), keys = new Map<string, string>(), entries: string[] = [];
-  for (const s of m.sources) { const e = C.bibtex(s.csl, used); keys.set(s.id, /\{([^,]+),/.exec(e)![1]); if (rendered.cited.includes(s.id)) entries.push(e); }
+  for (const s of m.sources) { const e = C.bibtex(s.csl, used); keys.set(s.id, /\{([^,]+),/.exec(e)![1]); if (c.cited.includes(s.id)) entries.push(e); }
   // the .bib is always references.bib, the name the LaTeX file asks for (a Hebrew file name trips BibTeX)
   if (fmt === 'bib') return new Response(entries.join('\n\n') + '\n', { headers: { 'content-type': 'application/x-bibtex; charset=utf-8', 'content-disposition': 'attachment; filename="references.bib"' } });
   if (fmt === 'tex') {
     const BS = String.fromCharCode(92);
     const tex = [`${BS}documentclass{article}`, `${BS}usepackage{polyglossia}`, `${BS}setmainlanguage{hebrew}`, `${BS}setotherlanguage{english}`,
       `${BS}newfontfamily${BS}hebrewfont{David CLM}`, `${BS}title{${d.title.replace(/[{}\\]/g, '')}}`, `${BS}begin{document}`, `${BS}maketitle`, '',
-      C.mdToLatex(d.body, keys), '', `${BS}bibliographystyle{${style === 'apa' ? 'apalike' : 'plain'}}`, `${BS}bibliography{references}`, `${BS}end{document}`, ''].join('\n');
+      latexBody(d.body, keys), '', `${BS}bibliographystyle{${style === 'apa' ? 'apalike' : 'plain'}}`, `${BS}bibliography{references}`, `${BS}end{document}`, ''].join('\n');
     return file('tex', 'application/x-tex', tex);
   }
-  return file('md', 'text/markdown', rendered.text + (rendered.bibliography.length ? '\n\n## ביבליוגרפיה\n\n' + rendered.bibliography.map((b) => `- ${b}`).join('\n') + '\n' : ''));
+  return file('md', 'text/markdown', c.text
+    + (c.notes.length ? '\n\n## הערות\n\n' + c.notes.map((n, i) => `${i + 1}. ${n}`).join('\n') : '')
+    + (c.bibliography.length ? '\n\n## ביבליוגרפיה\n\n' + c.bibliography.map((b) => `- ${b}`).join('\n') : '') + '\n');
+}
+
+/** the LaTeX body: LaTeX numbers the sections itself, so the headings stay plain; a footnote becomes \footnote{…} with
+    its own citations as \cite */
+function latexBody(md: string, keys: Map<string, string>) {
+  const BS = String.fromCharCode(92), notes: string[] = [];
+  const marked = Pk.replaceFootnotes(Pk.plainHeadings(md), (n) => { notes.push(n); return `FOOTNOTE${notes.length - 1}MARK`; });
+  return C.mdToLatex(marked, keys).replace(/FOOTNOTE(\d+)MARK/g, (_, i) => `${BS}footnote{${C.mdToLatex(notes[Number(i)], keys)}}`);
 }
 
 /** POST /api/research/drafts/:id/drive → { url } – the draft as a Google Doc (the same one again on each save) */
@@ -182,7 +219,7 @@ export async function draftToDrive(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await ownDraft(ctx, u.email, ctx.params.id);
   const m = await material(ctx, u.email, d.research_id);
-  const f = await saveToDrive(ctx, u.email, { id: d.drive_id, name: d.title, content: htmlPage(d.title, C.renderDraft(d.body, m.sources, d.style)), html: true, folder: 'האוהל · מחקרים' });
+  const f = await saveToDrive(ctx, u.email, { id: d.drive_id, name: d.title, content: htmlPage(d.title, compose({ body: d.body, numbered: d.numbered, style: d.style }, m.sources)), html: true, folder: 'האוהל · מחקרים' });
   await ctx.env.DB.prepare('UPDATE research_drafts SET drive_id = ? WHERE email = ? AND id = ?').bind(f.id, u.email, d.id).run();
   return json({ url: f.webViewLink, id: f.id });
 }
@@ -220,4 +257,81 @@ export async function aiDraft(ctx: Ctx) {
   });
   if (!out.body.trim()) throw new HttpError(502, 'ai_failed');
   return json({ body: out.body.slice(0, 200000) });
+}
+
+const Queries = z.object({ queries: z.array(z.string()) });
+/** POST /api/research/r/:id/ai/search {question?} → works found by searches the AI writes from the research (or a question);
+    the plain search (/api/research/find) takes the person's own words */
+export async function aiSearch(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const { question } = await read(ctx, z.object({ question: z.string().max(500).optional() }));
+  const m = await material(ctx, u.email, r.id);
+  const q = await aiJson(ctx.env, {
+    prefer: 'gemini', fast: true, schema: Queries,
+    system: 'You turn a research question into 2–3 short searches for OpenAlex, a database of scholarly works: in English (scholarly literature is mostly English), 2–6 key terms each, no boolean operators, different angles of the same question. JSON only: {"queries": [""]}',
+    prompt: `Research: ${r.title}\nAim: ${r.aim || ''}\n${question ? `Question: ${question}\n` : ''}Notes: ${m.notes.map((n) => n.title).join('; ').slice(0, 1500)}`,
+  });
+  const queries = q.queries.map((s) => s.trim()).filter(Boolean).slice(0, 3);
+  const seen = new Set<string>(), results: any[] = [];
+  for (const list of await Promise.all(queries.map((s) => searchOpenAlex(ctx, s, 8).catch(() => [])))) {
+    for (const x of list) { const k = x.doi || x.id; if (k && !seen.has(k)) { seen.add(k); results.push(x); } }
+  }
+  return json({ queries, results: results.slice(0, 20), credit: 'OpenAlex' });
+}
+
+const Summary = z.object({ points: z.array(z.string()), relevance: z.string() });
+/** POST /api/research/sources/:id/ai/summary → the source's abstract (from OpenAlex, live) in a few Hebrew points, and how
+    it bears on the research. Nothing of it is stored; the person may keep it as a note. */
+export async function aiSummary(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const s = await ctx.env.DB.prepare('SELECT s.*, r.title AS rtitle, r.aim FROM research_sources s JOIN researches r ON r.email = s.email AND r.id = s.research_id WHERE s.email = ? AND s.id = ?').bind(u.email, ctx.params.id).first<any>();
+  if (!s) throw new HttpError(404, 'Not found');
+  const csl = JSON.parse(s.csl || '{}') as C.Csl;
+  const abstract = s.doi ? await abstractOf(ctx, s.doi) : '';
+  if (!abstract) throw new HttpError(422, 'no_abstract');
+  const out = await aiJson(ctx.env, {
+    prefer: 'gemini', fast: true, schema: Summary,
+    system: 'Summarise a scholarly work for a Hebrew-speaking researcher, only from its abstract: 3–5 short points in Hebrew (what was asked, how, what was found), and one or two sentences on how it bears on their research. Never add what the abstract does not say. JSON only: {"points": [""], "relevance": ""}',
+    prompt: `Their research: ${s.rtitle} – ${s.aim || ''}\n\nThe work: ${C.format(csl, 'apa')}\n\nAbstract:\n${abstract}`,
+  });
+  return json({ points: out.points.slice(0, 6), relevance: out.relevance, cite: C.inText(csl, 'apa') });
+}
+
+/** POST /api/research/r/:id/ai/compare {sources: [id…]} → how two to five sources agree, differ and complement (from their
+    abstracts), in Hebrew Markdown */
+export async function aiCompare(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const r = await ownResearch(ctx, u.email, ctx.params.id);
+  const { sources } = await read(ctx, z.object({ sources: z.array(z.string().max(40)).min(2).max(5) }));
+  const rows = (await ctx.env.DB.prepare(`SELECT id, csl, doi FROM research_sources WHERE email = ? AND research_id = ? AND id IN (${sources.map(() => '?').join(',')})`).bind(u.email, r.id, ...sources).all<any>()).results;
+  const items = await Promise.all(rows.map(async (s) => { const csl = JSON.parse(s.csl || '{}') as C.Csl; return { cite: C.inText(csl, 'apa'), title: csl.title || '', abstract: s.doi ? await abstractOf(ctx, s.doi) : '' }; }));
+  const usable = items.filter((i) => i.abstract);
+  if (usable.length < 2) throw new HttpError(422, 'no_abstract');
+  const out = await aiJson(ctx.env, {
+    prefer: 'gemini', schema: Draft,
+    system: 'Compare scholarly works for a researcher, only from their abstracts, in Hebrew Markdown: a short table (work · question · method · finding), then where they agree, where they differ, and what each adds. Refer to each work by its citation as given. Never add what the abstracts do not say. JSON only: {"body": "…"}',
+    prompt: `Their research: ${r.title}\n\n${usable.map((i) => `${i.cite} ${i.title}\nAbstract: ${i.abstract}`).join('\n\n')}`.slice(0, 40000),
+  });
+  return json({ body: out.body, missing: items.filter((i) => !i.abstract).map((i) => i.cite) });
+}
+
+const Edit = z.object({ text: z.string(), notes: z.array(z.string()) });
+/** POST /api/research/drafts/:id/ai/edit {text?} → the draft (or a part of it) edited for language – clearer, correct Hebrew,
+    the same content – with a few notes on what changed. The citation, link and footnote marks are kept as they are. */
+export async function aiEdit(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const d = await ownDraft(ctx, u.email, ctx.params.id);
+  const { text } = await read(ctx, z.object({ text: z.string().max(60000).optional() }));
+  const input = (text ?? d.body).trim();
+  if (!input) throw new HttpError(400, 'Empty');
+  const out = await aiJson(ctx.env, {
+    prefer: 'claude', schema: Edit,
+    system: 'You are a careful Hebrew language editor for academic and personal writing. Improve clarity, grammar, spelling, punctuation and flow; keep the author\'s voice, meaning, structure and Markdown. Do not add or remove content or claims. Keep every mark exactly as it is: [@…] citations, [[…]] links, ^[…] footnotes, {#…} labels, [ref:…] references. JSON only: {"text": "the edited text", "notes": ["a few short notes in Hebrew on the main changes"]}',
+    prompt: input,
+  });
+  // the marks must survive the editing: if one is lost, the edit is not offered
+  const marks = (s: string) => (s.match(/\[@[^\]]+\]|\[\[[^\]]+\]\]|\^\[|\{#[^}]+\}|\[ref:[^\]]+\]/g) || []).sort().join('|');
+  if (marks(out.text) !== marks(input)) throw new HttpError(502, 'edit_lost_marks');
+  return json({ text: out.text, notes: out.notes.slice(0, 6) });
 }

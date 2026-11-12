@@ -56,10 +56,24 @@ export async function find(ctx: Ctx) {
   if (q.length < 2) return json({ results: [] });
   const doi = C.doiOf(q);
   if (doi) return json({ results: [{ ...(await lookupDoi(ctx, doi)), doi }] });
+  return json({ results: await searchOpenAlex(ctx, q), credit: 'OpenAlex' });
+}
+/** works from OpenAlex for words (the ✨ focused search runs several of these) */
+export async function searchOpenAlex(ctx: Ctx, q: string, per = 15) {
   const mail = await contact(ctx);
-  const d = await getJson(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=15${mail ? `&mailto=${encodeURIComponent(mail)}` : ''}`, UA(mail));
+  const d = await getJson(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${per}${mail ? `&mailto=${encodeURIComponent(mail)}` : ''}`, UA(mail));
   if (!d) throw new HttpError(502, 'search_failed');
-  return json({ results: (d.results || []).map((w: any) => { const x = C.fromOpenAlex(w); return { ...x, doi: x.csl.DOI || null }; }), credit: 'OpenAlex' });
+  return (d.results || []).map((w: any) => { const x = C.fromOpenAlex(w); return { ...x, doi: x.csl.DOI || null }; });
+}
+/** a work's abstract from OpenAlex (rebuilt from its word index), live and never stored – for ✨ summaries and comparisons */
+export async function abstractOf(ctx: Ctx, doi: string): Promise<string> {
+  const mail = await contact(ctx);
+  const w = await getJson(`https://api.openalex.org/works/doi:${encodeURIComponent(doi)}${mail ? `?mailto=${encodeURIComponent(mail)}` : ''}`, UA(mail)).catch(() => null);
+  const idx = w?.abstract_inverted_index as Record<string, number[]> | undefined;
+  if (!idx) return '';
+  const words: string[] = [];
+  for (const [word, at] of Object.entries(idx)) for (const i of at) words[i] = word;
+  return words.filter(Boolean).join(' ').slice(0, 6000);
 }
 
 /* ---------------- researches ---------------- */

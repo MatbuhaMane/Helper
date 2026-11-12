@@ -876,6 +876,9 @@ CREATE TABLE IF NOT EXISTS research_drafts (
   title       TEXT NOT NULL,
   body        TEXT NOT NULL,     -- Markdown, with [@source id] citations and [[note]] links
   drive_id    TEXT,              -- the Google Doc it was saved as
+  template    TEXT,              -- imrad, seminar, essay, talk, post (research-pack.ts)
+  target      INTEGER,           -- the length to aim for, in words
+  numbered    INTEGER NOT NULL DEFAULT 0,   -- 1: numbered headings, cross-references by number
   created_at  INTEGER NOT NULL,
   updated_at  INTEGER NOT NULL,
   PRIMARY KEY (email, id)

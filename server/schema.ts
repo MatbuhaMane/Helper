@@ -37,6 +37,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['notes', 'drive_id', 'TEXT'],                // the Google Doc this note was saved as, in the person's own Drive
   ['notes', 'drive_at', 'INTEGER'],             // when it was last saved there
   ['notes', 'inbox', 'INTEGER'],                // 1: captured from anywhere (/capture/), waiting to be sorted into a research
+  ['researches', 'goal_id', 'TEXT'],           // the goal it became (the goals engine: its steps come to "היום")
+  ['researches', 'done_at', 'INTEGER'],         // finished ("גשש")
 ];
 
 let ready: Promise<void> | null = null;

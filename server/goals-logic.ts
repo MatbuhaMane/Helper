@@ -75,6 +75,14 @@ export interface StepLite { id: string; goal: string; process: string; text: str
 export interface GoalLite { id: string; title: string; kind: Kind; due: string | null; days: number[] | null; status: string; sort: number }
 export interface ProcessLite { id: string; goal: string; sort: number }
 
+/** one open research thread for today (the research assistant's "חוט אחד ליום"): the same all day, another tomorrow */
+export function threadOfDay<T>(threads: T[], today: string): T | null {
+  if (!threads.length) return null;
+  let h = 0;
+  for (const ch of today) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return threads[h % threads.length];
+}
+
 /** 2–3 small steps for today: the next open step of each active goal that works today (short goals first, then the nearest
     due date), and a second one from the first goal when there are fewer goals than three */
 export function todays(goals: GoalLite[], processes: ProcessLite[], steps: StepLite[], today: string, rest: number | null, max = 3): StepLite[] {
@@ -106,6 +114,14 @@ export const TEMPLATES: Template[] = [
     ['תנאי עצירה אחרי שלושה חודשים', ['לכתוב מה ייחשב הצלחה', 'לקבוע תאריך לבדיקה ביומן']],
     ['לפני המכירה הראשונה', ['לקבוע פגישה עם רואה חשבון', 'לרשום את השאלות לפגישה']],
     ['המוצר מממן את עצמו', ['לחשב כמה עולה חודש', 'לבדוק כמה משלמים היום', 'לבחור צעד אחד שמקרב']],
+  ]),
+  // the research assistant's own path (a research becomes a goal of this engine: docs/vision/research.md, step 2)
+  T('research', 'מחקר', /^\s*מחקר|לחקור|עבודה סמינריונית|תזה|מאמר אקדמי/, [
+    ['לברר מה השאלה', ['לנסח את שאלת המחקר במשפט אחד', 'לכתוב למה היא חשובה לי']],
+    ['לאסוף מקורות', ['למצוא חמישה מקורות', 'לסמן את שלושת החשובים']],
+    ['לקרוא ולכתוב פתקים', ['לקרוא מקור אחד ולכתוב ממנו פתק', 'לקשר בין שני פתקים']],
+    ['לכתוב', ['לבנות שלד מהפתקים', 'לכתוב פסקה אחת']],
+    ['לעבור ולסיים', ['לבדוק את הציטוטים', 'לייצא ולשלוח']],
   ]),
   T('study', 'לימודים ומבחן', /מבחן|בחינה|ללמוד|לימוד|קורס|תואר|בגרות|מבחנים/, [
     ['להבין מה צריך', ['לרשום את הנושאים למבחן', 'לסמן מה כבר יודעים', 'לבחור את הנושא הקשה ביותר']],
@@ -188,7 +204,7 @@ export const BADGES: Badge[] = [
   { id: 'pole', name: 'עמוד האוהל', how: 'סיימת תהליך שלם', group: 'progress' },
   { id: 'standing', name: 'האוהל עומד', how: 'השגת מטרה', group: 'progress' },
   { id: 'journey', name: 'מסע', how: '100 צעדים בסך הכול', group: 'progress' },
-  { id: 'tracker', name: 'גשש', how: 'סיימת מחקר בעוזר המחקר', group: 'progress', soon: true },
+  { id: 'tracker', name: 'גשש', how: 'סיימת מחקר בעוזר המחקר', group: 'progress' },
   { id: 'dawn', name: 'עלות השחר', how: 'צעד מוקדם בבוקר (4:00–7:00)', group: 'progress' },
   { id: 'night', name: 'משמרת לילה', how: 'צעד מאוחר בלילה (23:00–3:00)', group: 'progress' },
   { id: 'traveller', name: 'איש/אשת מסע', how: 'השגת מטרה שנמשכה יותר משנה', group: 'progress' },
@@ -216,6 +232,7 @@ export interface Stats {
   processesDone: number;            // processes with all their steps done (and at least one)
   goalsDone: { kind: Kind; created: number; done: number }[];
   longActiveSince: number | null;   // the oldest active long goal's start
+  researchesDone?: number;          // researches finished in the research assistant ("גשש")
   rest: number | null;
   today: string;
 }
@@ -237,7 +254,7 @@ function longestRun(days: Set<string>, rest: number | null = null): number {
   }
   return best;
 }
-/** every badge the stats earn (the family ones and "גשש" come later) */
+/** every badge the stats earn (the family ones come later) */
 export function earned(s: Stats): string[] {
   const out: string[] = [];
   const days = new Set(s.doneAt.map((t) => dayOf(t)));
@@ -264,6 +281,7 @@ export function earned(s: Stats): string[] {
   if (s.processesDone > 0) out.push('pole');
   if (s.goalsDone.length) out.push('standing');
   if (s.doneAt.length >= 100) out.push('journey');
+  if ((s.researchesDone || 0) > 0) out.push('tracker');
   if (s.doneAt.some((t) => { const h = hourOf(t); return h >= 4 && h < 7; })) out.push('dawn');
   if (s.doneAt.some((t) => { const h = hourOf(t); return h >= 23 || h < 3; })) out.push('night');
   if (s.goalsDone.some((g) => g.done - g.created > 365 * 864e5)) out.push('traveller');

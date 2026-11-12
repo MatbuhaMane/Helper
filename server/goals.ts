@@ -62,9 +62,11 @@ async function newBadges(ctx: Ctx, email: string, data: Awaited<ReturnType<typeo
     goalsDone: data.goals.filter((g) => g.status === 'done' && g.done_at).map((g) => ({ kind: g.kind, created: g.created_at, done: g.done_at })),
     longActiveSince: longs.length ? Math.min(...longs) : null,
   });
+  const researched = await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM researches WHERE email = ? AND done_at IS NOT NULL').bind(email).first<{ n: number }>().catch(() => null);
+  const ids2 = (researched?.n || 0) > 0 && !ids.includes('tracker') ? [...ids, 'tracker'] : ids;
   const { results } = await ctx.env.DB.prepare('SELECT badge, earned_at FROM goal_badges WHERE email = ?').bind(email).all<{ badge: string; earned_at: number }>();
   const had = new Set(results.map((r) => r.badge));
-  const fresh = ids.filter((id) => !had.has(id));
+  const fresh = ids2.filter((id) => !had.has(id));
   if (fresh.length) {
     const now = Date.now();
     await ctx.env.DB.batch(fresh.map((b) => ctx.env.DB.prepare('INSERT OR IGNORE INTO goal_badges (email, badge, earned_at) VALUES (?, ?, ?)').bind(email, b, now)));
@@ -87,6 +89,10 @@ export async function list(ctx: Ctx) {
   }));
   const today3 = L.todays(goals.map((g) => ({ ...g })), data.processes.map((p) => ({ id: p.id, goal: p.goal_id, sort: p.sort })), steps, today, rest);
   const review = await ctx.env.DB.prepare('SELECT week FROM goal_reviews WHERE email = ? ORDER BY week DESC LIMIT 1').bind(u.email).first<{ week: string }>();
+  // one open thread of the research assistant for today ("חוט אחד ליום")
+  const threads = await ctx.env.DB.prepare("SELECT t.id, t.text, t.research_id, r.title FROM research_threads t JOIN researches r ON r.email = t.email AND r.id = t.research_id WHERE t.email = ? AND t.status = 'open' AND r.status != 'deleted' ORDER BY t.created_at")
+    .bind(u.email).all<{ id: string; text: string; research_id: string; title: string }>().catch(() => ({ results: [] as { id: string; text: string; research_id: string; title: string }[] }));
+  const thread = L.threadOfDay(threads.results, today);
   const badges = await newBadges(ctx, u.email, data, rest, today);
   // the "why" of the goal that waited longest, with its smallest next step
   let why = null;
@@ -98,6 +104,7 @@ export async function list(ctx: Ctx) {
   function lastStep(g: { id: string }) { return Math.max(0, ...steps.filter((s) => s.goal === g.id && s.doneAt).map((s) => s.doneAt as number)); }
   return json({
     goals, today: today3, date: today, rest, isRest: rest !== null && L.weekday(today) === rest,
+    thread: thread ? { id: thread.id, text: thread.text, research: thread.research_id, researchTitle: thread.title } : null,
     week: L.week(done, today, rest), streak: L.streak(done, today, rest), why,
     review: L.reviewDue(today, rest, review?.week || null),
     badges: { earned: badges.earned, fresh: badges.fresh },
@@ -119,19 +126,24 @@ export async function create(ctx: Ctx) {
   const u = requireUser(ctx);
   const p = NewGoal.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid goal');
-  const g = p.data, now = Date.now(), id = uid(), db = ctx.env.DB;
-  const count = await db.prepare("SELECT COUNT(*) AS n FROM goals WHERE email = ? AND status != 'deleted'").bind(u.email).first<{ n: number }>();
+  return json({ ok: true, id: await insertGoal(ctx, u.email, p.data) });
+}
+/** a goal with its processes and steps (also for the research assistant: a research becomes a goal of the same engine) */
+export async function insertGoal(ctx: Ctx, email: string, g: z.infer<typeof NewGoal>) {
+  const now = Date.now(), id = uid(), db = ctx.env.DB;
+  const count = await db.prepare("SELECT COUNT(*) AS n FROM goals WHERE email = ? AND status != 'deleted'").bind(email).first<{ n: number }>();
   if ((count?.n || 0) >= 200) throw new HttpError(400, 'too_many_goals');
   const stmts = [db.prepare('INSERT INTO goals (email, id, title, why, kind, due, status, days, time, template, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(u.email, id, g.title, g.why, g.kind, g.due || null, 'active', g.days ? JSON.stringify(g.days) : null, g.time || null, g.template || null, now, now, now)];
+    .bind(email, id, g.title, g.why, g.kind, g.due || null, 'active', g.days ? JSON.stringify(g.days) : null, g.time || null, g.template || null, now, now, now)];
   g.processes.forEach((pr, i) => {
     const pid = uid();
-    stmts.push(db.prepare('INSERT INTO goal_processes (email, goal_id, id, title, sort, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(u.email, id, pid, pr.title, i, now));
-    pr.steps.forEach((t, k) => stmts.push(db.prepare('INSERT INTO goal_steps (email, goal_id, process_id, id, text, sort, small, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)').bind(u.email, id, pid, uid(), t, k, now)));
+    stmts.push(db.prepare('INSERT INTO goal_processes (email, goal_id, id, title, sort, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(email, id, pid, pr.title, i, now));
+    pr.steps.forEach((t, k) => stmts.push(db.prepare('INSERT INTO goal_steps (email, goal_id, process_id, id, text, sort, small, created_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?)').bind(email, id, pid, uid(), t, k, now)));
   });
   await db.batch(stmts);
-  return json({ ok: true, id });
+  return id;
 }
+export { NewGoal };
 
 /** PUT /api/goals/:id */
 export async function update(ctx: Ctx) {

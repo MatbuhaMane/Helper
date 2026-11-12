@@ -50,5 +50,20 @@ eq('from OpenAlex', [oa.csl.DOI, oa.csl.author, oa.csl.page, oa.oa, oa.retracted
 /* ---- links between notes ---- */
 eq('[[links]] in a note', C.linksIn('ראו [[הסולם]] וגם [[ בית אל ]], ושוב [[הסולם]]'), ['הסולם', 'בית אל']);
 
+/* ---- drafts (step 2) ---- */
+const srcs = [{ id: 'src0001', csl: article }, { id: 'src0002', csl: book }];
+const dr = C.renderDraft('כפי שטוענים [@src0001], ובספר [@src0002, p. 12]. שוב [@src0001]. ראו [[בית אל]]. [@nope99]', srcs, 'apa');
+eq('a draft: citations written out, notes plain, an unknown one left', dr.text, 'כפי שטוענים (Cohen & Levi, 2020), ובספר (Sarna, 1989, p. 12). שוב (Cohen & Levi, 2020). ראו בית אל. [@nope99]');
+eq('the draft cites these, in order of first use', dr.cited, ['src0001', 'src0002']);
+eq('its bibliography: only what it cites, sorted', dr.bibliography.length, 2);
+eq('MLA with a page', C.renderDraft('[@src0002, 12]', srcs, 'mla').text, '(Sarna 12)');
+eq('an outline from notes', C.outlineFromNotes('הסולם', [{ title: 'בית אל', body: 'המקום' }], ['מה פירוש סלם?']).split('\n').filter((l) => l.startsWith('#') || l.startsWith('-')),
+  ['# הסולם', '## מבוא', '## בית אל', '## שאלות שעוד פתוחות', '- מה פירוש סלם?', '## סיכום']);
+eq('Markdown to HTML, escaped', C.mdToHtml('# כותרת\n\nשורה **חזקה** <script>\n\n- א\n- ב\n\n> ציטוט'), '<h1>כותרת</h1>\n<p>שורה <b>חזקה</b> &lt;script&gt;</p>\n<ul><li>א</li><li>ב</li></ul>\n<blockquote>ציטוט</blockquote>');
+const BS = String.fromCharCode(92);
+eq('Markdown to LaTeX, with \cite and escapes', C.mdToLatex('## פרק\n\n50% & _x_ [@src0001, p. 3] *נטוי*', new Map([['src0001', 'cohen2020ladder']])),
+  `${BS}section{פרק}\n\n50${BS}% ${BS}& ${BS}_x${BS}_ ${BS}cite[p. 3]{cohen2020ladder} ${BS}emph{נטוי}`);
+eq('a backslash in the text', C.mdToLatex('a' + BS + 'b'), 'a' + BS + 'textbackslash{}b');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

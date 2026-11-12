@@ -91,21 +91,40 @@ export async function driveStatus(ctx: Ctx) {
 }
 
 /** the folder the helper made (drive.file sees only those), or a new one */
-async function folderId(token: string): Promise<string> {
-  const q = encodeURIComponent(`name = '${FOLDER}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
+async function folderId(token: string, folder = FOLDER): Promise<string> {
+  const q = encodeURIComponent(`name = '${folder.replace(/'/g, '')}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
   const found = await fetch(`${DRIVE}?q=${q}&fields=files(id)&pageSize=1`, { headers: { authorization: `Bearer ${token}` } });
   if (found.ok) { const id = ((await found.json()) as { files: { id: string }[] }).files[0]?.id; if (id) return id; }
   const made = await fetch(`${DRIVE}?fields=id`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ name: FOLDER, mimeType: 'application/vnd.google-apps.folder' }) });
+    body: JSON.stringify({ name: folder, mimeType: 'application/vnd.google-apps.folder' }) });
   if (!made.ok) throw new HttpError(502, `drive_error_${made.status}`);
   return ((await made.json()) as { id: string }).id;
 }
 
 /** the note as a Doc: its metadata and its text, in one multipart request */
-function multipart(meta: Record<string, unknown>, text: string) {
+function multipart(meta: Record<string, unknown>, text: string, mime = 'text/plain') {
   const b = 'helper' + uid();
   return { type: `multipart/related; boundary=${b}`,
-    body: `--${b}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\ncontent-type: text/plain; charset=UTF-8\r\n\r\n${text}\r\n--${b}--` };
+    body: `--${b}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\ncontent-type: ${mime}; charset=UTF-8\r\n\r\n${text}\r\n--${b}--` };
+}
+
+/** a Google Doc in the person's Drive, made or (with its id) updated: the notes' and the research drafts' way (drive.file;
+    the person's own grant, asked for the first time – 409 drive_not_connected until then). HTML becomes a formatted Doc. */
+export async function saveToDrive(ctx: Ctx, email: string, f: { id?: string | null; name: string; content: string; html?: boolean; folder?: string }) {
+  if (!(await hasDrive(ctx, email))) throw new HttpError(409, 'drive_not_connected');
+  let token: string;
+  try { token = await googleAccessToken(ctx.env, email); } catch { throw new HttpError(409, 'drive_not_connected'); }
+  const auth = { authorization: `Bearer ${token}` }, mime = f.html ? 'text/html' : 'text/plain';
+  if (f.id) {
+    const m = multipart({ name: f.name }, f.content, mime);
+    const r = await fetch(`${UPLOAD}/${encodeURIComponent(f.id)}?uploadType=multipart&fields=id,webViewLink`, { method: 'PATCH', headers: { ...auth, 'content-type': m.type }, body: m.body });
+    if (r.ok) return (await r.json()) as { id: string; webViewLink: string };
+    if (r.status !== 404) throw new HttpError(502, `drive_error_${r.status}`);    // 404: the person deleted it – a new one
+  }
+  const m = multipart({ name: f.name, mimeType: 'application/vnd.google-apps.document', parents: [await folderId(token, f.folder)] }, f.content, mime);
+  const r = await fetch(`${UPLOAD}?uploadType=multipart&fields=id,webViewLink`, { method: 'POST', headers: { ...auth, 'content-type': m.type }, body: m.body });
+  if (!r.ok) throw new HttpError(502, `drive_error_${r.status}`);
+  return (await r.json()) as { id: string; webViewLink: string };
 }
 
 /** POST /api/notes/:id/drive → { url } – the note saved (or saved again) as a Google Doc in the person's Drive */
@@ -113,24 +132,8 @@ export async function toDrive(ctx: Ctx) {
   const u = requireUser(ctx);
   const row = await ctx.env.DB.prepare('SELECT * FROM notes WHERE email = ? AND id = ? AND deleted = 0').bind(u.email, ctx.params.id).first<any>();
   if (!row) throw new HttpError(404, 'Not found');
-  if (!(await hasDrive(ctx, u.email))) throw new HttpError(409, 'drive_not_connected');
-  let token: string;
-  try { token = await googleAccessToken(ctx.env, u.email); } catch { throw new HttpError(409, 'drive_not_connected'); }
   const text = `${row.title}\n\n${row.body}${row.source_url ? `\n\n${row.source_title || 'המקור'}: ${row.source_url}` : ''}`;
-  const auth = { authorization: `Bearer ${token}` };
-  let file: { id: string; webViewLink: string } | null = null;
-  if (row.drive_id) {
-    const m = multipart({ name: row.title }, text);
-    const r = await fetch(`${UPLOAD}/${encodeURIComponent(row.drive_id)}?uploadType=multipart&fields=id,webViewLink`, { method: 'PATCH', headers: { ...auth, 'content-type': m.type }, body: m.body });
-    if (r.ok) file = await r.json();
-    else if (r.status !== 404) throw new HttpError(502, `drive_error_${r.status}`);    // 404: the person deleted it – a new one
-  }
-  if (!file) {
-    const m = multipart({ name: row.title, mimeType: 'application/vnd.google-apps.document', parents: [await folderId(token)] }, text);
-    const r = await fetch(`${UPLOAD}?uploadType=multipart&fields=id,webViewLink`, { method: 'POST', headers: { ...auth, 'content-type': m.type }, body: m.body });
-    if (!r.ok) throw new HttpError(502, `drive_error_${r.status}`);
-    file = await r.json();
-  }
-  await ctx.env.DB.prepare('UPDATE notes SET drive_id = ?, drive_at = ? WHERE email = ? AND id = ?').bind(file!.id, Date.now(), u.email, row.id).run();
-  return json({ url: file!.webViewLink, id: file!.id });
+  const file = await saveToDrive(ctx, u.email, { id: row.drive_id, name: row.title, content: text });
+  await ctx.env.DB.prepare('UPDATE notes SET drive_id = ?, drive_at = ? WHERE email = ? AND id = ?').bind(file.id, Date.now(), u.email, row.id).run();
+  return json({ url: file.webViewLink, id: file.id });
 }

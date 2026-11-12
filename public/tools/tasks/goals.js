@@ -128,7 +128,10 @@
     return el('section', { class: 'card gl-today', style: CARD },
       el('b', {}, '☀ היום'),
       items.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, items.map((s) => stepRow(s, { showGoal: true })))
-        : el('p', { class: 'muted', style: 'margin:0' }, D.goals.some((g) => g.status === 'active') ? 'אין צעדים פתוחים להיום. אפשר להוסיף צעד באחת המטרות.' : 'כשתהיה מטרה, כאן יופיעו שניים־שלושה צעדים קטנים להיום.'));
+        : el('p', { class: 'muted', style: 'margin:0' }, D.goals.some((g) => g.status === 'active') ? 'אין צעדים פתוחים להיום. אפשר להוסיף צעד באחת המטרות.' : 'כשתהיה מטרה, כאן יופיעו שניים־שלושה צעדים קטנים להיום.'),
+      // one open thread of the research assistant for today (the same all day, another tomorrow)
+      D.thread ? el('a', { class: 'gl-thread', href: `/tools/research/?r=${encodeURIComponent(D.thread.research)}`, style: 'display:block;text-decoration:none;color:inherit;border-block-start:1px dashed var(--line);padding-block-start:8px' },
+        el('small', { class: 'muted' }, '🧵 חוט אחד להיום · ' + D.thread.researchTitle), el('span', { dir: 'auto', style: 'display:block' }, D.thread.text)) : null);
   }
   function stepRow(s, { showGoal = false } = {}) {
     const box = el('input', { type: 'checkbox', checked: s.done, 'aria-label': 'סימון: ' + s.text, onchange: (e) => toggleStep(s, e.target.checked) });

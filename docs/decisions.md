@@ -11,6 +11,51 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The research assistant, step 2 completed: the academic pack, docx and slides, and the ✨ tools (ai-features → master, design)
+
+The owner's scope for step 2 (vision): beyond 6d9a822, now also
+- **The academic formatting and writing pack** (`server/research-pack.ts`, 20 tests in `server/test-research-pack.mjs`):
+  draft templates (IMRaD, a seminar paper, an essay, a talk, a post) with their sections and a length to aim for;
+  numbered headings and cross-references (`{#label}` on a heading, `[ref:label]` → "סעיף 2.1"); footnotes `^[…]` (with
+  citations inside them; LaTeX `ootnote`); a word count against the target; a checklist before handing in (the
+  template's sections, the length, citations that point nowhere, places still to complete, the abstract, broken
+  references); Hebrew and English kept in order in HTML (`dir="auto"` paragraphs, `<bdi>` for English runs).
+- **Export:** a real **.docx** written here with no library (a stored zip with its CRC; checked with a zip reader and an
+  XML parser), right to left, headings styled, notes and bibliography; **slides** as one HTML page (a slide per `##`).
+- **✨ (own AI or credit):** focused search (the AI writes 2–3 OpenAlex searches), a source's summary and a comparison of
+  2–5 sources – both from abstracts read live from OpenAlex and never stored (a work without an open abstract is said so)
+  – and language editing (the citation, link and footnote marks must come back unchanged, or it is not offered).
+- Columns in the new table `research_drafts` (not yet live, so in its CREATE): `template`, `target`, `numbered`.
+  Routes: `/api/research/r/:id/ai/{search,compare}`, `/api/research/sources/:id/ai/summary`, `/api/research/drafts/:id/ai/edit`.
+  `searchOpenAlex` and `abstractOf` are exported from researches.ts.
+- **For the master:** `test:research-pack` in `npm test`.
+- **For design:** `.rx-format` (numbering, the target, the template, ✨ editing), `.rx-words`, `.rx-checks` (a `<details>`,
+  `li.ok` / `li.todo`); the docx and slides have their own styles inside them.
+Status: done (on `ai-features`).
+
+## 2026-11-14 – The research assistant, step 2: persistence and writing (ai-features → master, design)
+
+- **One engine with the goals:** "🎯 להפוך למטרה" makes a goal from a research (the new "מחקר" template; `insertGoal`
+  in goals.ts is shared), so its steps come to "היום", the weekly review, "נתקעתי" and the badges; "היום" also shows one
+  open research thread a day (`threadOfDay`); "🏁 סיימתי" finishes the research (and its goal) and earns "גשש" (no longer
+  "soon"). A research journal of a few lines a day.
+- **Writing:** drafts – an outline from the notes (no AI), an empty one, or ✨ a draft from the notes; citations as
+  `[@source]` (with a page), written out in the research's style with the bibliography of what is cited; a formatted
+  preview; export to Markdown, HTML (to print or save as PDF), Word (an HTML .doc; a real .docx would need a library –
+  I would ask first), LaTeX with `references.bib`, and a Google Doc (`saveToDrive` in notes.ts, now shared by notes and
+  drafts: the same drive.file grant, a folder "האוהל · מחקרים").
+- **✨ (the person's own AI or credit):** directions (questions worth asking, small next steps – to the threads or the
+  goal) and a first draft; without AI, guided questions and the outline.
+- Tables appended: `research_journal`, `research_drafts`; COLUMNS: `researches.goal_id`, `researches.done_at`. Routes:
+  `/api/research/r/:id/{goal,done,journal,drafts,ai/directions,ai/draft}`, `/api/research/drafts/:id` (+ `/export`, `/drive`).
+  Tests: research 24 (drafts, LaTeX, HTML), goals 40.
+- **For the master:** a review of `saveToDrive` (moved out of `toDrive`, the same calls; HTML now converts to a formatted
+  Doc). Nothing else of yours.
+- **For design:** `.rx-persist`, `.rx-directions`, `.rx-dir-out`, `.rx-drafts`, `.rx-draft-item`, the draft screen
+  `.rx-draft` (`.rx-toolbar`, `.rx-preview` with an iframe of the export, `.rx-export`), `.rx-journal`
+  (`.rx-journal-entry`); in goals, `.gl-thread` (the thread of the day under "היום").
+Status: done (on `ai-features`).
+
 ## 2026-11-14 – The research assistant, step 1: the core (ai-features → master, design, vision)
 
 Vision's spec v1 (`docs/vision/research.md`), step 1 of 4. In `/tools/research/` ("עוזר מחקר", a new tile in the tools box):

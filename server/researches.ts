@@ -56,10 +56,24 @@ export async function find(ctx: Ctx) {
   if (q.length < 2) return json({ results: [] });
   const doi = C.doiOf(q);
   if (doi) return json({ results: [{ ...(await lookupDoi(ctx, doi)), doi }] });
+  return json({ results: await searchOpenAlex(ctx, q), credit: 'OpenAlex' });
+}
+/** works from OpenAlex for words (the ✨ focused search runs several of these) */
+export async function searchOpenAlex(ctx: Ctx, q: string, per = 15) {
   const mail = await contact(ctx);
-  const d = await getJson(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=15${mail ? `&mailto=${encodeURIComponent(mail)}` : ''}`, UA(mail));
+  const d = await getJson(`https://api.openalex.org/works?search=${encodeURIComponent(q)}&per-page=${per}${mail ? `&mailto=${encodeURIComponent(mail)}` : ''}`, UA(mail));
   if (!d) throw new HttpError(502, 'search_failed');
-  return json({ results: (d.results || []).map((w: any) => { const x = C.fromOpenAlex(w); return { ...x, doi: x.csl.DOI || null }; }), credit: 'OpenAlex' });
+  return (d.results || []).map((w: any) => { const x = C.fromOpenAlex(w); return { ...x, doi: x.csl.DOI || null }; });
+}
+/** a work's abstract from OpenAlex (rebuilt from its word index), live and never stored – for ✨ summaries and comparisons */
+export async function abstractOf(ctx: Ctx, doi: string): Promise<string> {
+  const mail = await contact(ctx);
+  const w = await getJson(`https://api.openalex.org/works/doi:${encodeURIComponent(doi)}${mail ? `?mailto=${encodeURIComponent(mail)}` : ''}`, UA(mail)).catch(() => null);
+  const idx = w?.abstract_inverted_index as Record<string, number[]> | undefined;
+  if (!idx) return '';
+  const words: string[] = [];
+  for (const [word, at] of Object.entries(idx)) for (const i of at) words[i] = word;
+  return words.filter(Boolean).join(' ').slice(0, 6000);
 }
 
 /* ---------------- researches ---------------- */
@@ -80,7 +94,7 @@ export async function list(ctx: Ctx) {
   ]);
   const by = new Map(counts.results.map((c) => [c.id, c]));
   return json({
-    researches: rs.results.map((r) => ({ id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, updatedAt: r.updated_at, notes: by.get(r.id)?.notes || 0, sources: by.get(r.id)?.sources || 0, open: by.get(r.id)?.open || 0 })),
+    researches: rs.results.map((r) => ({ id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, updatedAt: r.updated_at, done: !!r.done_at, notes: by.get(r.id)?.notes || 0, sources: by.get(r.id)?.sources || 0, open: by.get(r.id)?.open || 0 })),
     threads: threads.results.map(threadOut),
     inbox: inbox.results.map((n) => ({ id: n.id, title: n.title, body: n.body, source: n.source_url ? { url: n.source_url, title: n.source_title || '' } : null, createdAt: n.created_at })),
     styles: C.STYLES,
@@ -123,7 +137,7 @@ export async function get(ctx: Ctx) {
   }
   const ref = (id: string) => ({ id, title: titleOf.get(id) || '' });
   return json({
-    research: { id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style },
+    research: { id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, goalId: r.goal_id || null, doneAt: r.done_at || null },
     notes: notes.results.map((n) => ({ id: n.id, title: n.title, body: n.body, starred: !!n.starred, source: n.source_url ? { url: n.source_url, title: n.source_title || '' } : null,
       links: (out.get(n.id) || []).map(ref), backlinks: (back.get(n.id) || []).map(ref), updatedAt: n.updated_at })),
     threads: threads.results.map(threadOut),

@@ -36,6 +36,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['notes', 'starred', 'INTEGER'],              // 1: the person starred this note (shown first)
   ['notes', 'drive_id', 'TEXT'],                // the Google Doc this note was saved as, in the person's own Drive
   ['notes', 'drive_at', 'INTEGER'],             // when it was last saved there
+  ['notes', 'inbox', 'INTEGER'],                // 1: captured from anywhere (/capture/), waiting to be sorted into a research
 ];
 
 let ready: Promise<void> | null = null;

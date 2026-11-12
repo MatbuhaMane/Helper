@@ -810,3 +810,52 @@ CREATE TABLE IF NOT EXISTS goal_badges (
   earned_at INTEGER NOT NULL,
   PRIMARY KEY (email, badge)
 );
+
+-- עוזר מחקר: researches; their notes are the hub's own notes (research_notes links them, a note in several researches);
+-- questions and threads; sources as CSL-JSON (Crossref's and OpenAlex's metadata, no abstracts). server/researches.ts
+CREATE TABLE IF NOT EXISTS researches (
+  email      TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  purpose    TEXT NOT NULL,      -- paper, book, talk, post, work, personal, family
+  aim        TEXT,
+  style      TEXT NOT NULL,      -- apa, mla, chicago
+  status     TEXT NOT NULL,      -- active, deleted
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS research_notes (
+  email       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  note_id     TEXT NOT NULL,
+  sort        REAL NOT NULL DEFAULT 0,
+  added_at    INTEGER NOT NULL,
+  PRIMARY KEY (email, research_id, note_id)
+);
+CREATE TABLE IF NOT EXISTS research_threads (
+  email       TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  text        TEXT NOT NULL,
+  status      TEXT NOT NULL,     -- open, answered, parked
+  answer      TEXT,
+  note_id     TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS research_sources (
+  email       TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  csl         TEXT NOT NULL,     -- JSON, CSL fields
+  doi         TEXT,
+  oa_url      TEXT,              -- an open copy (OpenAlex)
+  retracted   INTEGER NOT NULL DEFAULT 0,
+  cited       INTEGER,
+  note        TEXT,
+  reliability INTEGER,           -- 1-5, the person's own mark
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);

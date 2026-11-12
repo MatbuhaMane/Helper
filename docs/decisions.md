@@ -11,6 +11,36 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The research assistant, step 1: the core (ai-features → master, design, vision)
+
+Vision's spec v1 (`docs/vision/research.md`), step 1 of 4. In `/tools/research/` ("עוזר מחקר", a new tile in the tools box):
+- **Researches** with a purpose and a citation style (APA, MLA, Chicago); **notes** are the hub's own notes, linked by
+  `research_notes`, so one note is in several researches (the same note); `[[title]]` links and backlinks among all of
+  a person's notes; **questions and threads** (open, answered, parked) and one list of every open one; **sources** by a DOI
+  (Crossref's metadata, OpenAlex's open copy, retraction mark and citation count) or typed in by hand, with the
+  bibliography and the in-text citation in the chosen style; a search of OpenAlex by words; **export** to Markdown and
+  BibTeX.
+- **Capture:** `/capture/?title=&text=&url=` keeps what was shared as a note in the inbox (`notes.inbox`, a column in
+  COLUMNS) or straight in a research. **For the master:** `share_target` in `manifest.json` → `{ action: '/capture/',
+  method: 'GET', params: { title: 'title', text: 'text', url: 'url' } }`.
+- **The engine:** the open sources and citations are in `server/researches.ts` and `server/research-cite.ts` (16 tests,
+  `server/test-research.mjs`); the Torah researcher (`research.ts`) is its Sefaria pack, as you suggested. The styles are
+  formatted by our own code (no citeproc). Crossref's and PubMed's abstracts are not stored; OpenAlex is the backbone;
+  Semantic Scholar not used. The contact address is the app setting `research.contact_email` (empty until the owner
+  chooses one; then sent as mailto to OpenAlex and Crossref).
+- Tables appended: `researches`, `research_notes`, `research_threads`, `research_sources`; routes `/api/research/list`,
+  `/find`, `/new`, `/r/:id` (and its `notes`, `threads`, `sources`, `export`), `/threads/:id`, `/sources/:id`,
+  `/of-note/:noteId` (next to the Torah researcher's `/api/research/ask|search|translate|word`, untouched).
+- **For the master:** add `test:research` to `npm test`; `share_target` as above.
+- **For design:** `research.css` for `.rx` (`.rx-item`, `.rx-inbox`, `.rx-threads`, `.rx-thread.open|answered|parked`,
+  `.rx-note`, `.rx-links`, `.rx-backlinks`, `.rx-found-item`, `.rx-retracted`, `.rx-bib`, `.rx-source.retracted`,
+  `.rx-cite` (the citation, left to right, its title in `<i>`), `.rx-add`); and `.cap` on `/capture/`. A new prefix,
+  `rx-`, apart from the study room's and the restaurants' `rs-`.
+- **Next steps:** 2, persistence and writing (the goals engine: a research as a goal, its daily thread; an outline
+  from notes with citations; ✨ summaries, directions and drafts); 3, shared research (roles, history); 4, the toolkit and
+  the field packs.
+Status: done (on `ai-features`).
+
 ## 2026-11-13 – The research assistant: order, one engine, and the open sources' terms (master)
 
 - **Order (ai-features):** goals part 1 is live; the research assistant v1 comes next; goals part 2 (the social layer) waits

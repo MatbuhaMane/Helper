@@ -1,12 +1,12 @@
 /* Folders of apps (Food, Tools) and the page of an app that is still to come.
-   H.folder({ title, sub, back?: { href, label }, look?: 'flat', arrange?: 'tools', apps: [{ href, ic, name, c1, c2, soon?, owner?, art?, tint?, line? }] })
+   H.folder({ title, sub, back?: { href, label }, look?: 'flat', arrange?: 'tools', hero?: { src, small?, alt }, apps: [{ href, ic, name, c1, c2, soon?, owner?, art?, tint?, line? }] })
    (arrange: the person may reorder the tiles and pin them to the home page's ring – kept under H.prefs(arrange))
    (art: a silhouette picture used as the icon, filled with tint and outlined with line;
     look 'flat': the line icon itself, large, filled with the app's pastel tint, with no tile behind it)
    H.soonPage({ title, ic, c1, c2, back: { href, label }, text }) */
 (() => {
   const { el } = H;
-  async function folder({ title, sub, apps, back, look, arrange }) {
+  async function folder({ title, sub, apps, back, look, arrange, hero }) {
     const r = await H.requireLogin();
     H.header(title);
     const root = document.querySelector('main');
@@ -31,9 +31,16 @@
           ? el('span', { class: 'ic art', style: `--tint:${a.tint};--line:${a.line}` }, el('span', { class: 'shape', style: `-webkit-mask-image:url(${a.art});mask-image:url(${a.art})` }))
           : el('span', { class: 'ic' }, icon(a.ic)),
         el('span', { class: 'name' }, a.name), a.soon ? el('span', { class: 'soon' }, 'בקרוב') : null)));
-    const folderEl = el('div', { class: 'folder' },
+    // the head: the title and its line – or, with a hero picture, a window in the tent's style with the title on it
+    const head = hero
+      ? el('div', { class: 'folder-hero' },
+        el('img', { src: hero.src, srcset: hero.small ? `${hero.small} 800w, ${hero.src} 1376w` : null, sizes: hero.small ? '(max-width: 700px) 100vw, 860px' : null,
+          alt: hero.alt || '', decoding: 'async', fetchpriority: 'high', width: 1376, height: 768 }),
+        el('div', { class: 'folder-head folder-hero-cap' }, el('h1', {}, title), sub ? el('p', {}, sub) : null))
+      : el('div', { class: 'folder-head' }, el('h1', {}, title), sub ? el('p', {}, sub) : null);
+    const folderEl = el('div', { class: 'folder' + (hero ? ' with-hero' : '') },
       back ? el('a', { class: 'folder-back', href: back.href }, '‹ ', back.label) : null,
-      el('div', { class: 'folder-head' }, el('h1', {}, title), sub ? el('p', {}, sub) : null),
+      head,
       grid);
     root.append(folderEl);
     if (arrange) arrangeable(folderEl, grid, P, arrange);

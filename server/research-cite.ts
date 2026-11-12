@@ -127,3 +127,79 @@ export function fromOpenAlex(w: any): { csl: Csl; oa: string | null; retracted: 
 
 /** [[a note's title]] links in a note's text (each once, in order) */
 export const linksIn = (body: string) => [...new Set([...String(body || '').matchAll(/\[\[([^\[\]\n]{1,120})\]\]/g)].map((m) => m[1].trim()).filter(Boolean))];
+
+/* ---------------- writing: a draft with its citations (step 2) ---------------- */
+
+export interface DraftSource { id: string; csl: Csl }
+/** a draft's citation marks: [@<source id>] or [@<id>, p. 12] */
+const CITE = /\[@([A-Za-z0-9_-]{4,40})(?:,\s*([^\]]{1,40}))?\]/g;
+
+/** the draft with its citations written out in the style, the sources it cites (in order of first use) and the
+    bibliography of those only; [[note]] links become plain words */
+export function renderDraft(body: string, sources: DraftSource[], style: Style) {
+  const by = new Map(sources.map((s) => [s.id, s]));
+  const cited: string[] = [];
+  const text = String(body || '').replace(CITE, (m, id: string, loc?: string) => {
+    const s = by.get(id);
+    if (!s) return m;
+    if (!cited.includes(id)) cited.push(id);
+    const t = inText(s.csl, style);
+    return loc ? t.replace(/\)$/, `${style === 'mla' ? ' ' : ', '}${loc.trim()})`) : t;
+  }).replace(/\[\[([^\[\]\n]{1,120})\]\]/g, '$1');
+  const bibliography = cited.map((id) => format(by.get(id)!.csl, style)).sort((a, b) => a.localeCompare(b));
+  return { text, cited, bibliography };
+}
+
+/** an outline from notes, without AI: a heading for each note and its text under it, then the open questions */
+export function outlineFromNotes(title: string, notes: { title: string; body: string }[], questions: string[] = []) {
+  const parts = [`# ${title}`, '', '## מבוא', '', '(מה השאלה, ולמה היא חשובה)', ''];
+  for (const n of notes) parts.push(`## ${n.title}`, '', n.body.trim() || '(להרחיב)', '');
+  if (questions.length) parts.push('## שאלות שעוד פתוחות', '', ...questions.map((q) => `- ${q}`), '');
+  parts.push('## סיכום', '', '(מה למדנו)', '');
+  return parts.join('\n');
+}
+
+const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/** a little Markdown (headings, paragraphs, lists, **bold**, *italics*, quotes) as HTML, every bit escaped first */
+export function mdToHtml(md: string): string {
+  const inline = (s: string) => escHtml(s).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/\*([^*]+)\*/g, '<i>$1</i>');
+  const out: string[] = [];
+  let list: string[] | null = null;
+  const flush = () => { if (list) { out.push('<ul>' + list.map((l) => `<li>${l}</li>`).join('') + '</ul>'); list = null; } };
+  for (const block of String(md || '').replace(/\r/g, '').split(/\n{2,}/)) {
+    const lines = block.split('\n');
+    if (lines.every((l) => /^\s*[-*]\s+/.test(l))) { flush(); out.push('<ul>' + lines.map((l) => `<li>${inline(l.replace(/^\s*[-*]\s+/, ''))}</li>`).join('') + '</ul>'); continue; }
+    flush();
+    const h = /^(#{1,4})\s+(.*)$/.exec(lines[0]);
+    if (h && lines.length === 1) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); continue; }
+    if (lines.every((l) => /^>\s?/.test(l))) { out.push(`<blockquote>${lines.map((l) => inline(l.replace(/^>\s?/, ''))).join('<br>')}</blockquote>`); continue; }
+    out.push(`<p>${lines.map(inline).join('<br>')}</p>`);
+  }
+  flush();
+  return out.join('\n');
+}
+
+/** the same as LaTeX (with \cite{key} for each citation when keys are given), to compile with the BibTeX file */
+export function mdToLatex(md: string, keys?: Map<string, string>): string {
+  const BS = String.fromCharCode(92);   // a backslash, spelled out so no tool along the way eats it
+  // the backslash set aside first, the special signs escaped, then the backslash back as a command (its braces untouched)
+  const esc = (s: string) => s.split(BS).join('\u0001').replace(/([&%$#_{}])/g, BS + '$1').replace(/~/g, BS + 'textasciitilde{}').replace(/\^/g, BS + 'textasciicircum{}')
+    .split('\u0001').join(BS + 'textbackslash{}');
+  const inline = (s: string) => {
+    let t = s;
+    const cites: string[] = [];
+    if (keys) t = t.replace(CITE, (m, id: string, loc?: string) => { const k = keys.get(id); if (!k) return m; cites.push(loc ? `${BS}cite[${esc(loc.trim())}]{${k}}` : `${BS}cite{${k}}`); return `\u0000${cites.length - 1}\u0000`; });
+    t = esc(t).replace(/\*\*([^*]+)\*\*/g, BS + 'textbf{$1}').replace(/\*([^*]+)\*/g, BS + 'emph{$1}').replace(/\[\[([^\[\]\n]{1,120})\]\]/g, '$1');
+    return t.replace(/\u0000(\d+)\u0000/g, (_, i) => cites[Number(i)]);
+  };
+  const out: string[] = [];
+  const SECTION = ['section*', 'section', 'subsection', 'subsubsection'];
+  for (const block of String(md || '').replace(/\r/g, '').split(/\n{2,}/)) {
+    const lines = block.split('\n');
+    if (lines.every((l) => /^\s*[-*]\s+/.test(l))) { out.push(`${BS}begin{itemize}\n` + lines.map((l) => `  ${BS}item ${inline(l.replace(/^\s*[-*]\s+/, ''))}`).join('\n') + `\n${BS}end{itemize}`); continue; }
+    const h = /^(#{1,4})\s+(.*)$/.exec(lines[0]);
+    if (h && lines.length === 1) { out.push(`${BS}${SECTION[h[1].length - 1]}{${inline(h[2])}}`); continue; }
+    out.push(lines.map(inline).join(BS + BS + '\n'));
+  }
+  return out.join('\n\n');
+}

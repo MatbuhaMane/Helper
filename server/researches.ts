@@ -80,7 +80,7 @@ export async function list(ctx: Ctx) {
   ]);
   const by = new Map(counts.results.map((c) => [c.id, c]));
   return json({
-    researches: rs.results.map((r) => ({ id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, updatedAt: r.updated_at, notes: by.get(r.id)?.notes || 0, sources: by.get(r.id)?.sources || 0, open: by.get(r.id)?.open || 0 })),
+    researches: rs.results.map((r) => ({ id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, updatedAt: r.updated_at, done: !!r.done_at, notes: by.get(r.id)?.notes || 0, sources: by.get(r.id)?.sources || 0, open: by.get(r.id)?.open || 0 })),
     threads: threads.results.map(threadOut),
     inbox: inbox.results.map((n) => ({ id: n.id, title: n.title, body: n.body, source: n.source_url ? { url: n.source_url, title: n.source_title || '' } : null, createdAt: n.created_at })),
     styles: C.STYLES,
@@ -123,7 +123,7 @@ export async function get(ctx: Ctx) {
   }
   const ref = (id: string) => ({ id, title: titleOf.get(id) || '' });
   return json({
-    research: { id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style },
+    research: { id: r.id, title: r.title, purpose: r.purpose, aim: r.aim || '', style: r.style, goalId: r.goal_id || null, doneAt: r.done_at || null },
     notes: notes.results.map((n) => ({ id: n.id, title: n.title, body: n.body, starred: !!n.starred, source: n.source_url ? { url: n.source_url, title: n.source_title || '' } : null,
       links: (out.get(n.id) || []).map(ref), backlinks: (back.get(n.id) || []).map(ref), updatedAt: n.updated_at })),
     threads: threads.results.map(threadOut),

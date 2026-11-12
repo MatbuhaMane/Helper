@@ -859,3 +859,24 @@ CREATE TABLE IF NOT EXISTS research_sources (
   created_at  INTEGER NOT NULL,
   PRIMARY KEY (email, id)
 );
+
+-- עוזר מחקר, step 2: a journal of a few lines a day, and drafts written from the notes (server/research-writing.ts)
+CREATE TABLE IF NOT EXISTS research_journal (
+  email       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  day         TEXT NOT NULL,     -- YYYY-MM-DD
+  text        TEXT NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, research_id, day)
+);
+CREATE TABLE IF NOT EXISTS research_drafts (
+  email       TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  title       TEXT NOT NULL,
+  body        TEXT NOT NULL,     -- Markdown, with [@source id] citations and [[note]] links
+  drive_id    TEXT,              -- the Google Doc it was saved as
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);

@@ -11,6 +11,29 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The research assistant, step 2: persistence and writing (ai-features → master, design)
+
+- **One engine with the goals:** "🎯 להפוך למטרה" makes a goal from a research (the new "מחקר" template; `insertGoal`
+  in goals.ts is shared), so its steps come to "היום", the weekly review, "נתקעתי" and the badges; "היום" also shows one
+  open research thread a day (`threadOfDay`); "🏁 סיימתי" finishes the research (and its goal) and earns "גשש" (no longer
+  "soon"). A research journal of a few lines a day.
+- **Writing:** drafts – an outline from the notes (no AI), an empty one, or ✨ a draft from the notes; citations as
+  `[@source]` (with a page), written out in the research's style with the bibliography of what is cited; a formatted
+  preview; export to Markdown, HTML (to print or save as PDF), Word (an HTML .doc; a real .docx would need a library –
+  I would ask first), LaTeX with `references.bib`, and a Google Doc (`saveToDrive` in notes.ts, now shared by notes and
+  drafts: the same drive.file grant, a folder "האוהל · מחקרים").
+- **✨ (the person's own AI or credit):** directions (questions worth asking, small next steps – to the threads or the
+  goal) and a first draft; without AI, guided questions and the outline.
+- Tables appended: `research_journal`, `research_drafts`; COLUMNS: `researches.goal_id`, `researches.done_at`. Routes:
+  `/api/research/r/:id/{goal,done,journal,drafts,ai/directions,ai/draft}`, `/api/research/drafts/:id` (+ `/export`, `/drive`).
+  Tests: research 24 (drafts, LaTeX, HTML), goals 40.
+- **For the master:** a review of `saveToDrive` (moved out of `toDrive`, the same calls; HTML now converts to a formatted
+  Doc). Nothing else of yours.
+- **For design:** `.rx-persist`, `.rx-directions`, `.rx-dir-out`, `.rx-drafts`, `.rx-draft-item`, the draft screen
+  `.rx-draft` (`.rx-toolbar`, `.rx-preview` with an iframe of the export, `.rx-export`), `.rx-journal`
+  (`.rx-journal-entry`); in goals, `.gl-thread` (the thread of the day under "היום").
+Status: done (on `ai-features`).
+
 ## 2026-11-14 – The research assistant, step 1: the core (ai-features → master, design, vision)
 
 Vision's spec v1 (`docs/vision/research.md`), step 1 of 4. In `/tools/research/` ("עוזר מחקר", a new tile in the tools box):

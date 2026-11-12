@@ -77,5 +77,13 @@ eq('seven Shabbatot kept, in weeks with steps', G.earned({ ...base, today: '2027
 eq('a secret badge is marked secret', G.BADGES.find((b) => b.id === 'the_way').secret, true);
 eq('the rest badges\' names for another tradition', [G.badgeName(G.BADGES.find((b) => b.id === 'rest_return'), 0), G.badgeName(G.BADGES.find((b) => b.id === 'rest_return'), 6)], ['חזרה אחרי המנוחה', 'שבת למנוחה']);
 
+/* ---- the research assistant in the goals engine (research step 2) ---- */
+eq('one thread a day: the same all day', G.threadOfDay(['a', 'b', 'c'], '2026-11-14'), G.threadOfDay(['a', 'b', 'c'], '2026-11-14'));
+eq('…and over a week, more than one', new Set(Array.from({ length: 7 }, (_, i) => G.threadOfDay(['a', 'b', 'c'], G.addDays('2026-11-14', i)))).size > 1, true);
+eq('no threads: none', G.threadOfDay([], '2026-11-14'), null);
+eq('a research finished: גשש', G.earned({ ...base, doneAt: [], researchesDone: 1 }).includes('tracker'), true);
+eq('גשש is no longer "soon"', !!G.BADGES.find((b) => b.id === 'tracker').soon, false);
+eq('the research template', G.templateById('research').processes.map((p) => p.title)[0], 'לברר מה השאלה');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

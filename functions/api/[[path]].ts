@@ -1,11 +1,12 @@
 // Single entry point for /api/*: a tiny router over the server modules.
 
 import { aiStatus } from '../../server/ai';
-import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner } from '../../server/core';
+import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
 import * as daemon from '../../server/daemon';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
+import * as join from '../../server/join';
 import * as admin from '../../server/admin';
 import * as credits from '../../server/credits';
 import * as designImages from '../../server/design-images';
@@ -305,6 +306,8 @@ route('POST', '/api/gather/invite/:token/comments', gather.inviteComment);
 route('DELETE', '/api/gather/invite/:token/comments/:comment', gather.inviteCommentDelete);
 route('GET', '/api/gather/invite/:token/ics', gather.inviteIcs);
 route('POST', '/api/gather/invite/:token/event', gather.inviteEvent);
+route('POST', '/api/gather/invite/:token/join', join.inviteJoin);
+useInviteHooks({ admit: join.admitFromInvite, joined: join.joinedAs });   // a guest signs in from the invitation (master, server/join.ts)
 
 /* the owner's room (ai-features, server/admin.ts): entered with the owner's biometric; messages and features for everyone */
 route('GET', '/api/admin/status', admin.status);

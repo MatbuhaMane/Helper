@@ -376,3 +376,10 @@ export async function forCalendar(ctx: Ctx, u: Member) {
   return results.map((g) => ({ id: 'gather:' + g.id, title: '🎉 ' + g.title, kind: 'other', date: g.date, after_sunset: false, recur: 'none',
     note: [g.time, g.place].filter(Boolean).join(' · '), by: 'gather', from: 'gather', gather: g.id, updated_at: 0 }));
 }
+
+/** for joining from an invitation (server/join.ts): the gathering this link opens, whether it is open, and this guest's answer */
+export async function inviteInfo(ctx: Ctx, guest: unknown): Promise<{ id: string; open: boolean; rsvp: string | null }> {
+  const g = await byToken(ctx);
+  const who = await me(ctx, g, guest);
+  return { id: g.id, open: open(g), rsvp: who && !who.email ? who.id : null };
+}

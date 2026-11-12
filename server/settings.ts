@@ -7,6 +7,7 @@ import { Setting, settingValue } from './admin-rules';
 
 export const SETTINGS: Setting[] = [
   { key: 'gather.enabled', group: 'מפגש משפחתי', label: 'אפשר ליצור מפגשים', help: 'כשכבוי, אי אפשר לפתוח מפגש חדש (מפגשים קיימים ממשיכים).', type: 'bool', def: true },
+  { key: 'gather.guest_signup', group: 'מפגש משפחתי', label: 'הצטרפות מהזמנה', help: 'אורח שנכנס עם Google מהזמנה למפגש מקבל משק בית משלו ומתנת פתיחה של AI. כשכבוי, רק מי שהוזמן לאוהל נכנס.', type: 'bool', def: true },
   { key: 'gather.link_days', group: 'מפגש משפחתי', label: 'ימי ההזמנה אחרי המפגש', help: 'כמה ימים אחרי המפגש קישור ההזמנה עוד נפתח (לתמונות ולתודות).', type: 'number', def: 1, min: 0, max: 30 },
   { key: 'calendar.feed', group: 'לוח שנה', label: 'קישור ליומן Google פעיל', help: 'כשכבוי, היומנים שנרשמו מפסיקים לקבל עדכונים (הקישורים נשמרים).', type: 'bool', def: true },
   { key: 'ai.monthly_budget_usd', group: 'בינה מלאכותית', label: 'תקציב חודשי ל־AI (דולר)', help: 'מעבר לסכום הזה הלוח מציג אזהרה. 0: בלי תקציב. (עצירה של הקריאות עצמן: הצעה לסשן הראשי.)', type: 'number', def: 0, min: 0, max: 10000 },

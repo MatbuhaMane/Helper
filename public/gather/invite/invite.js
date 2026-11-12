@@ -5,6 +5,9 @@
 (() => {
   const { el, toast } = H;
   const root = document.querySelector('main');
+  // back from Google's sign-in (see join below): the invitation's key comes back from this device, not from the address
+  const RETURN = 'gather-return';
+  if (!location.hash) { try { const back = sessionStorage.getItem(RETURN); if (back) { sessionStorage.removeItem(RETURN); history.replaceState(null, '', '#' + back); } } catch (_) { /* fine */ } }
   const token = location.hash.slice(1).split(/[?&]/)[0];
   const KEY = 'gather-guest:' + token.slice(0, 16);
   const SEEN = 'gather-seen:' + token.slice(0, 16);
@@ -109,10 +112,20 @@
       comments,
       // after the answer: the door to the rest (only now – the first minute is the gathering alone)
       answered && !g.member ? el('section', { class: 'card ga-join' },
-        el('p', {}, 'משתמשים באוהל? היכנסו, ומה שתביאו ייכנס לרשימת הקניות שלכם, והמפגש ללוח השנה.'),
-        el('a', { class: 'btn small', href: '/api/auth/login?next=' + encodeURIComponent('/gather/invite/#' + token),
-          onclick: () => { try { navigator.sendBeacon?.(base + '/event', new Blob([JSON.stringify({ kind: 'signin' })], { type: 'application/json' })); } catch (_) { /* fine */ } } }, 'כניסה עם Google')) : null,
+        el('p', {}, 'היכנסו עם Google: מה שתביאו ייכנס לרשימת הקניות שלכם, והמפגש ללוח השנה. מי שעוד לא באוהל מקבל אותו, בחינם.'),
+        el('button', { class: 'btn small', type: 'button', onclick: (e) => join(e.currentTarget) }, 'כניסה עם Google')) : null,
       el('p', { class: 'muted small ga-fine' }, 'ההזמנה הזו מהאוהל: מי שיש לו את הקישור רואה רק את המפגש ואת השמות הפרטיים של מי שמגיע.')));
+  }
+  /** "כניסה עם Google": a single-use ticket from the server (server/join.ts), then Google's sign-in. The invitation's key
+      stays on this device (sessionStorage) and is put back when the sign-in returns, so it never travels in an address. */
+  async function join(btn) {
+    btn.disabled = true;
+    try { navigator.sendBeacon?.(base + '/event', new Blob([JSON.stringify({ kind: 'signin' })], { type: 'application/json' })); } catch (_) { /* fine */ }
+    try {
+      const r = await call('/join', { method: 'POST' });
+      try { sessionStorage.setItem(RETURN, token); } catch (_) { /* a private window: they come back to the page without it */ }
+      location.href = r.url;
+    } catch (e) { btn.disabled = false; say(e.code === 'signup_closed' ? { message: 'הכניסה מהזמנה סגורה כרגע.' } : e); }
   }
   addEventListener('hashchange', () => location.reload());
   draw();

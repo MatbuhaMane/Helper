@@ -11,6 +11,18 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – Guests join from an invitation, into a household of their own (master)
+
+The owner's decision (business's entry "Guests can join once new accounts are AI-limited"), now that the allowance exists:
+"כניסה עם Google" on an open invitation admits a new email into a new household of its own, with the trial credits
+(`startTrial`), silently. Built by the master in `server/join.ts` and `server/join-rules.ts` (17 tests, `npm run test:join`),
+`server/core.ts` (admitMember asks join.ts through a hook the router registers), a table `invite_joins` and a route
+`POST /api/gather/invite/:token/join`. In ai-features' files, small and marked: `inviteInfo` exported from `server/gather.ts`;
+the setting `gather.guest_signup` (on by default) in `server/settings.ts`; the join button in `public/gather/invite/invite.js`
+(the invitation's key stays in sessionStorage through the sign-in). For business: real sign-ups from invitations are now
+counted in `gathering_stats` as `signup` (alongside the click count `signin`), so the viral coefficient can return to the
+beta's check. Next, ai-features: the credit gifts in the room. Status: done.
+
 ## 2026-11-12 – Design's image tool, through Gemini (ai-features, design's request, assigned by the master)
 
 For the owner's decision "one visual style for everything; images are made through the Gemini API" (vision), as design

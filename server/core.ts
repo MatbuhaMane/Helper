@@ -98,7 +98,7 @@ export function getCookie(req: Request, name: string): string | null {
   return null;
 }
 
-function cookie(name: string, value: string, maxAge: number): string {
+export function cookie(name: string, value: string, maxAge: number): string {
   return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
@@ -119,8 +119,17 @@ async function createSession(env: Env, email: string): Promise<string> {
   return cookie('sid', id, SESSION_DAYS * 86400);
 }
 
-/** Members must be invited by an owner; OWNER_EMAIL is admitted (and made owner) automatically. */
-async function admitMember(env: Env, email: string, name: string | null): Promise<Member | null> {
+/** Joining from a gathering's invitation (server/join.ts) – registered by the router, so this module does not import it. */
+interface InviteHooks {
+  admit: (env: Env, req: Request, email: string, name: string | null) => Promise<Member | null>;
+  joined: (env: Env, req: Request, email: string) => Promise<void>;
+}
+let inviteHooks: InviteHooks | null = null;
+export function useInviteHooks(h: InviteHooks) { inviteHooks = h; }
+
+/** Members must be invited by an owner; OWNER_EMAIL is admitted (and made owner) automatically; a guest who signs in from
+    a gathering's invitation (a join ticket on this device, server/join.ts) gets a household of their own. */
+async function admitMember(env: Env, email: string, name: string | null, req?: Request): Promise<Member | null> {
   const existing = await env.DB.prepare('SELECT email, name, household, role FROM members WHERE email = ?')
     .bind(email).first<Member>();
   if (existing) {
@@ -128,7 +137,10 @@ async function admitMember(env: Env, email: string, name: string | null): Promis
     return existing;
   }
   const owners = (env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
-  if (!owners.includes(email)) return null;
+  if (!owners.includes(email)) {
+    if (!req || !inviteHooks) return null;
+    return inviteHooks.admit(env, req, email, name);
+  }
   await env.DB.prepare('INSERT INTO members (email, name, household, role, created_at) VALUES (?, ?, ?, ?, ?)')
     .bind(email, name, 'family', 'owner', Date.now()).run();
   return { email, name, household: 'family', role: 'owner' };
@@ -211,7 +223,7 @@ export async function googleCallback(ctx: Ctx): Promise<Response> {
   if (!claims.email_verified) throw new HttpError(403, 'Google email not verified');
   const email = String(claims.email).toLowerCase();
 
-  const member = await admitMember(env, email, claims.name || null);
+  const member = await admitMember(env, email, claims.name || null, saved.preview ? undefined : req);
   if (!member) return redirect('/?error=not_invited&email=' + encodeURIComponent(email));
 
   // a preview asked: no session here – a signed one-minute ticket for that preview
@@ -237,6 +249,7 @@ export async function googleCallback(ctx: Ctx): Promise<Response> {
   const headers = new Headers({ location: safeNext(saved.next) });
   headers.append('set-cookie', await createSession(env, email));
   headers.append('set-cookie', cookie('oauth', '', 0));
+  await signedInFromInvite(env, req, email, headers);
   return new Response(null, { status: 302, headers });
 }
 
@@ -271,13 +284,21 @@ export async function previewHandoff(ctx: Ctx): Promise<Response> {
   return new Response(null, { status: 302, headers });
 }
 
+/** after a sign-in from an invitation: the guest's earlier answer becomes the member's, and the join ticket is cleared */
+async function signedInFromInvite(env: Env, req: Request, email: string, headers: Headers) {
+  if (!getCookie(req, 'join') || !inviteHooks) return;
+  await inviteHooks.joined(env, req, email).catch((e: unknown) => console.error('join', e instanceof Error ? e.message : e));
+  headers.append('set-cookie', cookie('join', '', 0));
+}
+
 export async function devLogin(ctx: Ctx): Promise<Response> {
   if (ctx.env.DEV_MODE !== '1') throw new HttpError(404, 'Not found');
   const email = (ctx.url.searchParams.get('email') || '').toLowerCase();
-  const member = await admitMember(ctx.env, email, ctx.url.searchParams.get('name'));
+  const member = await admitMember(ctx.env, email, ctx.url.searchParams.get('name'), ctx.req);
   if (!member) throw new HttpError(403, 'Not invited');
   const headers = new Headers({ location: safeNext(ctx.url.searchParams.get('next')) });
   headers.append('set-cookie', await createSession(ctx.env, email));
+  await signedInFromInvite(ctx.env, ctx.req, email, headers);
   return new Response(null, { status: 302, headers });
 }
 

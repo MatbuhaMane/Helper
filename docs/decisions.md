@@ -254,6 +254,23 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)
+
+**Decided:**
+- Every tool that uses AI also has a version that is not smart but still useful, for users with no AI connection and no
+  credits. It can be built from templates, search, rules or forms.
+- The invitation to connect an AI or buy credits comes in addition to that version, never instead of it.
+
+This extends the earlier decisions: "The app works without AI, in a simpler version" and "A button for an AI ability
+never looks broken" (the entry "Product direction").
+
+**Affects:**
+- ai-features: every AI tool, existing and new, including the recipe book, the diets and the weather.
+- Design: how the two versions look side by side.
+- Vision: the goal-management spec.
+
+Status: Decided (the owner).
+
 ## 2026-11-12 – The PC guide and the mail organizer: the simple path, through the user's own AI (vision, the owner)
 
 **Decided:**

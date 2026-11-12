@@ -25,6 +25,13 @@ The owner set the direction (details in `docs/business/vision.md`):
   federation off (`docs/business/social-and-growth.md`); the technical choice belongs to the master and ai-features.
 - **Personalization is free:** each user or family picks a palette, keeps its own recipe and song books, has a personal
   companion and a personal feed. Design owns the palettes.
+- **The helper sits on top of the services people already use: Google, WhatsApp and their own paid AI.**
+  - **For one person:** everyday tools, highly accessible, in the person's own language.
+  - **For the family:** a meeting point to set and coordinate events, settle who brings what, and keep and share the
+    family story.
+  - **Proposals** (`docs/business/integrations.md`) for the master and ai-features: a remote MCP connector so the
+    user's own Claude, ChatGPT or Gemini works on the family's data at no AI cost to the owner; an ICS calendar feed;
+    WhatsApp share links; Google Photos Picker; Gmail only through the user's own agent, which may avoid CASA.
 - **The core is free for everyone.** Paid extras only: features that cost the owner money (server AI), family photos,
   a companion figure unique to the family, and companion packs.
 

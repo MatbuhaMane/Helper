@@ -24,13 +24,50 @@ ai-features does the following before step 3 (b24e1c1, 9376809, 46d5e59) is merg
 Opening sharing to other households waits for a child marker or a birth year on members (the master owns members), and
 then for the owner's OK. Status: accepted.
 
+## 2026-11-14 – The research assistant, step 3: shared research (ai-features → master for a security review, design)
+
+The owner's go-ahead ("כן, שלב 3"), from vision's spec (`docs/vision/research.md`):
+- **Roles** (`server/research-share.ts`, 24 tests in `server/test-research-share.mjs`): owner (everything: invite,
+  roles, remove, delete, settings, the goal), editor (anyone's notes, questions, sources and drafts; restores from the
+  history; invites readers), contributor (adds, and changes only what they wrote), reader (sees and comments). The server
+  checks every write through `access()` in `server/researches.ts`; someone not in a research gets 404, as if it were not
+  there. The page offers only what the role allows.
+- **Joining (after the master's review, a47e3c5):** within the owner's household only, for now (the master's entry
+  above). The owner (or an editor, for readers) invites someone of the household who is already in הָאֹהֶל; whoever is
+  not – not registered, or of another household – gets the very same 403 `not_same_household` (`inviteCheck`), so an
+  invitation never tells whether an address exists. No mail goes out; it counts only once accepted. Members are shown
+  by name; their addresses go only to the research's owner (`memberView`). The children's rule waits in `mayJoin()`
+  for when sharing opens beyond the household.
+- **Private notes:** a note keeps living in its author's פתקים (`research_notes.note_email`). When a note of mine joins a
+  research that is shared (or one that isn't mine), the server answers 409 `ask_share` and the page asks each time
+  whether to share it. If not, the others see "a private note of X": no title, no text, not in drafts, ✨ or exports. Only
+  its author can open it later, and a restore cannot reopen it.
+- **History and restore:** each add, change and removal is kept with how it was before (`research_history`); a draft is
+  kept at most once every ten minutes per person (it saves as one types), and at once when someone else writes. An
+  editor restores a removed thread, source, note link or draft, or an earlier text.
+- **Comments** on the research or on a note, question or source (`research_comments`); the writer or an editor deletes.
+- **The journal** stays personal: each member keeps their own lines about a shared research. The goal and "done" are the
+  owner's. A draft saved to Drive by someone else goes to their own Drive, as a new Doc.
+- **Appended:** tables `research_members`, `research_history`, `research_comments` (`schema.sql`); `COLUMNS` →
+  `research_notes.note_email`, `research_notes.shared`, `created_by` on `research_threads`, `research_sources` and
+  `research_drafts`; nine routes (`/api/research/r/:id/members|join|comments`, `…/notes/:noteId` PUT and `/share`,
+  `/api/research/comments/:id`, `/api/research/history/:id/restore`).
+- **For the master (a security review):** this lets one member read another member's rows for the first time, outside the
+  vault. Worth a look: `access()` and `item()` in `researches.ts` (rows keyed by the owner, the member found through
+  `research_members` with `status = 'active'`), `visibleNotes()` (the hidden note's body never leaves the server), and the
+  `invite()` checks (only existing members, the household compared on the server).
+- **For design:** new classes `.rx-invites`, `.rx-sharing`, `.rx-role` (a role pill), `.rx-shared` (on a research card),
+  `.rx-private` (a note that wasn't shared), `.rx-comments`, `.rx-comment`, `.rx-history`. Inline rules hold the layout for
+  now. Also fixed: `.rx-preview` no longer has an inline `display`, so the `[hidden]` guard in research.css can go.
+Status: done on `ai-features`; reviewed by the master, with the three changes in a47e3c5.
+
 ## 2026-11-14 – The research assistant, step 2 completed: the academic pack, docx and slides, and the ✨ tools (ai-features → master, design)
 
 The owner's scope for step 2 (vision): beyond 6d9a822, now also
 - **The academic formatting and writing pack** (`server/research-pack.ts`, 20 tests in `server/test-research-pack.mjs`):
   draft templates (IMRaD, a seminar paper, an essay, a talk, a post) with their sections and a length to aim for;
   numbered headings and cross-references (`{#label}` on a heading, `[ref:label]` → "סעיף 2.1"); footnotes `^[…]` (with
-  citations inside them; LaTeX `ootnote`); a word count against the target; a checklist before handing in (the
+  citations inside them; LaTeX `\footnote`); a word count against the target; a checklist before handing in (the
   template's sections, the length, citations that point nowhere, places still to complete, the abstract, broken
   references); Hebrew and English kept in order in HTML (`dir="auto"` paragraphs, `<bdi>` for English runs).
 - **Export:** a real **.docx** written here with no library (a stored zip with its CRC; checked with a zip reader and an

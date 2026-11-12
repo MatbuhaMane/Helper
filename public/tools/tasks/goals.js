@@ -15,7 +15,6 @@
   const WD = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
   const WD_NAME = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   const REST_NAME = (r) => (r === 6 ? 'שבת' : r === null ? 'בלי יום מנוחה' : 'יום ' + WD_NAME[r]);
-  const CARD = 'padding:16px;display:grid;gap:10px;align-content:start';
   const ROW = 'display:flex;flex-wrap:wrap;align-items:center;gap:8px';
   let D = null, openGoal = null;
 
@@ -80,31 +79,31 @@
     if (openGoal && goalOf(openGoal)) return drawGoal(goalOf(openGoal));
     openGoal = null;
     const active = D.goals.filter((g) => g.status === 'active'), done = D.goals.filter((g) => g.status === 'done');
-    root.replaceChildren(el('div', { class: 'gl', style: 'max-inline-size:1100px;margin:0 auto;padding-block:14px 40px;display:grid;gap:14px' },
+    root.replaceChildren(el('div', { class: 'gl' },
       el('a', { class: 'folder-back', href: '/tools/' }, '‹ כלים'),
       el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap' },
-        el('h1', { style: 'margin:0' }, 'ניהול מטרות'),
+        el('h1', {}, 'ניהול מטרות'),
         el('button', { class: 'btn primary', type: 'button', onclick: () => wizard() }, '+ מטרה חדשה')),
       D.why ? whyCard(D.why) : null,
-      D.review ? el('section', { class: 'card gl-review-due', style: CARD }, el('b', {}, '🗓 דקה לסיכום השבוע'), el('p', { class: 'muted', style: 'margin:0' }, 'מה הלך טוב, מה נתקע, ומה משנים. דקה אחת, לפני יום המנוחה.'),
+      D.review ? el('section', { class: 'card gl-review-due' }, el('b', {}, '🗓 דקה לסיכום השבוע'), el('p', { class: 'muted', style: 'margin:0' }, 'מה הלך טוב, מה נתקע, ומה משנים. דקה אחת, לפני יום המנוחה.'),
         el('div', {}, el('button', { class: 'btn small', type: 'button', onclick: weeklyReview }, 'לסיכום'))) : null,
       todayCard(),
-      el('section', { class: 'gl-pulse card', style: CARD + ';grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))' },
-        el('div', {}, el('small', { class: 'muted' }, 'השבוע'), el('div', { style: 'font-size:1.6rem;font-weight:600' }, `${D.week.done} מתוך ${D.week.of}`),
+      el('section', { class: 'gl-pulse card' },
+        el('div', {}, el('small', { class: 'muted' }, 'השבוע'), el('div', {}, `${D.week.done} מתוך ${D.week.of}`),
           el('small', { class: 'muted' }, D.rest === null ? 'ימים עם צעד' : `ימים עם צעד (${REST_NAME(D.rest)} לא נספר)`)),
-        el('div', {}, el('small', { class: 'muted' }, 'רצף'), el('div', { style: 'font-size:1.6rem;font-weight:600' }, D.streak ? `🔥 ${D.streak}` : '—'),
+        el('div', {}, el('small', { class: 'muted' }, 'רצף'), el('div', {}, D.streak ? `🔥 ${D.streak}` : '—'),
           el('small', { class: 'muted' }, D.rest === null ? 'ימים ברצף' : `יום המנוחה לא שובר רצף`)),
-        el('div', {}, el('small', { class: 'muted' }, 'badges'), el('div', { style: 'font-size:1.6rem;font-weight:600' }, `🏅 ${D.badges.earned.length}`),
+        el('div', {}, el('small', { class: 'muted' }, 'badges'), el('div', {}, `🏅 ${D.badges.earned.length}`),
           el('button', { class: 'btn ghost small', type: 'button', onclick: badgesGallery }, 'לכל ה־badges'))),
-      el('h2', { style: 'margin:6px 0 0' }, 'המטרות שלי'),
-      active.length ? el('div', { class: 'gl-goals', style: 'display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))' }, active.map(goalCard))
+      el('h2', {}, 'המטרות שלי'),
+      active.length ? el('div', { class: 'gl-goals' }, active.map(goalCard))
         : emptyState(),
       done.length ? el('details', { class: 'gl-done' }, el('summary', {}, `🏕 מטרות שהושגו (${done.length})`),
         el('div', { style: 'display:grid;gap:8px;margin-top:8px' }, done.map(goalCard))) : null,
       el('p', { class: 'small muted' }, 'יום המנוחה שלי: ', el('b', {}, REST_NAME(D.rest)), ' · ', el('button', { class: 'linklike', type: 'button', style: 'background:none;border:0;color:var(--primary);cursor:pointer;font:inherit;text-decoration:underline', onclick: restPicker }, 'שינוי'))));
   }
   function emptyState() {
-    return el('div', { class: 'card gl-empty', style: CARD + ';text-align:center' },
+    return el('div', { class: 'card gl-empty' },
       el('p', { style: 'margin:0' }, 'עוד אין כאן מטרות.'),
       el('p', { class: 'muted', style: 'margin:0' }, 'כותבים מטרה ולמה היא חשובה, והאוהל עוזר לחלק אותה לתהליכים ולצעדים קטנים, יום אחרי יום.'),
       el('div', { style: ROW + ';justify-content:center' },
@@ -115,17 +114,17 @@
   function goalCard(g) {
     const p = progress(g), pct = p.all ? Math.round((100 * p.done) / p.all) : 0;
     const procDone = g.processes.filter((x) => x.steps.length && x.steps.every((s) => s.done)).length;
-    return el('button', { class: 'card gl-goal', type: 'button', style: CARD + ';text-align:start;cursor:pointer;font:inherit;color:inherit', onclick: () => { openGoal = g.id; draw(); scrollTo(0, 0); } },
-      el('div', { style: 'display:flex;gap:8px;align-items:start' }, el('b', { dir: 'auto', style: 'flex:1;font-size:1.05rem' }, g.title), el('small', { class: 'gl-kind ' + g.kind, style: 'border:1px solid var(--line-strong);border-radius:999px;padding:1px 8px' }, KIND[g.kind])),
+    return el('button', { class: 'card gl-goal', type: 'button', onclick: () => { openGoal = g.id; draw(); scrollTo(0, 0); } },
+      el('div', { style: 'display:flex;gap:8px;align-items:start' }, el('b', { dir: 'auto', style: 'flex:1;font-size:1.05rem' }, g.title), el('small', { class: 'gl-kind ' + g.kind }, KIND[g.kind])),
       g.why ? el('small', { class: 'muted', dir: 'auto', style: 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden' }, g.why) : null,
-      el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct), 'aria-label': 'התקדמות', style: 'block-size:8px;border-radius:999px;background:var(--line);overflow:hidden' },
-        el('span', { style: `display:block;block-size:100%;inline-size:${pct}%;background:var(--primary)` })),
+      el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct), 'aria-label': 'התקדמות' },
+        el('span', { style: `inline-size:${pct}%` })),
       el('small', { class: 'muted' }, `${p.done} מתוך ${p.all} צעדים · תהליך ${Math.min(procDone + 1, g.processes.length || 1)} מתוך ${g.processes.length || 1}`, g.due ? ` · עד ${new Date(g.due).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}` : ''));
   }
   function todayCard() {
-    if (D.isRest) return el('section', { class: 'card gl-today rest', style: CARD }, el('b', {}, '🌿 היום ' + REST_NAME(D.rest)), el('p', { class: 'muted', style: 'margin:0' }, 'יום מנוחה. הוא לא שובר שום רצף, והמנוחה עצמה נחשבת.'));
+    if (D.isRest) return el('section', { class: 'card gl-today rest' }, el('b', {}, '🌿 היום ' + REST_NAME(D.rest)), el('p', { class: 'muted', style: 'margin:0' }, 'יום מנוחה. הוא לא שובר שום רצף, והמנוחה עצמה נחשבת.'));
     const items = D.today;
-    return el('section', { class: 'card gl-today', style: CARD },
+    return el('section', { class: 'card gl-today' },
       el('b', {}, '☀ היום'),
       items.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, items.map((s) => stepRow(s, { showGoal: true })))
         : el('p', { class: 'muted', style: 'margin:0' }, D.goals.some((g) => g.status === 'active') ? 'אין צעדים פתוחים להיום. אפשר להוסיף צעד באחת המטרות.' : 'כשתהיה מטרה, כאן יופיעו שניים־שלושה צעדים קטנים להיום.'),
@@ -143,7 +142,7 @@
       s.done ? null : el('button', { class: 'btn ghost small gl-stuck', type: 'button', title: 'הצעד גדול מדי? נפרק אותו לגרסה של חמש דקות', onclick: () => stuck(s) }, 'נתקעתי'));
   }
   function whyCard(w) {
-    return el('section', { class: 'card gl-why', style: CARD },
+    return el('section', { class: 'card gl-why' },
       el('small', { class: 'muted' }, 'זוכרים למה?'),
       el('b', { dir: 'auto' }, w.title),
       el('p', { dir: 'auto', style: 'margin:0;font-size:1.1rem' }, '“' + w.why + '”'),
@@ -153,15 +152,15 @@
   /* ---------- one goal: its processes as checklists ---------- */
   function drawGoal(g) {
     const p = progress(g), pct = p.all ? Math.round((100 * p.done) / p.all) : 0;
-    root.replaceChildren(el('div', { class: 'gl gl-one', style: 'max-inline-size:900px;margin:0 auto;padding-block:14px 40px;display:grid;gap:14px' },
-      el('button', { class: 'folder-back', type: 'button', style: 'background:none;border:0;cursor:pointer;font:inherit;text-align:start', onclick: () => { openGoal = null; draw(); } }, '‹ כל המטרות'),
+    root.replaceChildren(el('div', { class: 'gl gl-one' },
+      el('button', { class: 'folder-back', type: 'button', onclick: () => { openGoal = null; draw(); } }, '‹ כל המטרות'),
       el('div', { style: 'display:grid;gap:6px' },
-        el('h1', { dir: 'auto', style: 'margin:0' }, g.title),
+        el('h1', { dir: 'auto' }, g.title),
         g.why ? el('p', { class: 'gl-why-line', dir: 'auto', style: 'margin:0;font-size:1.05rem' }, '“' + g.why + '”') : null,
         el('small', { class: 'muted' }, `${KIND[g.kind]} · ${p.done} מתוך ${p.all} צעדים`, g.due ? ` · עד ${new Date(g.due).toLocaleDateString('he-IL')}` : '',
           g.days?.length ? ' · ' + g.days.map((d) => WD[d]).join(' ') : '', g.time ? ' · ' + g.time : ''),
-        el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuenow': String(pct), 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-label': 'התקדמות', style: 'block-size:10px;border-radius:999px;background:var(--line);overflow:hidden' },
-          el('span', { style: `display:block;block-size:100%;inline-size:${pct}%;background:var(--primary)` }))),
+        el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuenow': String(pct), 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-label': 'התקדמות', style: 'block-size:10px' },
+          el('span', { style: `inline-size:${pct}%` }))),
       ...g.processes.map((pr, i) => processCard(g, pr, i)),
       el('div', { style: ROW },
         el('button', { class: 'btn small', type: 'button', onclick: async () => {
@@ -176,7 +175,7 @@
     const done = pr.steps.filter((s) => s.done).length;
     const add = el('input', { type: 'text', dir: 'auto', placeholder: '+ צעד חדש (Enter)', 'aria-label': 'צעד חדש בתהליך ' + pr.title, style: 'font:inherit;padding:6px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--text);inline-size:100%' });
     add.addEventListener('keydown', async (e) => { if (e.key === 'Enter' && add.value.trim()) { await api(`/api/goals/processes/${pr.id}/steps`, { body: { text: add.value.trim() } }); await load(); } });
-    return el('section', { class: 'card gl-process' + (pr.steps.length && done === pr.steps.length ? ' done' : ''), style: CARD },
+    return el('section', { class: 'card gl-process' + (pr.steps.length && done === pr.steps.length ? ' done' : '') },
       el('div', { style: 'display:flex;align-items:center;gap:8px' },
         el('b', { dir: 'auto', style: 'flex:1' }, `${i + 1}. ${pr.title}`), el('small', { class: 'muted' }, `${done}/${pr.steps.length}`),
         el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'שינוי שם התהליך', title: 'שינוי שם', onclick: async () => { const t = prompt('שם התהליך:', pr.title); if (t?.trim()) { await api(`/api/goals/processes/${pr.id}`, { method: 'PUT', body: { title: t } }); await load(); } } }, '✎'),
@@ -230,7 +229,7 @@
     const G = { title: seed.title || '', why: seed.why || '', kind: seed.kind || 'regular', due: '', processes: [], template: seed.template || null, days: [], time: '' };
     let step = 1;
     const body = el('div', { style: 'display:grid;gap:12px' });
-    const head = el('h2', { style: 'margin:0' });
+    const head = el('h2', {});
     const dots = el('div', { 'aria-hidden': 'true', style: 'display:flex;gap:6px' });
     const nav = el('div', { style: ROW });
     const titles = ['', 'מה ולמה', 'כמה זמן', 'התהליכים', 'ההתחלה', 'הקצב'];

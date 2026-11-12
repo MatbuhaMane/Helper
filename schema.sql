@@ -883,3 +883,44 @@ CREATE TABLE IF NOT EXISTS research_drafts (
   updated_at  INTEGER NOT NULL,
   PRIMARY KEY (email, id)
 );
+
+-- עוזר מחקר, step 3, shared research (server/researches.ts, research-share.ts): members in roles, the history of changes
+-- (to restore), and comments. Rows are kept under the research owner's address (owner).
+CREATE TABLE IF NOT EXISTS research_members (
+  owner       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  email       TEXT NOT NULL,
+  role        TEXT NOT NULL,            -- editor, contributor, reader
+  status      TEXT NOT NULL,            -- invited, active
+  outside     INTEGER NOT NULL DEFAULT 0, -- 1: not of the owner's household (joins only on their own approval)
+  invited_by  TEXT,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (owner, research_id, email)
+);
+CREATE INDEX IF NOT EXISTS research_members_email ON research_members (email, status);
+CREATE TABLE IF NOT EXISTS research_history (
+  owner       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  at          INTEGER NOT NULL,
+  by          TEXT NOT NULL,
+  kind        TEXT NOT NULL,            -- note, thread, source, draft, member
+  item_id     TEXT NOT NULL,
+  action      TEXT NOT NULL,            -- add, edit, remove, restore
+  before      TEXT,                     -- JSON: how it was (what a restore brings back)
+  after       TEXT,
+  PRIMARY KEY (owner, research_id, id)
+);
+CREATE INDEX IF NOT EXISTS research_history_id ON research_history (id);
+CREATE TABLE IF NOT EXISTS research_comments (
+  owner       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  on_kind     TEXT NOT NULL,            -- research, note, thread, source, draft
+  on_id       TEXT NOT NULL DEFAULT '',
+  by          TEXT NOT NULL,
+  text        TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (owner, research_id, id)
+);
+CREATE INDEX IF NOT EXISTS research_comments_id ON research_comments (id);

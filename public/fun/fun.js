@@ -48,7 +48,8 @@
         p.what ? el('p', { class: 'fun-what' }, p.what) : '',
         p.why ? el('p', { class: 'fun-why' }, p.why) : '',
         whereOf(p),
-        el('a', { class: 'fun-src', href: p.link, target: '_blank', rel: 'noopener' }, 'ההמלצה מ־', p.source, ' ↗')));
+        // (a plain pick, without AI: a headline as it is, not a recommendation)
+        el('a', { class: 'fun-src', href: p.link, target: '_blank', rel: 'noopener' }, p.plain ? 'הכתבה ב־' : 'ההמלצה מ־', p.source, ' ↗')));
     art.addEventListener('click', (e) => { if (e.target.closest('a') || getSelection().toString()) return; openPick(p, tint, cat, art); });
     return art;
   }
@@ -131,7 +132,9 @@
         const key = (p) => (p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
         const fresh = d.picks.filter((p) => !S.seen.has(p.link) && !S.seen.has(key(p)) && S.seen.add(p.link) && S.seen.add(key(p)));
         board.append(...fresh.map((p) => card(p, tint, S.cat)));
-        if (S.page === 0) { keep(S.cat, d); stamp.textContent = `נבחרו ${ago(d.at)}`; }
+        // without AI the board is the sites' latest headlines, unfiltered: said so, and not kept on this device
+        const plain = d.picks[0]?.plain;
+        if (S.page === 0) { if (!plain) keep(S.cat, d); stamp.textContent = plain ? 'בלי העוזר החכם: הכותרות האחרונות מהאתרים, בלי סינון' : `נבחרו ${ago(d.at)}`; }
         S.done = !d.more || !d.picks.length;
       }
       S.page++;

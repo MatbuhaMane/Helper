@@ -1422,10 +1422,61 @@
     canvasBox.setAttribute('aria-label', `${d.name || d.form.he} – לחצו כדי לדבר`);
   }
 
+  /* ---------- without AI (docs/ai/without-ai.md #8): he cannot follow every sentence, but he knows the way – a place on
+     this screen he points to, a part of the tent he takes you to, or a short menu with a tip. His voice stays the
+     browser's own. (Actions are links: the chat panel copies them.) ---------- */
+  const TIPS = [
+    'אפשר לסמן טקסט בכל מקום באוהל וללחוץ "שמירה כפתק".',
+    'ברשימת הקניות, ✓ על מוצר מעביר אותו לסל; מה שלא נקנה נשאר לפעם הבאה.',
+    'בחדשות, ⋯ ליד כתבה שומר אותה, משתף אותה או פותח אותה באתר המקורי.',
+    'בטלפון אפשר "לשתף" כל דבר אל האוהל, והוא מחכה בתיבת הנכנסים של עוזר המחקר.',
+    'בפתקים, #מילה היא תגית, ולחיצה עליה מסננת את הרשימה.',
+    'במחשבון אפשר לכתוב גם אחוזים, שברים ויחידות, כמו 15% מ־240.',
+    'בהגדרות בוחרים צבעים, גודל אותיות, ואת הקול שלי.',
+  ];
+  const SYN = {
+    '/groceries/': 'קניות לקנות סופר חסר', '/groceries/#book': 'מתכון מתכונים לבשל', '/news/': 'חדשות כתבה כתבות עדכונים',
+    '/tools/notes/': 'פתק פתקים לרשום לזכור', '/tools/calendar/': 'לוח חג חגים תאריך הולדת חנוכה פסח פורים סוכות צום', '/tools/calc/': 'מחשבון לחשב תרגיל אחוז אחוזים כמה',
+    '/mail/': 'מייל דואר', '/family/': 'משפחה עץ סבא סבתא', '/songs/': 'שיר שירים אקורדים זמירות', '/parasha/': 'פרשה שבת נרות',
+    '/settings/': 'הגדרות חשבון נגישות קול', '/food/fridge/': 'מקרר', '/fun/': 'סרט סדרה משחק', '/gather/': 'מפגש ארוחה אירוח',
+  };
+  const PLAIN_STOP = new Set('יום היום שלום מה איך אני אתה רוצה רוצים צריך אפשר תודה בבקשה עם של את זה זו לי לך יש אין איפה כל עוד כן לא טוב שלומך'.split(' '));
+  const wordsOf = (s) => (String(s || '').match(/[\p{L}\p{N}]+/gu) || []).map((w) => (w.length > 3 ? w.replace(/^[והבלמש]/, '') : w)).filter((w) => w.length > 1 && !PLAIN_STOP.has(w));
+  const hits = (said, words) => said.filter((w) => words.some((x) => x === w || (w.length > 3 && x.length > 3 && (x.startsWith(w) || w.startsWith(x))))).length;
+  const link = (href, label) => el('a', { class: 'btn ghost small', href }, label);
+  async function plainReply(text) {
+    const said = wordsOf(text);
+    // a place on this screen
+    const spot = !overlay && said.length ? landmarks().map((l) => [l, hits(said, wordsOf(l.label))]).sort((a, b) => b[1] - a[1])[0] : null;
+    if (spot && spot[1]) {
+      const say = 'הנה, כאן.';
+      addMsg('daemon', say); speak(say);
+      showElement(document.querySelector(`[data-guide="${CSS.escape(spot[0].key)}"]`), say);
+      return;
+    }
+    // a part of the tent
+    try { await H.loadOnce('/assets/apps.js'); } catch (_) { /* the menu still has the tip */ }
+    // its name and the words people use for it count twice its description; one word of a description is not enough
+    const apps = (H.APPS || []).map((a) => [a, 2 * hits(said, wordsOf(`${a.name} ${SYN[a.href] || ''}`)) + hits(said, wordsOf(a.sub))]).sort((a, b) => b[1] - a[1]);
+    let say, actions;
+    if (apps[0]?.[1] >= 2) {
+      const a = apps[0][0];
+      say = `ל${a.name}? ${a.sub}.`;
+      actions = [link(a.href, 'לשם ←')];
+    } else {
+      say = `${text ? 'בלי העוזר החכם אני לא מבין כל משפט, אבל את הדרך אני יודע. ' : ''}טיפ: ${TIPS[Math.floor(Math.random() * TIPS.length)]}`;
+      actions = [...(H.ringApps?.() || []).slice(1, 5).map((a) => link(a.href, a.name)), link('/settings/', '✨ לחבר לי מוח')];
+    }
+    balloonActs.replaceChildren(...actions);
+    if (panel.hidden) speakBalloon(say, true);
+    addMsg('daemon', say, { actions });
+    speak(say);
+  }
+
   async function send(text, event) {
     text = (text || '').trim();
     if ((!text && !event) || busy) return;
-    if (!state?.ai) { speakBalloon('עוד לא חיברו לי מוח (מפתח API של Claude).'); return; }
+    if (!state?.ai) { input.value = ''; if (text) addMsg('me', text); return plainReply(text); }
     busy = true;
     wake();
     if (parts) parts.thinkStyle = Math.random() < 0.35 ? 'phone' : 'think';
@@ -1471,6 +1522,8 @@
       }
     } catch (e) {
       mood = null;
+      // no AI (none connected, or no credit left): what he can do without it
+      if (e.status === 402 || e.status === 503) { busy = false; canvasBox.classList.remove('thinking'); return plainReply(text); }
       speakBalloon('אוי, משהו השתבש: ' + e.message);
       setMood('worried');
     } finally {

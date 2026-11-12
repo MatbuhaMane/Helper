@@ -307,7 +307,8 @@
 
   /** A food from the shopping list or the calculator: values per 100 g, and a way to correct them from the label. */
   function showFood(name, food) {
-    const src = { builtin: 'מטבלת הערכים המובנית', ai: 'הערכה של העוזר החכם', user: 'ערכים שתיקנו אצלנו' }[food.source] || '';
+    // (Open Food Facts is ODbL: its values say where they came from)
+    const src = { builtin: 'מטבלת הערכים המובנית', ai: 'הערכה של העוזר החכם', user: 'ערכים שתיקנו אצלנו', off: 'מתוויות המוצרים ב־Open Food Facts' }[food.source] || '';
     showTotals(`${name} · ל-100 גרם`, food, null, el('div', {},
       el('p', { class: 'muted' }, [src, food.unit_g ? `יחידה אחת ≈ ${fmt(food.unit_g, 0)} גרם` : ''].filter(Boolean).join(' · ')),
       el('div', { class: 'row' },
@@ -564,7 +565,11 @@
     if (!ingredients.length) return Promise.reject(new Error('אין מצרכים'));
     const key = JSON.stringify([recipe.meta?.servings || '', ingredients]);
     if (!recipeValues.has(key)) {
-      const p = api('/api/keto/recipe', { body: { title: recipe.title, servings: recipe.meta?.servings || '', ingredients } });
+      // the values we already know (the family's, the built-in table's, the stored ones): without AI the server works
+      // the recipe out from them
+      const known = {};
+      for (const i of ingredients) { const f = lookup(i.name); if (f && f.is_food !== false) known[i.name] = { fat: f.fat, protein: f.protein, carbs: f.carbs, fiber: f.fiber, unit_g: f.unit_g || null }; }
+      const p = api('/api/keto/recipe', { body: { title: recipe.title, servings: recipe.meta?.servings || '', ingredients, known } });
       p.catch(() => recipeValues.delete(key));
       recipeValues.set(key, p);
     }
@@ -578,7 +583,7 @@
     valuesFor(recipe).then(({ v, s, verdict: [level, text] }) => {
       const st = state.settings;
       box.replaceChildren(
-        el('div', { class: 'kr-head' }, el('h4', {}, `ערכי קטו למנה (מתוך ${v.servings})`), el('span', { class: 'kr-verdict ' + level }, text)),
+        el('div', { class: 'kr-head' }, el('h4', {}, v.servingsKnown === false ? 'ערכי קטו למתכון כולו' : `ערכי קטו למנה (מתוך ${v.servings})`), el('span', { class: 'kr-verdict ' + level }, text)),
         el('div', { class: 'kr-body' },
           el('button', { class: 'pie-btn', 'aria-label': 'פירוט הערכים לפי מצרכים', onclick: () => showTotals('ערכים למנה', v.per_serving, v.items.map((i) => ({ ...i, grams: i.grams / v.servings, fat: i.fat / v.servings, protein: i.protein / v.servings, carbs: i.carbs / v.servings, fiber: i.fiber / v.servings }))), html: M.pieSvg(v.per_serving, 96, { ring: true }) }),
           el('div', { class: 'kr-stats' },
@@ -591,7 +596,9 @@
             await saveMeal({ at: Date.now(), name: recipe.title, status: 'eaten', items: v.items.map((i) => ({ name: i.name, grams: i.grams / v.servings, fat: i.fat / v.servings, protein: i.protein / v.servings, carbs: i.carbs / v.servings, fiber: i.fiber / v.servings })) });
             toast(`מנה אחת של "${recipe.title}" נרשמה ביומן`);
           } }, '🍽 אכלנו מנה – הוסף ליומן'),
-          el('small', { class: 'muted' }, 'הערכה לפי המצרכים והכמויות במתכון')));
+          el('small', { class: 'muted' }, v.via === 'plain' ? 'חישוב לפי הכמויות במתכון והערכים ל־100 גרם (בלי העוזר החכם)' : 'הערכה לפי המצרכים והכמויות במתכון')),
+        // without AI: what it could not tell, so the number is read as "at least"
+        ...(v.via === 'plain' && v.unknown?.length ? [el('p', { class: 'small muted' }, `לא חושבו (אין כמות או ערכים): ${v.unknown.join(', ')}. אפשר להוסיף ערכים לפי התווית ברשימת הקניות.`)] : []));
     }).catch((e) => box.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לחשב ערכי קטו למתכון: ' + e.message)));
     return box;
   }

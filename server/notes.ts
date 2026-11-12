@@ -1,15 +1,17 @@
 // Notes (פתקים): each person's own notes, dated, with a title the helper writes when none was given.
 // Anything marked on the site (an article, a recipe, a song…) can be saved as a note, with where it came from.
+// Without AI (docs/ai/without-ai.md #12): the title is the note's first real line, and its #words are its tags (notes-plain.ts).
 
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, DRIVE_FILE_SCOPE, HttpError, body, googleAccessToken, json, requireUser, uid } from './core';
+import { plainTitle, tagsOf } from './notes-plain';
 
-const toNote = (r: any) => ({ id: r.id, title: r.title, body: r.body, source: r.source_url ? { url: r.source_url, title: r.source_title || '' } : null, starred: !!r.starred, drive: r.drive_id ? { at: r.drive_at } : null, createdAt: r.created_at, updatedAt: r.updated_at });
+const toNote = (r: any) => ({ id: r.id, title: r.title, body: r.body, tags: tagsOf(r.body), source: r.source_url ? { url: r.source_url, title: r.source_title || '' } : null, starred: !!r.starred, drive: r.drive_id ? { at: r.drive_at } : null, createdAt: r.created_at, updatedAt: r.updated_at });
 
-/** A short title for a note: by the AI when it can (a few words, in the note's language), else its first words. */
-async function titleFor(ctx: Ctx, text: string): Promise<string> {
-  const first = text.replace(/\s+/g, ' ').trim().split(' ').slice(0, 7).join(' ').slice(0, 60);
+/** A short title for a note: by the AI when it can (a few words, in the note's language), else its first real line. */
+async function titleFor(ctx: Ctx, text: string, source?: { url?: string | null; title?: string | null } | null): Promise<string> {
+  const first = plainTitle(text, source);
   if (!ctx.env.GEMINI_API_KEY && !ctx.env.ANTHROPIC_API_KEY) return first;
   try {
     const r = await aiJson(ctx.env, {
@@ -17,7 +19,7 @@ async function titleFor(ctx: Ctx, text: string): Promise<string> {
       prompt: text.slice(0, 2000), schema: z.object({ title: z.string() }), prefer: 'gemini', fast: true,
     });
     return (r.title || first).trim().slice(0, 80) || first;
-  } catch { return first || 'פתק'; }
+  } catch { return first; }
 }
 
 export async function list(ctx: Ctx) {
@@ -37,11 +39,11 @@ export async function create(ctx: Ctx) {
   const p = Input.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid note');
   const text = (p.data.body || '').trim();
-  const title = (p.data.title || '').trim() || (text ? await titleFor(ctx, text) : 'פתק חדש');
+  const title = (p.data.title || '').trim() || (text ? await titleFor(ctx, text, p.data.source) : 'פתק חדש');
   const now = Date.now(), id = uid();
   await ctx.env.DB.prepare('INSERT INTO notes (email, id, title, body, source_url, source_title, created_at, updated_at, deleted, inbox) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)')
     .bind(u.email, id, title, text, p.data.source?.url || null, p.data.source?.title || null, now, now, p.data.inbox ? 1 : 0).run();
-  return json({ note: { id, title, body: text, source: p.data.source || null, createdAt: now, updatedAt: now } });
+  return json({ note: { id, title, body: text, tags: tagsOf(text), source: p.data.source || null, createdAt: now, updatedAt: now } });
 }
 
 export async function update(ctx: Ctx) {

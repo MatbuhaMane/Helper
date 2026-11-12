@@ -242,6 +242,15 @@ route('POST', '/api/research/r/:id/ai/search', writing.aiSearch);
 route('POST', '/api/research/r/:id/ai/compare', writing.aiCompare);
 route('POST', '/api/research/sources/:id/ai/summary', writing.aiSummary);
 route('POST', '/api/research/drafts/:id/ai/edit', writing.aiEdit);
+route('PUT', '/api/research/r/:id/notes/:noteId', researches.editNote);
+route('PUT', '/api/research/r/:id/notes/:noteId/share', researches.shareNote);
+route('POST', '/api/research/r/:id/members', researches.invite);
+route('POST', '/api/research/r/:id/join', researches.join);
+route('PUT', '/api/research/r/:id/members/:email', researches.setRole);
+route('DELETE', '/api/research/r/:id/members/:email', researches.removeMember);
+route('POST', '/api/research/r/:id/comments', researches.comment);
+route('DELETE', '/api/research/comments/:id', researches.removeComment);
+route('POST', '/api/research/history/:id/restore', researches.restore);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);

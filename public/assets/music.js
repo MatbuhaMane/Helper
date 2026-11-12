@@ -584,12 +584,20 @@
       .catch(() => mine.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לטעון את הפלייליסטים')));
   }
 
+  /* ready lists by mood (docs/ai/without-ai.md #10): a tap searches them; with no YouTube key and no AI, the search
+     opens on YouTube itself */
+  const MOODS = [['🌙 שקט לערב', 'שירים שקטים בעברית'], ['🎯 ריכוז', 'מוזיקה לריכוז בלי מילים'], ['🕯 שבת', 'שירי שבת וזמירות'],
+    ['🧒 לילדים', 'שירי ילדים בעברית'], ['🇮🇱 להיטים', 'להיטים ישראליים'], ['🎻 קלאסי', 'מוזיקה קלאסית רגועה'], ['⚡ אנרגיה', 'מוזיקה קצבית לאימון']];
   function youtubeTab(body) {
     const sb = searchBox('שיר ביוטיוב, או הדביקו קישור', async (q, out) => {
       const r = await api('/api/music/youtube/search?q=' + encodeURIComponent(q), { noRedirect: true });
-      out.replaceChildren(...(r.videos.length ? r.videos.map((v) => row(v, v.channel, () => E.playYT(v, r.videos))) : [el('p', { class: 'muted' }, 'לא נמצאו סרטונים')]));
+      out.replaceChildren(...(r.videos.length ? r.videos.map((v) => row(v, v.channel, () => E.playYT(v, r.videos)))
+        : r.searchUrl ? [el('p', { class: 'muted' }, 'כאן אי אפשר לחפש כרגע (אין חיבור לחיפוש של יוטיוב או לעוזר החכם).'), el('a', { class: 'btn ghost small', href: r.searchUrl, target: '_blank', rel: 'noopener' }, '↗ החיפוש ביוטיוב')]
+        : [el('p', { class: 'muted' }, 'לא נמצאו סרטונים')]));
     });
-    body.append(sb.node);
+    const moods = el('div', { class: 'mu-moods', role: 'group', 'aria-label': 'לפי מצב רוח', style: 'display:flex;flex-wrap:wrap;gap:6px;margin-block:8px' },
+      MOODS.map(([label, q]) => el('button', { class: 'chip', type: 'button', onclick: () => { sb.input.value = q; sb.input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); } }, label)));
+    body.append(sb.node, moods);
     if (matchMedia('(pointer: coarse)').matches) body.append(el('p', { class: 'mu-foot muted' }, 'בטלפון יוטיוב עוצר כשיוצאים מהאפליקציה (זה הכלל של יוטיוב). למוזיקה ברקע – ספוטיפיי.'));
   }
 

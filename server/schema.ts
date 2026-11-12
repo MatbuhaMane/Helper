@@ -39,6 +39,11 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['notes', 'inbox', 'INTEGER'],                // 1: captured from anywhere (/capture/), waiting to be sorted into a research
   ['researches', 'goal_id', 'TEXT'],           // the goal it became (the goals engine: its steps come to "היום")
   ['researches', 'done_at', 'INTEGER'],         // finished ("גשש")
+  ['research_notes', 'note_email', 'TEXT'],     // shared research: whose note it is (empty: the research's owner)
+  ['research_notes', 'shared', 'INTEGER'],      // 0: a private note – the others see only that there is one
+  ['research_threads', 'created_by', 'TEXT'],   // who wrote it (empty: the owner)
+  ['research_sources', 'created_by', 'TEXT'],   // who added it (empty: the owner)
+  ['research_drafts', 'created_by', 'TEXT'],    // who started it (empty: the owner)
 ];
 
 let ready: Promise<void> | null = null;

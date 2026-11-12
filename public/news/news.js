@@ -625,6 +625,11 @@
   $('#histSw').addEventListener('change', runSearch);
 
   /* ================= the article: the card flips into a panel with the gist; the full article on request ================= */
+  /* without AI (docs/ai/without-ai.md #6): the article's opening, Google's translation of the page, who else reports it */
+  const googleTranslate = (url) => `https://translate.google.com/translate?sl=auto&tl=iw&u=${encodeURIComponent(url)}`;
+  const googleNews = (title) => `https://news.google.com/search?q=${encodeURIComponent(title)}&hl=iw&gl=IL&ceid=IL:he`;
+  const aiInvite = () => H.loadOnce('/assets/ai-invite.js').then(() => H.aiInvite?.()).catch(() => toast('אפשר לחבר AI בהגדרות ← חיבור לשירותים'));
+  const upgrade = (text) => el('button', { type: 'button', class: 'linklike small ai-up offer', onclick: aiInvite }, text);
   const ICON = {
     amlek: '✨', ivrut: '🌐', tachles: '🔍', full: '📖', back: '↩', out: '↗', more: '⋯', prev: '→', next: '←',
   };
@@ -640,6 +645,7 @@
       it.kind !== 'websearch' ? item(it.starred ? '★ שמור – להעביר או להסיר' : '☆ שמירה', () => chooseFolder(it)) : null,
       item('📤 שיתוף', () => share(it)),
       item(it.kind === 'telegram' ? '↗ פתיחה בטלגרם' : '↗ פתיחה באתר המקורי', () => window.open(it.link, '_blank', 'noopener')),
+      lang !== 'he' && it.kind !== 'telegram' ? item('🌐 תרגום הדף ב־Google', () => window.open(googleTranslate(it.link), '_blank', 'noopener')) : null,
       ctx.full && it.kind !== 'telegram' ? item(ctx.embed ? '📄 חזרה לתצוגת קריאה' : '🖼 האתר המקורי בתוך החלונית', () => ctx.toggleEmbed()) : null);
     return el('div', { class: 'tools' },
       ctx.main,
@@ -672,7 +678,10 @@
       boxes.amlek.replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'מאמלק…'));
       try {
         const s = await api('/api/news/summary', { body: { url: it.link, text: textOf() } });
-        boxes.amlek.replaceChildren(el('div', { class: 'note-box amlek' }, el('b', {}, '✨ אמלק'), el('ul', {}, s.bullets.map((x) => el('li', {}, x)))));
+        boxes.amlek.replaceChildren(s.via === 'lead'
+          ? el('div', { class: 'note-box amlek plain' }, el('b', {}, '📰 הפתיחה של הכתבה'), el('ul', {}, s.bullets.map((x) => el('li', { dir: 'auto' }, x))),
+            el('small', { class: 'muted' }, 'המשפטים הראשונים, כפי שנכתבו. '), upgrade('✨ לסיכום של העוזר החכם'))
+          : el('div', { class: 'note-box amlek' }, el('b', {}, '✨ אמלק'), el('ul', {}, s.bullets.map((x) => el('li', {}, x)))));
       } catch (err) { boxes.amlek.replaceChildren(); toast(err.message); if (b) b.disabled = false; }
     };
     const tachles = async (e) => {
@@ -686,7 +695,16 @@
           v.explanation_he ? el('p', {}, v.explanation_he) : null,
           v.sources?.length ? el('div', { class: 'v-sources' }, el('small', { class: 'muted' }, 'מקורות בלתי תלויים:'), v.sources.map((s) => el('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.title || new URL(s.url).hostname))) : null));
         redraw(it);
-      } catch (err) { boxes.tachles.replaceChildren(); toast(err.message); }
+      } catch (err) {
+        // without AI: who else among the sources reports the same story (by its words), the source's rating, and a search
+        const c = corro[it.id], f = feedOf(it);
+        boxes.tachles.replaceChildren(el('div', { class: 'note-box verdict plain' },
+          el('b', {}, '🔍 בדיקה בלי העוזר החכם'),
+          el('p', {}, c?.others ? `גם ${c.outlets.join(', ')} ${c.others > 1 ? 'מדווחים' : 'מדווח'} על זה.` : 'לא מצאתי את הסיפור אצל מקורות אחרים שלכם (עדיין).'),
+          f?.quality ? el('p', { class: 'muted' }, `דירוג המקור: ${stars(f.quality)}`) : null,
+          el('div', { class: 'row' }, el('a', { class: 'btn ghost small', href: googleNews(it.title), target: '_blank', rel: 'noopener' }, '↗ מי עוד מדווח (Google News)'), upgrade('✨ בדיקה מול מקורות ברשת'))));
+        if (err.status !== 402 && err.status !== 503) toast(err.message);
+      }
       if (b) b.disabled = false;
     };
     let translated = null;
@@ -701,7 +719,13 @@
         boxes.ivrut.replaceChildren(el('div', { class: 'note-box translated' }, el('p', { class: 'tr-note' }, `🌐 עוברת מ${t.from || LANG[lang] || 'השפה המקורית'}`),
           el('h3', { class: 'tr-title' }, t.title_he), ...(into === 'full' ? t.paragraphs : t.paragraphs.slice(0, 3)).map((p) => el('p', {}, p)),
           into === 'full' || t.paragraphs.length <= 3 ? null : el('button', { class: 'link', onclick: () => showFull(true) }, 'לכל הכתבה בעברית ←')));
-      } catch (err) { boxes.ivrut.replaceChildren(); toast(err.message); }
+      } catch (err) {
+        // without AI: Google's translation of the page (only its address goes there)
+        boxes.ivrut.replaceChildren(it.kind === 'telegram' ? '' : el('div', { class: 'note-box plain' },
+          el('b', {}, '🌐 תרגום בלי העוזר החכם'),
+          el('div', { class: 'row' }, el('a', { class: 'btn ghost small', href: googleTranslate(it.link), target: '_blank', rel: 'noopener' }, '↗ הכתבה בעברית ב־Google Translate'), upgrade('✨ תרגום של העוזר החכם'))));
+        if (err.status !== 402 && err.status !== 503) toast(err.message);
+      }
       if (b) b.disabled = false;
     };
 

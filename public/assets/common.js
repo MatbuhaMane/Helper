@@ -37,6 +37,8 @@
       err.code = code;
       err.status = res.status;
       if (res.status === 401 && !opts.noRedirect) location.href = '/?next=' + encodeURIComponent(location.pathname);
+      // the AI credit ran out (server/credits.ts): an invitation to connect one's own AI, not a broken button
+      if (res.status === 402 && code === 'ai_credit_needed') loadOnce('/assets/ai-invite.js').then(() => window.H.aiInvite?.()).catch(() => {});
       throw err;
     }
     return data;
@@ -307,7 +309,7 @@
         el('a', { class: 'ink-nav', href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'nav-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, n.label))),
       el('span', { class: 'spacer' }),
       // (day and night: the sun and moon's orbit on the home page is the switch; elsewhere the app follows the sun)
-      el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, hidden: true }, '…'));
+      el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, title: 'הגדרות', hidden: true }, '…'));
     const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) =>
       el('a', { href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'tab-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, icon(n.icon), el('span', {}, n.short || n.label))));
     document.body.prepend(bar);
@@ -323,15 +325,25 @@
       const vault = document.body.dataset.vault === '1';
       if (!r.offline && !embedded && !vault) loadMusic();
       if (!r.offline && !vault) loadCapture();
+      if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
     });
     return bar;
   }
 
-  async function userMenu() {
+  /** the name in the bar opens the person's settings (the account, signing out, חיבור לשירותים) */
+  function userMenu() { location.href = '/settings/'; }
+  /** signing out, for the settings page: the session ends here and the device forgets the person */
+  async function logout() {
     if (!confirm('להתנתק מהאוהל?')) return;
     await api('/api/auth/logout', { method: 'POST' }).catch(() => {});
     try { localStorage.removeItem('helper.me'); localStorage.removeItem(PREFS_CACHE); } catch (_) { /* ignore */ }
     location.href = '/';
+  }
+  /** a script of our own, once per page */
+  function loadOnce(src) {
+    const had = document.querySelector(`script[src="${src}"]`);
+    if (had) return had.dataset.loaded ? Promise.resolve() : new Promise((ok, no) => { had.addEventListener('load', ok); had.addEventListener('error', no); });
+    return new Promise((ok, no) => { const s = el('script', { src }); s.addEventListener('load', () => { s.dataset.loaded = '1'; ok(); }); s.addEventListener('error', no); document.head.append(s); });
   }
 
   /* Glass modal shared by apps */
@@ -402,5 +414,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 })();

@@ -57,11 +57,13 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 /* members (owner) */
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role FROM members ORDER BY household, email').all();
   return json({ members: results });
 });
 route('PUT', '/api/members/:email/name', async (ctx) => {
   requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const name = heName((await body<{ he_name?: string }>(ctx.req)).he_name);
   await ctx.env.DB.prepare('UPDATE members SET he_name = ? WHERE email = ?').bind(name, decodeURIComponent(ctx.params.email).toLowerCase()).run();
   return json({ ok: true, he_name: name });
@@ -74,6 +76,7 @@ const heName = (v: unknown) => {
 };
 route('POST', '/api/members', async (ctx) => {
   requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const b = await body<{ email: string; name?: string; he_name?: string; household?: string; role?: string }>(ctx.req);
   const he = heName(b.he_name);
   const email = (b.email || '').trim().toLowerCase();
@@ -88,6 +91,7 @@ route('POST', '/api/members', async (ctx) => {
 });
 route('DELETE', '/api/members/:email', async (ctx) => {
   const me = requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const email = decodeURIComponent(ctx.params.email).toLowerCase();
   if (email === me.email) throw new HttpError(400, 'You cannot remove yourself');
   await ctx.env.DB.batch([

@@ -73,6 +73,28 @@ Read this before changing sign-in, the API, the family vault, or the headers.
   indexed. An invitation does **not** admit anyone into the app: a guest who signs in with Google from it is turned away unless
   already invited (the owner's decision, until AI limits or credits exist).
 
+### The owner's room (`server/admin.ts`, `public/admin/`)
+- Entered only with a passkey of an owner (the emails in `OWNER_EMAIL`) or a super the owner named, with user verification
+  required; the challenge is bound to this device's session, and so is the entry. On someone else's device the browser can
+  offer the owner's phone by QR code.
+- The entry closes after **3 idle minutes** (a floating warning after 30 seconds; any action keeps it open), and after 2 hours
+  at most (30 minutes for a visit from someone else's account). A lock button closes it at once. "Stay unlocked" lifts the
+  idle limit only on the owner's own account, enforced on the server.
+- From someone else's account (a visit): only that person's features and the app's counts – no money, settings, members,
+  messages to everyone or audit log. Every action is written to `admin_audit`.
+- The members list (`/api/members`) and the AI cost report (`/api/usage`) need the owner's session **and** the room open from
+  the owner's own account.
+
+### The AI allowance and people's own keys (`server/credits.ts`, `server/meter.ts`)
+- The meter's fetch wrapper gates every request to Claude or Gemini (`/v1/messages`, `:generateContent`), however `fetch`
+  is called. A limited account with no credit left is refused (402 `ai_credit_needed`) before anything leaves. The family
+  (members with no allowance row) is not limited; new accounts get a one-time trial grant. If the allowance cannot be read,
+  the call is let through and logged (a deliberate trade-off: a database fault does not switch the AI off for everyone).
+- A person's own Claude or Gemini key is checked once with the provider (listing models), stored sealed with the vault key
+  under a per-person context, never returned (only its last four characters are shown), never logged, removable at any time;
+  saving is limited to ten tries an hour. Their requests go out with their key and are metered as `own_key`, outside the
+  owner's costs and their credit.
+
 ### The desktop program (`desktop/main.js`)
 - Context isolation and the sandbox are on; navigation is locked to the app; links open in the browser only if they are http(s);
   device permissions are refused except the microphone.

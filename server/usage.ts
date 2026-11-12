@@ -4,11 +4,13 @@
 
 import { Ctx, json, requireOwner } from './core';
 import { costOf, UsageRow } from './prices';
+import { requireAdmin } from './admin';
 
 interface Row extends UsageRow { email: string | null; feature: string; provider: string }
 
 export async function report(ctx: Ctx) {
   requireOwner(ctx);
+  await requireAdmin(ctx, 'own');            // and the owner's room is open, from their own account
   const days = Math.min(90, Math.max(1, Number(ctx.url.searchParams.get('days')) || 14));
   const since = Date.now() - days * 864e5;
   const [{ results }, names] = await Promise.all([

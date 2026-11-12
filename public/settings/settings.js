@@ -35,7 +35,7 @@
       el('section', { class: 'card st-account' },
         el('h2', {}, 'החשבון'),
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
-        el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { if (!confirm('להתנתק מהאוהל?')) return; await api('/api/auth/logout', { method: 'POST' }).catch(() => {}); location.href = '/'; } }, 'התנתקות')),
+        el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')),
       el('section', { id: 'services', class: 'st-services' },
         el('h2', {}, 'חיבור לשירותים'),
         el('p', { class: 'muted' }, me.limited

@@ -303,7 +303,7 @@
     if (!P.profile) return wizard(false);
     P.plan = plan({ ...P.profile, weight: currentWeight() || P.profile.weight });   // the plan follows the weight
     root.replaceChildren(el('div', { class: 'hk' },
-      el('a', { class: 'folder-back', href: '/food/diet/' }, '‹ דיאטה'),
+      el('a', { class: 'folder-back', href: '/food/diet/' }, '‹ תנועה ותזונה'),
       el('h1', { class: 'hk-title' }, 'הקפדה'),
       dashboard(), workouts()));
   }

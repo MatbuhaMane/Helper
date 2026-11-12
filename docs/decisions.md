@@ -11,6 +11,96 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The recipe check without AI (docs/ai/without-ai.md #4) (ai-features → master, design)
+
+`POST /api/recipes/check` now checks by word lists first (`server/recipe-rules.ts`, 17 tests in
+`server/test-recipe-rules.mjs`): non-kosher foods, seafood, shrimp, meat with dairy (the dairy marked, with its
+substitutes), high-carb foods for keto, and the ingredients with no amount (`missing`). The answer has the same shape
+plus `method: 'rules' | 'ai'`. The AI checks by itself only when it is free for the person (the family, or their own
+key), as before; otherwise on request (`{ai: true}`, "✨ בדיקה חכמה" in the fix window, an invitation when no AI is
+left). An AI answer already cached for the same ingredients is used for anyone at no cost.
+- **For the master:** add `test:recipe-rules` to `npm test`. No route or table.
+- **For design:** `.fix-smart` (an `.ai-pair` with ✨ and a short note), `.fix-missing` (the ingredients with no amount).
+Status: done (on `ai-features`).
+
+## 2026-11-13 – The study room without AI (docs/ai/without-ai.md #7) (ai-features → master, design)
+
+The dictionaries, the concordance and the commentaries already worked without AI. Now:
+- **The researcher:** "🔎 חיפוש בספריא" (primary) searches all of Sefaria's sources by the question's key words
+  (`public/parasha/plain.js`, 13 tests in `server/test-parasha-plain.mjs`; through the existing `/api/research/search`),
+  beside "✨ שאלה לחוקר" (`.ai-up`, `offer` when no AI is left); a link to the verse's commentaries.
+- **A word:** the Hebrew explanation (AI) comes by itself only when the AI is free for this person (the family, or their
+  own key); a limited account gets "✨ פירוש בעברית" and spends nothing on a tap.
+- **Translation:** "📖 התרגום של ספריא" (Sefaria's own translation of a Sefaria source, e.g. the Metsudah Onkelos) and
+  "📚 מילון למילים" (each word in Sefaria's dictionaries) beside "✨ תרגום לעברית". AI results carry `.ai-note`.
+- **For the master:** `public/parasha/index.html` loads `plain.js` before `study.js`; add `test:parasha-plain` to
+  `npm test`. No route or table.
+- **For design:** `.rs-ask-acts` (the researcher's two buttons, on their own row), `.rs-plain` and `.rs-plain-hit`
+  (the search results; an inline rule holds them until then), `.rs-tr-plain`, `.rs-tr-gloss`, `.rs-tr-sef`.
+Status: done (on `ai-features`).
+
+## 2026-11-12 – Restaurants: the family's list (A) and Google Places (C) (ai-features → master, design)
+
+The owner chose A, then C (docs/ai/restaurants.md); for C, the place is both the city in the settings and the device's
+location, and Google is open to everyone with a monthly limit.
+- **A, מסעדות שלנו** (`/food/restaurants/`): table `restaurants` (appended to schema.sql), routes `/api/restaurants`
+  (list, add, change, delete, `/:id/fav`, `/:id/visit`), 5 tests (`server/test-restaurants.mjs`). In the food
+  portal: a tile, and in the slider the favourites not visited for 30 days and the new ones.
+- **C, Google Places** (`server/places.ts`, 14 tests in `server/test-places.mjs`): `GET/POST /api/restaurants/search`,
+  on request only. A text search around the city (`prefs me.city`, a new "המקום שלי" in the settings) or a nearby
+  search around the device's point (asked with its permission, used for that one call, not kept). Only the "Pro"
+  fields. Nothing of Google's answer is stored; a restaurant added from it keeps Google's place ID
+  (`restaurants.place_id`, allowed indefinitely). Results are marked "Google Maps". Limits: 20 searches a month for a
+  limited person, none for the family (`ai_allowance.limited`), and 4,500 a month for the whole site (Google's free
+  tier is 5,000), counted in the new table `places_usage`.
+- **For the owner:** a Google Maps Platform API key restricted to "Places API (New)", with a daily quota cap in Google
+  Cloud, entered as the secret `GOOGLE_MAPS_API_KEY`. Until then the page says the search is not set up.
+- **For the master:** add `GOOGLE_MAPS_API_KEY?: string` to `Env` in core.ts (places.ts reads it through a local type
+  until then); add `test:restaurants` and `test:places` to `npm test`. Google's terms (the master's answer): only the
+  place ID is kept. "Add to our list" shows Google's name and address for reference, and the person types the name in
+  their own words; the link saved is `https://www.google.com/maps/place/?q=place_id:<id>` (a URL, no API call).
+- **For design:** `.rs`, `.rs-card`, `.rs-fav`, `.rs-filters`, `.rs-tags`, `.rs-kosher` (`kosher`, `mehadrin`, `no`),
+  `.rs-near`, `.rs-place`, `.rs-attrib` (Google's attribution: keep it visible), `.fs-restaurant`; and a restaurant
+  icon for the portal tile (it uses `food` now).
+Status: done (on `ai-features`); C waits for the key.
+
+## 2026-11-12 – Vision batch 4 on ai-features: what was built, and what others are asked (ai-features → master, design)
+
+Built on `ai-features` (each commit names its item):
+- **(1, 8) תנועה ותזונה**: the folder "דיאטה" is renamed (its address `/food/diet/` stays), with הקפדה first; הקפדה
+  is in the tools box too; the food portal's subtitle follows. **For the master:** `public/assets/apps.js` still says
+  `name: 'דיאטה', sub: 'קטוזיס, הקפדה, ומה מתאים'` (and `'… דיאטה והמקרר'` for אוכל). Proposed: `'תנועה ותזונה'` /
+  `'הקפדה, קטוזיס, ומה מתאים'` / `'רשימת קניות, ספר מתכונים, תנועה ותזונה והמקרר'`, and a הקפדה entry
+  (`/food/diet/hakpada/`, ic `target`) so it can be pinned to the ring.
+- **(5) Notes**: saved only on "שמירה" (or Ctrl+S); closing with changes asks "לבטל את השינויים?"; a ✕; a star.
+  Column `notes.starred`. **Drive**: "☁ ל־Drive" makes a Google Doc in "האוהל · פתקים" through the existing
+  `/api/auth/login?drive=1` (drive.file, sealed in `google_tokens`). Routes appended: `GET /api/notes/drive`,
+  `POST /api/notes/:id/drive`; columns `notes.drive_id`, `notes.drive_at`. `mail.mailStatus` now counts Gmail as
+  connected only with the Gmail scope, since a Drive-only grant shares the row. **For the master:** a review of the
+  token use. It was not tried against Google (sign-in needs port 8788), and the Drive upload needs a test on a preview.
+- **(6) Settings**: in the owner's order, kept per person (prefs `ui`, `access`, `look`, `me`, `daemon`).
+  **For the master:** `public/settings/apply.js` defines `H.applySettings()`, `H.reducedMotion()`, `H.vibrate()`,
+  `H.soundsOn()`; please run it from `common.js` right after the prefs load (inline it, or `loadOnce` it early), so
+  every page gets the text size and the marks before it paints. **For design:** CSS for `:root[data-spacing="wide"]`,
+  `[data-font="readable"]`, `[data-contrast="high"]`, `[data-motion="reduce"]`, `[data-palette="…"]` (the palettes'
+  ids go in `PALETTES` in settings.js); in `settings.css`, `.st-sec`, `.st-choices` / `.st-jump` (rows of `.chip`, the
+  chosen one `aria-checked="true"`), `.st-services-grid`, `.st-field`, `.st-skins`, `.st-soon`. The inline rules in
+  settings.js only hold the layout until then.
+- **(10) Songbook**: the reader is the hub's flip sheet (`H.sheet`, so `/songs/` loads `sheet.css` and `sheet.js`; the
+  old `#reader` section is gone, and the guide's `song-reader` mark moved to the sheet's content); ❤ on a double tap or
+  ♡ (prefs `songs.favs`, links only); "🎸 אני מנגן" (prefs `songs.plays`); delete from the reader. In
+  `public/assets/music.js`, "the words are in the songbook" is a side popup `.mu-peek` that slides in and out (inline
+  styles until design). **For design:** `.scard .fav`, `.chip.plays`, `.heart-burst`, `.mu-peek`, `.songs-sheet`.
+  Shared songbooks are not built: they need a sharing model (between households, by link?), which goes to the master
+  first.
+- **(11) The food portal's slider**: `GET /api/food/highlights` (route appended, `server/food.ts`, 11 tests in
+  `server/test-food.mjs`): what goes off within three days in the household's fridges, then its own recipes that use
+  it, then recent ones. `public/food/slider.js` puts it under the header. **For design:** `.food-slider`, `.fs-track`,
+  `.fs-item` (`.fs-fridge.soon`, `.gone`, `.fs-recipe`). **For the master:** add `node server/test-food.mjs` to
+  `npm test`. Restaurants: a proposal for the owner in `docs/ai/restaurants.md`; nothing built.
+- **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
+Status: done (on `ai-features`), except the items marked for others.
+
 ## 2026-11-12 – The calculator without AI: percentages, currencies, fractions, equations (ai-features → master, design)
 
 The second tool of `docs/ai/without-ai.md`. The calculator reads "15% מ-80", "100 דולר בשקלים" / "$50 + 20 €" (today's

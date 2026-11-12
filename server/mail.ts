@@ -8,7 +8,7 @@
 
 import { z } from 'zod';
 import { aiJson } from './ai';
-import { Ctx, Env, HttpError, body, googleAccessToken, json, requireUser, uid } from './core';
+import { Ctx, Env, GMAIL_SCOPE, HttpError, body, googleAccessToken, json, requireUser, uid } from './core';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 export const REVIEW_LABEL = 'Helper/לבדיקה לפני מחיקה';
@@ -94,8 +94,9 @@ async function batchModify(token: string, ids: string[], add: string[], remove: 
 
 export async function mailStatus(ctx: Ctx) {
   const u = requireUser(ctx);
-  const row = await ctx.env.DB.prepare('SELECT updated_at FROM google_tokens WHERE email = ?').bind(u.email).first();
-  return json({ connected: !!row, reviewLabel: REVIEW_LABEL });
+  // (the same row may hold only a Drive grant – for notes – so Gmail counts only with its own scope)
+  const row = await ctx.env.DB.prepare('SELECT scope FROM google_tokens WHERE email = ?').bind(u.email).first<{ scope: string | null }>();
+  return json({ connected: !!row && (!row.scope || row.scope.includes(GMAIL_SCOPE)), reviewLabel: REVIEW_LABEL });
 }
 
 export async function disconnect(ctx: Ctx) {

@@ -3,6 +3,8 @@
  * - מצרך בעייתי מסומן בקו של עיפרון, ומתחתיו שורה עם תחליף לבחירה
  * - אזהרות למעלה (לחיצה פותחת חלונית תיקון), וחותמת כשרות / קטו כשהמתכון מתאים
  * זו הערכה לפי שמות המצרכים בלבד, לא תחליף להשגחה: את ההכשר של המוצרים עצמם בודקים על האריזה.
+ * בלי AI (docs/ai/without-ai.md #4): הבדיקה לפי רשימות מילים בשרת, וגם אילו מצרכים חסרה להם כמות. ה-AI בודק מעצמו רק
+ * כשהוא חופשי לאדם (המשפחה, או מפתח משלו); לכל השאר "✨ בדיקה חכמה" בחלונית התיקון, או הזמנה לחבר AI כשאין.
  */
 (() => {
   'use strict';
@@ -25,11 +27,17 @@
   const closeModal = closeDialog;
 
   const checks = new Map(); // names key -> Promise
-  /** The check for a recipe's ingredients (cached for the visit; the server keeps it too). */
-  function check(recipe) {
+  /** The check for a recipe's ingredients (cached for the visit; the server keeps the AI's too).
+      { ai: true } asks the AI (✨); once it answered, the same ingredients give its answer from then on. */
+  function check(recipe, { ai } = {}) {
     const ings = (recipe.ingredients || []).map((i) => ({ name: (i.name || '').trim(), measure: i.measure || '' }));
-    if (!ings.some((i) => i.name)) return Promise.resolve({ kosher: [], keto: [] });
-    const key = JSON.stringify(ings.map((i) => i.name));
+    if (!ings.some((i) => i.name)) return Promise.resolve({ kosher: [], keto: [], missing: [], method: 'rules' });
+    const key = JSON.stringify(ings.map((i) => [i.name, !!i.measure.trim()]));
+    if (ai) {
+      const p = api('/api/recipes/check', { body: { title: recipe.title || '', ingredients: ings, ai: true } });
+      p.then(() => checks.set(key, p), () => {});
+      return p;
+    }
     if (!checks.has(key)) {
       const p = api('/api/recipes/check', { body: { title: recipe.title || '', ingredients: ings } });
       p.catch(() => checks.delete(key));
@@ -37,6 +45,10 @@
     }
     return checks.get(key);
   }
+  let aiP = null;
+  /** no AI left for this person (limited, out of credit, no key of their own): ✨ invites instead */
+  const noAi = () => (aiP ||= api('/api/me/ai').then((me) => !!me.out && !Object.keys(me.keys || {}).length).catch(() => false));
+  const invite = () => H.loadOnce('/assets/ai-invite.js').then(() => H.aiInvite?.()).catch(() => {});
 
   /** Where the recipe stands, given the substitutes chosen so far (Map index -> name, or null to keep the original). */
   function kosherStatus(result, subs) {
@@ -131,8 +143,8 @@
   }
 
   /* ---------- the fix window ---------- */
-  /** subs: current Map; apply(newSubs) is called with the whole new map. */
-  function openFix({ focus, recipe, result, subs, apply }) {
+  /** subs: current Map; apply(newSubs) is called with the whole new map; onResult(newResult) when ✨ brought the AI's check. */
+  function openFix({ focus, recipe, result, subs, apply, onResult }) {
     const next = new Map(subs);
     const names = recipe.ingredients.map((i) => i.name);
     const ketoIssues = Keto.enabled ? (result.keto || []).filter((k) => !(result.kosher || []).some((x) => x.index === k.index)) : [];
@@ -165,7 +177,31 @@
       el('div', { class: 'row', style: 'margin-top:14px' },
         el('button', { class: 'btn primary', onclick: () => { closeModal(); apply(next); } }, 'להחיל על המתכון'),
         el('button', { class: 'btn ghost', onclick: closeModal }, 'ביטול')),
+      missingLine(recipe, result),
+      smartRow(),
       el('p', { class: 'fine' }, 'הבדיקה לפי שמות המצרכים בלבד ואינה תחליף להשגחה; את ההכשר של כל מוצר בודקים על האריזה.'));
+
+    /** the check without AI knows names, not dishes: ✨ asks the AI to read the whole recipe (or invites to connect one) */
+    function smartRow() {
+      if (result.method === 'ai') return el('p', { class: 'ai-note' }, '✨ נבדק בעזרת העוזר החכם');
+      const btn = el('button', { class: 'btn ai-up', type: 'button', onclick: async () => {
+        if (await noAi()) return invite();
+        btn.disabled = true; btn.textContent = 'בודק…';
+        try {
+          const res = await check(recipe, { ai: true });
+          closeModal();
+          onResult?.(res);
+          openFix({ focus, recipe, result: res, subs, apply, onResult });
+        } catch (e) { btn.disabled = false; btn.textContent = '✨ בדיקה חכמה'; if (e?.code !== 'ai_credit_needed') H.toast?.('הבדיקה החכמה לא הצליחה כרגע'); }
+      } }, '✨ בדיקה חכמה');
+      noAi().then((out) => btn.classList.toggle('offer', out));
+      return el('div', { class: 'ai-pair fix-smart' }, btn, el('small', { class: 'muted' }, 'הבדיקה כאן לפי רשימות מילים. ✨ קוראת את כל המתכון.'));
+    }
+  }
+  /** the ingredients with no amount (salt and "to taste" need none) */
+  function missingLine(recipe, result) {
+    const names = (result.missing || []).map((i) => recipe.ingredients[i]?.name).filter(Boolean);
+    return names.length ? el('p', { class: 'fix-missing small' }, '📏 חסרה כמות: ', names.join(', ')) : null;
   }
 
   window.RecipeFix = { check, kosherStatus, kosherChip, ketoChip, statusRows, subLine, openFix, stamp };

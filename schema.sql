@@ -725,3 +725,33 @@ CREATE TABLE IF NOT EXISTS invite_joins (
   exp        INTEGER NOT NULL,
   used       INTEGER NOT NULL DEFAULT 0
 );
+
+-- מסעדות שלנו: the household's own list of restaurants (server/restaurants.ts)
+CREATE TABLE IF NOT EXISTS restaurants (
+  household  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  place      TEXT,
+  cuisine    TEXT,
+  kosher     TEXT,             -- '' (not known), kosher, mehadrin, no
+  link       TEXT,
+  phone      TEXT,
+  note       TEXT,
+  place_id   TEXT,             -- Google's place ID, when it came from a search (the only thing of Google's that may be kept)
+  fav        INTEGER NOT NULL DEFAULT 0,
+  visited_at INTEGER,
+  visited_by TEXT,
+  created_by TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (household, id)
+);
+
+-- restaurants from Google Places: searches per person per month (server/places.ts), nothing of the answers
+CREATE TABLE IF NOT EXISTS places_usage (
+  email TEXT NOT NULL,
+  month TEXT NOT NULL,          -- YYYY-MM
+  n     INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, month)
+);

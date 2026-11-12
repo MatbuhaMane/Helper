@@ -625,7 +625,8 @@
     const ketoSlot = el('div');
     const ingSlot = el('div');
     let result = null;
-    const openFix = (focus) => result && RecipeFix.openFix({ focus, recipe, result, subs, apply: (next) => { subs.clear(); next.forEach((v, k) => subs.set(k, v)); draw(); } });
+    const openFix = (focus) => result && RecipeFix.openFix({ focus, recipe, result, subs, apply: (next) => { subs.clear(); next.forEach((v, k) => subs.set(k, v)); draw(); },
+      onResult: (res) => { result = res; for (const x of res.kosher) if (!subs.has(x.index)) subs.set(x.index, x.subs[0]); draw(); } });
     const draw = () => {
       const eff = effective(recipe, subs);
       // The chips: a warning about the original recipe, and stamps for the version on screen.
@@ -908,6 +909,7 @@
     }
     const openBookFix = (focus) => lastResult && RecipeFix.openFix({
       focus, recipe: currentRecipe(), result: lastResult, subs: new Map(),
+      onResult: () => { lastNames = null; runCheck(); },   // (the AI's answer is now the cached one for these ingredients)
       apply: (next) => {
         const rows = rowsNow();
         next.forEach((v, i) => { if (v && rows[i]) { const n = rows[i].querySelector('.n'); n.value = v; autosize(n); clearMarks(rows[i]); } });

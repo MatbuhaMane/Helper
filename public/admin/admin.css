@@ -39,9 +39,10 @@
 .ad tbody td > label > input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: relative; flex: none; margin: 0; cursor: pointer;
   inline-size: 38px; block-size: 22px; border-radius: 999px; background: var(--line-strong); transition: background .2s var(--ease-river); }
 .ad tbody td > label > input[type="checkbox"]::before { content: ""; position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 16px; block-size: 16px;
-  border-radius: 50%; background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: inset-inline-start .2s var(--ease-river); }
+  border-radius: 50%; background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s var(--ease-river); }
 .ad tbody td > label > input[type="checkbox"]:checked { background: var(--primary); }
-.ad tbody td > label > input[type="checkbox"]:checked::before { inset-inline-start: 19px; }
+.ad tbody td > label > input[type="checkbox"]:checked::before { transform: translateX(16px); }
+:dir(rtl) .ad tbody td > label > input[type="checkbox"]:checked::before, [dir="rtl"] .ad tbody td > label > input[type="checkbox"]:checked::before { transform: translateX(-16px); }
 .ad tbody td > label > input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
 .ad tbody td > label > input[type="checkbox"]:disabled { opacity: .55; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .ad tbody td > label > input[type="checkbox"], .ad tbody td > label > input[type="checkbox"]::before { transition: none; } }

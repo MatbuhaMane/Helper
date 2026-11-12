@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The family tree on a trusted device; special actions still ask (master, the owner approved)
+
+Vision's batch 2 item 4 ("the family tree opens freely after the first sign-in"), made safe and approved by the owner.
+The vault's encryption does not change (the key is a Worker secret; a passkey never decrypted anything – it is a gate).
+A session that unlocks the vault becomes a **trusted device for 30 days**, renewed on each use: the tree (people,
+relationships, roles, the forest), editing people and links, and non-private details open there without a touch.
+**Every time** a fresh unlock (passkey, or a Google sign-in from the last 10 minutes): documents and files, private items,
+changing privacy, linking trees, any delete, export. Settings get a "מכשירים מוכרים" list to revoke a device at once.
+Untrusted sessions are as before. Built by ai-features in `server/vault/index.ts`, reviewed by the master. Status: Decided (the owner), assigned.
+
 ## 2026-11-12 – Credit gifts in the room (ai-features, the owner's decisions via business and the master)
 
 The owner gives AI credit to chosen people from the room: the owner only (not a super), from the owner's own account,

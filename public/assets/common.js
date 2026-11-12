@@ -290,7 +290,7 @@
   const PARTS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];
   const NAV = [
     { href: '/', label: 'בית', icon: 'home' },
-    { href: '/family/', label: 'עץ המשפחה', short: 'משפחה', icon: 'family' },
+    { href: '/family/', label: 'עץ המשפחה', lines: ['עץ', 'המשפחה'], short: 'משפחה', icon: 'family' },   // lines: two lines on PC (the owner's choice)
     { menu: 'parts', label: 'ניווט', icon: 'compass', also: [...PARTS, '/groceries/'] },
     { menu: 'tools', href: '/tools/', label: 'כלים', icon: 'tools', also: ['/tools/', '/mail/', '/pc/', '/gather/'] },
     { href: '/settings/', label: 'הגדרות', icon: 'settings', tab: true },   // on PC: the gear with the person's name
@@ -342,7 +342,7 @@
         'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'פתיחת ' + n.label, onclick: (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, n.menu, phone); } },
         phone ? icon(n.icon) : null, el('span', {}, n.short || n.label), phone ? null : el('span', { class: 'nav-caret', 'aria-hidden': 'true' }, '▾'))
       : el('a', { class: phone ? null : 'ink-nav', href: n.href, 'aria-current': current(n) ? 'page' : null, 'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'מעבר ל' + n.label },
-        phone ? icon(n.icon) : null, phone ? el('span', {}, n.short || n.label) : n.label);
+        phone ? icon(n.icon) : null, phone ? el('span', {}, n.short || n.label) : n.lines ? el('span', { class: 'nav-two' }, el('span', {}, n.lines[0]), ' ', el('span', {}, n.lines[1])) : n.label);
     const bar = el('header', { class: 'appbar' },
       el('a', { class: 'brand', href: '/', 'aria-label': 'הָאֹ֔הֶל, לדף הבית' }, el('span', { html: BRAND }), el('span', { class: 'brand-text' }, 'הָאֹ֔הֶל')),
       title ? el('h1', { class: 'page-title' }, title) : null,
@@ -454,4 +454,21 @@
   else setTimeout(autoDaemon);
 
   window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+
+  /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
+     page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then
+     apply.js loads and owns them from there (H.applySettings, H.reducedMotion, H.vibrate, H.soundsOn), re-applying when
+     the prefs change on another device. Keep this early copy in step with apply.js. */
+  (function earlySettings() {
+    const d = prefStore.data || {}, a = d.access || {}, l = d.look || {}, m = d.me || {}, root = document.documentElement;
+    const text = Math.min(1.6, Math.max(0.85, Number(a.text) || 1));
+    if (text !== 1) root.style.fontSize = `${Math.round(text * 100)}%`;
+    if (a.spacing === 'wide') root.dataset.spacing = 'wide';
+    if (a.font === 'readable') root.dataset.font = 'readable';
+    if (a.contrast === 'high') root.dataset.contrast = 'high';
+    if (a.motion === 'reduce') root.dataset.motion = 'reduce';
+    if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;
+    if (/^[a-z]{1,16}$/.test(m.religion || '')) root.dataset.religion = m.religion;
+  })();
+  if (!embedded) loadOnce('/settings/apply.js').catch(() => { /* the early marks stay */ });
 })();

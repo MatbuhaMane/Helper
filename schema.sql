@@ -438,3 +438,21 @@ CREATE TABLE IF NOT EXISTS rate_hits (
   count    INTEGER NOT NULL,
   reset_at INTEGER NOT NULL
 );
+
+-- The vault's backups: which file has a copy where, and the backup settings (server/vault/backup.ts).
+CREATE TABLE IF NOT EXISTS vault_replicas (
+  item_id   TEXT NOT NULL,
+  target    TEXT NOT NULL,
+  remote_id TEXT NOT NULL,
+  at        INTEGER NOT NULL,
+  PRIMARY KEY (item_id, target)
+);
+CREATE TABLE IF NOT EXISTS backup_state (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
+-- Previews: the sign-in tickets already used (each one works once).
+CREATE TABLE IF NOT EXISTS handoff_nonces (
+  n   TEXT PRIMARY KEY,
+  exp INTEGER NOT NULL
+);

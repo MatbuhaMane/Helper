@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url';
 
 const dir = mkdtempSync(join(tmpdir(), 'vault-test-'));
 const entry = join(dir, 'entry.ts');
-writeFileSync(entry, `export * from ${JSON.stringify(join(process.cwd(), 'server/vault/webauthn.ts'))};\nexport * as vcrypto from ${JSON.stringify(join(process.cwd(), 'server/vault/crypto.ts'))};\n`);
+writeFileSync(entry, `export * from ${JSON.stringify(join(process.cwd(), 'server/vault/webauthn.ts'))};\nexport * as vcrypto from ${JSON.stringify(join(process.cwd(), 'server/vault/crypto.ts'))};\nexport * as core from ${JSON.stringify(join(process.cwd(), 'server/core.ts'))};\n`);
 const out = join(dir, 'bundle.mjs');
 execFileSync(process.execPath, [join(process.cwd(), 'node_modules/esbuild/bin/esbuild'), entry, '--bundle', '--format=esm', '--platform=neutral', `--outfile=${out}`, '--log-level=error']);
 const W = await import(pathToFileURL(out).href);
@@ -102,6 +102,44 @@ ok('sealed text opens', (await C.unseal(env, s, 'item:1:title')) === 'דרכון
 await throwsCode('sealed text moved to another field', async () => C.unseal(env, s, 'item:2:title'), 'vault_integrity');
 await throwsCode('another master key cannot open', async () => C.unseal({ VAULT_KEY: Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64') }, s, 'item:1:title'), 'vault_integrity');
 await throwsCode('production without VAULT_KEY refuses', async () => C.seal({}, 'x', 'a'), 'vault_not_configured');
+
+/* previews: the one-minute sign-in ticket from the live site */
+const K = W.core;
+const live = new URL('https://helper.shemrivers.workers.dev/api/auth/login');
+ok('a preview of this Worker is recognised', K.isPreviewOf(live, 'https://feature-family-vault-helper.shemrivers.workers.dev'));
+ok('the live site itself is not a preview', !K.isPreviewOf(live, 'https://helper.shemrivers.workers.dev'));
+ok('another site is not a preview', !K.isPreviewOf(live, 'https://evil-helper.shemrivers.workers.dev.evil.com'));
+ok('another account is not a preview', !K.isPreviewOf(live, 'https://x-helper.other.workers.dev'));
+ok('plain http is not a preview', !K.isPreviewOf(live, 'http://x-helper.shemrivers.workers.dev'));
+const PREV = 'https://feature-x-helper.shemrivers.workers.dev';
+function fakeEnv() {
+  const nonces = new Set(), sessions = [];
+  const DB = { prepare: (sql) => ({ bind: (...a) => ({
+    run: async () => { if (/INSERT INTO handoff_nonces/.test(sql)) { if (nonces.has(a[0])) return { meta: { changes: 0 } }; nonces.add(a[0]); return { meta: { changes: 1 } }; }
+                       if (/INSERT INTO sessions/.test(sql)) sessions.push(a[1]); return { meta: { changes: 1 } }; },
+    first: async () => (/FROM members/.test(sql) && a[0] === 'family@example.com' ? { email: a[0], name: 'x', household: 'family', role: 'member' } : null),
+  }) }) };
+  return { env: { DB, PRODUCTION_ORIGIN: 'https://helper.shemrivers.workers.dev', PREVIEW_HANDOFF_KEY: 'k'.repeat(44), OWNER_EMAIL: '' }, sessions };
+}
+async function handoff(env, t, origin = PREV) {
+  const url = new URL(`${origin}/api/auth/handoff?t=${encodeURIComponent(t)}&next=%2Ffamily%2F`);
+  return K.previewHandoff({ env, url, req: new Request(url), params: {}, user: null, waitUntil: () => {} });
+}
+{
+  const { env, sessions } = fakeEnv();
+  const good = await K.signTicket(env.PREVIEW_HANDOFF_KEY, { email: 'family@example.com', name: null, aud: PREV, exp: Date.now() + 60e3, n: 'n1' });
+  const r = await handoff(env, good);
+  ok('a good ticket signs in', r.status === 302 && r.headers.get('location') === '/family/' && sessions.length === 1);
+  await throwsCode('the same ticket twice', () => handoff(env, good), 'Ticket used');
+  await throwsCode('a ticket for another preview', async () => handoff(env, await K.signTicket(env.PREVIEW_HANDOFF_KEY, { email: 'family@example.com', aud: 'https://other-helper.shemrivers.workers.dev', exp: Date.now() + 60e3, n: 'n2' })), 'Ticket expired');
+  await throwsCode('an expired ticket', async () => handoff(env, await K.signTicket(env.PREVIEW_HANDOFF_KEY, { email: 'family@example.com', aud: PREV, exp: Date.now() - 1, n: 'n3' })), 'Ticket expired');
+  await throwsCode('a ticket signed with another key', async () => handoff(env, await K.signTicket('x'.repeat(44), { email: 'family@example.com', aud: PREV, exp: Date.now() + 60e3, n: 'n4' })), 'Bad ticket');
+  const forged = good.split('.')[0].slice(0, -2) + 'AA.' + good.split('.')[1];
+  await throwsCode('a ticket with a changed body', () => handoff(env, forged), 'Bad ticket');
+  await throwsCode('the live site does not take tickets', async () => handoff(env, good, 'https://helper.shemrivers.workers.dev'), 'Not found');
+  const r2 = await handoff(env, await K.signTicket(env.PREVIEW_HANDOFF_KEY, { email: 'stranger@example.com', aud: PREV, exp: Date.now() + 60e3, n: 'n5' }));
+  ok('someone not in the family is turned away', r2.status === 302 && r2.headers.get('location').includes('not_invited') && sessions.length === 1);
+}
 
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

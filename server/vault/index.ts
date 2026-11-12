@@ -12,6 +12,7 @@ import { Ctx, HttpError, Member, body, getCookie, json, requireUser, uid } from 
 import { decryptFile, encryptFile, fingerprint, newDataKey, openDataKey, seal, unseal, b64url } from './crypto';
 import { defaultStore, store, StoreName } from './store';
 import { challenge, verifyAssertion, verifyRegistration } from './webauthn';
+import { backupStatus, driveDelete, nightly, readWithFailover, replicate, setState } from './backup';
 
 const IDLE = 15 * 60e3, MAX = 2 * 3600e3, FRESH = 10 * 60e3, KEEP_DELETED = 30 * 864e5;
 const MAX_FILE = 25 * 1024 * 1024;
@@ -325,6 +326,8 @@ export async function itemAdd(ctx: Ctx) {
   await ctx.env.DB.prepare('INSERT INTO vault_items (id, household, person_id, kind, title_enc, note_enc, mime, size, store, object_key, dek, owner_email, private, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(id, u.household, p.id, kind, await seal(ctx.env, title || (file as any)?.name || '', `item:${id}:title`), await seal(ctx.env, note, `item:${id}:note`), mime, size, storeName, objectKey, dek, u.email, priv, now, now).run();
   await audit(ctx, u, 'add:' + kind, id, p.id, !!priv);
+  // the encrypted copy on Drive, right away (the nightly job catches whatever this misses)
+  if (objectKey) ctx.waitUntil(replicate(ctx.env, { id, store: storeName, object_key: objectKey }).catch((e) => console.error('vault copy', id, e instanceof Error ? e.message : e)));
   return json({ id });
 }
 
@@ -334,7 +337,7 @@ export async function itemFile(ctx: Ctx) {
   const it = await item(ctx, u, ctx.params.id);
   if (!it.object_key || !it.dek) throw new HttpError(404, 'no_file');
   const key = await openDataKey(ctx.env, it.dek, it.id);
-  const bytes = await decryptFile(key, await store(ctx.env, it.store as StoreName).get(it.object_key), it.id);
+  const bytes = await decryptFile(key, await readWithFailover(ctx.env, { id: it.id, store: it.store, object_key: it.object_key }), it.id);
   await audit(ctx, u, 'view:' + it.kind, it.id, it.person_id, !!it.private);
   return new Response(bytes, { headers: {
     'content-type': it.mime || 'application/octet-stream', 'content-length': String(bytes.length),
@@ -379,8 +382,36 @@ async function purge(ctx: Ctx) {
   const { results } = await ctx.env.DB.prepare('SELECT id, store, object_key FROM vault_items WHERE deleted_at IS NOT NULL AND deleted_at < ? LIMIT 50').bind(Date.now() - KEEP_DELETED).all<{ id: string; store: string; object_key: string | null }>();
   for (const r of results) {
     if (r.object_key) await store(ctx.env, r.store as StoreName).delete(r.object_key).catch(() => {});
+    const copies = await ctx.env.DB.prepare('SELECT target, remote_id FROM vault_replicas WHERE item_id = ?').bind(r.id).all<{ target: string; remote_id: string }>();
+    for (const c of copies.results) if (c.target === 'drive') await driveDelete(ctx.env, c.remote_id);
+    await ctx.env.DB.prepare('DELETE FROM vault_replicas WHERE item_id = ?').bind(r.id).run();
     await ctx.env.DB.prepare('DELETE FROM vault_items WHERE id = ?').bind(r.id).run();
   }
+}
+
+/* ---------------- backups (the owner's panel) ---------------- */
+
+async function requireOwnerUnlocked(ctx: Ctx) {
+  const u = await requireUnlocked(ctx);
+  if (u.role !== 'owner') throw new HttpError(403, 'Owner only');
+  return u;
+}
+export async function backups(ctx: Ctx) {
+  await requireOwnerUnlocked(ctx);
+  return json(await backupStatus(ctx.env));
+}
+export async function backupsRun(ctx: Ctx) {
+  const u = await requireOwnerUnlocked(ctx);
+  await rateLimit(ctx, 'backup-run', 6, 3600e3);
+  const r = await nightly(ctx.env);
+  await audit(ctx, u, 'backup:run', null, null);
+  return json(r);
+}
+export async function driveDisconnect(ctx: Ctx) {
+  const u = await requireOwnerUnlocked(ctx);
+  for (const k of ['drive_email', 'drive_folder']) await setState(ctx.env, k, null);
+  await audit(ctx, u, 'backup:drive-off', null, null);
+  return json({ ok: true });
 }
 
 /* ---------------- the audit log ---------------- */

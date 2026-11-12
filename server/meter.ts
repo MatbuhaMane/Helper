@@ -10,7 +10,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import type { Env } from './core';
 import { gate } from './credits';
-import { providerOf } from './credits-rules';
+import { providerOf, withKey } from './credits-rules';
 
 interface Scope { env: Env; email: string | null; feature: string; waitUntil: (p: Promise<unknown>) => void }
 const store = new AsyncLocalStorage<Scope>();
@@ -86,16 +86,6 @@ function geminiUsage(model: string, d: any): Usage {
     grounded: (d?.candidates || []).some((c: any) => c.groundingMetadata?.webSearchQueries?.length || c.groundingMetadata?.groundingChunks?.length) ? 1 : 0,
     audioOut, imageOut,
   };
-}
-
-/** a request sent with the person's own key instead of the app's (server/credits.ts) */
-function withKey(provider: 'claude' | 'gemini', url: string, init: RequestInit | undefined, key: string): [string, RequestInit] {
-  const h = new Headers(init?.headers);
-  if (provider === 'claude') { h.set('x-api-key', key); return [url, { ...init, headers: h }]; }
-  const u = new URL(url);
-  u.searchParams.delete('key');
-  h.set('x-goog-api-key', key);
-  return [u.href, { ...init, headers: h }];
 }
 
 let installed = false;

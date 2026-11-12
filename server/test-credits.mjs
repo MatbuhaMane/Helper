@@ -50,5 +50,20 @@ ok('a key of the wrong shape', C.cleanKey('claude', 'AIzaSyA1234567890abcdefghij
 ok('an unknown provider', C.cleanKey('openai', 'sk-abc') === null);
 eq('the hint shows only the end', C.keyHint('sk-ant-api03-secretsecret1234'), '…1234');
 
+/* ---- a request sent with the person's own key ---- */
+{
+  const [url, init] = C.withKey('claude', 'https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'x-api-key': 'APP-KEY', 'anthropic-version': '2023-06-01', 'content-type': 'application/json' }, body: '{"a":1}' }, 'sk-ant-mine');
+  const h = new Headers(init.headers);
+  eq('Claude: the address is the same', url, 'https://api.anthropic.com/v1/messages');
+  eq('Claude: their key, not the app\'s', h.get('x-api-key'), 'sk-ant-mine');
+  ok('Claude: the rest of the request is kept', h.get('anthropic-version') === '2023-06-01' && init.body === '{"a":1}' && init.method === 'POST');
+  ok('Claude: no other credential left', !h.has('authorization'));
+  const [u2, i2] = C.withKey('gemini', 'https://generativelanguage.googleapis.com/v1beta/models/g:generateContent?key=APP-KEY&alt=sse', { headers: { 'x-goog-api-key': 'APP-KEY' } }, 'AIza-mine');
+  ok('Gemini: the app\'s key is out of the address', !u2.includes('APP-KEY') && u2.includes('alt=sse'));
+  eq('Gemini: their key in the header', new Headers(i2.headers).get('x-goog-api-key'), 'AIza-mine');
+  const [, i3] = C.withKey('gemini', 'https://generativelanguage.googleapis.com/v1beta/models/g:generateContent', undefined, 'AIza-mine');
+  eq('Gemini: a request with no headers gets one', new Headers(i3.headers).get('x-goog-api-key'), 'AIza-mine');
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

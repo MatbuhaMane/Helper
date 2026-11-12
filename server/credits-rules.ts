@@ -42,3 +42,14 @@ export function cleanKey(provider: string, key: unknown): string | null {
 }
 /** the last characters of a key, to show which one is connected without showing it */
 export const keyHint = (k: string) => '…' + k.slice(-4);
+
+/** a request sent with the person's own key instead of the app's: Claude takes it in x-api-key; Gemini in
+    x-goog-api-key, with any ?key= (the app's) taken out of the address. Nothing else of the request changes. */
+export function withKey(provider: 'claude' | 'gemini', url: string, init: RequestInit | undefined, key: string): [string, RequestInit] {
+  const h = new Headers(init?.headers);
+  if (provider === 'claude') { h.set('x-api-key', key); h.delete('authorization'); return [url, { ...init, headers: h }]; }
+  const u = new URL(url);
+  u.searchParams.delete('key');
+  h.set('x-goog-api-key', key);
+  return [u.href, { ...init, headers: h }];
+}

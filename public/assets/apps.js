@@ -29,7 +29,8 @@
     { href: '/tools/calc/', ic: 'calc', name: 'מחשבון', sub: 'חשבון, ועוזר חכם למתמטיקה ולפיזיקה', pillow: 'p06', c2: '#9c2a2a' },
     { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c' },
     { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a' },
-    { href: '/food/diet/', ic: 'diet', name: 'דיאטה', sub: 'קטוזיס, הקפדה, ומה מתאים', pillow: 'p10', c2: '#9c2a2a' },
+    { href: '/food/diet/', ic: 'diet', name: 'תנועה ותזונה', sub: 'הקפדה, הדרך שבה אוכלים, ומה מתאים לה', pillow: 'p10', c2: '#9c2a2a' },
+    { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', sub: 'מה שהחלטתם לשמור עליו, יום אחר יום', pillow: 'p12', c2: '#c4501e' },
     { href: '/food/fridge/', ic: 'fridge', name: 'מקרר', sub: 'מה יש בבית, ומה לבשל ממנו', pillow: 'p06', c2: '#9c2a2a' },
   ];
   const DEFAULT_PINS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];   // the parts the ring always had

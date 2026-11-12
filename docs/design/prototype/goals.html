@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ניהול מטרות – אב טיפוס</title>
+  <!-- The design prototype of ניהול מטרות (docs/design/goals.md). It uses the real styles: serve it from the dev server
+       (copy to public/ for a moment) so /assets/base.css and /tools/tasks/goals.css load. The data is the owner's first
+       goal, the tent itself. The JS here only switches screens and toggles states; the real logic is ai-features'. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/tools/tasks/goals.css">
+  <style>
+    body { padding: 0 16px 90px; }
+    .proto-nav { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; background: var(--bg); scrollbar-width: none; }
+    .proto-nav button { flex: none; }
+    .proto-nav button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    [data-screen][hidden] { display: none; }
+  </style>
+</head>
+<body>
+<nav class="proto-nav" aria-label="מסכי אב הטיפוס">
+  <button class="chip" data-go="dash" aria-pressed="true">המטרות</button>
+  <button class="chip" data-go="goal">מטרה</button>
+  <button class="chip" data-go="today">היום</button>
+  <button class="chip" data-go="new">מטרה חדשה</button>
+  <button class="chip" data-go="review">סיכום שבועי</button>
+  <button class="chip" data-go="stuck">נתקעתי</button>
+  <button class="chip" data-go="badges">הטלאים</button>
+</nav>
+
+<!-- ============ 1. the dashboard: the entry point ============ -->
+<main class="gl" data-screen="dash">
+  <a class="gl-back" href="#">‹ כלים</a>
+  <header class="gl-head">
+    <div><h1>המטרות שלי</h1><p>צעד קטן כל יום. שבת לא שוברת שום רצף.</p></div>
+    <button class="btn primary" type="button">+ מטרה חדשה</button>
+  </header>
+  <a class="gl-todaycard" href="#" data-go="today">
+    <span class="gl-flame" aria-hidden="true">🔥</span>
+    <div><b>היום: 3 צעדים קטנים</b><small>בערך 25 דקות · השבוע 4 מתוך 6</small></div>
+    <span class="gl-go">להתחיל ‹</span>
+  </a>
+  <section class="gl-sec">
+    <div class="gl-sec-head"><h2>בדרך</h2></div>
+    <div class="gl-goals">
+      <article class="card gl-goal">
+        <div class="gl-goal-top">
+          <div class="gl-ring-box"><div class="gl-ring" style="--p:38"></div><b>38%</b></div>
+          <div>
+            <span class="gl-len long">ארוכת טווח</span>
+            <h3><a href="#" data-go="goal">האוהל מצליח ומפרנס</a></h3>
+            <p class="gl-why">שהמשפחה תנהל את החיים יחד ותשמור על קשר, ושאוכל להמשיך ליצור דברים שעוזרים לאנשים.</p>
+          </div>
+        </div>
+        <ol class="gl-path" style="--n:5;--at:1.5">
+          <li class="gl-stop done"><i></i><span>בטא במשפחה</span></li>
+          <li class="gl-stop now"><i></i><span>מדד הצפון</span></li>
+          <li class="gl-stop"><i></i><span>רואה חשבון</span></li>
+          <li class="gl-stop"><i></i><span>מכירה ראשונה</span></li>
+          <li class="gl-stop"><i></i><span>מממן את עצמו</span></li>
+        </ol>
+        <p class="gl-next"><b>לשלוח את הקישור לבני הדודים</b></p>
+        <div class="gl-week"><div class="gl-days" aria-hidden="true"><i class="gl-day done"></i><i class="gl-day done"></i><i class="gl-day"></i><i class="gl-day done"></i><i class="gl-day done today"></i><i class="gl-day"></i><i class="gl-day rest"></i></div><small>השבוע <b>4 מתוך 6</b></small></div>
+      </article>
+      <article class="card gl-goal">
+        <div class="gl-goal-top">
+          <div class="gl-ring-box"><div class="gl-ring" style="--p:70"></div><b>70%</b></div>
+          <div>
+            <span class="gl-len">רגילה</span>
+            <h3><a href="#">לרוץ 5 ק״מ</a></h3>
+            <p class="gl-why">להיות בכושר כשהילדים רוצים לטייל.</p>
+          </div>
+        </div>
+        <ol class="gl-path" style="--n:3;--at:2">
+          <li class="gl-stop done"><i></i><span>הליכה</span></li>
+          <li class="gl-stop done"><i></i><span>ריצה קלה</span></li>
+          <li class="gl-stop now"><i></i><span>5 ק״מ</span></li>
+        </ol>
+        <p class="gl-next"><b>ריצה של 20 דקות, בקצב נוח</b></p>
+        <div class="gl-week"><div class="gl-days" aria-hidden="true"><i class="gl-day done"></i><i class="gl-day"></i><i class="gl-day done"></i><i class="gl-day"></i><i class="gl-day today"></i><i class="gl-day"></i><i class="gl-day rest"></i></div><small>השבוע <b>2 מתוך 3</b></small></div>
+      </article>
+      <article class="card gl-goal">
+        <div class="gl-goal-top">
+          <div class="gl-ring-box"><div class="gl-ring" style="--p:50"></div><b>1/2</b></div>
+          <div>
+            <span class="gl-len short">קצרה · היום</span>
+            <h3><a href="#">לסדר את המחסן</a></h3>
+            <p class="gl-why">שיהיה מקום לאופניים לפני החורף.</p>
+          </div>
+        </div>
+        <p class="gl-next"><b>לפנות את המדף העליון</b></p>
+      </article>
+    </div>
+  </section>
+  <section class="gl-sec">
+    <div class="gl-sec-head"><h2>הטלאים שלי</h2><a href="#" data-go="badges">כל הטלאים ‹</a></div>
+    <div class="gl-mine" data-badges="mine"></div>
+  </section>
+</main>
+
+<!-- ============ 2. one goal: the ring, the why, the processes with their checklists ============ -->
+<main class="gl" data-screen="goal" hidden>
+  <a class="gl-back" href="#" data-go="dash">‹ המטרות שלי</a>
+  <section class="card gl-hero">
+    <div class="gl-ring-box big"><div class="gl-ring" style="--p:38"></div><b>38%</b></div>
+    <div>
+      <span class="gl-len long">ארוכת טווח · מאז אלול</span>
+      <h1>האוהל מצליח ומפרנס</h1>
+      <p class="gl-why">שהמשפחה תנהל את החיים יחד ותשמור על קשר, ושאוכל להמשיך ליצור דברים שעוזרים לאנשים.</p>
+      <div class="gl-week"><div class="gl-days" aria-hidden="true"><i class="gl-day done"></i><i class="gl-day done"></i><i class="gl-day"></i><i class="gl-day done"></i><i class="gl-day done today"></i><i class="gl-day"></i><i class="gl-day rest"></i></div><small>השבוע <b>4 מתוך 6</b> · שבת למנוחה</small></div>
+    </div>
+  </section>
+  <div class="gl-procs">
+    <details class="card gl-proc">
+      <summary><div class="gl-ring-box"><div class="gl-ring done" style="--p:100"></div><b>✓</b></div><h3>הבטא במשפחה המורחבת</h3><small>4/4</small></summary>
+    </details>
+    <details class="card gl-proc" open>
+      <summary><div class="gl-ring-box"><div class="gl-ring" style="--p:40"></div><b>2/5</b></div><h3>מדד הצפון: בני משפחה פעילים בשבוע</h3><small>2/5</small></summary>
+      <ul class="gl-checks">
+        <li class="gl-check"><input type="checkbox" id="c1" checked><label for="c1">להחליט מה נחשב "פעיל"</label></li>
+        <li class="gl-check"><input type="checkbox" id="c2" checked><label for="c2">לספור כמה פעילים היום</label></li>
+        <li class="gl-check next"><input type="checkbox" id="c3"><label for="c3">לשלוח את הקישור לבני הדודים</label><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></li>
+        <li class="gl-check"><input type="checkbox" id="c4"><label for="c4">שיחה עם סבתא על הלוח</label></li>
+        <li class="gl-check"><input type="checkbox" id="c5"><label for="c5">לבדוק את המספר בעוד שבועיים</label></li>
+      </ul>
+    </details>
+    <details class="card gl-proc">
+      <summary><div class="gl-ring-box"><div class="gl-ring" style="--p:0"></div><b>0/3</b></div><h3>פגישה עם רואה חשבון</h3><small>0/3</small></summary>
+    </details>
+  </div>
+</main>
+
+<!-- ============ 3. today: two or three small steps ============ -->
+<main class="gl" data-screen="today" hidden>
+  <a class="gl-back" href="#" data-go="dash">‹ המטרות שלי</a>
+  <header class="gl-head"><div><h1>היום</h1><p>שלושה צעדים קטנים. זה מספיק.</p></div></header>
+  <div class="gl-today">
+    <article class="card gl-whyback">
+      <p>לא היה צעד ב"לרוץ 5 ק״מ" כבר יומיים. זה בסדר. ככה כתבת:</p>
+      <blockquote>להיות בכושר כשהילדים רוצים לטייל.</blockquote>
+      <p>צעד קטנטן להיום: <b>לנעול נעלי ריצה ולצאת לחמש דקות.</b></p>
+    </article>
+    <article class="card gl-step">
+      <button class="gl-tick" type="button" aria-pressed="false" aria-label="סיימתי">✓</button>
+      <div><b>לשלוח את הקישור לבני הדודים</b><small>האוהל מצליח ומפרנס · 5 דקות</small></div>
+      <div class="gl-step-acts"><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></div>
+    </article>
+    <article class="card gl-step">
+      <button class="gl-tick" type="button" aria-pressed="true" aria-label="סיימתי">✓</button>
+      <div><b>ריצה של 20 דקות, בקצב נוח</b><small>לרוץ 5 ק״מ · 20 דקות</small></div>
+    </article>
+    <article class="card gl-step">
+      <button class="gl-tick" type="button" aria-pressed="false" aria-label="סיימתי">✓</button>
+      <div><b>לפנות את המדף העליון</b><small>לסדר את המחסן · היום</small></div>
+      <div class="gl-step-acts"><button class="gl-stuckbtn" type="button" data-go="stuck">נתקעתי</button></div>
+    </article>
+    <article class="card gl-done" hidden>
+      <span class="gl-flame" aria-hidden="true">🔥</span>
+      <p><b>זהו להיום.</b></p>
+      <p class="muted">השבוע 5 מתוך 6. נתראה מחר.</p>
+    </article>
+  </div>
+</main>
+
+<!-- ============ 4. a new goal: five short steps (step 1 and step 3 shown; the rest share the same frame) ============ -->
+<main class="gl" data-screen="new" hidden>
+  <a class="gl-back" href="#" data-go="dash">‹ המטרות שלי</a>
+  <section class="card gl-new">
+    <ol class="gl-steps"><li class="now"><span>מה ולמה</span></li><li><span>אורך</span></li><li><span>תהליכים</span></li><li><span>התחלה</span></li><li><span>קצב</span></li></ol>
+    <h2>מה המטרה?</h2>
+    <p class="gl-lead">במילים שלך. אפשר גם להקליט.</p>
+    <label class="gl-field gl-write">
+      <textarea dir="auto" aria-label="המטרה" placeholder="למשל: לרוץ 5 ק״מ עד הקיץ">לרוץ 5 ק״מ עד הקיץ</textarea>
+      <button class="gl-mic" type="button" aria-pressed="false" aria-label="הקלטה">🎙</button>
+    </label>
+    <div class="ai-pair"><small class="muted">ההקלטה נכתבת במכשיר, בלי AI.</small><button class="btn small ai-up" type="button">✨ תמלול מדויק יותר</button></div>
+    <label class="gl-field"><span>ולמה זה חשוב לך? משפט אחד</span><input type="text" dir="auto" value="להיות בכושר כשהילדים רוצים לטייל."></label>
+    <h2>כמה זמן?</h2>
+    <div class="gl-lens" role="radiogroup" aria-label="אורך המטרה">
+      <button type="button" role="radio" aria-checked="false"><span class="gl-em">☀️</span><b>קצרה</b><small>פחות מיום</small></button>
+      <button type="button" role="radio" aria-checked="true"><span class="gl-em">🧭</span><b>רגילה</b><small>שבועות או חודשים</small></button>
+      <button type="button" role="radio" aria-checked="false"><span class="gl-em">🐪</span><b>ארוכת טווח</b><small>יותר משנה</small></button>
+    </div>
+    <h2>התהליכים בדרך</h2>
+    <p class="gl-from-tpl">מתבנית "כושר": אפשר לשנות, להוסיף ולמחוק.</p>
+    <ol class="gl-plist">
+      <li><input type="text" dir="auto" value="הליכה מהירה, שלוש פעמים בשבוע"><button class="gl-x" type="button" aria-label="מחיקה">✕</button></li>
+      <li><input type="text" dir="auto" value="ריצה קלה לסירוגין"><button class="gl-x" type="button" aria-label="מחיקה">✕</button></li>
+      <li><input type="text" dir="auto" value="5 ק״מ ברצף"><button class="gl-x" type="button" aria-label="מחיקה">✕</button></li>
+    </ol>
+    <div class="ai-pair"><button class="btn small" type="button">+ תהליך</button><button class="btn small ai-up offer" type="button">✨ פירוק חכם</button></div>
+    <h2>באילו ימים?</h2>
+    <div class="gl-wdays" role="group" aria-label="ימים">
+      <button type="button" aria-pressed="true">א</button><button type="button" aria-pressed="false">ב</button><button type="button" aria-pressed="true">ג</button><button type="button" aria-pressed="false">ד</button><button type="button" aria-pressed="true">ה</button><button type="button" aria-pressed="false">ו</button><button type="button" class="rest" aria-pressed="false" disabled>ש</button>
+    </div>
+    <label class="gl-field" style="max-inline-size:200px;margin-block-start:14px"><span>באיזו שעה</span><input type="time" value="06:30"></label>
+    <div class="gl-new-acts"><button class="btn ghost" type="button">‹ הקודם</button><span class="spacer"></span><button class="btn primary" type="button">הבא ›</button></div>
+  </section>
+</main>
+
+<!-- ============ 5. the weekly review: one minute ============ -->
+<main class="gl" data-screen="review" hidden>
+  <a class="gl-back" href="#" data-go="dash">‹ המטרות שלי</a>
+  <section class="card gl-review">
+    <header><h1>סיכום השבוע</h1><span class="gl-minute">⏱ דקה אחת</span></header>
+    <div class="gl-week"><div class="gl-days" aria-hidden="true"><i class="gl-day done"></i><i class="gl-day done"></i><i class="gl-day"></i><i class="gl-day done"></i><i class="gl-day done"></i><i class="gl-day done today"></i><i class="gl-day rest"></i></div><small>השבוע <b>5 מתוך 6</b>. שבת שלום.</small></div>
+    <div class="gl-rq"><label for="r1">מה הלך טוב?</label><div class="gl-quick"><button class="chip" aria-pressed="true">הריצות</button><button class="chip" aria-pressed="false">הקישור לבני הדודים</button></div><textarea id="r1" dir="auto" placeholder="במילים שלך (לא חובה)"></textarea></div>
+    <div class="gl-rq"><label for="r2">מה נתקע?</label><div class="gl-quick"><button class="chip" aria-pressed="false">רואה החשבון</button><button class="chip" aria-pressed="false">שום דבר</button></div><textarea id="r2" dir="auto"></textarea></div>
+    <div class="gl-rq"><label for="r3">מה משנים בשבוע הבא?</label><textarea id="r3" dir="auto" placeholder="למשל: לרוץ בבוקר במקום בערב"></textarea></div>
+    <div class="gl-new-acts"><span class="spacer"></span><button class="btn primary" type="button">שמירה</button></div>
+  </section>
+</main>
+
+<!-- ============ 6. "נתקעתי" (a modal in the app: H.modal) ============ -->
+<main class="gl" data-screen="stuck" hidden>
+  <a class="gl-back" href="#" data-go="today">‹ היום</a>
+  <section class="card gl-stuck" style="padding:20px;max-inline-size:560px;justify-self:center;inline-size:100%">
+    <h2>בוא נקטין את הצעד</h2>
+    <p class="gl-from">הצעד: <b>לשלוח את הקישור לבני הדודים</b></p>
+    <span class="gl-five">⏱ גרסה של 5 דקות</span>
+    <p class="gl-q">מה הדבר הכי קטן שאפשר לעשות בזה בחמש דקות?</p>
+    <input type="text" dir="auto" placeholder="למשל: לשלוח רק לבן דוד אחד">
+    <div class="ai-pair"><button class="btn primary" type="button">זה הצעד של היום</button><button class="btn ai-up" type="button">✨ הצעה</button></div>
+    <p class="ai-note">✨ הוצע בעזרת העוזר החכם · <button type="button">ביטול</button></p>
+  </section>
+</main>
+
+<!-- ============ 7. the badges ============ -->
+<main class="gl" data-screen="badges" hidden>
+  <a class="gl-back" href="#" data-go="dash">‹ המטרות שלי</a>
+  <header class="gl-head"><div><h1>הטלאים</h1><p>רקומים ביד. ריחוף או נגיעה מגלים איך משיגים כל אחד.</p></div></header>
+  <div class="gl-wall" data-badges="wall"></div>
+</main>
+
+<script>
+  // the badges (docs/vision/goals.md, section 3): id, name, how, shelf; state for the prototype: earned / progress / locked / secret
+  const B = [
+    ['yated-rishona', 'יתד ראשונה', 'הצעד הראשון במטרה חדשה', 'start', 'earned'],
+    ['gachelet', 'גחלת', '3 ימים של צעדים', 'start', 'earned'],
+    ['medura', 'מדורה', '7 ימים של צעדים', 'start', 'p:5/7'],
+    ['esh-tamid', 'אש תמיד', '30 ימים של צעדים', 'start', 'p:12/30', 'אֵשׁ תָּמִיד תּוּקַד עַל הַמִּזְבֵּחַ, לֹא תִכְבֶּה'],
+    ['shabbat-menucha', 'שבת למנוחה', 'חזרת לצעדים אחרי הפסקה בשבת', 'start', 'earned'],
+    ['shabbtotai', 'אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ', 'שמירת מנוחה 7 שבתות ברצף', 'start', 'p:3/7'],
+    ['amud-haohel', 'עמוד האוהל', 'סיימת תהליך שלם', 'way', 'earned'],
+    ['haohel-omed', 'האוהל עומד', 'השגת מטרה', 'way', 'locked'],
+    ['masa', 'מסע', '100 צעדים בסך הכול', 'way', 'p:41/100'],
+    ['gashash', 'גשש', 'סיימת מחקר בעוזר המחקר', 'way', 'locked'],
+    ['alot-hashachar', 'עלות השחר', 'צעד מוקדם בבוקר', 'way', 'earned'],
+    ['mishmeret-laila', 'משמרת לילה', 'צעד מאוחר בלילה', 'way', 'locked'],
+    ['ish-masa', 'איש מסע', 'עמידה במשימה שארכה יותר משנה', 'way', 'locked'],
+    ['matanot-ktanot', 'מתנות קטנות', 'השלמת 10 מטרות קצרות', 'way', 'p:3/10'],
+    ['avnei-derech', 'אבני דרך', 'מטרה קצרה בכל יום במשך שבוע', 'way', 'locked'],
+    ['derech-rishit', 'דרך ראשית', 'מטרה קצרה בכל יום במשך חודש', 'way', 'locked'],
+    ['derech-chaim', 'דרך חיים', 'מטרה קצרה בכל יום במשך שנה', 'way', 'locked'],
+    ['derech-hachaim', 'דרך החיים', '', 'way', 'secret'],
+    ['derech-hamelech', 'דרך המלך', 'תחזוקת מטלות פעילות והשלמתן במשך 10 שנים', 'way', 'locked'],
+    ['shevet', 'שבט', 'עודדת בן משפחה, או השלמתם יחד מטרה משותפת', 'kin', 'locked'],
+    ['malach-derech', 'מלאך דרך', 'עזרת לבן משפחה או לחבר להשלים מטרה שלו', 'kin', 'locked'],
+    ['yoetz', 'יועץ', 'נתת עצה טובה, וסימנו אותה בלייק', 'kin', 'locked'],
+    ['katef-tomechet', 'כתף תומכת', 'עקבת אחרי המסע של חבר במטרה שלו', 'kin', 'earned'],
+  ];
+  const HAVE = new Set(['yated-rishona','gachelet','medura','esh-tamid','shabbat-menucha','shabbtotai','amud-haohel','haohel-omed','masa','alot-hashachar','mishmeret-laila','ish-masa','avnei-derech','katef-tomechet']);
+  const SHELF = { start: 'התחלה ועקביות', way: 'התקדמות', kin: 'משפחה וחברים' };
+  const img = (id, st) => st === 'secret' ? '/assets/badges/secret.webp' : HAVE.has(id) ? `/assets/badges/${id}.webp` : '/assets/badges/secret.webp';
+  function badge([id, name, how, , st, quote], isNew) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'gl-badge' + (st === 'earned' ? '' : st === 'secret' ? ' secret' : ' locked') + (isNew ? ' new' : '');
+    b.setAttribute('aria-expanded', 'false');
+    const p = st.startsWith('p:') ? st.slice(2).split('/').map(Number) : null;
+    b.innerHTML = `<img src="${img(id, st)}" alt="" loading="lazy"><b>${st === 'secret' ? '???' : name}</b>`
+      + (p ? `<span class="gl-bar"><i style="--p:${Math.round(p[0] / p[1] * 100)}"></i></span>` : '')
+      + `<span class="gl-tip" role="tooltip">${st === 'secret' ? '<b>טלאי סודי</b><span>מי שימצא אותו, יידע.</span>'
+        : `<b>${name}</b><span>${how}</span>${quote ? `<q>${quote}</q>` : ''}${st === 'earned' ? '<small>נרקם אצלך ב־ג׳ בכסלו</small>' : p ? `<small>${p[0]} מתוך ${p[1]}</small>` : '<small>עוד לא</small>'}`}</span>`;
+    b.setAttribute('aria-label', st === 'secret' ? 'טלאי סודי' : `${name}: ${how}`);
+    return b;
+  }
+  const wall = document.querySelector('[data-badges="wall"]');
+  for (const [k, title] of Object.entries(SHELF)) {
+    const s = document.createElement('section'); s.className = 'gl-shelf';
+    s.innerHTML = `<h3>${title}</h3><ul class="gl-patches"></ul>`;
+    B.filter((x) => x[3] === k).forEach((x) => { const li = document.createElement('li'); li.append(badge(x, x[0] === 'alot-hashachar')); s.querySelector('ul').append(li); });
+    wall.append(s);
+  }
+  const mine = document.querySelector('[data-badges="mine"]');
+  B.filter((x) => x[4] === 'earned').forEach((x) => mine.append(badge(x)));
+  // a tap on a patch opens its way (one at a time); a tap elsewhere closes it
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.gl-badge');
+    document.querySelectorAll('.gl-badge[aria-expanded="true"]').forEach((o) => { if (o !== b) o.setAttribute('aria-expanded', 'false'); });
+    if (b) b.setAttribute('aria-expanded', String(b.getAttribute('aria-expanded') !== 'true'));
+    const t = e.target.closest('.gl-tick, .gl-wdays button, .gl-quick .chip, .gl-mic');
+    if (t && !t.disabled) t.setAttribute('aria-pressed', String(t.getAttribute('aria-pressed') !== 'true'));
+    const len = e.target.closest('.gl-lens button');
+    if (len) len.parentElement.querySelectorAll('button').forEach((x) => x.setAttribute('aria-checked', String(x === len)));
+    const go = e.target.closest('[data-go]');
+    if (go) { e.preventDefault(); document.querySelectorAll('[data-screen]').forEach((s) => { s.hidden = s.dataset.screen !== go.dataset.go; });
+      document.querySelectorAll('.proto-nav button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.go === go.dataset.go))); scrollTo(0, 0); }
+  });
+</script>
+</body>
+</html>

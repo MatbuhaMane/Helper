@@ -10,20 +10,21 @@ const SEED = ['הבית בהר', 'שילה', 'קרן היסוד'];
 
 /** The fridges (the first visit ever creates the family's three). */
 export async function listFridges(ctx: Ctx) {
-  requireUser(ctx);
+  const u = requireUser(ctx);
   const db = ctx.env.DB;
-  let { results } = await db.prepare('SELECT id, name, sort FROM fridges WHERE deleted = 0 ORDER BY sort, created_at').all<{ id: string; name: string; sort: number }>();
+  const mine = () => db.prepare("SELECT id, name, sort FROM fridges WHERE deleted = 0 AND COALESCE(household, 'family') = ? ORDER BY sort, created_at").bind(u.household).all<{ id: string; name: string; sort: number }>();
+  let { results } = await mine();
   if (!results.length) {
-    const any = await db.prepare('SELECT COUNT(*) AS n FROM fridges').first<{ n: number }>();
+    const any = await db.prepare("SELECT COUNT(*) AS n FROM fridges WHERE COALESCE(household, 'family') = ?").bind(u.household).first<{ n: number }>();
     if (!any?.n) {
       const now = Date.now();
-      await db.batch(SEED.map((name, i) => db.prepare('INSERT INTO fridges (id, name, sort, created_by, created_at, deleted) VALUES (?, ?, ?, ?, ?, 0)').bind(uid(), name, i, 'seed', now + i)));
-      ({ results } = await db.prepare('SELECT id, name, sort FROM fridges WHERE deleted = 0 ORDER BY sort, created_at').all());
+      await db.batch(SEED.map((name, i) => db.prepare('INSERT INTO fridges (id, name, sort, created_by, created_at, deleted, household) VALUES (?, ?, ?, ?, ?, 0, ?)').bind(uid(), name, i, 'seed', now + i, u.household)));
+      ({ results } = await mine());
     }
   }
   // how full each one is, and how much in it is about to go off (in the next two days)
   const soon = new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10);
-  const counts = await db.prepare(`SELECT fridge, COUNT(*) AS n, SUM(CASE WHEN expires IS NOT NULL AND expires <= ? THEN 1 ELSE 0 END) AS soon FROM fridge_items WHERE deleted = 0 GROUP BY fridge`).bind(soon).all<{ fridge: string; n: number; soon: number }>();
+  const counts = await db.prepare(`SELECT fridge, COUNT(*) AS n, SUM(CASE WHEN expires IS NOT NULL AND expires <= ? THEN 1 ELSE 0 END) AS soon FROM fridge_items WHERE deleted = 0 AND fridge IN (SELECT id FROM fridges WHERE COALESCE(household, 'family') = ?) GROUP BY fridge`).bind(soon, u.household).all<{ fridge: string; n: number; soon: number }>();
   const by = Object.fromEntries(counts.results.map((c) => [c.fridge, c]));
   return json({ fridges: results.map((f) => ({ id: f.id, name: f.name, count: by[f.id]?.n || 0, soon: by[f.id]?.soon || 0 })) });
 }
@@ -34,20 +35,20 @@ export async function createFridge(ctx: Ctx) {
   const p = Name.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid name');
   const id = uid();
-  const max = await ctx.env.DB.prepare('SELECT COALESCE(MAX(sort), 0) AS m FROM fridges').first<{ m: number }>();
-  await ctx.env.DB.prepare('INSERT INTO fridges (id, name, sort, created_by, created_at, deleted) VALUES (?, ?, ?, ?, ?, 0)').bind(id, p.data.name, (max?.m || 0) + 1, u.email, Date.now()).run();
+  const max = await ctx.env.DB.prepare("SELECT COALESCE(MAX(sort), 0) AS m FROM fridges WHERE COALESCE(household, 'family') = ?").bind(u.household).first<{ m: number }>();
+  await ctx.env.DB.prepare('INSERT INTO fridges (id, name, sort, created_by, created_at, deleted, household) VALUES (?, ?, ?, ?, ?, 0, ?)').bind(id, p.data.name, (max?.m || 0) + 1, u.email, Date.now(), u.household).run();
   return json({ fridge: { id, name: p.data.name, count: 0, soon: 0 } });
 }
 export async function renameFridge(ctx: Ctx) {
-  requireUser(ctx);
+  const u = requireUser(ctx);
   const p = Name.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid name');
-  await ctx.env.DB.prepare('UPDATE fridges SET name = ? WHERE id = ?').bind(p.data.name, ctx.params.id).run();
+  await ctx.env.DB.prepare("UPDATE fridges SET name = ? WHERE id = ? AND COALESCE(household, 'family') = ?").bind(p.data.name, ctx.params.id, u.household).run();
   return json({ ok: true });
 }
 export async function deleteFridge(ctx: Ctx) {
-  requireUser(ctx);
-  await ctx.env.DB.prepare('UPDATE fridges SET deleted = 1 WHERE id = ?').bind(ctx.params.id).run();
+  const u = requireUser(ctx);
+  await ctx.env.DB.prepare("UPDATE fridges SET deleted = 1 WHERE id = ? AND COALESCE(household, 'family') = ?").bind(ctx.params.id, u.household).run();
   return json({ ok: true });
 }
 
@@ -59,9 +60,16 @@ const Item = z.object({
 const Ops = z.object({ ops: z.array(z.union([z.object({ op: z.literal('upsert'), item: Item }), z.object({ op: z.literal('delete'), id: z.string().min(1).max(40) })])).max(300) });
 const toItem = (r: any) => ({ id: r.id, name: r.name, cat: r.cat, qty: r.qty, unit: r.unit, expires: r.expires, note: r.note, addedBy: r.added_by, updatedAt: r.updated_at, updatedBy: r.updated_by, deleted: !!r.deleted });
 
+/** The fridge must be this household's (another household's fridge is as if it were not there). */
+async function ownFridge(ctx: Ctx, household: string) {
+  const f = await ctx.env.DB.prepare("SELECT id FROM fridges WHERE id = ? AND COALESCE(household, 'family') = ?").bind(ctx.params.id, household).first();
+  if (!f) throw new HttpError(404, 'Not found');
+}
+
 /** What's in one fridge (since=… : only what changed, deletions included, for the live refresh). */
 export async function listItems(ctx: Ctx) {
-  requireUser(ctx);
+  const u = requireUser(ctx);
+  await ownFridge(ctx, u.household);
   const since = Number(ctx.url.searchParams.get('since') || 0);
   const { results } = since
     ? await ctx.env.DB.prepare('SELECT * FROM fridge_items WHERE fridge = ? AND updated_at > ?').bind(ctx.params.id, since).all()
@@ -71,6 +79,7 @@ export async function listItems(ctx: Ctx) {
 
 export async function applyOps(ctx: Ctx) {
   const u = requireUser(ctx);
+  await ownFridge(ctx, u.household);
   const p = Ops.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid ops');
   const db = ctx.env.DB, fridge = ctx.params.id;
@@ -93,7 +102,8 @@ export async function applyOps(ctx: Ctx) {
 /** What this fridge usually has: every name that was ever in it, how many times it came in, whether it's there now,
     and when it was last there – so "my fridge" can say what to restock. */
 export async function history(ctx: Ctx) {
-  requireUser(ctx);
+  const u = requireUser(ctx);
+  await ownFridge(ctx, u.household);
   const { results } = await ctx.env.DB.prepare(
     `SELECT name, COUNT(*) AS times, MAX(updated_at) AS last, SUM(CASE WHEN deleted = 0 THEN 1 ELSE 0 END) AS here,
             SUM(CASE WHEN deleted = 0 THEN qty ELSE 0 END) AS qty, MAX(cat) AS cat

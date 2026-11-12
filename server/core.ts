@@ -18,6 +18,10 @@ export interface Env {
   GEMINI_TTS_MODEL?: string;    // optional: the speech model (default gemini-2.5-flash-preview-tts)
   SPOTIFY_CLIENT_ID?: string;   // the Spotify app's client id (public; sign-in uses PKCE, so there is no secret)
   YOUTUBE_API_KEY?: string;     // optional: YouTube Data API key for search (else search goes through Gemini with Google Search)
+  VAULT_KEY?: string;           // the family vault's master key: base64 of 32 random bytes (a secret; see docs/security.md)
+  VAULT_KEY_OLD?: string;       // only while rotating VAULT_KEY: the previous key, so older files still open
+  VAULT?: R2Bucket;             // optional: a bucket of the vault's own (else MEDIA under vault/)
+  VAULT_STORE?: string;         // where new vault files go: r2 (default) | drive | nas
 }
 
 export interface Member {
@@ -108,8 +112,8 @@ export async function loadUser(env: Env, req: Request): Promise<Member | null> {
 
 async function createSession(env: Env, email: string): Promise<string> {
   const id = uid() + uid();
-  await env.DB.prepare('INSERT INTO sessions (id, email, expires_at) VALUES (?, ?, ?)')
-    .bind(id, email, Date.now() + SESSION_DAYS * 86400_000).run();
+  await env.DB.prepare('INSERT INTO sessions (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
+    .bind(id, email, Date.now() + SESSION_DAYS * 86400_000, Date.now()).run();
   return cookie('sid', id, SESSION_DAYS * 86400);
 }
 
@@ -136,6 +140,7 @@ export function googleLogin(ctx: Ctx): Response {
   const { env, url } = ctx;
   if (!env.GOOGLE_CLIENT_ID) throw new HttpError(500, 'GOOGLE_CLIENT_ID is not configured');
   const gmail = url.searchParams.get('gmail') === '1';
+  const reauth = url.searchParams.get('reauth') === '1';   // the vault: prove it is you again, now
   const next = safeNext(url.searchParams.get('next'));
   const state = uid();
   const p = new URLSearchParams({
@@ -145,8 +150,9 @@ export function googleLogin(ctx: Ctx): Response {
     scope: gmail ? `openid email profile ${GMAIL_SCOPE}` : 'openid email profile',
     state,
     include_granted_scopes: 'true',
-    prompt: gmail ? 'consent' : 'select_account',
+    prompt: gmail ? 'consent' : reauth ? 'login' : 'select_account',
   });
+  if (reauth) p.set('max_age', '0');
   if (gmail) p.set('access_type', 'offline');
   return new Response(null, {
     status: 302,

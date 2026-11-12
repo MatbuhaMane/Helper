@@ -18,8 +18,8 @@ const out = (r: Row) => ({ id: r.id, title: r.title, kind: r.kind, date: r.date,
 
 /** GET /api/calendar/events */
 export async function list(ctx: Ctx) {
-  requireUser(ctx);
-  const { results } = await ctx.env.DB.prepare('SELECT * FROM family_events WHERE deleted = 0 ORDER BY date').all<Row>();
+  const u = requireUser(ctx);
+  const { results } = await ctx.env.DB.prepare("SELECT * FROM family_events WHERE deleted = 0 AND COALESCE(household, 'family') = ? ORDER BY date").bind(u.household).all<Row>();
   return json({ events: results.map(out) });
 }
 
@@ -29,26 +29,26 @@ export async function create(ctx: Ctx) {
   const p = Event.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid event');
   const e = p.data, id = uid(), now = Date.now();
-  await ctx.env.DB.prepare('INSERT INTO family_events (id, title, kind, date, after_sunset, recur, note, created_by, created_at, updated_at, deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)')
-    .bind(id, e.title, e.kind, e.date, e.after_sunset ? 1 : 0, e.recur, e.note, u.email, now, now).run();
+  await ctx.env.DB.prepare('INSERT INTO family_events (id, title, kind, date, after_sunset, recur, note, created_by, created_at, updated_at, deleted, household) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)')
+    .bind(id, e.title, e.kind, e.date, e.after_sunset ? 1 : 0, e.recur, e.note, u.email, now, now, u.household).run();
   return json({ event: { id, ...e, by: u.email, updated_at: now } });
 }
 
 /** PUT /api/calendar/events/:id */
 export async function update(ctx: Ctx) {
-  requireUser(ctx);
+  const u = requireUser(ctx);
   const p = Event.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid event');
   const e = p.data, now = Date.now();
-  const r = await ctx.env.DB.prepare('UPDATE family_events SET title = ?, kind = ?, date = ?, after_sunset = ?, recur = ?, note = ?, updated_at = ? WHERE id = ? AND deleted = 0')
-    .bind(e.title, e.kind, e.date, e.after_sunset ? 1 : 0, e.recur, e.note, now, ctx.params.id).run();
+  const r = await ctx.env.DB.prepare("UPDATE family_events SET title = ?, kind = ?, date = ?, after_sunset = ?, recur = ?, note = ?, updated_at = ? WHERE id = ? AND deleted = 0 AND COALESCE(household, 'family') = ?")
+    .bind(e.title, e.kind, e.date, e.after_sunset ? 1 : 0, e.recur, e.note, now, ctx.params.id, u.household).run();
   if (!r.meta.changes) throw new HttpError(404, 'Not found');
   return json({ ok: true });
 }
 
 /** DELETE /api/calendar/events/:id */
 export async function remove(ctx: Ctx) {
-  requireUser(ctx);
-  await ctx.env.DB.prepare('UPDATE family_events SET deleted = 1, updated_at = ? WHERE id = ?').bind(Date.now(), ctx.params.id).run();
+  const u = requireUser(ctx);
+  await ctx.env.DB.prepare("UPDATE family_events SET deleted = 1, updated_at = ? WHERE id = ? AND COALESCE(household, 'family') = ?").bind(Date.now(), ctx.params.id, u.household).run();
   return json({ ok: true });
 }

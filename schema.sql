@@ -353,3 +353,88 @@ CREATE TABLE IF NOT EXISTS family_events (
   updated_at INTEGER NOT NULL,
   deleted INTEGER NOT NULL DEFAULT 0
 );
+
+-- The family vault (server/vault): the tree, the documents and pictures, who did what, and how one unlocks it.
+-- Names, titles, notes and details are stored sealed (encrypted), files only as ciphertext in R2 (or Drive, or the NAS).
+CREATE TABLE IF NOT EXISTS family_people (
+  id           TEXT PRIMARY KEY,
+  household    TEXT NOT NULL,
+  name_enc     TEXT,
+  details_enc  TEXT,
+  parent1      TEXT,
+  parent2      TEXT,
+  partner      TEXT,
+  member_email TEXT,
+  photo_item   TEXT,
+  created_by   TEXT,
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  deleted_at   INTEGER
+);
+CREATE INDEX IF NOT EXISTS family_people_house ON family_people(household);
+
+CREATE TABLE IF NOT EXISTS vault_items (
+  id          TEXT PRIMARY KEY,
+  household   TEXT NOT NULL,
+  person_id   TEXT NOT NULL,
+  kind        TEXT NOT NULL,
+  title_enc   TEXT,
+  note_enc    TEXT,
+  mime        TEXT,
+  size        INTEGER,
+  store       TEXT NOT NULL DEFAULT 'r2',
+  object_key  TEXT,
+  dek         TEXT,
+  owner_email TEXT NOT NULL,
+  private     INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS vault_items_person ON vault_items(person_id);
+
+CREATE TABLE IF NOT EXISTS vault_audit (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  household TEXT NOT NULL,
+  email     TEXT NOT NULL,
+  action    TEXT NOT NULL,
+  target    TEXT,
+  person_id TEXT,
+  private   INTEGER NOT NULL DEFAULT 0,
+  ip        TEXT,
+  at        INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS vault_audit_house ON vault_audit(household, at);
+
+CREATE TABLE IF NOT EXISTS passkeys (
+  id         TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  alg        INTEGER NOT NULL,
+  jwk        TEXT NOT NULL,
+  sign_count INTEGER NOT NULL DEFAULT 0,
+  label      TEXT,
+  created_at INTEGER NOT NULL,
+  last_used  INTEGER
+);
+CREATE INDEX IF NOT EXISTS passkeys_email ON passkeys(email);
+
+CREATE TABLE IF NOT EXISTS vault_unlocks (
+  sid        TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  until      INTEGER NOT NULL,
+  hard_until INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS webauthn_challenges (
+  id         TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  challenge  TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS rate_hits (
+  key      TEXT PRIMARY KEY,
+  count    INTEGER NOT NULL,
+  reset_at INTEGER NOT NULL
+);

@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-12 – The owner's room locks itself (master, the owner's decision)
+
+The owner's words: "make an open/locked lock interface on the owner's room to lock it again when inside. if it stays open for
+more than 3 idle minutes close it. after 30 idle seconds send a floating message warning, leave a stay unlocked switch for
+work for now." So: a visible lock in the room that locks it at once; every entry closes after 3 idle minutes (a visit from
+someone else's account also after 30 minutes at most, the owner's own after 2 hours); a floating warning with a countdown
+after 30 idle seconds; a "stay unlocked" switch that lifts the idle limit, offered only from the owner's own account.
+The master's addition: messages to everyone only from the owner's own account (a visit cannot send them). Built by
+ai-features in the room (`server/admin.ts`, `server/admin-rules.ts`, `public/admin/`). Status: Decided (the owner), in progress.
+
 ## 2026-11-12 – The family gathering's look (design)
 
 `public/gather/gather.css` (new, design's), linked from `public/gather/index.html` and `public/gather/invite/index.html` (one

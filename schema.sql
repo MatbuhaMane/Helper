@@ -3,6 +3,7 @@
 CREATE TABLE IF NOT EXISTS members (
   email      TEXT PRIMARY KEY,
   name       TEXT,
+  he_name    TEXT,                                -- the Hebrew name the helper calls the person by
   household  TEXT NOT NULL DEFAULT 'family',
   role       TEXT NOT NULL DEFAULT 'member',      -- 'owner' | 'member'
   created_at INTEGER NOT NULL

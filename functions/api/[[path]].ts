@@ -50,20 +50,33 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 /* members (owner) */
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
-  const { results } = await ctx.env.DB.prepare('SELECT email, name, household, role FROM members ORDER BY household, email').all();
+  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role FROM members ORDER BY household, email').all();
   return json({ members: results });
 });
+route('PUT', '/api/members/:email/name', async (ctx) => {
+  requireOwner(ctx);
+  const name = heName((await body<{ he_name?: string }>(ctx.req)).he_name);
+  await ctx.env.DB.prepare('UPDATE members SET he_name = ? WHERE email = ?').bind(name, decodeURIComponent(ctx.params.email).toLowerCase()).run();
+  return json({ ok: true, he_name: name });
+});
+/** The Hebrew name the helper calls someone by: set by the family's owner (on the admin page). */
+const heName = (v: unknown) => {
+  const s = String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, 40);
+  if (s && !/^[\u0590-\u05FF'"׳״\- ]+$/.test(s)) throw new HttpError(400, 'השם צריך להיות באותיות עבריות');
+  return s || null;
+};
 route('POST', '/api/members', async (ctx) => {
   requireOwner(ctx);
-  const b = await body<{ email: string; name?: string; household?: string; role?: string }>(ctx.req);
+  const b = await body<{ email: string; name?: string; he_name?: string; household?: string; role?: string }>(ctx.req);
+  const he = heName(b.he_name);
   const email = (b.email || '').trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, 'Invalid email');
   const household = (b.household || 'family').trim().slice(0, 40) || 'family';
   const role = b.role === 'owner' ? 'owner' : 'member';
   await ctx.env.DB.prepare(
-    `INSERT INTO members (email, name, household, role, created_at) VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(email) DO UPDATE SET name = COALESCE(excluded.name, name), household = excluded.household, role = excluded.role`,
-  ).bind(email, b.name?.trim() || null, household, role, Date.now()).run();
+    `INSERT INTO members (email, name, he_name, household, role, created_at) VALUES (?, ?, ?, ?, ?, ?)
+     ON CONFLICT(email) DO UPDATE SET name = COALESCE(excluded.name, name), he_name = COALESCE(excluded.he_name, he_name), household = excluded.household, role = excluded.role`,
+  ).bind(email, b.name?.trim() || null, he, household, role, Date.now()).run();
   return json({ ok: true });
 });
 route('DELETE', '/api/members/:email', async (ctx) => {

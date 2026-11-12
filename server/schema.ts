@@ -18,6 +18,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['news_state', 'rating', 'INTEGER'], // the person's own reliability rating for this article (1-5)
   ['news_state', 'folder', 'TEXT'],    // the folder of a saved article (the folders themselves are in the person's prefs)
   ['music_tokens', 'scope', 'TEXT'],   // what the person allowed (streaming = the helper can play Spotify itself)
+  ['members', 'he_name', 'TEXT'],      // the Hebrew name the helper calls the person by (Google gives names in English)
 ];
 
 let ready: Promise<void> | null = null;

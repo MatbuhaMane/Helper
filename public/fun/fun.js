@@ -16,13 +16,17 @@
   const root = document.querySelector('main');
   const tabs = el('nav', { class: 'fun-tabs', role: 'tablist', 'aria-label': 'סוגי הבידור' });
   const board = el('section', { class: 'fun-board', 'aria-live': 'polite' });
-  const stamp = el('p', { class: 'fun-stamp muted' });
+  const stamp = el('span', {});
+  // a fresh choice on request (the server allows one every ten minutes per tab, since it costs a search-backed AI call)
+  const refresh = el('button', { class: 'btn ghost small fun-refresh', type: 'button', title: 'לבחור מחדש עכשיו', onclick: () => open(S.cat, true) },
+    el('span', { 'aria-hidden': 'true' }, '↻'), ' רענון');
+  const stampRow = el('div', { class: 'fun-stamp muted' }, stamp, refresh);
   const foot = el('div', { class: 'fun-foot' });   // the end of the board: when it comes into view, the next page loads
   root.append(el('div', { class: 'fun' },
     el('header', { class: 'fun-head' },
       el('span', { class: 'fun-logo', 'aria-hidden': 'true' }, H.icon('fun')),
       el('div', {}, el('small', {}, 'בידור'), el('h1', {}, 'מה שווה לראות, לשמוע ולשחק'), el('p', { class: 'muted' }, 'רק המלצות – ואיפה אפשר למצוא אותן בישראל'))),
-    tabs, stamp, board, foot));
+    tabs, stampRow, board, foot));
 
   /* a recommendation */
   const logo = (w) => (w.domain ? el('img', { class: 'fun-svc-logo', src: `/api/fun/logo/${w.domain}`, alt: '', loading: 'lazy', onerror: (e) => e.target.replaceWith(el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1))) }) : el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1)));
@@ -82,14 +86,15 @@
     foot.replaceChildren(spinner(S.cat === 'funny' ? 'מביא עוד…' : `בוחר עוד המלצות ב${name}…`));
     try {
       if (S.cat === 'funny') {
-        const d = await H.api('/api/fun/viral' + (S.cursor ? '?cursor=' + encodeURIComponent(S.cursor) : ''));
+        const d = await H.api('/api/fun/viral' + (S.cursor ? '?cursor=' + encodeURIComponent(S.cursor) : S.fresh ? '?fresh=1' : ''));
         if (mine !== token) return;
         const fresh = d.items.filter((v) => !S.seen.has(v.id || v.src) && S.seen.add(v.id || v.src));
         board.append(...fresh.map(viralCard));
         S.cursor = d.cursor; S.done = !d.cursor;
         if (S.page === 0) { keep('funny', { items: fresh, cursor: d.cursor, at: Date.now() }); stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
       } else {
-        const d = await H.api(`/api/fun/picks?cat=${S.cat}&page=${S.page}`);
+        const d = await H.api(`/api/fun/picks?cat=${S.cat}&page=${S.page}${S.fresh && S.page === 0 ? '&fresh=1' : ''}`);
+        if (S.fresh && S.page === 0 && Date.now() - (d.at || 0) > 60e3) H.toast('הבחירה כאן עודכנה לפני רגע – אפשר לבחור שוב בעוד כמה דקות');
         if (mine !== token) return;
         const key = (p) => (p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
         const fresh = d.picks.filter((p) => !S.seen.has(p.link) && !S.seen.has(key(p)) && S.seen.add(p.link) && S.seen.add(key(p)));
@@ -114,16 +119,18 @@
   }
   new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) more(); }, { rootMargin: '600px 0px' }).observe(foot);
 
-  function open(cat) {
+  function open(cat, fresh = false) {
     P.cat = cat; H.savePrefs('fun');
     const [, name, , tint] = CATS.find((c) => c[0] === cat);
     tabs.querySelectorAll('[role=tab]').forEach((t) => { const on = t.dataset.cat === cat; t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); });
     token++;
-    S = { cat, page: 0, seen: new Set(), busy: false, done: false, cursor: null };
+    S = { cat, page: 0, seen: new Set(), busy: false, done: false, cursor: null, fresh };
+    refresh.disabled = false;
     board.classList.toggle('viral', cat === 'funny');
     stamp.textContent = '';
     // what this device kept from last time, while the fresh first page comes
-    const old = kept(cat);
+    const old = fresh ? null : kept(cat);
+    if (fresh) scrollTo({ top: 0, behavior: 'smooth' });
     if (old && cat === 'funny' && old.items?.length) { board.replaceChildren(...old.items.map(viralCard)); old.items.forEach((v) => S.seen.add(v.id || v.src)); S.cursor = old.cursor; S.page = 1; stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
     else if (old && old.picks?.length) { board.replaceChildren(...old.picks.map((p) => card(p, tint))); old.picks.forEach((p) => { S.seen.add(p.link); S.seen.add((p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')); }); S.page = 1; stamp.textContent = `נבחרו ${ago(old.at)}`; }
     else board.replaceChildren(spinner(cat === 'funny' ? 'מחפש מה הכי ויראלי עכשיו…' : `בוחר את המומלצים ב${name} ובודק איפה אפשר לראות אותם… (עד דקה)`));
@@ -133,4 +140,30 @@
   tabs.append(...CATS.map(([cat, name, ic, tint]) => el('button', { role: 'tab', class: 'fun-tab', 'data-cat': cat, style: `--tint:${tint}`, onclick: () => open(cat) },
     el('span', { class: 'ic' }, H.icon(ic)), el('span', {}, name))));
   open(CATS.some((c) => c[0] === P.cat) ? P.cat : 'tv');
+
+  /* pull to refresh: at the top of the page, a finger drawing the page down past the mark chooses again (like the feeds of
+     social apps). The browser's own pull (which would reload the whole page) is turned off here in fun.css. */
+  const pull = el('div', { class: 'fun-pull', 'aria-hidden': 'true' }, el('span', {}, '↻'));
+  document.body.append(pull);
+  const MARK = 80;
+  let y0 = null, dy = 0;
+  addEventListener('touchstart', (e) => {
+    y0 = scrollY <= 0 && e.touches.length === 1 && !document.body.classList.contains('modal-open') ? e.touches[0].clientY : null;
+    dy = 0;
+  }, { passive: true });
+  addEventListener('touchmove', (e) => {
+    if (y0 == null) return;
+    dy = Math.max(0, e.touches[0].clientY - y0);
+    if (scrollY > 0) { y0 = null; dy = 0; }
+    const k = Math.min(1, dy / MARK);
+    pull.style.setProperty('--pull', String(Math.min(dy, MARK * 1.4)));
+    pull.style.setProperty('--turn', `${k * 300}deg`);
+    pull.classList.toggle('ready', k >= 1);
+    pull.classList.toggle('on', dy > 8);
+  }, { passive: true });
+  addEventListener('touchend', () => {
+    if (y0 != null && dy >= MARK && S) { pull.classList.add('spin'); open(S.cat, true); setTimeout(() => pull.classList.remove('spin', 'on', 'ready'), 900); }
+    else pull.classList.remove('on', 'ready');
+    y0 = null; dy = 0;
+  }, { passive: true });
 })();

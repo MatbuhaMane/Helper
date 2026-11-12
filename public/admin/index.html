@@ -11,8 +11,9 @@
     table { width: 100%; border-collapse: collapse; }
     td, th { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: start; font-size: .92rem; }
     th { color: var(--muted); font-weight: 500; }
-    .addm { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; padding: 12px; }
+    .addm { display: grid; grid-template-columns: 2fr 1.2fr 1fr 1fr auto; gap: 8px; padding: 12px; }
     @media (max-width: 600px) { .addm { grid-template-columns: 1fr; } }
+    .he-name { inline-size: 9em; font: inherit; padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: 8px; background: transparent; color: var(--text); }
   </style>
 </head>
 <body>
@@ -20,11 +21,12 @@
     <p class="notice" style="margin-top:14px">רק מי שברשימה יכול להתחבר. <b>בית</b> קובע מי חולק רשימת קניות וספר מתכונים – למשל "family" לבני הבית, ושם אחר לכל חבר או משפחה אחרת. חדשות ומייל הם אישיים לכל אחד.</p>
     <form id="add" class="card addm">
       <input id="email" type="email" placeholder="כתובת Gmail" required dir="ltr">
+      <input id="he_name" type="text" placeholder="שם בעברית" aria-label="השם בעברית">
       <input id="name" type="text" placeholder="שם (לא חובה)">
       <input id="household" type="text" placeholder="בית" value="family" dir="ltr">
       <button class="btn primary">הוספה</button>
     </form>
-    <div class="card" style="overflow-x:auto"><table><thead><tr><th>שם</th><th>אימייל</th><th>בית</th><th>תפקיד</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    <div class="card" style="overflow-x:auto"><table><thead><tr><th>שם</th><th>שם בעברית</th><th>אימייל</th><th>בית</th><th>תפקיד</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
   </main>
   <script src="/assets/common.js"></script>
   <script>
@@ -38,7 +40,10 @@
       const rows = document.getElementById('rows');
       rows.textContent = '';
       for (const m of members) rows.append(el('tr', {},
-        el('td', {}, m.name || '—'), el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household),
+        el('td', {}, m.name || '—'),
+        el('td', {}, el('input', { type: 'text', value: m.he_name || '', placeholder: 'למשל מישאל', 'aria-label': 'השם בעברית של ' + (m.name || m.email), class: 'he-name',
+          onchange: async (e) => { try { await api('/api/members/' + encodeURIComponent(m.email) + '/name', { method: 'PUT', body: { he_name: e.target.value } }); toast('נשמר'); } catch (err) { toast(err.message); } } })),
+        el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household),
         el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר'),
         el('td', {}, m.email === user.email ? '' : el('button', { class: 'mini danger', title: 'הסרה', onclick: async () => {
           if (!confirm(`להסיר את ${m.email}?`)) return;
@@ -49,9 +54,9 @@
     document.getElementById('add').addEventListener('submit', async (e) => {
       e.preventDefault();
       try {
-        await api('/api/members', { body: { email: email.value, name: name.value, household: household.value } });
+        await api('/api/members', { body: { email: email.value, he_name: he_name.value, name: name.value, household: household.value } });
         toast(`${email.value} נוסף. עכשיו אפשר לשלוח לו את הקישור לעוזר.`);
-        email.value = name.value = '';
+        email.value = name.value = he_name.value = '';
         load();
       } catch (err) { toast(err.message); }
     });

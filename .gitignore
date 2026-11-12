@@ -5,3 +5,7 @@ __pycache__/
 
 # the downloaded sources of the witnesses and the concordance (tools/build-*.py fetch them again)
 data/witnesses/sources/
+
+# the owner's artwork (tools/moon-art.py cuts it into public/assets/moon/ and eclipse.webp)
+data/art/
+data/family.sql

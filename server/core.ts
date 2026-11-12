@@ -23,6 +23,7 @@ export interface Env {
 export interface Member {
   email: string;
   name: string | null;
+  he_name?: string | null;
   household: string;
   role: 'owner' | 'member';
 }
@@ -99,7 +100,7 @@ export async function loadUser(env: Env, req: Request): Promise<Member | null> {
   const sid = getCookie(req, 'sid');
   if (!sid) return null;
   const row = await env.DB.prepare(
-    `SELECT m.email, m.name, m.household, m.role FROM sessions s JOIN members m ON m.email = s.email
+    `SELECT m.email, m.name, m.he_name, m.household, m.role FROM sessions s JOIN members m ON m.email = s.email
      WHERE s.id = ? AND s.expires_at > ?`,
   ).bind(sid, Date.now()).first<Member>();
   return row || null;

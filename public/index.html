@@ -7,16 +7,24 @@
   <title>העוזר המשפחתי</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/icon-180.png">
   <link rel="stylesheet" href="/assets/base.css">
   <style>
     /* The home page is a small camp: a greeting, Ibn Ezra's tent (he stands on its front rug), and the apps on a ring
        you can spin forever. No straight lines: the orbit, the ground and the bubbles are all round. */
     .home { display: grid; justify-items: center; padding-block: 12px 24px; gap: 2px; }
     @media (min-width: 900px) { .home { padding-block: 30px 40px; } }
-    .greet { text-align: center; }
+    /* the greeting stands on the right, out of the sun's way (the orbit also bends under it, see geometry()) */
+    .greet { text-align: start; justify-self: start; padding-inline-start: 8px; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; }
+    /* where the right side is not out of the orbit's way (phones, tablets, short windows – measured in geometry()), the
+       greeting comes just under the tent, as one line: below the horizon the sun is never seen */
+    .home.greet-under > .camp { order: -1; margin-block-start: 64px; }   /* the sky above the tent keeps its room */
+    .home.greet-under > .greet { margin-block: 2px 4px; }
+    @media (max-width: 599px) {
+      .home.greet-under > .greet { padding-inline-start: 2px; }
+      .home.greet-under > .greet h1 { font-size: 1.75rem; }
+    }
     .greet h1 { font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.2rem); line-height: 1.15; margin: 0 0 2px; --swell-color: var(--primary); }
-    .greet p { margin: 0; color: var(--muted); font-size: 1.15rem; }
 
     .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 495px) * 1.76)); margin-block-start: 4px; }
     @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 405px) * 1.76)); } }
@@ -168,11 +176,17 @@
     :root[data-theme="dark"] .sun { opacity: .6; --halo: .14; }
     @media (prefers-reduced-motion: reduce) { .sun .halo { animation: none; } }
 
-    /* The moon: the sun's drawing in moonlight, with tonight's real phase as a shadow over its face. It crosses the
+    /* The moon: the drawing of tonight's real phase (one of eight). It crosses the
        night sky on the sun's path (rising on the right, setting behind the tent's left side). */
     .moon { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--moon-size, 100px); block-size: var(--moon-size, 100px); margin: calc(var(--moon-size, 100px) / -2) 0 0 calc(var(--moon-size, 100px) / -2);
       padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .92; -webkit-tap-highlight-color: transparent; transition: opacity 1.2s; }
     .moon:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
+    /* a lunar eclipse: the moon in the earth's shadow turns copper */
+    .moon.eclipse img { filter: sepia(.9) saturate(2.4) hue-rotate(-28deg) brightness(.72); }
+    /* a solar eclipse: the eclipse drawing is larger than the sun's ball (its corona reaches out) */
+    .sun.eclipse .ball { scale: 1.9; }
+    .sun.eclipse .halo { opacity: .35; }
+    .sun-card .eclipse-now { color: var(--primary); font-weight: 500; }
     .moon img, .moon svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; -webkit-user-drag: none; }
     .moon .halo { position: absolute; inset: -45%; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(214, 226, 255, var(--mhalo, .2)), transparent 70%); animation: sun-breathe 9s ease-in-out infinite; transition: scale .6s var(--ease-river); }
     .moon:hover .halo { scale: 1.12; }
@@ -248,7 +262,9 @@
     }
 
     const u = r.user;
-    const first = (u.name || u.email).split(' ')[0];
+    // greeted by the Hebrew name (Google gives English names): the one set in the helper, or a Google name already in Hebrew
+    const heFirst = (s) => (s && /[\u0590-\u05FF]/.test(s) ? s.trim().split(/\s+/)[0] : '');
+    const first = u.he_name?.trim() || heFirst(u.name);
     const apps = [
       // each app is a cushion in its own weave (c2: the colour its letters glow in when they swell)
       { href: '/food/', ic: 'food', name: 'אוכל', sub: 'רשימת קניות, ספר מתכונים, דיאטה והמקרר', pillow: 'p13', c2: '#2f7d4a' },
@@ -260,10 +276,39 @@
     ];
     if (u.role === 'owner') apps.push({ href: '/admin/', ic: 'family', name: 'ניהול משפחה', sub: 'מי יכול להשתמש בעוזר', pillow: 'p15', c2: '#8a5a32' });
 
+    /* The moon's drawings, one for each of the eight phases (tools/moon-art.py cuts them from the artwork). */
+    const MOON_ART = '/assets/moon/';
+    function moonArt(m) {
+      const a = m.age;
+      return a < 0.034 || a > 0.966 ? 'new' : a < 0.22 ? 'waxing-crescent' : a < 0.28 ? 'first-quarter' : a < 0.47 ? 'waxing-gibbous'
+        : a < 0.53 ? 'full' : a < 0.72 ? 'waning-gibbous' : a < 0.78 ? 'third-quarter' : 'waning-crescent';
+    }
+    /* The eclipses seen from Jerusalem (timeanddate.com, local time with its offset): from the first contact to the last.
+       Penumbral lunar eclipses are left out – the eye hardly sees them. */
+    const ECLIPSES = [
+      ['solar', '2027-08-02T11:40+03:00', '2027-08-02T14:18+03:00', 'ליקוי חמה חלקי'],
+      ['lunar', '2028-01-12T04:07+02:00', '2028-01-12T06:48+02:00', 'ליקוי ירח חלקי'],
+      ['lunar', '2028-07-06T19:44+03:00', '2028-07-06T23:55+03:00', 'ליקוי ירח חלקי'],
+      ['lunar', '2028-12-31T16:35+02:00', '2028-12-31T21:40+02:00', 'ליקוי ירח מלא'],
+      ['lunar', '2029-06-26T03:34+03:00', '2029-06-26T05:37+03:00', 'ליקוי ירח מלא'],
+      ['lunar', '2029-12-20T21:42+02:00', '2029-12-21T03:41+02:00', 'ליקוי ירח מלא'],
+      ['solar', '2030-06-01T06:42+03:00', '2030-06-01T09:10+03:00', 'ליקוי חמה חלקי'],
+      ['lunar', '2030-06-15T19:35+03:00', '2030-06-15T23:52+03:00', 'ליקוי ירח חלקי'],
+      ['lunar', '2032-04-25T19:14+03:00', '2032-04-25T21:04+03:00', 'ליקוי ירח חלקי'],
+      ['lunar', '2032-10-18T19:24+03:00', '2032-10-19T00:40+03:00', 'ליקוי ירח מלא'],
+      ['lunar', '2033-04-14T19:12+03:00', '2033-04-15T01:13+03:00', 'ליקוי ירח מלא'],
+      ['solar', '2034-03-20T11:41+02:00', '2034-03-20T14:23+02:00', 'ליקוי חמה חלקי'],
+      ['lunar', '2034-09-28T03:42+03:00', '2034-09-28T06:35+03:00', 'ליקוי ירח חלקי'],
+      ['lunar', '2035-08-19T01:46+03:00', '2035-08-19T06:15+03:00', 'ליקוי ירח חלקי'],
+    ].map(([kind, from, to, name]) => ({ kind, from: Date.parse(from), to: Date.parse(to), name }));
+    const eclipseAt = (now = Date.now()) => ECLIPSES.find((e) => now >= e.from && now <= e.to) || null;
+    const nextEclipse = (kind, now = Date.now()) => ECLIPSES.find((e) => e.kind === kind && e.to > now) || null;
+    /** "שלום מישאל": the Hebrew name the family's owner set for each member (just "שלום" until there is one) */
+    const greeting = () => el('div', { class: 'greet' }, el('h1', {}, swell(first ? `שלום ${first}` : 'שלום')));
     const dock = el('span', { class: 'dock', 'aria-hidden': 'true' });
     const wheel = appWheel(apps);
     root.append(el('div', { class: 'home' },
-      el('div', { class: 'greet' }, el('h1', {}, swell(`שלום ${first}`)), el('p', {}, 'במה נתחיל היום?')),
+      greeting(),
       el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של ראב"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
       wheel.root, wheel.caption,
       el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
@@ -353,12 +398,13 @@
        it; the person can turn it too – drag the sun or the moon along it – and that is the app's day/night switch: let go
        with the moon up and it is night, with the sun up and it is day (until the next real sunrise or sunset). */
     function sky() {
+      const sunImg = el('img', { class: 'ball', src: '/assets/sun-core.webp', alt: '' });
       const sun = el('button', { class: 'sun', type: 'button', 'aria-label': 'השמש – לחיצה: זמני היום; גרירה: מעבר ללילה' },
-        el('span', { class: 'halo' }), el('img', { class: 'ball', src: '/assets/sun-core.webp', alt: '' }));
-      const moonShade = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      moonShade.setAttribute('viewBox', '-1 -1 2 2'); moonShade.setAttribute('aria-hidden', 'true');
+        el('span', { class: 'halo' }), sunImg);
+      const moonImg = el('img', { src: MOON_ART + moonArt(moonPhase()) + '.webp', alt: '' });
+      moonImg.addEventListener('error', () => { if (!moonImg.src.endsWith('/assets/moon.webp')) moonImg.src = '/assets/moon.webp'; });
       const moon = el('button', { class: 'moon', type: 'button', 'aria-label': 'הירח – לחיצה: המופע; גרירה: מעבר ליום' },
-        el('span', { class: 'halo' }), el('img', { src: '/assets/moon.webp', alt: '' }), moonShade);
+        el('span', { class: 'halo' }), moonImg);
       // the path itself, shown faintly only while it is being turned
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       path.setAttribute('class', 'orbit-path'); path.setAttribute('aria-hidden', 'true');
@@ -375,7 +421,15 @@
       const camp = document.querySelector('.camp');
 
       let geo = null;
+      /** The orbit, and where the greeting stands: on the right if the arc can pass it untouched, otherwise under the tent. */
       function geometry() {
+        const home = document.querySelector('.home');
+        home?.classList.remove('greet-under');
+        let g = orbitGeometry();
+        if (g.squeezed && home) { home.classList.add('greet-under'); g = orbitGeometry(); }
+        return g;
+      }
+      function orbitGeometry() {
         const r = camp.getBoundingClientRect(), campTop = r.top + scrollY;
         const size = innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124;
         const appbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--appbar-h')) || 56;
@@ -383,7 +437,19 @@
         const cy = campTop + r.height * 0.655;
         const left = r.left + r.width * 0.06, right = r.left + r.width * 0.94;
         const top = appbar + size * 0.62;
-        return { size, cx: (left + right) / 2, cy, rx: (right - left) / 2, ry: Math.max(60, cy - top), campTop, height: cy + size * 0.12 };
+        const cx = (left + right) / 2, rx = (right - left) / 2;
+        let ry = cy - top, squeezed = false;
+        // the greeting is never crossed: where the arc passes over its span (with the sun's radius), it runs below it
+        const g = document.querySelector('.home > .greet')?.getBoundingClientRect();
+        if (g && g.width && g.top + scrollY < cy) {   // (on a phone it stands under the tent, below the horizon)
+          const rad = size / 2 + 8;
+          const near = g.left - rad > cx ? g.left - rad : g.right + rad < cx ? g.right + rad : cx;   // its point nearest the apex
+          const u = Math.abs(near - cx) / rx;
+          const fit = u < 1 ? (cy - (g.bottom + scrollY + rad)) / Math.sqrt(1 - u * u) : Infinity;
+          if (fit < ry * 0.97) squeezed = true;   // the arc would have to sink toward the tent
+          ry = Math.min(ry, fit);
+        }
+        return { size, cx, cy, rx, ry: Math.max(60, ry), campTop, height: cy + size * 0.12, squeezed };
       }
       const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
 
@@ -433,7 +499,7 @@
         box.classList.toggle('night', night);
         box.style.setProperty('--sky-glow', night ? 'rgba(150, 182, 255, .15)' : tw > 0 ? `rgba(255, 128, 72, ${(0.22 * tw).toFixed(3)})` : 'rgba(255, 214, 140, .10)');
         box.style.setProperty('--sky-top', night ? 'rgba(4, 8, 22, .45)' : `rgba(130, 178, 222, ${(0.14 * (1 - tw)).toFixed(3)})`);
-        paintPhase(moonPhase(now));
+        paintPhase(moonPhase(now), now);
         if (!held) turnTo(targetA(), tween ? 900 : 0);
         else paint();
       }
@@ -455,15 +521,18 @@
         };
         mine.raf = requestAnimationFrame(step);
       }
-      function paintPhase(m) {
-        // the dark part of the face: half the disc on the unlit side, closed by the terminator (an ellipse)
-        const f = 0.817;   // the face's radius inside the drawing (inside the cream ring)
-        const waxing = m.age < 0.5;
-        const c = Math.cos(2 * Math.PI * (waxing ? m.age : 1 - m.age));   // 1 at new moon, -1 at full
-        const rx = Math.abs(c) * f;
-        const d = `M0,${-f} A${f},${f} 0 0 0 0,${f} A${rx.toFixed(4)},${f} 0 0 ${c > 0 ? 0 : 1} 0,${-f} Z`;
-        moonShade.innerHTML = m.lit > 0.985 ? '' : `<path d="${d}" fill="rgba(13, 19, 36, .8)" transform="${waxing ? '' : 'scale(-1,1)'}"/>`;
-        moon.title = m.name;
+      function paintPhase(m, now = Date.now()) {
+        // tonight's moon is the drawing of its phase; in a real eclipse the sun becomes the eclipse, and the moon turns copper
+        const src = MOON_ART + moonArt(m) + '.webp';
+        if (!moonImg.src.endsWith(src)) moonImg.src = src;
+        const ec = eclipseAt(now);
+        const sunSrc = ec?.kind === 'solar' ? '/assets/eclipse.webp' : '/assets/sun-core.webp';
+        if (!sunImg.src.endsWith(sunSrc)) sunImg.src = sunSrc;
+        sun.classList.toggle('eclipse', ec?.kind === 'solar');
+        moon.classList.toggle('eclipse', ec?.kind === 'lunar');
+        moon.title = ec?.kind === 'lunar' ? 'ליקוי ירח' : m.name;
+        if (ec?.kind === 'solar') sun.title = 'ליקוי חמה';
+        else sun.removeAttribute('title');
       }
 
       /* turning it by hand: the body under the finger follows along the orbit; let go and it settles into day or night */
@@ -513,6 +582,7 @@
       place();
       setInterval(() => { tween = tween || { raf: 0 }; place(); }, 60e3);
       addEventListener('resize', () => { tween = null; place(); });
+      document.fonts?.ready.then(() => place());   // the greeting's size is known only once Rubik has loaded
       document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') place(); });
       // day ↔ night (by the person, or by the real sun at sunrise and sunset): the orbit turns into its new place
       new MutationObserver(() => { tween = tween || { raf: 0 }; place(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -537,13 +607,21 @@
         el('button', { class: 'btn ghost small x', type: 'button', 'aria-label': 'סגירה', onclick: () => card.remove() }, '✕'),
         el('h3', {}, m.name),
         el('div', { class: 'times' }, el('span', {}, el('small', {}, 'מואר'), el('b', {}, Math.round(m.lit * 100) + '%')), el('span', {}, el('small', {}, 'היום בלוח העברי'), el('b', {}, heb))),
-        el('p', {}, m.age < 0.5 ? `ירח מלא ${day(m.toFull)}.` : `מולד ${day(m.toNew)}.`));
+        el('p', {}, m.age < 0.5 ? `ירח מלא ${day(m.toFull)}.` : `מולד ${day(m.toNew)}.`),
+        eclipseLine('lunar'));
       document.body.append(card);
       const r = moon.getBoundingClientRect();
       card.style.left = Math.max(12, Math.min(innerWidth - card.offsetWidth - 12, r.left + r.width / 2 - card.offsetWidth / 2)) + 'px';
       card.style.top = Math.min(innerHeight - card.offsetHeight - 12, r.bottom + 8) + 'px';
       const off = (e) => { if (!card.contains(e.target) && !moon.contains(e.target)) { card.remove(); document.removeEventListener('pointerdown', off); } };
       setTimeout(() => document.addEventListener('pointerdown', off), 0);
+    }
+    /** "ליקוי חמה חלקי עכשיו, עד 14:18" or "ליקוי הירח הבא: 12 בינואר 2028" */
+    function eclipseLine(kind) {
+      const now = eclipseAt(), t = (ms) => new Date(ms).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+      if (now?.kind === kind) return el('p', { class: 'eclipse-now' }, `${now.name} עכשיו, עד ${t(now.to)}.`);
+      const e = nextEclipse(kind);
+      return e ? el('p', { class: 'muted' }, `${kind === 'solar' ? 'ליקוי החמה' : 'ליקוי הירח'} הבא בירושלים: ${new Date(e.from).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}.`) : null;
     }
     function sunCard(sun) {
       document.querySelector('.sun-card')?.remove();
@@ -555,6 +633,7 @@
         el('h3', {}, s.day ? 'יום' : 'לילה'),
         el('div', { class: 'times' }, el('span', {}, el('small', {}, 'זריחה'), el('b', {}, t(s.rise))), el('span', {}, el('small', {}, 'צהריים'), el('b', {}, t(s.noon))), el('span', {}, el('small', {}, 'שקיעה'), el('b', {}, t(s.set)))),
         el('p', {}, s.day && left ? `עוד ${mins >= 60 ? Math.floor(mins / 60) + ' שעות ו־' : ''}${mins % 60} דקות עד השקיעה.` : 'השמש תזרח שוב ב־' + t(s.next) + '.'),
+        eclipseLine('solar'),
         el('p', {}, el('a', { href: '/tools/weather/' }, 'תחזית מזג האוויר'), ' – בקרוב, בכלים.'));
       document.body.append(card);
       const r = sun.getBoundingClientRect();

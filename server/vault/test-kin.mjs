@@ -62,6 +62,10 @@ eq('outside: the strictest levels of the person decide', v.name, K.ANON);
 v = K.view(card({ privacy: K.parsePrivacy('{"identity":"forest"}') }), 'linked', nobody, { privacy: K.parsePrivacy('{"identity":"forest"}'), anonymous: true });
 eq('outside: anonymous in any tree is anonymous', v.anonymous, true);
 eq('none: not seen at all', K.view(card(), 'none', nobody), null);
+const lv = (s) => K.parsePrivacy(s);
+eq('outside, no user: the strictest of the records', K.outside([{ privacy: lv('{"identity":"forest"}'), anonymous: false, user: false }, { privacy: lv(null), anonymous: false, user: false }]).privacy.identity, 'household');
+eq('outside, no user: anonymous in any record', K.outside([{ privacy: lv(null), anonymous: true, user: false }, { privacy: lv(null), anonymous: false, user: false }]).anonymous, true);
+eq('outside, a user: the user decides, not another tree\'s default', K.outside([{ privacy: lv('{"identity":"forest"}'), anonymous: false, user: true }, { privacy: lv(null), anonymous: true, user: false }]), { privacy: lv('{"identity":"forest"}'), anonymous: false });
 eq('the tribe head (keeper) sees an anonymous non-user', K.view(card({ anonymous: true }), 'forest', keeper).name, 'רינה');
 
 eq('saving keeps what the editor could not see', K.keepHidden({ notes: 'סוד', born: '1960-01-02', sex: 'f' }, { born: '1961-01-01', sex: 'f', notes: '' }, ['notes']), { born: '1961-01-01', sex: 'f', notes: 'סוד' });

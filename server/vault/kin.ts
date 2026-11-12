@@ -37,6 +37,13 @@ export function strictest(list: Privacy[]): Privacy {
   return out;
 }
 
+/** what of a person may leave their household, from all their records: when one of them is a user's own card, the
+    user decides (their cards only); otherwise the strictest levels of all, and anonymous if any household made them so */
+export function outside(cards: { privacy: Privacy; anonymous: boolean; user: boolean }[]): { privacy: Privacy; anonymous: boolean } {
+  const own = cards.filter((c) => c.user), from = own.length ? own : cards;
+  return { privacy: strictest(from.map((c) => c.privacy)), anonymous: from.some((c) => c.anonymous) };
+}
+
 /** how far a card's household is from the viewer's: the same one, linked to it directly, in the same tribe, or none */
 export type Distance = 'household' | 'linked' | 'forest' | 'none';
 const DIST: Record<Distance, number> = { household: 1, linked: 2, forest: 3, none: 99 };

@@ -22,6 +22,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['sessions', 'created_at', 'INTEGER'], // when the session began (the vault wants a fresh sign-in for some steps)
   ['family_events', 'household', 'TEXT'], // whose calendar (older rows: the family's)
   ['fridges', 'household', 'TEXT'],       // whose fridge (older rows: the family's)
+  ['family_people', 'privacy', 'TEXT'],      // JSON {identity, dates, notes, files}: private | household | linked | forest
+  ['family_people', 'anonymous', 'INTEGER'], // 1: outside the household only "קרוב/ת משפחה"
 ];
 
 let ready: Promise<void> | null = null;

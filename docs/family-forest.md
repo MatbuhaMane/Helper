@@ -72,7 +72,10 @@ Files never leave the household unless their owner shares them, and private file
 - Who sets them: a user for themself (on every card that carries their email); for a non-user, a head of the household
   that keeps the card, or the tribe head. A household never changes another household's card.
 - When the same person is in two trees with different levels, the strictest one decides what crosses between
-  households. Inside its own household a card follows its own levels.
+  households – unless the person is a user: then their own levels decide, whatever the other trees left at the
+  default (found while testing: otherwise a user who opened their name could stay hidden by a tree that never chose).
+  Inside its own household a card follows its own levels.
+- A card's email makes it a user's: only a head puts someone else's email on a card (anyone may put their own).
 - **Anonymous**: outside its household the person is *קרוב/ת משפחה* (no name, sex, photo, dates, notes, email), with an
   opaque id, but still counts in paths. Any household that marks them anonymous makes them anonymous outside.
 - Files do not leave their household in stage 2 at all, whatever the level.

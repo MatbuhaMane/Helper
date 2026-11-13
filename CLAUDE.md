@@ -16,7 +16,9 @@ and the architecture.
 3. **A hub.** New everyday tools are added to the hub (shared shell, navigation, sign-in, daemon) rather than built as separate apps.
 4. **Pleasant, comfortable, intuitive on PC and on mobile.** This is a work rule, not a nice-to-have:
    a feature is done only after it has been checked at phone width (375 px) and at desktop width, in light and dark mode.
-   `tools/audit.js` runs that check over every page (overflow, broken images, nameless controls, low contrast).
+   `tools/audit.js` runs that check over every page (overflow, broken images, nameless controls, low contrast, and motion).
+   Motion is part of done: animations and transitions move only `transform` and `opacity`, never layout properties
+   (width, height, margin, top…); the audit lists every one that does, and each is a defect (owner, 2026-11-14).
 5. **Be proactive.** After feature work, give an honest self-review (what is weak, what was not tested) and a few
    concrete proposals for the interface, the functionality and new features.
 6. **Tools.** Look for tools, plugins and skills that would do the work better, and ask the owner before installing any of them.

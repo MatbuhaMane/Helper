@@ -59,16 +59,43 @@
     return node;
   }
 
+  // Pop-up messages (vision batch 17, the owner): light and never in the way. Short-lived, and closed by a swipe on a phone
+  // (up or sideways) or a click on a computer; the timer waits while the pointer rests on it. The look and the place are in base.css.
   let toastTimer;
   function toast(msg, actionLabel, action) {
     let t = document.getElementById('toast');
-    if (!t) { t = el('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(t); }
+    if (!t) {
+      t = el('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite', title: 'לסגירה: לחיצה או החלקה' });
+      document.body.append(t);
+      const hide = () => { clearTimeout(toastTimer); t.classList.remove('show', 'dragging'); t.style.translate = t.style.opacity = ''; };
+      let p = null;
+      t.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; p = { x: e.clientX, y: e.clientY, id: e.pointerId, moved: false }; });
+      t.addEventListener('pointermove', (e) => {
+        if (!p || e.pointerId !== p.id) return;
+        const dx = e.clientX - p.x, dy = Math.min(0, e.clientY - p.y);
+        if (!p.moved && Math.hypot(dx, dy) < 6) return;
+        if (!p.moved) { p.moved = true; t.classList.add('dragging'); clearTimeout(toastTimer); try { t.setPointerCapture(e.pointerId); } catch (_) { /* gone */ } }
+        t.style.translate = `${dx}px ${dy}px`; t.style.opacity = String(Math.max(0.2, 1 - Math.hypot(dx, dy) / 160));
+      });
+      const up = (e) => {
+        if (!p || e.pointerId !== p.id) return;
+        const { moved } = p, far = Math.hypot(e.clientX - p.x, Math.min(0, e.clientY - p.y)) > 48; p = null;
+        if (!moved || far || e.type === 'pointercancel' && moved) return hide();   // a click, or a swipe far enough, closes it
+        t.classList.remove('dragging'); t.style.translate = t.style.opacity = '';  // a small nudge springs back
+        toastTimer = setTimeout(hide, 2500);
+      };
+      t.addEventListener('pointerup', up); t.addEventListener('pointercancel', up);
+      t.addEventListener('mouseenter', () => clearTimeout(toastTimer));
+      t.addEventListener('mouseleave', () => { if (t.classList.contains('show')) toastTimer = setTimeout(hide, 1500); });
+      t._hide = hide;
+    }
     t.textContent = '';
     t.append(el('span', {}, msg));
-    if (actionLabel) t.append(el('button', { class: 'btn small', onclick: () => { action(); t.classList.remove('show'); } }, actionLabel));
+    if (actionLabel) t.append(el('button', { class: 'btn small', onclick: () => { action(); t._hide(); } }, actionLabel));
+    t.classList.remove('dragging'); t.style.translate = t.style.opacity = '';
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), actionLabel ? 6000 : 3800);
+    toastTimer = setTimeout(t._hide, actionLabel ? 5000 : 2600);
   }
 
   let mePromise;

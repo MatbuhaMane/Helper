@@ -27,6 +27,11 @@ Last update: 2026-11-13.
 
 ## In progress
 
+- **Batch 8, sent:**
+  - the social layer, which unblocks goals part 2 (`docs/vision/social.md`);
+  - the first-minute wizard, in a game feel (`docs/vision/first-minute.md`);
+  - the tent app icon, with the family logo for the owner only, served per user by the master.
+
 - **The "בקרוב" pages:** done on ai-features (580dc1a), waiting for the master's merge.
   - Weather is finished.
   - ChatGPT and the goals' family signals are hidden.
@@ -47,6 +52,7 @@ Last update: 2026-11-13.
 ## Needs the owner
 
 - **The joint test run:** when to start it, now or after the first measurement.
+- **Which session owns the shared files now,** the master or the new CEO session? Batch 8 went to both.
 - **Through the other departments:**
   - business: approving the founders' "free for life" track;
   - ai-features: the restaurant source for the food slider.

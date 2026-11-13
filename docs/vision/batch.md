@@ -4,7 +4,11 @@
 
 ## הבא בתור
 
-### Batch 8 (נאסף ב-2026-11-13)
+(ריק)
+
+## נשלח
+
+### Batch 8: נשלח ב-2026-11-13 ל-ai-features ולעיצוב, עם עותק למאסטר ולמנכ"ל
 
 - **ההחלטה:** `decisions.md`, "The social layer, the first minute, and the app icon".
 - **הפירוט:** `docs/vision/social.md`, `docs/vision/first-minute.md`.
@@ -19,8 +23,6 @@
 3. **סמל האפליקציה:**
    - **design:** אוהל קטן כסמל הרגיל.
    - **המאסטר:** `manifest.json` ו-`apple-touch-icon` לפי המשתמש המחובר. הלוגו המשפחתי רק לבעלים, ומתג ב"הגדרות סודיות" שרק הוא רואה.
-
-## נשלח
 
 ### Batch 7: נשלח ב-2026-11-13 למאסטר (שמתחיל בכלי המדידה), לעיצוב ול-ai-features. business קיבל לידיעה
 

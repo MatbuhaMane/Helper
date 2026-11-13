@@ -411,13 +411,11 @@
     /* the search, in every household (server/member-admin-rules.ts searchSql): each word in a name, the email or the
        household's name. Typing opens suggestions under the box (a combobox: arrows, Enter, Escape); choosing one shows
        that member's row with the same editors, and Enter with none chosen shows every result. "חיפוש מתקדם" adds filters.
-       The list's look is inline for now (design: please move it to admin.css as .ad-combo / .ad-sugg). */
+       The look is in admin.css (.ad-combo, #ad-sugg). */
     const found = el('div', { class: 'ad-found', 'aria-live': 'polite' });
     const q = el('input', { type: 'search', placeholder: 'שם, משפחה, אימייל או בית', 'aria-label': 'חיפוש חבר בכל הבתים', enterkeyhint: 'search',
-      autocomplete: 'off', role: 'combobox', style: 'inline-size:100%', 'aria-expanded': 'false', 'aria-controls': 'ad-sugg', 'aria-autocomplete': 'list' });
-    const sugg = el('ul', { id: 'ad-sugg', role: 'listbox', 'aria-label': 'חברים שנמצאו', hidden: true,
-      style: 'position:absolute;inset-inline:0;inset-block-start:calc(100% + 4px);z-index:var(--z-menu);margin:0;padding:4px;list-style:none;'
-        + 'background:var(--card);color:var(--text);border:1px solid var(--line-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow);max-block-size:min(20rem,60vh);overflow-y:auto' });
+      autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': 'ad-sugg', 'aria-autocomplete': 'list' });
+    const sugg = el('ul', { id: 'ad-sugg', role: 'listbox', 'aria-label': 'חברים שנמצאו', hidden: true });
     const pick = (o) => el('select', { 'aria-label': o.label, style: 'inline-size:auto;max-inline-size:100%' }, o.items.map(([v, t]) => el('option', { value: v }, t)));
     const fHouse = pick({ label: 'בית', items: [['', 'כל הבתים'], ...households.map((h) => [h.id, h.title || h.id])] });
     const fRole = pick({ label: 'תפקיד', items: [['', 'כל התפקידים'], ...Object.entries(ROLE_NAMES)] });
@@ -438,7 +436,7 @@
     const closeSugg = () => { sugg.hidden = true; active = -1; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); };
     const mark = (i) => {
       active = i;
-      [...sugg.children].forEach((li, j) => { li.setAttribute('aria-selected', String(j === i)); li.style.background = j === i ? 'color-mix(in srgb, var(--primary) 14%, transparent)' : ''; });
+      [...sugg.children].forEach((li, j) => { li.setAttribute('aria-selected', String(j === i)); });
       if (i < 0) q.removeAttribute('aria-activedescendant');
       else { q.setAttribute('aria-activedescendant', 'ad-sugg-' + i); sugg.children[i].scrollIntoView({ block: 'nearest' }); }
     };
@@ -467,12 +465,11 @@
         if (!rows.length) { closeSugg(); found.replaceChildren(el('p', { class: 'muted small' }, 'לא נמצא חבר.')); return; }
         found.replaceChildren();
         sugg.replaceChildren(...rows.map((m, i) => el('li', { id: 'ad-sugg-' + i, role: 'option', 'aria-selected': 'false',
-          style: 'display:grid;gap:2px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;min-block-size:44px;align-content:center',
           onpointerdown: (e) => e.preventDefault(),                 // keep the focus in the box
           onpointermove: () => { if (active !== i) mark(i); },
           onclick: () => choose(m) },
           el('b', {}, [m.he_name, m.name].filter(Boolean).join(' · ') || m.email),
-          el('small', { class: 'muted', style: 'overflow-wrap:anywhere' }, el('span', { dir: 'ltr' }, m.email), ' · ', houseName(m.household)))));
+          el('small', { class: 'muted' }, el('span', { dir: 'ltr' }, m.email), ' · ', houseName(m.household)))));
         sugg.hidden = false; q.setAttribute('aria-expanded', 'true'); mark(-1);
       } catch (err) { say(err); }
     };
@@ -503,7 +500,7 @@
       el('h3', {}, `הבית שלי${mine ? ` · ${houseName(mine)}` : ''}`),
       table(list, () => members(box)),
       el('h3', {}, 'חיפוש בכל הבתים'),
-      el('div', { class: 'ad-combo', style: 'position:relative;max-inline-size:30rem' }, el('label', { class: 'ad-search', style: 'display:block' }, q), sugg), adv, found,
+      el('div', { class: 'ad-combo' }, el('label', { class: 'ad-search' }, q), sugg), adv, found,
       el('h3', {}, 'הוספת חבר'),
       el('form', { class: 'ad-form', onsubmit: async (e) => {
         e.preventDefault();

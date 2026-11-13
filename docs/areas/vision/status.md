@@ -34,6 +34,7 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 15** (2026-11-14), sent to design and the CEO: big new ideas wait, and the interface shows them only as "בקרוב". This applies to גבעה ביער and the garage. The garage study is cancelled.
 - **The owner's quick ideas** (`docs/vision/later.md`), split into three waves:
   - wave 2 waits for the family launch: the הקפדה coach, Telegram-level chat;
   - wave 3: friends and "גבעה ביער" wait for a vision spec, and the garage waits for the study.

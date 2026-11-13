@@ -2,9 +2,16 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the cushions' flat ellipse; the page turn between windows)._
+_Updated 2026-11-13 (the second tree, canopy; hanging oval frames for both trees)._
 
 ## Done
+- **A second family tree, "canopy" (עץ ב׳), beside the olive (the owner's Gemini drawing, 2026-11-13), ready to merge:**
+  cut into our four layers by `docs/design/cut-tree-canopy.mjs` (webp, a cream rim so it holds at night, leafy side twigs).
+  Its box is **1000×1500**, not 1800: the tree is wide and short, and five tiers of 90 px people need ~95 px each at 375.
+  `slots.json` gains `"ext": "webp"` (svg when absent) and `"candleY"`; `tree.css` keys the box on `data-kind`, so the page
+  swaps trees by a pref with no new code. **Hanging oval frames** for both trees: `data-look="frame"` on `.tree` (gilt, bronze for
+  the passed). The olive got small leafy side twigs. The prototype has זית / עץ ב׳ and עלים / מסגרות switches. Checked at 375 and
+  1280, light and dark, reduced motion: no people overlap (only the candle and the "+" bud, beside their person by design).
 - **The family tree, spec 1 (vision's batch):** one fixed drawn tree in the tent's style, in moving layers (ground, boughs,
   trunk, crown) made in code by `docs/design/make-tree.mjs` into `/assets/tree/<kind>/` with `slots.json` (the tiers where
   people hang). **The owner chose the olive** (2026-11-14); the oak and acacia are

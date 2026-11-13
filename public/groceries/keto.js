@@ -535,12 +535,12 @@
     const food = lookup(item.name);
     if (!food) { want(item.name); return el('span', { class: 'macro wait', title: 'מחפש ערכים…' }, el('span', { class: 'spinner tiny' })); }
     if (!food.is_food) return null;
-    const s = M.summarize(food);
-    return el('span', { class: 'macro' },
-      el('button', { type: 'button', class: 'pie-btn', 'aria-label': `ערכי התזונה של ${item.name} בהגדלה`, onclick: (e) => { e.preventDefault(); e.stopPropagation(); showFood(item.name, food); }, html: M.pieSvg(food, 26) }),
-      el('small', { class: 'macro-nums', title: 'ל-100 גרם: שומן · חלבון · פחמימות · סיבים' },
-        el('span', { class: 't-fat' }, `ש ${fmt(s.fat)}`), el('span', { class: 't-protein' }, `ח ${fmt(s.protein)}`),
-        el('span', { class: 't-carbs' }, `פ ${fmt(s.carbs)}`), el('span', { class: 't-fiber' }, `ס ${fmt(s.fiber)}`)));
+    // One small pie per diet, titled, enlarged on tap (the owner's tour, 2026-11-13: no small numbers in the list).
+    // Design's contract: span.macro.diet-pies > button.diet-pie[data-diet] > svg.pie + span.diet-pie-name.
+    const pie = el('button', { type: 'button', class: 'diet-pie', 'data-diet': 'keto', 'aria-label': `קטו: ערכי התזונה של ${item.name}`,
+      onclick: (e) => { e.preventDefault(); e.stopPropagation(); showFood(item.name, food); } }, el('span', { class: 'diet-pie-name' }, 'קטו'));
+    pie.insertAdjacentHTML('afterbegin', M.pieSvg(food, 24, { ring: true }));
+    return el('span', { class: 'macro diet-pies' }, pie);
   }
 
   /* ================= מתכון: ערכים למנה לפי הדיאטה ================= */

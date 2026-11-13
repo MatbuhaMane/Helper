@@ -16,13 +16,15 @@ const ok = (name, cond) => { if (cond) pass++; else { fail++; console.error('FAI
 const eq = (name, got, want) => ok(`${name}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`, JSON.stringify(got) === JSON.stringify(want));
 
 /* ---- the owner's rule, route by route ---- */
-for (const r of ['tree', 'personGet', 'personSave', 'linkAdd', 'linkSave', 'roles', 'householdSave', 'bridges', 'forest', 'related'])
+for (const r of ['tree', 'personGet', 'personSave', 'linkAdd', 'linkSave', 'roles', 'householdSave', 'bridges', 'forest', 'related',
+  // the tree's soft delete, its undo, the owner's restore and the changes that wait for a user's yes (2026-11-13)
+  'personDelete', 'linkDelete', 'personRestore', 'changesList', 'changeApprove', 'changeDecline', 'changeCancel', 'trashList', 'trashRestore'])
   eq(`${r}: open on a trusted device`, A.ACCESS[r], 'tree');
 for (const [what, routes] of Object.entries({
   'documents and files': ['items', 'itemAdd', 'itemFile', 'itemSave', 'itemDelete', 'itemRestore'],
   'privacy': ['privacySave'],
   'linking trees': ['bridgeAsk', 'bridgeApprove', 'bridgeConsent', 'bridgeDecline', 'bridgeRevoke'],
-  'any delete': ['personDelete', 'linkDelete', 'itemDelete'],
+  'deleting a file': ['itemDelete'],
   'export and backups': ['auditLog', 'backups', 'backupsRun', 'driveDisconnect'],
   'the keys': ['passkeyList', 'passkeyRemove'],
   'rights': ['roleSave'],

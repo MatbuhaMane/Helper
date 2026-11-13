@@ -950,3 +950,19 @@ CREATE TABLE IF NOT EXISTS gathering_milestones (
   dev        INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS gathering_milestones_host ON gathering_milestones(host_email, reached_at);
+
+-- The app lock and the tree lock, per person (server/lock.ts; the owner's design, docs/decisions.md "Locks and privacy").
+-- The 4-digit code only as PBKDF2 over an HMAC with a pepper from VAULT_KEY, salted per person.
+CREATE TABLE IF NOT EXISTS user_locks (
+  email       TEXT PRIMARY KEY,
+  app         TEXT NOT NULL DEFAULT 'off',     -- off | pin | bio
+  tree        TEXT NOT NULL DEFAULT 'off',     -- off | pin | bio
+  autolock    INTEGER NOT NULL DEFAULT 5,      -- minutes away before the app locks itself: 1 | 5 | 15 | 60
+  pin_hash    TEXT,
+  pin_salt    TEXT,
+  fails       INTEGER NOT NULL DEFAULT 0,
+  pause_until INTEGER NOT NULL DEFAULT 0,
+  closed      INTEGER NOT NULL DEFAULT 0,      -- 1: ten wrong codes, open again with a new Google sign-in
+  tip_hidden  INTEGER NOT NULL DEFAULT 0,      -- "לא להציג שוב" on the tree's security tip
+  updated_at  INTEGER NOT NULL
+);

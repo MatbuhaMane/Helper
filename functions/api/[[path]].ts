@@ -10,6 +10,7 @@ import * as join from '../../server/join';
 import * as admin from '../../server/admin';
 import * as credits from '../../server/credits';
 import * as figures from '../../server/figures';
+import * as lock from '../../server/lock';
 import { setting } from '../../server/settings';
 import { childOf } from '../../server/members';
 import { birthYear } from '../../server/figures-rules';
@@ -53,6 +54,16 @@ function route(method: string, path: string, h: Handler) {
 route('GET', '/api/auth/login', googleLogin);
 route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
+route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
+route('POST', '/api/auth/passkey', lock.login);
+/* the app lock and the tree lock (the master's, server/lock.ts) */
+route('GET', '/api/lock', lock.status);
+route('PUT', '/api/lock', lock.save);
+route('PUT', '/api/lock/pin', lock.setPin);
+route('POST', '/api/lock/lock', lock.lockNow);
+route('POST', '/api/lock/unlock', lock.unlock);
+route('POST', '/api/lock/passkey/options', lock.passkeyOptions);
+route('POST', '/api/lock/passkey', lock.passkeyUnlock);
 route('GET', '/api/auth/handoff', previewHandoff);
 route('POST', '/api/auth/logout', logout);
 route('POST', '/api/auth/desktop/start', desktopStart);
@@ -63,7 +74,8 @@ route('GET', '/api/me', async (ctx) => {
   // The person's preferences come with "who am I", so every page has them before it draws anything.
   // child: under 12 by the birth year the owner set (the year itself stays private)
   return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
-    shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false) });   // shop: the owner's switch for prices and buying
+    shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
+    locked: await lock.lockedNow(ctx.env, ctx.req) });   // locked: the app lock is closed (the page shows the lock screen)   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);
 route('PUT', '/api/prefs/:ns', prefs.putPrefs);
@@ -476,6 +488,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil })
     try {
       await ensureSchema(env);
       const user = await loadUser(env, request);
+      // the app lock: a locked session reaches only the lock itself, /api/me and signing in and out (423 app_locked)
+      if (user) await lock.gate(env, request, user.email, url.pathname, waitUntil);
       // every AI call made while answering is metered: who, from which feature (server/meter.ts)
       return await metered({ env, email: user?.email || null, feature: featureOf(url.pathname), waitUntil }, () => h({ req: request, env, url, params, user, waitUntil }));
     } catch (err) {

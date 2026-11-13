@@ -54,6 +54,16 @@ Read this before changing sign-in, the API, the family vault, or the headers.
   do not load there (`data-vault`). Nothing about the vault is cached by the service worker.
 - **Activity log.** Unlocks, views, uploads, edits, deletions, passkey changes; IP addresses are kept only as a keyed fingerprint.
 
+### The app lock and the tree lock (`server/lock.ts`, the owner's design of 2026-11-14)
+- **The tree.** Open to a signed-in member of its household by default. This replaces the trusted device. A person may lock it with a 4-digit code or a passkey, and then it opens for 15 minutes from its last use. Documents, files, privacy, deletes, linking trees and backups stay `fresh`: a passkey, or a Google sign-in from the last 10 minutes. No setting opens them.
+- **The app lock.** Optional, per person: a code or a passkey, with an idle timer (1/5/15/60 minutes) or the padlock in the menu. It is enforced in the router (`lock.gate`). A locked session gets 423 from everything but `/api/lock*`, `/api/me`, `/api/logout` and `/api/auth/*`.
+- **The code.** It is kept as PBKDF2-SHA256 (100,000 rounds) over HMAC(code) with a pepper derived from `VAULT_KEY`, with a salt per person, and compared in constant time. A 4-digit space is small, so the server limits guesses:
+  - every 5 wrong codes, a 15-minute pause;
+  - at 10 wrong codes, the code closes until a new sign-in.
+  - Changing the code, or weakening a lock, needs the current code or a proof (a code, passkey or sign-in) from the last 5 minutes.
+- **Recovery.** Recovery is a new Google sign-in ("שכחתי את הקוד"): every new session starts open and resets the wrong-code count. So the lock protects an unattended open device, not an account whose Google sign-in is in someone else's hands. That is the intended level: "secure but not excessive".
+- **Passkey sign-in.** `/api/auth/passkey` takes a discoverable passkey that a member registered (for the vault). Its signature, counter, origin and rpId are checked as in `webauthn.ts`, and only a person still in `members` gets a session. It is rate-limited per IP.
+
 ### Links that are their own key (`server/calendar.ts`)
 - `GET /api/calendar/feed/:token` (the calendar that Google, Apple or Outlook subscribe to) answers **without a session**: the link is the key.
   It is 24 random bytes (32 characters); only its SHA-256 hash is stored; it is rate-limited; a new link replaces the old one, it can be

@@ -378,7 +378,16 @@ export async function chat(ctx: Ctx) {
 export async function getDaemon(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY });
+  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY, ibnEzra: await ownersFamily(ctx, u) });
+}
+
+/** Ibn Ezra (the 3D vinyl figure) belongs to the owner's family only (decisions.md, "Companion figures"); others choose
+    among the 2D figures, which are free to all */
+async function ownersFamily(ctx: Ctx, u: Member) {
+  const owners = (ctx.env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  if (owners.includes(u.email)) return true;
+  if (!owners.length) return false;
+  return !!(await ctx.env.DB.prepare(`SELECT 1 FROM members WHERE household = ? AND email IN (${owners.map(() => '?').join(',')}) LIMIT 1`).bind(u.household, ...owners).first());
 }
 
 /** "Forget our conversation" (keeps the name, shape and memory notes). */

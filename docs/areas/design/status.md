@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (live in main v95: the covers at night and הרגלי אכילה's icon; waiting for the owner: the brand mark)._
+_Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set from the logo, the tree smoother while scrolling)._
 
 **Where we stand (a brief for the next round):**
 - **Live in main (v91):**
@@ -18,6 +18,17 @@ _Updated 2026-11-13 (live in main v95: the covers at night and הרגלי אכי
   - C: the shin turned over as a two-peaked roof; at small sizes it looks a little like mountains.
   - Once the owner chooses, the `--bm-*` tokens go into base.css and the SVG goes to the CEO for BRAND in common.js.
 - **Ready to merge:** the profile faces' initial is darker (≥ 4.5:1 in light, it was 2.9:1, from ai-features' audit), and the tree prototype names עץ ב׳ (canopy) first and the olive עץ א׳ (v97).
+- **Ready to merge: the app icon from the owner's logo** (`public/assets/icons/ohel-*`, `docs/design/make-ohel-icons.mjs`): limestone tile, basalt ink,
+  any + maskable, 16/32/48/180/192/512, `ohel-favicon.ico`, `ohel-apple-touch-icon.png`; looked at on a light and a dark ground. The master wires manifest.json and index.html.
+  base.css `.brand-mark` now carries the logo's size (26 px, 405.4/159.4), so BRAND's inline style in common.js can go. The bar is checked at 375 and 1280, light and dark.
+- **Ready to merge: the tree smoother while scrolling** (the owner: jumpy). The sway keyframes are plain numbers (no CSS variable), the two big layers hold
+  `will-change: transform`, `.tree.off` pauses everything (the JS adds it off screen), and the search switch's knob slides by translate. Not measured on a phone.
+- **Live in main (v99): the owner's tree batch (design's part).** ai-features does the JS to the classes agreed with them.
+  - `tree.css`: the tree breathes slower and smaller (sine easing, no overshoot). Moving the tree leans it a little through a transition on `rotate`, so the breath no longer jumps. Reduced motion stops everything.
+  - People on the tree: on hover a small lift, a soft shadow and a warm light (a lantern glow at night). On press they sink in, then settle back without the wiggle.
+  - `family.css`: the member card in view mode (`.mc`: banner, avatar, name, family logo, facts; the pencil only on `.mc.mine`) and חיפוש ביער (`.fs`: a pill box, the "קרובי משפחה בלבד" switch, the results floating under it, a vine leaf on relatives). The markup is in the comments; the prototype is `docs/design/prototype/tree-card-search.html`.
+  - Checked at 375 and 1280, light and dark: no overflow, all text ≥ 5:1. Hover is checked on desktop and reduced motion through the app's own setting. A real touch press is not checked yet.
+- **Live: the owner's logo** (03f971c), אהל in the old script, cut to `public/assets/brand/` (SVG, light SVG, a transparent PNG).
 - **Launch prep, the page audit (v92, 28 pages incl. /food/diet/habits/, at 375 and 1280, light and dark): clean.**
   - The check found no overflow, broken images, nameless controls or contrast under 3:1.
   - It skips oklab colours, so the home page's 53 oklab texts were measured separately on a canvas: all ≥ 4.5:1.

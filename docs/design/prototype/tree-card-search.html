@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>העץ – כרטיס בן משפחה וחיפוש ביער</title>
+  <!-- The tree batch (the owner, 2026-11-13): the tree's gentle motion and its people's hover and press (/assets/tree.css),
+       the member card in view mode and "חיפוש ביער" (/family/family.css; the markup is in the comments there).
+       A sample family, no real people. Copy to public/ to view (it is not committed there). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/tree.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <style>
+    body { margin: 0; opacity: 1 !important; visibility: visible !important; }
+    .demo { max-inline-size: 980px; margin-inline: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 22px; }
+    .demo h2.demo-h { margin: 0; font-size: 1rem; color: var(--muted); font-weight: 500; }
+    .cards { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); align-items: start; }
+    .tree { inline-size: min(100%, 460px); }
+  </style>
+</head>
+<body>
+<div class="demo fv">
+  <h2 class="demo-h">חיפוש ביער</h2>
+  <div class="fv-tools">
+    <div class="fs" role="search">
+      <label class="fs-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" class="fs-input" placeholder="חיפוש ביער" aria-label="חיפוש ביער" value="רחל"></label>
+      <label class="fs-kin"><input type="checkbox" checked><span>קרובי משפחה בלבד</span></label>
+      <ul class="fs-results" role="listbox" aria-label="תוצאות">
+        <li><button class="fs-hit kin" type="button" role="option" aria-selected="true"><span class="fs-face">רכ</span><span class="fs-text"><b>רחל כהן</b><small>משפחת כהן · סבתא</small></span></button></li>
+        <li><button class="fs-hit kin" type="button" role="option"><span class="fs-face">רל</span><span class="fs-text"><b>רחלי לוי</b><small>משפחת לוי · בת דודה</small></span></button></li>
+        <li><button class="fs-hit" type="button" role="option"><span class="fs-face">רא</span><span class="fs-text"><b>רחל אברהם</b><small>משפחת אברהם</small></span></button></li>
+      </ul>
+    </div>
+  </div>
+  <div style="block-size: 210px"></div>
+
+  <h2 class="demo-h">כרטיס בן משפחה – שלי (עם עיפרון), ושל אחר</h2>
+  <div class="cards">
+    <article class="mc mine">
+      <div class="mc-banner"><img src="/assets/covers/hills.svg" alt=""></div>
+      <div class="mc-head">
+        <span class="mc-avatar">דל</span>
+        <div class="mc-who"><h2 class="mc-name">דנה לוי</h2><p class="mc-rel">אני · משפחת לוי</p></div>
+        <span class="mc-logo"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%238a5a32'/%3E%3Ctext x='20' y='27' text-anchor='middle' font-family='Rubik,Arial' font-weight='700' font-size='20' fill='%23f7f6f0'%3Eל%3C/text%3E%3C/svg%3E" alt="סמל משפחת לוי"></span>
+        <button class="mc-edit" type="button" aria-label="עריכת הפרטים שלי"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg></button>
+      </div>
+      <dl class="mc-facts">
+        <div class="mc-fact"><dt>נולדה</dt><dd>ג׳ בתמוז תש״ן</dd></div>
+        <div class="mc-fact"><dt>גרה ב</dt><dd>ירושלים</dd></div>
+        <div class="mc-fact"><dt>הורים</dt><dd>דוד ורחל</dd></div>
+        <div class="mc-fact"><dt>אוהבת</dt><dd>אפייה, טיולים</dd></div>
+      </dl>
+      <p class="mc-about">הבת הבכורה. מכינה את החלות לכל שבת משפחתית.</p>
+    </article>
+    <article class="mc">
+      <div class="mc-banner"></div>
+      <div class="mc-head">
+        <span class="mc-avatar">אכ</span>
+        <div class="mc-who"><h2 class="mc-name">אברהם כהן</h2><p class="mc-rel">סבא · משפחת כהן</p></div>
+        <button class="mc-edit" type="button" aria-label="עריכה"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+      </div>
+      <dl class="mc-facts">
+        <div class="mc-fact"><dt>נולד</dt><dd>תרצ״ב, מרקש</dd></div>
+        <div class="mc-fact"><dt>עלה ארצה</dt><dd>1956</dd></div>
+      </dl>
+      <div class="mc-actions"><button class="btn small ghost" type="button">איך אנחנו קשורים</button></div>
+    </article>
+  </div>
+
+  <h2 class="demo-h">אנשים על העץ – ריחוף ולחיצה</h2>
+  <div class="tree" data-kind="canopy" style="--crown-x:48%; --crown-y:29.3%">
+    <img class="tree-l tree-ground" src="/assets/tree/canopy/ground.webp" alt="">
+    <img class="tree-l tree-boughs" src="/assets/tree/canopy/boughs.webp" alt="">
+    <img class="tree-l tree-trunk" src="/assets/tree/canopy/trunk.webp" alt="">
+    <img class="tree-l tree-crown" src="/assets/tree/canopy/crown.webp" alt="">
+    <button class="tr-p" type="button" style="--x:29; --y:63" aria-label="רחל, סבתא"><span class="tr-leaf"><span class="tr-face">ר</span></span><span class="tr-tag"><b>רחל</b><small>סבתא</small></span></button>
+    <button class="tr-p me" type="button" style="--x:62; --y:44" aria-label="דנה, אני"><span class="tr-leaf"><span class="tr-face">ד</span></span><span class="tr-tag"><b>דנה</b><small>אני</small></span></button>
+    <button class="tr-p passed" type="button" style="--x:38; --y:82" aria-label="אברהם, זיכרונו לברכה"><span class="tr-leaf"><span class="tr-face">א</span></span><span class="tr-tag"><b>אברהם</b><small>תרצ״ב–תשס״ח</small></span></button>
+  </div>
+</div>
+<script>
+  document.querySelectorAll('.tr-p').forEach((b) => b.addEventListener('click', () => { b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); setTimeout(() => b.classList.remove('tap'), 600); }));
+  let still; const tree = document.querySelector('.tree');
+  addEventListener('scroll', () => { tree.classList.add('moving'); clearTimeout(still); still = setTimeout(() => tree.classList.remove('moving'), 260); }, { passive: true });
+</script>
+</body>
+</html>

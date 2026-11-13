@@ -39,14 +39,14 @@ with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entr
 ## People and characters (vision batch 6)
 
 Twelve, from the owner's lists, drawn from the original sources (likeness notes in the `historic-figures` skill),
-`kind: 'person'`:
+`kind: 'historic'` (`paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
 
 | tier | figures |
 |---|---|
 | free | ibnsina (אבן סינא), rambam (הרמב"ם), newton (ניוטון), juha (ג'וחא), hershele (הרשל׳ה), scheherazade (שחרזאדה), alibaba (עלי באבא), peterpan (פיטר פן) |
 | paid | maryshelley (מרי שלי), leonardo (לאונרדו דה וינצ׳י), cleopatra (קליאופטרה), dracula (דרקולה) |
 
-`Figure2D.list()` gives each one's `tier` and `tags`. **Traditions:** none of them is a prophet or a sacred figure, and
+`Figure2D.list()` gives each one's `tier`, `paid`, `hideFor` and `tags`. **Traditions:** none of them is a prophet or a sacred figure, and
 every one is drawn modestly and respectfully. The one to filter is Dracula (`tags: ['horror']`, undead): leave him out for
 children under 12, and offer him only on request (or hide him for anyone who prefers no horror). Whether a tradition
 setting should hide anyone else is the owner's call (vision). Peter Pan: the UK's perpetual right (Great Ormond Street)

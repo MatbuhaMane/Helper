@@ -36,7 +36,7 @@
     const draw = (v) => group.replaceChildren(...options.map(([val, text, opts = {}]) => el('button', {
       type: 'button', role: 'radio', class: 'chip', name, 'aria-checked': String(val === v), disabled: !!opts.soon, 'data-swatch': opts.swatch ?? null, 'data-font-sample': opts.font ?? null,
       title: opts.title || null, onclick: () => { onPick(val); draw(val); },
-    }, text, opts.soon ? el('small', { class: 'st-soon' }, ' · בקרוב') : null)));
+    }, text, opts.soon ? el('small', { class: 'st-soon' }, ' · ' + (typeof opts.soon === 'string' ? opts.soon : 'בקרוב')) : null)));   // (soon: true, or the reason it is off)
     draw(value);
     return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, label), group);
   }
@@ -413,7 +413,7 @@
     try { lock = await api('/api/lock'); } catch (e) { privacyBox.replaceChildren(el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'), el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
     try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
     const bio = !!H.passkeysWork?.();
-    const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: !bio, title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
+    const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: bio ? false : 'לא במכשיר הזה', title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
     /** a lock's mode: a code needs one set first; a passkey needs one made on this device (the vault's passkeys) */
     const setMode = async (which, v) => {
       try {

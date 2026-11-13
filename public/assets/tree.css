@@ -14,17 +14,22 @@
        <div class="tr-candle" style="--x:50; --y:93" role="img" aria-label="נר זיכרון לרחל"><span class="tr-flame"></span></div>
      </div>
    Looks: leaves (the default) or data-look="frame", oval gilt frames on cords; the markup is the same.
-   Motion is transform and opacity only; nothing moves with reduced motion (the device's or the app's own setting). */
+   Motion is transform, opacity and filter only, slow and small, with no bounce: the tree breathes, it does not dance.
+   Nothing moves with reduced motion (the device's or the app's own setting). */
 
 .tree { position: relative; direction: ltr;   /* the drawing's own coordinates: --x from its left, like a map */
   inline-size: min(100%, 760px); aspect-ratio: 1000 / 1800; margin-inline: auto; container-type: inline-size;
-  --crown-x: 50%; --crown-y: 42%; --sway: .5deg; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  --crown-x: 50%; --crown-y: 42%; --sway: .3deg; --breath: cubic-bezier(.45, .05, .55, .95); --settle: cubic-bezier(.22, .61, .36, 1);
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .tree-l { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
-/* the crown breathes from the top of the trunk, the boughs a little less; when the tree is moved they sway more, then settle */
-.tree-crown { transform-origin: var(--crown-x) var(--crown-y); animation: tr-sway 6.5s ease-in-out infinite alternate; }
-.tree-boughs { transform-origin: 50% 70%; animation: tr-sway 8s ease-in-out -2s infinite alternate; --sway: .25deg; }
-.tree.moving .tree-crown { --sway: 1.3deg; animation-duration: 1.6s; }
-.tree.moving .tree-boughs { --sway: .7deg; animation-duration: 2s; }
+/* the crown breathes from the top of the trunk, the boughs a little less. When the tree is moved (.moving) they lean a
+   little with it and then settle back slowly: a transition on `rotate`, added on top of the breathing, so the breath keeps
+   its rhythm (changing the animation itself made it jump) */
+.tree-crown, .tree-boughs { rotate: 0deg; transition: rotate 1.6s var(--settle); }
+.tree-crown { transform-origin: var(--crown-x) var(--crown-y); animation: tr-sway 9s var(--breath) infinite alternate; }
+.tree-boughs { transform-origin: 50% 70%; animation: tr-sway 11s var(--breath) -3s infinite alternate; --sway: .15deg; }
+.tree.moving .tree-crown { rotate: .45deg; transition-duration: .9s; }
+.tree.moving .tree-boughs { rotate: .2deg; transition-duration: .9s; }
 /* the second tree, the wide canopy: a shorter box, and its boughs spring from the middle of the trunk */
 .tree[data-kind="canopy"] { aspect-ratio: 1000 / 1500; }
 .tree[data-kind="canopy"] .tree-boughs { transform-origin: 50% 45%; }
@@ -37,15 +42,17 @@
 .tr-p { position: absolute; inset-inline-start: calc(var(--x) * 1%); inset-block-start: calc(var(--y) * 1%); translate: -50% -14%;
   display: grid; justify-items: center; gap: 2px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
   -webkit-tap-highlight-color: transparent; transform-origin: 50% 0; z-index: 1;
-  --leaf: clamp(44px, 11cqi, 88px); animation: tr-hang 5.5s ease-in-out infinite alternate; animation-delay: calc(var(--x) * -73ms); }
-@keyframes tr-hang { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
-.tree.moving .tr-p { animation-duration: 1.4s; }
+  --leaf: clamp(44px, 11cqi, 88px); animation: tr-hang 7.5s var(--breath) infinite alternate; animation-delay: calc(var(--x) * -97ms);
+  rotate: 0deg; transition: rotate 1.8s var(--settle); }
+@keyframes tr-hang { from { transform: rotate(-.8deg); } to { transform: rotate(.8deg); } }
+.tree.moving .tr-p { rotate: .7deg; transition-duration: 1s; }
 .tr-leaf { position: relative; display: grid; place-items: center; inline-size: var(--leaf); aspect-ratio: 120 / 152;
-  background: url("/assets/tree/leaf.svg") center / contain no-repeat; transition: transform 380ms cubic-bezier(.34, 1.56, .64, 1); }
+  background: url("/assets/tree/leaf.svg") center / contain no-repeat;
+  transition: transform 320ms var(--settle), filter 320ms var(--settle); }
 .tr-face { inline-size: 62%; aspect-ratio: 1; margin-block-end: 22%; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
   background: #f6efe0; border: 2.5px solid #2a1c12; color: #3b2a1a; font-weight: 700; font-size: calc(var(--leaf) * .22); line-height: 1; }
 .tr-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
-.tr-tag { position: relative; display: grid; justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
+.tr-tag { position: relative; display: grid; transition: translate 320ms var(--settle), filter 320ms var(--settle); justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
   border: 2px solid #2a1c12; border-radius: 10px; color: #3a2614; line-height: 1.2; text-align: center; direction: rtl;
   background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(122, 82, 40, .12) 7px 8.5px), linear-gradient(#e2bf88, #d3a86e);
   box-shadow: inset 0 0 0 2px rgba(255, 240, 210, .45), 0 3px 0 -1px rgba(42, 28, 18, .35); }
@@ -53,10 +60,20 @@
   background: url("/assets/tree/rope.svg") center / contain no-repeat; }
 .tr-tag b { font-size: clamp(.78rem, 2.9cqi, 1rem); font-weight: 700; overflow-wrap: anywhere; }
 .tr-tag small { font-size: clamp(.6rem, 2.1cqi, .78rem); opacity: .85; white-space: nowrap; }
-/* a touch has weight: it dips, then springs back with a wiggle (the JS adds .tap for 600 ms) */
-.tr-p:active .tr-leaf { transform: scale(.9) rotate(-4deg); transition-duration: 90ms; }
-.tr-p.tap .tr-leaf { animation: tr-wiggle 600ms cubic-bezier(.34, 1.56, .64, 1); }
-@keyframes tr-wiggle { 0% { transform: scale(.9) rotate(-4deg); } 35% { transform: scale(1.08) rotate(5deg); } 65% { transform: scale(.98) rotate(-2deg); } 100% { transform: none; } }
+/* under the pointer a person lifts a little toward you, a soft shadow below and a warm light round the leaf; under the
+   finger it presses in, and on release (the JS adds .tap) it settles back, no wiggle */
+@media (hover: hover) {
+  .tr-p:hover { z-index: 3; }
+  .tr-p:hover .tr-leaf { transform: translateY(-4%) scale(1.05); filter: drop-shadow(0 5px 6px rgba(42, 28, 18, .28)) drop-shadow(0 0 7px rgba(255, 214, 140, .55)); }
+  .tr-p:hover .tr-tag { translate: 0 -2px; filter: brightness(1.05); }
+}
+.tr-p:active .tr-leaf { transform: translateY(2%) scale(.95); filter: drop-shadow(0 1px 2px rgba(42, 28, 18, .3)); transition-duration: 90ms; }
+.tr-p:active .tr-tag { translate: 0 1px; transition-duration: 90ms; }
+.tr-p.tap .tr-leaf { animation: tr-settle 480ms var(--settle); }
+@keyframes tr-settle { from { transform: translateY(2%) scale(.95); } to { transform: none; } }
+/* at night the light round a lifted leaf is a lantern glow, and the shadow under it goes */
+:root[data-theme="dark"] .tr-p:is(:hover, :active) .tr-leaf { filter: drop-shadow(0 0 9px rgba(255, 200, 120, .5)) brightness(1.06); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tr-p:is(:hover, :active) .tr-leaf { filter: drop-shadow(0 0 9px rgba(255, 200, 120, .5)) brightness(1.06); } }
 .tr-p:focus-visible { outline: none; }
 .tr-p:focus-visible .tr-tag { outline: 3px solid var(--primary); outline-offset: 3px; }
 /* you: a vine ring round the face */
@@ -65,43 +82,51 @@
 .tr-p.bday { z-index: 0; }
 .tr-p.bday .tr-leaf::before { content: ""; position: absolute; inset: -38%; z-index: -1; border-radius: 50%;
   background: radial-gradient(closest-side, rgba(255, 214, 120, .95), rgba(255, 190, 90, .45) 55%, transparent);
-  animation: tr-glow 2.6s ease-in-out infinite alternate; }
-@keyframes tr-glow { from { opacity: .45; transform: scale(.9); } to { opacity: 1; transform: scale(1.06); } }
+  animation: tr-glow 4.2s var(--breath) infinite alternate; }
+@keyframes tr-glow { from { opacity: .6; transform: scale(.96); } to { opacity: .95; transform: scale(1.02); } }
 .tr-p.bday .tr-tag { border-color: #8a5a12; box-shadow: inset 0 0 0 2px rgba(255, 226, 150, .9), 0 3px 0 -1px rgba(42, 28, 18, .35); }
-/* those who have passed: a quiet autumn leaf, a darker tag, and stillness (no hanging sway, no wiggle) */
+/* those who have passed: a quiet autumn leaf, a darker tag, and stillness (no hanging sway, a quieter lift) */
 .tr-p.passed { animation: none; }
+@media (hover: hover) { .tr-p.passed:hover .tr-leaf { transform: translateY(-2%) scale(1.02); } }
 .tr-p.passed .tr-leaf { background-image: url("/assets/tree/leaf-quiet.svg"); }
 .tr-p.passed .tr-face img { filter: grayscale(.6) sepia(.25); }
 .tr-p.passed .tr-tag { color: #f4ead6; background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(0, 0, 0, .1) 7px 8.5px), linear-gradient(#8a6a4c, #75573c); }
-.tr-p.passed.tap .tr-leaf { animation: tr-bow 900ms ease-out; }
+.tr-p.passed.tap .tr-leaf { animation: tr-bow 900ms var(--settle); }
 /* the frame look (data-look="frame" on .tree, for either tree; from the owner's references): a gilt oval frame on a short cord
    instead of the leaf, the face an oval in it. The same box as the leaf, so the tiers and the overlap check hold. */
 .tree[data-look="frame"] .tr-leaf { background-image: url("/assets/tree/frame.svg"); }
 .tree[data-look="frame"] .tr-p.passed .tr-leaf { background-image: url("/assets/tree/frame-quiet.svg"); }
 .tree[data-look="frame"] .tr-face { inline-size: 66.7%; aspect-ratio: 4 / 5; align-self: end; margin-block-end: 13.3%; border-width: 0; }
-@keyframes tr-bow { 0% { transform: scale(.96); } 40% { transform: scale(.98) rotate(-1.5deg); } 100% { transform: none; } }
+@keyframes tr-bow { 0% { transform: scale(.97); } 45% { transform: scale(.985) rotate(-.6deg); } 100% { transform: none; } }
 
-/* the "+" bud beside a person: it grows in, dips under the finger, a 44 px target round a smaller drawing */
+/* the "+" bud beside a person: it fades in, lifts under the pointer, dips under the finger; a 44 px target round a smaller drawing */
 .tr-bud { position: absolute; inset-inline-start: calc(var(--x) * 1%); inset-block-start: calc(var(--y) * 1%); translate: -50% -50%;
   inline-size: 44px; block-size: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; z-index: 2;
   background: url("/assets/tree/bud.svg") center / 34px no-repeat; -webkit-tap-highlight-color: transparent;
-  animation: tr-bud-in 520ms cubic-bezier(.34, 1.56, .64, 1) backwards; transition: transform 300ms cubic-bezier(.34, 1.56, .64, 1); }
-@keyframes tr-bud-in { from { opacity: 0; transform: scale(.3); } }
-.tr-bud:hover { transform: scale(1.1) rotate(6deg); }
-.tr-bud:active { transform: scale(.86); transition-duration: 90ms; }
+  animation: tr-bud-in 600ms var(--settle) 200ms backwards; transition: transform 300ms var(--settle), filter 300ms var(--settle); }
+@keyframes tr-bud-in { from { opacity: 0; transform: scale(.7); } }
+@media (hover: hover) { .tr-bud:hover { transform: scale(1.08); filter: drop-shadow(0 0 6px rgba(140, 190, 90, .55)); } }
+.tr-bud:active { transform: scale(.92); transition-duration: 90ms; }
 .tr-bud:focus-visible { outline: 3px solid var(--primary); outline-offset: 0; }
 
 /* the memorial candle by the roots, on the day: the glass still, the flame alive, a soft light around it */
 .tr-candle { position: absolute; inset-inline-start: calc(var(--x) * 1%); inset-block-start: calc(var(--y) * 1%); translate: -50% -100%; z-index: 1;
   inline-size: clamp(30px, 7cqi, 48px); aspect-ratio: 80 / 120; background: url("/assets/tree/candle.svg") center bottom / contain no-repeat; }
 .tr-candle::before { content: ""; position: absolute; inset: -70% -120% 20%; border-radius: 50%; z-index: -1;
-  background: radial-gradient(closest-side, rgba(255, 210, 120, .55), rgba(255, 200, 110, .18) 60%, transparent); animation: tr-candle-glow 3.2s ease-in-out infinite alternate; }
+  background: radial-gradient(closest-side, rgba(255, 210, 120, .55), rgba(255, 200, 110, .18) 60%, transparent); animation: tr-candle-glow 4.5s var(--breath) infinite alternate; }
 .tr-flame { position: absolute; inset-block-end: 66%; inset-inline: 0; margin-inline: auto; inline-size: 48%; aspect-ratio: 40 / 60;
-  background: url("/assets/tree/flame.svg") center / contain no-repeat; transform-origin: 50% 90%; animation: tr-flicker 2.2s ease-in-out infinite; }
-@keyframes tr-flicker { 0%, 100% { transform: scale(1, 1) rotate(0); } 25% { transform: scale(.94, 1.06) rotate(-2deg); } 50% { transform: scale(1.03, .96) rotate(1.5deg); } 75% { transform: scale(.97, 1.04) rotate(-1deg); } }
-@keyframes tr-candle-glow { from { opacity: .7; } to { opacity: 1; } }
+  background: url("/assets/tree/flame.svg") center / contain no-repeat; transform-origin: 50% 90%; animation: tr-flicker 3.4s var(--breath) infinite; }
+@keyframes tr-flicker { 0%, 100% { transform: scale(1, 1) rotate(0); } 30% { transform: scale(.97, 1.03) rotate(-1deg); } 55% { transform: scale(1.015, .98) rotate(.7deg); } 80% { transform: scale(.985, 1.02) rotate(-.4deg); } }
+@keyframes tr-candle-glow { from { opacity: .8; } to { opacity: 1; } }
 
+/* reduced motion (the device's or the app's own): nothing moves. The hover light and the press shade stay (colour, not movement). */
 @media (prefers-reduced-motion: reduce) {
-  .tree-crown, .tree-boughs, .tr-p, .tr-p.tap .tr-leaf, .tr-p.bday .tr-leaf::before, .tr-bud, .tr-flame, .tr-candle::before { animation: none; }
+  .tree-crown, .tree-boughs, .tr-p, .tr-p.tap .tr-leaf, .tr-p.passed.tap .tr-leaf, .tr-p.bday .tr-leaf::before, .tr-bud, .tr-flame, .tr-candle::before { animation: none; }
+  .tree-crown, .tree-boughs, .tr-p, .tr-leaf, .tr-tag, .tr-bud { transition: none; rotate: none !important; }
+  .tr-p .tr-leaf, .tr-bud { transform: none !important; }
+  .tr-tag { translate: none !important; }
   .tr-p.bday .tr-leaf::before { opacity: .8; }
 }
+:root[data-motion="reduce"] :is(.tree-crown, .tree-boughs, .tr-p, .tr-p .tr-leaf, .tr-bud, .tr-flame) { animation: none !important; rotate: none !important; }
+:root[data-motion="reduce"] :is(.tr-p .tr-leaf, .tr-bud) { transform: none !important; }
+:root[data-motion="reduce"] .tr-tag { translate: none !important; }

@@ -18,6 +18,12 @@ _Updated 2026-11-13 (live in main v95: the covers at night and הרגלי אכי
   - C: the shin turned over as a two-peaked roof; at small sizes it looks a little like mountains.
   - Once the owner chooses, the `--bm-*` tokens go into base.css and the SVG goes to the CEO for BRAND in common.js.
 - **Ready to merge:** the profile faces' initial is darker (≥ 4.5:1 in light, it was 2.9:1, from ai-features' audit), and the tree prototype names עץ ב׳ (canopy) first and the olive עץ א׳ (v97).
+- **Ready to merge: the owner's tree batch (design's part).** ai-features does the JS to the classes agreed with them.
+  - `tree.css`: the tree breathes slower and smaller (sine easing, no overshoot). Moving the tree leans it a little through a transition on `rotate`, so the breath no longer jumps. Reduced motion stops everything.
+  - People on the tree: on hover a small lift, a soft shadow and a warm light (a lantern glow at night). On press they sink in, then settle back without the wiggle.
+  - `family.css`: the member card in view mode (`.mc`: banner, avatar, name, family logo, facts; the pencil only on `.mc.mine`) and חיפוש ביער (`.fs`: a pill box, the "קרובי משפחה בלבד" switch, the results floating under it, a vine leaf on relatives). The markup is in the comments; the prototype is `docs/design/prototype/tree-card-search.html`.
+  - Checked at 375 and 1280, light and dark: no overflow, all text ≥ 5:1. Hover is checked on desktop and reduced motion through the app's own setting. A real touch press is not checked yet.
+- **Live: the owner's logo** (03f971c), אהל in the old script, cut to `public/assets/brand/` (SVG, light SVG, a transparent PNG).
 - **Launch prep, the page audit (v92, 28 pages incl. /food/diet/habits/, at 375 and 1280, light and dark): clean.**
   - The check found no overflow, broken images, nameless controls or contrast under 3:1.
   - It skips oklab colours, so the home page's 53 oklab texts were measured separately on a canvas: all ≥ 4.5:1.

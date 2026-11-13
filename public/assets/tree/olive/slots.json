@@ -1,0 +1,126 @@
+{
+ "box": [
+  1000,
+  1800
+ ],
+ "crownPivot": [
+  50,
+  42.2
+ ],
+ "trunkPivot": [
+  50,
+  89.4
+ ],
+ "tiers": [
+  {
+   "name": "roots",
+   "note": "the eldest, the forebears: on the mound by the roots",
+   "line": [
+    [
+     13,
+     91.9
+    ],
+    [
+     33,
+     91.1
+    ],
+    [
+     67,
+     91.1
+    ],
+    [
+     87,
+     91.9
+    ]
+   ]
+  },
+  {
+   "name": "low",
+   "note": "grandparents: under the low boughs",
+   "line": [
+    [
+     9,
+     70.6
+    ],
+    [
+     31.1,
+     71.4
+    ],
+    [
+     72.7,
+     69.2
+    ],
+    [
+     92,
+     67.5
+    ]
+   ]
+  },
+  {
+   "name": "mid",
+   "note": "parents: under the upper boughs",
+   "line": [
+    [
+     12,
+     54.4
+    ],
+    [
+     30.6,
+     56.2
+    ],
+    [
+     68.9,
+     54.5
+    ],
+    [
+     89.5,
+     53.1
+    ]
+   ]
+  },
+  {
+   "name": "crown",
+   "note": "you, your siblings and cousins: across the crown",
+   "line": [
+    [
+     14.9,
+     35
+    ],
+    [
+     38.3,
+     35
+    ],
+    [
+     61.7,
+     35
+    ],
+    [
+     85.1,
+     35
+    ]
+   ]
+  },
+  {
+   "name": "top",
+   "note": "children and grandchildren: the crown top",
+   "line": [
+    [
+     22.1,
+     21.9
+    ],
+    [
+     40.7,
+     21.9
+    ],
+    [
+     59.3,
+     21.9
+    ],
+    [
+     77.9,
+     21.9
+    ]
+   ]
+  }
+ ]
+}

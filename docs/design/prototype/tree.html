@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>עץ המשפחה – שלוש גרסאות</title>
+  <!-- The family tree, spec 1 (docs/vision/tree.md): /assets/tree.css, /assets/tree-sound.js and the layers in /assets/tree/.
+       The markup is in tree.css's header. This page shows the three trees with a sample family (no real people):
+       the eldest by the roots, a memorial candle there today, a birthday glowing in the crown, a "+" bud beside "me".
+       People are spread along each tier's line from slots.json; that placing is ai-features' to write in the real page.
+       Copy to public/ to view (it is not committed there). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/tree.css">
+  <style>
+    body { margin: 0; }
+    .bar { position: sticky; inset-block-start: 0; z-index: 5; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 10px 16px;
+      background: color-mix(in srgb, var(--bg) 88%, transparent); border-block-end: 1px solid var(--line); }
+    .bar .btn[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    .stage { padding: 12px max(8px, env(safe-area-inset-right)) 40px max(8px, env(safe-area-inset-left)); }
+    .note { text-align: center; color: var(--muted); font-size: .85rem; margin: 6px 16px 0; }
+  </style>
+</head>
+<body>
+<div class="bar" role="group" aria-label="סוג העץ">
+  <button class="btn" type="button" data-kind="olive">זית</button>
+  <button class="btn" type="button" data-kind="oak">אלון התבור</button>
+  <button class="btn" type="button" data-kind="acacia">שיטה</button>
+</div>
+<p class="note" id="note"></p>
+<div class="stage"><div class="tree" id="tree"></div></div>
+<script src="/assets/tree-sound.js"></script>
+<script>
+  const NOTES = { olive: 'זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.', oak: 'אלון התבור: גזע ישר ורחב, צמרת עגולה ועמוקה ובלוטים.', acacia: 'שיטה: העץ של המדבר ליד האוהל, גזע דק וצמרת שטוחה כמו מטרייה, עם פרחים צהובים.' };
+  // a sample family by tier, oldest first (no real people)
+  const FAMILY = {
+    roots: [{ n: 'אברהם', d: 'תר״ן–תשכ״ב', passed: 1 }, { n: 'שרה', d: 'תרנ״ה–תשל״א', passed: 1, candle: 1 }],
+    low: [{ n: 'יעקב', d: 'תרפ״ה–תשס״ב', passed: 1 }, { n: 'רחל' }, { n: 'משה' }, { n: 'מרים' }],
+    mid: [{ n: 'דוד' }, { n: 'רות' }, { n: 'נעמי' }, { n: 'יוסף' }],
+    crown: [{ n: 'איתי' }, { n: 'דנה', me: 1 }, { n: 'נועה', bday: 1 }, { n: 'עומר' }],
+    top: [{ n: 'אורי' }, { n: 'מאיה' }],
+  };
+  /** n points spread evenly along a polyline (by length), in percent. */
+  function spread(line, n) {
+    const seg = line.slice(1).map((p, i) => Math.hypot(p[0] - line[i][0], (p[1] - line[i][1]) * 1.8)), total = seg.reduce((a, b) => a + b, 0);
+    return Array.from({ length: n }, (_, k) => { let d = total * (n === 1 ? 0.5 : (k + 0.5) / n), i = 0; while (i < seg.length - 1 && d > seg[i]) { d -= seg[i]; i++; }
+      const t = seg[i] ? d / seg[i] : 0; return [line[i][0] + (line[i + 1][0] - line[i][0]) * t, line[i][1] + (line[i + 1][1] - line[i][1]) * t]; });
+  }
+  const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); e.append(...kids.filter(Boolean)); return e; };
+  const tree = document.getElementById('tree');
+
+  async function draw(kind) {
+    const s = await (await fetch(`/assets/tree/${kind}/slots.json`)).json();
+    tree.dataset.kind = kind; tree.style.cssText = `--crown-x:${s.crownPivot[0]}%; --crown-y:${s.crownPivot[1]}%`;
+    tree.replaceChildren(...['ground', 'boughs', 'trunk', 'crown'].map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${kind}/${l}.svg`, alt: '', decoding: 'async' })));
+    let me = null;
+    for (const tier of s.tiers) {
+      const people = FAMILY[tier.name] || [], pts = spread(tier.line, people.length);
+      people.forEach((p, i) => {
+        const [x, y] = pts[i];
+        const b = el('button', { class: 'tr-p' + (p.me ? ' me' : '') + (p.bday ? ' bday' : '') + (p.passed ? ' passed' : ''), type: 'button', style: `--x:${x}; --y:${y}`,
+          'aria-label': p.n + (p.passed ? `, ${p.d}` : '') + (p.bday ? ', יום הולדת היום' : ''), onclick: () => tap(b, p) },
+          el('span', { class: 'tr-leaf' }, el('span', { class: 'tr-face' }, p.n[0])), el('span', { class: 'tr-tag' }, el('b', {}, p.n), p.d ? el('small', {}, p.d) : null));
+        tree.append(b);
+        if (p.me) me = [x, y, b];
+        if (p.candle) tree.append(el('div', { class: 'tr-candle', style: `--x:${50 + (x < 50 ? -9 : 9)}; --y:${s.trunkPivot[1] + 2.4}`, role: 'img', 'aria-label': `נר זיכרון ל${p.n}, היום יום האזכרה` }, el('span', { class: 'tr-flame' })));
+      });
+    }
+    // the "+" bud beside me: "add a parent of דנה?"
+    if (me) tree.append(el('button', { class: 'tr-bud', type: 'button', style: `--x:${me[0] + 6.5}; --y:${me[1] + 0.6}`, 'aria-label': `הוספת אדם קרוב ל${me[2].textContent.slice(1)}`, onclick: () => TreeSound.bud() }));
+    me?.[2].scrollIntoView({ block: 'center' });
+  }
+  function tap(b, p) { b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); setTimeout(() => b.classList.remove('tap'), 900); p.passed ? TreeSound.quiet() : TreeSound.leaf(); }
+  // the tree sways a little more while it is moved, then settles with a faint rustle
+  let still; addEventListener('scroll', () => { tree.classList.add('moving'); clearTimeout(still); still = setTimeout(() => { tree.classList.remove('moving'); TreeSound.settle(); }, 260); }, { passive: true });
+  document.querySelectorAll('.bar .btn').forEach((b) => b.addEventListener('click', () => pick(b.dataset.kind)));
+  function pick(kind) { document.querySelectorAll('.bar .btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === kind))); document.getElementById('note').textContent = NOTES[kind]; draw(kind); }
+  pick(new URLSearchParams(location.search).get('kind') || 'olive');
+</script>
+</body>
+</html>

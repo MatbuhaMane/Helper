@@ -3,6 +3,7 @@
 import { aiStatus } from '../../server/ai';
 import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
 import * as daemon from '../../server/daemon';
+import * as access from '../../server/access';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
@@ -66,6 +67,8 @@ function route(method: string, path: string, h: Handler) {
 route('GET', '/api/auth/login', googleLogin);
 route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
+route('POST', '/api/access/request', access.request);              // asking the owner for access, no session (server/access.ts)
+route('GET', '/api/admin/access-requests', access.list);
 route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
 route('POST', '/api/auth/passkey', lock.login);
 /* the app lock and the tree lock (the master's, server/lock.ts) */

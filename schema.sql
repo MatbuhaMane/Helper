@@ -1159,3 +1159,19 @@ CREATE TABLE IF NOT EXISTS story_items (
   deleted_at  INTEGER
 );
 CREATE INDEX IF NOT EXISTS story_items_house ON story_items(household, created_at);
+
+-- a request for access (server/access.ts, master): someone who signed in with Google, not a member and not invited.
+-- The sign-in leaves a one-hour ticket (its hash only); the form sends it back with a name and a note; the owner is told.
+CREATE TABLE IF NOT EXISTS access_requests (
+  email          TEXT PRIMARY KEY,
+  google_name    TEXT,
+  ticket_hash    TEXT,
+  ticket_exp     INTEGER,
+  name           TEXT,
+  note           TEXT,
+  status         TEXT NOT NULL DEFAULT 'denied',   -- denied (signed in, did not ask), asked, invited, declined
+  asked_at       INTEGER,
+  created_at     INTEGER NOT NULL,
+  last_denied_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS access_requests_ticket ON access_requests (ticket_hash);

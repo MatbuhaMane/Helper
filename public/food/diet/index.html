@@ -15,18 +15,13 @@
   <script src="/assets/common.js"></script>
   <script src="/assets/launcher.js"></script>
   <script>
-  // תנועה ותזונה (vision batch 4, item 1; it was "דיאטה", the address stays): every tool for the ways of eating, הקפדה first;
-  // ketosis's dashboard and the other ways of eating live in the groceries app (diets.js).
+  // תנועה ותזונה (vision batch 4, item 1; it was "דיאטה", the address stays): הקפדה, and הרגלי אכילה, one tool for every
+  // way of eating (the owner, 2026-11-14): ketosis, Atkins, paleo, low-carb, low sugar and fasting, each with its switch.
+  // Their dashboards stay in the groceries app (diets.js); the switch is in הרגלי אכילה.
   H.folder({ title: 'תנועה ותזונה', sub: 'הקפדה, הדרך שבה אוכלים, ומה מתאים לה', back: { href: '/food/', label: 'אוכל' }, look: 'flat', apps: [
     { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', tint: '#ffd9c2', c1: '#ffb07a', c2: '#e0533d' },
-    { href: '/groceries/#keto', ic: 'keto', name: 'קטוזיס', tint: '#c8f0ea', c1: '#6fe0d0', c2: '#1f8f8a' },
-    // the other ways of eating (the owner's tour, 2026-11-13): each opens its tab in groceries, where its switch is.
-    // The icons are placeholders from the set until design draws their own (egg, leaf, bread, drop, clock).
-    { href: '/groceries/#atkins', ic: 'food', name: 'אטקינס', tint: '#ffe9b8', c1: '#ffc94d', c2: '#c98a00' },
-    { href: '/groceries/#paleo', ic: 'diet', name: 'פליאו', tint: '#d9efc6', c1: '#9fd673', c2: '#4f8a2b' },
-    { href: '/groceries/#lowcarb', ic: 'calc', name: 'דל פחמימות', tint: '#f3dcc4', c1: '#e7b07a', c2: '#a8652a' },
-    { href: '/groceries/#glycemic', ic: 'lens', name: 'דל סוכר', tint: '#d6e6fb', c1: '#8fb8ef', c2: '#2f6cb8' },
-    { href: '/groceries/#fasting', ic: 'calendar', name: 'צום לסירוגין', tint: '#e6dcf5', c1: '#b9a0e6', c2: '#6a48a8' },
+    // the icon is a placeholder from the set until design draws its own
+    { href: '/food/diet/habits/', ic: 'keto', name: 'הרגלי אכילה', tint: '#c8f0ea', c1: '#6fe0d0', c2: '#1f8f8a' },
   ] });
   </script>
 </body>

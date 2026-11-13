@@ -1,9 +1,16 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (back on the phone).
+Last update: 2026-11-14 (הרגלי אכילה).
 
 ## Done
+
+- **הרגלי אכילה** (the CEO's queue, item 1): `/food/diet/habits/`, one card per way of eating (ketosis and the five in
+  `diets.js`), each with ketosis's big switch, what it shows when on, the rules in short, and a link to its tab while on.
+  The six tiles in תנועה ותזונה became one. An old `/groceries/#<diet>` of a diet that is off leads to its switch, with
+  its card marked. The daemon can open it (`open_app: habits`). Checked at 375 and 1280, light and dark: no overflow, no
+  nameless controls, no low contrast; the switches save (keto to `/api/keto/settings`, the others to prefs).
+  Not checked: a real phone; two devices at once (another device's change redraws the page through `helper:prefs`).
 
 - **The CEO's quick queue (2026-11-14)**:
   - toolbox long press (78e73e2);

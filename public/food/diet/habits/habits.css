@@ -1,0 +1,15 @@
+/* הרגלי אכילה: the first look, written by ai-features; design owns it from here. The switch is groceries' .switch
+   (style.css), the same one as ketosis's. */
+.habits { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; align-items: start; }
+.habit { margin: 0; padding: 14px 16px; border-inline-start: 4px solid transparent; scroll-margin-block: calc(var(--appbar-h, 56px) + 16px); }
+.habit.on { border-inline-start-color: var(--c2); }
+.habit.marked { box-shadow: 0 0 0 3px var(--c2); }
+.habit-head { display: flex; align-items: center; gap: 10px; margin-block-end: 10px; }
+.habit-head h2 { margin: 0; font-size: 1.15rem; }
+.habit-ic { inline-size: 44px; block-size: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--tint); color: #2b2a26; flex: none; }
+.habit-ic svg { inline-size: 26px; block-size: 26px; }
+.habit-switch { margin-block: 4px 2px; }
+.habit p { margin: 6px 0; }
+.habit details { margin-block: 6px; }
+.habit details summary { cursor: pointer; color: var(--muted); }
+.habit-open { display: inline-block; margin-block-start: 6px; font-weight: 600; }

@@ -1104,3 +1104,33 @@ CREATE TABLE IF NOT EXISTS report_messages (
   at       INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS report_messages_report ON report_messages(report, at);
+
+-- Messages between members, הודעות (server/dm.ts): one conversation per pair (a < b, emails in lower case);
+-- only the two sides ever read it. The back door gets counts only.
+CREATE TABLE IF NOT EXISTS dm_threads (
+  id         TEXT PRIMARY KEY,
+  a          TEXT NOT NULL,
+  b          TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_at    INTEGER,                          -- the last message (NULL: opened, nothing sent yet)
+  last_by    TEXT,                             -- who wrote it
+  a_seen     INTEGER,                          -- when a last opened it
+  b_seen     INTEGER,
+  UNIQUE (a, b)
+);
+CREATE INDEX IF NOT EXISTS dm_threads_a ON dm_threads(a, last_at);
+CREATE INDEX IF NOT EXISTS dm_threads_b ON dm_threads(b, last_at);
+CREATE TABLE IF NOT EXISTS dm_messages (
+  id     TEXT PRIMARY KEY,
+  thread TEXT NOT NULL,
+  sender TEXT NOT NULL,
+  text   TEXT NOT NULL,
+  at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS dm_messages_thread ON dm_messages(thread, at);
+CREATE TABLE IF NOT EXISTS dm_blocks (
+  blocker TEXT NOT NULL,
+  blocked TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  PRIMARY KEY (blocker, blocked)
+);

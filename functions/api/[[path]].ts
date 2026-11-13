@@ -51,6 +51,7 @@ import * as weather from '../../server/weather';
 import * as discovery from '../../server/discover';
 import * as goalSocial from '../../server/goal-social';
 import * as reports from '../../server/reports';
+import * as dm from '../../server/dm';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -528,6 +529,16 @@ route('GET', '/api/admin/reports', reports.adminList);
 route('GET', '/api/admin/reports/:id', reports.adminThread);
 route('PUT', '/api/admin/reports/:id', reports.adminState);
 route('POST', '/api/admin/reports/:id/reply', reports.adminReply);
+/* messages between members, הודעות (server/dm.ts): one on one, only the two sides read a conversation; the back door counts only */
+route('GET', '/api/dm', dm.list);
+route('GET', '/api/dm/unread', dm.unread);
+route('GET', '/api/dm/people', dm.people);                                      // the household, and the joined trees' users
+route('POST', '/api/dm/start', dm.start);                                       // { to }: a contact id from /api/dm/people
+route('GET', '/api/dm/:id', dm.thread);                                         // ?after=
+route('POST', '/api/dm/:id', dm.send);                                          // { text }
+route('POST', '/api/dm/:id/block', dm.block);
+route('DELETE', '/api/dm/:id/block', dm.block);
+route('GET', '/api/admin/dm-stats', dm.adminStats);                             // counts only
 route('GET', '/api/admin/reports/:id/shot', reports.adminShot);
 /* the owner edits members' names, households and roles, and searches every household (server/member-admin.ts) */
 route('GET', '/api/admin/people', memberAdmin.people);

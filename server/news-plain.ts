@@ -67,3 +67,13 @@ export function feedMedia(b: string): { small: string | null; full: string | nul
   const small = sized.find((m) => m.w >= 300) || sized[sized.length - 1];
   return { small: small.url, full: sized[sized.length - 1].url };
 }
+
+/** a picture address that says its own size (Cloudinary's /image/upload/…h_2400,w_3600/, as the Jerusalem Post's)
+    asks for one 480 wide, the same shape: ~18KB in place of ~470KB on a phone's list. Anything else stays as it is. */
+export function smallImage(url: string, width = 480): string {
+  if (!/\/image\/upload\//.test(url)) return url;
+  const hw = /([,/])h_(\d+),w_(\d+)([,/])/.exec(url), wh = /([,/])w_(\d+),h_(\d+)([,/])/.exec(url);
+  if (hw && +hw[3] > width) return url.replace(hw[0], `${hw[1]}h_${Math.round((+hw[2] * width) / +hw[3])},w_${width}${hw[4]}`);
+  if (wh && +wh[2] > width) return url.replace(wh[0], `${wh[1]}w_${width},h_${Math.round((+wh[3] * width) / +wh[2])}${wh[4]}`);
+  return url;
+}

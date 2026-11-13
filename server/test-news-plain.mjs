@@ -48,5 +48,12 @@ eq('a video is left out', N.feedMedia('<media:content url="https://v/x.mp4" type
 eq('none', N.feedMedia('<title>x</title>'), { small: null, full: null });
 eq('media:group is not a picture', N.feedMedia('<media:group><media:content url="https://i/g.jpg" width="600"/></media:group>'), { small: 'https://i/g.jpg', full: 'https://i/g.jpg' });
 
+// smallImage: a Cloudinary address that says its size asks for 480 wide
+const jp = 'https://images.jpost.com/image/upload/f_auto,fl_lossy/q_auto/c_fill,g_faces:center,h_2400,w_3600/746245';
+eq('jpost h,w', N.smallImage(jp), 'https://images.jpost.com/image/upload/f_auto,fl_lossy/q_auto/c_fill,g_faces:center,h_320,w_480/746245');
+eq('w,h order', N.smallImage('https://x.com/image/upload/c_fill,w_1200,h_800/a.jpg'), 'https://x.com/image/upload/c_fill,w_480,h_320/a.jpg');
+eq('already small', N.smallImage('https://x.com/image/upload/c_fill,h_200,w_300/a.jpg'), 'https://x.com/image/upload/c_fill,h_200,w_300/a.jpg');
+eq('not cloudinary', N.smallImage('https://i.guim.co.uk/img/media/a.jpg?width=1200'), 'https://i.guim.co.uk/img/media/a.jpg?width=1200');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

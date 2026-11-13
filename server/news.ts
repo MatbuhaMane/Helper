@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, sha1Hex, uid } from './core';
-import { feedMedia, lead } from './news-plain';
+import { feedMedia, lead, smallImage } from './news-plain';
 import { fetchText, readable, sanitize } from './web';
 
 /**
@@ -499,11 +499,17 @@ export function parseFeed(xml: string): Parsed {
       link: link.trim(),
       date,
       summary: text(desc).slice(0, 400),
-      image: image ? unescapeXml(image) : null,
-      ...(media.full && media.full !== media.small ? { image_full: unescapeXml(media.full) } : {}),
+      ...pictures(image ? unescapeXml(image) : null, media.full ? unescapeXml(media.full) : null),
     };
   }).filter((i) => i.link);
   return { title: channelTitle, items };
+}
+
+/** the list's picture (made smaller where the address says its size) and the hero's, when it is another one */
+function pictures(image: string | null, full: string | null): { image: string | null; image_full?: string } {
+  const small = image ? smallImage(image) : null;
+  const big = full || image;
+  return big && big !== small ? { image: small, image_full: big } : { image: small };
 }
 
 function tag(s: string, name: string): string {

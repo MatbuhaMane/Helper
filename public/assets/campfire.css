@@ -47,3 +47,16 @@
 :root[data-motion="reduce"] .wheel-item.chosen .pillow::before { animation: none; opacity: .7; }
 .wheel-item.chosen .label { color: var(--olive-ink); }
 @media (prefers-reduced-motion: reduce) { .cf-roll .cf-glow { animation: none; } }
+
+/* No control on another (vision batch 17, the audit's overlap check). The ring's cushions sit close round the fire and their
+   pictures (with their clear margins) overlap their neighbours, so a tap on one cushion's edge opened the next one. A cushion is
+   pressed only on its core now, an oval in the middle of the picture, and the front cushion's name too; the rest of its box lets
+   the touch through to the ring (a drag still spins it). Measured over a whole turn at 375 px: no two cores touch. */
+.wheel-item, .wheel-item .pillow, .wheel-item .pillow img, .wheel-item .label { pointer-events: none; }
+.wheel-item .pillow::after { content: ""; position: absolute; inset: 28% 20%; border-radius: 50%; pointer-events: auto; }
+.wheel-item.front .label { pointer-events: auto; }
+/* the music corner: while the player's record is parked on the stump (body.mu-docked) it is the one to press, not the empty slot
+   under it; and the songbook cushion is pressed only clear of the record (its inline-end part lies under the record) */
+body.mu-one-record.mu-docked .corner .rec { pointer-events: none; }
+.corner .song { pointer-events: none; }
+.corner .song::after { content: ""; position: absolute; inset-block: 12% 14%; inset-inline: 8% 30%; border-radius: 40%; pointer-events: auto; }

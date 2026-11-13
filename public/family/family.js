@@ -269,15 +269,21 @@
   }
   /** how are we related – inside our tree here in the page; with someone from a linked tree, on the server */
   /* ---------- חיפוש ביער: the people of the forest the viewer may see (server/family-find.ts), never more ---------- */
+  // the markup is design's (.fs / .fs-*, see family.css)
+  const SVG = (d) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true');
+    s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d); s.append(p); return s; };
+  const LENS = 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4', PENCIL = 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4';
   let searches = 0;
   function forestSearch({ label = 'חיפוש ביער', kin = true, onPick }) {
-    const id = 'fv-found-' + (++searches);
-    const input = el('input', { type: 'search', class: 'fv-find', placeholder: label, 'aria-label': label, autocomplete: 'off',
+    const id = 'fs-results-' + (++searches);
+    const input = el('input', { type: 'search', class: 'fs-input', placeholder: label, 'aria-label': label, autocomplete: 'off',
       role: 'combobox', 'aria-expanded': 'false', 'aria-controls': id, 'aria-autocomplete': 'list' });
-    const only = el('input', { type: 'checkbox', class: 'fv-kin-box' });
-    const list = el('ul', { class: 'fv-found', role: 'listbox', id, 'aria-label': 'תוצאות', hidden: true });
-    const close = () => { list.hidden = true; input.setAttribute('aria-expanded', 'false'); };
-    const open = (...rows) => { list.replaceChildren(...rows); list.hidden = false; input.setAttribute('aria-expanded', 'true'); };
+    const only = el('input', { type: 'checkbox' });
+    const list = el('ul', { class: 'fs-results', role: 'listbox', id, 'aria-label': 'תוצאות', hidden: true });
+    const empty = el('p', { class: 'fs-empty', 'aria-live': 'polite', hidden: true });
+    const close = () => { list.hidden = true; empty.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+    const note = (text) => { list.hidden = true; empty.textContent = text; empty.hidden = false; input.setAttribute('aria-expanded', 'false'); };
     let wait, seq = 0;
     const run = async () => {
       const q = input.value.trim();
@@ -285,31 +291,36 @@
       const my = ++seq;
       let r;
       try { r = await call(`/api/family/find?q=${encodeURIComponent(q)}${only.checked ? '&kin=1' : ''}`); } catch (e) {
-        if (my === seq) open(el('li', { class: 'fv-none muted' }, e.code === 'too_many_tries' ? 'יותר מדי חיפושים ברצף. נסו שוב בעוד דקה.' : 'החיפוש לא הצליח. נסו שוב.'));
+        if (my === seq) note(e.code === 'too_many_tries' ? 'יותר מדי חיפושים ברצף. נסו שוב בעוד דקה.' : 'החיפוש לא הצליח. נסו שוב.');
         return;
       }
       if (my !== seq) return;
-      open(...(r.people.length ? r.people.map((p) => el('li', { role: 'option' },
-        el('button', { type: 'button', class: 'fv-hit', onclick: () => { close(); input.value = ''; onPick(p); } },
-          el('b', {}, p.name),
-          el('small', { class: 'muted' }, [p.self ? 'אני' : p.relation, p.mine ? '' : p.title].filter(Boolean).join(' · ')),
-          p.user ? el('span', { class: 'fv-badge' }, 'באוהל') : null)))
-        : [el('li', { class: 'fv-none muted' }, 'לא נמצא. מופיעים כאן רק מי שבחרו להיראות לך.')]));
+      if (!r.people.length) return note('לא נמצא. מופיעים כאן רק מי שבחרו להיראות לך.');
+      list.replaceChildren(...r.people.map((p) => el('li', {},
+        el('button', { type: 'button', role: 'option', class: 'fs-hit' + (p.relation ? ' kin' : ''), 'aria-selected': 'false',
+          onclick: () => { close(); input.value = ''; onPick(p); } },
+          el('span', { class: 'fs-face', 'aria-hidden': 'true' }, initials(p.name)),
+          el('span', { class: 'fs-text' }, el('b', {}, p.name),
+            el('small', {}, [p.self ? 'אני' : p.relation, p.mine ? '' : p.title, p.user ? 'באוהל' : ''].filter(Boolean).join(' · ')))))));
+      empty.hidden = true; list.hidden = false; input.setAttribute('aria-expanded', 'true');
     };
     input.addEventListener('input', () => { clearTimeout(wait); wait = setTimeout(run, 250); });
     only.addEventListener('change', run);
+    const hits = () => [...list.querySelectorAll('.fs-hit')];
+    const mark = (b) => { hits().forEach((h) => h.setAttribute('aria-selected', String(h === b))); b?.focus(); };
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') close();
-      else if (e.key === 'ArrowDown' && !list.hidden) { e.preventDefault(); list.querySelector('.fv-hit')?.focus(); }
+      else if (e.key === 'ArrowDown' && !list.hidden) { e.preventDefault(); mark(hits()[0]); }
     });
     list.addEventListener('keydown', (e) => {
-      const hits = [...list.querySelectorAll('.fv-hit')], i = hits.indexOf(document.activeElement);
-      if (e.key === 'ArrowDown' && i < hits.length - 1) { e.preventDefault(); hits[i + 1].focus(); }
-      else if (e.key === 'ArrowUp') { e.preventDefault(); (i > 0 ? hits[i - 1] : input).focus(); }
+      const h = hits(), i = h.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' && i < h.length - 1) { e.preventDefault(); mark(h[i + 1]); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (i > 0) mark(h[i - 1]); else { mark(null); input.focus(); } }
       else if (e.key === 'Escape') { close(); input.focus(); }
     });
-    const wrap = el('div', { class: 'fv-search' }, input,
-      kin ? el('label', { class: 'fv-kin' }, only, 'קרובי משפחה בלבד') : null, list);
+    const wrap = el('div', { class: 'fs', role: 'search' },
+      el('label', { class: 'fs-box' }, SVG(LENS), input),
+      kin ? el('label', { class: 'fs-kin' }, only, el('span', {}, 'קרובי משפחה בלבד')) : null, list, empty);
     wrap.addEventListener('focusout', (e) => { if (!wrap.contains(e.relatedTarget)) setTimeout(() => { if (!wrap.contains(document.activeElement)) close(); }, 120); });
     return wrap;
   }
@@ -341,37 +352,51 @@
     run();
   }
 
-  /* ---------- the member card: one person as this viewer may see them (server/family-find.ts card) ---------- */
+  /* ---------- the member card: one person as this viewer may see them (server/family-find.ts card); design's .mc markup ---------- */
   let ourProfile = null;
+  /** the card's facts: born, died, from, age – only from what the server let through */
+  function facts(d, sex) {
+    const day = (iso) => { const t = iso && new Date(iso + 'T12:00'); return t && !isNaN(t) ? t : null; };
+    const gs = (m, f, both) => (sex === 'm' ? m : sex === 'f' ? f : both);
+    const greg = (t) => t.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const both = (t, late) => `${greg(t)} · ${heDate(late ? new Date(t.getTime() + 864e5) : t)}`;
+    const years = (from, to) => { let y = to.getFullYear() - from.getFullYear(); if (to < new Date(to.getFullYear(), from.getMonth(), from.getDate())) y--; return y; };
+    const b = day(d.born), x = day(d.died), out = [];
+    if (b) out.push([gs('נולד', 'נולדה', 'נולד/ה'), both(b, d.bornAfterSunset)]);
+    if (x) out.push([gs('נפטר', 'נפטרה', 'נפטר/ה'), both(x, d.diedAfterSunset)]);
+    if (d.place) out.push(['מקום', d.place]);
+    if (b) out.push(x ? [gs('חי', 'חיה', 'חי/ה'), years(b, x) + ' שנים'] : ['גיל', String(years(b, new Date()))]);
+    return out;
+  }
   async function memberCard(id) {
     let c;
     try { c = await call(`/api/family/card?id=${encodeURIComponent(id)}`); } catch (e) { return say(e); }
     if (c.mine && !ourProfile) ourProfile = await api('/api/family/profile', { noRedirect: true }).catch(() => ({}));
     const P = c.mine ? ourProfile : {};
     const cover = P.cover ? (P.cover === 'own' && P.coverUrl ? P.coverUrl : `/assets/covers/${P.cover}.svg`) : null;
-    const face = el('span', { class: 'fv-member-face', 'aria-hidden': 'true' }, initials(c.name));
+    const face = el('span', { class: 'mc-avatar', 'aria-hidden': 'true' }, initials(c.name));
     if (c.photo) photoInto(c.photo, face);
-    const house = c.title || '';
-    const seal = el('span', { class: 'fv-member-seal', 'aria-hidden': 'true' }, house.replace(/^משפחת\s+/, '')[0] || 'א');
-    const edit = c.self ? el('button', { type: 'button', class: 'fv-member-edit', 'aria-label': 'עריכת הפרופיל שלי', title: 'עריכת הפרופיל שלי', onclick: async () => {
+    const rel = [c.self ? 'אני' : c.relation, c.title].filter(Boolean).join(' · ');
+    const edit = c.self ? el('button', { type: 'button', class: 'mc-edit', 'aria-label': 'עריכת הפרטים שלי', title: 'עריכת הפרטים שלי', onclick: async () => {
       try { const p = await call(`/api/vault/people/${encodeURIComponent(c.id)}`); H.closeModal(); personForm(p); } catch (e) { say(e); }
-    } }, el('span', { 'aria-hidden': 'true' }, '✎')) : null;
-    const d = c.details || {};
-    H.modal(el('article', { class: 'fv-member' + (c.self ? ' is-self' : ''), 'aria-label': 'הכרטיס של ' + c.name },
-      el('div', { class: 'fv-member-banner' }, cover ? el('img', { src: cover, alt: '' }) : null),
-      el('header', { class: 'fv-member-head' }, face,
-        el('div', { class: 'fv-member-who' },
-          el('h2', {}, c.name),
-          c.self ? el('p', { class: 'fv-relname' }, 'אני') : c.relation ? el('p', { class: 'fv-relname' }, c.relation) : null,
-          el('p', { class: 'fv-member-house muted small' }, seal, house)),
+    } }, SVG(PENCIL)) : null;
+    const list = facts(c.details || {}, c.sex);
+    const about = [c.user ? `${c.sex === 'f' ? 'משתמשת' : c.sex === 'm' ? 'משתמש' : 'משתמש/ת'} באוהל.` : '',
+      c.hidden.length && !c.self ? (c.anonymous ? 'הפרטים מוסתרים לבקשתם.' : 'חלק מהפרטים מוסתרים, לפי מה שבחרו להראות לך.') : ''].filter(Boolean).join(' ');
+    const acts = c.mine ? [
+      // the person's story (the story page filters to them and checks access itself)
+      el('a', { class: 'btn small ghost', href: `/family/story/?person=${encodeURIComponent(c.id)}` }, `הסיפור של ${c.name.split(/\s+/)[0]}`),
+      // the vault's documents and photos stay one step away (they ask for a fresh unlock, as before)
+      el('button', { type: 'button', class: 'btn small ghost', onclick: () => { H.closeModal(); panel(c.id); } }, 'מסמכים ותמונות'),
+    ] : [];
+    H.modal(el('article', { class: 'mc' + (c.self ? ' mine' : ''), 'aria-label': 'הכרטיס של ' + c.name },
+      el('div', { class: 'mc-banner' }, cover ? el('img', { src: cover, alt: '' }) : null),
+      el('div', { class: 'mc-head' }, face,
+        el('div', { class: 'mc-who' }, el('h2', { class: 'mc-name' }, c.name), rel ? el('p', { class: 'mc-rel' }, rel) : null),
         edit),
-      el('div', { class: 'fv-member-body' },
-        lifeLine({ ...d, sex: c.sex }),
-        c.user ? el('p', { class: 'fv-badge' }, 'באוהל') : null,
-        c.hidden.length && !c.self ? el('p', { class: 'muted small' }, c.anonymous ? 'הפרטים מוסתרים לבקשתם.' : 'חלק מהפרטים מוסתרים, לפי מה שבחרו להראות לך.') : null),
-      // our own household: the vault's documents and photos stay one step away (they ask for a fresh unlock, as before)
-      c.mine ? el('div', { class: 'fv-acts' },
-        el('button', { type: 'button', class: 'btn small ghost', onclick: () => { H.closeModal(); panel(c.id); } }, 'מסמכים ותמונות')) : null));
+      list.length ? el('dl', { class: 'mc-facts' }, list.map(([k, v]) => el('div', { class: 'mc-fact' }, el('dt', {}, k), el('dd', {}, v)))) : null,
+      about ? el('p', { class: 'mc-about' }, about) : null,
+      acts.length ? el('div', { class: 'mc-actions' }, acts) : null));
   }
 
   /* ---------- drawing: the family around one person, or the whole tree ---------- */
@@ -425,7 +450,12 @@
   function watchSize(board) {
     if (board.dataset.watch) return;
     board.dataset.watch = '1';
-    new ResizeObserver(() => redrawLines(board)).observe(board);
+    let queued = false;
+    new ResizeObserver(() => {
+      if (queued || board.classList.contains('fv-gliding')) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; redrawLines(board); });
+    }).observe(board);
   }
   /** the nuclear family around the person in the centre: grandparents, parents, the person with siblings and partners, children */
   function drawFamily(board) {
@@ -586,8 +616,8 @@
         'aria-label': [p.name, rel, bday ? 'יום הולדת היום' : '', passed ? 'זיכרונו לברכה' : ''].filter(Boolean).join(', '),
         onclick: () => {
           b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
-          setTimeout(() => b.classList.remove('tap'), 900);
-          setTimeout(() => memberCard(p.id), 220);
+          setTimeout(() => b.classList.remove('tap'), 600);
+          memberCard(p.id);
         } },
         el('span', { class: 'tr-leaf' }, face),
         el('span', { class: 'tr-tag' }, el('b', {}, (p.name || '?').trim().split(/\s+/)[0]), years || rel ? el('small', {}, years || rel) : null));
@@ -603,8 +633,6 @@
     // which tree and which look: the person picks (prefs: they follow them to every device)
     const choice = (label, opts, on, key) => el('div', { class: 'fv-views tr-sets', role: 'radiogroup', 'aria-label': label },
       opts.map(([v, name]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(v === on),
-        // (until design styles [aria-checked] in .fv-views like the tabs' [aria-selected])
-        style: v === on ? 'background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12);font-weight:500' : null,
         onclick: () => { if (v !== on) { H.savePrefs('family', { [key]: v }); draw(); } } }, name)));
     const pickers = el('div', { class: 'fv-tools tr-pick' },
       sets.length > 1 ? choice('איזה עץ', sets.map((x) => [x.id, x.name || x.id]), set, 'treeSet') : null,
@@ -642,17 +670,23 @@
     H.modal(el('div', { class: 'fv-form' }, el('h2', {}, `מי נוסף ליד ${first}?`),
       el('div', { style: 'display:grid;gap:8px' }, opts.map(([as, label]) => el('button', { type: 'button', class: 'btn', onclick: () => { H.closeModal(); personForm(null, { as, of: p.id }); } }, label)))));
   }
-  /** the tree sways more while the page scrolls, and settles when it stops (one listener for the page) */
+  /** the tree leans while the page scrolls and settles when it stops. The CSS does the motion (design); the scroll only
+      toggles a class, once: no layout reads, no style writes per event. Off screen, .off pauses every tree animation. */
+  let treeSeen = null;
   function treeMotion() {
+    const t = root.querySelector('.tree');
+    if (t && typeof IntersectionObserver === 'function') {
+      treeSeen?.disconnect();
+      treeSeen = new IntersectionObserver(([e]) => t.classList.toggle('off', !e.isIntersecting));
+      treeSeen.observe(t);
+    }
     if (TREE.motion) return;
     TREE.motion = true;
-    let still;
+    let still, moving = null;
     addEventListener('scroll', () => {
-      const t = root.querySelector('.tree');
-      if (!t) return;
-      t.classList.add('moving');
+      if (!moving) { moving = root.querySelector('.tree'); moving?.classList.add('moving'); }
       clearTimeout(still);
-      still = setTimeout(() => t.classList.remove('moving'), 260);
+      still = setTimeout(() => { moving?.classList.remove('moving'); moving = null; }, 550);   // a wheel's ticks read as one scroll
     }, { passive: true });
   }
   function drawAll(board) {

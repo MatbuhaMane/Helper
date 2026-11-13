@@ -21,13 +21,14 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **The very special figures** (seven: הקוסם מהשוק, האסטרונומית, בובת הטלאים, קוסם הלילה, קוסמת היער, הקוסם הקטן,
   הקוסמת הקטנה; design's entry on `design`)
   cost more than a paid figure.
-  - **Proposed: ₪20**, the same as one ₪20 pack. Not yet decided.
+  - **₪20**, the same as one ₪20 pack. Approved by the owner (via the master, 2026-11-14), and live in cache v57 as
+    the setting `figures.special_price_ils`, for all seven.
 - Founding members get the special figures too (paid items with no per-use cost).
 
 **Affects:** ai-features and master (`server/figures-rules.ts`, the paid list): the price per figure in credits, with
 the special ones in their own price group.
 
-**Status:** Decided, except the special figures' exact price.
+**Status:** Decided (the owner).
 
 ## 2026-11-13 – How money is collected: one credits wallet, an Israeli provider, standing orders (business)
 

@@ -26,6 +26,21 @@ The owner: "בניהול מטרות, אפשר הגדרת מטרות מחזורי
   styles for now; they are free to be replaced in `tasks.css`.
 Status: done (on `ai-features`).
 
+## 2026-11-14 – Groceries: the automatic list from the fridge (ai-features → master, design)
+
+docs/vision/batch.md 8: "רשימה אוטומטית" is a fixed list built from the fridge. It only suggests, and nothing is ever added by itself.
+- `GET /api/groceries/auto` (one route appended; `server/grocery-auto.ts`, logic and 11 tests in `grocery-auto-logic.ts` /
+  `test-grocery-auto.mjs`). It looks at the person's own fridge (the fridge preferences' `mine`), or all the household's.
+  It suggests what came in at least twice and is now gone, expired, or down to one. It leaves out what waits on the main
+  list and what the person put off.
+- The groceries page shows the chip "🤖 אוטומטית" with a count. Its dialog has "＋ לרשימה" per item, "＋ הכל" and "לא הפעם".
+  "לא הפעם" puts an item off for a week, kept in the person's `groceries` preferences (`autoSkip`). An item is added
+  through the page's own add, so it goes to the list on show, skips duplicates and works offline.
+- For the master: please add `node server/test-grocery-auto.mjs` to `npm test` in `package.json`.
+- For design: the classes are `.list-auto`, `.list-auto-n`, `.auto-list`, `.auto-rows`, `.auto-row` (`.gone`, `.expired`,
+  `.low`, `.listed`), `.auto-name`, `.auto-acts`. There is no CSS for them yet.
+Status: done (on `ai-features`).
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**

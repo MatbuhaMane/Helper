@@ -120,6 +120,17 @@ export async function stay(ctx: Ctx) {
   await log(ctx, a, on ? 'stay:on' : 'stay:off');
   return json({ ok: true, stay: on });
 }
+/** GET /api/admin/room – for the back door's tab on the other pages (/assets/admin-tab.js): is the room still open on this
+    device's session, and until when if nothing more is done in it. It only reads: it is not an action (the idle minutes go
+    on, unlike /status and /ping), and it says nothing of who opened it or what is inside. */
+export async function room(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const e = await ctx.env.DB.prepare('SELECT * FROM admin_entries WHERE sid_hash = ?').bind(await sidHash(ctx)).first<Entry>();
+  if (!e || !R.entryAlive(e) || e.as_email !== u.email || !(await mayEnter(ctx.env)).has(e.by_email)) return json({ open: false });
+  const until = R.entryUntil(e);
+  return json({ open: true, until, left: until - Date.now() });     // left: by the server's clock, for the tab's timer
+}
+/** POST /api/admin/leave – נעילה: the entry ends on the server, so the next one needs the passkey again */
 export async function leave(ctx: Ctx) {
   requireUser(ctx);
   await ctx.env.DB.prepare('DELETE FROM admin_entries WHERE sid_hash = ?').bind(await sidHash(ctx)).run();
@@ -240,26 +251,35 @@ export async function supersSave(ctx: Ctx) {
   return json({ ok: true });
 }
 
-/* ---------------- messages to everyone ---------------- */
+/* ---------------- messages to everyone, or to one member ---------------- */
 
 const LEVELS = new Set(['info', 'warn', 'party']);
 export async function messagesList(ctx: Ctx) {
   await requireAdmin(ctx, 'own');
-  const { results } = await ctx.env.DB.prepare('SELECT m.*, (SELECT COUNT(*) FROM message_reads r WHERE r.message = m.id) AS seen FROM admin_messages m WHERE m.to_email IS NULL ORDER BY m.created_at DESC LIMIT 50').all();
+  // to everyone, and to one member (sent from here or a gift's note); the room's own notes to the owner (by 'system') stay out
+  const { results } = await ctx.env.DB.prepare(`SELECT m.*, (SELECT COUNT(*) FROM message_reads r WHERE r.message = m.id) AS seen,
+      (SELECT COALESCE(p.he_name, p.name) FROM members p WHERE p.email = m.to_email) AS to_name
+    FROM admin_messages m WHERE m.to_email IS NULL OR m.by_email <> 'system' ORDER BY m.created_at DESC LIMIT 50`).all();
   return json({ messages: results, members: await count(ctx.env, 'SELECT COUNT(*) AS n FROM members') });
 }
 export async function messageSend(ctx: Ctx) {
   const a = await requireAdmin(ctx, 'own');            // never from someone else's device: a message to all goes out in the owner's name
-  const b = await body<{ text?: string; level?: string; link?: string; days?: number }>(ctx.req);
+  const b = await body<{ text?: string; level?: string; link?: string; days?: number; to?: string }>(ctx.req);
   const text = String(b.text || '').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 500);
   if (!text) throw new HttpError(400, 'text_required');
   let link = String(b.link || '').trim();
   if (link && !/^\/[^/]/.test(link) && !/^https:\/\//.test(link)) link = '';             // a page of the app, or an https link
   const days = Math.max(1, Math.min(60, Math.round(Number(b.days) || 7)));
+  // to one member (the owner, 2026-11-13): only an address on the members list; empty: to everyone
+  let to: string | null = null;
+  if (b.to !== undefined && b.to !== null && String(b.to).trim()) {
+    to = String(b.to).trim().toLowerCase().slice(0, 200);
+    if (!(await ctx.env.DB.prepare('SELECT 1 FROM members WHERE email = ?').bind(to).first())) throw new HttpError(400, 'not_member');
+  }
   const id = uid(), now = Date.now();
-  await ctx.env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active) VALUES (?, ?, ?, ?, ?, ?, ?, 1)')
-    .bind(id, text, LEVELS.has(String(b.level)) ? b.level : 'info', link.slice(0, 300) || null, a.by, now, now + days * 864e5).run();
-  await log(ctx, a, 'message', text.slice(0, 80));
+  await ctx.env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
+    .bind(id, text, LEVELS.has(String(b.level)) ? b.level : 'info', link.slice(0, 300) || null, a.by, now, now + days * 864e5, to).run();
+  await log(ctx, a, to ? 'message:one' : 'message', (to ? to + ': ' : '') + text.slice(0, 80));
   return json({ id });
 }
 export async function messageStop(ctx: Ctx) {

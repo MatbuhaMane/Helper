@@ -2349,3 +2349,26 @@ The CEO's task: in the חברים section the owner edits each member's name, ho
      address demotes them, and `role: 'owner'` is accepted for any address. Proposed: `ON CONFLICT DO NOTHING` (editing
      goes through `/api/admin/people`), and role owner only for OWNER_EMAIL.
 Status: ready on `ai-features`, waiting for the master's review.
+
+## 2026-11-13 – The back door's tab, the usage line, a message to one member (ai-features → master; the lock and the session for review)
+
+1. **A new route, `GET /api/admin/room`** (appended to `functions/api/[[path]].ts`): `{open, until, left}` for this device's
+   room entry, open only if the entry is alive, is the signed-in owner's own (`as_email`) and its opener may still enter.
+   It **only reads**: it never touches `last_at`, so it never keeps the room open. `until` is `entryUntil` in admin-rules.ts
+   (the idle limit, or two hours with "stay"; 30 minutes for a visit). 5 new tests in test-admin.mjs.
+2. **The tab, `public/assets/admin-tab.js`** (ai-features). admin.js writes the localStorage mark `helper.adminRoom {ends}`
+   when the room opens from the owner's own account, and removes it at the gate (נעילה, a timeout, any refusal). On other
+   pages the tab asks `/api/admin/room` and shows only while the entry is open; closed, refused or signed out: it hides and
+   forgets the mark; offline: it hides and asks again later. It re-asks when the entry would close and when the page is shown again.
+   The idle rule goes on while the owner is elsewhere, so in practice the tab lasts three minutes after the last action in
+   the room (two hours with "stay").
+3. **For the master, `common.js`**: three lines that load admin-tab.js only when the mark is there, never on `/admin/`, in
+   the vault or in a frame. The patch is in the notes folder (`ai-features-admin-tab-common.patch`). `sw.js` may want
+   `/assets/admin-tab.js` in its cached list.
+4. **For design**: `.ad-edge` (the tab: `a.ad-edge > .ad-edge-ic + .ad-edge-text`; until then an inline fallback at the
+   inline-start edge under the top bar), `.ad-fold` (the folded usage card: `details.ad-fold > summary` with an inline h2 and a
+   summary line), and the suggestion list under the class `.ad-sugg` as well as `#ad-sugg` (the messages' combobox is
+   `#ad-sugg-to`; a small inline fallback until then).
+5. **A message to one member**: `POST /api/admin/messages` takes `to` (an email); it must be on the members list (400
+   `not_member`), goes into `admin_messages.to_email`, and is logged as `message:one`. The room's list now shows personal
+   messages too (with `to_name`), except the room's own notes to the owner (`by_email = 'system'`).

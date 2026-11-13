@@ -1,10 +1,19 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (החיפוש בכל הבתים).
+Last update: 2026-11-13 (לשונית הדלת האחורית, שימוש מקופל, הודעה לחבר אחד).
 
 ## Done
 
+- **לשונית הדלת האחורית, שימוש מקופל, הודעה לחבר אחד** (the CEO, 2026-11-13), on `ai-features`, waiting for the master:
+  - `GET /api/admin/room` (read only, never keeps the room open) and `public/assets/admin-tab.js`; the mark `helper.adminRoom`
+    written by admin.js from the owner's own account only; נעילה ends the entry and the tab; the common.js lines are a patch
+    for the master (notes folder); the CSS (`.ad-edge`, `.ad-fold`, `.ad-sugg`) asked of design, inline fallbacks until then;
+  - usage folded to one line ("3 מתוך 6 נכנסו השבוע · הכי בשימוש: …"), the choice kept in `H.prefs('admin').usageOpen`;
+  - messages: "כל המשתמשים / למשתמש אחד", the members combobox (now one shared `combo()` in admin.js, used by both), `to` checked
+    on the server (`not_member`), the list shows "ל: שם" and "נקראה / עוד לא";
+  - checked on 8790: the tab on /settings/, hidden after נעילה and with a stale mark; the fold remembered; Dana alone gets her
+    message; the members search after the refactor; 375 dark and 1024. test-admin 35, test-member-admin 62, typecheck clean.
 - **החיפוש בכל הבתים** (the owner through the CEO, 2026-11-13), on `ai-features`, waiting for the master's merge:
   - every word must appear in the email, the Google name, the Hebrew name, the household's id or its title ("משפחת כהן");
   - suggestions under the box while typing (a combobox: arrows, Enter, Escape, Home/End), each with name, email and household;

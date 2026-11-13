@@ -69,6 +69,13 @@ export const entryAlive = (s: { created_at: number; last_at: number; by_email?: 
   const stay = !!s.stay && !visit;
   return (stay || now - s.last_at < IDLE) && now - s.created_at < (visit ? VISIT_MAX : MAX);
 };
+/** when an open entry closes if nothing more is done in the room: the idle minutes from the last action ("stay unlocked":
+    none), and never after the maximum. The back door's tab on the other pages (GET /api/admin/room) hides itself then. */
+export const entryUntil = (s: { created_at: number; last_at: number; by_email?: string; as_email?: string; stay?: number | boolean | null }) => {
+  const visit = !!s.by_email && s.by_email !== s.as_email;
+  const end = s.created_at + (visit ? VISIT_MAX : MAX);
+  return !!s.stay && !visit ? end : Math.min(end, s.last_at + IDLE);
+};
 
 /* ---------------- settings ---------------- */
 

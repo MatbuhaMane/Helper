@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The tree batch: חיפוש ביער, the member card, keys and backups in settings (ai-features → master, design)
+
+- Appended routes in `functions/api/[[path]].ts` (with one import): `GET /api/family/find?q=&kin=1&users=1` and
+  `GET /api/family/card?id=` (`server/family-find.ts`). Appended to `server/vault/index.ts`: `forestFor`; to
+  `server/vault/access.ts`: `forestFor: 'tree'` (the forest's own level, so `test-access.mjs` keeps every guarded entry
+  in the table). No change to the vault's security code, its routes or its levels.
+- Privacy: both read only the forest `/api/vault/forest` already shows (kin `view` per card, `outside` for other
+  households). The search drops anonymous and identity-hidden cards, needs 2 letters, returns at most 20, never an email,
+  and is rate-limited (40 a minute per person; the card 90). People outside the viewer's tribe never show (`sees` gives
+  `none`), so "all users of the app" means the users of one's forest. Outside the household, no photo (files never leave).
+  Searches and cards that touch another household are written in its activity log.
+- New test `server/test-family-find.mjs` (26): the master adds it to `npm test`.
+- The passkeys and backups moved from the tree's bar to settings → privacy (`public/settings/vault-keys.js`, loaded by
+  `settings.js`); the same routes, each still asking for a fresh unlock. The first passkey offered when the vault opens
+  stays on the tree page.
+- Design: the class names went to design (`.fv-gliding`, `.fv-search`, `.fv-found`, `.fv-hit`, `.fv-kin`, `.fv-badge`,
+  `.fv-pick`, `.fv-chosen`, `.fv-member*`, `.st-vault`).
+Status: on `ai-features`, waiting for the CEO's review and design's CSS.
+
 ## 2026-11-14 – הרגלי אכילה: one tool for every way of eating (ai-features → master, design)
 
 `/food/diet/habits/` (the owner's words, through the CEO): ketosis, Atkins, paleo, low-carb, low sugar and fasting, each

@@ -1,9 +1,25 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (פרופיל המשפחה).
+Last update: 2026-11-14 (the tree batch).
 
 ## Done
+
+- **The tree batch** (the CEO, 2026-11-14), on `ai-features`:
+  1. no sounds in the tree;
+  2. a softer glide (shorter, no bounce, none under reduced motion; `.fv-gliding` on the board while it runs);
+  3. the passkeys and backups moved to settings → privacy;
+  4. "איך אנחנו קשורים" picks people by a forest search;
+  5. a tap on a name opens the member card in view mode (a pencil on your own card opens its editing);
+  6. "חיפוש ביער" with "קרובי משפחה בלבד".
+  Server `server/family-find.ts` and a pure filter with 26 tests (`server/test-family-find.mjs`, for `npm test`).
+  It shows only the forest the tree already shows: no anonymous or hidden cards, no emails, 2 letters, rate-limited.
+  Checked on the dev server: search, kin filter, related, own and outside cards (outside: name only, no dates), 429 after
+  40 searches, no page overflow at 375, the card at 1280 dark, no nameless controls, typecheck and `npm test` clean.
+  Waiting on design's CSS (the search overflows its row at 375 until then). Not checked: a real phone; the owner's
+  backups from settings (dev user not the owner's own Drive); a tribe with a family path across households.
+  Open: no personal logo or banner exists, so the card uses the tree photo and, at home, the family profile's cover;
+  should users outside one's forest ever be findable (a new opt-in level)? The owner's question, through the CEO.
 
 - **פרופיל המשפחה** (the CEO's queue, item 2): `/family/profile.html` on design's markup, a door at the top of the tree.
   Server `server/family-profile.ts`, the view filter `server/family-profile-rules.ts` with 31 tests

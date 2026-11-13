@@ -418,10 +418,10 @@
        it; the person can turn it too – drag the sun or the moon along it – and that is the app's day/night switch: let go
        with the moon up and it is night, with the sun up and it is day (until the next real sunrise or sunset). */
     function sky() {
-      const sunImg = el('img', { class: 'ball', src: '/assets/sun-core.webp', alt: '' });
+      const sunImg = el('img', { class: 'ball', src: '/assets/sun-core.webp', alt: '', fetchpriority: 'low' });
       const sun = el('button', { class: 'sun', type: 'button', 'aria-label': 'השמש – לחיצה: זמני היום; גרירה: מעבר ללילה' },
         el('span', { class: 'halo' }), sunImg);
-      const moonImg = el('img', { src: MOON_ART + moonArt(moonPhase()) + '.webp', alt: '' });
+      const moonImg = el('img', { src: MOON_ART + moonArt(moonPhase()) + '.webp', alt: '', fetchpriority: 'low' });
       moonImg.addEventListener('error', () => { if (!moonImg.src.endsWith('/assets/moon.webp')) moonImg.src = '/assets/moon.webp'; });
       const moon = el('button', { class: 'moon', type: 'button', 'aria-label': 'הירח – לחיצה: המופע; גרירה: מעבר ליום' },
         el('span', { class: 'halo' }), moonImg);
@@ -542,7 +542,7 @@
           if (k < 1) requestAnimationFrame(down);
         };
         requestAnimationFrame(down);
-        const ec = el('img', { class: 'egg-eclipse', src: '/assets/eclipse.webp', alt: '' });
+        const ec = el('img', { class: 'egg-eclipse', src: '/assets/eclipse.webp', alt: '', loading: 'lazy' });
         ec.style.setProperty('--x', geo.cx + 'px'); ec.style.setProperty('--y', (geo.cy - geo.ry * 0.92) + 'px'); ec.style.setProperty('--s', Math.round(geo.size * 1.9) + 'px');   // at the top of the orbit, in open sky
         box.append(ec);
         setTimeout(() => ec.classList.add('up'), sinkMs - 300);
@@ -679,7 +679,7 @@
         const row = el('div', { class: 'sky-acts' },
           el('button', { class: 'btn small', type: 'button', onclick: () => { card.remove(); H.chooseTheme(!night); } }, night ? 'מעבר ליום' : 'מעבר ללילה'),
           real ? null : el('button', { class: 'btn small primary', type: 'button', title: 'בחזרה ליום או ללילה של השעה הזאת', onclick: () => { card.remove(); H.chooseTheme(!s.day); } },
-            el('img', { src: s.day ? '/assets/sun-core.webp' : '/assets/moon.webp', alt: '', width: 18, height: 18 }), 'חזרה למצב האמיתי'));
+            el('img', { src: s.day ? '/assets/sun-core.webp' : '/assets/moon.webp', alt: '', width: 18, height: 18, loading: 'lazy' }), 'חזרה למצב האמיתי'));
         card.append(row);
       }
       sun.addEventListener('click', () => { if (sun.justTurned) return; sun.classList.remove('flash'); void sun.offsetWidth; sun.classList.add('flash'); if (H.weather?.open) return H.weather.open(sun); sunCard(sun); addControls(document.querySelector('.sun-card')); });
@@ -740,7 +740,7 @@
         el('div', { class: 'times' }, el('span', {}, el('small', {}, 'זריחה'), el('b', {}, t(s.rise))), el('span', {}, el('small', {}, 'צהריים'), el('b', {}, t(s.noon))), el('span', {}, el('small', {}, 'שקיעה'), el('b', {}, t(s.set)))),
         el('p', {}, s.day && left ? `עוד ${mins >= 60 ? Math.floor(mins / 60) + ' שעות ו־' : ''}${mins % 60} דקות עד השקיעה.` : 'השמש תזרח שוב ב־' + t(s.next) + '.'),
         eclipseLine('solar'),
-        el('p', {}, el('a', { href: '/tools/weather/' }, 'תחזית מזג האוויר'), ' – בקרוב, בכלים.'));
+        el('p', {}, el('a', { href: '/tools/weather/' }, 'תחזית מזג האוויר'), '.'));
       document.body.append(card);
       const r = sun.getBoundingClientRect();
       card.style.left = Math.max(12, Math.min(innerWidth - card.offsetWidth - 12, r.left + r.width / 2 - card.offsetWidth / 2)) + 'px';
@@ -755,7 +755,7 @@
       const rec = el('button', { class: 'rec', type: 'button', title: 'נגן המוזיקה', 'aria-label': 'לפתוח את נגן המוזיקה', onclick: () => H.music?.float() },
         el('span', { class: 'record' }), el('span', { class: 'tip' }, 'נגן'));
       const song = el('button', { class: 'song', type: 'button', title: 'השירון', 'aria-label': 'לפתוח את השירון בחלון צף', onclick: () => songWindow() },
-        el('img', { src: '/assets/pillows/p05.webp', alt: '', draggable: 'false' }), el('span', { class: 'badge' }, H.icon('music')));
+        el('img', { src: '/assets/pillows/p05.webp', alt: '', draggable: 'false', loading: 'lazy' }), el('span', { class: 'badge' }, H.icon('music')));
       // the record shows what's playing (the player loads a moment after the page)
       const watch = () => {
         if (!H.music) return setTimeout(watch, 400);
@@ -766,7 +766,7 @@
         });
       };
       watch();
-      return el('div', { class: 'corner' }, el('img', { class: 'stump', src: '/assets/stump-guitar.webp', alt: '', width: 700, height: 698, draggable: 'false' }), song, rec);
+      return el('div', { class: 'corner' }, el('img', { class: 'stump', src: '/assets/stump-guitar.webp', alt: '', width: 700, height: 698, draggable: 'false', loading: 'lazy' }), song, rec);
     }
 
     /** The songbook in a window over the home page (the player's songbook window; it loads a moment after the page). */
@@ -792,7 +792,7 @@
       const prev = el('button', { class: 'spin prev', type: 'button', 'aria-label': 'האפליקציה הקודמת' }, arrow('M9 5l7 7-7 7'));
       const next = el('button', { class: 'spin next', type: 'button', 'aria-label': 'האפליקציה הבאה' }, arrow('M15 5l-7 7 7 7'));
       const items = list.map((a, i) => el('a', { class: 'wheel-item', href: a.href, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name, style: `--c2:${a.c2}`, draggable: 'false' },
-        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async' }), el('span', { class: 'badge' }, H.appIcon(a.ic))),
+        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async', loading: 'lazy' }), el('span', { class: 'badge' }, H.appIcon(a.ic))),
         el('b', { class: 'label' }, swell(a.name))));
       const root = el('nav', { class: 'wheel', 'aria-label': 'האפליקציות', 'aria-roledescription': 'גלגל' }, orbit, campfire(), ...items, prev, next);
       // off: how far the cushion's centre sits above the item box's centre (the ring passes through the cushions' centres)

@@ -38,11 +38,13 @@
 @keyframes tr-sway { from { transform: rotate(-.3deg); } to { transform: rotate(.3deg); } }
 @keyframes tr-sway-low { from { transform: rotate(-.15deg); } to { transform: rotate(.15deg); } }
 /* off screen (the JS adds .off from an IntersectionObserver) the tree holds still, so it costs nothing while you read elsewhere */
-.tree.off :is(.tree-crown, .tree-boughs, .tr-p, .tr-p .tr-leaf, .tr-p .tr-leaf::before, .tr-bud, .tr-flame, .tr-candle::before) { animation-play-state: paused; }
+.tree.off :is(.tree-crown, .tree-boughs, .tr-p, .tr-p .tr-leaf, .tr-bud, .tr-flame), .tree.off .tr-p .tr-leaf::before, .tree.off .tr-candle::before { animation-play-state: paused; }
 .tree.off :is(.tree-crown, .tree-boughs) { will-change: auto; }
 /* at night the same drawing, dimmed a little */
-:root[data-theme="dark"] .tree-l { filter: brightness(.8) saturate(.9); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tree-l { filter: brightness(.8) saturate(.9); } }
+/* (two filters in a row: the season's tint of a layer, then the night's dimming; batch 18) */
+.tree-l { filter: var(--season-f, saturate(1)) var(--night-f, brightness(1)); }
+:root[data-theme="dark"] .tree { --night-f: brightness(.8) saturate(.9); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tree { --night-f: brightness(.8) saturate(.9); } }
 
 /* a person: a leaf with the face, the name on a wooden tag under it; it hangs from its point on the tree */
 .tr-p { position: absolute; inset-inline-start: calc(var(--x) * 1%); inset-block-start: calc(var(--y) * 1%); translate: -50% -14%;
@@ -144,3 +146,233 @@
 .tr-p.pending .tr-leaf::after { content: ""; position: absolute; inset-block-start: 4%; inset-inline-end: -6%; inline-size: max(20px, calc(var(--leaf) * .34)); aspect-ratio: 1; box-sizing: border-box;
   border-radius: 50%; background: #f3e3a6 url(/assets/bd-icons/clock.svg) center / 64% no-repeat; border: 2px solid #2a1c12; box-shadow: 0 2px 0 -1px rgba(42, 28, 18, .35); }
 .tr-p.going { opacity: .42; filter: grayscale(.7); pointer-events: none; animation: none; transition: opacity .4s, filter .4s; }
+
+/* ===================== vision batch 18: the tree after test run 1 (contract: docs/design/tree-18.md) =====================
+   Seasons, the empty leaf, one screen and zoom, the floating menu, a leaf that grows to a banner and to the full profile,
+   a profile docked at the side, a leaf detached by a drag. Every motion here is transform, translate, scale or opacity. */
+
+/* ---- one screen: the tree fits the height left between the bars (ai-features sets .fit; --tree-chrome is what the page
+   keeps above and below it). Pinch and pan move the tree inside .tree-stage by --z, --px and --py (scale and translate). */
+.tree.fit { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1800)); }
+.tree.fit[data-kind="canopy"] { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1500)); }
+.tree-stage { position: relative; overflow: hidden; touch-action: none; overscroll-behavior: contain; border-radius: 18px; }
+.tree-stage > .tree { transform-origin: 0 0; translate: var(--px, 0px) var(--py, 0px); scale: var(--z, 1); }
+.tree-stage.zooming > .tree, .tree-stage.zooming .tr-p { transition: none; }
+.tree-stage.zooming .tr-p { animation-play-state: paused; }
+/* the zoom buttons for a mouse (a phone pinches; "fit" stays on both): the stage's bottom inline-end corner */
+.tree-zoom { position: absolute; z-index: 4; inset-block-end: 10px; inset-inline-end: 10px; display: grid; gap: 6px; }
+.tree-zoom button { display: grid; place-items: center; inline-size: 44px; block-size: 44px; padding: 0; border-radius: 50%; cursor: pointer; color: var(--text);
+  background: color-mix(in srgb, var(--card) 78%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border, var(--line)); box-shadow: 0 3px 10px rgba(0, 0, 0, .12); }
+.tree-zoom svg { inline-size: 20px; block-size: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.tree-zoom button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+@media (hover: none) { .tree-zoom :is(.tz-in, .tz-out) { display: none; } }
+
+/* ---- the seasons: data-season on .tree (none, or "summer", is the tree as drawn). The crown takes a tint and a dress
+   masked by the crown's own picture (so it sways with it), and something falls slowly in front of the boughs, behind
+   the people.
+     <img class="tree-l tree-crown" …>
+     <span class="tree-l tree-dress" aria-hidden="true"></span>      (right after the crown)
+     <span class="tree-l tree-fall" aria-hidden="true"></span>       (after the dress, before the people) */
+.tree-dress, .tree-fall { display: none; }
+.tree[data-season]:not([data-season="summer"]) :is(.tree-dress, .tree-fall) { display: block; }
+.tree[data-kind="olive"] { --crown-mask: url("/assets/tree/olive/crown.svg"); }
+.tree[data-kind="canopy"] { --crown-mask: url("/assets/tree/canopy/crown.webp"); }
+.tree-dress { background: var(--dress) 0 0 / 15cqi 15cqi repeat; opacity: .92;
+  -webkit-mask: var(--crown-mask) center / 100% 100% no-repeat; mask: var(--crown-mask) center / 100% 100% no-repeat;
+  transform-origin: var(--crown-x) var(--crown-y); animation: tr-sway 9s var(--breath) infinite alternate; rotate: 0deg; transition: rotate 1.6s var(--settle); }
+.tree.moving .tree-dress { rotate: .45deg; transition-duration: .9s; }
+.tree-fall { overflow: hidden; -webkit-mask: linear-gradient(transparent, #000 8%, #000 80%, transparent 96%); mask: linear-gradient(transparent, #000 8%, #000 80%, transparent 96%); }
+.tree-fall::before, .tree-fall::after { content: ""; position: absolute; inset-inline: -12cqi; inset-block: calc(var(--tile) * -1) 0;
+  background: var(--fall) 0 0 / var(--tile) var(--tile) repeat; will-change: transform;
+  animation: tr-fall var(--fall-s, 30s) linear infinite, tr-drift 7s var(--breath) infinite alternate; }
+.tree-fall::before { --tile: 66cqi; }
+.tree-fall::after { --tile: 44cqi; opacity: .6; animation-duration: calc(var(--fall-s, 30s) * 1.45), 9s; animation-delay: 0s, -4s; }
+@keyframes tr-fall { from { transform: translateY(0); } to { transform: translateY(var(--tile)); } }
+@keyframes tr-drift { from { translate: -2.5cqi 0; } to { translate: 2.5cqi 0; } }
+.tree[data-season="autumn"] { --dress: url("/assets/tree/season/autumn-dress.svg"); --fall: url("/assets/tree/season/autumn-fall.svg"); --fall-s: 34s; }
+.tree[data-season="autumn"] .tree-crown { --season-f: hue-rotate(-38deg) saturate(1.3) brightness(1.03); }
+.tree[data-season="autumn"] .tree-boughs { --season-f: hue-rotate(-24deg) saturate(1.15); }
+.tree[data-season="autumn"] .tree-ground { --season-f: hue-rotate(-18deg) saturate(.95); }
+.tree[data-season="winter"] { --dress: url("/assets/tree/season/winter-dress.svg"); --fall: url("/assets/tree/season/winter-fall.svg"); --fall-s: 40s; }
+.tree[data-season="winter"] .tree-crown { --season-f: saturate(.5) brightness(1.06); }
+.tree[data-season="winter"] .tree-boughs { --season-f: saturate(.55) brightness(1.04); }
+.tree[data-season="winter"] .tree-ground { --season-f: saturate(.35) brightness(1.18); }
+.tree[data-season="winter"] .tree-dress { opacity: .95; }
+.tree[data-season="spring"] { --dress: url("/assets/tree/season/spring-dress.svg"); --fall: url("/assets/tree/season/spring-fall.svg"); --fall-s: 44s; }
+.tree[data-season="spring"] .tree-crown { --season-f: hue-rotate(10deg) saturate(1.2) brightness(1.05); }
+.tree[data-season="spring"] .tree-ground { --season-f: hue-rotate(8deg) saturate(1.15) brightness(1.04); }
+.tree[data-season="spring"] .tree-dress { opacity: .85; background-size: 17cqi 17cqi; }
+.tree.off .tree-dress, .tree.off .tree-fall::before, .tree.off .tree-fall::after { animation-play-state: paused; }
+
+/* ---- the empty leaf: a person in the generations with no record yet. Pale, a dashed leaf, a "?" for a face; a tap adds them.
+     <button class="tr-p empty" style="--x; --y" aria-label="אין רשומה: אבא של משה. הוספה">
+       <span class="tr-leaf"><span class="tr-face">?</span></span><span class="tr-tag"><b>אבא של משה</b></span></button> */
+.tr-p.empty .tr-leaf, .tree[data-look="frame"] .tr-p.empty .tr-leaf { background-image: url("/assets/tree/leaf-empty.svg"); }
+.tr-p.empty .tr-face { background: transparent; border: 2px dashed #8a7a62; color: #5f5242; font-weight: 600; }
+.tr-p.empty .tr-tag { background: #efe8d6; border-style: dashed; border-color: #8a7a62; color: #4f4537; box-shadow: none; }
+.tr-p.empty .tr-tag::before { opacity: .55; }
+.tr-p.empty .tr-tag b { font-weight: 600; font-size: clamp(.7rem, 2.5cqi, .9rem); }
+@media (hover: hover) { .tr-p.empty:hover .tr-face { border-color: var(--primary); color: var(--primary); } }
+
+/* ---- the floating menu: a tap on a person. Translucent glass over the leaf, kept inside the screen by the CSS.
+   JS: --mx is the leaf's centre from the screen's inline-start edge (in RTL: innerWidth − centreX), --my the leaf's top,
+   or its bottom with data-place="below" (when the leaf is near the top). With "עריכה" (a long press, with permission) data-edit.
+     <div class="tr-menu" id="trMenu" role="menu" aria-label="רחל כהן" style="--mx:180px; --my:340px" [data-place="below"] [data-edit]>
+       <b class="tr-menu-name">רחל כהן</b>
+       <div class="tr-menu-acts">
+         <button role="menuitem" data-act="profile">(person)<span>פרופיל</span></button>
+         <button role="menuitem" data-act="photos">(photo)<span>תמונות</span></button>
+         <button role="menuitem" data-act="message">(chat)<span>הודעה</span></button>
+         [<button role="menuitem" data-act="edit">(pen)<span>עריכה</span></button>]
+       </div></div> */
+.tr-menu { --mw: 246px; --ms: clamp(8px, calc(var(--mx, 50vw) - var(--mw) / 2), calc(100vw - var(--mw) - 8px));
+  position: fixed; z-index: var(--z-menu); box-sizing: border-box; inline-size: var(--mw);
+  inset-inline-start: var(--ms); inset-block-start: var(--my, 50vh); translate: 0 calc(-100% - 12px); transform-origin: 50% 100%;
+  display: grid; gap: 6px; padding: 8px 8px 6px; border-radius: 20px; color: var(--text);
+  background: color-mix(in srgb, var(--card) 70%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid var(--glass-border, var(--line)); box-shadow: 0 10px 30px rgba(0, 0, 0, .16);
+  transition: opacity 180ms ease, transform 220ms var(--ease-river); }
+.tr-menu[data-edit] { --mw: 318px; }
+.tr-menu[data-place="below"] { translate: 0 12px; transform-origin: 50% 0; }
+.tr-menu[hidden] { display: none; }
+@starting-style { .tr-menu { opacity: 0; transform: scale(.92); } }
+.tr-menu.closing { opacity: 0; transform: scale(.95); pointer-events: none; }
+.tr-menu::after { content: ""; position: absolute; inset-block-start: 100%; inset-inline-start: calc(var(--mx, 50vw) - var(--ms) - 8px);
+  inline-size: 16px; block-size: 9px; background: color-mix(in srgb, var(--card) 70%, transparent); clip-path: polygon(0 0, 100% 0, 50% 100%); }
+.tr-menu[data-place="below"]::after { inset-block: auto 100%; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.tr-menu-name { padding-inline: 6px; font-size: .82rem; font-weight: 600; color: var(--muted); text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-menu-acts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; }
+.tr-menu-acts button { display: grid; justify-items: center; gap: 3px; min-block-size: 56px; padding: 7px 4px 6px; border: 0; border-radius: 14px; cursor: pointer;
+  color: var(--text); background: transparent; font: inherit; font-size: .8rem; font-weight: 600; line-height: 1.2; transition: background-color .15s; }
+.tr-menu-acts svg { inline-size: 22px; block-size: 22px; fill: none; stroke: var(--primary); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.tr-menu-acts button:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.tr-menu-acts button:active { background: color-mix(in srgb, var(--primary) 20%, transparent); }
+.tr-menu-acts button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.tr-menu-acts button[hidden] { display: none; }
+/* the person whose menu is open: lifted a little */
+.tr-p.menu-on { z-index: 4; }
+.tr-p.menu-on .tr-leaf { transform: translateY(-4%) scale(1.06); }
+
+/* ---- the banner: the leaf grown into a ribbon with the avatar, at the person's place on the tree. A tap on it opens the
+   full profile; the fold button returns it to a leaf. The leaf steps away (.away) while its banner shows.
+     <div class="tr-banner [passed]" style="--x:41; --y:71" role="group" aria-label="רחל כהן">
+       <button class="tr-banner-main" type="button" aria-label="הפרופיל המלא של רחל כהן">
+         <span class="tr-banner-face">(img or initials)</span>
+         <span class="tr-banner-txt"><b>רחל כהן</b><small>סבתא · תרפ״ה</small></span></button>
+       <button class="tr-banner-fold" type="button" aria-label="חזרה לעלה">(leaf)</button></div>
+   The morph (leaf ⇄ banner ⇄ full) is document.startViewTransition: view-transition-name "tr-face" on the face of the state
+   that leaves and on the avatar of the one that comes, "tr-card" on the leaf, the banner or the panel; view-transition-class
+   tr-morph on both. Without view transitions the new state fades and grows in (@starting-style). */
+.tr-p.away { opacity: 0; pointer-events: none; }
+.tr-banner { --bw: min(270px, 74cqi); position: absolute; z-index: 5; direction: rtl; box-sizing: border-box; inline-size: var(--bw);
+  inset-inline-start: clamp(4px, calc(var(--x) * 1% - var(--bw) / 2), calc(100% - var(--bw) - 4px)); inset-block-start: calc(var(--y) * 1%);
+  display: flex; align-items: center; gap: 4px; padding: 6px; padding-inline-end: 4px;
+  border: 2px solid #2a1c12; border-radius: 999px; color: #3a2614;
+  background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(122, 82, 40, .1) 7px 8.5px), linear-gradient(#efd6a8, #dfbb80);
+  box-shadow: inset 0 0 0 2px rgba(255, 240, 210, .5), 0 8px 18px rgba(42, 28, 18, .28);
+  transition: opacity 220ms ease, transform 320ms var(--settle); }
+@starting-style { .tr-banner { opacity: 0; transform: scale(.85); } }
+.tr-banner-main { flex: 1; min-inline-size: 0; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; }
+.tr-banner-face { flex: none; display: grid; place-items: center; inline-size: 52px; block-size: 52px; border-radius: 50%; overflow: hidden; box-sizing: border-box;
+  background: #f6efe0; border: 2.5px solid #2a1c12; font-weight: 700; font-size: 1.1rem; }
+.tr-banner-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.tr-banner-txt { display: grid; min-inline-size: 0; line-height: 1.25; }
+.tr-banner-txt b { font-size: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-banner-txt small { font-size: .78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-banner-fold { flex: none; display: grid; place-items: center; inline-size: 44px; block-size: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+  color: #3a2614; background: rgba(255, 246, 225, .55); }
+.tr-banner-fold svg { inline-size: 20px; block-size: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tr-banner-fold:hover { background: rgba(255, 246, 225, .9); }
+.tr-banner :is(.tr-banner-main, .tr-banner-fold):focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 999px; }
+.tr-banner.passed { background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(0, 0, 0, .08) 7px 8.5px), linear-gradient(#8f7257, #75573c); color: #fbf3e4; }
+.tr-banner.passed .tr-banner-fold { color: #fbf3e4; background: rgba(0, 0, 0, .18); }
+.tr-banner.passed .tr-banner-face img { filter: grayscale(.6) sepia(.25); }
+
+/* ---- the full profile: a sheet from the bottom on a phone, a panel at the inline-end on a wide screen; the tree stays
+   in sight above or beside it. Its head folds it back one step (to the banner), docks it, or closes it to the leaf.
+     <section class="tr-full" role="dialog" aria-modal="false" aria-labelledby="trFullName">
+       <header class="tr-full-head">
+         <span class="tr-full-face">(img or initials)</span>
+         <div class="tr-full-id"><h2 id="trFullName">רחל כהן</h2><small>סבתא · תרפ״ה</small></div>
+         <div class="tr-full-acts">
+           <button class="tr-ic" data-act="fold" aria-label="להקטין לבאנר">(chevron)</button>
+           <button class="tr-ic" data-act="dock" aria-label="לעגן בצד">(pin)</button>
+           <button class="tr-ic" data-act="close" aria-label="סגירה, חזרה לעלה">(x)</button></div></header>
+       <div class="tr-full-body">(the profile, as in /family/profile.html) … <ul class="tr-full-soon">…</ul></div></section> */
+.tr-full { position: fixed; z-index: var(--z-sheet); inset-inline: 0; inset-block-end: 0; box-sizing: border-box;
+  max-block-size: min(86dvh, 760px); display: grid; grid-template-rows: auto 1fr; direction: rtl;
+  border-start-start-radius: 24px; border-start-end-radius: 24px; border: 1px solid var(--line-strong); border-block-end: 0;
+  color: var(--text); background: var(--card); box-shadow: 0 -12px 34px rgba(0, 0, 0, .18);
+  padding-block-end: env(safe-area-inset-bottom, 0px); transition: transform 360ms var(--ease-river), opacity 200ms ease; }
+@starting-style { .tr-full { transform: translateY(40%); opacity: 0; } }
+.tr-full.closing { transform: translateY(100%); opacity: 0; }
+.tr-full-head { position: relative; display: flex; align-items: center; gap: 12px; padding: 16px 14px 10px; border-block-end: 1px solid var(--line); }
+.tr-full-head::before { content: ""; position: absolute; inset-block-start: 6px; inset-inline: 0; margin-inline: auto; inline-size: 40px; block-size: 4px; border-radius: 2px; background: var(--line-strong); }
+.tr-full-face { flex: none; display: grid; place-items: center; inline-size: 72px; block-size: 72px; border-radius: 50%; overflow: hidden; box-sizing: border-box;
+  background: #f6efe0; border: 3px solid #2a1c12; color: #3b2a1a; font-weight: 700; font-size: 1.5rem; }
+.tr-full-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.tr-full-id { flex: 1; min-inline-size: 0; display: grid; }
+.tr-full-id h2 { margin: 0; font-size: 1.25rem; line-height: 1.25; overflow-wrap: anywhere; text-wrap: balance; }
+.tr-full-id small { color: var(--muted); font-size: .85rem; }
+.tr-full-acts { flex: none; display: flex; gap: 2px; align-self: start; }
+.tr-ic { display: grid; place-items: center; inline-size: 44px; block-size: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; color: var(--muted); background: transparent; }
+.tr-ic svg { inline-size: 22px; block-size: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tr-ic:hover { color: var(--text); background: color-mix(in srgb, var(--text) 7%, transparent); }
+.tr-ic:focus-visible { outline: 2px solid var(--primary); outline-offset: 0; }
+.tr-full-body { overflow: auto; overscroll-behavior: contain; padding: 12px 16px 20px; display: grid; gap: 14px; align-content: start; }
+@media (min-width: 900px) {
+  .tr-full { inset-block: calc(var(--appbar-h, 56px) + 12px) 12px; inset-inline: auto 12px; inline-size: 420px; max-block-size: none;
+    border: 1px solid var(--line-strong); border-radius: 22px; box-shadow: var(--lift, 0 12px 34px rgba(0, 0, 0, .18)); padding-block-end: 0; }
+  .tr-full-head { padding-block-start: 14px; }
+  .tr-full-head::before { display: none; }
+  @starting-style { .tr-full { transform: translateX(var(--tr-in, -24px)); opacity: 0; } }
+  .tr-full.closing { transform: translateX(var(--tr-in, -24px)); }
+  :root[dir="ltr"] .tr-full { --tr-in: 24px; }
+}
+/* the ideas that wait, inside the profile: one quiet list, each a line with the "בקרוב" note (docs/design/soon.md) */
+.tr-full-soon { display: grid; gap: 6px; margin: 0; padding: 10px 12px; list-style: none; border-radius: 14px;
+  border: 1.5px dashed color-mix(in srgb, var(--soon) 40%, var(--line-strong)); background: color-mix(in srgb, var(--soon) 4%, var(--card)); }
+.tr-full-soon li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-block-size: 32px; font-size: .9rem; }
+
+/* ---- docked: a profile kept at the side as a tab, like the player and the helper. It sits on the inline-START edge
+   (the helper's tab is on the end). Dragged up and down (JS sets --dy while .dragging: translate only). A tap opens the
+   full profile again. Several tabs stack by --i.
+     <button class="tr-dock" style="--i:0" aria-label="רחל כהן, פרופיל מעוגן. פתיחה">
+       <img src="…" alt="">(or <span class="tr-dock-ini">ר״כ</span>)<b>רחל</b></button> */
+.tr-dock { position: fixed; z-index: var(--z-float); inset-inline-start: 0; inset-block-end: calc(var(--tabbar-h, 64px) + 90px + var(--i, 0) * 66px);
+  display: flex; align-items: center; gap: 6px; padding: 5px; padding-inline-end: 12px; max-inline-size: 44vw; cursor: pointer; font: inherit;
+  color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-inline-start: 0;
+  border-start-end-radius: 30px; border-end-end-radius: 30px; border-start-start-radius: 0; border-end-start-radius: 0; box-shadow: var(--lift, 0 6px 18px rgba(0, 0, 0, .14));
+  translate: 0 var(--dy, 0px); touch-action: none; transition: translate 260ms var(--ease-river), opacity 200ms ease, scale 200ms var(--ease-river); }
+@starting-style { .tr-dock { opacity: 0; scale: .9; } }
+.tr-dock.dragging { transition: none; cursor: grabbing; box-shadow: 0 10px 26px rgba(0, 0, 0, .22); }
+.tr-dock img, .tr-dock-ini { flex: none; display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; object-fit: cover;
+  border: 2px solid #2a1c12; background: #f6efe0; color: #3b2a1a; font-weight: 700; font-size: .95rem; box-sizing: border-box; }
+.tr-dock b { font-size: .85rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr-dock:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+/* ---- a leaf detached by a drag (editing, with permission): it lifts off its rope and follows the finger (--dx, --dy on
+   translate); a person it can join glows (.drop-near). On release .settling brings it back, or the tree draws again. */
+.tr-p.detached { z-index: 8; animation: none; translate: calc(-50% + var(--dx, 0px)) calc(-14% + var(--dy, 0px)); rotate: -4deg; transition: rotate 200ms var(--settle); cursor: grabbing; }
+.tr-p.detached .tr-leaf { transform: scale(1.1); filter: drop-shadow(0 10px 10px rgba(42, 28, 18, .35)); }
+.tr-p.detached .tr-tag::before { opacity: 0; }
+.tr-p.settling { transition: translate 380ms var(--settle), rotate 380ms var(--settle); }
+.tr-p.drop-near .tr-face { box-shadow: 0 0 0 3px #fbf3df, 0 0 0 7px var(--primary); }
+
+/* the morph between the states (view transitions) */
+::view-transition-group(*.tr-morph) { animation-duration: 420ms; animation-timing-function: var(--ease-river); }
+::view-transition-old(*.tr-morph), ::view-transition-new(*.tr-morph) { animation-duration: 260ms; }
+
+/* reduced motion: the states change in place, nothing falls, nothing sways */
+@media (prefers-reduced-motion: reduce) {
+  .tree-dress { animation: none; rotate: none !important; transition: none; }
+  .tree-fall::before, .tree-fall::after { animation: none; }
+  .tr-menu, .tr-banner, .tr-full, .tr-dock, .tr-p.detached, .tr-p.settling { transition: none; }
+  .tr-p.detached { rotate: none; }
+  ::view-transition-group(*.tr-morph), ::view-transition-old(*.tr-morph), ::view-transition-new(*.tr-morph) { animation-duration: 0s; }
+}
+:root[data-motion="reduce"] .tree-dress { animation: none !important; rotate: none !important; }
+:root[data-motion="reduce"] .tree-fall::before, :root[data-motion="reduce"] .tree-fall::after { animation: none !important; }
+:root[data-motion="reduce"] :is(.tr-menu, .tr-banner, .tr-full, .tr-dock, .tr-p.detached, .tr-p.settling) { transition: none !important; }
+:root[data-motion="reduce"]::view-transition-group(*.tr-morph), :root[data-motion="reduce"]::view-transition-old(*.tr-morph), :root[data-motion="reduce"]::view-transition-new(*.tr-morph) { animation-duration: 0s; }

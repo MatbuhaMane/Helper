@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The tools menu order and the experimental tag (vision → master, design)
+The owner's decision during joint test run 1. Status: Decided (the owner).
+- **The order in the tools menu,** by how often the family uses each tool:
+  - shopping list, recipe book, fridge;
+  - messages, family gathering, calendar;
+  - weather, notes, calculator;
+  - goals, movement and nutrition, הקפדה, eating habits;
+  - research helper;
+  - last: mail organizer and PC organizer.
+- **The experimental tag:** the mail organizer and the PC organizer carry a "ניסיוני" tag.
+- **The parts of the tent** (food, news, entertainment, songbook, the weekly portion) stay in their own group above the tools.
+- **Who acts:**
+  - the master: the order in `H.APPS` in `public/assets/apps.js`, and a field for the tag;
+  - design: the tag's look.
+
 ## 2026-11-13 – The home cushions: arrange, remove, add; fixed cushions (vision → master, design, ai-features)
 The owner's decision during joint test run 1. It extends batch 2 #6 (arranging by a long press). Status: Decided (the owner).
 - **Arrange mode:** a long press on a cushion opens it. In it the user can:

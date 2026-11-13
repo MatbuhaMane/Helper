@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>מצבי משפחה</title>
+  <!-- A sample for care.css: the grandparents' home, the emergency button and its screens, the kids' home.
+       Copy to public/ to view (not committed there).
+       ?view=gp (default) | hold (the ring part-filled; &p=0.6) | sent (&left=7, &coming=1) | alert (&taken=1, &mine=1, &noloc=1) | kids
+       ?theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/care.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; }</style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');   /* common.js applies the saved prefs later; keep the asked-for theme */
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const view = q.get('view') || 'gp';
+  const IC = {
+    speak: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path class="gp-wave" d="M15.5 9a4 4 0 0 1 0 6"/><path class="gp-wave" d="M18 6.5a7.5 7.5 0 0 1 0 11"/>',
+    more: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+    bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/>',
+    phone: '<path d="M6.5 3.5h3l1.5 4.5-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4.5 1.5v3a2 2 0 0 1-2 2A16.5 16.5 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/>',
+    pin: '<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/>',
+  };
+  const ic = (n) => IC[n] ? `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>` : H.icon(n).outerHTML;
+  const speak = (label) => `<button class="gp-speak" type="button" aria-label="הקראה בקול: ${label}" aria-pressed="false">${ic('speak')}</button>`;
+  const pill = (p) => `<img src="/assets/pillows/${p}.webp" alt="">`;
+  const dial = `<section class="sos-call" aria-labelledby="call-h"><h3 id="call-h">צריך עזרה מיד? חיוג לחירום</h3>
+    <ul class="sos-dial">
+      <li><a href="tel:101">${ic('phone')}<b>101</b><span>מגן דוד אדום</span></a></li>
+      <li><a href="tel:100">${ic('phone')}<b>100</b><span>משטרה</span></a></li>
+      <li><a href="tel:102">${ic('phone')}<b>102</b><span>כבאות</span></a></li>
+    </ul><p class="sos-note">הלחיצה פותחת את החייגן עם המספר, ועוד לחיצה מתקשרת.</p></section>`;
+  const who = (rows) => `<section class="sos-who" aria-labelledby="who-h"><h3 id="who-h">מי קיבל</h3><ul>${rows.map(([f, n, s, t]) =>
+    `<li data-state="${s}"><i class="sos-face">${f}</i><b>${n}</b><span class="sos-state">${t}</span></li>`).join('')}</ul></section>`;
+  let html = '';
+
+  if (view === 'gp' || view === 'hold') {
+    const p = view === 'hold' ? (q.get('p') || '0.6') : '0';
+    const tile = (href, c2, art, name) => `<li class="gp-tile" style="--c2:${c2}"><a href="#${href}">${art}<b>${name}</b></a>${speak(name)}</li>`;
+    html = `<main class="gp-home">
+      <header class="gp-head">
+        <div class="gp-say"><h1>בוקר טוב, סבתא רחל</h1>${speak('בוקר טוב, סבתא רחל')}</div>
+        <div class="gp-say"><p>יום שישי, י"ב בכסלו</p>${speak('יום שישי, י"ב בכסלו')}</div>
+      </header>
+      <ul class="gp-tiles">
+        ${tile('/family/', '#8a5a32', pill('p15'), 'המשפחה')}
+        ${tile('/photos/', '#2a7fa8', pill('p14'), 'תמונות')}
+        ${tile('/ask/', 'var(--primary)', `<span class="gp-tile-ic">${ic('mic')}</span>`, 'לשאול בקול')}
+        ${tile('/songs/', '#d2601a', pill('p03'), 'שירון')}
+      </ul>
+      <section class="sos" aria-label="קריאה לעזרה">
+        <button class="sos-btn${view === 'hold' ? ' holding' : ''}" type="button" style="--p:${p}" aria-describedby="sos-how">
+          <span class="sos-core">${ic('bell')}<b>עזרה</b></span></button>
+        <p class="sos-how" id="sos-how" aria-live="polite">${view === 'hold'
+          ? '<b>ממשיכים להחזיק…</b><span>עוד <span class="sos-left">1</span> שנייה</span>'
+          : '<b>לחצו והחזיקו 3 שניות</b><span>כל המשפחה תקבל הודעה מיד.</span>'}</p>
+      </section>
+      <a class="gp-more" href="#/tools/">${ic('more')}עוד</a>
+    </main>`;
+  }
+
+  if (view === 'sent') {
+    const left = +(q.get('left') || 7), coming = q.get('coming');
+    html = `<div class="sos-screen" role="alertdialog" aria-modal="true" aria-labelledby="ss-h" aria-describedby="ss-d"><div class="sos-screen-in">
+      <header class="sos-top"><span class="sos-top-ic">${ic('bell')}</span><h2 id="ss-h">ההודעה נשלחה למשפחה</h2>
+        <p id="ss-d">כל בני הבית קיבלו התראה. המיקום שלך צורף.</p></header>
+      ${coming ? `<div class="sos-coming" role="status">${ic('check')}<div><b>דנה בדרך אלייך</b><span>היא לחצה "אני מטפלת" ב־10:43</span></div></div>`
+        : left > 0 ? `<div class="sos-cancel"><button class="sos-undo" type="button">לחצתי בטעות, לבטל <span class="sos-left" aria-hidden="true">${left}</span></button>
+          <span class="sos-timer" aria-hidden="true"><i style="--t:${left / 10}"></i></span></div>` : ''}
+      ${who(coming ? [['ד', 'דנה', 'on-it', 'מטפלת'], ['י', 'יוסי', 'seen', 'ראה'], ['נ', 'נועה', 'sent', 'נשלח']]
+                   : [['ד', 'דנה', 'seen', 'ראתה'], ['י', 'יוסי', 'sent', 'נשלח'], ['נ', 'נועה', 'sent', 'נשלח']])}
+      ${dial}
+    </div></div>`;
+  }
+
+  if (view === 'alert') {
+    const taken = q.get('taken'), mine = q.get('mine'), noloc = q.get('noloc');
+    html = `<main class="sos-alert">
+      <header class="sos-alert-top" role="alert"><span class="sos-bell">${ic('bell')}</span>
+        <div><h1>סבתא רחל ביקשה עזרה</h1><p>לפני 2 דקות · 10:42</p></div></header>
+      ${noloc ? `<section class="sos-where" data-none>${ic('pin')}<div><b>אין מיקום</b><small>סבתא רחל לא אישרה שליחת מיקום.</small></div></section>`
+        : `<section class="sos-where">${ic('pin')}<div><b>רחוב הגפן 12, רעננה</b><small>מדויק עד 20 מטר · נשלח ב־10:42</small></div>
+          <a class="btn" href="#map">פתיחה במפה</a></section>`}
+      ${taken && !mine ? `<div class="sos-coming" role="status">${ic('check')}<div><b>דנה מטפלת בזה</b><span>היא לחצה ב־10:43. אפשר עדיין להתקשר.</span></div></div>` : ''}
+      <button class="sos-take" type="button" aria-pressed="${mine ? 'true' : 'false'}">${ic('check')}${mine ? 'אני מטפל · כולם רואים' : 'אני מטפל'}</button>
+      <a class="btn sos-callback" href="#tel">${ic('phone')}התקשרות לסבתא רחל</a>
+      ${who(mine ? [['א', 'אתה', 'on-it', 'מטפל'], ['ד', 'דנה', 'seen', 'ראתה'], ['נ', 'נועה', 'sent', 'נשלח']]
+         : taken ? [['ד', 'דנה', 'on-it', 'מטפלת'], ['י', 'יוסי', 'seen', 'ראה'], ['נ', 'נועה', 'sent', 'נשלח']]
+         : [['ד', 'דנה', 'seen', 'ראתה'], ['י', 'יוסי', 'sent', 'נשלח'], ['נ', 'נועה', 'sent', 'נשלח']])}
+      ${dial}
+    </main>`;
+  }
+
+  if (view === 'kids') {
+    const t = (c2, p, name, sub) => `<li><a href="#" style="--c2:${c2}">${pill(p)}<b>${name}</b><small>${sub}</small></a></li>`;
+    html = `<main class="kd-home">
+      <header class="kd-head"><img class="kd-buddy" src="/assets/icons/ohel.svg" alt=""><div><h1>היי, נועם!</h1><p>מה עושים היום?</p></div></header>
+      <form class="kd-ask" onsubmit="event.preventDefault()"><input type="text" placeholder="מה תרצה לשאול את העוזר?" aria-label="שאלה לעוזר">
+        <button type="button" aria-label="לשאול בקול">${ic('mic')}</button></form>
+      <ul class="kd-tiles">
+        ${t('#8a5a32', 'p15', 'עץ המשפחה', 'מי זה מי אצלנו')}
+        ${t('#d2601a', 'p03', 'שירון', 'שירים ואקורדים')}
+        ${t('#9c2a2a', 'p10', 'פתקים', 'מה ששמרת')}
+        ${t('#8e2435', 'p01', 'מתכונים', 'מבשלים ביחד')}
+        ${t('#b8457a', 'p05', 'דמויות', 'החברים מהאוהל')}
+      </ul>
+    </main>`;
+  }
+  document.body.insertAdjacentHTML('beforeend', html);
+})();
+</script>
+</body>
+</html>

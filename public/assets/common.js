@@ -285,6 +285,7 @@
     gamepad: '<path d="M7.5 7h9a5 5 0 0 1 4.9 6l-.6 3a2.6 2.6 0 0 1-4.5 1.2L14.6 15H9.4l-1.7 2.2a2.6 2.6 0 0 1-4.5-1.2l-.6-3A5 5 0 0 1 7.5 7z"/><path d="M8 9.8v3.4M6.3 11.5h3.4M15.5 10.5h.01M17.5 12.5h.01"/>',
     smile: '<circle cx="12" cy="12" r="9"/><path d="M8 14.2a5 5 0 0 0 8 0M9 9.5h.01M15 9.5h.01"/>',
     calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.2h.01M12 17.2h.01"/>',
+    parnasa: '<path d="M4 8h15a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 20H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 8V7a2 2 0 0 1 1.6-2L15 3.2a1 1 0 0 1 1.2 1V8"/><path d="M20.5 12H17a2 2 0 0 0 0 4h3.5"/><circle cx="17.2" cy="14" r=".9" fill="currentColor"/>',
     lens: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.3 15.3 20.5 20.5"/>',
     torah: '<rect x="3.5" y="4" width="3.5" height="16" rx="1.75"/><rect x="17" y="4" width="3.5" height="16" rx="1.75"/><path d="M5.25 1.8v2.2M5.25 20v2.2M18.75 1.8v2.2M18.75 20v2.2"/><path d="M7 6h10v12H7z"/><path d="M9.6 9.5h4.8M9.6 12h4.8M9.6 14.5h3.2"/>',
     note: '<path d="M6 3.5h9l4 4V20a.5.5 0 0 1-.5.5h-12A.5.5 0 0 1 5.5 20V4a.5.5 0 0 1 .5-.5z"/><path d="M15 3.5V8h4M9 12h6M9 15.5h6"/>',
@@ -743,6 +744,22 @@
     },
     test: () => api('/api/push/test', { method: 'POST' }),
   };
+  /* /?push=test — turn notifications on for this device and send a test (a button, since a phone asks only on a tap) */
+  if (new URLSearchParams(location.search).get('push') === 'test') addEventListener('load', async () => {
+    const st = await push.state().catch(() => 'unsupported');
+    const say = { 'not-installed': 'באייפון ההתראות עובדות רק מהאוהל שמותקן במסך הבית. פתח אותו משם ונסה שוב.',
+      unsupported: 'הדפדפן הזה לא תומך בהתראות.', denied: 'ההתראות חסומות לאתר הזה. אפשר לפתוח אותן בהגדרות הדפדפן.' }[st];
+    const out = el('p', { 'aria-live': 'polite' }, say || (st === 'on' ? 'ההתראות כבר פעילות במכשיר הזה.' : ''));
+    const go = el('button', { class: 'btn', onclick: async () => {
+      go.disabled = true; out.textContent = 'רגע…';
+      try {
+        if (!(await push.enable())) { out.textContent = 'ההתראות לא הופעלו (לא אושרו, או שהשרת עוד לא מוכן).'; go.disabled = false; return; }
+        const r = await push.test();
+        out.textContent = r.devices ? 'נשלחה התראת ניסיון. היא אמורה להופיע עכשיו.' : 'ההתראות פעילות, אבל השליחה לא הגיעה למכשיר. נסה שוב בעוד רגע.';
+      } catch (e) { out.textContent = 'משהו השתבש: ' + (e.message || e); go.disabled = false; }
+    } }, st === 'on' ? 'שלח התראת ניסיון' : 'הפעל התראות ושלח ניסיון');
+    modal(...[el('h2', {}, 'התראות במכשיר הזה'), out, say ? null : go].filter(Boolean));
+  });
 
   window.H = { api, el, toast, me, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 

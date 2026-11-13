@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>סידור הכריות</title>
+  <!-- A sample for arrange.css (the home's arrange mode), the "ניסיוני" tag and the "חיפוש בגוגל" button (base.css).
+       Copy to public/ to view (not committed there).  ?theme=dark · ?add=1 opens the add sheet · ?drag=2 lifts the third cushion -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/launcher.css">
+  <link rel="stylesheet" href="/assets/arrange.css">
+  <style>
+    body { opacity: 1 !important; visibility: visible !important; }
+    main { display: grid; gap: 28px; padding: 14px max(16px, env(safe-area-inset-left)) 40px; }
+    h2.demo { margin: 0; font-size: .85rem; color: var(--muted); font-weight: 500; }
+    .demo-ring { display: flex; gap: 24px; justify-content: center; }
+    /* a stand-in for one cushion on the ring (index.html, the master's file) */
+    .wheel-item { position: relative; display: grid; justify-items: center; gap: 6px; inline-size: 150px; color: var(--text); text-decoration: none; }
+    .wheel-item .pillow { position: relative; display: grid; place-items: center; inline-size: 108px; block-size: 100px; }
+    .wheel-item .pillow img { max-inline-size: 100%; max-block-size: 100%; filter: drop-shadow(0 10px 8px rgba(30, 16, 8, .32)); }
+    .wheel-item .label { font-size: 1.28rem; font-weight: 600; }
+    .card-demo { max-inline-size: 520px; padding: 16px; display: grid; gap: 10px; }
+    .card-demo p { margin: 0; }
+  </style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const SV = (d, w = 24) => `<svg viewBox="0 0 ${w} ${w}" aria-hidden="true">${d}</svg>`;
+  const X = SV('<path d="M6 6l12 12M18 6 6 18"/>');
+  const LOCK = SV('<rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>');
+  const PLUS = SV('<path d="M12 5v14M5 12h14"/>');
+  const FLASK = SV('<path d="M9.5 3.5h5M10.5 3.5v5.2L5.4 17.6A2 2 0 0 0 7.1 20.5h9.8a2 2 0 0 0 1.7-2.9l-5.1-8.9V3.5"/><path d="M7.6 14.5h8.8"/>');
+  const tag = `<span class="tag-exp">${FLASK}ניסיוני</span>`;
+  const ic = (n) => H.icon(n).outerHTML;
+  const P = (n) => `/assets/pillows/p${String(n).padStart(2, '0')}.webp`;
+  const items = [
+    ['עץ המשפחה', 15, 'family', 1], ['מתכונים', 3, 'book'], ['שירון', 7, 'music'], ['פתקים', 9, 'note'],
+    ['הגדרות', 2, 'settings', 1], ['סידור המייל', 11, 'mail', 0, 1], ['חדשות', 5, 'news'], ['כלים', 1, 'tools', 1]];
+  const drag = +(q.get('drag') ?? -1);
+  const li = ([name, p, icon, fixed, exp], i) => `<li class="arr-item${i === drag ? ' dragging' : ''}${i === drag + 1 && drag >= 0 ? ' ghost' : ''}" style="--n:${i}" tabindex="0"
+      aria-roledescription="כרית שאפשר להזיז" ${fixed ? 'data-fixed' : ''}>
+      <span class="arr-pillow"><img src="${P(p)}" alt=""><span class="badge">${ic(icon)}</span></span>
+      <b class="arr-name">${name}</b>${exp ? tag : ''}
+      ${fixed ? `<span class="arr-fixed" role="img" aria-label="כרית קבועה" title="כרית קבועה: אפשר להזיז, לא להוריד">${LOCK}</span>`
+               : `<button class="arr-x" type="button" aria-label="הורדת ${name} מהבית">${X}</button>`}
+    </li>`;
+  document.body.insertAdjacentHTML('beforeend', `<main>
+    <section class="arr" aria-labelledby="arr-h">
+      <header class="arr-bar"><div><h2 id="arr-h">סידור הכריות</h2><p>גוררים כרית כדי להזיז אותה, ✕ כדי להוריד. כריות עם מנעול נשארות תמיד.</p></div>
+        <button class="btn primary arr-done" type="button">סיום</button></header>
+      <ul class="arr-tray">${items.map(li).join('')}
+        <li><button class="arr-add" type="button"><span class="arr-slot">${PLUS}</span><b>הוסף כרית</b></button></li></ul>
+    </section>
+
+    <h2 class="demo">התגית על כרית בגלגל</h2>
+    <div class="demo-ring">
+      <a class="wheel-item" href="#"><span class="pillow"><img src="${P(11)}" alt="">${tag}</span><span class="label">סידור המייל</span></a>
+      <a class="wheel-item" href="#"><span class="pillow"><img src="${P(13)}" alt="">${tag}</span><span class="label">סידור המחשב</span></a>
+    </div>
+
+    <h2 class="demo">התגית ברשימת הכלים</h2>
+    <div class="apps-grid flat">
+      <a class="app" href="#"><span class="ic">${ic('book')}</span><span>מתכונים</span></a>
+      <a class="app" href="#"><span class="ic">${ic('note')}</span><span>פתקים</span></a>
+      <a class="app" href="#"><span class="ic">${ic('mail')}</span><span>סידור המייל</span>${tag}</a>
+      <a class="app" href="#"><span class="ic">${ic('pc')}</span><span>סידור המחשב</span>${tag}</a>
+    </div>
+
+    <h2 class="demo">כפתור "חיפוש בגוגל" בכרטיס</h2>
+    <div class="card card-demo"><p><b>שקשוקה ירוקה</b></p><p class="muted">מתכון של סבתא, בלי כמויות. אפשר לחפש גרסאות נוספות:</p>
+      <p><a class="g-search" href="https://www.google.com/search?q=%D7%A9%D7%A7%D7%A9%D7%95%D7%A7%D7%94" target="_blank" rel="noopener">${ic('lens')}חיפוש בגוגל</a>
+         <a class="g-search" href="#" target="_blank" rel="noopener">${ic('lens')}חיפוש בגוגל: <span class="g-q">שקשוקה ירוקה עם תרד וגבינת פטה</span></a></p></div>
+  </main>`);
+  if (q.get('add')) H.modal(H.el('h2', {}, 'הוספת כרית'), (() => { const d = document.createElement('div'); d.innerHTML = `<ul class="arr-pick">
+      ${[['סידור המחשב', 13, 'מדריך קטן למחשב הביתי', 1], ['לוח השנה', 6, 'אירועים וימי הולדת'], ['אלבום', 8, 'התמונות של המשפחה']].map(([n, p, s, e]) =>
+        `<li><button type="button"><img src="${P(p)}" alt=""><span><b>${n}</b><small>${s}</small>${e ? tag : ''}</span><span class="arr-plus">${PLUS}</span></button></li>`).join('')}</ul>`; return d; })());
+})();
+</script>
+</body>
+</html>

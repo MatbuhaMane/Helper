@@ -1,0 +1,227 @@
+/*
+  Care modes: the grandparents' home (.gp-), the emergency button and its screens (.sos-), the kids' home (.kd-).
+  Loaded after base.css by the home (index.html) and by the alert page. The contract is docs/design/care.md,
+  the sample docs/design/prototype/care.html.
+
+  The emergency red is its own token, used for nothing else in the hub, so it is never mistaken for an ordinary
+  "danger" (a delete, a minus). Text on it is white and large; the ring and the countdown use the same red.
+*/
+:root {
+  --sos: #b3261e;            /* white text 6.5:1 */
+  --sos-ink: #ffffff;
+  --sos-deep: #8c1d17;       /* pressed */
+  --sos-text: #9c2119;       /* red as text on the card, 6.9:1 */
+  --sos-tint: #f7e1dc;       /* a pale red field */
+  --sos-track: color-mix(in srgb, var(--sos) 18%, var(--card));
+  --care-ok: #2f6b3a;        /* someone is on the way: a calm green, 6:1 on the card */
+  --care-ok-tint: #e1eedb;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --sos: #c7362a; --sos-ink: #ffffff; --sos-deep: #a02a20; --sos-text: #f3a397; --sos-tint: #3a1714;
+  --sos-track: color-mix(in srgb, var(--sos) 30%, var(--card)); --care-ok: #9fd2a2; --care-ok-tint: #15281a;
+} }
+:root[data-theme="dark"] {
+  --sos: #c7362a; --sos-ink: #ffffff; --sos-deep: #a02a20; --sos-text: #f3a397; --sos-tint: #3a1714;
+  --sos-track: color-mix(in srgb, var(--sos) 30%, var(--card)); --care-ok: #9fd2a2; --care-ok-tint: #15281a;
+}
+
+/* ───────────── The read-aloud button (any text in grandparents mode, and the kids' answers) ───────────── */
+.gp-speak { flex: none; display: inline-grid; place-items: center; inline-size: 48px; block-size: 48px; padding: 0; border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--primary) 35%, var(--line)); background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  color: var(--primary); cursor: pointer; font: inherit; }
+.gp-speak .icon { inline-size: 26px; block-size: 26px; }
+.gp-speak:hover { background: color-mix(in srgb, var(--primary) 14%, var(--card)); }
+.gp-speak:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.gp-speak[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); }
+.gp-speak[aria-pressed="true"] .gp-wave { animation: gp-wave 1s ease-in-out infinite alternate; }
+@keyframes gp-wave { from { opacity: .35; } to { opacity: 1; } }
+
+/* ───────────── The grandparents' home ───────────── */
+.gp-home { font-size: 1.25rem; line-height: 1.5; display: grid; gap: 22px; max-inline-size: 980px; margin-inline: auto;
+  padding-block: 20px 40px; padding-inline: 16px; }
+.gp-home h1, .gp-home h2, .gp-home p { margin: 0; }
+.gp-say { display: flex; align-items: center; gap: 12px; }
+.gp-say > :first-child { flex: 1; min-inline-size: 0; }
+.gp-head { display: grid; gap: 6px; }
+.gp-head h1 { font-size: 2rem; line-height: 1.2; font-weight: 600; text-wrap: balance; }
+.gp-head p { color: var(--muted); }
+
+.gp-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gp-tile { position: relative; }
+.gp-tile > a { display: grid; justify-items: center; align-content: center; gap: 10px; min-block-size: 158px; padding: 16px 12px 14px;
+  border-radius: var(--radius-lg); border: 2px solid color-mix(in srgb, var(--c2, var(--primary)) 30%, var(--line));
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--c2, var(--primary)) 16%, var(--card)), var(--card) 70%);
+  color: var(--text); text-decoration: none; text-align: center; }
+.gp-tile > a:hover { border-color: color-mix(in srgb, var(--c2, var(--primary)) 60%, var(--line)); }
+.gp-tile > a:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.gp-tile > a:active { transform: scale(.98); }
+.gp-tile img { inline-size: 96px; block-size: 89px; object-fit: contain; }
+.gp-tile .gp-tile-ic { display: grid; place-items: center; inline-size: 88px; block-size: 88px; border-radius: 50%;
+  background: var(--primary); color: var(--primary-ink); }
+.gp-tile .gp-tile-ic .icon { inline-size: 44px; block-size: 44px; stroke-width: 1.8; }
+.gp-tile b { font-size: 1.4rem; font-weight: 600; line-height: 1.2; }
+.gp-tile .gp-speak { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; inline-size: 44px; block-size: 44px; }
+
+.gp-more { display: flex; align-items: center; justify-content: center; gap: 12px; min-block-size: 64px; padding: 10px 20px;
+  border-radius: var(--radius-lg); border: 2px solid var(--line-strong); background: var(--card); color: var(--text);
+  font-size: 1.3rem; font-weight: 600; text-decoration: none; }
+.gp-more .icon { inline-size: 28px; block-size: 28px; }
+.gp-more:hover { border-color: var(--primary); }
+.gp-more:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+
+@media (min-width: 760px) {
+  .gp-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .gp-tile > a { min-block-size: 200px; }
+  .gp-home .sos { max-inline-size: 640px; inline-size: 100%; justify-self: center; }
+}
+
+/* ───────────── The emergency button: hold 3 seconds while the ring fills ───────────── */
+.sos { display: flex; align-items: center; gap: 18px; padding: 16px 18px; border-radius: var(--radius-lg);
+  background: var(--sos-tint); border: 2px solid color-mix(in srgb, var(--sos) 35%, transparent); }
+.sos-btn { --p: 0; flex: none; position: relative; display: grid; place-items: center; inline-size: 128px; block-size: 128px; padding: 9px;
+  border: 0; border-radius: 50%; cursor: pointer; font: inherit; touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; background: conic-gradient(var(--sos) calc(var(--p) * 1turn), var(--sos-track) 0); }
+.sos-core { display: grid; place-items: center; align-content: center; gap: 2px; inline-size: 100%; block-size: 100%; border-radius: 50%;
+  background: var(--sos); color: var(--sos-ink); box-shadow: inset 0 -4px 0 rgb(0 0 0 / .18); transition: transform .12s ease; }
+.sos-core .icon { inline-size: 34px; block-size: 34px; stroke-width: 1.9; }
+.sos-core b { font-size: 1.45rem; font-weight: 600; line-height: 1.1; }
+.sos-btn:focus-visible { outline: 3px solid var(--sos-text); outline-offset: 4px; }
+.sos-btn.holding .sos-core { transform: scale(.94); background: var(--sos-deep); box-shadow: none; }
+.sos-how { flex: 1; min-inline-size: 0; display: grid; gap: 4px; }
+.sos-how b { font-size: 1.3rem; color: var(--sos-text); line-height: 1.25; }
+.sos-how span { font-size: 1.05rem; color: var(--text); }
+.sos-how .sos-left { font-variant-numeric: tabular-nums; }
+@media (max-width: 340px) { .sos { flex-direction: column; text-align: center; } }
+
+/* ───────────── After sending: the sender's screen ───────────── */
+.sos-screen { position: fixed; inset: 0; z-index: calc(var(--z-sheet, 60) + 5); overflow-y: auto; background: var(--bg);
+  padding-block: calc(env(safe-area-inset-top, 0px) + 18px) calc(env(safe-area-inset-bottom, 0px) + 24px);
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); font-size: 1.15rem; }
+.sos-screen-in, .sos-alert { display: grid; gap: 16px; max-inline-size: 640px; margin-inline: auto; }
+.sos-screen h2, .sos-screen h3, .sos-screen p, .sos-alert h1, .sos-alert h2, .sos-alert p { margin: 0; }
+
+.sos-top { display: grid; justify-items: center; gap: 8px; padding: 22px 16px; text-align: center; border-radius: var(--radius-lg);
+  background: var(--sos-tint); border: 2px solid color-mix(in srgb, var(--sos) 35%, transparent); }
+.sos-top-ic { display: grid; place-items: center; inline-size: 72px; block-size: 72px; border-radius: 50%; background: var(--sos); color: var(--sos-ink); }
+.sos-top-ic .icon { inline-size: 38px; block-size: 38px; stroke-width: 1.9; }
+.sos-top h2 { font-size: 1.7rem; line-height: 1.2; text-wrap: balance; }
+.sos-top p { color: var(--text); }
+
+/* the 10 seconds to cancel: a wide button with a bar that empties */
+.sos-cancel { display: grid; gap: 8px; }
+.sos-undo { min-block-size: 60px; font-size: 1.25rem; font-weight: 600; border-radius: var(--radius); border: 2px solid var(--line-strong);
+  background: var(--card); color: var(--text); cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.sos-undo:hover { border-color: var(--text); }
+.sos-undo:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.sos-undo .sos-left { display: inline-grid; place-items: center; min-inline-size: 1.9em; block-size: 1.9em; border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 10%, var(--card)); font-variant-numeric: tabular-nums; }
+.sos-timer { block-size: 6px; border-radius: 3px; background: var(--sos-track); overflow: hidden; }
+.sos-timer i { display: block; block-size: 100%; inline-size: calc(var(--t, 1) * 100%); background: var(--sos); border-radius: inherit; transition: inline-size 1s linear; }
+
+/* someone is coming: the most important line on the screen once it is true */
+.sos-coming { display: flex; align-items: center; gap: 14px; padding: 16px; border-radius: var(--radius-lg);
+  background: var(--care-ok-tint); border: 2px solid color-mix(in srgb, var(--care-ok) 45%, transparent); }
+.sos-coming .icon { flex: none; inline-size: 34px; block-size: 34px; color: var(--care-ok); stroke-width: 1.9; }
+.sos-coming b { display: block; font-size: 1.35rem; color: var(--care-ok); line-height: 1.25; }
+.sos-coming span { color: var(--text); }
+
+/* who got it, who saw it, who is on it */
+.sos-who { display: grid; gap: 8px; }
+.sos-who h3, .sos-call h3 { font-size: 1.05rem; color: var(--muted); font-weight: 500; }
+.sos-who ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sos-who li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 12px;
+  border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+.sos-face { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 16%, var(--card)); color: var(--text); font-weight: 600; font-style: normal; }
+.sos-face img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.sos-who li > b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sos-state { font-size: .92rem; color: var(--muted); white-space: nowrap; }
+.sos-who li[data-state="seen"] .sos-state { color: var(--text); }
+.sos-who li[data-state="on-it"] { border: 2px solid var(--care-ok); background: var(--care-ok-tint); }
+.sos-who li[data-state="on-it"] .sos-state { color: var(--care-ok); font-weight: 600; }
+.sos-who li[data-state="on-it"] .sos-face { box-shadow: 0 0 0 2px var(--care-ok); }
+
+/* the three numbers */
+.sos-call { display: grid; gap: 8px; }
+.sos-dial { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.sos-dial a { display: grid; justify-items: center; align-content: center; gap: 2px; min-block-size: 92px; padding: 10px 6px;
+  border-radius: var(--radius); border: 2px solid color-mix(in srgb, var(--sos) 55%, var(--line)); background: var(--card);
+  color: var(--text); text-decoration: none; text-align: center; }
+.sos-dial a:hover { background: var(--sos-tint); }
+.sos-dial a:focus-visible { outline: 3px solid var(--sos-text); outline-offset: 2px; }
+.sos-dial .icon { inline-size: 22px; block-size: 22px; color: var(--sos-text); }
+.sos-dial b { font-size: 1.9rem; line-height: 1.1; font-weight: 600; color: var(--sos-text); font-variant-numeric: tabular-nums; }
+.sos-dial span { font-size: .88rem; line-height: 1.25; }
+.sos-note { font-size: .95rem; color: var(--muted); }
+
+/* ───────────── The alert the household gets (its own page, opened from the notification) ───────────── */
+.sos-alert { font-size: 1.1rem; padding-block: 18px 40px; padding-inline: 16px; }
+.sos-alert-top { display: flex; align-items: center; gap: 16px; padding: 18px; border-radius: var(--radius-lg); background: var(--sos); color: var(--sos-ink); }
+.sos-alert-top h1 { font-size: 1.6rem; line-height: 1.2; text-wrap: balance; }
+.sos-alert-top p { opacity: .92; }
+.sos-bell { flex: none; position: relative; display: grid; place-items: center; inline-size: 60px; block-size: 60px; border-radius: 50%;
+  background: rgb(255 255 255 / .16); }
+.sos-bell .icon { inline-size: 32px; block-size: 32px; stroke-width: 1.9; }
+.sos-bell::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgb(255 255 255 / .7); animation: sos-pulse 1.6s ease-out infinite; }
+@keyframes sos-pulse { from { transform: scale(1); opacity: .9; } to { transform: scale(1.5); opacity: 0; } }
+
+.sos-where { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 12px; padding: 14px 16px;
+  border-radius: var(--radius-lg); background: var(--card); border: 1px solid var(--line); }
+.sos-where > .icon { inline-size: 28px; block-size: 28px; color: var(--sos-text); }
+.sos-where b { display: block; }
+.sos-where small { color: var(--muted); font-size: .9rem; }
+.sos-where .btn { grid-column: 1 / -1; justify-self: stretch; justify-content: center; text-align: center; min-block-size: 48px; }
+.sos-where[data-none] > .icon { color: var(--muted); }
+
+.sos-take { inline-size: 100%; min-block-size: 64px; font-size: 1.35rem; font-weight: 600; border-radius: var(--radius-lg); border: 0; cursor: pointer;
+  font-family: inherit; background: var(--care-ok); color: var(--bg); display: flex; align-items: center; justify-content: center; gap: 10px; }
+.sos-take .icon { inline-size: 28px; block-size: 28px; }
+.sos-take:hover { background: color-mix(in srgb, var(--care-ok) 88%, var(--ink)); }
+.sos-take:focus-visible { outline: 3px solid var(--care-ok); outline-offset: 3px; }
+.sos-take[aria-pressed="true"] { background: var(--care-ok-tint); color: var(--care-ok); border: 2px solid var(--care-ok); }
+.sos-callback { min-block-size: 56px; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.sos-callback .icon { inline-size: 24px; block-size: 24px; }
+
+@media (prefers-reduced-motion: reduce) { .sos-bell::after, .gp-speak .gp-wave { animation: none; } .sos-timer i, .sos-core { transition: none; } }
+:root[data-motion="reduce"] .sos-bell::after, :root[data-motion="reduce"] .gp-speak .gp-wave { animation: none; }
+
+/* ───────────── The kids' home ───────────── */
+.kd-home { display: grid; gap: 20px; max-inline-size: 1000px; margin-inline: auto; padding-block: 20px 40px; padding-inline: 16px; font-size: 1.1rem; }
+.kd-home h1, .kd-home p { margin: 0; }
+.kd-head { display: flex; align-items: center; gap: 14px; }
+.kd-head > div { flex: 1; min-inline-size: 0; }
+.kd-head h1 { font-family: 'Varela Round', 'Rubik', 'Ohel Ivri', sans-serif; font-size: 2.1rem; line-height: 1.15; }
+.kd-head p { color: var(--muted); font-size: 1.15rem; }
+.kd-buddy { flex: none; inline-size: 72px; block-size: 72px; border-radius: 50%; object-fit: cover; background: color-mix(in srgb, var(--olive) 30%, var(--card)); }
+
+/* ask the helper: one round field, the mic at its end */
+.kd-ask { display: flex; align-items: center; gap: 8px; padding: 6px; padding-inline-start: 18px; border-radius: 999px;
+  background: var(--card); border: 2px solid color-mix(in srgb, var(--olive) 55%, var(--line)); }
+.kd-ask:focus-within { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent); }
+.kd-ask input { flex: 1; min-inline-size: 0; border: 0; background: none; font: inherit; font-size: 1.15rem; color: var(--text); padding-block: 10px; }
+.kd-ask input:focus { outline: none; }
+.kd-ask input::placeholder { color: var(--muted); }
+.kd-ask button { flex: none; display: grid; place-items: center; inline-size: 52px; block-size: 52px; border-radius: 50%; border: 0;
+  background: var(--primary); color: var(--primary-ink); cursor: pointer; }
+.kd-ask button .icon { inline-size: 26px; block-size: 26px; }
+.kd-ask button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+
+.kd-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.kd-tiles a { position: relative; display: grid; justify-items: center; align-content: start; gap: 6px; min-block-size: 190px; padding: 16px 10px 14px;
+  border-radius: 26px; text-align: center; text-decoration: none; color: var(--text);
+  background: color-mix(in srgb, var(--c2, var(--olive)) 20%, var(--card));
+  border: 2px solid color-mix(in srgb, var(--c2, var(--olive)) 40%, transparent);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--c2, var(--olive)) 45%, transparent); transition: transform .15s ease, box-shadow .15s ease; }
+.kd-tiles li:nth-child(odd) a img { rotate: -5deg; }
+.kd-tiles li:nth-child(even) a img { rotate: 4deg; }
+.kd-tiles img { inline-size: 104px; block-size: 96px; object-fit: contain; transition: rotate .2s ease, scale .2s ease; }
+.kd-tiles b { font-family: 'Varela Round', 'Rubik', 'Ohel Ivri', sans-serif; font-size: 1.3rem; line-height: 1.2; }
+.kd-tiles small { font-size: .92rem; color: color-mix(in srgb, var(--muted) 70%, var(--text)); line-height: 1.3; }
+.kd-tiles a:hover { transform: translateY(-2px); }
+.kd-tiles a:hover img { rotate: 0deg; scale: 1.06; }
+.kd-tiles a:active { transform: translateY(3px); box-shadow: 0 2px 0 color-mix(in srgb, var(--c2, var(--olive)) 45%, transparent); }
+.kd-tiles a:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+@media (min-width: 760px) { .kd-tiles { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { .kd-tiles a, .kd-tiles img { transition: none; } }
+:root[data-motion="reduce"] :is(.kd-tiles a, .kd-tiles img) { transition: none; }

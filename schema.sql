@@ -1266,3 +1266,16 @@ CREATE TABLE IF NOT EXISTS egg_finds (
   at     INTEGER NOT NULL,
   PRIMARY KEY (egg_id, email)
 );
+
+-- notifications held by the gate (quiet hours, quiet Shabbat, not urgent) for the daily summary (server/push.ts)
+CREATE TABLE IF NOT EXISTS push_digest (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  email      TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  url        TEXT,
+  created_at INTEGER NOT NULL,
+  seen_at    INTEGER
+);
+CREATE INDEX IF NOT EXISTS push_digest_email ON push_digest (email, seen_at);

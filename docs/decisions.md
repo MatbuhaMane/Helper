@@ -2587,3 +2587,27 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - **For design (styles needed):** `.layout-pv` (the preview bar; now unstyled, static), `details.st-ver`, the egg form's
   x/y ranges and kind select (`form.egg-form`), `button.egg.float` / `.egg.found` / `.egg-note` on pages, and the tree's
   bottom sheet height at 375 (it reaches slightly past the screen's foot).
+
+## 2026-11-13 · The notification gate and the daily summary (master, batch 13)
+- Every push passes `server/push-gate.ts` (tests: `tools/test-push-gate.mjs`).
+  - An emergency (`urgent: true`) always goes.
+  - Quiet Shabbat holds everything else, from candle lighting to havdalah, Yom Tov included. It uses Hebcal for the city in prefs `calendar.city`.
+  - Quiet hours hold everything else too.
+  - During the day only five `kind`s go at once: `family`, `gather`, `reminder`, `familyday`, `emergency`.
+  - A message without a kind is held for the summary.
+- **For areas:** pass `kind` in every `PushMsg`.
+- **Prefs `notify`** (the settings page writes them; ai-features):
+  - `quietFrom` and `quietTo` ("HH:MM", Israel time; default 22:00–07:00);
+  - `shabbat` (true for a person whose tradition keeps Shabbat).
+- **Not yet built:** the sender side ("nothing is sent from a Shabbat-keeping user") belongs to each feature. Use `inShabbat` from push-gate when that is needed.
+- **The summary:**
+  - held items go to `push_digest`, and `GET /api/digest` returns them and marks them seen;
+  - the home shows them in a plain window at the first open of the day (index.html) until design's card arrives.
+
+## 2026-11-14 · The summary every morning (the owner)
+- The "סיכום היום" card shows at the first open of every day.
+  - It lists what waited when something did.
+  - Otherwise it shows a quiet-day line with the day's sunset.
+- When something waited in the last day, one morning notification goes out: "סיכום היום מהאוהל".
+  - It is sent by the cron `0 5 * * *` (07:00 in winter, 08:00 in summer) through `push.morning`, with kind `summary`.
+  - Shabbat or the person's quiet hours skip it.

@@ -7,6 +7,8 @@
      H.ringApps()              what the ring shows now, in order
      H.isPinned(href)          H.togglePin(href) → pinned or not (saved)
      H.appIcon(name)           the icon of a menu (H.icon)
+     H.setRing(hrefs)          the home's arrange tray: the ring's cushions in this order (saved: pins + order)
+     H.expTag(app)             the "ניסיוני" tag (design's .tag-exp) for an app with tag, else null
      H.PARTS                   the parts of the tent (the top menu), in order
    The owner's עץ מבנה (the back door, server/layout.ts) is a layer over this list: order, the tools under each part,
    hidden items, names, icons, cushions, colours and the ring's default (H.mergeLayout; H.layout() for the editor). */
@@ -24,22 +26,23 @@
     { href: '/songs/', ic: 'music', name: 'שירון', sub: 'מילים, אקורדים לגיטרה ולפסנתר, וזמירות שבת', pillow: 'p03', c2: '#d2601a' },
     { href: '/parasha/', ic: 'torah', name: 'פרשת השבוע', sub: 'הפרשה, הקריאה וזמני השבת', pillow: 'p02', c2: '#8e2435' },
     // the tools
-    { href: '/tools/calendar/', ic: 'calendar', name: 'לוח שנה', sub: 'החגים, הצומות והימים של המשפחה', pillow: 'p07', c2: '#c0402a' },
-    { href: '/gather/', ic: 'family', name: 'מפגש משפחתי', sub: 'קישור אחד לווטסאפ, וכולם עונים', pillow: 'p14', c2: '#b8402a' },
-    { href: '/messages/', ic: 'mail', name: 'הודעות', sub: 'שיחה עם בני הבית והמשפחה', pillow: 'p13', c2: '#3557a8' },
+    // (the owner's order, batch 14, 2026-11-14; tag: a small label design styles, e.g. 'ניסיוני')
     { href: '/groceries/', ic: 'cart', name: 'רשימת קניות', sub: 'מה חסר בבית, ומי קונה', pillow: 'p12', c2: '#c4501e' },
     { href: '/groceries/#book', ic: 'book', name: 'ספר מתכונים', sub: 'המתכונים שלנו, ומתכונים מכל העולם', pillow: 'p01', c2: '#8e2435' },
-    { href: '/tools/notes/', ic: 'note', name: 'פתקים', sub: 'מה ששמרתם מכל מקום באוהל', pillow: 'p10', c2: '#9c2a2a' },
-    { href: '/tools/tasks/', ic: 'tasks', name: 'ניהול מטרות', sub: 'מטרה, תהליכים, וצעד קטן כל יום', pillow: 'p09', c2: '#6c4fd6' },
-    { href: '/tools/research/', ic: 'lens', name: 'עוזר מחקר', sub: 'פתקים, שאלות פתוחות, מקורות וכתיבה', pillow: 'p11', c2: '#3557a8' },
+    { href: '/food/fridge/', ic: 'fridge', name: 'מקרר', sub: 'מה יש בבית, ומה לבשל ממנו', pillow: 'p06', c2: '#9c2a2a' },
+    { href: '/messages/', ic: 'mail', name: 'הודעות', sub: 'שיחה עם בני הבית והמשפחה', pillow: 'p13', c2: '#3557a8' },
+    { href: '/gather/', ic: 'family', name: 'מפגש משפחתי', sub: 'קישור אחד לווטסאפ, וכולם עונים', pillow: 'p14', c2: '#b8402a' },
+    { href: '/tools/calendar/', ic: 'calendar', name: 'לוח שנה', sub: 'החגים, הצומות והימים של המשפחה', pillow: 'p07', c2: '#c0402a' },
     { href: '/tools/weather/', ic: 'weather', name: 'מזג אוויר', sub: 'מה בחוץ היום, ומה מחר', pillow: 'p14', c2: '#2a7fa8' },
+    { href: '/tools/notes/', ic: 'note', name: 'פתקים', sub: 'מה ששמרתם מכל מקום באוהל', pillow: 'p10', c2: '#9c2a2a' },
     { href: '/tools/calc/', ic: 'calc', name: 'מחשבון', sub: 'חשבון, ועוזר חכם למתמטיקה ולפיזיקה', pillow: 'p06', c2: '#9c2a2a' },
-    { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c' },
-    { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a' },
+    { href: '/tools/tasks/', ic: 'tasks', name: 'ניהול מטרות', sub: 'מטרה, תהליכים, וצעד קטן כל יום', pillow: 'p09', c2: '#6c4fd6' },
     { href: '/food/diet/', ic: 'diet', name: 'תנועה ותזונה', sub: 'הקפדה, הדרך שבה אוכלים, ומה מתאים לה', pillow: 'p10', c2: '#9c2a2a' },
     { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', sub: 'מה שהחלטתם לשמור עליו, יום אחר יום', pillow: 'p12', c2: '#c4501e' },
     { href: '/food/diet/habits/', ic: 'habits', name: 'הרגלי אכילה', sub: 'קטו, אטקינס, פליאו ועוד – מתג לכל דרך אכילה', pillow: 'p13', c2: '#1f8f8a' },
-    { href: '/food/fridge/', ic: 'fridge', name: 'מקרר', sub: 'מה יש בבית, ומה לבשל ממנו', pillow: 'p06', c2: '#9c2a2a' },
+    { href: '/tools/research/', ic: 'lens', name: 'עוזר מחקר', sub: 'פתקים, שאלות פתוחות, מקורות וכתיבה', pillow: 'p11', c2: '#3557a8' },
+    { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c', tag: 'ניסיוני' },
+    { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a', tag: 'ניסיוני' },
   ];
   const DEFAULT_PINS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];   // the parts the ring always had
   const CODE = APPS.slice();                    // the code's own catalogue; APPS itself is what the layout makes of it
@@ -135,11 +138,32 @@
   }
   /** the ring: the family tree first, the person's pins, then the tools and the settings */
   function ringApps() {
-    const pinned = prefs().pins.map(byHref).filter((a) => a && !a.fixed);
-    return [byHref('/family/'), ...pinned, byHref('/tools/'), byHref('/settings/')];
+    const p = prefs();
+    const pinned = p.pins.map(byHref).filter((a) => a && !a.fixed);
+    const all = [byHref('/family/'), ...pinned, byHref('/tools/'), byHref('/settings/')];
+    if (!Array.isArray(p.order)) return all;
+    // the order set in the home's arrange tray (batch 14); anything pinned since then goes at the end
+    const set = p.order.map(byHref).filter((a, i, arr) => a && all.includes(a) && arr.indexOf(a) === i);
+    return [...set, ...all.filter((a) => !set.includes(a))];
   }
+  function setRing(hrefs) {
+    const p = prefs();
+    const order = [...new Set(hrefs)].filter(byHref);
+    for (const a of APPS) if (a.fixed && !order.includes(a.href)) order.push(a.href);   // a fixed cushion is never removed
+    p.order = order;
+    p.pins = order.filter((h) => !byHref(h).fixed);
+    H.savePrefs('home');
+  }
+  const FLASK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3.5h5M10.5 3.5v5.2L5.4 17.6A2 2 0 0 0 7.1 20.5h9.8a2 2 0 0 0 1.7-2.9l-5.1-8.9V3.5"/><path d="M7.6 14.5h8.8"/></svg>';
+  const expTag = (a) => (a?.tag ? H.el('span', { class: 'tag-exp', html: FLASK + a.tag }) : null);
   // (the shared icons have the gear for הגדרות now; appIcon stays as the one name the ring and the tools page use)
   const appIcon = (name, cls) => H.icon(name, cls);
-  Object.assign(H, { APPS, PARTS, ringApps, isPinned, togglePin, appIcon, mergeLayout,
+  /* Big ideas shown on purpose as "בקרוב" (batch 15, 2026-11-14): no work on them, not even a spec. Not in APPS, so nothing links
+     to a page that doesn't exist. Design draws each one and its note; a tap opens only the one sentence in `line`. */
+  const SOON = [
+    { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
+    { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' },
+  ];
+  Object.assign(H, { APPS, PARTS, SOON, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
     layout: () => ({ code: CODE, tree: TREE, hidden: HIDDEN, pins: PINS.slice(), defaultPins: DEFAULT_PINS.slice() }) });
 })();

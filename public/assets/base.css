@@ -33,6 +33,7 @@
   --accent-ink: var(--ink);
   --danger: #9a3b2a;
   --alert: #cc5a46;   /* the bar's warning triangle: a soft coral red, still 3:1 on the bar */
+  --exp: #8f5a0c;     /* the "ניסיוני" tag: a warm amber, a trial and not a warning (4.5:1 as text on its own wash) */
   --ok: var(--vine);
   --glass: rgba(247, 246, 240, 0.82);
   --glass-border: rgba(46, 42, 30, 0.12);
@@ -66,6 +67,7 @@
     --primary-ink: #070b14;
     --danger: #e79a85;
     --alert: #e79a85;
+    --exp: #e8b766;
     --ok: #a8c28c;
     --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
@@ -85,6 +87,7 @@
     --primary-ink: #070b14;
     --danger: #e79a85;
     --alert: #e79a85;
+    --exp: #e8b766;
     --ok: #a8c28c;
     --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
@@ -812,3 +815,23 @@ body:has(.fab-wrap) .owner-msgs { inset-block-end: calc(var(--tabbar-h, 0px) + e
 .ivri.open .ivri-old { display: none; }
 .ivri.open .ivri-he { position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; white-space: normal; }
 .ivri:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* "ניסיוני": a tool still on trial (H.APPS tag). A small amber pill with a flask; on a tile in the tools list, on a cushion
+   on the ring and in the arrange tray it sits on the top corner (.app .tag-exp, .wheel-item .tag-exp, .arr-item .tag-exp). */
+.tag-exp { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px 1px 7px; border-radius: 999px; font-size: .72rem; font-weight: 600; line-height: 1.5;
+  white-space: nowrap; color: var(--exp); background: color-mix(in srgb, var(--exp) 13%, var(--card)); border: 1px solid color-mix(in srgb, var(--exp) 45%, transparent); }
+.tag-exp svg { inline-size: 12px; block-size: 12px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+:is(.app, .wheel-item, .arr-item) > .tag-exp, .wheel-item .pillow > .tag-exp { position: absolute; inset-block-start: -6px; inset-inline-end: 0; z-index: 2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .12); pointer-events: none; }
+.wheel-item .pillow > .tag-exp { inset-block-start: 2px; inset-inline-end: -4px; }
+.wheel-item.back .tag-exp { opacity: 0; }
+
+/* "חיפוש בגוגל": in place of a bare Google link in a card. A quiet outlined pill with a magnifier; it opens a new tab. */
+.g-search { display: inline-flex; align-items: center; gap: 6px; min-block-size: 36px; padding: 5px 14px 5px 12px; border-radius: 999px; font-size: .9rem; font-weight: 500;
+  line-height: 1.3; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); text-decoration: none; white-space: nowrap; vertical-align: middle;
+  transition: border-color var(--dur-quick) var(--ease-river), color var(--dur-quick) var(--ease-river); -webkit-tap-highlight-color: transparent; }
+.g-search .icon { inline-size: 17px; block-size: 17px; stroke-width: 2; }
+.g-search:hover { border-color: var(--primary); color: var(--primary); }
+.g-search:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.g-search:active { transform: translateY(1px); }
+.g-search .g-q { max-inline-size: 18ch; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-weight: 400; }

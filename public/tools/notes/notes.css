@@ -58,3 +58,141 @@
 /* tags: a row of chips (a pressed one filters; base.css colours the pressed state) */
 .nt-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .nt-tags .chip.nt-tag { font-size: .82rem; padding: 3px 10px; }
+
+/* ---------- the formatting toolbar and the rich note (notes.js, 2026-11-13; it had no look of its own) ---------- */
+.nt-tools { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 4px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, var(--card));
+  border: 1px solid var(--line); }
+.nt-tool { min-inline-size: 38px; min-block-size: 38px; padding: 0 8px; display: inline-grid; grid-auto-flow: column; place-items: center; gap: 4px; border-radius: 9px;
+  border: 1px solid transparent; background: none; color: var(--text); font: inherit; font-size: 1rem; line-height: 1; cursor: pointer; transition: background .15s, border-color .15s; }
+.nt-tool:hover { background: var(--card); border-color: var(--line); }
+.nt-tool:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
+.nt-tool[aria-pressed="true"], .nt-tool[aria-expanded="true"] { background: color-mix(in srgb, var(--primary) 16%, var(--card)); border-color: color-mix(in srgb, var(--primary) 55%, transparent); color: var(--primary); }
+.nt-tool b { font-weight: 700; }
+.nt-tool i { font-style: italic; font-family: 'Frank Ruhl Libre', serif; }
+.nt-tool u, .nt-tool s { text-decoration-thickness: 2px; }
+.nt-pop-b { font-size: .9rem; }
+/* a small down chevron (a drawn glyph, so physical sides: the logical ones turned it sideways in RTL) */
+.nt-pop-b::after { content: ""; inline-size: 6px; block-size: 6px; border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor; rotate: 45deg; translate: 0 -2px; opacity: .7; }
+.nt-swatch-a { font-weight: 700; text-decoration: underline 3px var(--vine); text-underline-offset: 3px; }
+.nt-pop { position: absolute; inset-block-start: calc(100% + 6px); inset-inline-start: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px;
+  max-inline-size: min(320px, 100%); border-radius: 14px; background: var(--card); border: 1px solid var(--line-strong); box-shadow: var(--lift); }
+.nt-pop[hidden] { display: none; }
+.nt-swatch { inline-size: 40px; block-size: 40px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line-strong); background: var(--bg);
+  font: inherit; font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+.nt-swatch:hover, .nt-font-b:hover { border-color: var(--primary); }
+.nt-swatch:focus-visible, .nt-font-b:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.nt-font-b { min-block-size: 40px; padding: 4px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-size: 1rem; cursor: pointer; }
+.nt-rich { white-space: pre-wrap; overflow-wrap: anywhere; }
+.nt-rich p { margin: 0; }
+
+/* the six ink colours and four faces a note may use (the allowlist in notes.js and server/notes-rich.ts) */
+:root { --nc-vine: #2f6b2a; --nc-olive: #5f6a1e; --nc-soil: #8a5a2e; --nc-red: #b03a2e; --nc-blue: #2a5f9e; }
+:root[data-theme="dark"] { --nc-vine: #8fcf7e; --nc-olive: #c5cf7a; --nc-soil: #d9a774; --nc-red: #f08e80; --nc-blue: #8cb8f0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --nc-vine: #8fcf7e; --nc-olive: #c5cf7a; --nc-soil: #d9a774; --nc-red: #f08e80; --nc-blue: #8cb8f0; } }
+.c-def { color: var(--text); } .c-vine { color: var(--nc-vine); } .c-olive { color: var(--nc-olive); } .c-soil { color: var(--nc-soil); }
+.c-red { color: var(--nc-red); } .c-blue { color: var(--nc-blue); }
+.f-rubik { font-family: 'Rubik', system-ui, sans-serif; } .f-heebo { font-family: 'Heebo', system-ui, sans-serif; }
+.f-round { font-family: 'Varela Round', 'Rubik', sans-serif; } .f-serif { font-family: 'Frank Ruhl Libre', 'David', serif; }
+
+/* ---------- four ways to see the notes (vision batch 14): .nt[data-view] = cols (default) | panes | list | board ----------
+   The choice is a row of four buttons in the head (.nt-views); notes.js keeps it with H.prefs('notes', { view }).
+   In every view but cols the notes fill the page, and opening one shows the editor in their place (body.nt-editing),
+   as on a phone. */
+.nt-views { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 5%, var(--card)); border: 1px solid var(--line); }
+.nt-views button { display: inline-flex; align-items: center; gap: 6px; min-block-size: 38px; padding: 0 12px; border: 0; border-radius: 999px; background: none;
+  color: var(--muted); font: inherit; font-size: .88rem; cursor: pointer; transition: background .15s, color .15s; }
+.nt-views button .icon { inline-size: 18px; block-size: 18px; }
+.nt-views button:hover { color: var(--text); }
+.nt-views button[aria-pressed="true"] { background: var(--card); color: var(--text); font-weight: 500; box-shadow: 0 1px 4px rgba(0, 0, 0, .14); }
+.nt-views button:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
+@media (max-width: 760px) {
+  .nt-views button span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .nt-views button { padding: 0 10px; }
+}
+.nt-head { flex-wrap: wrap; }
+.nt-head-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.nt[data-view]:not([data-view="cols"]) .nt-cols { grid-template-columns: minmax(0, 1fr); }
+.nt[data-view]:not([data-view="cols"]) .nt-editor { position: static; }
+body.nt-editing .nt[data-view]:not([data-view="cols"]) :is(.nt-side, .nt-head) { display: none; }
+.nt[data-view]:not([data-view="cols"]) .nt-back { display: inline-flex; }
+.nt[data-view]:not([data-view="cols"]) .nt-search { max-inline-size: 520px; }
+
+/* panes ("חלוניות"): each note a card with more of its text, in a grid under each day */
+.nt[data-view="panes"] .nt-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 12px; }
+.nt[data-view="panes"] .nt-group h3 { grid-column: 1 / -1; margin-block-end: 0; }
+.nt[data-view="panes"] .nt-row { position: relative; margin: 0; }
+.nt[data-view="panes"] .nt-item { block-size: 100%; align-content: start; grid-template-rows: auto auto 1fr; gap: 6px; padding: 14px 16px 12px; padding-inline-end: 44px;
+  border-radius: 16px; min-block-size: 150px; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+.nt[data-view="panes"] .nt-item b { font-size: 1.08rem; font-weight: 600; }
+.nt[data-view="panes"] .nt-snip { -webkit-line-clamp: 6; line-clamp: 6; font-size: .92rem; line-height: 1.55; }
+.nt[data-view="panes"] .nt-item small { align-self: end; }
+.nt[data-view="panes"] .nt-star { position: absolute; inset-block-start: 6px; inset-inline-end: 4px; }
+
+/* list: one dense line per note (title, the start of the text, the date), for many notes */
+.nt[data-view="list"] .nt-list { border-radius: 16px; border: 1px solid var(--line); background: var(--card); overflow: hidden; }
+.nt[data-view="list"] .nt-group h3 { margin: 0; padding: 10px 14px 6px; background: color-mix(in srgb, var(--text) 5%, var(--card)); border-block-end: 1px solid var(--line); }
+.nt[data-view="list"] .nt-group + .nt-group h3 { border-block-start: 1px solid var(--line); }
+.nt[data-view="list"] .nt-row { margin: 0; align-items: center; padding-inline-end: 6px; border-block-end: 1px solid var(--line); }
+.nt[data-view="list"] .nt-group .nt-row:last-child { border-block-end: 0; }
+.nt[data-view="list"] .nt-item { grid-template-columns: minmax(8em, 16em) minmax(0, 1fr) auto; align-items: baseline; gap: 12px; padding: 11px 14px;
+  border: 0; border-radius: 0; background: none; }
+.nt[data-view="list"] .nt-item:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+.nt[data-view="list"] .nt-item.on { box-shadow: inset -3px 0 0 var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.nt[data-view="list"] .nt-item b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nt[data-view="list"] .nt-snip { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nt[data-view="list"] .nt-item small { white-space: nowrap; }
+@media (max-width: 600px) {
+  .nt[data-view="list"] .nt-item { grid-template-columns: minmax(0, 1fr) auto; row-gap: 2px; padding-block: 9px; }
+  .nt[data-view="list"] .nt-snip { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* board: a real cork board, each note a square of coloured paper, slightly askew, held by a pin */
+.nt[data-view="board"] .nt-list { --cork: #c49a68; --frame: #8a5a32; padding: 18px 14px 26px; border-radius: 18px; background-color: var(--cork);
+  background-image: radial-gradient(circle at 20% 30%, rgba(90, 50, 20, .22) 0 1px, transparent 1.6px), radial-gradient(circle at 70% 80%, rgba(255, 240, 210, .28) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 45% 60%, rgba(90, 50, 20, .16) 0 1.4px, transparent 2px);
+  background-size: 7px 7px, 9px 9px, 13px 13px;
+  border: 10px solid var(--frame); box-shadow: inset 0 2px 10px rgba(40, 20, 6, .45), 0 10px 24px -14px rgba(40, 20, 6, .6); }
+:root[data-theme="dark"] .nt[data-view="board"] .nt-list { --cork: #7a5a3a; --frame: #4a3220; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nt[data-view="board"] .nt-list { --cork: #7a5a3a; --frame: #4a3220; } }
+.nt[data-view="board"] .nt-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 26px 20px; }
+.nt[data-view="board"] .nt-group + .nt-group { margin-block-start: 22px; }
+.nt[data-view="board"] .nt-group h3 { grid-column: 1 / -1; justify-self: start; margin: 0; padding: 3px 12px; border-radius: 4px; background: #fbf7ec; color: #4a3a28;
+  font-weight: 600; box-shadow: 0 2px 4px rgba(40, 20, 6, .3); rotate: -1deg; }
+.nt[data-view="board"] .nt-row { --paper: #fbe98c; --tilt: -1.6deg; position: relative; margin: 0; rotate: var(--tilt); transition: rotate .25s var(--ease-river), translate .25s var(--ease-river); }
+.nt[data-view="board"] .nt-row:nth-of-type(5n+2) { --paper: #fcc8d4; --tilt: 1.4deg; }
+.nt[data-view="board"] .nt-row:nth-of-type(5n+3) { --paper: #c8ecc4; --tilt: -.6deg; }
+.nt[data-view="board"] .nt-row:nth-of-type(5n+4) { --paper: #c4def6; --tilt: 2deg; }
+.nt[data-view="board"] .nt-row:nth-of-type(5n) { --paper: #fdd9a8; --tilt: -2.2deg; }
+/* a note may keep its own paper (data-paper="1"…"5", e.g. from its id), so it does not change colour when the list changes */.nt[data-view="board"] .nt-row[data-paper="1"] { --paper: #fbe98c; } .nt[data-view="board"] .nt-row[data-paper="2"] { --paper: #fcc8d4; }.nt[data-view="board"] .nt-row[data-paper="3"] { --paper: #c8ecc4; } .nt[data-view="board"] .nt-row[data-paper="4"] { --paper: #c4def6; }.nt[data-view="board"] .nt-row[data-paper="5"] { --paper: #fdd9a8; }
+.nt[data-view="board"] .nt-row:hover, .nt[data-view="board"] .nt-row:focus-within { rotate: 0deg; translate: 0 -3px; z-index: 2; }
+.nt[data-view="board"] .nt-item { block-size: 100%; aspect-ratio: 1; align-content: start; grid-template-rows: auto auto 1fr; gap: 6px; padding: 26px 16px 12px; border: 0;
+  border-radius: 2px 2px 3px 14px / 2px 2px 3px 6px; background: linear-gradient(to bottom, rgba(0, 0, 0, .05), transparent 18px), var(--paper); color: #2e2a20;
+  box-shadow: 0 1px 1px rgba(40, 20, 6, .2), 0 12px 14px -10px rgba(40, 20, 6, .55); font-family: 'Varela Round', 'Rubik', sans-serif; overflow: hidden; }
+.nt[data-view="board"] .nt-item:hover { border: 0; }
+.nt[data-view="board"] .nt-item b { font-size: 1.05rem; font-weight: 400; }
+.nt[data-view="board"] .nt-snip { color: #4a4436; -webkit-line-clamp: 6; line-clamp: 6; font-size: .9rem; line-height: 1.5; }
+.nt[data-view="board"] .nt-item small { color: #5e5646; align-self: end; }
+.nt[data-view="board"] .nt-item.on { box-shadow: 0 0 0 3px var(--primary), 0 12px 14px -10px rgba(40, 20, 6, .55); }
+.nt[data-view="board"] .nt-item:focus-visible { outline: 3px solid #1f4f8a; outline-offset: 3px; }
+/* the pin: a round head with a highlight, at the top middle; red, blue or yellow */
+.nt[data-view="board"] .nt-row::before { content: ""; position: absolute; z-index: 3; inset-block-start: 6px; inset-inline-start: calc(50% - 8px); inline-size: 16px; block-size: 16px;
+  border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ff9e8e, #c2382a 55%, #7a1c14); box-shadow: 0 3px 3px -1px rgba(40, 10, 4, .55); pointer-events: none; }
+.nt[data-view="board"] .nt-row:nth-of-type(3n+2)::before { background: radial-gradient(circle at 35% 30%, #a8d4ff, #2a6ab8 55%, #143a6a); }
+.nt[data-view="board"] .nt-row:nth-of-type(3n)::before { background: radial-gradient(circle at 35% 30%, #fff1a0, #d0a018 55%, #7a5a08); }
+.nt[data-view="board"] .nt-star { position: absolute; z-index: 3; inset-block-start: 2px; inset-inline-end: 2px; color: #6a5a3a; background: none; border-color: transparent; }
+.nt[data-view="board"] .nt-star:hover { background: rgba(255, 255, 255, .45); border-color: transparent; }
+.nt[data-view="board"] .nt-star.on, .nt[data-view="board"] .nt-star[aria-pressed="true"] { color: #9a5a00; }
+.nt[data-view="board"] :is(.nt-none, .nt-empty) { margin: 0; padding: 14px; border-radius: 4px; background: #fbf7ec; color: #4a3a28; }
+/* by night the papers are dimmed a little, so they do not glare, and keep their dark ink */
+:root[data-theme="dark"] .nt[data-view="board"] .nt-item { filter: brightness(.86) saturate(.9); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .nt[data-view="board"] .nt-item { filter: brightness(.86) saturate(.9); } }
+:root[data-motion="reduce"] .nt[data-view="board"] .nt-row { transition: none; }
+@media (prefers-reduced-motion: reduce) { .nt[data-view="board"] .nt-row { transition: none; } }
+@media (max-width: 420px) {
+  .nt[data-view="board"] .nt-list { padding: 14px 10px 20px; border-width: 7px; }
+  .nt[data-view="board"] .nt-group { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+  .nt[data-view="board"] .nt-item { padding: 22px 10px 8px; }
+  .nt[data-view="board"] .nt-item b { font-size: .95rem; }
+  .nt[data-view="board"] .nt-snip { -webkit-line-clamp: 3; line-clamp: 3; font-size: .82rem; }
+}

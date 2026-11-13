@@ -198,3 +198,23 @@
 .rx-state button[aria-pressed="true"]:first-child { background: #c2412d; border-color: #c2412d; color: #fff; }   /* חדשה */
 .rx-thread:has(.rm-thread) .rx-pick { display: none; }
 .rx-pick { margin: 0; padding: 40px 12px; text-align: center; color: var(--muted); }
+
+/* ── the members search in חברים (admin.js): a combobox whose suggestions open under the box, like the forest search's list.
+   <div class="ad-combo"><label class="ad-search"><input type="search" role="combobox" aria-controls="ad-sugg"></label>
+     <ul id="ad-sugg" role="listbox" [hidden]><li id="ad-sugg-0" role="option" aria-selected="true|false"><b>שם</b>
+       <small class="muted"><span dir="ltr">email</span> · הבית</small></li> …</ul></div>
+   The chosen row is aria-selected (arrows or the pointer); no inline style is needed. */
+.ad-combo { position: relative; max-inline-size: 30rem; }
+.ad-combo .ad-search { display: block; }
+.ad-combo input[type="search"] { inline-size: 100%; box-sizing: border-box; }
+#ad-sugg { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 4px); z-index: var(--z-menu); margin: 0; padding: 4px; list-style: none;
+  display: grid; gap: 2px; max-block-size: min(20rem, 60vh); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--card); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 12px 32px rgba(20, 16, 8, .18); }
+#ad-sugg[hidden] { display: none; }
+#ad-sugg li { display: grid; gap: 2px; align-content: center; min-block-size: 44px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+#ad-sugg li b { font-weight: 500; overflow-wrap: anywhere; }
+#ad-sugg li small { font-size: .84rem; overflow-wrap: anywhere; }
+#ad-sugg li[aria-selected="true"] { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+#ad-sugg li[aria-selected="true"] b { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #ad-sugg { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); } }
+:root[data-theme="dark"] #ad-sugg { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); }

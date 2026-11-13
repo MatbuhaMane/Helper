@@ -323,6 +323,8 @@
     email_fixed: 'אי אפשר לשנות כתובת. מוסיפים את החדשה כחבר ומסירים את הישנה.',
     owner_only_from_config: '"מנהל" הוא מנהל האוהל כולו, ושמור לכתובת של בעל האוהל. לראש של משפחה בחרו "ראש בית".',
     owner_stays: 'בעל האוהל נשאר מנהל, ואי אפשר להסיר אותו.', last_owner: 'זה המנהל האחרון. אי אפשר להוריד אותו.',
+    already_member: 'הכתובת הזו כבר חבר באוהל. הנה הוא בחיפוש: משנים שם, בית או תפקיד בשורה שלו.',
+    self: 'אי אפשר להסיר את עצמך.', 'Invalid email': 'הכתובת לא תקינה.',
     owner_home_fixed: 'הבית של המנהל קבוע.', new_household_head: 'מי שפותח משק בית חדש הוא ראש הבית שלו.', no_household: 'אין בית כזה.', bad_role: 'תפקיד לא מוכר.',
     he_name_hebrew: 'השם בעברית צריך להיות באותיות עבריות.', confirm_needed: 'צריך לאשר את השינוי.', owner_level_only: 'רק בעל האוהל משנה תפקיד או בית.',
   });
@@ -439,7 +441,12 @@
       el('h3', {}, 'הוספת חבר'),
       el('form', { class: 'ad-form', onsubmit: async (e) => {
         e.preventDefault();
-        try { await call('/api/members', { body: { email: email.value, he_name: he.value, household: house.value } }); toast(`${email.value} נוסף`); members(box); } catch (err) { say(err); }
+        try { await call('/api/members', { body: { email: email.value, he_name: he.value, household: house.value } }); toast(`${email.value} נוסף`); members(box); }
+        catch (err) {
+          say(err);
+          // already a member (409): nothing was changed; show them in the search, where their row is edited
+          if (err.code === 'already_member') { q.value = email.value.trim(); await search(); q.scrollIntoView({ block: 'center' }); }
+        }
       } }, el('label', {}, 'אימייל', email), el('label', {}, 'שם בעברית', he), el('label', {}, 'משק בית', house), el('button', { class: 'btn primary' }, 'הוספה'))));
     // the first-sign-in message links here (/admin/#members): the room is drawn after the biometric, so scroll now
     if (location.hash === '#members' && !members.scrolled) { members.scrolled = true; box.scrollIntoView({ block: 'start' }); }

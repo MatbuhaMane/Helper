@@ -141,17 +141,17 @@
    H.palette.derive() (palette.js), which already keeps the contrast; by night the derived night values come in the same way. */
 
 /* The fonts to choose from (data-font): Rubik is the hub's own; each of the others loads only for whoever picks it. */
-:root[data-font="heebo"] body, :root[data-font="heebo"] :is(button, input, select, textarea) { font-family: 'Heebo', system-ui, sans-serif; }
-:root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, sans-serif; }
-:root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', serif; }
+:root[data-font="heebo"] body, :root[data-font="heebo"] :is(button, input, select, textarea) { font-family: 'Heebo', system-ui, 'Ohel Ivri', sans-serif; }
+:root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, 'Ohel Ivri', sans-serif; }
+:root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', 'Ohel Ivri', serif; }
 :root[data-font="serif"] :is(h1, h2, h3) { font-weight: 700; }
-:root[data-font="alef"] body, :root[data-font="alef"] :is(button, input, select, textarea) { font-family: 'Alef', 'Rubik', system-ui, sans-serif; }
+:root[data-font="alef"] body, :root[data-font="alef"] :is(button, input, select, textarea) { font-family: 'Alef', 'Rubik', system-ui, 'Ohel Ivri', sans-serif; }
 
 /* Reading comfort (הגדרות › נגישות; settings/apply.js marks <html>): the text size is the root's font size (every rem grows
    with it); these are the rest. */
 :root[data-spacing="wide"] body { line-height: 1.8; word-spacing: .14em; letter-spacing: .015em; }
 :root[data-spacing="wide"] :is(p, li, dd, label, small, .muted) { line-height: 1.8; }
-:root[data-font="readable"] body, :root[data-font="readable"] :is(button, input, select, textarea) { font-family: Arial, 'Segoe UI', system-ui, sans-serif; }
+:root[data-font="readable"] body, :root[data-font="readable"] :is(button, input, select, textarea) { font-family: Arial, 'Segoe UI', system-ui, 'Ohel Ivri', sans-serif; }
 :root[data-contrast="high"] { --text: #14120c; --muted: #3b3528; --line: #a9a28c; --line-strong: #77705b; }
 :root[data-contrast="high"][data-theme="dark"] { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; }
 @media (prefers-color-scheme: dark) { :root[data-contrast="high"]:not([data-theme="light"]) { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; } }
@@ -166,7 +166,7 @@ html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
 body { overflow-x: clip; }   /* nothing may widen a page sideways on a phone; clip keeps sticky headers working */
 body {
   margin: 0;
-  font-family: 'Rubik', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  font-family: 'Rubik', system-ui, -apple-system, 'Segoe UI', Arial, 'Ohel Ivri', sans-serif;
   font-size: 1.0625rem;
   line-height: 1.6;
   background: var(--bg);

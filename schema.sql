@@ -977,3 +977,17 @@ CREATE TABLE IF NOT EXISTS tool_visits (
   n         INTEGER NOT NULL DEFAULT 1,
   PRIMARY KEY (email, tool)
 );
+
+-- The family's feedback (ai-features, the family batch): a button on any page and the companion send it here; the owner
+-- reads it in the owner's room. No alert is sent.
+CREATE TABLE IF NOT EXISTS feedback (
+  id       TEXT PRIMARY KEY,
+  email    TEXT NOT NULL,
+  name     TEXT,
+  text     TEXT NOT NULL,
+  page     TEXT,
+  via      TEXT NOT NULL DEFAULT 'button',   -- button | companion
+  at       INTEGER NOT NULL,
+  read_at  INTEGER,
+  done     INTEGER NOT NULL DEFAULT 0
+);

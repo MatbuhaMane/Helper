@@ -525,7 +525,9 @@
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
-        el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')))));
+        el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')),
+      // feedback to the owner (the family batch): the same form any button can open
+      el('button', { class: 'btn small', type: 'button', onclick: async () => { try { await H.loadOnce('/assets/feedback.js'); H.feedback(); } catch (_) { toast('לא הצלחתי לפתוח את הטופס'); } } }, 'משוב לבעלים של האוהל'))));
   drawServices(); drawAssistant(); drawDevices(); drawPrivacy();
   paintNows();
   const want = location.hash.slice(1);

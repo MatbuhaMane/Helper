@@ -95,14 +95,51 @@
       el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל.')),
       el('span', { class: 'spacer' }), stay, lock);
     const parts = st.own
-      ? [['dash', 'לוח'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ...(st.level === 'owner' ? [['gifts', 'מתנות']] : []), ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
+      ? [['dash', 'לוח'], ['inbox', 'פניות'], ['usage', 'שימוש'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ...(st.level === 'owner' ? [['gifts', 'מתנות']] : []), ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
       : [['dash', 'מצב האוהל'], ['features', `התכונות של ${st.as.name}`]];
     const nav = el('nav', { class: 'ad-nav', 'aria-label': 'חלקי החדר' }, parts.map(([id, n]) => el('a', { href: '#' + id }, n)));
     const boxes = Object.fromEntries(parts.map(([id]) => [id, el('div', { id })]));
     root.replaceChildren(el('section', { class: 'ad' }, bar, nav, ...parts.map(([id]) => boxes[id])));
     dash(boxes.dash);
     features(boxes.features);
-    if (st.own) { messages(boxes.messages); settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); if (boxes.gifts) gifts(boxes.gifts); }
+    if (st.own) { inbox(boxes.inbox); usage(boxes.usage); messages(boxes.messages); settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); if (boxes.gifts) gifts(boxes.gifts); }
+  }
+
+  /* ---------- the family's feedback (a button anywhere, or through the companion) ---------- */
+  async function inbox(box) {
+    let d;
+    try { d = await call('/api/admin/feedback'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
+    const when = (t) => new Date(t).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const mark = async (f, patch) => { try { await call(`/api/admin/feedback/${f.id}`, { method: 'PUT', body: patch }); inbox(box); } catch (e) { toast(ERR[e.code] || e.message); } };
+    box.replaceChildren(section('inbox-s', d.unread ? `פניות · ${d.unread} חדשות` : 'פניות',
+      d.feedback.length ? el('ul', { class: 'ad-inbox', style: 'list-style:none;margin:0;padding:0;display:grid;gap:10px' }, d.feedback.map((f) => el('li', {
+        class: 'card' + (f.read_at ? '' : ' unread'), style: 'display:grid;gap:6px;' + (f.done ? 'opacity:.6' : f.read_at ? '' : 'border-inline-start:4px solid var(--primary)') },
+        el('div', { class: 'small muted' }, `${f.name || f.email} · ${when(f.at)}${f.page ? ' · ' + f.page : ''}${f.via === 'companion' ? ' · דרך העוזר' : ''}`),
+        el('p', { dir: 'auto', style: 'margin:0;white-space:pre-wrap' }, f.text),
+        el('div', { class: 'row' },
+          el('button', { class: 'btn small ghost', type: 'button', onclick: () => mark(f, { read: !f.read_at }) }, f.read_at ? 'סימון כלא נקראה' : 'נקראה'),
+          el('button', { class: 'btn small ghost', type: 'button', onclick: () => mark(f, { done: !f.done, read: true }) }, f.done ? 'החזרה לפתוחות' : 'טופלה')))))
+        : el('p', { class: 'muted' }, 'עוד אין פניות. כפתור "משוב לבעלים של האוהל" נמצא בהגדרות, ואפשר גם לבקש מהעוזר להעביר.')));
+  }
+
+  /* ---------- usage: who comes in, and which tools (never what is in them) ---------- */
+  async function usage(box) {
+    let d;
+    try { d = await call('/api/admin/usage'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
+    const ago = (t) => (!t ? 'עוד לא' : H.timeAgo ? H.timeAgo(t) : new Date(t).toLocaleDateString('he-IL'));
+    const most = Math.max(1, ...d.tools.map((t) => t.people));
+    box.replaceChildren(section('usage-s', 'שימוש',
+      el('p', { class: 'muted small' }, 'מי נכנס ולאילו כלים. רק איזה כלי ומתי, אף פעם לא מה שבתוכו.'),
+      el('h3', {}, 'אנשים'),
+      el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ad-table' },
+        el('thead', {}, el('tr', {}, ['מי', 'פעם אחרונה', 'כלים', 'השבוע', 'ביקורים'].map((h) => el('th', {}, h)))),
+        el('tbody', {}, d.people.map((p) => el('tr', {}, el('td', {}, p.name || p.email), el('td', {}, ago(p.last)), el('td', {}, `${p.tools} / ${d.total}`), el('td', {}, String(p.week || 0)), el('td', {}, String(p.visits))))))),
+      el('h3', {}, 'כלים'),
+      d.tools.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:6px' }, d.tools.map((t) => el('li', { style: 'display:grid;grid-template-columns:8em minmax(0,1fr) auto;gap:10px;align-items:center' },
+        el('span', {}, t.name),
+        el('span', { 'aria-hidden': 'true', style: 'block-size:8px;border-radius:4px;background:var(--line)' }, el('i', { style: `display:block;block-size:100%;inline-size:${Math.round((t.people / most) * 100)}%;border-radius:4px;background:var(--primary)` })),
+        el('small', { class: 'muted' }, `${t.people} אנשים · ${t.visits} ביקורים`))))
+        : el('p', { class: 'muted' }, 'עוד אין ביקורים בכלים.')));
   }
 
   /* ---------- the dashboard, and the money ---------- */

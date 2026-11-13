@@ -123,6 +123,14 @@ LCP has not moved yet. The causes:
     375 px with no overflow. The real screens wait for the owner's biometric.
   - Fitted to design's final markup (design 489f08b: `section.ad.bd`, an empty `.ic` with the icon from `data-bd`, `.bd-back` in each panel, `.bd-state`). Checked with design's CSS brought in for the test. **Merge design 489f08b with it.**
 
+- **The companions' voices (the owner's request, 2026-11-13)**: רַאבַּ"ע alone keeps Algenib and the old sage's directions; each
+  default animal has its own light, playful, warm voice (`server/voice-figures.ts`, 36 tests):
+  - פנק (fennec): Fenrir · ינשוף (owl): Achird · קיפוד (hedgehog): Sadachbia · טלה (lamb): Puck; any other figure: Puck.
+  - The picker offers Algenib only for רַאבַּ"ע, and the choice is kept per figure (`prefs.voices`). The old saved choice
+    (`voice_prefs`) counts for רַאבַּ"ע alone, so an animal never speaks in Algenib.
+  - The cache key holds the voice and the directions, so no old audio is replayed. רַאבַּ"ע's cache stays valid.
+  - Checked: the lists, the refusal of Algenib for the owl, and one real sample in the owl's voice. Not heard by ear.
+
 ## In progress
 
 - Next by the owner's order:

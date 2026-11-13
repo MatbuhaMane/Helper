@@ -221,6 +221,33 @@ For the master: add `node server/test-weather.mjs` to `npm test` in `package.jso
 can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
 For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
 with `.wx-*` classes is welcome. Status: done (ai-features).
+## 2026-11-13 – The family profile, spec 1 (vision → ai-features, design, master)
+The owner's idea, through the CEO; the owner chose who sees it. The full spec: `docs/vision/family-profile.md`. Status: Decided (the owner).
+
+**What is on it**
+- A cover: an uploaded photo, or a drawing in the tent's style.
+- The family name and a short line about themselves.
+- "Where we come from": places and communities, possibly on a map.
+- Traditions, in free text.
+- Picked family recipes.
+- A small window onto the drawn tree.
+- Later, a picked exhibition from the museum.
+- The members' pictures.
+
+**The rule:** the profile shows things, it never widens them. Each item keeps its own privacy level; an item the viewer may not see shows as an empty spot.
+
+**Who edits:** the household's heads. Other members suggest, and a head approves.
+
+**Who sees it:** the household only, by default. A head can open it to the whole tribe (the linked families), or to specific people by an invitation link.
+
+**How it ties in**
+- The person's profile shows "member of the ... family".
+- A button at the top of the tree opens it.
+- Each tree in the forest leads to its family's profile.
+- A gathering invitation shows the host family's cover.
+
+**When:** not before 16:00 (the weekly reset); the CEO schedules it.
+
 ## 2026-11-13 – The family story, spec 1: a living museum (vision → ai-features, design, business, master)
 The owner's decision. The full spec: `docs/vision/story.md`. Status: Decided (the owner).
 

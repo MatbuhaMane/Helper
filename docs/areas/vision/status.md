@@ -35,6 +35,7 @@ Last update: 2026-11-13.
   - Before the family launch.
   - Next: the family story ("a living museum").
 - **The family story, spec 1** (`docs/vision/story.md`): decided, and in the batch queue waiting for "שלח". It comes after the launch.
+- **The family profile, spec 1** (`docs/vision/family-profile.md`): decided (the household by default, opened by choice), in the batch queue.
 
 - **The heads' round** (decided):
   - the joint test run starts now;

@@ -144,6 +144,8 @@ LCP has not moved yet. The causes:
     צום לסירוגין (`public/groceries/diets.js`, 21 tests). Each opens its tab with its switch (per person, `prefs.diets`);
     on, it adds its own pie and verdict beside each list item and a stamp on recipes; fasting is an eating-window clock.
     The verdicts are rules of thumb from net carbs per 100 g or per serving and from the ingredients' names.
+  - parasha (stop 3): א−/א+ text size in the study room (prefs.study.size), and back closes the open layer one step at a time
+    through H.back, whose common.js/sheet.js patch waits for the master (ai-features-hback.patch in the notes folder; 627843e).
   - The look of all of these is design's: the class contract is in the notes folder (ai-features-diet-pie-contract.md).
     Unstyled until then: the pie buttons are 45 px tall.
 

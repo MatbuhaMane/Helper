@@ -1095,7 +1095,7 @@
     for (const d of Diets.all) $('#tab-' + d.id).hidden = !(Diets.isOn(d.id) || tabNow === d.id);
   };
   // Each tab is a step in the history (the owner's tour, 2026-11-13): the back gesture or key returns to the previous tab,
-  // not out of the page. how: 'push' (a tap), 'replace' (the first draw), 'pop' (back/forward, the history moved already).
+  // not out of the page (H.back in common.js). how: 'push' (a tap), 'replace' (the first draw), 'pop' (back: the history moved already).
   function showTab(which, how = 'push') {
     const was = tabNow;
     tabNow = which; ketoTab();
@@ -1107,14 +1107,10 @@
     if (which === 'keto' && !ketoMounted) { ketoMounted = true; Keto.mount($('#viewKeto')); }
     if (Diets.get(which) && !mounted.has(which)) { mounted.add(which); Diets.mount($('#view-' + which), which); }
     const url = which === 'list' ? location.pathname : '#' + which;
-    if (how === 'replace' || (how === 'push' && which === was)) history.replaceState({ tab: which }, '', url);
-    else if (how === 'push') history.pushState({ tab: which }, '', url);
+    if (how === 'push' && which !== was && was && H.back) H.back.push(() => showTab(was, 'pop'), url);
+    else if (how !== 'pop') history.replaceState(history.state, '', url);
   }
   H.showTab = showTab;
-  window.addEventListener('popstate', (e) => {
-    const tab = e.state?.tab || tabFromHash();
-    if (tab !== tabNow) showTab(tab, 'pop');
-  });
   // A sideways swipe moves to the next tab: in Hebrew the next one is on the left, so a swipe to the right brings it.
   // Not from the screen's edges (the phone's own back gesture), not in a field, a sheet, a dialog or a sideways scroller.
   let swipe = null;

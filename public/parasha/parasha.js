@@ -101,12 +101,15 @@
   }
 
   /** קונקורדנציה: everything, book by book – a count per book, the reference and the words in context */
+  let ccStep = 0;   // the back gesture closes the concordance (H.back in common.js)
   function sheet(title, sub) {
     document.querySelector('.cc')?.remove();
     const list = el('div', { class: 'cc-list' }, el('p', { class: 'muted' }, 'אוסף את כל המופעים…'));
     const booksBar = el('nav', { class: 'cc-books', 'aria-label': 'ספרים' });
     const subEl = el('p', { class: 'muted cc-sub' }, sub || '');
-    const close = () => { root.remove(); document.body.classList.remove('modal-open'); };
+    const shut = () => { root.remove(); if (!document.querySelector('.rs')) document.body.classList.remove('modal-open'); };
+    const close = () => { shut(); if (ccStep) { const s = ccStep; ccStep = 0; H.back.done(s); } };
+    if (!ccStep && H.back) ccStep = H.back.push(() => { ccStep = 0; document.querySelector('.cc')?.remove(); if (!document.querySelector('.rs')) document.body.classList.remove('modal-open'); });
     const root = el('div', { class: 'cc', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'קונקורדנציה: ' + title },
       el('header', { class: 'cc-head' }, el('button', { class: 'rs-back', onclick: close }, '‹ חזרה'),
         el('div', { class: 'cc-title' }, el('small', {}, 'קונקורדנציה'), el('h2', {}, title), subEl),

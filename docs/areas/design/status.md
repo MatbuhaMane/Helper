@@ -2,12 +2,13 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the family tree, spec 1: three versions for the owner)._
+_Updated 2026-11-14 (the family tree: the olive chosen)._
 
 ## Done
 - **The family tree, spec 1 (vision's batch):** one fixed drawn tree in the tent's style, in moving layers (ground, boughs,
   trunk, crown) made in code by `docs/design/make-tree.mjs` into `/assets/tree/<kind>/` with `slots.json` (the tiers where
-  people hang). Three versions: **olive, Tabor oak, acacia** (`docs/design/tree-versions.png`). People are leaves with a
+  people hang). **The owner chose the olive** (2026-11-14); the oak and acacia are
+  removed. Four people on a tier no longer touch at 375 px (`docs/design/tree-family-olive.jpg`). People are leaves with a
   wooden name tag; the passed get an autumn leaf, a dark tag and stillness; a yahrzeit candle by the roots, a birthday glow,
   the "+" bud. Soft Web Audio sounds (`tree-sound.js`: a wooden tok, a low quiet tone for the passed, no confetti).
   `tree.css` documents the markup for ai-features; the prototype is `docs/design/prototype/tree.html`. Checked at 375 and
@@ -86,5 +87,4 @@ _Updated 2026-11-14 (the family tree, spec 1: three versions for the owner)._
 - The horizon: only the hills, **low, on the line where the sun and moon meet the ground** (patch for index.html in the notes).
 
 ## Needs the owner
-- **Which tree:** olive, Tabor oak or acacia (my pick: the olive).
-- Nothing else open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)
+- Nothing open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)

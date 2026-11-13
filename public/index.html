@@ -148,6 +148,12 @@
     body.mu-one-record.mu-docked .corner .rec::before { opacity: 0; }
     body.mu-one-record.mu-dragging .corner .rec::before { opacity: 1; scale: 1.1; border-color: var(--primary); }
     @keyframes rec-spin { from { transform: rotate(-14deg); } to { transform: rotate(346deg); } }
+    /* the guitar: a tap strums it (a soft pluck, a short buzz on a phone) and it sways a little on the stump */
+    .corner .guitar { inset-inline-end: 60%; inset-block-end: 5%; inline-size: 25%; block-size: 56%; border-radius: 40% 40% 20% 20%; }
+    .corner .stump { transform-origin: 60% 96%; }
+    .corner.strum .stump { animation: strum-sway .9s var(--ease-river, ease-out); }
+    @keyframes strum-sway { 0% { rotate: 0deg; } 18% { rotate: -1.6deg; } 40% { rotate: 1.1deg; } 62% { rotate: -.6deg; } 82% { rotate: .25deg; } 100% { rotate: 0deg; } }
+    @media (prefers-reduced-motion: reduce) { .corner.strum .stump { animation: none; } }
     /* the songbook: a cushion on the ground in front of the stump */
     .corner .song { inset-inline-end: 16%; inset-block-end: -10%; inline-size: 44%; }
     .corner .song img { inline-size: 100%; display: block; filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .3)); transition: transform .35s var(--ease-river); -webkit-user-drag: none; }
@@ -818,7 +824,37 @@
         });
       };
       watch();
-      return el('div', { class: 'corner' }, el('img', { class: 'stump', src: '/assets/stump-guitar.webp', alt: '', width: 700, height: 698, draggable: 'false', loading: 'lazy' }), song, rec);
+      const corner = el('div', { class: 'corner' });
+      const guitar = el('button', { class: 'guitar', type: 'button', title: 'גיטרה', 'aria-label': 'לפרוט על הגיטרה', onclick: () => {
+        strum();
+        try { navigator.vibrate?.([12, 30, 10, 30, 8, 30, 14]); } catch { /* no vibration here */ }
+        corner.classList.remove('strum'); void corner.offsetWidth; corner.classList.add('strum');
+      } });
+      corner.addEventListener('animationend', () => corner.classList.remove('strum'));
+      corner.append(el('img', { class: 'stump', src: '/assets/stump-guitar.webp', alt: '', width: 700, height: 698, draggable: 'false', loading: 'lazy' }), guitar, song, rec);
+      return corner;
+    }
+
+    /** A gentle strum of an open G chord, made on the spot (plucked strings, Karplus-Strong): no sound file to load. */
+    let strumCtx = null, strumBufs = null;
+    function strum() {
+      try {
+        strumCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+        const ac = strumCtx;
+        if (ac.state === 'suspended') ac.resume();
+        if (!strumBufs) strumBufs = [98, 123.47, 146.83, 196, 246.94, 392].map((f) => {
+          const sr = ac.sampleRate, n = Math.floor(sr * 2.2), buf = ac.createBuffer(1, n, sr), d = buf.getChannelData(0);
+          const p = Math.round(sr / f), line = new Float32Array(p);
+          for (let i = 0; i < p; i++) line[i] = (Math.random() * 2 - 1) * (0.5 + 0.5 * Math.sin(Math.PI * i / p));   // a soft pick
+          for (let i = 0, j = 0; i < n; i++, j = (j + 1) % p) { const next = line[(j + 1) % p]; d[i] = line[j]; line[j] = 0.4985 * (line[j] + next); }
+          return buf;
+        });
+        const out = ac.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 3200;
+        const vol = ac.createGain(); vol.gain.value = 0.16;
+        out.connect(vol).connect(ac.destination);
+        const t0 = ac.currentTime + 0.01;
+        strumBufs.forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * 0.028); });
+      } catch { /* no sound here */ }
     }
 
     /** The songbook in a window over the home page (the player's songbook window; it loads a moment after the page). */

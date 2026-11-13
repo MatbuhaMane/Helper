@@ -87,7 +87,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 @media (prefers-reduced-motion: reduce) { .shb { animation: none; } .shb-tent::after { animation: none; opacity: .7; } }
 
 /* ───────────── "סיכום היום": at the top of the home, on the first open of the day ───────────── */
-.dsum { inline-size: min(100%, 640px); min-inline-size: 0; justify-self: center; margin-block: 6px 10px; padding: 14px 16px 12px; border-radius: var(--radius-lg);
+.dsum { position: relative; z-index: 2; isolation: isolate; inline-size: min(100%, 640px); min-inline-size: 0; justify-self: center; margin-block: 6px 10px; padding: 14px 16px 12px; border-radius: var(--radius-lg);
   background: var(--card); border: 1px solid var(--line); box-shadow: 0 6px 18px rgb(46 42 30 / .07); text-align: start;
   animation: dsum-in .6s var(--ease-river) both; }
 @keyframes dsum-in { from { opacity: 0; transform: translateY(-8px); } }
@@ -106,7 +106,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-body > section { min-inline-size: 0; }
 .dsum-sub { margin: 0 0 4px; font-size: .82rem; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
 .dsum-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.dsum-list a, .dsum-list .dsum-row { display: flex; align-items: center; gap: 12px; min-block-size: 48px; padding: 6px 8px; margin-inline: -8px;
+.dsum-list > li > * { display: flex; align-items: center; gap: 12px; min-block-size: 48px; padding: 6px 8px; margin-inline: -8px;
   border-radius: var(--radius); color: inherit; text-decoration: none; }
 .dsum-list a:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
 .dsum-list a:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
@@ -115,8 +115,10 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-ic .icon { inline-size: 20px; block-size: 20px; stroke-width: 1.7; }
 .dsum-txt { flex: 1; min-inline-size: 0; display: grid; }
 .dsum-txt b { font-weight: 500; line-height: 1.35; }
+/* a long title or line keeps to two lines, so the time stays beside it and the card stays short */
+.dsum-txt :is(b, small) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
 .dsum-txt small { font-size: .88rem; color: var(--muted); line-height: 1.35; }
-.dsum-when { flex: none; font-size: .95rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--text); }
+.dsum-when { flex: none; white-space: nowrap; font-size: .95rem; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--text); }
 /* the quiet part, what is not urgent since the last summary: small chips */
 .dsum-quiet { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0; padding: 0; }
 .dsum-quiet a { display: inline-flex; align-items: center; gap: 6px; min-block-size: 36px; padding: 4px 12px 4px 10px; border-radius: 999px;
@@ -133,7 +135,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-more:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
 /* on a phone the card stays short, so the tent still shows: the chips run in one row that scrolls sideways */
 @media (max-width: 759px) {
-  .dsum-list a, .dsum-list .dsum-row { min-block-size: 44px; padding-block: 4px; }
+  .dsum-list > li > * { min-block-size: 44px; padding-block: 4px; }
   .dsum-quiet { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; padding-block: 2px;
     -webkit-mask: linear-gradient(to left, transparent, #000 16px, #000 calc(100% - 16px), transparent);
             mask: linear-gradient(to left, transparent, #000 16px, #000 calc(100% - 16px), transparent); }

@@ -296,6 +296,14 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-13 – Three special companions, paid (the owner)
+
+The owner wants all the figures, and three special paid ones – a man, a woman and neither – worth paying for. From the
+options design proposed (each special in a different way) he chose: הקוסם מהשוק (a trick: a dove from his hat when
+something is achieved), האסטרונומית (her shawl lights up with stars at night) and בובת הטלאים (the person's own badges
+sewn on her – a figure that looks different for everyone). Drawn and built on design (00bdf33); how to wire them is in
+docs/design/figures-2d.md. Status: done (design), for ai-features to wire.
+
 ## 2026-11-13 – The default companion is פנק (the owner)
 
 From the preview of the four simple companions (https://claude.ai/artifact/1VZvspHAQp7Pd5Ww9m96fF), the owner chose the

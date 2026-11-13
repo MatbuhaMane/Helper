@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Founding members: the moment a gathering has five confirmed invitees is recorded (ai-features → business, master)
+
+Business's urgent item (the owner's decision of 2026-11-13, docs/business/founders.md on `business`): before the first real
+gathering goes out, record when each gathering first has five invitees who confirmed, and its organiser.
+- Table `gathering_milestones` (appended to schema.sql): `seq` (AUTOINCREMENT, runs forever – "the millionth"),
+  `gathering` (unique), `host_email`, `household`, `reached_at`, `confirmed`, `dev`. Written once (INSERT OR IGNORE),
+  never rewritten: a later "no" does not move it.
+- The rule (`server/gather-rules.ts` `confirmedGuests` / `reachedFounding`, tests in test-gather.mjs): answers "yes",
+  each answer once, not heads, and not the organiser's own answer.
+- Recorded in `rsvp()` (server/gather.ts) on every "yes"; a failure is logged and never fails the answer.
+- Test gatherings: `dev = 1` on a dev server. On the live site a test gathering is a real row; the owner's approval of the
+  list in the room (founders.md) filters it, or a "test" mark when a gathering is created – business/the owner to decide.
+- For the founders' order: a person's first moment is `MIN(reached_at)` by `host_email` (the room's list, the master's).
+Status: done on `ai-features`.
+
 ## 2026-11-14 – Paid figures bought with credits; a private birth year; figures everyone agrees on (master)
 The owner's decisions, built by the master.
 

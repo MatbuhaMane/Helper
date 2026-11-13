@@ -935,3 +935,18 @@ CREATE TABLE IF NOT EXISTS figure_owned (
   bought_at INTEGER NOT NULL,
   PRIMARY KEY (email, figure)
 );
+
+-- Founding members (docs/business/founders.md; the owner's decision of 2026-11-13): the moment each gathering first had five
+-- invitees who confirmed, and its organiser. Written once and never rewritten – it cannot be rebuilt afterwards. seq runs
+-- forever ("the millionth" is counted from it, also after the beta window); dev: from a dev server, never counted. The owner
+-- approves the founders' list in the room at the end of the window (fake gatherings filtered there). server/gather.ts
+CREATE TABLE IF NOT EXISTS gathering_milestones (
+  seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+  gathering  TEXT NOT NULL UNIQUE,
+  host_email TEXT NOT NULL,
+  household  TEXT NOT NULL,
+  reached_at INTEGER NOT NULL,
+  confirmed  INTEGER NOT NULL,
+  dev        INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS gathering_milestones_host ON gathering_milestones(host_email, reached_at);

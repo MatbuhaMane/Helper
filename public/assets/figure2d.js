@@ -24,6 +24,9 @@
 (() => {
   if (window.Figure2D) return;
   const BASE = '/figures/2d/';
+  /** a badge's stand-in until its picture exists: a cloth patch with a dashed stitch and an emoji */
+  const patchPlaceholder = (emoji) => 'data:image/svg+xml,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#efe4cc" stroke="#9a8460" stroke-width="2.5" stroke-dasharray="5 4"/><text x="32" y="43" font-size="28" text-anchor="middle">${emoji}</text></svg>`);
   const FIGURES = {
     // the generic ones: free for everyone (docs/design/figures-2d.md; drawn with the image tool, 2026-11-13)
     fennec: { name: 'פנק', kind: 'generic', neck: 0.6, pivot: [0.5, 0.58], eyes: [[0.39, 0.47], [0.61, 0.47]], eyeR: 0.055, mouth: [0.5, 0.535], mouthW: 0.1, cheek: '#e89a7a', trait: 'toss' },
@@ -222,6 +225,8 @@
       const p = document.createElement('span'); p.className = 'f2-patch' + (fresh ? ' fresh' : '');
       p.style.cssText = `left:${slot[0] * 100}%;top:${slot[1] * 100}%;width:${slot[2] * 200}%`;
       const im = document.createElement('img'); im.alt = ''; im.src = `/assets/badges/${badge}.webp`; im.draggable = false;
+      // a badge whose picture design has not drawn yet (the tools' badges): a stitched patch with an emoji, never a broken image
+      im.onerror = () => { im.onerror = null; im.src = patchPlaceholder(badge.startsWith('tool_') ? '🧭' : '⭐'); };
       p.append(im); body.append(p); patches.push(badge); return true;
     };
     if (cfg.special === 'patches') (opts.patches || []).forEach((b) => sew(b, false));

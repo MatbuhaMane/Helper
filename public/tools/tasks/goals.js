@@ -16,6 +16,10 @@
   const WD_NAME = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   const REST_NAME = (r) => (r === 6 ? 'שבת' : r === null ? 'בלי יום מנוחה' : 'יום ' + WD_NAME[r]);
   const ROW = 'display:flex;flex-wrap:wrap;align-items:center;gap:8px';
+  // recurring goals: a fresh round each period (server/goals-logic.ts, parseRepeat)
+  const EVERY = { day: 'כל יום', week: 'כל שבוע', month: 'כל חודש', days: 'כל כמה ימים' };
+  const ROUND_NOW = { day: 'היום', week: 'השבוע', month: 'החודש', days: 'הסבב הזה' };
+  const repeatName = (r) => (r ? (r.every === 'days' ? `כל ${r.n} ימים` : EVERY[r.every]) : '');
   let D = null, openGoal = null;
 
   /* ---------- the AI: ✨, or an invitation when none is left ---------- */
@@ -65,6 +69,10 @@
         if (r.goalDone && g?.status === 'active') setTimeout(() => askDone(g), 300);
       }
       await load();
+      if (done && r.roundDone) {
+        const n = goalOf(s.goal)?.roundStreak || 0;
+        toast(`🔁 הסבב ${ROUND_NOW[goalOf(s.goal)?.repeat?.every] || ''} הושלם` + (n > 1 ? ` · ${n} סבבים ברצף` : ''));
+      }
     } catch (e) { toast(e.message || 'לא נשמר'); }
   }
   function askDone(g) {
@@ -161,7 +169,19 @@
       g.why ? el('small', { class: 'muted', dir: 'auto', style: 'display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden' }, g.why) : null,
       el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct), 'aria-label': 'התקדמות' },
         el('span', { style: `inline-size:${pct}%` })),
-      el('small', { class: 'muted' }, `${p.done} מתוך ${p.all} צעדים · תהליך ${Math.min(procDone + 1, g.processes.length || 1)} מתוך ${g.processes.length || 1}`, g.due ? ` · עד ${new Date(g.due).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}` : ''));
+      g.repeat ? roundLine(g)
+        : el('small', { class: 'muted' }, `${p.done} מתוך ${p.all} צעדים · תהליך ${Math.min(procDone + 1, g.processes.length || 1)} מתוך ${g.processes.length || 1}`, g.due ? ` · עד ${new Date(g.due).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}` : ''));
+  }
+  /** a recurring goal: "🔁 כל שבוע · השבוע 2 מתוך 3 · 4 סבבים ברצף", then a dot for each of the last rounds (oldest first) */
+  function roundLine(g) {
+    const r = g.round || { done: 0, total: 0 }, n = g.roundStreak || 0;
+    const past = (g.history || []).slice().reverse();
+    return el('div', { class: 'gl-rounds', style: 'display:grid;gap:4px' },
+      el('small', { class: 'muted' }, `🔁 ${repeatName(g.repeat)} · ${ROUND_NOW[g.repeat.every]} ${r.done} מתוך ${r.total}`, n ? ` · ${n === 1 ? 'סבב שלם אחד' : n + ' סבבים ברצף'}` : ''),
+      past.length > 1 ? el('div', { class: 'gl-round-dots', role: 'img', 'aria-label': `${past.filter((x) => x.whole).length} מתוך ${past.length} הסבבים האחרונים הושלמו`, style: 'display:flex;gap:4px;align-items:center' },
+        past.map((x, i) => el('span', { class: 'gl-round-dot' + (x.whole ? ' whole' : x.done ? ' part' : '') + (i === past.length - 1 ? ' now' : ''),
+          title: `${new Date(x.period).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}: ${x.done} מתוך ${x.total}`,
+          style: `inline-size:10px;block-size:10px;border-radius:50%;border:1.5px solid var(--primary);background:${x.whole ? 'var(--primary)' : x.done ? 'color-mix(in srgb, var(--primary) 35%, transparent)' : 'transparent'}` + (i === past.length - 1 && !x.whole ? ';border-style:dashed' : '') }))) : null);
   }
   function todayCard() {
     if (D.isRest) return el('section', { class: 'card gl-today rest' }, el('b', {}, '🌿 היום ' + REST_NAME(D.rest)), el('p', { class: 'muted', style: 'margin:0' }, 'יום מנוחה. הוא לא שובר שום רצף, והמנוחה עצמה נחשבת.'));
@@ -201,6 +221,7 @@
         g.why ? el('p', { class: 'gl-why-line', dir: 'auto', style: 'margin:0;font-size:1.05rem' }, '“' + g.why + '”') : null,
         el('small', { class: 'muted' }, `${KIND[g.kind]} · ${p.done} מתוך ${p.all} צעדים`, g.due ? ` · עד ${new Date(g.due).toLocaleDateString('he-IL')}` : '',
           g.days?.length ? ' · ' + g.days.map((d) => WD[d]).join(' ') : '', g.time ? ' · ' + g.time : ''),
+        g.repeat ? roundLine(g) : null,
         el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuenow': String(pct), 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-label': 'התקדמות', style: 'block-size:10px' },
           el('span', { style: `inline-size:${pct}%` }))),
       ...g.processes.map((pr, i) => processCard(g, pr, i)),
@@ -241,10 +262,12 @@
     const kinds = chips(Object.entries(KIND).map(([k, n]) => [k, n]), () => kind, (v) => { kind = v; });
     const daysRow = dayPicker(() => days, (v) => { days = v; });
     const time = el('input', { type: 'time', value: g.time || '' });
+    let repeat = g.repeat || null;
+    const repeatRow = repeatPicker(() => repeat, (v) => { repeat = v; });
     H.modal(el('h2', {}, 'עריכת המטרה'),
-      el('div', { style: 'display:grid;gap:10px' }, field('המטרה', title), field('למה זה חשוב לי', why), field('אורך', kinds), field('תאריך יעד (לא חובה)', due), field('הימים', daysRow), field('שעה (לא חובה)', time),
+      el('div', { style: 'display:grid;gap:10px' }, field('המטרה', title), field('למה זה חשוב לי', why), field('אורך', kinds), field('תאריך יעד (לא חובה)', due), field('הימים', daysRow), field('שעה (לא חובה)', time), field('מטרה חוזרת', repeatRow),
         el('div', { style: ROW }, el('button', { class: 'btn primary', type: 'button', onclick: async () => {
-          await api(`/api/goals/${g.id}`, { method: 'PUT', body: { title: title.value, why: why.value, kind, due: due.value || null, days: days.length ? days : null, time: time.value || null } });
+          await api(`/api/goals/${g.id}`, { method: 'PUT', body: { title: title.value, why: why.value, kind, due: due.value || null, days: days.length ? days : null, time: time.value || null, repeat } });
           H.closeModal(); await load();
         } }, 'שמירה'))));
   }
@@ -257,6 +280,19 @@
       style: get() === v ? 'background:var(--primary);border-color:var(--primary);color:var(--chalk-raised,#f7f6f0)' : null, onclick: () => { set(v); draw(); } }, n, hint ? el('small', { style: 'opacity:.75' }, ' · ' + hint) : null)));
     draw();
     return box;
+  }
+  /** none / day / week / month / every n days; each period opens a fresh round of the same steps */
+  function repeatPicker(get, set) {
+    const n = el('input', { type: 'number', min: '2', max: '60', inputmode: 'numeric', value: String(get()?.n || 3), 'aria-label': 'כל כמה ימים', style: 'font:inherit;inline-size:5em;padding:6px 10px',
+      oninput: () => { const v = Math.min(60, Math.max(2, Math.round(+n.value) || 2)); if (get()?.every === 'days') set({ every: 'days', n: v }); } });
+    const nRow = el('label', { style: ROW }, 'כל', n, 'ימים');
+    const sync = () => { nRow.hidden = get()?.every !== 'days'; };
+    const box = chips([['', 'לא חוזרת'], ...Object.entries(EVERY)], () => get()?.every || '', (v) => {
+      set(!v ? null : v === 'days' ? { every: 'days', n: Math.min(60, Math.max(2, Math.round(+n.value) || 3)) } : { every: v }); sync();
+    });
+    const hint = el('small', { class: 'muted' }, 'כל תקופה נפתח סבב חדש של אותם צעדים, ונשמר כמה סבבים שלמים היו ברצף.');
+    sync();
+    return el('div', { style: 'display:grid;gap:6px' }, box, nRow, hint);
   }
   function dayPicker(get, set) {
     const box = el('div', { role: 'group', 'aria-label': 'הימים', style: ROW });
@@ -272,7 +308,7 @@
 
   /* ---------- a new goal, in five steps ---------- */
   async function wizard(seed = {}) {
-    const G = { title: seed.title || '', why: seed.why || '', kind: seed.kind || 'regular', due: '', processes: [], template: seed.template || null, days: [], time: '' };
+    const G = { title: seed.title || '', why: seed.why || '', kind: seed.kind || 'regular', due: '', processes: [], template: seed.template || null, days: [], time: '', repeat: null };
     let step = 1;
     const body = el('div', { style: 'display:grid;gap:12px' });
     const head = el('h2', {});
@@ -336,11 +372,12 @@
         body.replaceChildren(
           field('באילו ימים עובדים על המטרה (בלי בחירה: כל יום חוץ מיום המנוחה)', dayPicker(() => G.days, (v) => { G.days = v; })),
           field('באיזו שעה (לא חובה)', time),
+          field('מטרה חוזרת? (לא חובה)', repeatPicker(() => G.repeat, (v) => { G.repeat = v; })),
           el('p', { class: 'small muted', style: 'margin:0' }, `יום המנוחה: ${REST_NAME(D.rest)}. הוא לא שובר רצף.`));
         nav.replaceChildren(back, el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
           e.currentTarget.disabled = true;
           try {
-            const r = await api('/api/goals', { body: { title: G.title.trim(), why: G.why.trim(), kind: G.kind, due: G.due || null, days: G.days.length ? G.days : null, time: G.time || null, template: G.method === 'template' ? G.template : null, processes: G.processes } });
+            const r = await api('/api/goals', { body: { title: G.title.trim(), why: G.why.trim(), kind: G.kind, due: G.due || null, days: G.days.length ? G.days : null, time: G.time || null, template: G.method === 'template' ? G.template : null, processes: G.processes, repeat: G.repeat } });
             H.closeModal(); openGoal = r.id; await load(); toast('יתד ראשונה בקרקע ⛺');
           } catch (err) { toast(err.message || 'לא נשמר'); e.currentTarget.disabled = false; }
         } }, 'יוצאים לדרך ⛺'));

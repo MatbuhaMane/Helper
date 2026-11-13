@@ -18,26 +18,30 @@
 
   /* ================= מצב וסנכרון ================= */
   // items: Map id -> item. pending: ops not yet confirmed by the server (kept across reloads for offline use).
-  let { items, pending, since, hideChecked: legacyHide } = loadCache();
+  // lists: the household's named lists (from the server); cur: the list on show on this device (null: the main list)
+  let { items, pending, since, hideChecked: legacyHide, lists, cur } = loadCache();
+  const inCur = (i) => (i.list || null) === cur;
+  const here = () => [...items.values()].filter(inCur);
+  let auto = { fridge: null, items: [] };   // the automatic list's suggestions (loadAuto)
   // "Hide checked items" is a per-person preference that follows them to every device.
   const listPrefs = H.prefs('groceries', { hideChecked: false }, legacyHide ? { hideChecked: true } : null);
 
   function loadCache() {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-      if (c) return { items: new Map(c.items.map((i) => [i.id, i])), pending: c.pending || [], since: c.since || 0, hideChecked: !!c.hideChecked };
+      if (c) return { items: new Map(c.items.map((i) => [i.id, i])), pending: c.pending || [], since: c.since || 0, hideChecked: !!c.hideChecked, lists: c.lists || [], cur: c.cur || null };
     } catch (_) { /* ignore */ }
-    return { items: new Map(), pending: [], since: 0, hideChecked: false };
+    return { items: new Map(), pending: [], since: 0, hideChecked: false, lists: [], cur: null };
   }
   function saveCache() {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ items: [...items.values()], pending, since })); } catch (_) { /* ignore */ }
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ items: [...items.values()], pending, since, lists, cur })); } catch (_) { /* ignore */ }
   }
 
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
 
   function upsert(item) {
     items.set(item.id, item);
-    queue({ op: 'upsert', item: { id: item.id, name: item.name, cat: item.cat, checked: !!item.checked, qty: item.qty || 1, from: item.from } });
+    queue({ op: 'upsert', item: { id: item.id, name: item.name, cat: item.cat, checked: !!item.checked, qty: item.qty || 1, from: item.from, list: item.list || null } });
   }
   function remove(id) {
     items.delete(id);
@@ -79,12 +83,14 @@
       for (const it of r.items) {
         if (pendingIds.has(it.id)) continue; // local edit wins until it reaches the server
         if (it.deleted) items.delete(it.id);
-        else items.set(it.id, { id: it.id, name: it.name, cat: it.cat, checked: it.checked, qty: it.qty, from: it.from });
+        else items.set(it.id, { id: it.id, name: it.name, cat: it.cat, checked: it.checked, qty: it.qty, from: it.from, list: it.list || null });
       }
       if (r.items.length) since = Math.max(since, ...r.items.map((i) => i.updatedAt));
+      const listsChanged = r.lists && JSON.stringify(r.lists) !== JSON.stringify(lists);
+      if (listsChanged) lists = r.lists;
       saveCache();
       setSync(true);
-      if (r.items.length) render();
+      if (r.items.length || listsChanged) render();
     } catch (e) {
       setSync(false);
     }
@@ -123,12 +129,12 @@
   function findDuplicate(name, exceptId) {
     const key = normalize(name);
     if (!key) return null;
-    for (const it of items.values()) if (it.id !== exceptId && normalize(it.name) === key) return it;
+    for (const it of here()) if (it.id !== exceptId && normalize(it.name) === key) return it;
     return null;
   }
   function duplicateGroups() {
     const groups = new Map();
-    for (const it of items.values()) {
+    for (const it of here()) {
       const k = normalize(it.name);
       if (!groups.has(k)) groups.set(k, []);
       groups.get(k).push(it);
@@ -159,7 +165,7 @@
       else upsert({ ...dup, qty: (dup.qty || 1) + 1 });
       return { item: dup, dup: true };
     }
-    const item = { id: uid(), name: name.trim(), cat: cat || categorize(name), checked: false, qty: 1, from };
+    const item = { id: uid(), name: name.trim(), cat: cat || categorize(name), checked: false, qty: 1, from, list: cur };
     upsert(item);
     return { item, dup: false };
   }
@@ -170,10 +176,11 @@
   }
 
   function render() {
+    renderLists();
     const list = $('#list');
     list.textContent = '';
     $('#hideChecked').checked = listPrefs.hideChecked;
-    const all = [...items.values()];
+    const all = here();
     for (const cat of CATEGORIES) {
       let catItems = all.filter((i) => (catById[i.cat] ? i.cat : 'other') === cat.id);
       if (!catItems.length) continue;
@@ -184,7 +191,7 @@
         el('h2', {}, el('span', {}, `${cat.icon} ${cat.name}`), el('span', { class: 'count' }, remaining ? `${remaining} נותרו` : '✓ הכל נקנה')),
         el('ul', {}, catItems.map(renderItem))));
     }
-    if (!all.length) list.append(el('p', { class: 'empty card' }, 'הרשימה ריקה. הוסף פריטים או חפש מתכון 🙂'));
+    if (!all.length) list.append(el('p', { class: 'empty card' }, cur ? 'הרשימה הזאת ריקה. הוסיפו לה פריטים 🙂' : 'הרשימה ריקה. הוסף פריטים או חפש מתכון 🙂'));
     renderDupBanner();
   }
 
@@ -254,6 +261,186 @@
     });
   }
 
+  /* ================= הרשימות ================= */
+  // the main list, and beside it named lists anyone in the household can open ("שבת", "מסיבה"). Only the one who opened
+  // a list, or a household admin, may delete it (the server decides: canDelete); a delete can be undone for a few seconds.
+  const listsBar = el('nav', { class: 'lists-bar', 'aria-label': 'הרשימות' });
+  $('#addForm').before(listsBar);
+  function renderLists() {
+    if (cur && !lists.some((l) => l.id === cur && l.kind === 'list')) cur = null;   // deleted, or finished into the archive
+    const show = (id) => { if (cur === id) return; cur = id; saveCache(); render(); $('#addHint').textContent = ''; };
+    const chip = (id, name) => el('button', { type: 'button', class: 'chip list-chip', 'aria-pressed': String(cur === id), onclick: () => show(id) }, name);
+    const on = lists.find((l) => l.id === cur);
+    const autoN = auto.items.filter((i) => !isWaiting(i.name)).length;   // suggestions not on the list yet
+    listsBar.replaceChildren(
+      chip(null, '🛒 הרשימה'),
+      ...lists.filter((l) => l.kind === 'list').map((l) => chip(l.id, l.name)),
+      el('button', { type: 'button', class: 'chip list-auto', 'aria-label': autoN ? `אוטומטית: ${nItems(autoN)} מהמקרר` : 'אוטומטית: הצעות מהמקרר', onclick: autoList },
+        '🤖 אוטומטית', autoN ? el('span', { class: 'list-auto-n' }, String(autoN)) : ''),
+      el('button', { type: 'button', class: 'chip list-new', onclick: newList }, '＋ רשימה חדשה'),
+      el('button', { type: 'button', class: 'chip list-saved', onclick: savedLists }, '📚 שמורות'),
+      on?.canDelete ? el('button', { type: 'button', class: 'chip list-del', 'aria-label': `מחיקת הרשימה ${on.name}`, onclick: () => deleteList(on) }, '🗑 מחיקת הרשימה') : '');
+  }
+  function newList() {
+    const input = el('input', { type: 'text', maxlength: '40', dir: 'auto', 'aria-label': 'שם הרשימה', placeholder: 'למשל: שבת, מסיבה, טיול' });
+    const go = el('button', { class: 'btn primary', type: 'submit' }, 'פתיחה');
+    modal(el('form', { class: 'list-form', onsubmit: async (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      go.disabled = true;
+      try {
+        const r = await api('/api/groceries/lists', { body: { name } });
+        lists.push(r.list); cur = r.list.id; saveCache(); closeModal(); render();
+        toast(`הרשימה "${name}" נפתחה`);
+        $('#addInput').focus();
+      } catch (_) { go.disabled = false; toast('לא הצלחתי לפתוח רשימה – בדקו את החיבור'); }
+    } },
+      el('h2', {}, 'רשימה חדשה'),
+      el('label', {}, 'השם', input),
+      el('div', { class: 'modal-acts' }, go, el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'ביטול'))));
+    setTimeout(() => input.focus(), 60);
+  }
+  function deleteList(l) {
+    const n = [...items.values()].filter((i) => i.list === l.id).length;
+    modal(el('h2', {}, `למחוק את הרשימה "${l.name}"?`),
+      el('p', {}, (n ? `יש בה ${n} פריטים. ` : '') + 'היא תימחק לכל בני הבית.'),
+      el('div', { class: 'modal-acts' },
+        el('button', { class: 'btn danger', type: 'button', onclick: async (e) => {
+          e.currentTarget.disabled = true;
+          try { await api(`/api/groceries/lists/${encodeURIComponent(l.id)}`, { method: 'DELETE' }); }
+          catch (err) { closeModal(); toast(err?.status === 403 ? 'רק מי שפתח את הרשימה, או מנהל הבית, יכולים למחוק אותה' : 'המחיקה לא הצליחה – בדקו את החיבור'); return; }
+          closeModal();
+          lists = lists.filter((x) => x.id !== l.id); if (cur === l.id) cur = null; saveCache(); render();
+          toast(`הרשימה "${l.name}" נמחקה`, 'בטל', async () => {
+            try {
+              await api(`/api/groceries/lists/${encodeURIComponent(l.id)}/restore`, { method: 'POST' });
+              if (!lists.some((x) => x.id === l.id)) lists = [...lists, l].sort((a, b) => a.createdAt - b.createdAt);
+              cur = l.id; saveCache(); render(); toast('הרשימה חזרה');
+            } catch (_) { toast('לא הצלחתי להחזיר אותה'); }
+          });
+        } }, 'מחיקה'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'ביטול')));
+  }
+
+  /* The automatic list (the owner, 2026-11-14): what the fridge usually has and is missing now (server/grocery-auto.ts).
+     It only suggests: an item goes on the list when someone taps it, never by itself. "לא הפעם" puts one off for a week
+     (the person's own preference, so it follows them to every device). */
+  const AUTO_WHY = { gone: 'בדרך כלל יש, ועכשיו אין', expired: 'פג תוקף', low: 'נשאר אחד' };
+  async function loadAuto() {
+    try { auto = await api('/api/groceries/auto', { noRedirect: true }); renderLists(); } catch (_) { /* offline: the chip waits */ }
+    return auto;
+  }
+  const isWaiting = (name) => { const d = findDuplicate(name); return !!d && !d.checked; };
+  async function autoList() {
+    const box = el('div', { class: 'auto-list' });
+    const draw = () => {
+      const waiting = auto.items.filter((i) => !isWaiting(i.name));
+      box.replaceChildren(
+        el('h2', {}, '🤖 רשימה אוטומטית'),
+        el('p', { class: 'muted' }, `מה ש${auto.fridge ? `במקרר "${auto.fridge}"` : 'במקררים של הבית'} בדרך כלל יש, ועכשיו חסר. שום דבר לא נכנס לרשימה בלי לחיצה.`),
+        waiting.length > 1 ? el('div', { class: 'modal-acts' }, el('button', { class: 'btn primary', type: 'button', onclick: () => take(waiting) }, `＋ הכל אל ${listName()} (${waiting.length})`)) : '',
+        auto.items.length ? el('ul', { class: 'auto-rows' }, ...auto.items.map((i) => {
+          const on = isWaiting(i.name);
+          return el('li', { class: 'auto-row ' + i.why + (on ? ' listed' : '') },
+            el('span', { class: 'auto-name' }, i.name, el('small', {}, ` · ${AUTO_WHY[i.why]}`)),
+            on ? el('small', { class: 'ok' }, '✓ ברשימה')
+              : el('span', { class: 'auto-acts' },
+                el('button', { type: 'button', class: 'btn small', 'aria-label': `להוסיף "${i.name}" אל ${listName()}`, onclick: () => take([i]) }, '＋ לרשימה'),
+                el('button', { type: 'button', class: 'btn small ghost', 'aria-label': `לא הפעם: ${i.name}`, title: 'לא להציע שבוע', onclick: () => putOff(i) }, 'לא הפעם')));
+        })) : el('p', { class: 'muted' }, 'אין מה להשלים כרגע. כשמצרכים ייכנסו למקרר וייגמרו כמה פעמים, הם יופיעו כאן.'),
+        el('div', { class: 'modal-acts' }, el('a', { class: 'btn ghost', href: '/food/fridge/' }, '🧊 למקרר'), el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'סגירה')));
+    };
+    const take = (xs) => {
+      xs.forEach((i) => addByName(i.name, categorize(i.name), 'אוטומטית'));
+      toast(xs.length === 1 ? `"${xs[0].name}" נוסף אל ${listName()}` : `${nItems(xs.length)} נוספו אל ${listName()}`);
+      render(); draw();
+    };
+    const putOff = (i) => {
+      const until = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10), today = new Date().toISOString().slice(0, 10);
+      const skip = Object.fromEntries(Object.entries(listPrefs.autoSkip || {}).filter(([, d]) => d >= today));
+      H.savePrefs('groceries', { autoSkip: { ...skip, [i.key]: until } });
+      auto.items = auto.items.filter((x) => x !== i); renderLists(); draw();
+      toast(`"${i.name}" לא יוצע שבוע`);
+    };
+    draw();
+    modal(box);
+    await loadAuto(); draw();
+  }
+
+  /* Saved lists (the owner, 2026-11-14): templates ("קניות שבועיות", "שבת") and the archive of finished lists, on the
+     server for the whole household. A saved list comes back as a new list or into the one on show, unchecked; a name
+     already waiting there is skipped. */
+  const listName = () => lists.find((l) => l.id === cur)?.name || 'הרשימה';
+  const listCount = (id) => [...items.values()].filter((i) => i.list === id).length;
+  const nItems = (n) => (n === 1 ? 'פריט אחד' : `${n} פריטים`);
+  function savedLists() {
+    const row = (l) => el('li', { class: 'saved-row' },
+      el('span', { class: 'saved-name' }, l.name, el('small', {}, ` · ${nItems(listCount(l.id))}`)),
+      el('span', { class: 'saved-acts' },
+        el('button', { type: 'button', class: 'btn small', onclick: (e) => useSaved(l, 'new', e.currentTarget) }, 'לרשימה חדשה'),
+        el('button', { type: 'button', class: 'btn small ghost', onclick: (e) => useSaved(l, cur || 'main', e.currentTarget) }, `אל ${listName()}`),
+        l.canDelete ? el('button', { type: 'button', class: 'btn small ghost', 'aria-label': `מחיקת ${l.name}`, onclick: () => deleteList(l) }, '🗑') : ''));
+    const temps = lists.filter((l) => l.kind === 'template');
+    const arch = lists.filter((l) => l.kind === 'archive').reverse();
+    const checked = here().filter((i) => i.checked).length;
+    modal(el('div', { class: 'saved-lists' },
+      el('h2', {}, 'רשימות שמורות'),
+      el('div', { class: 'modal-acts' },
+        el('button', { class: 'btn', type: 'button', onclick: saveTemplate }, `💾 שמירת ${cur ? 'הרשימה' : 'הרשימה הראשית'} כתבנית`),
+        el('button', { class: 'btn', type: 'button', disabled: !cur && !checked, onclick: finishList },
+          cur ? '✅ סיום הרשימה – לארכיון' : `✅ הקנייה הסתיימה – ${checked === 1 ? 'המסומן' : checked + ' המסומנים'} לארכיון`)),
+      el('h3', {}, 'תבניות'),
+      temps.length ? el('ul', { class: 'saved-list' }, ...temps.map(row)) : el('p', { class: 'muted' }, 'עוד אין. שמרו רשימה כתבנית, למשל "קניות שבועיות" או "שבת".'),
+      el('h3', {}, 'ארכיון'),
+      arch.length ? el('ul', { class: 'saved-list' }, ...arch.map(row)) : el('p', { class: 'muted' }, 'רשימות שהסתיימו יופיעו כאן.')));
+  }
+  function saveTemplate() {
+    const input = el('input', { type: 'text', maxlength: '40', dir: 'auto', 'aria-label': 'שם התבנית', value: cur ? listName() : '', placeholder: 'למשל: קניות שבועיות' });
+    const go = el('button', { class: 'btn primary', type: 'submit' }, 'שמירה');
+    const pick = (name) => el('button', { type: 'button', class: 'chip', onclick: () => { input.value = name; input.focus(); } }, name);
+    modal(el('form', { class: 'list-form', onsubmit: async (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      go.disabled = true;
+      try {
+        await flush();
+        const r = await api(`/api/groceries/lists/${encodeURIComponent(cur || 'main')}/save`, { body: { kind: 'template', name } });
+        lists = [...lists, r.list]; saveCache(); closeModal(); await pull(); render();
+        toast(`התבנית "${name}" נשמרה (${nItems(r.moved)})`);
+      } catch (err) { go.disabled = false; toast(err?.status === 400 ? 'הרשימה ריקה – אין מה לשמור' : 'השמירה לא הצליחה – בדקו את החיבור'); }
+    } },
+      el('h2', {}, 'שמירה כתבנית'),
+      el('p', { class: 'muted' }, `הפריטים של ${listName()} יישמרו, והרשימה עצמה תישאר כמו שהיא.`),
+      el('label', {}, 'השם', input),
+      el('div', { class: 'list-suggest' }, pick('קניות שבועיות'), pick('שבת'), pick('מסיבה')),
+      el('div', { class: 'modal-acts' }, go, el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'ביטול'))));
+    setTimeout(() => input.focus(), 60);
+  }
+  async function finishList(e) {
+    e.currentTarget.disabled = true;
+    const name = listName();
+    try {
+      await flush();
+      const r = await api(`/api/groceries/lists/${encodeURIComponent(cur || 'main')}/save`, { body: { kind: 'archive' } });
+      if (cur) { lists = lists.map((l) => (l.id === cur ? { ...l, ...r.list } : l)); cur = null; } else lists = [...lists, r.list];
+      saveCache(); closeModal(); await pull(); render();
+      toast(r.moved ? (r.moved === 1 ? 'פריט אחד עבר לארכיון' : `${r.moved} פריטים עברו לארכיון`) : `"${name}" עברה לארכיון`);
+    } catch (err) { closeModal(); toast(err?.status === 400 ? 'אין פריטים מסומנים לשמור' : 'לא הצלחתי – בדקו את החיבור'); }
+  }
+  async function useSaved(l, into, btn) {
+    btn.disabled = true;
+    try {
+      await flush();
+      const r = await api(`/api/groceries/lists/${encodeURIComponent(l.id)}/use`, { body: { into } });
+      if (r.list) lists = [...lists, r.list];
+      cur = r.into || null; saveCache(); closeModal(); await pull(); render();
+      toast(!r.added ? 'הכול כבר ברשימה' : (r.added === 1 ? 'נוסף פריט אחד' : `נוספו ${r.added} פריטים`)
+        + (r.added && r.skipped ? (r.skipped === 1 ? ' (אחד כבר היה ברשימה)' : ` (${r.skipped} כבר היו ברשימה)`) : ''));
+    } catch (_) { btn.disabled = false; toast('לא הצלחתי – בדקו את החיבור'); }
+  }
+
   /* ================= טופס הוספה וסרגל ================= */
   const sel = $('#addCategory');
   sel.append(...categoryOptions(null));
@@ -281,7 +468,7 @@
   $('#hideChecked').addEventListener('change', (e) => { H.savePrefs('groceries', { hideChecked: e.target.checked }); render(); });
   window.addEventListener('helper:prefs', (e) => { if (e.detail === 'groceries') render(); });
   $('#clearChecked').addEventListener('click', () => {
-    const done = [...items.values()].filter((i) => i.checked);
+    const done = here().filter((i) => i.checked);
     if (!done.length) return toast('אין פריטים מסומנים');
     done.forEach((i) => remove(i.id));
     toast(`${done.length} פריטים נמחקו`, 'בטל', () => done.forEach(upsert));
@@ -289,13 +476,14 @@
   $('#shareList').addEventListener('click', async () => {
     const lines = [];
     for (const cat of CATEGORIES) {
-      const ci = [...items.values()].filter((i) => i.cat === cat.id && !i.checked);
+      const ci = here().filter((i) => i.cat === cat.id && !i.checked);
       if (!ci.length) continue;
       lines.push(`${cat.icon} ${cat.name}`, ...ci.map((i) => `• ${i.name}${i.qty > 1 ? ` ×${i.qty}` : ''}`), '');
     }
     const text = lines.join('\n').trim() || 'הרשימה ריקה';
     try {
-      if (navigator.share) await navigator.share({ title: 'רשימת קניות', text });
+      const title = lists.find((l) => l.id === cur)?.name || 'רשימת קניות';
+      if (navigator.share) await navigator.share({ title, text });
       else { await navigator.clipboard.writeText(text); toast('הרשימה הועתקה – אפשר להדביק בוואטסאפ'); }
     } catch (_) { /* cancelled */ }
   });
@@ -1141,6 +1329,7 @@
   window.addEventListener('diets:changed', () => { ketoTab(); render(); });
 
   render();
+  loadAuto();
   showTab(tabFromHash(), 'replace');
   await flush();
   await pull();

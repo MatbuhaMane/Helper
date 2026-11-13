@@ -373,13 +373,18 @@
     const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) => entry(n, true)));
     document.body.prepend(bar);
     document.body.append(tabs);
+    // signed in on the last page: the navigation shows at once, so it stands still while the page turns (base.css, @view-transition)
+    // instead of blinking out until /api/me answers; it hides again below if the session is gone
+    const chip = document.getElementById('userchip');
+    const showNav = (u, on) => {
+      bar.querySelector('.topnav').hidden = !on; tabs.hidden = !on; chip.hidden = !on;
+      if (on) chip.querySelector('.userchip-name').textContent = u.he_name || (u.name || u.email).split(' ')[0];
+    };
+    let known = null; try { known = JSON.parse(localStorage.getItem('helper.me') || 'null'); } catch (_) { /* ignore */ }
+    if (known?.email) showNav(known, true);
     me().then((r) => {
-      if (!r.user) return;
-      bar.querySelector('.topnav').hidden = false;
-      tabs.hidden = false;
-      const chip = document.getElementById('userchip');
-      chip.hidden = false;
-      chip.querySelector('.userchip-name').textContent = r.user.he_name || (r.user.name || r.user.email).split(' ')[0];
+      if (!r.user) { if (known) showNav(null, false); return; }
+      showNav(r.user, true);
       // the app lock (server/lock.ts): locked already – the lock screen; a lock set – the open padlock in the bar, to lock now
       if (r.locked) showLock('app');
       if (r.appLock && r.appLock !== 'off' && !embedded) {

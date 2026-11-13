@@ -11,6 +11,61 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Recurring goals: a fresh round each period (ai-features → master, design)
+
+The owner: "בניהול מטרות, אפשר הגדרת מטרות מחזוריות".
+- A goal may repeat every day, week (from Sunday), month (from the 1st) or every n days (2–60, counted from the goal's
+  first day). New column `goals.repeat` (JSON `{every, n?}`, appended to `COLUMNS` in `server/schema.ts`); `null` is a
+  plain goal, as before.
+- Its steps count as done only within the running period, so each period opens a fresh round of the same steps.
+  New table `goal_rounds (email, goal_id, period, done, total, updated_at)` (appended to `schema.sql`) keeps each round's
+  count, written whenever a step is ticked or unticked; it feeds the history (the last 8 rounds) and the streak of whole
+  rounds. An open round never breaks the streak. The logic and its tests are in `server/goals-logic.ts` / `test-goals.mjs`.
+- `PUT /api/goals/steps/:id` returns `roundDone`; a recurring goal never returns `goalDone` (it is ended by hand).
+- For design: the page draws `.gl-rounds` and its dots `.gl-round-dot` (`.whole`, `.part`, `.now`) with small inline
+  styles for now; they are free to be replaced in `tasks.css`.
+Status: done (on `ai-features`).
+
+## 2026-11-14 – Groceries: the automatic list from the fridge (ai-features → master, design)
+
+docs/vision/batch.md 8: "רשימה אוטומטית" is a fixed list built from the fridge. It only suggests, and nothing is ever added by itself.
+- `GET /api/groceries/auto` (one route appended; `server/grocery-auto.ts`, logic and 11 tests in `grocery-auto-logic.ts` /
+  `test-grocery-auto.mjs`). It looks at the person's own fridge (the fridge preferences' `mine`), or all the household's.
+  It suggests what came in at least twice and is now gone, expired, or down to one. It leaves out what waits on the main
+  list and what the person put off.
+- The groceries page shows the chip "🤖 אוטומטית" with a count. Its dialog has "＋ לרשימה" per item, "＋ הכל" and "לא הפעם".
+  "לא הפעם" puts an item off for a week, kept in the person's `groceries` preferences (`autoSkip`). An item is added
+  through the page's own add, so it goes to the list on show, skips duplicates and works offline.
+- For the master: please add `node server/test-grocery-auto.mjs` to `npm test` in `package.json`.
+- For design: the classes are `.list-auto`, `.list-auto-n`, `.auto-list`, `.auto-rows`, `.auto-row` (`.gone`, `.expired`,
+  `.low`, `.listed`), `.auto-name`, `.auto-acts`. There is no CSS for them yet.
+Status: done (on `ai-features`).
+
+## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
+
+**Decided (the owner):**
+1. **The founding members' levels are named by number only, with no metaphor:**
+   - "מהעשרה הראשונים" (the first 10);
+   - "מהחמישים הראשונים" (11–50);
+   - "מהמאה הראשונים" (51–100);
+   - and "חבר/ה מייסד/ת" for the rest in the window.
+   - The draft names עמוד / יתד / חבל are dropped.
+2. **Fundraising:** self-funded, and outside money only after the metrics. This is the roadmap in
+   `docs/business/business-plan.md`, section 9.3:
+   - no equity before the beta passes;
+   - a founding-supporters campaign at the public launch;
+   - then Tnufa or a small friends-and-family SAFE at about 1,000 families;
+   - a community round at about 10,000 families.
+3. **The payment provider:** quotes from many providers, not only three, plus a web comparison of their published
+   prices. Then choose before the public launch.
+
+**Affects:**
+- **design:** the founders page and the title pills use the number titles.
+- **ai-features:** the title strings.
+- **The owner:** asking for quotes. The business department does the web comparison.
+
+**Status:** Decided (the owner).
+
 ## 2026-11-14 – Colour palettes are never sold; free users choose a basic palette too (business, the owner)
 
 **Decided:** palettes are not a paid item. The owner's words: "זה גרידי".
@@ -27,6 +82,54 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-14 – Groceries: saved lists, templates and an archive (ai-features → master, design)
+
+- A template ("קניות שבועיות", "שבת") or a finished list is a `grocery_lists` row of kind `template` or `archive`. Its items
+  are ordinary `grocery_items` rows with `list` set to its id, so they sync like the rest and never touch the main list. No new table or column.
+- Routes (appended): `POST /api/groceries/lists/:id/save {kind, name?}` (`:id` may be `main`) and
+  `POST /api/groceries/lists/:id/use {into: 'new' | 'main' | <list id>}`. The code is in `server/grocery-lists.ts`.
+- Finishing the main list moves only the checked items into a new archive entry. A named list moves to the archive whole.
+  The archive keeps the last 30. Any member may save, finish or use; deleting one keeps the rule (the opener or an admin).
+- Copying back adds the items unchecked and skips a name already waiting on the target list.
+- Design: in the lists bar, `.chip.list-saved` "📚 שמורות" opens `.saved-lists`. Inside: `.modal-acts`, then `h3` headings,
+  then `ul.saved-list > li.saved-row` rows, each with `span.saved-name` (`small` count) and `span.saved-acts` (three small buttons).
+  The template form adds `.list-suggest` (name chips).
+
+## 2026-11-14 – Groceries: named lists, and deleting one with undo (ai-features → master, design)
+The owner asked to delete a list; the groceries had one list per household, so named lists come first.
+- **Data.** A new table `grocery_lists` (appended to `schema.sql`) and a column `grocery_items.list` (appended to `COLUMNS`).
+  An item with no list is on the household's main list, as before; the daemon, the fridge and the recipes still read
+  and add only there (`currentGroceries` now filters `list IS NULL`).
+- **Routes** (appended): `POST /api/groceries/lists`, `DELETE /api/groceries/lists/:id`, `POST /api/groceries/lists/:id/restore`.
+  `GET /api/groceries` also returns `lists`, each with `canDelete`. Ops accept `item.list`.
+- **Who may delete:** the one who opened the list, or a household admin (the site's owner, or a head of that household
+  in `family_roles`), checked on the server (403 otherwise). The delete is soft; the page offers "בטל" for 6 seconds.
+  The main list cannot be deleted.
+- `kind` is `list` now; saved lists (template, archive) and the fridge's automatic list come next on the same table.
+- **Design:** `.lists-bar` (a row of `.chip.list-chip[aria-pressed]`, `.chip.list-new`, `.chip.list-del`) above the add
+  form, and `.list-form` in the modal (a label with an input, `.modal-acts`). It wraps at 375 px today; a horizontal
+  scroll row may look better.
+Status: done (ai-features), the CSS pending (design).
+
+## 2026-11-13 – Rich notes: formatting stored as allowlist HTML (ai-features → master, design)
+The owner asked for bold, italic, underline, strikethrough, a text colour and a font in notes.
+- **Storage.** A new column `notes.rich` (appended to `COLUMNS` in `server/schema.ts`). It holds the note's formatting as
+  allowlist HTML, and only when the note has formatting; otherwise it is null and the note is plain text as before.
+  `body` is always the plain text (derived on the server), so search, tags, titles and the research are unchanged.
+- **The allowlist** (`server/notes-rich.ts`, tests in `server/test-notes-rich.mjs`): b, i, u, s, p, br, and span with
+  a class from `c-def|vine|olive|soil|red|blue` or `f-rubik|heebo|round|serif`. No other tag or attribute, no inline
+  style, no links or images. The server cleans on every save; the page cleans again on render and on every paste.
+- **Paste** is plain text, unless it is the notes' own copy (marked `data-ohel-rich`), which is cleaned too.
+- **API.** `POST /api/notes` and `PUT /api/notes/:id` accept `rich`; a plain `body` alone (the calculator's pad, an
+  older page) replaces the formatting. Notes now return `rich`.
+- **Master:** please add `node server/test-notes-rich.mjs` to `npm test`. This touches user input that is rendered as
+  HTML, so the master reviews `server/notes-rich.ts` before merging.
+- **Design:** the toolbar `.nt-tools` (sticky above the phone keyboard: `inset-block-end: var(--nt-kb)`), the buttons
+  `.nt-tool[aria-pressed]`, the pops `.nt-pop` with `.nt-swatch.c-*` and `.nt-font-b.f-*`, the colour classes
+  `.c-*` (readable in light and dark), the font classes `.f-*`, the placeholder `.nt-rich[data-placeholder]:empty::before`
+  and `.nt-rich p { margin: 0 }`. Details in the design contract note.
+Status: done (ai-features), the CSS pending (design).
+
 ## 2026-11-13 – Shared goals and encouragement (ai-features → master, design)
 Vision batch 8, slice C; the owner chose it after the badges.
 - **What it does:**
@@ -88,6 +191,45 @@ For the master: add `node server/test-weather.mjs` to `npm test` in `package.jso
 can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
 For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
 with `.wx-*` classes is welcome. Status: done (ai-features).
+## 2026-11-13 – The family story, spec 1: a living museum (vision → ai-features, design, business, master)
+The owner's decision. The full spec: `docs/vision/story.md`. Status: Decided (the owner).
+
+**The items**
+- Stories (text), recordings, readings aloud, documents and photos.
+- Each item can be tagged with people from the tree, a date (approximate allowed) and a place.
+
+**Where it lives**
+- In each person's card in the tree: "הסיפור של...".
+- In a museum hall of its own, drawn in the tent's style. It can be browsed four ways:
+  - a timeline;
+  - by person;
+  - exhibitions that family members curate;
+  - by place, on a map.
+
+**Collecting**
+- A guided interview ("ראיון עם סבתא"): ready questions, each answer recorded separately, saved as items tagged with the person.
+  - Without AI: a fixed list of questions.
+  - With AI (proposed): the companion suggests a follow-up question.
+- Free upload of any item.
+- Recordings are transcribed to searchable Hebrew text. Without AI, the recording is kept with its title.
+
+**The feel**
+- No quests and no badges.
+- A pleasant recorder: a big mic, a haptic at the start and at the end, a live waveform.
+- Quiet and respectful for those who passed away, as in the tree.
+
+**Privacy**
+- A new item is seen by the household by default.
+- The uploader can widen it to the whole tribe, or narrow it to themselves.
+- Restricted documents need a passkey, per "Locks and privacy".
+- The items are part of the vault backup.
+
+**Storage**
+- A free quota, and paid extra storage. Business sets the size and the price.
+
+**When**
+- After the family launch. The new tree is the priority before it.
+
 ## 2026-11-13 – Tigrinya joins Russian and Amharic (vision → master, design, ai-features, business)
 The owner's decision, through the CEO. The full notes: `docs/vision/languages-ru-am.md`, section "טיגרית". Status: Decided (the owner).
 - **The slot:** the same as Russian and Amharic, after the family launch and before the closed beta.

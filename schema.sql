@@ -1021,3 +1021,28 @@ CREATE TABLE IF NOT EXISTS post_advice (
   hearted INTEGER NOT NULL DEFAULT 0,     -- the advised marked it good: the adviser badge
   deleted INTEGER NOT NULL DEFAULT 0
 );
+
+-- named grocery lists beside the household's main one (grocery-lists.ts); an item's list column points here
+CREATE TABLE IF NOT EXISTS grocery_lists (
+  household  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'list',   -- list (later: template, archive, auto)
+  owner      TEXT NOT NULL,                  -- who opened it: they, or a household admin, may delete it
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (household, id)
+);
+
+-- Recurring goals (ai-features, 2026-11-13; server/goals.ts): a recurring goal (goals.repeat) starts a fresh round each
+-- period; each round's count is kept here, for the history and the streak of whole rounds.
+CREATE TABLE IF NOT EXISTS goal_rounds (
+  email      TEXT NOT NULL,
+  goal_id    TEXT NOT NULL,
+  period     TEXT NOT NULL,              -- the period's first day, YYYY-MM-DD
+  done       INTEGER NOT NULL DEFAULT 0, -- steps done within the period
+  total      INTEGER NOT NULL DEFAULT 0, -- the goal's steps then
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (email, goal_id, period)
+);

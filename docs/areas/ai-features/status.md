@@ -1,9 +1,21 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13.
+Last update: 2026-11-14 (the automatic list).
 
 ## Done
+
+- **The CEO's quick queue (2026-11-14)**:
+  - toolbox long press (78e73e2);
+  - groceries named lists with delete and undo (a69ba3d);
+  - rich notes (0dd842d);
+  - save-as-note only in the parasha, as a bottom bar for marked text with a link back to the verse (281e711);
+  - groceries templates and an archive (bfbc416);
+  - easier parasha marking: a tap on a verse number marks it, another tap stretches it (c1a59de);
+  - a badge with no picture yet: a stitched patch with an emoji instead of a broken image (693efd8);
+  - recurring goals: a fresh round each day / week / month / n days, a history and a streak of whole rounds (d7d34c3);
+  - the automatic shopping list from the fridge, suggestions only with one-tap approval (server 90715d3, page a3a6f02).
+  - Next: the tree (olive).
 
 - **Locks and privacy, aligned to design** (4d7c7c3, in main, v61): the lock screen on `Lock.screen`, the tree tip on
   `Lock.warnCard`, settings in design's classes. Tested end to end locally (code, wrong code, the tree, the tip).
@@ -151,6 +163,11 @@ LCP has not moved yet. The causes:
   - notes (the owner): the "שמירה כפתק" popup on marked text is gone in favour of paste: Ctrl+V on the notes page opens a
     new note, and "📋 הדבקה" reads the clipboard or opens an empty note for a long-press paste (e69a2e0). Removing
     assets/capture.js with its loader in common.js and sw.js is the master's patch (ai-features-capture-removal.patch).
+    The explicit "שמירה כפתק" buttons in parasha, research and the calculator are gone too (d2c6962).
+  - notes (the owner): rich formatting, bold, italic, underline, strikethrough, a colour and a font, from a compact
+    toolbar and Ctrl+B/I/U (0dd842d). Stored as allowlist HTML in `notes.rich`, cleaned on the server on each save
+    (`server/notes-rich.ts`, 36 tests) and again on the page; paste is plain text. The master reviews the cleaning
+    and adds the test to npm test; design styles the toolbar and the colour and font classes.
   - The look of all of these is design's: the class contract is in the notes folder (ai-features-diet-pie-contract.md).
     Unstyled until then: the pie buttons are 45 px tall.
 

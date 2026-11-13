@@ -37,6 +37,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['notes', 'drive_id', 'TEXT'],                // the Google Doc this note was saved as, in the person's own Drive
   ['notes', 'drive_at', 'INTEGER'],             // when it was last saved there
   ['notes', 'inbox', 'INTEGER'],                // 1: captured from anywhere (/capture/), waiting to be sorted into a research
+  ['notes', 'rich', 'TEXT'],                    // the note with its formatting (allowlist HTML, notes-rich.ts); null: plain text
+  ['grocery_items', 'list', 'TEXT'],            // a named list (grocery_lists); null: the household's main list
   ['researches', 'goal_id', 'TEXT'],           // the goal it became (the goals engine: its steps come to "היום")
   ['researches', 'done_at', 'INTEGER'],         // finished ("גשש")
   ["members", "birth_year", "INTEGER"],         // private: only the owner sees it (the room); under 12 hides horror figures and keeps a child in the family
@@ -52,6 +54,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['research_threads', 'created_by', 'TEXT'],   // who wrote it (empty: the owner)
   ['research_sources', 'created_by', 'TEXT'],   // who added it (empty: the owner)
   ['research_drafts', 'created_by', 'TEXT'],    // who started it (empty: the owner)
+  ['goals', 'repeat', 'TEXT'],                  // a recurring goal: JSON {every: day|week|month|days, n?} (goals-logic.ts)
 ];
 
 let ready: Promise<void> | null = null;

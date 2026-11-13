@@ -25,8 +25,8 @@
     @media (max-width: 599px) { .greet { padding-inline-start: 2px; } }
     .greet h1 { font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.2rem); line-height: 1.15; margin: 0 0 2px; --swell-color: var(--primary); }
 
-    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 517px) * 1.76)); margin-block-start: var(--sky-room); }
-    @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 473px) * 1.76)); } }
+    .camp { position: relative; inline-size: min(100%, 640px, max(280px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 501px) * 1.76)); margin-block-start: var(--sky-room); }
+    @media (max-width: 599px) { .camp { inline-size: min(100%, 640px, max(250px, (100dvh - var(--appbar-h) - var(--tabbar-h) - 449px) * 1.76)); } }
     .camp::before { content: ''; position: absolute; inset-inline: 2% 2%; inset-block-end: -4%; block-size: 34%; border-radius: 50%;
       background: radial-gradient(closest-side, color-mix(in srgb, var(--olive) 34%, transparent), transparent); pointer-events: none; }
     .camp > img { position: relative; display: block; inline-size: 100%; block-size: auto; aspect-ratio: 1400 / 794; filter: drop-shadow(0 14px 18px rgba(46, 42, 30, .16)); animation: camp-in .9s var(--ease-river) both; }
@@ -52,7 +52,7 @@
                   radial-gradient(ellipse 58% 90% at var(--moon-u, 160%) var(--moon-v, 50%), rgb(198 214 255 / calc(var(--moon-lit, 0) * .48)), transparent 72%); }
 
     /* The apps ring: cushions sitting around a small campfire; spinning the ring carries them round the fire. */
-    .wheel { --cy: -2px; position: relative; isolation: isolate; inline-size: min(100%, 860px); block-size: 390px; margin-block-start: 0; touch-action: pan-y;
+    .wheel { --cy: -6px; position: relative; isolation: isolate; inline-size: min(100%, 860px); block-size: 374px; margin-block-start: 0; touch-action: pan-y;
       -webkit-user-select: none; user-select: none; cursor: grab; outline: none; }
     .wheel.dragging { cursor: grabbing; }
     .wheel .orbit { position: absolute; inset: 0; margin: auto; inline-size: calc(var(--rx) * 2px + 60px); block-size: calc(var(--ry) * 2px + 44px); border-radius: 50%;
@@ -87,21 +87,21 @@
        drawn in the tent's style, its flames moving in code (/assets/campfire.js and campfire.css), and the warm light it
        casts on the ground around it, breathing with the flames (--cf-heat). */
     .fire { --fw: 168px; position: absolute; inset: 0; margin: auto; inline-size: var(--fw); block-size: calc(var(--fw) * 403 / 640); z-index: 50; pointer-events: none;
-      transform: translateY(calc(var(--cy) - 14px)); }
+      transform: translateY(calc(var(--cy) - 20px)); }
     .fire .ground { position: absolute; inset: auto -110% -55%; block-size: 150%; border-radius: 50%; pointer-events: none; z-index: -1;
       background: radial-gradient(closest-side, rgba(255, 150, 50, calc(.2 + var(--cf-heat, .5) * .16)), rgba(255, 120, 30, .1) 45%, transparent 75%); }
     :root[data-theme="dark"] .fire .ground { mix-blend-mode: screen; }
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fire .ground { mix-blend-mode: screen; } }
 
     @media (max-width: 599px) {
-      .wheel { --cy: -14px; block-size: 304px; }
+      .wheel { --cy: -14px; block-size: 280px; }
       .wheel-item { inline-size: 150px; block-size: 146px; }
       .wheel-item .pillow { inline-size: 108px; block-size: 100px; }
       .wheel-item .badge { inline-size: 32px; block-size: 32px; inset-inline-start: calc(50% - 16px); }
       .wheel-item .badge .icon { inline-size: 27px; block-size: 27px; }
       .wheel-item .label { font-size: 1.28rem; }
       .wheel .spin { display: none; }   /* on a phone the ring is spun with a finger */
-      .fire { --fw: 116px; transform: translateY(calc(var(--cy) - 10px)); }
+      .fire { --fw: 116px; transform: translateY(calc(var(--cy) - 20px)); }
     }
 
     /* Letters that swell: each one grows toward the pointer (or ripples in a wave on a long press). */
@@ -828,7 +828,9 @@
         const w = root.clientWidth;
         const small = w < 600;
         rx = Math.max(110, Math.min(small ? w / 2 - 50 : w / 2 - 120, 360));
-        ry = small ? 90 : 112;   // clear space all round between the cushions and the fire; the ring lower, away from the tent (the owner, twice)
+        // a flat ellipse round the fire (depth), the front cushions 10-13 px clear of the logs and flames, the back one partly behind
+        // the flames; tuned on the real images' outlines over a whole turn (the owner, 2026-11-14)
+        ry = small ? 78 : 102;
         cy = parseFloat(getComputedStyle(root).getPropertyValue('--cy')) || 0;
         const pil = items[0].querySelector('.pillow');
         const ph = parseFloat(getComputedStyle(pil).height) || 100;   // (an SVG has no offsetHeight)

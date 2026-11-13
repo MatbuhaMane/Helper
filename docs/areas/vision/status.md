@@ -34,6 +34,7 @@ Last update: 2026-11-13.
   - Quiet and respectful for those who passed away.
   - Before the family launch.
   - Next: the family story ("a living museum").
+- **The family story, spec 1** (`docs/vision/story.md`): decided, and in the batch queue waiting for "שלח". It comes after the launch.
 
 - **The heads' round** (decided):
   - the joint test run starts now;

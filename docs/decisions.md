@@ -1089,6 +1089,30 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-13 – Russian and Amharic: after the family launch, before the closed beta (vision, the owner via the CEO)
+
+**Decided:** הָאֹהֶל becomes accessible in Russian and Amharic, after the family launch and before the closed beta.
+The owner approved the order through the CEO.
+
+**The spec** (`docs/vision/languages-ru-am.md`):
+- **Translated:** the interface, the wizard, the badges and titles, the assistant's prompts and answers, and voice.
+- **Amharic voice** (text-to-speech and speech-to-text) is still to be checked; without it, text only.
+- **Direction:** both languages are left to right, with `dir` and `lang` set per language.
+- **Fonts:** Rubik's Cyrillic for Russian; an Ethiopic font, such as Noto Sans Ethiopic (OFL), for Amharic.
+- **Choosing the language:** in the wizard's first step and in settings, defaulting to the browser's language.
+- **Translation:** a Gemini draft, approved by a native speaker, with a fixed glossary per language.
+- **Infrastructure:** one translation infrastructure for every language, Arabic and English included.
+
+**Affects:**
+- **The CEO:** the translation infrastructure, `dir` and `lang`, and the audit in both directions.
+- **Design:** the fonts and the left-to-right layout.
+- **ai-features:** the prompts and voice per language.
+- **Business:** recruiting the native speakers.
+
+**Proposed, not yet decided:** Sigd in the calendar, and Novy God as an optional family event.
+
+Status: Decided (the owner).
+
 ## 2026-11-13 – The road to the parents: the joint run now, the parents first, the wizard first (vision, the owner)
 
 Answered in the department heads' round:

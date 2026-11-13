@@ -26,8 +26,9 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - The passkeys and backups moved from the tree's bar to settings → privacy (`public/settings/vault-keys.js`, loaded by
   `settings.js`); the same routes, each still asking for a fresh unlock. The first passkey offered when the vault opens
   stays on the tree page.
-- Design: the class names went to design (`.fv-gliding`, `.fv-search`, `.fv-found`, `.fv-hit`, `.fv-kin`, `.fv-badge`,
-  `.fv-pick`, `.fv-chosen`, `.fv-member*`, `.st-vault`).
+- Design: the page uses design's classes: `.fs*` for the search and `.mc*` for the member card (design 497eea2), plus
+  `.fv-gliding`, `.fv-pick`, `.fv-chosen`, `.st-vault`, and the `.tree.moving` and `.tree.off` hooks (design e8568f6).
+- The member card links to `/family/story/?person=<id>` for your own household's people (the story session's page).
 Status: on `ai-features`, waiting for the CEO's review and design's CSS.
 
 ## 2026-11-14 – הרגלי אכילה: one tool for every way of eating (ai-features → master, design)

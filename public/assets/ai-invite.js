@@ -4,7 +4,7 @@
    H.geminiGuide(onDone) is the guide itself (settings ← חיבור לשירותים opens it too): Google's page opens in a new tab,
    and when the person comes back we offer to paste what they copied, check it with Google (PUT /api/me/ai/keys) and
    connect. If the browser will not let us read the clipboard, one paste field. Claude stays the advanced option, in
-   settings. The look is design's: .gm-guide, .gm-steps > li.gm-step (.gm-art, .gm-text), .gm-paste, .gm-done. */
+   settings. The look is design's .gk (base.css, db03b95); the paste field is form.gk-paste, between the steps and .gk-err. */
 (() => {
   if (!window.H || window.H.aiInvite) return;
   const H = window.H, { el } = H;
@@ -13,77 +13,82 @@
     too_many_tries: 'יותר מדי ניסיונות. נסו שוב בעוד שעה.' };
   const looksRight = (s) => /^AIza[\w-]{30,}$/.test(s);
 
-  // three small drawings (currentColor, so they follow the theme): a sign-in, the button to press, copy and come back
-  const ART = [
-    '<svg viewBox="0 0 96 64" width="96" height="64" aria-hidden="true"><rect x="4" y="6" width="88" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M4 16h88" stroke="currentColor" stroke-width="2.5"/><circle cx="12" cy="11" r="1.8" fill="currentColor"/><circle cx="19" cy="11" r="1.8" fill="currentColor"/><circle cx="48" cy="31" r="7" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M35 50c2-7 8-10 13-10s11 3 13 10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>',
-    '<svg viewBox="0 0 96 64" width="96" height="64" aria-hidden="true"><rect x="4" y="6" width="88" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M4 16h88" stroke="currentColor" stroke-width="2.5"/><path d="M14 26h34M14 34h24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity=".45"/><rect x="54" y="38" width="30" height="11" rx="5.5" fill="currentColor"/><path d="M70 44l6 12 2-5 5-2z" fill="var(--paper, #fff)" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>',
-    '<svg viewBox="0 0 96 64" width="96" height="64" aria-hidden="true"><rect x="10" y="14" width="26" height="32" rx="4" fill="none" stroke="currentColor" stroke-width="2.5"/><rect x="17" y="8" width="26" height="32" rx="4" fill="var(--paper, #fff)" stroke="currentColor" stroke-width="2.5"/><path d="M50 30h26m0 0l-7-7m7 7l-7 7" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 63 30)"/><path d="M70 50l10-14 10 14z" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/></svg>',
-  ];
-  const art = (i) => el('span', { class: 'gm-art', html: ART[i] });
-
-  /** the three steps; onDone runs once Gemini is connected */
+  /** the three steps, in design's .gk (db03b95: the drawings and numbers come from the CSS, by data-pic; only the
+      current step, aria-current="step", shows its button; a finished one has data-done); onDone runs once connected */
   H.geminiGuide = (onDone) => {
     let left = false;   // the person went to Google's page (so their coming back is the moment to offer the paste)
-    const body = el('div', { class: 'gm-body' });
-    const box = el('section', { class: 'gm-guide', 'aria-labelledby': 'gm-h' }, el('h2', { id: 'gm-h' }, 'חיבור עוזר חינמי'), body);
-    const close = () => { document.removeEventListener('visibilitychange', back); H.closeModal(); };
-
+    const err = el('p', { class: 'gk-err', role: 'alert', hidden: true });
+    const fail = (e) => { err.textContent = ERR[e?.code] || e?.message || 'המפתח לא עבד. נסו להעתיק שוב.'; err.hidden = false; };
+    const steps = [];
+    const at = (n) => {   // step n is the current one; the ones before it are done
+      steps.forEach((li, i) => {
+        if (i + 1 === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
+        if (i + 1 < n) li.setAttribute('data-done', ''); else li.removeAttribute('data-done');
+      });
+      steps[n - 1]?.querySelector('.gk-go')?.focus({ preventScroll: true });
+    };
+    const step = (pic, title, small, go) => {
+      const li = el('li', { class: 'gk-step', 'data-pic': pic }, el('span', { class: 'gk-pic', 'aria-hidden': 'true' }),
+        el('div', { class: 'gk-txt' }, el('b', {}, title), el('small', {}, small)), go);
+      steps.push(li);
+      return li;
+    };
     const connect = async (key, btn) => {
       key = (key || '').trim();
       if (!looksRight(key)) throw Object.assign(new Error(ERR.bad_key), { code: 'bad_key' });
+      err.hidden = true;
       if (btn) btn.disabled = true;
       try { await H.api('/api/me/ai/keys', { method: 'PUT', body: { provider: 'gemini', key } }); } finally { if (btn) btn.disabled = false; }
-      done();
-    };
-    const done = () => {
       document.removeEventListener('visibilitychange', back);
-      body.replaceChildren(el('div', { class: 'gm-done', role: 'status' },
-        el('p', { class: 'gm-ok' }, 'Gemini מחובר ✓'),
-        el('p', {}, 'העוזר החכם ממשיך לעבוד, בחינם, דרך החשבון שלך ב־Google.'),
-        el('div', { class: 'sky-acts' }, el('button', { class: 'btn primary', type: 'button', onclick: () => { close(); onDone?.(); } }, 'מעולה'))));
+      box.dataset.state = 'done';
+      box.querySelector('.gk-done .gk-go').focus({ preventScroll: true });
     };
     /** one field to paste into, when the browser keeps the clipboard to itself (or what was copied was something else) */
     const field = (why) => {
+      box.querySelector('.gk-paste')?.remove();
       const input = el('input', { type: 'text', dir: 'ltr', autocomplete: 'off', spellcheck: 'false', placeholder: 'AIza…', 'aria-label': 'הדביקו כאן את מה שהעתקתם' });
-      const msg = el('p', { class: 'muted small', role: 'alert' }, why || '');
-      const form = el('form', { class: 'gm-paste', onsubmit: async (e) => {
+      const form = el('form', { class: 'gk-paste', onsubmit: async (e) => {
         e.preventDefault();
-        try { await connect(input.value, e.target.querySelector('button')); } catch (err) { msg.textContent = ERR[err.code] || err.message || 'זה לא הצליח. נסו שוב.'; }
-      } }, el('label', {}, 'הדביקו כאן את מה שהעתקתם', input), el('button', { class: 'btn primary' }, 'חיבור'), msg);
-      return form;
+        try { await connect(input.value, e.target.querySelector('button')); } catch (x) { fail(x); }
+      } }, el('label', {}, 'הדביקו כאן את מה שהעתקתם', input), el('button', { class: 'btn primary' }, 'חיבור'));
+      err.before(form);   // under the steps, full width (inside a step it would sit in one grid cell)
+      if (why) fail({ message: why });
+      input.focus();
     };
-    /** back from Google: "להדביק את המפתח?" – a tap reads the clipboard (a tap is what lets the browser allow it) */
-    const offer = () => {
-      const msg = el('p', { class: 'muted small', role: 'alert' });
-      const slot = el('div', {});
-      const yes = el('button', { class: 'btn primary', type: 'button', onclick: async () => {
-        let text = '';
-        try { text = await navigator.clipboard.readText(); } catch (_) { return slot.replaceChildren(field('הדפדפן לא נתן לי לקרוא את ההעתקה. הדביקו כאן (לחיצה ארוכה ← הדבק).')); }
-        if (!looksRight(text.trim())) return slot.replaceChildren(field('לא מצאתי מפתח במה שהועתק. העתיקו אותו שוב ב־Google, או הדביקו כאן.'));
-        try { await connect(text, yes); } catch (err) { msg.textContent = ERR[err.code] || err.message || 'זה לא הצליח. נסו שוב.'; }
-      } }, 'כן, להדביק');
-      body.replaceChildren(el('div', { class: 'gm-back' },
-        el('p', { class: 'gm-q' }, 'חזרת. להדביק את המפתח?'),
-        el('p', { class: 'muted small' }, 'נבדוק אותו מול Google, והוא יישמר מוצפן, רק לבקשות שלך.'),
-        el('div', { class: 'sky-acts' }, yes,
-          el('button', { class: 'btn ghost', type: 'button', onclick: () => slot.replaceChildren(field()) }, 'אדביק בעצמי'),
-          el('a', { class: 'btn ghost', href: GOOGLE, target: '_blank', rel: 'noopener', onclick: () => { left = true; } }, 'חזרה ל־Google')),
-        msg, slot));
+    // a tap on "הדבק" reads the clipboard (a tap is what lets the browser allow it)
+    const paste = async (e) => {
+      let text = '';
+      try { text = await navigator.clipboard.readText(); } catch (_) { return field('הדפדפן לא נתן לי לקרוא את ההעתקה. הדביקו כאן (לחיצה ארוכה ← הדבק).'); }
+      if (!looksRight(text.trim())) return field('לא מצאתי מפתח במה שהועתק. העתיקו אותו שוב ב־Google, או הדביקו כאן.');
+      try { await connect(text, e.currentTarget); } catch (x) { fail(x); }
     };
-    function back() { if (left && document.visibilityState === 'visible' && document.body.contains(box)) { left = false; offer(); } }
+    const toGoogle = () => { left = true; at(2); };
+    const box = el('div', { class: 'gk', 'data-state': 'steps' },
+      el('header', { class: 'gk-head' }, el('span', { class: 'gk-free' }, 'חינם'), el('h2', {}, 'חבר עוזר חינמי'), el('p', {}, 'שלושה צעדים, בערך דקה')),
+      el('ol', { class: 'gk-steps' },
+        step('signin', 'נכנסים ל־Google', 'עם החשבון הרגיל שלכם. הדף נפתח בלשונית חדשה.',
+          el('a', { class: 'btn primary gk-go', href: GOOGLE, target: '_blank', rel: 'noopener', onclick: toGoogle }, 'קבל מפתח חינמי מ־Google')),
+        step('key', 'לוחצים על הכפתור הכחול ליצירת מפתח', 'ואז "Copy" ליד הקוד שנוצר. אם שואלים על פרויקט, בוחרים את מה שמוצע.',
+          el('button', { class: 'btn primary gk-go', type: 'button', onclick: () => at(3) }, 'העתקתי')),
+        step('paste', 'חוזרים לאוהל ולוחצים „הדבק”', 'נבדוק את המפתח מול Google. הוא נשמר מוצפן, רק לבקשות שלך.',
+          el('button', { class: 'btn primary gk-go', type: 'button', onclick: paste }, 'הדבק'))),
+      err,
+      el('div', { class: 'gk-done', role: 'status' }, el('span', { class: 'gk-ok' }, 'Gemini מחובר ✓'),
+        el('p', {}, 'העוזר החכם עובד עכשיו על החשבון שלכם ב־Google, בחינם.'),
+        el('button', { class: 'btn primary gk-go', type: 'button', onclick: () => { close(); onDone?.(); } }, 'סיום')),
+      el('button', { class: 'btn ghost gk-later', type: 'button', onclick: () => close() }, 'לא עכשיו'));
+    const close = () => { document.removeEventListener('visibilitychange', back); H.closeModal(); };
+    /** back from Google: "להדביק את המפתח?" on the last step */
+    function back() {
+      if (!left || document.visibilityState !== 'visible' || !document.body.contains(box)) return;
+      left = false;
+      steps[2].querySelector('b').textContent = 'חזרת. להדביק את המפתח?';
+      at(3);
+    }
     document.addEventListener('visibilitychange', back);
-
-    body.replaceChildren(
-      el('p', {}, 'Google נותנת עוזר חכם בחינם (Gemini). מחברים אותו פעם אחת, בדקה:'),
-      el('ol', { class: 'gm-steps' },
-        el('li', { class: 'gm-step' }, art(0), el('div', { class: 'gm-text' }, el('b', {}, 'נכנסים ל־Google'), el('span', {}, 'עם החשבון הרגיל שלכם. הדף נפתח בלשונית חדשה.'))),
-        el('li', { class: 'gm-step' }, art(1), el('div', { class: 'gm-text' }, el('b', {}, 'לוחצים על הכפתור הכחול ליצירת מפתח'), el('span', {}, 'אם שואלים על פרויקט, בוחרים את מה שמוצע.'))),
-        el('li', { class: 'gm-step' }, art(2), el('div', { class: 'gm-text' }, el('b', {}, 'מעתיקים וחוזרים לכאן'), el('span', {}, 'לוחצים "העתק" ליד הקוד שנוצר, וחוזרים לאוהל. אנחנו נדביק.')))),
-      el('div', { class: 'sky-acts' },
-        el('a', { class: 'btn primary', href: GOOGLE, target: '_blank', rel: 'noopener', onclick: () => { left = true; } }, 'קבל מפתח חינמי מ־Google'),
-        el('button', { class: 'btn ghost', type: 'button', onclick: offer }, 'כבר העתקתי'),
-        el('button', { class: 'btn ghost', type: 'button', onclick: close }, 'לא עכשיו')));
+    at(1);
     H.modal(box);
+    at(1);   // (again, once it is on the page, for the focus)
   };
 
   let shown = false;

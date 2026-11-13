@@ -149,7 +149,7 @@
       const key = el('input', { type: 'password', autocomplete: 'off', spellcheck: 'false', dir: 'ltr', placeholder: p.placeholder, 'aria-label': 'המפתח של ' + p.name });
       return el('div', { class: 'card st-service' },
         el('h3', {}, p.name),
-        has ? [el('p', {}, p.guide ? 'Gemini מחובר ✓' : `מחובר (מפתח שמסתיים ב־${has.hint.replace('…', '')})`),
+        has ? [p.guide ? el('p', {}, el('span', { class: 'gk-ok small' }, 'Gemini מחובר ✓')) : el('p', {}, `מחובר (מפתח שמסתיים ב־${has.hint.replace('…', '')})`),
           el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { if (!confirm('לנתק את ' + p.name + '?')) return; try { await api('/api/me/ai/keys/' + p.id, { method: 'DELETE' }); toast('נותק'); drawServices(); } catch (e) { say(e); } } }, 'ניתוק')]
           : p.guide ? [el('p', { class: 'muted small' }, 'בחינם, דרך החשבון שלך ב־Google. מחברים פעם אחת, בדקה.'),
             el('button', { class: 'btn small primary', type: 'button', onclick: async () => {

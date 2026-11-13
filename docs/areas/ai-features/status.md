@@ -1,9 +1,54 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (פרופיל המשפחה).
+Last update: 2026-11-14 (תיבת פניות).
 
 ## Done
+
+- **תיבת פניות** (the CEO, 2026-11-14), on `ai-features`:
+  1. A report from any page, by shaking the phone or from the menu ("דווח על בעיה" in the tools menu and in settings).
+     The shake has a threshold of 3 sharp peaks in 0.9 s and a 4 s debounce. It is switched by "נענוע לדיווח" in
+     settings, a per-user pref `reports.shake`: on by default where no permission is needed, and on iOS asked on the tap.
+  2. The sheet says it goes to "צוות האוהל". It keeps the page, the time, the device, the theme, the width and the text.
+     A screenshot is kept only when the person ticks it: on a PC a picture of the tab, on a phone an image from the gallery.
+     The limit is 12 reports a day.
+  3. In the back door, the tile "תיבת פניות" shows threads with the states חדשה / בטיפול / טופלה, filters, and a count
+     on the tile. The answer is private.
+  4. The person's inbox "התיבה שלי" has a red dot on the user chip and a count on the entry.
+  Server `server/reports.ts`; the rules `server/reports-rules.ts`, with 61 tests in `server/test-reports.mjs`. The tests
+  cover privacy (404 to anyone but the reporter) and the admin gate on every team handler. The companion's feedback
+  lands here too.
+  Checked on the dev server (8791):
+  - send, list and screenshot;
+  - another member gets 404 on the thread and on the picture, and so does a back-door user on the member route;
+  - a reply sets בטיפול, the dot appears and clears after reading, and a bad state gets 400;
+  - at 375 (list ↔ thread, the back button) and at 1280 (two columns), in light and dark: no overflow, contrast fine;
+  - typecheck and `npm test` pass.
+  The back door was opened in the local database as a test super (no passkey in dev).
+  Not checked: a real shake on a phone and iOS's permission prompt, the tab capture's picker (it needs a real tap), and
+  R2 on the live site (locally it ran on the local bucket).
+  Waiting: the master's common.js hook (the dot and the shake on every page), and test-reports in `npm test`.
+  For design: `.navmenu-reports`, and the pressed `.rx-*` buttons in dark mode.
+
+- **The tree batch** (the CEO, 2026-11-14), on `ai-features`:
+  1. no sounds in the tree;
+  2. a softer glide (shorter, no bounce, none under reduced motion; `.fv-gliding` on the board while it runs);
+  3. the passkeys and backups moved to settings → privacy;
+  4. "איך אנחנו קשורים" picks people by a forest search;
+  5. a tap on a name opens the member card in view mode (a pencil on your own card opens its editing);
+  6. "חיפוש ביער" with "קרובי משפחה בלבד".
+  Server `server/family-find.ts` and a pure filter with 26 tests (`server/test-family-find.mjs`, for `npm test`).
+  It shows only the forest the tree already shows: no anonymous or hidden cards, no emails, 2 letters, rate-limited.
+  Checked on the dev server: search, kin filter, related, own and outside cards (outside: name only, no dates), 429 after
+  40 searches, no page overflow at 375, the card at 1280 dark, no nameless controls, typecheck and `npm test` clean.
+  Then (a57efaf): design's markup (`.fs*` for the search, `.mc*` for the card, rechecked at 375 dark and 1280), the story
+  link "הסיפור של …" on the card, and the scrolling the owner found jumpy: the scroll only toggles `.moving` once and settles
+  after 550 ms, `.off` while the tree is off screen, the lines redrawn once a frame and never during a glide.
+  For design: `.fv-tools` does not wrap at 375, so `.fs` is squeezed to about 105 px. Not checked: a real scroll on a
+  phone (the preview pane draws no frames, so only the logic was checked). Not checked: a real phone; the owner's
+  backups from settings (dev user not the owner's own Drive); a tribe with a family path across households.
+  Open: no personal logo or banner exists, so the card uses the tree photo and, at home, the family profile's cover;
+  should users outside one's forest ever be findable (a new opt-in level)? The owner's question, through the CEO.
 
 - **פרופיל המשפחה** (the CEO's queue, item 2): `/family/profile.html` on design's markup, a door at the top of the tree.
   Server `server/family-profile.ts`, the view filter `server/family-profile-rules.ts` with 31 tests
@@ -14,6 +59,9 @@ Last update: 2026-11-14 (פרופיל המשפחה).
   and dark: no overflow, no nameless controls; one finding for design (the initial in `.fp-face` is 2.9:1 in light).
   Not checked: an own cover upload on a real phone; the tribe view (no confirmed links in the local DB); `?h=` is accepted
   but nothing links to it yet (the forest will).
+  Merged into main as v98 (89d236a); the push waits for the owner. Open: "חבר/ה במשפחת…" on the person's profile; the
+  forest and gathering doors; the museum exhibit; members' photos instead of initials; whether recipes may be shared
+  outside the household (the owner's question, through the CEO).
 
 - **הרגלי אכילה** (the CEO's queue, item 1): `/food/diet/habits/`, one card per way of eating (ketosis and the five in
   `diets.js`), each with ketosis's big switch, what it shows when on, the rules in short, and a link to its tab while on.

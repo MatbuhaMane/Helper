@@ -1071,3 +1071,36 @@ CREATE TABLE IF NOT EXISTS family_profile_suggestions (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS family_profiles_link ON family_profiles(link_hash);
+
+-- The reports inbox, תיבת פניות (ai-features; server/reports.ts): a member reports a problem from any page (a shake or
+-- the menu); the team reads it in the back door and answers privately. Only the reporter sees the report and the answer.
+CREATE TABLE IF NOT EXISTS reports (
+  id           TEXT PRIMARY KEY,
+  email        TEXT NOT NULL,                  -- who sent it
+  name         TEXT,                           -- their card name then
+  text         TEXT NOT NULL,
+  path         TEXT NOT NULL DEFAULT '/',      -- the page, a path of the app
+  title        TEXT,                           -- the page's name
+  device       TEXT,                           -- phone | tablet | pc
+  theme        TEXT,                           -- light | dark
+  width        INTEGER,                        -- the screen's width in CSS pixels
+  has_shot     INTEGER NOT NULL DEFAULT 0,     -- a screenshot the person chose to attach (MEDIA reports/<id>, or shot_data)
+  shot_data    TEXT,                           -- the screenshot as a data URL, only where there is no MEDIA bucket
+  via          TEXT NOT NULL DEFAULT 'menu',   -- shake | menu | button | companion
+  state        TEXT NOT NULL DEFAULT 'new',    -- new | working | done
+  created_at   INTEGER NOT NULL,
+  updated_at   INTEGER NOT NULL,
+  read_at      INTEGER,                        -- the team last opened it
+  seen_at      INTEGER,                        -- the reporter last opened it
+  last_team_at INTEGER                         -- the team's last answer
+);
+CREATE INDEX IF NOT EXISTS reports_email ON reports(email, created_at);
+CREATE TABLE IF NOT EXISTS report_messages (
+  id       TEXT PRIMARY KEY,
+  report   TEXT NOT NULL,
+  by_team  INTEGER NOT NULL DEFAULT 1,         -- 1: the team's answer
+  by_email TEXT,                               -- who in the team wrote it (never shown to the member)
+  text     TEXT NOT NULL,
+  at       INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS report_messages_report ON report_messages(report, at);

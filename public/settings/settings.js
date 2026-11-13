@@ -477,6 +477,8 @@
     setTimeout(() => (cur || a).focus(), 30);
   });
   async function drawPrivacy() {
+    let owner = false; try { owner = (await H.me()).user?.role === 'owner'; } catch (_) { /* not known: no backups button */ }
+    try { await H.loadOnce('/settings/vault-keys.js'); H.vaultBack?.(); } catch (_) { /* the vault buttons do nothing */ }
     let lock;
     try { lock = await api('/api/lock'); } catch (e) { privacyBox.body.replaceChildren(el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.'), devicesBox); return; }
     try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
@@ -486,7 +488,7 @@
     const setMode = async (which, v) => {
       try {
         if (v === 'pin' && !lock.hasPin && !(await setPin(lock))) return drawPrivacy();
-        if (v === 'bio' && !lock.hasPasskey) { toast('קודם צריך מפתח במכשיר הזה: בעץ המשפחה ← אבטחה ← הוספת מכשיר'); return drawPrivacy(); }
+        if (v === 'bio' && !lock.hasPasskey) { toast('קודם צריך מפתח במכשיר הזה: כאן למטה ← מפתחות גישה ← המכשיר הזה'); return drawPrivacy(); }
         const r = await lockChange('/api/lock', 'PUT', { [which]: v }, lock);
         if (r) toast(v === 'off' ? 'הנעילה כבויה' : 'הנעילה פעילה');
       } catch (e) { say(e); }
@@ -516,9 +518,24 @@
         } }, 'שכחתי את הקוד') : null),
       lock.closed ? el('p', { class: 'small', role: 'note' }, 'הקוד נסגר אחרי הרבה ניסיונות. היכנסו שוב עם Google, וקבעו קוד חדש.') : null,
       el('p', { class: 'st-safe muted small' }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל מקרה.'),
+      // the vault's passkeys and (the owner) its backups: moved here from the tree page (the owner, 2026-11-14)
+      el('h3', {}, 'הכספת המשפחתית'),
+      el('p', { class: 'muted small' }, 'המכשירים שפותחים את הכספת, וגיבויי הכספת. כל פתיחה כאן מבקשת אישור.'),
+      el('div', { class: 'row st-vault', style: 'gap:8px;flex-wrap:wrap' },
+        el('button', { class: 'btn small', type: 'button', onclick: () => H.vaultKeys?.() }, 'מפתחות גישה'),
+        owner ? el('button', { class: 'btn small', type: 'button', onclick: () => H.vaultBackups?.() }, 'גיבויים') : null),
       devicesBox,
     ].filter(Boolean));
   }
+
+  /* ---------- reports: דווח על בעיה, התיבה שלי, and נענוע לדיווח (a per-user pref; iOS asks for motion on this tap) ---------- */
+  const reportsBox = el('div', { class: 'st-reports' });
+  H.loadOnce('/assets/reports.js').then(() => {
+    const sw = el('input', { type: 'checkbox', checked: H.shakeOn(), onchange: async (e) => { e.target.checked = await H.setShake(e.target.checked); } });
+    reportsBox.replaceChildren(...H.reportEntries(),
+      H.canShake() ? el('div', { class: 'st-field' }, el('label', { class: 'st-switch' }, sw, ' ', 'נענוע לדיווח'),
+        el('p', { class: 'muted small' }, 'לנער את הטלפון מכל דף, והדיווח נפתח.')) : null);
+  }).catch(() => reportsBox.replaceChildren(el('p', { class: 'muted small' }, 'לא הצלחתי לטעון את הדיווחים.')));
 
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
   const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['account', 'החשבון']];
@@ -531,8 +548,8 @@
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')),
       el('a', { class: 'btn small ghost', href: '/welcome/' }, 'ההגדרה הראשונית שוב'),
-      // feedback to the owner (the family batch): the same form any button can open
-      el('button', { class: 'btn small', type: 'button', onclick: async () => { try { await H.loadOnce('/assets/feedback.js'); H.feedback(); } catch (_) { toast('לא הצלחתי לפתוח את הטופס'); } } }, 'משוב לבעלים של האוהל'))));
+      // reports to צוות האוהל (server/reports.ts, /assets/reports.js): report a problem, the person's inbox, and the shake switch
+      reportsBox)));
   drawServices(); drawAssistant(); drawDevices(); drawPrivacy();
   paintNows();
   const want = location.hash.slice(1);

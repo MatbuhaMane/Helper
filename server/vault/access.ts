@@ -14,6 +14,7 @@ export const ACCESS: Record<string, Level> = {
   // the tree, open on a trusted device
   tree: 'tree', personGet: 'tree', personSave: 'tree', linkAdd: 'tree', linkSave: 'tree',
   roles: 'tree', householdSave: 'tree', bridges: 'tree', forest: 'tree', related: 'tree',
+  forestFor: 'tree',                                                                  // the forest search and the member card (server/family-find.ts): the forest's own level
   // always a fresh unlock
   personDelete: 'fresh', linkDelete: 'fresh',                                         // any delete
   items: 'fresh', itemAdd: 'fresh', itemFile: 'fresh', itemSave: 'fresh', itemDelete: 'fresh', itemRestore: 'fresh',   // documents and files

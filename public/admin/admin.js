@@ -101,7 +101,7 @@
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
     /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
     const APPS = st.own
-      ? [['messages', 'הודעות', messages], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts]] : []), ['settings', 'הגדרות האפליקציה', settings],
+      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts]] : []), ['settings', 'הגדרות האפליקציה', settings],
          ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
       : [['features', `התכונות של ${st.as.name}`, features]];
     const panels = {}, bodies = {}, loaded = new Set();
@@ -138,21 +138,97 @@
     show(location.hash.slice(1), !!location.hash);
   }
 
-  /* ---------- the family's feedback (a button anywhere, or through the companion) ---------- */
+  /* ---------- the board: how many reports wait (the inbox itself is the תיבת פניות tile) ---------- */
+  const reportsCount = (n) => {
+    const tile = document.querySelector('.bd-apps [data-bd="reports"]');
+    tile?.querySelector('.bd-count')?.remove();
+    if (tile && n) tile.append(el('span', { class: 'bd-count', 'aria-label': n + ' חדשות' }, String(n)));
+  };
   async function inbox(box) {
     let d;
-    try { d = await call('/api/admin/feedback'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
-    const when = (t) => new Date(t).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-    const mark = async (f, patch) => { try { await call(`/api/admin/feedback/${f.id}`, { method: 'PUT', body: patch }); inbox(box); } catch (e) { toast(ERR[e.code] || e.message); } };
-    box.replaceChildren(section('inbox-s', d.unread ? `פניות · ${d.unread} חדשות` : 'פניות',
-      d.feedback.length ? el('ul', { class: 'ad-inbox', style: 'list-style:none;margin:0;padding:0;display:grid;gap:10px' }, d.feedback.map((f) => el('li', {
-        class: 'card' + (f.read_at ? '' : ' unread'), style: 'display:grid;gap:6px;' + (f.done ? 'opacity:.6' : f.read_at ? '' : 'border-inline-start:4px solid var(--primary)') },
-        el('div', { class: 'small muted' }, `${f.name || f.email} · ${when(f.at)}${f.page ? ' · ' + f.page : ''}${f.via === 'companion' ? ' · דרך העוזר' : ''}`),
-        el('p', { dir: 'auto', style: 'margin:0;white-space:pre-wrap' }, f.text),
-        el('div', { class: 'row' },
-          el('button', { class: 'btn small ghost', type: 'button', onclick: () => mark(f, { read: !f.read_at }) }, f.read_at ? 'סימון כלא נקראה' : 'נקראה'),
-          el('button', { class: 'btn small ghost', type: 'button', onclick: () => mark(f, { done: !f.done, read: true }) }, f.done ? 'החזרה לפתוחות' : 'טופלה')))))
-        : el('p', { class: 'muted' }, 'עוד אין פניות. כפתור "משוב לבעלים של האוהל" נמצא בהגדרות, ואפשר גם לבקש מהעוזר להעביר.')));
+    try { d = await call('/api/admin/reports'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
+    reportsCount(d.count.new);
+    box.replaceChildren(section('inbox-s', d.count.new ? `פניות · ${d.count.new} חדשות` : 'פניות',
+      el('p', { class: 'muted small' }, d.count.all ? `${d.count.new} חדשות · ${d.count.working} בטיפול · ${d.count.done} טופלו` : 'עוד אין פניות. מנערים את הטלפון, או "דווח על בעיה" בתפריט הכלים ובהגדרות.'),
+      d.count.all ? el('a', { class: 'btn small', href: '#reports', onclick: (e) => { e.preventDefault(); document.querySelector('.bd-apps [data-bd="reports"]')?.click(); } }, 'לתיבת הפניות') : null));
+  }
+
+  /* ---------- תיבת פניות: every report as a thread, its state, and a private answer (server/reports.ts) ---------- */
+  async function reportsPart(box) {
+    try { await H.loadOnce('/assets/reports.js'); } catch (_) { return box.replaceChildren(el('p', { class: 'card' }, 'לא הצלחתי לטעון את תיבת הפניות.')); }
+    const STATES = [['new', 'חדשה'], ['working', 'בטיפול'], ['done', 'טופלה']];
+    const FILTERS = [['all', 'הכל'], ['new', 'חדשות'], ['working', 'בטיפול'], ['done', 'טופלו']];
+    const DEV = { phone: 'טלפון', tablet: 'טאבלט', pc: 'מחשב' };
+    const VIA = { shake: 'בניעור', companion: 'דרך העוזר', button: 'מההגדרות' };
+    const when = (t) => (new Date(t).toDateString() === new Date().toDateString() ? new Date(t).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+      : new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }));
+    const pick = () => el('p', { class: 'rx-pick' }, 'בחרו פנייה מהרשימה.');
+    let filter = 'all', current = null, d = { reports: [], count: {} };
+    const filters = el('div', { class: 'rx-filters', role: 'group', 'aria-label': 'סינון' });
+    const list = el('ul', { class: 'rx-list' });
+    const empty = el('p', { class: 'rx-empty' }, 'אין פניות כאן.');
+    const thread = el('section', { class: 'rx-thread card', 'aria-label': 'הפנייה' }, pick());
+    const rx = el('div', { class: 'rx' }, el('div', { class: 'rx-side' }, filters, list, empty), thread);
+    box.replaceChildren(rx);
+    const recount = () => {
+      d.count = { all: d.reports.length, new: 0, working: 0, done: 0 };
+      for (const r of d.reports) d.count[r.state]++;
+      reportsCount(d.count.new);
+    };
+    const drawFilters = () => filters.replaceChildren(...FILTERS.map(([k, name]) => el('button', { type: 'button', 'aria-pressed': String(filter === k), onclick: () => { filter = k; drawFilters(); drawList(); } },
+      name, k === 'new' && d.count.new ? el('span', {}, String(d.count.new)) : null)));
+    function drawList() {
+      const rows = d.reports.filter((r) => filter === 'all' || r.state === filter);
+      list.replaceChildren(...rows.map((r) => el('li', {}, el('button', {
+        class: 'rx-row' + (r.unread ? ' unread' : '') + (r.state === 'done' ? ' done' : ''), type: 'button', 'aria-current': current === r.id ? 'true' : null, onclick: () => openOne(r.id) },
+        el('span', { class: 'rx-face', 'aria-hidden': 'true' }, r.face), el('span', { class: 'rx-name' }, r.name), el('time', { class: 'rx-when', datetime: new Date(r.created_at).toISOString() }, when(r.created_at)),
+        el('span', { class: 'rx-snip', dir: 'auto' }, r.text),
+        el('span', { class: 'rx-tags' }, el('span', { class: 'rx-tag' }, r.title || r.path), r.has_shot ? el('span', { class: 'rx-tag shot' }, 'צילום') : null,
+          VIA[r.via] ? el('span', { class: 'rx-tag' }, VIA[r.via]) : null, r.replies ? el('span', { class: 'rx-tag' }, r.replies === 1 ? 'נענתה' : `${r.replies} תשובות`) : null)))));
+      empty.hidden = rows.length > 0;
+    }
+    async function openOne(id) {
+      let t;
+      try { t = await call('/api/admin/reports/' + encodeURIComponent(id)); } catch (e) { return say(e); }
+      current = id; rx.dataset.view = 'thread';
+      const r = t.report, first = r.name.split(' ')[0], to = (/^[א-ת]/.test(first) ? 'ל' : 'ל־') + first, row = d.reports.find((x) => x.id === id);
+      if (row) row.unread = false;
+      const stateBtns = el('div', { class: 'rx-state', role: 'group', 'aria-label': 'מצב' });
+      const setState = (k) => { r.state = k; if (row) row.state = k; drawState(); recount(); drawFilters(); drawList(); };
+      const drawState = () => stateBtns.replaceChildren(...STATES.map(([k, name]) => el('button', { type: 'button', 'aria-pressed': String(r.state === k), onclick: async () => {
+        try { await call('/api/admin/reports/' + encodeURIComponent(id), { method: 'PUT', body: { state: k } }); setState(k); } catch (e) { say(e); }
+      } }, name)));
+      const shotUrl = r.has_shot ? `/api/admin/reports/${encodeURIComponent(id)}/shot` : null;
+      const msgs = el('div', {}, H.reportThread(r, t.messages, { side: 'team', name: r.name, shotUrl }));
+      const ta = el('textarea', { rows: 2, dir: 'auto', 'aria-label': 'התשובה', placeholder: 'תשובה ' + to, maxlength: 2000 });
+      const sendB = el('button', { class: 'rm-send', 'aria-label': 'שליחת התשובה' });
+      const form = el('form', { class: 'rm-reply', onsubmit: async (e) => {
+        e.preventDefault();
+        const text = ta.value.trim();
+        if (!text) return ta.focus();
+        sendB.disabled = true;
+        try {
+          const res = await call('/api/admin/reports/' + encodeURIComponent(id) + '/reply', { body: { text } });
+          t.messages.push({ id: res.id, team: true, text, at: res.at }); ta.value = '';
+          if (row) row.replies = (row.replies || 0) + 1;
+          msgs.replaceChildren(H.reportThread(r, t.messages, { side: 'team', name: r.name, shotUrl }));
+          setState(res.state);
+          toast('נשלח, רק ' + to + '.');
+        } catch (err) { say(err); }
+        sendB.disabled = false;
+      } }, ta, sendB, el('p', { class: 'rm-private' }, `התשובה תגיע רק ${to}, לתיבה האישית באוהל.`));
+      drawState();
+      thread.replaceChildren(
+        el('header', { class: 'rx-thead' },
+          el('button', { class: 'rx-back', type: 'button', onclick: () => { delete rx.dataset.view; current = null; thread.replaceChildren(pick()); drawList(); } }, '‹ כל הפניות'),
+          el('div', { class: 'rx-who' }, el('b', {}, r.name), el('small', {}, [DEV[r.device], r.title || r.path, when(r.created_at)].filter(Boolean).join(' · '))),
+          stateBtns),
+        msgs, form);
+      drawList();
+      if (matchMedia('(max-width: 899px)').matches) thread.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    try { d = await call('/api/admin/reports'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
+    recount(); drawFilters(); drawList();
   }
 
   /* ---------- usage: who comes in, and which tools (never what is in them) ---------- */

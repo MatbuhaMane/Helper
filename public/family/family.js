@@ -145,8 +145,7 @@
     S.focus = S.people.some((p) => p.id === S.focus) ? S.focus : (S.mine || S.people[0]?.id || null);
     schedule();
     const clock = el('span', { class: 'fv-clock muted' });
-    const find = el('input', { type: 'search', class: 'fv-find', placeholder: 'חיפוש בעץ', 'aria-label': 'חיפוש בעץ', list: 'fv-names' });
-    find.addEventListener('change', () => { const p = S.people.find((x) => x.name === find.value.trim()) || S.people.find((x) => x.name.includes(find.value.trim())); if (p) { setView('family'); focusOn(p.id); find.value = ''; } });
+    const find = forestSearch({ onPick: pickFound });
     const views = el('div', { class: 'fv-views', role: 'tablist', 'aria-label': 'תצוגה' },
       VIEWS.map(([v, n]) => el('button', { role: 'tab', 'data-v': v, 'aria-selected': String((S.view || VIEWS[0][0]) === v), onclick: () => {
         const was = S.view || VIEWS[0][0];
@@ -161,10 +160,8 @@
       el('button', { class: 'btn small ghost', onclick: relatedTool }, 'איך אנחנו קשורים?'),
       el('button', { class: 'btn small ghost', onclick: linksTool }, waiting ? `עצים מקושרים (${waiting} מחכים)` : 'עצים מקושרים'),
       el('button', { class: 'btn small ghost', onclick: activity }, 'יומן פעילות'),
-      el('button', { class: 'btn small ghost', onclick: keys }, 'מפתחות גישה'),
-      S.owner ? el('button', { class: 'btn small ghost', onclick: backups }, 'גיבויים') : null,
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
-    const tools = el('div', { class: 'fv-tools' }, views, find, el('datalist', { id: 'fv-names' }, S.people.map((p) => el('option', { value: p.name }))));
+    const tools = el('div', { class: 'fv-tools' }, views, find);
     const board = el('div', { class: 'fv-tree' });
     root.replaceChildren(el('section', { class: 'fv' }, bar, S.people.length ? tools : null, board));
     tickTimer = setInterval(() => {
@@ -271,40 +268,135 @@
     return words.reverse().join(' של ');
   }
   /** how are we related – inside our tree here in the page; with someone from a linked tree, on the server */
-  async function relatedTool() {
-    let f = null;
-    try { f = await call('/api/vault/forest'); touched(); } catch (_) { /* our tree alone */ }
-    const mine = new Set(S.people.map((p) => p.id));
-    // a record in another tree that is one of ours is already in the list as ours
-    const dup = new Set();
-    for (const [x, y] of f?.same || []) { if (mine.has(x)) dup.add(y); else if (mine.has(y)) dup.add(x); else dup.add(y); }
-    const others = (f?.people || []).filter((p) => p.household !== 'mine' && !dup.has(p.id) && !p.anonymous && !p.hidden.includes('identity'));
-    const houses = (f?.households || []).filter((h) => h.id !== 'mine');
-    const foreign = new Map(others.map((p) => [p.id, p]));
-    const nameOf = (id) => byId(id)?.name || foreign.get(id)?.name || 'קרוב/ת משפחה';
-    const sexOfAny = (id) => byId(id)?.sex || foreign.get(id)?.sex || '';
-    const gAny = (id, m, w, both) => (sexOfAny(id) === 'm' ? m : sexOfAny(id) === 'f' ? w : both);
-    const opts = (sel) => S.people.map((p) => el('option', { value: p.id, selected: p.id === sel }, p.name));
-    const a = el('select', { 'aria-label': 'מ' }, opts(S.mine || S.focus));
-    const firstOther = S.focus !== (S.mine || S.focus) ? S.focus : S.people.find((p) => p.id !== a.value)?.id;
-    const b = el('select', { 'aria-label': 'אל' },
-      houses.length ? el('optgroup', { label: 'העץ שלנו' }, opts(firstOther)) : opts(firstOther),
-      houses.map((h) => { const ps = others.filter((p) => p.household === h.id); return ps.length ? el('optgroup', { label: h.title }, ps.map((p) => el('option', { value: p.id }, p.name))) : null; }));
-    const out = el('div', { class: 'fv-rel-out', 'aria-live': 'polite' });
-    const show = (r, name) => out.replaceChildren(!r || !name ? el('p', { class: 'muted' }, 'אין ביניהם קשר בעצים (עדיין).') :
-      el('div', {}, el('p', { class: 'fv-rel-name' }, `${nameOf(b.value)} ${gAny(b.value, 'הוא', 'היא', 'הוא/היא')} ${name} של ${nameOf(a.value)}`),
-        el('ol', { class: 'fv-rel-path' }, r.nodes.map((n) => el('li', {}, n.name ?? nameOf(n))))));
+  /* ---------- חיפוש ביער: the people of the forest the viewer may see (server/family-find.ts), never more ---------- */
+  // the markup is design's (.fs / .fs-*, see family.css)
+  const SVG = (d) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true');
+    s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2'); s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round');
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d); s.append(p); return s; };
+  const LENS = 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4', PENCIL = 'M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4';
+  let searches = 0;
+  function forestSearch({ label = 'חיפוש ביער', kin = true, onPick }) {
+    const id = 'fs-results-' + (++searches);
+    const input = el('input', { type: 'search', class: 'fs-input', placeholder: label, 'aria-label': label, autocomplete: 'off',
+      role: 'combobox', 'aria-expanded': 'false', 'aria-controls': id, 'aria-autocomplete': 'list' });
+    const only = el('input', { type: 'checkbox' });
+    const list = el('ul', { class: 'fs-results', role: 'listbox', id, 'aria-label': 'תוצאות', hidden: true });
+    const empty = el('p', { class: 'fs-empty', 'aria-live': 'polite', hidden: true });
+    const close = () => { list.hidden = true; empty.hidden = true; input.setAttribute('aria-expanded', 'false'); };
+    const note = (text) => { list.hidden = true; empty.textContent = text; empty.hidden = false; input.setAttribute('aria-expanded', 'false'); };
+    let wait, seq = 0;
     const run = async () => {
-      if (mine.has(b.value)) return show(pathBetween(a.value, b.value), relationName(a.value, b.value));
-      try {
-        const r = await call(`/api/vault/related?from=${encodeURIComponent(a.value)}&to=${encodeURIComponent(b.value)}`);
-        show(r.path.length ? { nodes: r.path } : null, r.name);
-      } catch (e) { say(e); }
+      const q = input.value.trim();
+      if ([...q.replace(/\s/g, '')].length < 2) return close();
+      const my = ++seq;
+      let r;
+      try { r = await call(`/api/family/find?q=${encodeURIComponent(q)}${only.checked ? '&kin=1' : ''}`); } catch (e) {
+        if (my === seq) note(e.code === 'too_many_tries' ? 'יותר מדי חיפושים ברצף. נסו שוב בעוד דקה.' : 'החיפוש לא הצליח. נסו שוב.');
+        return;
+      }
+      if (my !== seq) return;
+      if (!r.people.length) return note('לא נמצא. מופיעים כאן רק מי שבחרו להיראות לך.');
+      list.replaceChildren(...r.people.map((p) => el('li', {},
+        el('button', { type: 'button', role: 'option', class: 'fs-hit' + (p.relation ? ' kin' : ''), 'aria-selected': 'false',
+          onclick: () => { close(); input.value = ''; onPick(p); } },
+          el('span', { class: 'fs-face', 'aria-hidden': 'true' }, initials(p.name)),
+          el('span', { class: 'fs-text' }, el('b', {}, p.name),
+            el('small', {}, [p.self ? 'אני' : p.relation, p.mine ? '' : p.title, p.user ? 'באוהל' : ''].filter(Boolean).join(' · ')))))));
+      empty.hidden = true; list.hidden = false; input.setAttribute('aria-expanded', 'true');
     };
-    a.addEventListener('change', run); b.addEventListener('change', run);
-    H.modal(el('div', { class: 'fv-form' }, el('h2', {}, 'איך אנחנו קשורים?'), el('div', { class: 'fv-two' }, el('label', {}, 'מ־', a), el('label', {}, 'אל', b)),
-      houses.length ? el('p', { class: 'muted small' }, 'גם עם מי שבעצים המקושרים, לפי מה שכל אחד הרשה לראות ממנו.') : null, out));
+    input.addEventListener('input', () => { clearTimeout(wait); wait = setTimeout(run, 250); });
+    only.addEventListener('change', run);
+    const hits = () => [...list.querySelectorAll('.fs-hit')];
+    const mark = (b) => { hits().forEach((h) => h.setAttribute('aria-selected', String(h === b))); b?.focus(); };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowDown' && !list.hidden) { e.preventDefault(); mark(hits()[0]); }
+    });
+    list.addEventListener('keydown', (e) => {
+      const h = hits(), i = h.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' && i < h.length - 1) { e.preventDefault(); mark(h[i + 1]); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (i > 0) mark(h[i - 1]); else { mark(null); input.focus(); } }
+      else if (e.key === 'Escape') { close(); input.focus(); }
+    });
+    const wrap = el('div', { class: 'fs', role: 'search' },
+      el('label', { class: 'fs-box' }, SVG(LENS), input),
+      kin ? el('label', { class: 'fs-kin' }, only, el('span', {}, 'קרובי משפחה בלבד')) : null, list, empty);
+    wrap.addEventListener('focusout', (e) => { if (!wrap.contains(e.relatedTarget)) setTimeout(() => { if (!wrap.contains(document.activeElement)) close(); }, 120); });
+    return wrap;
+  }
+  /** a pick from the bar's search: our own people centre the tree, anyone else opens their card */
+  const pickFound = (p) => { if (p.mine && byId(p.id)) { setView('family'); focusOn(p.id); } else memberCard(p.id); };
+
+  async function relatedTool() {
+    const named = (id) => (id && byId(id) ? { id, name: byId(id).name } : null);
+    let from = named(S.mine), to = S.focus && S.focus !== S.mine ? named(S.focus) : null;
+    const out = el('div', { class: 'fv-rel-out', 'aria-live': 'polite' });
+    const fromBox = el('div', { class: 'fv-pick' }), toBox = el('div', { class: 'fv-pick' });
+    const pick = (box, label, who, set) => box.replaceChildren(el('span', { class: 'fv-pick-label' }, label),
+      who ? el('span', { class: 'fv-chosen' }, el('b', {}, who.name),
+        el('button', { type: 'button', class: 'btn small ghost', 'aria-label': `${label} ${who.name}: החלפה`, onclick: () => { set(null); box.querySelector('input')?.focus(); } }, 'החלפה'))
+        : forestSearch({ label: 'חיפוש שם…', onPick: set }));
+    const setFrom = (p) => { from = p; pick(fromBox, 'מ־', from, setFrom); run(); };
+    const setTo = (p) => { to = p; pick(toBox, 'אל', to, setTo); run(); };
+    const show = (r) => out.replaceChildren(!r.name || !r.path.length ? el('p', { class: 'muted' }, 'אין ביניהם קשר בעצים (עדיין).') :
+      el('div', {}, el('p', { class: 'fv-rel-name' }, `${r.to.name}: ${r.name} של ${r.from.name}`),
+        el('ol', { class: 'fv-rel-path' }, r.path.map((n) => el('li', {}, n.name)))));
+    const run = async () => {
+      if (!from || !to) return out.replaceChildren();
+      if (from.id === to.id) return out.replaceChildren(el('p', { class: 'muted' }, 'זה אותו אדם.'));
+      try { show(await call(`/api/vault/related?from=${encodeURIComponent(from.id)}&to=${encodeURIComponent(to.id)}`)); } catch (e) { say(e); }
+    };
+    pick(fromBox, 'מ־', from, setFrom); pick(toBox, 'אל', to, setTo);
+    H.modal(el('div', { class: 'fv-form fv-related' }, el('h2', {}, 'איך אנחנו קשורים?'), el('div', { class: 'fv-two' }, fromBox, toBox),
+      el('p', { class: 'muted small' }, 'חיפוש בכל היער: גם מי שבעצים המקושרים, לפי מה שכל אחד הרשה לראות ממנו.'), out));
     run();
+  }
+
+  /* ---------- the member card: one person as this viewer may see them (server/family-find.ts card); design's .mc markup ---------- */
+  let ourProfile = null;
+  /** the card's facts: born, died, from, age – only from what the server let through */
+  function facts(d, sex) {
+    const day = (iso) => { const t = iso && new Date(iso + 'T12:00'); return t && !isNaN(t) ? t : null; };
+    const gs = (m, f, both) => (sex === 'm' ? m : sex === 'f' ? f : both);
+    const greg = (t) => t.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+    const both = (t, late) => `${greg(t)} · ${heDate(late ? new Date(t.getTime() + 864e5) : t)}`;
+    const years = (from, to) => { let y = to.getFullYear() - from.getFullYear(); if (to < new Date(to.getFullYear(), from.getMonth(), from.getDate())) y--; return y; };
+    const b = day(d.born), x = day(d.died), out = [];
+    if (b) out.push([gs('נולד', 'נולדה', 'נולד/ה'), both(b, d.bornAfterSunset)]);
+    if (x) out.push([gs('נפטר', 'נפטרה', 'נפטר/ה'), both(x, d.diedAfterSunset)]);
+    if (d.place) out.push(['מקום', d.place]);
+    if (b) out.push(x ? [gs('חי', 'חיה', 'חי/ה'), years(b, x) + ' שנים'] : ['גיל', String(years(b, new Date()))]);
+    return out;
+  }
+  async function memberCard(id) {
+    let c;
+    try { c = await call(`/api/family/card?id=${encodeURIComponent(id)}`); } catch (e) { return say(e); }
+    if (c.mine && !ourProfile) ourProfile = await api('/api/family/profile', { noRedirect: true }).catch(() => ({}));
+    const P = c.mine ? ourProfile : {};
+    const cover = P.cover ? (P.cover === 'own' && P.coverUrl ? P.coverUrl : `/assets/covers/${P.cover}.svg`) : null;
+    const face = el('span', { class: 'mc-avatar', 'aria-hidden': 'true' }, initials(c.name));
+    if (c.photo) photoInto(c.photo, face);
+    const rel = [c.self ? 'אני' : c.relation, c.title].filter(Boolean).join(' · ');
+    const edit = c.self ? el('button', { type: 'button', class: 'mc-edit', 'aria-label': 'עריכת הפרטים שלי', title: 'עריכת הפרטים שלי', onclick: async () => {
+      try { const p = await call(`/api/vault/people/${encodeURIComponent(c.id)}`); H.closeModal(); personForm(p); } catch (e) { say(e); }
+    } }, SVG(PENCIL)) : null;
+    const list = facts(c.details || {}, c.sex);
+    const about = [c.user ? `${c.sex === 'f' ? 'משתמשת' : c.sex === 'm' ? 'משתמש' : 'משתמש/ת'} באוהל.` : '',
+      c.hidden.length && !c.self ? (c.anonymous ? 'הפרטים מוסתרים לבקשתם.' : 'חלק מהפרטים מוסתרים, לפי מה שבחרו להראות לך.') : ''].filter(Boolean).join(' ');
+    const acts = c.mine ? [
+      // the person's story (the story page filters to them and checks access itself)
+      el('a', { class: 'btn small ghost', href: `/family/story/?person=${encodeURIComponent(c.id)}` }, `הסיפור של ${c.name.split(/\s+/)[0]}`),
+      // the vault's documents and photos stay one step away (they ask for a fresh unlock, as before)
+      el('button', { type: 'button', class: 'btn small ghost', onclick: () => { H.closeModal(); panel(c.id); } }, 'מסמכים ותמונות'),
+    ] : [];
+    H.modal(el('article', { class: 'mc' + (c.self ? ' mine' : ''), 'aria-label': 'הכרטיס של ' + c.name },
+      el('div', { class: 'mc-banner' }, cover ? el('img', { src: cover, alt: '' }) : null),
+      el('div', { class: 'mc-head' }, face,
+        el('div', { class: 'mc-who' }, el('h2', { class: 'mc-name' }, c.name), rel ? el('p', { class: 'mc-rel' }, rel) : null),
+        edit),
+      list.length ? el('dl', { class: 'mc-facts' }, list.map(([k, v]) => el('div', { class: 'mc-fact' }, el('dt', {}, k), el('dd', {}, v)))) : null,
+      about ? el('p', { class: 'mc-about' }, about) : null,
+      acts.length ? el('div', { class: 'mc-actions' }, acts) : null));
   }
 
   /* ---------- drawing: the family around one person, or the whole tree ---------- */
@@ -324,6 +416,7 @@
     S.view = v;
     root.querySelectorAll('.fv-views button[data-v]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.v === v)));
   }
+  const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce';
   /** move the centre to someone, with the cards gliding from where they were (FLIP) */
   function focusOn(id) {
     const board = root.querySelector('.fv-tree');
@@ -331,15 +424,26 @@
     S.focus = id;
     try { localStorage.setItem('fv-focus', id); } catch (_) { /* fine */ }
     draw();
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (reducedMotion()) return;
+    // a soft glide (the owner, 2026-11-14): short, a gentle ease-out with no overshoot; a long way is felt shorter, since
+    // the card starts a little faded and the glide is capped in time, not in distance
     const anims = [];
+    board.classList.add('fv-gliding');                 // a hook for design: no hover lift while the cards move
     for (const c of board.querySelectorAll('.fv-card')) {
       const was = before.get(c.dataset.id), now = c.getBoundingClientRect();
-      if (was) anims.push(c.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }));
-      else anims.push(c.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' }));
+      if (was) {
+        const dx = was.left - now.left, dy = was.top - now.top, far = Math.hypot(dx, dy);
+        if (far < 1) continue;
+        anims.push(c.animate([{ transform: `translate(${dx}px, ${dy}px)`, opacity: far > 160 ? 0.55 : 0.85 }, { transform: 'none', opacity: 1 }],
+          { duration: Math.round(Math.min(340, 200 + far * 0.4)), easing: 'cubic-bezier(.25, .1, .25, 1)' }));
+      } else anims.push(c.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' }));
     }
     // the lines were measured while the cards were still gliding: draw them again where the cards came to rest
-    Promise.allSettled(anims.map((a) => a.finished)).then(() => redrawLines(board));
+    // (with a safety timer: a glide that never ends, e.g. in a tab sent to the background, must not leave the lines faded)
+    let done = false;
+    const end = () => { if (done) return; done = true; board.classList.remove('fv-gliding'); redrawLines(board); };
+    Promise.allSettled(anims.map((a) => a.finished)).then(end);
+    setTimeout(end, 500);
   }
   /** the lines on the board as it is now (the layer is made anew by every drawing) */
   function redrawLines(board) {
@@ -350,7 +454,12 @@
   function watchSize(board) {
     if (board.dataset.watch) return;
     board.dataset.watch = '1';
-    new ResizeObserver(() => redrawLines(board)).observe(board);
+    let queued = false;
+    new ResizeObserver(() => {
+      if (queued || board.classList.contains('fv-gliding')) return;
+      queued = true;
+      requestAnimationFrame(() => { queued = false; redrawLines(board); });
+    }).observe(board);
   }
   /** the nuclear family around the person in the centre: grandparents, parents, the person with siblings and partners, children */
   function drawFamily(board) {
@@ -413,14 +522,13 @@
   // only until design's sets.json is there: the sets that exist today (the owner compares them)
   const KNOWN_SETS = [{ id: 'olive', name: 'עץ א׳' }, { id: 'canopy', name: 'עץ ב׳' }];
   const LOOKS = [['leaf', 'עלים'], ['frame', 'מסגרות']];
-  /** the tree's stylesheet and sounds, added once; resolves when the styles are in (the leaves are measured after) */
+  /** the tree's stylesheet, added once (no sounds: the owner's choice, 2026-11-14); resolves when the styles are in (the leaves are measured after) */
   function treeAssets() {
     if (!TREE.css) {
       const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/assets/tree.css'; l.dataset.tree = '1';
       TREE.css = new Promise((ok) => { l.onload = ok; l.onerror = ok; setTimeout(ok, 4000); });
       document.head.append(l);
     }
-    if (!window.TreeSound && !document.querySelector('script[data-tree]')) { const x = document.createElement('script'); x.src = '/assets/tree-sound.js'; x.defer = true; x.dataset.tree = '1'; document.head.append(x); }
     return TREE.css;
   }
   async function treeSets() {
@@ -512,9 +620,8 @@
         'aria-label': [p.name, rel, bday ? 'יום הולדת היום' : '', passed ? 'זיכרונו לברכה' : ''].filter(Boolean).join(', '),
         onclick: () => {
           b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
-          setTimeout(() => b.classList.remove('tap'), 900);
-          try { if (passed) window.TreeSound?.quiet(); else window.TreeSound?.leaf(); } catch (_) { /* no sound */ }
-          setTimeout(() => panel(p.id), 220);
+          setTimeout(() => b.classList.remove('tap'), 600);
+          memberCard(p.id);
         } },
         el('span', { class: 'tr-leaf' }, face),
         el('span', { class: 'tr-tag' }, el('b', {}, (p.name || '?').trim().split(/\s+/)[0]), years || rel ? el('small', {}, years || rel) : null));
@@ -525,13 +632,11 @@
     const base = slots.candle || [slots.trunkPivot?.[0] ?? 50, slots.candleY ?? (slots.trunkPivot?.[1] ?? 89) + 2.4];
     candles.slice(0, 4).forEach((p, i) => tree.append(el('div', { class: 'tr-candle', style: `--x:${(base[0] + (i % 2 ? 9 : -9) * Math.ceil((i + 1) / 2)).toFixed(1)}; --y:${(+base[1]).toFixed(1)}`, role: 'img', 'aria-label': `נר זיכרון ל${p.name}, היום יום האזכרה` }, el('span', { class: 'tr-flame' }))));
     if (me) tree.append(el('button', { type: 'button', class: 'tr-bud', style: `--x:${Math.min(96, me.x + 6.5).toFixed(1)}; --y:${(me.y + 0.6).toFixed(1)}`, 'aria-label': `הוספת קרוב משפחה ל${me.p.name}`,
-      onclick: () => { try { window.TreeSound?.bud(); } catch (_) { /* no sound */ } addNear(me.p); } }));
+      onclick: () => addNear(me.p) }));
     // more than one drawing: the person picks (a pref: it follows them to every device)
     // which tree and which look: the person picks (prefs: they follow them to every device)
     const choice = (label, opts, on, key) => el('div', { class: 'fv-views tr-sets', role: 'radiogroup', 'aria-label': label },
       opts.map(([v, name]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(v === on),
-        // (until design styles [aria-checked] in .fv-views like the tabs' [aria-selected])
-        style: v === on ? 'background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12);font-weight:500' : null,
         onclick: () => { if (v !== on) { H.savePrefs('family', { [key]: v }); draw(); } } }, name)));
     const pickers = el('div', { class: 'fv-tools tr-pick' },
       sets.length > 1 ? choice('איזה עץ', sets.map((x) => [x.id, x.name || x.id]), set, 'treeSet') : null,
@@ -569,17 +674,23 @@
     H.modal(el('div', { class: 'fv-form' }, el('h2', {}, `מי נוסף ליד ${first}?`),
       el('div', { style: 'display:grid;gap:8px' }, opts.map(([as, label]) => el('button', { type: 'button', class: 'btn', onclick: () => { H.closeModal(); personForm(null, { as, of: p.id }); } }, label)))));
   }
-  /** the tree sways more while the page scrolls, and settles with a sound when it stops (one listener for the page) */
+  /** the tree leans while the page scrolls and settles when it stops. The CSS does the motion (design); the scroll only
+      toggles a class, once: no layout reads, no style writes per event. Off screen, .off pauses every tree animation. */
+  let treeSeen = null;
   function treeMotion() {
+    const t = root.querySelector('.tree');
+    if (t && typeof IntersectionObserver === 'function') {
+      treeSeen?.disconnect();
+      treeSeen = new IntersectionObserver(([e]) => t.classList.toggle('off', !e.isIntersecting));
+      treeSeen.observe(t);
+    }
     if (TREE.motion) return;
     TREE.motion = true;
-    let still;
+    let still, moving = null;
     addEventListener('scroll', () => {
-      const t = root.querySelector('.tree');
-      if (!t) return;
-      t.classList.add('moving');
+      if (!moving) { moving = root.querySelector('.tree'); moving?.classList.add('moving'); }
       clearTimeout(still);
-      still = setTimeout(() => { t.classList.remove('moving'); try { window.TreeSound?.settle(); } catch (_) { /* no sound */ } }, 260);
+      still = setTimeout(() => { moving?.classList.remove('moving'); moving = null; }, 550);   // a wheel's ticks read as one scroll
     }, { passive: true });
   }
   function drawAll(board) {
@@ -596,8 +707,8 @@
     if (p.photo) photoInto(p.photo, pic);
     const rel = S.mine && S.mine !== p.id ? relationName(S.mine, p.id) : S.mine === p.id ? 'אני' : null;
     const isFocus = role === 'focus';
-    return el('button', { class: 'fv-card' + (role ? ' r-' + role : ''), 'data-id': p.id, title: isFocus ? 'פתיחת החלונית' : 'מרכז העץ סביב ' + p.name,
-      onclick: () => (isFocus ? panel(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
+    return el('button', { class: 'fv-card' + (role ? ' r-' + role : ''), 'data-id': p.id, title: isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
+      onclick: () => (isFocus ? memberCard(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
       pic, el('b', {}, p.name),
       rel ? el('small', { class: 'fv-relname' }, rel) : null,
       el('small', { class: 'muted' }, [n.doc ? `${n.doc} מסמכים` : '', n.photo ? `${n.photo} תמונות` : ''].filter(Boolean).join(' · ') || (isFocus ? 'לחצו לפתיחה' : '')));
@@ -1029,41 +1140,6 @@
         el('ul', {}, events.map((e) => { const [a, k, x] = e.action.split(':'); return el('li', {}, el('b', {}, e.email === S.me ? 'אני' : e.email.split('@')[0]), ' ', ACT[a] || a, ' ', KIND[k] || k || '', x === 'from-outside' ? ' (ממשפחה אחרת)' : x === 'tribe' ? ' (הנהלת השבט)' : '', e.person_id && names.get(e.person_id) ? ` · ${names.get(e.person_id)}` : '', el('small', { class: 'muted' }, ' ' + new Date(e.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }))); }))));
     } catch (e) { say(e); }
   }
-  async function keys() {
-    try {
-      const { passkeys } = await call('/api/vault/passkeys');
-      const box = el('div', { class: 'fv-form' }, el('h2', {}, 'מפתחות הגישה שלי'), el('p', { class: 'muted small' }, 'כל מכשיר שיכול לפתוח את הכספת בטביעת אצבע, בפנים או ב־Windows Hello. מכשיר שאבד – הסירו אותו כאן.'),
-        el('ul', { class: 'fv-list' }, passkeys.map((k) => el('li', { class: 'fv-item' }, el('b', {}, k.label || 'מכשיר'), el('small', { class: 'muted' }, ` נוסף ${new Date(k.created_at).toLocaleDateString('he-IL')}${k.last_used ? ' · בשימוש ' + new Date(k.last_used).toLocaleDateString('he-IL') : ''}`),
-          el('button', { class: 'btn small ghost danger', onclick: async () => { if (!confirm('להסיר את המפתח הזה?')) return; await call(`/api/vault/passkeys/${encodeURIComponent(k.id)}`, { method: 'DELETE' }); H.closeModal(); keys(); } }, 'הסרה')))),
-        passkeysWork() ? el('button', { class: 'btn primary', onclick: async () => { try { await addPasskey(); toast('המפתח נשמר'); H.closeModal(); keys(); } catch (err) { if (err?.name !== 'NotAllowedError') say(err); } } }, '+ המכשיר הזה') : el('p', { class: 'muted' }, 'המכשיר הזה לא תומך במפתחות גישה.'));
-      H.modal(box);
-    } catch (e) { say(e); }
-  }
-
-  /* ---------- backups (the owner): Cloudflare first, an encrypted copy on Drive, the NAS pulls its own ---------- */
-  async function backups() {
-    let b;
-    try { b = await call('/api/vault/backups'); } catch (e) { return say(e); }
-    const when = (t) => (t ? new Date(t).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : 'עוד לא');
-    const run = el('button', { class: 'btn small primary', onclick: async () => {
-      run.disabled = true; run.textContent = 'מגבה…';
-      try { const r = await call('/api/vault/backups/run', { method: 'POST' }); toast(`הגיבוי הסתיים: ${r.copied} עותקים חדשים${r.failed ? `, ${r.failed} נכשלו` : ''}`); H.closeModal(); backups(); }
-      catch (e) { say(e); run.disabled = false; run.textContent = 'גיבוי עכשיו'; }
-    } }, 'גיבוי עכשיו');
-    H.modal(el('div', { class: 'fv-form' },
-      el('h2', {}, 'גיבויים'),
-      el('p', { class: 'muted small' }, 'הקבצים נשמרים ב־Cloudflare. מכל קובץ נשמר עותק מוצפן גם ב־Google Drive, וה־NAS מושך לעצמו את כל העותקים. בלי מפתח הכספת אי אפשר לקרוא אף אחד מהם.'),
-      el('div', { class: 'fv-item' }, el('b', {}, 'Google Drive'),
-        b.drive.email
-          ? [el('span', { dir: 'ltr', class: 'muted small' }, b.drive.email), el('span', {}, `${b.drive.copies} מתוך ${b.drive.files} קבצים מגובים`),
-             el('button', { class: 'btn small ghost', onclick: async () => { if (!confirm('לנתק את Google Drive מהגיבויים? העותקים שכבר שם נשארים.')) return; await call('/api/vault/backups/drive/disconnect', { method: 'POST' }); H.closeModal(); backups(); } }, 'ניתוק')]
-          : [el('span', { class: 'muted small' }, 'לא מחובר'), el('button', { class: 'btn small primary', onclick: () => { location.href = '/api/auth/login?drive=1&next=' + encodeURIComponent('/family/?fresh=1'); } }, 'חיבור Google Drive')]),
-      el('div', { class: 'fv-item' }, el('b', {}, 'NAS'), el('span', { class: 'muted small' }, 'ה־NAS מושך את הגיבויים מ־Cloudflare בעצמו (Cloud Sync). כך שום דבר בבית לא פתוח לאינטרנט. ההגדרה מתוארת ב־docs/security.md.')),
-      el('div', { class: 'fv-item' }, el('b', {}, 'עותק לילי של האילן'), el('span', { class: 'muted small' }, `האחרון: ${when(b.lastSnapshot)}`),
-        b.lastRun ? el('span', { class: 'muted small' }, `הגיבוי האחרון: ${when(b.lastRun.at)} · ${b.lastRun.copied} עותקים חדשים${b.lastRun.failed ? ` · ${b.lastRun.failed} נכשלו` : ''}`) : null),
-      el('div', { class: 'fv-acts' }, run)));
-  }
-
   /* ---------- leaving the page alone ---------- */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') hiddenAt = Date.now();

@@ -980,3 +980,28 @@ export async function profilePeople(ctx: Ctx, house: string) {
 }
 /** someone from outside opened a household's profile: written in that household's log */
 export const auditProfile = (ctx: Ctx, house: string, u: Member, how: string) => auditAt(ctx, house, u, 'view:profile:' + how, null, null);
+
+/* ---------------- the forest search and the member card (server/family-find.ts) ---------------- */
+
+/** the viewer's forest exactly as /api/vault/forest shows it (kin.view per card, opaque ids outside the household),
+    with the kin graph over it; the search and the card filter only from this, so they never show more than the forest */
+export async function forestFor(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.forestFor);
+  const v = await viewerOf(ctx, u), f = await forestOf(ctx, v), t = await titles(ctx);
+  const label = houseLabel(u, f.houses);
+  const score = (x: ForestPerson) => (x.household === u.household ? 2 : x.hidden.includes('identity') ? 0 : 1);
+  const best = new Map<string, ForestPerson>();
+  for (const p of f.people) { const cur = best.get(p.root); if (!cur || score(p) > score(cur)) best.set(p.root, p); }
+  const k = K.kin(K.mergeLinks(f.links, f.root), (id) => best.get(id)?.sex || '');
+  const me = f.people.find((p) => p.household === u.household && p.member === u.email)?.root || null;
+  // who is a user of the app, from the records themselves (an email never leaves the household, so not from the view)
+  const houses = [...f.houses], marks = houses.map(() => '?').join(', ');
+  const { results: owners } = await ctx.env.DB.prepare(`SELECT id, member_email FROM family_people WHERE household IN (${marks}) AND member_email IS NOT NULL AND deleted_at IS NULL`).bind(...houses).all<{ id: string; member_email: string }>();
+  const users = new Set(owners.filter((r) => v.users.has(r.member_email)).map((r) => r.id));
+  return {
+    u, people: f.people, me, kin: k,
+    label, title: (h: string) => titleIn(t, h),
+    user: (p: ForestPerson) => users.has(f.idOf.get(p.pid) || ''),
+    audit: (houses: Set<string>, action: string) => (houses.size > 1 || !houses.has(u.household) ? auditForest(ctx, u, houses, action) : Promise.resolve()),
+  };
+}

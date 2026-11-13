@@ -22,6 +22,8 @@ import * as R from './admin-rules';
 import { allowanceOf, balance, setLimited } from './credits';
 import * as C from './credits-rules';
 import { TOOLS } from './discover-logic';
+import { addReport } from './reports';
+import { cleanReport } from './reports-rules';
 
 const rpId = (ctx: Ctx) => ctx.url.hostname;
 const b64u = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -283,13 +285,9 @@ export async function messageRead(ctx: Ctx) {
 
 /** keep one piece of feedback (any member, from a button or from the companion); no alert, the owner reads the inbox */
 export async function addFeedback(ctx: Ctx, u: Member, text: string, page: string, via: 'button' | 'companion') {
-  const t = String(text || '').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 2000);
-  if (!t) throw new HttpError(400, 'text_required');
-  await rateLimit(ctx, 'feedback:' + u.email, 20, 864e5);
-  const id = uid();
-  await ctx.env.DB.prepare('INSERT INTO feedback (id, email, name, text, page, via, at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(id, u.email, u.he_name || u.name || null, t, String(page || '').slice(0, 120) || null, via, Date.now()).run();
-  return id;
+  // since the reports inbox (server/reports.ts) feedback is a report too: one inbox for the team, one answer path to the person
+  const input = cleanReport({ text, path: page.startsWith('/') ? page : '/', title: via === 'companion' ? 'דרך העוזר' : '' });
+  return addReport(ctx, u, input, via);
 }
 /** POST /api/feedback {text, page} */
 export async function feedbackSend(ctx: Ctx) {

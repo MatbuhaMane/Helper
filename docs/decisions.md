@@ -11,6 +11,48 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – תיבת פניות: reports from any page, the owner's inbox, private answers (ai-features → master, design)
+
+- **Appended:** the tables `reports` and `report_messages` at the end of `schema.sql`. Nine routes at the end of
+  `functions/api/[[path]].ts` (`/api/reports`, `/mine`, `/:id`, `/:id/shot`; `/api/admin/reports`, `/:id`, PUT `/:id`,
+  `/:id/reply`, `/:id/shot`) and one import line. No existing line edited; no new column.
+- **Privacy:** only the reporter sees a report, its screenshot and its answers; anyone else gets 404, the owner included,
+  outside the back door. The team's side is behind `requireAdmin(ctx, 'own')`. `server/test-reports.mjs` (61 tests)
+  checks this, and that every team handler opens with the gate.
+- **The older feedback joins the inbox.** `admin.addFeedback` (the companion's send_feedback) now writes a report, and
+  the old `feedback` rows are copied in once. The settings button became the two report entries.
+- **For the master:**
+  1. the one-line hook in `public/assets/common.js` that loads `/assets/reports.js` after sign-in, next to `messages.js`
+     (the patch is in the hand-over note);
+  2. `node server/test-reports.mjs` added to `npm test`;
+  3. perhaps `/assets/reports.js` in `sw.js`'s precache.
+  Until the hook lands, shaking and the dot work only in settings and the back door.
+- **For design:**
+  1. `.navmenu-reports`, a new wrapper for the two `.rp-entry` buttons at the foot of the tools menu (no CSS yet);
+  2. in dark mode `.rx-filters` / `.rx-state` `button[aria-pressed="true"]` is white on the light `--primary` (contrast 2.0).
+  The other class names are as in the contract (bff1c28), except `.rx[data-view="thread"]`, which follows admin.css.
+Status: done (on `ai-features`), waiting for the hook and the merge.
+
+## 2026-11-14 – The tree batch: חיפוש ביער, the member card, keys and backups in settings (ai-features → master, design)
+
+- Appended routes in `functions/api/[[path]].ts` (with one import): `GET /api/family/find?q=&kin=1&users=1` and
+  `GET /api/family/card?id=` (`server/family-find.ts`). Appended to `server/vault/index.ts`: `forestFor`; to
+  `server/vault/access.ts`: `forestFor: 'tree'` (the forest's own level, so `test-access.mjs` keeps every guarded entry
+  in the table). No change to the vault's security code, its routes or its levels.
+- Privacy: both read only the forest `/api/vault/forest` already shows (kin `view` per card, `outside` for other
+  households). The search drops anonymous and identity-hidden cards, needs 2 letters, returns at most 20, never an email,
+  and is rate-limited (40 a minute per person; the card 90). People outside the viewer's tribe never show (`sees` gives
+  `none`), so "all users of the app" means the users of one's forest. Outside the household, no photo (files never leave).
+  Searches and cards that touch another household are written in its activity log.
+- New test `server/test-family-find.mjs` (26): the master adds it to `npm test`.
+- The passkeys and backups moved from the tree's bar to settings → privacy (`public/settings/vault-keys.js`, loaded by
+  `settings.js`); the same routes, each still asking for a fresh unlock. The first passkey offered when the vault opens
+  stays on the tree page.
+- Design: the page uses design's classes: `.fs*` for the search and `.mc*` for the member card (design 497eea2), plus
+  `.fv-gliding`, `.fv-pick`, `.fv-chosen`, `.st-vault`, and the `.tree.moving` and `.tree.off` hooks (design e8568f6).
+- The member card links to `/family/story/?person=<id>` for your own household's people (the story session's page).
+Status: on `ai-features`, waiting for the CEO's review and design's CSS.
+
 ## 2026-11-14 – הרגלי אכילה: one tool for every way of eating (ai-features → master, design)
 
 `/food/diet/habits/` (the owner's words, through the CEO): ketosis, Atkins, paleo, low-carb, low sugar and fasting, each

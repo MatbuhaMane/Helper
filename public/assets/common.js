@@ -335,7 +335,8 @@
     await closeMenu();
     try { await loadOnce('/assets/apps.js'); } catch (_) { location.href = kind === 'tools' ? '/tools/' : '/'; return; }
     const here = location.pathname;
-    const items = (window.H.APPS || []).filter((a) => (kind === 'parts' ? PARTS.includes(a.href) : !a.fixed && !PARTS.includes(a.href)));
+    const parts = window.H.PARTS || PARTS;   // the owner's עץ מבנה may change the parts (apps.js)
+    const items = (window.H.APPS || []).filter((a) => (kind === 'parts' ? parts.includes(a.href) : !a.fixed && !parts.includes(a.href)));
     // a link leaves through the menu's own step, so back on the next page comes to this page, not to its open menu
     const go = (e) => { if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; e.preventDefault(); const to = e.currentTarget.href; closeMenu().then(() => location.assign(to)); };
     const link = (a) => el('li', {}, el('a', { href: a.href, onclick: go, 'aria-current': here.startsWith(a.href.split('#')[0]) && a.href !== '/' ? 'page' : null }, icon(a.ic), el('span', {}, a.name)));
@@ -415,6 +416,7 @@
       if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
       if (!r.offline && !vault && !embedded) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
       if (!r.offline && !vault && !embedded) loadOnce('/assets/dm.js').catch(() => {});         // messages between members: the dot and the menu entry (server/dm.ts)
+      if (!r.offline && !vault && !embedded) loadOnce('/assets/eggs.js').catch(() => {});       // the owner's surprise eggs on this page, if any (server/layout.ts)
       // the back door, opened on this device (ai-features' /assets/admin-tab.js): a tab back to it while the room is still open
       let room = null; try { room = localStorage.getItem('helper.adminRoom'); } catch (_) { /* no storage */ }
       if (room && !r.offline && !vault && !embedded && !location.pathname.startsWith('/admin/')) loadOnce('/assets/admin-tab.js').catch(() => {});

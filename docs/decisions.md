@@ -2350,7 +2350,6 @@ The CEO's task: in the חברים section the owner edits each member's name, ho
      goes through `/api/admin/people`), and role owner only for OWNER_EMAIL.
 Status: ready on `ai-features`, waiting for the master's review.
 
-<<<<<<< HEAD
 ## 2026-11-13 – The back door's tab, the usage line, a message to one member (ai-features → master; the lock and the session for review)
 
 1. **A new route, `GET /api/admin/room`** (appended to `functions/api/[[path]].ts`): `{open, until, left}` for this device's
@@ -2373,7 +2372,6 @@ Status: ready on `ai-features`, waiting for the master's review.
 5. **A message to one member**: `POST /api/admin/messages` takes `to` (an email); it must be on the members list (400
    `not_member`), goes into `admin_messages.to_email`, and is logged as `message:one`. The room's list now shows personal
    messages too (with `to_name`), except the room's own notes to the owner (`by_email = 'system'`).
-=======
 ## 2026-11-13 – Messages between members, הודעות v1 (a side session for the CEO; data exposure, for review)
 
 The owner asked for messaging between users. One on one, text only, no groups.
@@ -2399,4 +2397,3 @@ The owner asked for messaging between users. One on one, text only, no groups.
   look. `dm.js` injects `.dm-dot` (the reports' `.mi-dot` look, its own class so `reports.js` never clears it, at the chip's
   bottom corner) until it is in `base.css`. An icon for the tile. Which side "mine" sits on (now the start, the right) is yours.
 Status: on the side session's branch, waiting for the CEO's review and the owner's OK before any push.
->>>>>>> claude/clever-mclaren-48bdc5

@@ -23,6 +23,7 @@
     // the tools
     { href: '/tools/calendar/', ic: 'calendar', name: 'לוח שנה', sub: 'החגים, הצומות והימים של המשפחה', pillow: 'p07', c2: '#c0402a' },
     { href: '/gather/', ic: 'family', name: 'מפגש משפחתי', sub: 'קישור אחד לווטסאפ, וכולם עונים', pillow: 'p14', c2: '#b8402a' },
+    { href: '/messages/', ic: 'mail', name: 'הודעות', sub: 'שיחה עם בני הבית והמשפחה', pillow: 'p13', c2: '#3557a8' },
     { href: '/groceries/', ic: 'cart', name: 'רשימת קניות', sub: 'מה חסר בבית, ומי קונה', pillow: 'p12', c2: '#c4501e' },
     { href: '/groceries/#book', ic: 'book', name: 'ספר מתכונים', sub: 'המתכונים שלנו, ומתכונים מכל העולם', pillow: 'p01', c2: '#8e2435' },
     { href: '/tools/notes/', ic: 'note', name: 'פתקים', sub: 'מה ששמרתם מכל מקום באוהל', pillow: 'p10', c2: '#9c2a2a' },

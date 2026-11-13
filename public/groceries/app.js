@@ -1038,8 +1038,12 @@
   $('#bookImport').addEventListener('click', () => { setFab(false); importDialog(); });
 
   /* ================= לשוניות ================= */
-  let ketoMounted = false;
+  let ketoMounted = false, tabNow = 'list';
+  /* ketosis is the person's choice (the owner, 2026-11-13): its tab shows only once it is on, or while it is open – it is
+     reached from its app in תנועה ותזונה (/groceries/#keto), where its switch is */
+  const ketoTab = () => { $('#tabKeto').hidden = !(Keto.enabled || tabNow === 'keto'); };
   function showTab(which) {
+    tabNow = which; ketoTab();
     for (const [tab, view, name] of [['#tabList', '#viewList', 'list'], ['#tabBook', '#viewBook', 'book'], ['#tabKeto', '#viewKeto', 'keto']]) {
       $(tab).setAttribute('aria-selected', String(which === name));
       $(view).hidden = which !== name;
@@ -1052,7 +1056,7 @@
   $('#tabList').addEventListener('click', () => showTab('list'));
   $('#tabBook').addEventListener('click', () => showTab('book'));
   $('#tabKeto').addEventListener('click', () => showTab('keto'));
-  window.addEventListener('keto:changed', (e) => { if (e.detail !== 'state' || Keto.enabled) render(); });
+  window.addEventListener('keto:changed', (e) => { ketoTab(); if (e.detail !== 'state' || Keto.enabled) render(); });
 
   render();
   showTab(['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list');

@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (keto stamps).
+Last update: 2026-11-14 (back on the phone).
 
 ## Done
 
@@ -27,6 +27,9 @@ Last update: 2026-11-14 (keto stamps).
     in), and `.fv-views` styles only `[aria-selected]`, so the radios carry an inline stopgap until `[aria-checked="true"]` joins that rule.
   - design's keto patch applied (cab7c5a): diet stamps and one pie by a grocery item, windows grow out of them
     (`H.modalFrom`); also fixed a stray "null" in the totals window.
+  - back on the phone, one step at a time (a79525b): panels, menus and tab changes on every page each take one back
+    step; a note closed by back is saved. Waiting on the master's common.js patch (notes folder,
+    `common-back-2026-11-14.patch`: `H.back.watch`, the ניווט/כלים menus, the guard at the app's first page).
 
 - **Locks and privacy, aligned to design** (4d7c7c3, in main, v61): the lock screen on `Lock.screen`, the tree tip on
   `Lock.warnCard`, settings in design's classes. Tested end to end locally (code, wrong code, the tree, the tip).

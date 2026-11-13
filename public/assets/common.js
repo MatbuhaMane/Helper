@@ -383,10 +383,15 @@
       // the app lock (server/lock.ts): locked already – the lock screen; a lock set – the open padlock in the bar, to lock now
       if (r.locked) showLock('app');
       if (r.appLock && r.appLock !== 'off' && !embedded) {
-        chip.before(el('button', { type: 'button', class: 'navlock', title: 'לנעול את האוהל', 'aria-label': 'לנעול את האוהל', onclick: async () => {
+        const lockBtn = el('button', { type: 'button', class: 'navlock pl-btn', title: 'לנעול את האוהל', 'aria-label': 'לנעול את האוהל', onclick: async () => {
+          const pl = lockBtn.querySelector('.pl');
+          if (pl && window.Lock?.close) await window.Lock.close(pl);   // design's move: the shackle drops (~300ms; none with reduced motion)
           try { await api('/api/lock/lock', { method: 'POST' }); } catch (_) { /* the screen locks anyway */ }
           showLock('app', true);
-        } }, icon('unlocked')));
+        } }, icon('unlocked'));
+        chip.before(lockBtn);
+        // design's padlock in place of the icon, once its lock.js is in (the icon stays if it doesn't load)
+        loadOnce('/assets/lock.js').then(() => { if (window.Lock?.padlock) lockBtn.replaceChildren(window.Lock.padlock('open')); }).catch(() => {});
       }
       // the family vault (data-vault): no player, no capture – nothing from outside runs next to the documents
       const vault = document.body.dataset.vault === '1';

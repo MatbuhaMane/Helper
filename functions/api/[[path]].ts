@@ -45,6 +45,7 @@ import { ensureSchema } from '../../server/schema';
 import * as vault from '../../server/vault';
 import * as familyProfile from '../../server/family-profile';
 import * as familyFind from '../../server/family-find';
+import * as story from '../../server/story';
 import * as usage from '../../server/usage';
 import { featureOf, metered } from '../../server/meter';
 import * as weather from '../../server/weather';
@@ -544,6 +545,13 @@ route('GET', '/api/admin/reports/:id/shot', reports.adminShot);
 /* the owner edits members' names, households and roles, and searches every household (server/member-admin.ts) */
 route('GET', '/api/admin/people', memberAdmin.people);
 route('PUT', '/api/admin/people/:email', memberAdmin.edit);
+/* the family story (server/story.ts): read only through its view filter (server/story-rules.ts) */
+route('GET', '/api/story', story.list);                                        // ?h=household (another one's tribe items)
+route('POST', '/api/story', story.add);                                        // multipart: kind, title, text, when, place, people, level, file?
+route('PUT', '/api/story/:id', story.save);                                    // the one who added it
+route('DELETE', '/api/story/:id', story.remove);
+route('POST', '/api/story/:id/restore', story.restore);
+route('GET', '/api/story/:id/file', story.file);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

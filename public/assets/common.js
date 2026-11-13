@@ -77,6 +77,8 @@
     return mePromise.then((r) => {
       try { if (r.user) localStorage.setItem('helper.me', JSON.stringify(r.user)); } catch (_) { /* ignore */ }
       if (r.user && !r.offline) applyServerPrefs(r.user.email, r.prefs || {});
+      grants = r.grants || [];
+      ancientUi();
       return r;
     });
   }
@@ -640,7 +642,65 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  /* ---------- The ancient script (docs/vision/profile.md): Hebrew letters as Noto Sans Phoenician ----------
+   * H.ancient(text) → the same text in the ancient letters (finals become the plain letter, the vowel points drop).
+   * H.hasGrant(key) → a secret option the owner granted this person ('frames', 'bio_ancient', 'name_ancient'); the server
+   *   sends a person only their own grants, and checks them again on every save.
+   * The owner's switch, H.prefs('me').ancientUi (only with the 'ancient_ui' grant, the owner's alone): the interface itself –
+   *   the bar, menus, buttons, headings and labels – turns ancient; content (inputs, [data-content], .content) stays Hebrew,
+   *   and anything in .keep-he (the switch and the way out) stays plain Hebrew always. A tap on ancient text shows the Hebrew. */
+  let grants = [];
+  const hasGrant = (k) => grants.includes(k);
+  const PHN = 'אבגדהוזחטיכלמנסעפצקרשת', FIN = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+  function ancient(text) {
+    return String(text).replace(/[֑-ׇ]/g, '').replace(/[א-ת]/g, (c) => {
+      const i = PHN.indexOf(FIN[c] || c);
+      return i < 0 ? c : String.fromCodePoint(0x10900 + i);
+    });
+  }
+  const UI_SEL = 'header, nav, button, label, h1, h2, h3, h4, legend, summary, th, .btn, .tab, [role=tab], [role=menuitem], .ui, .sh-item, .wheel-item';
+  const SKIP_SEL = 'input, textarea, select, [contenteditable], [data-content], .content, .keep-he, script, style';
+  const orig = new WeakMap();
+  let ancientOn = false, ancientObs = null;
+  function ancientNode(t) {
+    const p = t.parentElement;
+    if (!p || !/[א-ת]/.test(t.data) || p.closest(SKIP_SEL) || !p.closest(UI_SEL)) return;
+    orig.set(t, t.data);
+    t.data = ancient(t.data);
+    p.classList.add('phn');
+  }
+  function ancientWalk(root) {
+    if (root.nodeType === 3) return ancientNode(root);
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const all = []; while (w.nextNode()) all.push(w.currentNode);
+    all.forEach(ancientNode);
+  }
+  function ancientUi() {
+    const want = hasGrant('ancient_ui') && !!prefs('me').ancientUi;
+    if (want === ancientOn) return;
+    ancientOn = want;
+    if (want) {
+      if (!document.getElementById('phn-font')) document.head.append(el('link', { id: 'phn-font', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Noto+Sans+Phoenician&display=swap' }));
+      document.documentElement.classList.add('ancient-ui'); if (!document.getElementById('phn-css')) document.head.append(el('style', { id: 'phn-css' }, ".ancient-ui .phn { font-family: 'Noto Sans Phoenician', var(--font, Rubik), sans-serif; }"));
+      ancientWalk(document.body);
+      ancientObs = new MutationObserver((ms) => { for (const m of ms) { if (m.type === 'characterData') { if (!orig.has(m.target)) ancientNode(m.target); } else m.addedNodes.forEach(ancientWalk); } });
+      ancientObs.observe(document.body, { childList: true, subtree: true, characterData: true });
+    } else {
+      ancientObs?.disconnect(); ancientObs = null;
+      document.documentElement.classList.remove('ancient-ui');
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      while (w.nextNode()) { const t = w.currentNode; if (orig.has(t)) { t.data = orig.get(t); orig.delete(t); } }
+    }
+  }
+  // a tap on ancient text shows the Hebrew it stands for, for a moment
+  document.addEventListener('click', (e) => {
+    if (!ancientOn) return;
+    const p = e.target.closest?.('.phn'); if (!p || p.closest('a, button, [role=button], [role=tab]')) return;
+    const t = [...p.childNodes].find((n) => orig.has(n)); if (t) toast(orig.get(t));
+  }, true);
+  addEventListener('helper:prefs', (e) => { if (!e.detail || e.detail === 'me') ancientUi(); });
+
+  window.H = { api, el, toast, me, ancient, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

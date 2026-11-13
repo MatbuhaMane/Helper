@@ -2450,3 +2450,16 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
   floats the list with a few inline rules; it stops once `.wz-sugg` is `position: absolute` in welcome.css.
 - **Open for the owner:** the search is limited to Google's region `il`; places Google files under another region are not
   suggested, and they stay free text.
+
+## 2026-11-13 – Serious mode on the home screen, secret grants and the ancient script (master; vision batch 11)
+- **Serious mode:** `H.prefs('me').serious` draws a plain grid of every tool (line icons, names, a search) instead of the
+  tent, the fire and the companion, chosen before drawing. `seriousPillows` keeps the cushion icons. `body.serious` is set
+  for the other pages. Settings (ai-features) owns both switches; design may refine `.serious-home` (inline in index.html).
+- **Grants** (`server/grants.ts`, table `user_grants`): `frames`, `bio_ancient`, `name_ancient`. The owner grants or
+  revokes from the owner's room (`GET /api/admin/grants`, `PUT /api/admin/grants/:email {key, on}`, behind the room's
+  biometric, logged). `/api/me` carries `grants`, only the person's own. Saves must check `hasGrant(env, email, key)`.
+  `ancient_ui` is the owner's alone and cannot be granted.
+- **The ancient script** (common.js): `H.ancient(text)`, `H.hasGrant(key)`. With `H.prefs('me').ancientUi` and the
+  owner's `ancient_ui`, the interface (bar, nav, buttons, headings, labels, tool names) turns Noto Sans Phoenician.
+  Content stays Hebrew (`input`, `[data-content]`, `.content`). `.keep-he` always stays plain Hebrew (the switch and the
+  way out). Call `H.ancientUi()` after saving the switch.

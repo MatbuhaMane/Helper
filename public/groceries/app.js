@@ -770,7 +770,22 @@
     $('#bookGrid').textContent = '';
     $('#bookGrid').append(loading('טוען את ספר המתכונים…'));
     try { book = (await api('/api/recipes')).recipes; } catch (e) { book = []; toast(e.message); }
+    if (!book.length && !listPrefs.starters && await (seeding ||= seedBook())) {
+      try { book = (await api('/api/recipes')).recipes; } catch { /* the empty book stays */ }
+    }
     renderBook();
+  }
+
+  // An empty book opens with a few good home recipes (the owner's tour, 2026-11-13), once per person: a book
+  // emptied on purpose stays empty. They are ordinary recipes in the household's book, to edit or delete.
+  let seeding = null;
+  async function seedBook() {
+    try {
+      const starters = await (await fetch('/groceries/starter.json')).json();
+      for (const r of starters.reverse()) await api('/api/recipes', { body: r });   // newest first: the first one on top
+      H.savePrefs('groceries', { starters: true });
+      return true;
+    } catch { seeding = null; return false; }   // offline: the empty message, and another try next time
   }
 
   function renderBook() {

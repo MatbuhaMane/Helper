@@ -131,6 +131,12 @@ LCP has not moved yet. The causes:
   - The cache key holds the voice and the directions, so no old audio is replayed. רַאבַּ"ע's cache stays valid.
   - Checked: the lists, the refusal of Algenib for the owl, and one real sample in the owl's voice. Not heard by ear.
 
+- **The owner's food tour (2026-11-13)**:
+  - ketosis is the person's choice: its tab shows only once it is on (0f24f89);
+  - the recipe book opens with six home recipes (שקשוקה, מג'דרה, סלט קצוץ, עוף בתנור, אורז כרובית, עוגיות טחינה) from
+    `public/groceries/starter.json`, once per person (`prefs.groceries.starters`); a book emptied on purpose stays empty.
+    Checked at 375 as a new household: six cards, no second seeding on reload.
+
 ## In progress
 
 - Next by the owner's order:

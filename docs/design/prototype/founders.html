@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>מי הקים את האוהל – אב טיפוס</title>
+  <!-- The founders' page (docs/business/founders.md). Placeholder names: the real list exists at the end of the beta. Serve from the
+       dev server (copy to public/ for a moment) so /assets/base.css and /founders/founders.css load. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/founders/founders.css">
+  <style>body { padding: 0 16px; }</style>
+</head>
+<body>
+<main class="fd">
+  <header class="fd-head">
+    <img src="/assets/tent.webp" alt="">
+    <h1>מי הקים את האוהל</h1>
+    <p>האנשים שהביאו את המשפחה שלהם לאוהל כשהוא עוד היה בבנייה. כל שם כאן נכנס כשמפגש שהוא ארגן הגיע לחמישה אישורי הגעה.</p>
+  </header>
+
+  <section class="fd-tier" aria-labelledby="t1">
+    <header><img src="/assets/badges/pole.webp" alt=""><div><h2 id="t1">עמודי האוהל</h2><small>עשרת הראשונים</small></div></header>
+    <ol class="fd-poles">
+      <li class="fd-pole"><span class="fd-num">1</span><b>שם ומשפחה</b><small>ירושלים · אלול</small></li>
+      <li class="fd-pole"><span class="fd-num">2</span><b>שם ומשפחה</b><small>צפת · אלול</small></li>
+      <li class="fd-pole"><span class="fd-num">3</span><b>שם ומשפחה</b><small>חיפה · תשרי</small></li>
+      <li class="fd-pole"><span class="fd-num">4</span><b>שם ומשפחה</b><small>תשרי</small></li>
+      <li class="fd-pole"><span class="fd-num">5</span><b>שם ומשפחה</b><small>תשרי</small></li>
+      <li class="fd-pole"><span class="fd-num">6</span><b>שם ומשפחה</b><small>חשוון</small></li>
+      <li class="fd-pole"><span class="fd-num">7</span><b>שם ומשפחה</b><small>חשוון</small></li>
+      <li class="fd-pole"><span class="fd-num">8</span><b>שם ומשפחה</b><small>חשוון</small></li>
+      <li class="fd-pole"><span class="fd-num">9</span><b>שם ומשפחה</b><small>כסלו</small></li>
+      <li class="fd-pole"><span class="fd-num">10</span><b>שם ומשפחה</b><small>כסלו</small></li>
+    </ol>
+  </section>
+
+  <section class="fd-tier" aria-labelledby="t2">
+    <header><img src="/assets/badges/peg.webp" alt=""><div><h2 id="t2">יתדות האוהל</h2><small>עד החמישים</small></div></header>
+    <ol class="fd-pegs" id="pegs"></ol>
+  </section>
+
+  <section class="fd-tier" aria-labelledby="t3">
+    <header><img src="/assets/badges/tribe.webp" alt=""><div><h2 id="t3">חבלי האוהל</h2><small>עד המאה</small></div></header>
+    <ol class="fd-ropes" id="ropes"></ol>
+  </section>
+
+  <section class="fd-tier" aria-labelledby="t4">
+    <header><img src="/assets/badges/shoulder.webp" alt=""><div><h2 id="t4">תומכים מייסדים</h2><small>מי שתמך באוהל מהתחלה, ובחר שיופיע כאן</small></div></header>
+    <ul class="fd-supporters"><li>שם ומשפחה</li><li>שם ומשפחה</li><li>שם ומשפחה</li><li>משפחת …</li></ul>
+  </section>
+
+  <div class="fd-million"><span class="who-title gold">המיליון</span><b>שם ומשפחה</b><small class="muted">המשתמש המיליון של האוהל</small></div>
+  <p class="fd-note">השמות כאן לתמיד. מי שלא רוצה להופיע, יכול להסתיר את השם בהגדרות.</p>
+</main>
+<script>
+  const pegs = document.getElementById('pegs'), ropes = document.getElementById('ropes');
+  for (let n = 11; n <= 50; n++) pegs.insertAdjacentHTML('beforeend', `<li class="fd-peg"><span class="fd-num">${n}</span><b>שם ומשפחה</b></li>`);
+  for (let n = 51; n <= 100; n++) ropes.insertAdjacentHTML('beforeend', `<li><span class="fd-num">${n}</span>שם ומשפחה</li>`);
+</script>
+</body>
+</html>

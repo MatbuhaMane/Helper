@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The founders page and the purchase page: their look (design → business, ai-features, master)
+
+At business's request (`docs/business/founders.md` §4–5, `docs/business/monetization.md` §4.3). CSS only, plus two
+prototypes with the markup in `docs/design/prototype/founders.html` and `buy.html` (serve them from the dev server by
+copying them into `public/` for a moment).
+
+- **`/founders/`**: link `/founders/founders.css` after base.css. `main.fd` > `header.fd-head` (the tent, h1, a line on
+  how a name gets in), then one `section.fd-tier` per tier with `header` (a badge img + h2 + small):
+  1–10 עמודי האוהל `ol.fd-poles` > `li.fd-pole` (`.fd-num`, `b` name, `small` place · month), 5 columns, 2 on phones;
+  11–50 יתדות `ol.fd-pegs` > `li.fd-peg` (`.fd-num`, `b`); 51–100 חבלים `ol.fd-ropes` > `li` (`.fd-num` + name);
+  then `ul.fd-supporters` > `li`, `.fd-million` (with `.who-title.gold`), `p.fd-note`, and `.fd-empty` for a tier not
+  filled yet. The badges used are pole, peg, tribe and shoulder from `/assets/badges/`.
+- **`/buy/`**: link `/buy/buy.css`. `main.by` > `.by-head`, `.by-main` (two columns, stacked under 760 px):
+  `figure.by-item` (a Figure2D stage, or a picture for credits or support) and `section.by-offer` with, in this order,
+  `.by-plans` (`role="radiogroup"`, `button.by-plan[role=radio][aria-checked]`, `.by-cancel` on the monthly one),
+  `.by-price`, `ul.by-gets`, `.by-terms` (the cancellation terms, always before the button), `label.by-agree` with a
+  checkbox, `button.btn.primary.by-buy` (disabled until the box is ticked) and `.by-pay-note`. Below it
+  `.by-seller` with the dealer's details; `.ph` marks a placeholder until the owner opens a tax file.
+- Wiring the pages, the routes and the payment provider is ai-features' and the master's. Checked at 375 px and desktop,
+  in light and dark (no overflow, contrast clear).
+Status: done (design); waiting for the pages to be wired.
+
 ## 2026-11-14 – Paid figures bought with credits; a private birth year; figures everyone agrees on (master)
 The owner's decisions, built by the master.
 

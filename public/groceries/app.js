@@ -306,10 +306,32 @@
     return INGREDIENT_EN_HE[k] || INGREDIENT_EN_HE[k.replace(/(es|s)$/, '')] || INGREDIENT_EN_HE[k + 's'] || name.trim();
   }
 
+  /** Servings and units over a recipe's ingredients (the owner's tour, 2026-11-13): "מנות − 4 +" (or "כמות ×1" when the
+   *  recipe does not say) and the units, as written / grams / cups and spoons. The units are the person's choice and
+   *  follow them (prefs.groceries.units); the servings are for this recipe on screen. Markup: .amounts > .amount-step, select. */
+  function amountTools(ingredients, base) {
+    let n = base || 1;
+    const factor = () => (base ? n / base : n);
+    const draw = () => {
+      for (const i of ingredients) if (i.mEl) i.mEl.textContent = Measure.show(i.measure, i.he, factor(), listPrefs.units || 'orig');
+      count.textContent = base ? String(n) : `×${Measure.fmtQty(n)}`;
+    };
+    const step = base ? 1 : 0.5;
+    const count = el('output', { 'aria-live': 'polite' });
+    const btn = (d, label, sym) => el('button', { type: 'button', class: 'btn ghost small', 'aria-label': label,
+      onclick: () => { n = Math.max(step, Math.min(base ? 60 : 10, n + d * step)); draw(); } }, sym);
+    const units = el('select', { 'aria-label': 'יחידות מידה', onchange: (e) => { H.savePrefs('groceries', { units: e.target.value }); draw(); } },
+      [['orig', 'מידות כמו במתכון'], ['grams', 'בגרמים'], ['cups', 'בכוסות וכפות']].map(([v, t]) => el('option', { value: v, selected: (listPrefs.units || 'orig') === v }, t)));
+    draw();
+    return el('div', { class: 'amounts' },
+      el('span', { class: 'amount-step' }, el('span', {}, base ? 'מנות' : 'כמות'), btn(-1, base ? 'פחות מנות' : 'פחות', '−'), count, btn(1, base ? 'יותר מנות' : 'יותר', '+')),
+      units);
+  }
+
   /** Ingredient picker used by both web recipes and saved recipes. Returns the <ul> and a getter for chosen ingredients.
    *  An ingredient may carry `issue` (from the kashrut/keto check), `orig` (its name before a substitute) and `kind`;
    *  then its name is struck through in pencil and a line under it offers substitutes (onSub(index, name|null)). */
-  function ingredientPicker(ingredients, { onSub } = {}) {
+  function ingredientPicker(ingredients, { onSub, servings } = {}) {
     const rows = ingredients.map((ing, idx) => {
       const existing = findDuplicate(ing.he);
       const basic = /^(water|salt|מים|מלח)$/i.test(ing.en || '') || /^(מים|מלח)$/.test(ing.he);
@@ -321,14 +343,15 @@
           replaced ? el('s', { class: 'pencil' }, ing.orig) : ing.he,
           !replaced && ing.issue && !onSub ? el('small', { class: 'issue-tag ' + ing.kind }, ing.issue.reason_he) : null,
           ing.en && ing.he !== ing.en ? el('small', { class: 'muted' }, ` (${ing.en})`) : null),
-        ing.measure ? el('small', { class: 'measure' }, ing.measure) : null,
+        ing.measure ? (ing.mEl = el('small', { class: 'measure' }, ing.measure)) : null,
         existing ? el('small', { class: 'tag ok' }, existing.checked ? 'נקנה' : 'כבר ברשימה') : null),
       ing.issue && onSub ? RecipeFix.subLine(ing.issue, ing.orig || ing.he, replaced ? ing.he : null, (v) => onSub(idx, v), ing.kind) : null);
     });
     return {
       tools: el('div', { class: 'ing-tools' },
         el('button', { class: 'btn ghost small', onclick: () => ingredients.forEach((i) => { i.cb.checked = true; }) }, 'סמן הכל'),
-        el('button', { class: 'btn ghost small', onclick: () => ingredients.forEach((i) => { i.cb.checked = false; }) }, 'נקה')),
+        el('button', { class: 'btn ghost small', onclick: () => ingredients.forEach((i) => { i.cb.checked = false; }) }, 'נקה'),
+        ingredients.some((i) => i.measure) ? amountTools(ingredients, servings) : null),
       list: el('ul', { class: 'ingredients' }, rows),
       addButton: (title) => el('button', { class: 'btn primary', onclick: () => {
         const chosen = ingredients.filter((i) => i.cb.checked);
@@ -652,7 +675,7 @@
         const issue = kosherAt.get(n) || ketoAt.get(n);
         return { he: subs.get(n) || i.name, measure: i.measure, orig: i.name, issue, kind: kosherAt.has(n) ? 'kosher' : 'keto' };
       });
-      const picker = ingredientPicker(ingredients, { onSub: (n, v) => { subs.set(n, v); draw(); } });
+      const picker = ingredientPicker(ingredients, { onSub: (n, v) => { subs.set(n, v); draw(); }, servings: Measure.servings(recipe.meta) });
       ingSlot.replaceChildren(el('h4', {}, `מצרכים (${ingredients.length})`), picker.tools, picker.list, el('div', { class: 'row' }, picker.addButton(recipe.title)));
     };
     draw();
@@ -947,7 +970,7 @@
       collect();
       const ingredients = draft.ingredients.filter((i) => i.name).map((i) => ({ he: i.name, measure: i.measure }));
       if (!ingredients.length) return toast('אין עדיין מצרכים');
-      const picker = ingredientPicker(ingredients);
+      const picker = ingredientPicker(ingredients, { servings: Measure.servings(draft.meta) });
       sheet.open(null, [el('button', { class: 'btn ghost small back', onclick: () => openBookRecipe(book.find((x) => x.id === draft.id) || draft) }, '→ חזרה למתכון'),
         el('h3', {}, `🛒 מצרכים מ"${draft.title}"`), picker.tools, picker.list, picker.addButton(draft.title)]);
     } }, '🛒 מצרכים לרשימת הקניות');
@@ -975,6 +998,7 @@
         el('label', { class: 'field' }, el('span', {}, 'קישור לתמונה'), image),
         el('label', { class: 'field' }, el('span', {}, 'קישור למתכון המקורי'), source)),
       el('div', { class: 'row', style: 'margin-top:14px' }, shop,
+        el('button', { class: 'btn ghost', onclick: () => shop.click() }, '⚖ כמויות ומידות'),   // the same sheet: servings and units on top
         draft.source_url ? el('a', { class: 'btn ghost', href: draft.source_url, target: '_blank', rel: 'noopener' }, '🔗 המקור') : null, del),
     ], { onLeave: () => save().then(renderBook) }); // closing (or moving on) saves whatever is still waiting
     requestAnimationFrame(() => autosize(notes));

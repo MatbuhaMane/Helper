@@ -709,7 +709,40 @@
   }, true);
   addEventListener('helper:prefs', (e) => { if (!e.detail || e.detail === 'me') ancientUi(); });
 
-  window.H = { api, el, toast, me, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  /* ---------- Notifications on this device (Web Push, server/push.ts) ----------
+   * await H.push.state()  → 'unsupported' | 'denied' | 'off' | 'on' | 'not-installed' (an iPhone outside the home screen)
+   * await H.push.enable() → asks the browser, subscribes this device; true when on.  H.push.disable(), H.push.test() */
+  const push = {
+    supported: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+    async state() {
+      const ios = /iP(hone|ad|od)/.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      if (ios && !standalone) return 'not-installed';
+      if (!push.supported()) return 'unsupported';
+      if (Notification.permission === 'denied') return 'denied';
+      const reg = await navigator.serviceWorker.getRegistration();
+      return (await reg?.pushManager.getSubscription()) ? 'on' : 'off';
+    },
+    async enable() {
+      if (!push.supported()) return false;
+      const { key } = await api('/api/push/key');
+      if (!key) return false;
+      if ((await Notification.requestPermission()) !== 'granted') return false;
+      const reg = await navigator.serviceWorker.ready;
+      const raw = Uint8Array.from(atob(key.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((key.length + 3) % 4)), (c) => c.charCodeAt(0));
+      const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: raw }));
+      await api('/api/push/subscribe', { method: 'POST', body: sub.toJSON() });
+      return true;
+    },
+    async disable() {
+      const sub = await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription();
+      if (!sub) return;
+      await api('/api/push/subscribe', { method: 'DELETE', body: { endpoint: sub.endpoint } }).catch(() => {});
+      await sub.unsubscribe();
+    },
+    test: () => api('/api/push/test', { method: 'POST' }),
+  };
+
+  window.H = { api, el, toast, me, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

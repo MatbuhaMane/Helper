@@ -38,6 +38,8 @@ GEMINI_MODEL = "gemini-3.8-flash"
 GEMINI_IMAGE_MODEL = "gemini-3.1-flash-image"
 # The Spotify app's client id (public: the sign-in uses PKCE, there is no client secret)
 SPOTIFY_CLIENT_ID = "3d73acbf9cea4927bb970c8968387b25"
+# Web Push (server/push.ts): the VAPID public key (public by design; its private half is the secret VAPID_PRIVATE)
+VAPID_PUBLIC = "BEBWlJ_SMDAakGGX-yR9aa8HrkP3gpgJ88ZrkYIzYCYX_R_puyBHyFhZy3xh4WupAqHSILZESLsqnNr7HORLmsg"
 
 # Previews: every branch other than main is built by Workers Builds with `npx wrangler preview`, which needs this block.
 # A preview has its own database and bucket – never the family's – so code that is not merged yet cannot touch real

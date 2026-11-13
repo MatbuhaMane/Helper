@@ -11,7 +11,8 @@ _Updated 2026-11-14._
   Cleopatra's counterpart, no longer tagged horror.
 - **Pages' look:** the founders page and the purchase page (paid in credits, terms before the button), opt-in founders.
 - **Locks:** `lock.js` + `lock.css`: the padlock and its locking move, the lock screen (dots, keypad, passkey), the tree's
-  first-visit window, the privacy section's parts in `settings.css`. Live in v61 through ai-features' `lock-screen.js`.
+  first-visit window, the privacy section's parts in `settings.css`. Live in v61 through ai-features' `lock-screen.js`;
+  the drawn padlock in the menu merged by the master (e24beb2).
 - **Readiness bar, condition 1 (graphics):** the sky redrawn in the tent's style (sun, the moon's eight phases from one
   drawing, the eclipse). With the campfire, style-check items 1–4 are ✅ (`docs/design/style-check.md`).
 - **Readiness bar, condition 2 (motion), first pass:** layout-driven animations made transforms, animated shadows made
@@ -24,7 +25,6 @@ _Updated 2026-11-14._
 
 ## Blockers
 - The image quota for 2026-11-13 is used (40/40).
-- Proposed to the master (his file): the menu padlock in `common.js` (`.navlock`) to use `Lock.padlock` with its move.
 - Asked of ai-features: `music.js` to grow the music bar by transform (`.mu-bar.scaled`, `--p`); the mail page's bar.
 
 ## Needs the owner

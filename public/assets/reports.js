@@ -2,14 +2,15 @@
    the phone, or from the menu ("דווח על בעיה"); the answer comes back to the person's own small inbox (התיבה שלי), with
    a dot on the user chip. Only the reporter ever sees it. The look is design's /assets/reports.css (loaded from here).
    Loaded by the shell once someone is signed in (common.js), and by the settings and the back door themselves.
-     H.report()            the report sheet          H.myInbox()        the person's inbox (and a thread in it)
+     H.report({kind})      the report sheet          H.myInbox()        the person's inbox (and a thread in it)
      H.reportEntries()     the two menu buttons      H.reportThread()   a thread's messages (the back door uses it too)
      H.shakeOn(), H.setShake(on)   the "נענוע לדיווח" switch (a per-user pref; iOS asks for motion on a tap)
    The ways in: shaking the phone, the warning triangle next to the settings button in the top bar, the menu's entry. */
 (() => {
   if (!window.H || window.H.report) return;
   const H = window.H, { el, api, toast } = H;
-  document.head.append(el('link', { rel: 'stylesheet', href: '/assets/reports.css' }));
+  const css = el('link', { rel: 'stylesheet', href: '/assets/reports.css' });
+  document.head.append(css);
 
   const TEXT_MAX = 1000, SHOT_MAX = 900000;
   const prefs = H.prefs('reports', { shake: 'auto' });
@@ -71,14 +72,21 @@
     });
   }
 
-  /* ---------------- the report sheet ---------------- */
+  /* ---------------- the report sheet: a problem (תקלה) or an idea for doing better (הצעה לשיפור) ----------------
+     The owner (2026-11-13): it is a young app, so the same sheet takes both. The kind is a choice at the top of the
+     sheet (.rp-kind, two radios); the sheet's words follow it, and the form carries data-kind for design. */
+  const KIND = {
+    bug: { h: 'דיווח על תקלה', ask: 'מה קרה?', eg: 'למשל: לחצתי על הוספה לרשימה ושום דבר לא קרה', sent: 'נשלח לצוות האוהל' },
+    idea: { h: 'הצעה לשיפור', ask: 'מה אפשר לעשות טוב יותר?', eg: 'למשל: היה נוח לסמן כמה פריטים ברשימה בבת אחת', sent: 'תודה! ההצעה הגיעה לצוות האוהל' },
+  };
   function report(opts = {}) {
     const via = opts.via === 'shake' ? 'shake' : 'menu';
+    let kind = opts.kind === 'idea' ? 'idea' : 'bug';
     const page = { path: location.pathname + location.search, title: pageName(), theme: theme(), width: innerWidth };
     let shot = null;
     const count = el('small', { class: 'rp-count', 'aria-live': 'polite' }, `0 / ${TEXT_MAX}`);
     const text = el('textarea', { class: 'rp-text', rows: 3, maxlength: TEXT_MAX, dir: 'auto', required: true,
-      placeholder: 'למשל: לחצתי על הוספה לרשימה ושום דבר לא קרה',
+      placeholder: KIND[kind].eg,
       oninput: () => { count.textContent = `${text.value.length} / ${TEXT_MAX}`; } });
     const img = el('img', { alt: 'צילום המסך שיצורף' });
     const thumb = el('figure', { class: 'rp-thumb' }, img);
@@ -92,14 +100,19 @@
       img.src = shot; shotWrap.classList.add('has');
     });
     const send = el('button', { class: 'btn primary', type: 'submit' }, 'שליחה');
-    const form = el('form', { class: 'rp', 'aria-labelledby': 'rp-h', onsubmit: async (e) => {
+    const head = el('h2', { id: 'rp-h' }, KIND[kind].h), ask = el('span', {}, KIND[kind].ask);
+    const kinds = el('fieldset', { class: 'rp-kind' }, el('legend', {}, 'מה תרצו לשלוח?'),
+      ...[['bug', 'תקלה'], ['idea', 'הצעה לשיפור']].map(([k, name]) => el('label', {},
+        el('input', { type: 'radio', name: 'rp-kind', value: k, checked: k === kind, onchange: () => setKind(k) }), el('span', {}, name))));
+    const setKind = (k) => { kind = k; form.dataset.kind = k; head.textContent = KIND[k].h; ask.textContent = KIND[k].ask; text.placeholder = KIND[k].eg; };
+    const form = el('form', { class: 'rp', 'aria-labelledby': 'rp-h', 'data-kind': kind, onsubmit: async (e) => {
       e.preventDefault();
       const t = text.value.trim();
       if (!t) return text.focus();
       send.disabled = true;
       try {
-        await api('/api/reports', { body: { text: t, ...page, shot: box.checked ? shot : null, via }, noRedirect: true });
-        H.modal(el('div', { class: 'rp-sent', role: 'status' }, el('span', { class: 'rp-sent-ic', 'aria-hidden': 'true' }), el('h2', {}, 'נשלח לצוות האוהל'),
+        await api('/api/reports', { body: { kind, text: t, ...page, shot: box.checked ? shot : null, via }, noRedirect: true });
+        H.modal(el('div', { class: 'rp-sent', role: 'status' }, el('span', { class: 'rp-sent-ic', 'aria-hidden': 'true' }), el('h2', {}, KIND[kind].sent),
           el('p', {}, 'התשובה תגיע לתיבה שלך באוהל.'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
       } catch (err) {
         send.disabled = false;
@@ -107,8 +120,9 @@
       }
     } },
       el('header', { class: 'rp-head' }, el('span', { class: 'rp-ic', 'aria-hidden': 'true' }),
-        el('div', {}, el('h2', { id: 'rp-h' }, 'דיווח על בעיה'), el('p', { class: 'rp-to' }, 'הולך ל', el('b', {}, 'צוות האוהל'), ', שקוראים כל דיווח'))),
-      el('label', { class: 'rp-field' }, el('span', {}, 'מה קרה?'), text, count),
+        el('div', {}, head, el('p', { class: 'rp-to' }, 'הולך ל', el('b', {}, 'צוות האוהל'), ', שקוראים כל פנייה'))),
+      kinds,
+      el('label', { class: 'rp-field' }, ask, text, count),
       shotWrap,
       el('p', { class: 'rp-meta' }, 'מהדף: ', el('b', {}, page.title || page.path)),
       el('div', { class: 'rp-actions' }, send, el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול')),
@@ -130,7 +144,7 @@
         el('header', { class: 'rm-who' }, el('b', {}, m.team ? 'צוות האוהל' : name), el('time', { datetime: iso(m.at) }, clock(m.at))),
         el('p', { class: 'rm-text', dir: 'auto' }, m.text),
         m.first && r.has_shot && shotUrl ? el('a', { class: 'rm-shot', href: shotUrl, target: '_blank', rel: 'noopener' }, el('img', { src: shotUrl, alt: 'צילום המסך מהדיווח', loading: 'lazy' })) : null,
-        m.first ? el('p', { class: 'rm-meta' }, el('span', { class: 'rm-chip' }, r.title || r.path), r.has_shot && !shotUrl ? el('span', { class: 'rm-chip' }, 'צילום מסך') : null,
+        m.first ? el('p', { class: 'rm-meta' }, r.kind === 'idea' ? el('span', { class: 'rm-chip idea' }, 'הצעה לשיפור') : null, el('span', { class: 'rm-chip' }, r.title || r.path), r.has_shot && !shotUrl ? el('span', { class: 'rm-chip' }, 'צילום מסך') : null,
           side === 'team' && r.device ? el('span', { class: 'rm-chip' }, [DEVICE[r.device] || r.device, r.width ? r.width + 'px' : '', r.theme === 'dark' ? 'לילה' : r.theme === 'light' ? 'יום' : ''].filter(Boolean).join(' · ')) : null) : null));
     }
     return out;
@@ -143,18 +157,18 @@
     try { d = await api('/api/reports/mine', { noRedirect: true }); } catch (_) { return toast('לא הצלחתי לפתוח את התיבה'); }
     setUnread(d.unread);
     const list = el('ul', { class: 'mi-list' }, d.reports.map((r) => el('li', {}, el('button', { class: 'mi-row' + (r.unread ? ' unread' : ''), type: 'button', onclick: () => openMine(r.id) },
-      el('span', { class: 'mi-what' }, el('b', {}, r.unread ? 'תשובה חדשה: ' + (r.title || 'הדיווח') : 'הדיווח על ' + (r.title || r.path)), el('small', { dir: 'auto' }, `"${r.text.length > 90 ? r.text.slice(0, 88) + '…' : r.text}"`)),
+      el('span', { class: 'mi-what' }, el('b', {}, r.unread ? 'תשובה חדשה: ' + (r.title || 'הפנייה') : (r.kind === 'idea' ? 'הצעה לשיפור: ' : 'הדיווח על ') + (r.title || r.path)), el('small', { dir: 'auto' }, `"${r.text.length > 90 ? r.text.slice(0, 88) + '…' : r.text}"`)),
       el('time', { class: 'mi-when', datetime: iso(r.last_team_at || r.created_at) }, when(r.last_team_at || r.created_at))))));
     H.modal(el('section', { class: 'mi', 'aria-labelledby': 'mi-h' },
       el('header', { class: 'mi-head' }, el('span', { class: 'mi-ic', 'aria-hidden': 'true' }), el('h2', { id: 'mi-h' }, 'התיבה שלי')),
       list, el('p', { class: 'mi-empty' }, 'עוד אין כאן כלום. מה שתכתבו לצוות האוהל, והתשובות, יגיעו לכאן.'),
-      el('div', { class: 'rp-actions' }, el('button', { class: 'btn ghost', type: 'button', onclick: () => report() }, 'דיווח חדש'))));
+      el('div', { class: 'rp-actions' }, el('button', { class: 'btn ghost', type: 'button', onclick: () => report() }, 'פנייה חדשה'))));
   }
   async function openMine(id) {
     let d;
     try { d = await api('/api/reports/' + encodeURIComponent(id), { noRedirect: true }); } catch (_) { return toast('הדיווח הזה לא נמצא'); }
     H.modal(el('section', { class: 'mi', 'aria-labelledby': 'mi-h' },
-      el('header', { class: 'mi-head' }, el('span', { class: 'mi-ic', 'aria-hidden': 'true' }), el('h2', { id: 'mi-h' }, 'הדיווח על ' + (d.report.title || d.report.path))),
+      el('header', { class: 'mi-head' }, el('span', { class: 'mi-ic', 'aria-hidden': 'true' }), el('h2', { id: 'mi-h' }, (d.report.kind === 'idea' ? 'הצעה לשיפור: ' : 'הדיווח על ') + (d.report.title || d.report.path))),
       reportThread(d.report, d.messages, { side: 'member', shotUrl: d.report.has_shot ? `/api/reports/${encodeURIComponent(id)}/shot` : null }),
       d.messages.length ? null : el('p', { class: 'mi-empty', style: 'display:block' }, 'צוות האוהל עוד לא ענה. התשובה תגיע לכאן.'),
       el('div', { class: 'rp-actions' }, el('button', { class: 'btn ghost', type: 'button', onclick: myInbox }, '‹ התיבה שלי'))));
@@ -183,7 +197,7 @@
     const go = (fn) => async () => { if (before) await before(); fn(); };
     return [
       el('button', { class: 'rp-entry', type: 'button', onclick: go(() => report()) }, el('span', { class: 'rp-entry-ic', 'aria-hidden': 'true' }),
-        el('span', {}, el('b', {}, 'דווח על בעיה'), el('small', {}, 'משהו לא עובד? זה מגיע לצוות האוהל'))),
+        el('span', {}, el('b', {}, 'תקלה או הצעה'), el('small', {}, 'משהו לא עובד, או רעיון לשיפור? זה מגיע לצוות האוהל'))),
       el('button', { class: 'rp-entry inbox', type: 'button', onclick: go(() => myInbox()) }, el('span', { class: 'rp-entry-ic', 'aria-hidden': 'true' }),
         el('span', {}, el('b', {}, 'התיבה שלי'), el('small', {}, 'מה שכתבתם, והתשובות')), count),
     ];
@@ -270,17 +284,15 @@
   addEventListener('helper:prefs', (e) => { if (e.detail === 'reports') { listen(shakeOn()); askOnTap(); } });
 
   /* ---------------- the warning triangle in the top bar (the owner, 2026-11-13) ----------------
-     Next to the settings button, on every page that loads this file: a tap opens the same report sheet. The look is
-     design's (.rp-alert in reports.css: pastel red, 44×44); the triangle is drawn here so it shows before the CSS. */
+     Next to the settings button (right before #userchip: in RTL, to its left), on every page that loads this file: a tap
+     opens the same sheet. Design's markup and look (.rp-alert in reports.css: pastel red, 44×44, the triangle drawn in
+     CSS, no children); added once reports.css is in, so there is no moment of a bare button. */
   function alertButton() {
     const chip = document.getElementById('userchip');
     if (!chip || document.querySelector('.rp-alert')) return;
-    const svg = new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">'
-      + '<path d="M12 3.5 2.6 19.8a1 1 0 0 0 .87 1.5h17.06a1 1 0 0 0 .87-1.5L12 3.5Z" fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>'
-      + '<path d="M12 9.5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor"/></svg>', 'image/svg+xml').documentElement;
-    chip.before(el('button', { class: 'rp-alert', type: 'button', title: 'דיווח על תקלה', 'aria-label': 'דיווח על תקלה', onclick: () => report() }, document.importNode(svg, true)));
+    chip.before(el('button', { class: 'rp-alert', type: 'button', title: 'תקלה או הצעה לשיפור', 'aria-label': 'דיווח על תקלה או הצעה לשיפור', onclick: () => report() }));
   }
-  alertButton();
+  if (css.sheet) alertButton(); else { css.addEventListener('load', alertButton, { once: true }); css.addEventListener('error', alertButton, { once: true }); }
 
   Object.assign(H, { report, myInbox, reportEntries, reportThread, shakeOn, setShake, canShake: () => canShake });
   refreshUnread();

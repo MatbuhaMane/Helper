@@ -2418,3 +2418,14 @@ The owner asked for messaging between users. One on one, text only, no groups.
   look. `dm.js` injects `.dm-dot` (the reports' `.mi-dot` look, its own class so `reports.js` never clears it, at the chip's
   bottom corner) until it is in `base.css`. An icon for the tile. Which side "mine" sits on (now the start, the right) is yours.
 Status: on the side session's branch, waiting for the CEO's review and the owner's OK before any push.
+
+## 2026-11-13 – Report a problem or suggest an improvement; the triangle; two welcome slides (ai-features → master, design)
+- **The kind** (the owner): the report sheet takes a problem (תקלה) or an idea (הצעה לשיפור). Appended to `COLUMNS` in
+  `server/schema.ts`: `reports.kind TEXT NOT NULL DEFAULT 'bug'` (`bug | idea`, `server/reports-rules.ts` KINDS). Older
+  reports and the older feedback paths stay `bug`. The back door's inbox shows it (a tag, the thread's line, a "הצעות" filter).
+- **The triangle**: `button.rp-alert` right before `#userchip`, design's markup (no children), added by `reports.js` once
+  `reports.css` has loaded. Needs design 2d27099 in the same merge.
+- **The welcome wizard**: after the name, two slides that only tell: `helper` (העוזר החכם, the figure mounted in `.wz-helper`)
+  and `report` (the triangle, `.wz-alert`). Both `.wz-intro` > `.wz-lines` > `p`; `#wz[data-step]` names the current step.
+  **For design:** the look of `.rp-kind` (a fieldset, two radios), `.rm-chip.idea`, `.rx-tag.idea`, `.wz-intro`, `.wz-lines`,
+  `.wz-helper`, `.wz-alert`, and whether to hide `.wz-friend` on `#wz[data-step="helper"]`.

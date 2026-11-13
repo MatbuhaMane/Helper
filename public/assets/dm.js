@@ -35,10 +35,6 @@
     }
   }).observe(document.body, { childList: true });
 
-  // until design has .dm-dot in base.css (docs/decisions.md): the same look as the reports' .mi-dot
-  if (!document.getElementById('dm-dot-style')) document.head.append(el('style', { id: 'dm-dot-style' },
-    '.userchip:has(.dm-dot){position:relative}.dm-dot{position:absolute;inset-block-end:-3px;inset-inline-end:-3px;inline-size:11px;block-size:11px;border-radius:50%;background:#c2412d;box-shadow:0 0 0 2px var(--bg);pointer-events:none}'));
-
   refresh();
   setInterval(refresh, 60_000);
   document.addEventListener('visibilitychange', refresh);

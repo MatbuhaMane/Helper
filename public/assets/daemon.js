@@ -1110,7 +1110,8 @@
       el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
     // Folded away: a small tab with his face at the edge of the screen; a tap brings him back.
     tab = el('button', { class: 'dm-tab', hidden: true, title: 'ראב"ע – לפתוח', 'aria-label': 'לפתוח את ראב"ע' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
-    tab.addEventListener('click', () => { minimize(false); openBalloon(); });
+    tab.addEventListener('click', (e) => { if (tabDragged) { tabDragged = false; e.preventDefault(); return; } minimize(false); openBalloon(); });
+    dragTab();
     document.body.append(canvasBox, balloon, tab);
     syncMode();
 
@@ -1198,6 +1199,58 @@
 
   /* Where he is: docked (home in the tent), out (following the person), or folded into the tab. */
   let minBtn, homeBtn, tab, gone = false;
+
+  /* The tab at the screen's edge is dragged (vision batch 5): let go near a side and it docks there, elsewhere it floats.
+     Where it is belongs to this device (CLAUDE.md, principle 2): localStorage, as fractions of the screen. */
+  const TAB_KEY = 'helper.daemon.tab';
+  let tabDragged = false;
+  const tabSpot = () => { try { return JSON.parse(localStorage.getItem(TAB_KEY) || 'null'); } catch (_) { return null; } };
+  function placeTab(spot = tabSpot()) {
+    tab.classList.remove('at-left', 'at-right', 'free');
+    const st = tab.style;
+    if (!spot) { st.left = st.right = st.top = st.bottom = st.borderRadius = st.border = st.animationName = ''; return; }   // the stylesheet's place
+    const y = Math.max(8, Math.min(innerHeight - 70, spot.y * innerHeight));
+    st.top = y + 'px'; st.bottom = 'auto';
+    if (spot.side === 'free') {
+      tab.classList.add('free');
+      st.left = Math.max(4, Math.min(innerWidth - 64, spot.x * innerWidth)) + 'px'; st.right = 'auto';
+      st.borderRadius = '50%'; st.border = '1px solid var(--line-strong)'; st.animationName = 'none';
+    } else {
+      // (docked: rounded on the inside, flat against its side – until daemon.css draws .at-left / .at-right)
+      tab.classList.add('at-' + spot.side);
+      if (spot.side === 'left') { st.left = '0'; st.right = 'auto'; st.borderRadius = '0 30px 30px 0'; } else { st.right = '0'; st.left = 'auto'; st.borderRadius = '30px 0 0 30px'; }
+      st.border = '1px solid var(--line-strong)'; st[spot.side === 'left' ? 'borderLeft' : 'borderRight'] = '0';
+      st.animationName = spot.side === 'left' ? 'dm-peek-rtl' : 'dm-peek';   // it slides in from its own side
+    }
+  }
+  function dragTab() {
+    placeTab();
+    addEventListener('resize', () => placeTab());
+    tab.addEventListener('pointerdown', (e) => {
+      const start = { x: e.clientX, y: e.clientY }, r = tab.getBoundingClientRect(), off = { x: e.clientX - r.left, y: e.clientY - r.top };
+      let moved = false, last = start;
+      try { tab.setPointerCapture(e.pointerId); } catch (_) { /* a pointer that cannot be captured: the moves still come */ }
+      const move = (ev) => {
+        if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 6) return;
+        moved = true; last = { x: ev.clientX, y: ev.clientY };
+        tab.classList.add('dragging');
+        placeTab({ side: 'free', x: (ev.clientX - off.x) / innerWidth, y: (ev.clientY - off.y) / innerHeight });
+      };
+      // (where it was last moved to: a cancelled pointer comes with no place of its own)
+      const up = (ev) => {
+        if (moved && ev.type === 'pointerup' && (ev.clientX || ev.clientY)) last = { x: ev.clientX, y: ev.clientY };
+        tab.removeEventListener('pointermove', move); tab.removeEventListener('pointerup', up); tab.removeEventListener('pointercancel', up);
+        tab.classList.remove('dragging');
+        if (!moved) return;
+        tabDragged = true;                      // the click that follows a drag does not open him
+        const x = last.x - off.x, y = (last.y - off.y) / innerHeight, near = 56;
+        const spot = last.x < near ? { side: 'left', y } : last.x > innerWidth - near ? { side: 'right', y } : { side: 'free', x: x / innerWidth, y };
+        try { localStorage.setItem(TAB_KEY, JSON.stringify(spot)); } catch (_) { /* private mode: it stays for now */ }
+        placeTab(spot);
+      };
+      tab.addEventListener('pointermove', move); tab.addEventListener('pointerup', up); tab.addEventListener('pointercancel', up);
+    });
+  }
   function syncMode() {
     const out = !docked;
     homeBtn.hidden = !out;
@@ -1448,21 +1501,23 @@
 
   /** the figure small, for a head: Ibn Ezra's face, or the 2D figure as an icon (or alive: prefs.header 'animated') */
   const heads = [];
-  function headFigure(cls = 'face') {
+  function headFigure(cls = 'face', size = 34) {
     const span = el('span', { class: 'dm-headfig ' + cls, 'aria-hidden': 'true' });
-    heads.forEach((h) => h.destroy?.());
-    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size: 34, still: prefs.header !== 'animated' }).then((f) => heads.push(f)).catch(() => {});
-    else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 34, height: 34 }));
+    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40 }).then((f) => heads.push(f)).catch(() => {});
+    else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: size, height: size }));
     return span;
   }
   function updateLabels() {
     const d = state?.daemon;
     if (!d) return;
+    heads.splice(0).forEach((h) => h.destroy?.());   // the small figures drawn last time
     const name = flat ? (Figure2D.list().find((f) => f.id === flatFigure)?.name || 'העוזר') : d.form.he;
     // the figure instead of its name (the name stays for screen readers)
     nameEl.replaceChildren(headFigure());
     nameEl.setAttribute('aria-label', name);
     panel?.querySelector('.dm-head .face')?.replaceWith(headFigure());
+    if (flat) { tab.querySelector('img, .dm-headfig')?.replaceWith(headFigure('tab-fig', 48)); minBtn?.querySelector('img, .dm-headfig')?.replaceWith(headFigure('btn-fig', 22)); }
+    tab.setAttribute('aria-label', `לפתוח את ${name}`); tab.title = `${name} – לפתוח`;
     canvasBox.setAttribute('aria-label', `${name} – לחצו כדי לדבר`);
   }
 

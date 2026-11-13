@@ -172,3 +172,126 @@
 .fv-links-part .fv-item select { inline-size: 100%; box-sizing: border-box; }
 .fv-links-part .fv-acts-row { align-items: end; }
 .fv-links-part .fv-acts-row > label { flex: 1 1 220px; }
+
+/* the tree and look pickers are radios: the chosen one looks like the chosen tab */
+.fv-views button[aria-checked="true"] { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); font-weight: 500; }
+
+/* ---------- a member's card, view mode (a tap on a name on the tree opens it) ----------
+   <article class="mc [mine]">
+     <div class="mc-banner">[<img src alt="">]</div>                       empty: the olive grove cover
+     <div class="mc-head">
+       <span class="mc-avatar">[<img alt="">|initials]</span>
+       <div class="mc-who"><h2 class="mc-name">NAME</h2><p class="mc-rel">אחי · משפחת לוי</p></div>
+       [<span class="mc-logo"><img src alt="סמל משפחת …"></span>]          the family's logo or seal
+       [<button class="mc-edit" type="button" aria-label="עריכת הפרטים שלי">(pencil svg)</button>]   your own card only
+     </div>
+     <dl class="mc-facts"><div class="mc-fact"><dt>נולד/ה</dt><dd>…</dd></div>…</dl>
+     [<p class="mc-about">…</p>]  [<div class="mc-actions">…</div>]
+   </article>
+   The banner is the person's (or their family's) picture; at night it is dimmed under the same veil as the profile covers. */
+.mc { --mc-av: 88px; display: grid; gap: 14px; inline-size: min(100%, 560px); margin-inline: auto; padding-block-end: 18px;
+  background: var(--card); border-radius: var(--radius-lg); overflow: hidden; }
+.mc-banner { position: relative; block-size: clamp(104px, 30vw, 168px);
+  background: url("/assets/covers/olive.svg") center / cover no-repeat, color-mix(in srgb, var(--vine) 30%, var(--card)); }
+.mc-banner img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; display: block; filter: var(--mc-img, none); }
+.mc-banner::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent 50%, rgba(46, 42, 30, .25)), var(--mc-veil, none); }
+:root[data-theme="dark"] .mc-banner { --mc-img: brightness(.85) saturate(.9); --mc-veil: linear-gradient(180deg, rgba(22, 28, 62, .45), rgba(12, 14, 28, .3)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mc-banner { --mc-img: brightness(.85) saturate(.9); --mc-veil: linear-gradient(180deg, rgba(22, 28, 62, .45), rgba(12, 14, 28, .3)); } }
+:root[data-theme="dark"] .mc-banner:not(:has(img)) { filter: brightness(.82) saturate(.85); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .mc-banner:not(:has(img)) { filter: brightness(.82) saturate(.85); } }
+
+/* the head: the avatar rises into the banner; the name beside it; the family's logo and (your own card) the pencil at the side */
+.mc-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: start; gap: 12px; padding-inline: 16px;
+  margin-block-start: calc(var(--mc-av) / -2); position: relative; }
+.mc-avatar { display: grid; place-items: center; inline-size: var(--mc-av); block-size: var(--mc-av); border-radius: 50%; overflow: hidden;
+  border: 4px solid var(--card); box-shadow: 0 0 0 1.5px var(--line-strong), 0 6px 16px rgba(42, 28, 18, .18);
+  background: color-mix(in srgb, var(--soil) 22%, var(--card)); color: color-mix(in srgb, var(--soil) 55%, var(--text));
+  font-weight: 700; font-size: calc(var(--mc-av) * .34); line-height: 1; }
+.mc-avatar img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.mc.mine .mc-avatar { box-shadow: 0 0 0 1.5px var(--line-strong), 0 0 0 4px var(--primary), 0 6px 16px rgba(42, 28, 18, .18); }
+.mc-who { min-inline-size: 0; padding-block-start: calc(var(--mc-av) / 2 + 8px); }
+.mc-head > :is(.mc-logo, .mc-edit) { margin-block-start: calc(var(--mc-av) / 2 + 8px); }
+.mc-name { margin: 0; font-size: clamp(1.25rem, 1.1rem + .8vw, 1.55rem); line-height: 1.2; text-wrap: balance; overflow-wrap: anywhere; }
+.mc-rel { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
+.mc-logo { display: grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 12px; overflow: hidden;
+  background: var(--card); border: 1px solid var(--line-strong); }
+.mc-logo img { inline-size: 80%; block-size: 80%; object-fit: contain; }
+/* the pencil: only on your own card, a quiet round button at the side, vine on hover */
+.mc-edit { display: grid; place-items: center; inline-size: 44px; block-size: 44px; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--line)); background: color-mix(in srgb, var(--primary) 10%, var(--card)); color: var(--primary);
+  transition: background-color var(--dur-quick) ease, color var(--dur-quick) ease, transform var(--dur-quick) ease; }
+.mc-edit svg { inline-size: 20px; block-size: 20px; }
+@media (hover: hover) { .mc-edit:hover { background: var(--primary); color: var(--primary-ink, #fff); } }
+.mc-edit:active { transform: scale(.94); }
+.mc-edit:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.mc:not(.mine) .mc-edit { display: none; }
+
+.mc-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin: 0; padding-inline: 16px; }
+.mc-fact { display: grid; gap: 2px; padding: 10px 12px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--text) 4%, transparent); min-inline-size: 0; }
+.mc-fact dt { font-size: .75rem; color: var(--muted); letter-spacing: .02em; }
+.mc-fact dd { margin: 0; font-weight: 500; overflow-wrap: anywhere; }
+.mc-about { margin: 0; padding-inline: 16px; line-height: 1.6; max-inline-size: 62ch; }
+.mc-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-inline: 16px; }
+@media (max-width: 599px) {
+  .mc { --mc-av: 76px; border-radius: var(--radius); }
+  .mc-head { gap: 10px; padding-inline: 14px; }
+  .mc-logo { inline-size: 38px; block-size: 38px; }
+  .mc-facts, .mc-about, .mc-actions { padding-inline: 14px; }
+  .mc-facts { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- חיפוש ביער: people across the app, with a "קרובי משפחה בלבד" switch (replaces the tree's own search) ----------
+   <div class="fs" role="search">
+     <label class="fs-box"><svg aria-hidden="true">(lens)</svg><input type="search" class="fs-input" placeholder="חיפוש ביער" aria-label="חיפוש ביער"></label>
+     <label class="fs-kin"><input type="checkbox"><span>קרובי משפחה בלבד</span></label>
+     <ul class="fs-results" role="listbox" [hidden]><li><button class="fs-hit [kin]" type="button" role="option" [aria-selected="true"]>
+       <span class="fs-face">[img|initials]</span><span class="fs-text"><b>NAME</b><small>משפחת … · בן דוד</small></span></button></li></ul>
+     <p class="fs-empty" [hidden]>…</p>
+   </div>
+   The results float under the box; a relative gets a small vine leaf at the end of the row. */
+.fs { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 300px; max-inline-size: 460px; min-inline-size: 0; }
+.fs-box { display: flex; align-items: center; gap: 8px; flex: 1 1 200px; min-inline-size: 0; min-block-size: 42px; padding-inline: 14px 6px;
+  border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); cursor: text;
+  transition: border-color var(--dur-quick) ease, box-shadow var(--dur-quick) ease; }
+.fs-box svg { inline-size: 18px; block-size: 18px; flex: none; }
+.fs-box:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); color: var(--primary); }
+.fs-input { flex: 1; min-inline-size: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; padding-block: 8px; }
+.fs-input::placeholder { color: var(--muted); opacity: 1; }
+/* the switch: a chip with a small track; on, it fills with vine */
+.fs-kin { display: inline-flex; align-items: center; gap: 8px; min-block-size: 42px; padding-inline: 10px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--text); font-size: .88rem; white-space: nowrap; user-select: none;
+  transition: background-color var(--dur-quick) ease, border-color var(--dur-quick) ease; }
+.fs-kin input { appearance: none; -webkit-appearance: none; margin: 0; flex: none; inline-size: 32px; block-size: 18px; border-radius: 999px; cursor: pointer; position: relative;
+  background: color-mix(in srgb, var(--text) 18%, transparent); transition: background-color var(--dur-quick) ease; }
+.fs-kin input::after { content: ""; position: absolute; inset-block: 2px; inset-inline-start: 2px; inline-size: 14px; border-radius: 50%; background: var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .25); transition: inset-inline-start var(--dur-quick) ease; }
+.fs-kin input:checked { background: var(--primary); }
+.fs-kin input:checked::after { inset-inline-start: 16px; }
+.fs-kin:has(input:checked) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); }
+.fs-kin:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: 2px; }
+/* the results */
+.fs-results { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 6px); z-index: 30; margin: 0; padding: 6px; list-style: none;
+  display: grid; gap: 2px; max-block-size: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 12px 32px rgba(20, 16, 8, .18); }
+.fs-hit { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 10px; inline-size: 100%; padding: 8px 10px; min-block-size: 52px;
+  border: 0; border-radius: var(--radius-sm); background: none; color: var(--text); font: inherit; text-align: start; cursor: pointer;
+  transition: background-color var(--dur-quick) ease; }
+@media (hover: hover) { .fs-hit:hover { background: color-mix(in srgb, var(--text) 6%, transparent); } }
+.fs-hit[aria-selected="true"], .fs-hit:focus-visible { background: color-mix(in srgb, var(--primary) 12%, transparent); outline: none; }
+.fs-hit:active { background: color-mix(in srgb, var(--primary) 18%, transparent); }
+.fs-face { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: 50%; overflow: hidden; font-weight: 700; font-size: .95rem;
+  background: color-mix(in srgb, var(--soil) 22%, var(--card)); color: color-mix(in srgb, var(--soil) 55%, var(--text)); }
+.fs-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
+.fs-text { display: grid; min-inline-size: 0; }
+.fs-text b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-text small { color: var(--muted); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fs-hit.kin::after { content: ""; inline-size: 18px; block-size: 18px; background: var(--primary);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 19C5 10 11 5 20 4c-1 9-6 15-15 15zm0 0 7-7' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 19C5 10 11 5 20 4c-1 9-6 15-15 15zm0 0 7-7' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.fs-empty { margin: 0; flex-basis: 100%; color: var(--muted); font-size: .88rem; padding-inline: 14px; }
+@media (max-width: 599px) {
+  .fv .fs, .fv-bar .fs { flex: 1 1 100%; max-inline-size: none; order: 5; }
+  .fs-kin { padding-inline: 8px 12px; font-size: .82rem; }
+}
+@media (prefers-reduced-motion: reduce) { .fs-box, .fs-kin, .fs-kin input, .fs-kin input::after, .fs-hit, .mc-edit { transition: none; } }

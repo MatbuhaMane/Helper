@@ -38,6 +38,21 @@ The owner asked for two things.
 
 Status: done (server).
 
+## 2026-11-14 – הקוסם, הרואה, palettes and pranks (design → master, ai-features, business)
+
+The owner's word (2026-11-13):
+- **Names:** `magician` is now **הקוסם** (was הקוסם מהשוק), `astronomer` is now **הרואה** (was האסטרונומית). The ids stay.
+  The master: please update the names wherever the server keeps them (e.g. `server/figures-rules.ts`).
+- **The magician** drawn again, taller and stronger, still old and warm. **The seer and the little witch** swapped skin
+  tones. **The night wizard's eyes** lowered to the right height.
+- **Palettes:** the night wizard and the forest witch can be dressed in other colours (5 each, the first as drawn):
+  `list()` → `palettes`, `mount(…, { palette })`, `f.setPalette(i)`. Part of the figure, no extra price (business may
+  decide otherwise).
+- **Pranks:** the gimmick of the little wizard and the little witch – small harmless tricks on the page while the app is
+  used, a feature the person can switch off. `/assets/pranks.js` (design); wiring and the switch are ai-features'
+  (`Pranks.start(f, { id })`, `H.prefs('daemon').pranks`, on by default). Details in `docs/design/figures-2d.md`.
+Status: done (design); waiting for ai-features (palette swatches, the pranks switch) and the master (the names).
+
 ## 2026-11-14 – Four more paid wizards, the magician redrawn, the astronomer's hair chosen (design → master, ai-features, business)
 
 The owner's word (2026-11-13), after the owner's pictures: the doll and the astronomer approved; **the magician redrawn**
@@ -621,15 +636,17 @@ Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the
   work, so a figure covers itself after about 14 sales.
 - **A personal figure** costs ₪400. Design measured 45–75 minutes, which comes to ₪300–500 at the 30/30/30/10 split.
   Revisit after the first five founders' figures.
-- **The very special figures** (הקוסם מהשוק, האסטרונומית, בובת הטלאים, and the further wizards when they are logged)
+- **The very special figures** (seven: הקוסם, הרואה (renamed 2026-11-14), בובת הטלאים, קוסם הלילה, קוסמת היער, הקוסם הקטן,
+  הקוסמת הקטנה; design's entry on `design`)
   cost more than a paid figure.
-  - **Proposed: ₪20**, the same as one ₪20 pack. Not yet decided.
+  - **₪20**, the same as one ₪20 pack. Approved by the owner (via the master, 2026-11-14), and live in cache v57 as
+    the setting `figures.special_price_ils`, for all seven.
 - Founding members get the special figures too (paid items with no per-use cost).
 
 **Affects:** ai-features and master (`server/figures-rules.ts`, the paid list): the price per figure in credits, with
 the special ones in their own price group.
 
-**Status:** Decided, except the special figures' exact price.
+**Status:** Decided (the owner).
 
 ## 2026-11-13 – How money is collected: one credits wallet, an Israeli provider, standing orders (business)
 

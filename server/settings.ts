@@ -15,7 +15,7 @@ export const SETTINGS: Setting[] = [
   { key: 'design.images_per_day', group: 'בינה מלאכותית', label: 'תמונות לעיצוב ביום', help: 'כמה תמונות כלי העיצוב (Gemini) מכין ביום לכל היותר, כדי שלולאה לא תריץ חשבון.', type: 'number', def: 40, min: 0, max: 400 },
   { key: "money.shop_open", group: "כסף", label: "להציג אפשרויות תשלום", help: "כבוי: אף אחד לא רואה מחירים, קנייה, חבילות קרדיט או דף רכישה. המשפחה ממשיכה לקבל הכול בחינם. מדליקים כשהחנות מוכנה.", type: "bool", def: false },
   { key: "figures.price_ils", group: "כסף", label: "מחיר דמות בתשלום (₪)", help: "כמה עולה דמות לוויה בתשלום למי שמשתמש בקרדיטים. המשפחה מקבלת אותה בחינם.", type: "number", def: 10, min: 0, max: 200 },
-  { key: "figures.special_price_ils", group: "כסף", label: "מחיר דמות מיוחדת (₪)", help: "הקוסם, האסטרונומית ובובת הטלאים: כל אחת עם תנועה משלה, ולכן יקרה יותר. המשפחה מקבלת אותן בחינם.", type: "number", def: 20, min: 0, max: 400 },
+  { key: "figures.special_price_ils", group: "כסף", label: "מחיר דמות מיוחדת (₪)", help: "הקוסם, הרואה, בובת הטלאים והקוסמים: כל אחת עם תנועה משלה, ולכן יקרה יותר. המשפחה מקבלת אותן בחינם.", type: "number", def: 20, min: 0, max: 400 },
   { key: 'research.contact_email', group: 'עוזר מחקר', label: 'כתובת קשר למקורות הפתוחים', help: 'OpenAlex, Crossref ו־Unpaywall מבקשים כתובת מייל של מי שפונה אליהם (ואז עונים מהר ויציב יותר). לא הכתובת הפרטית שלך: כתובת של האוהל. ריק: פונים בלי כתובת.', type: 'text', def: '' },
   { key: 'money.usd_ils', group: 'כסף', label: 'שער הדולר (₪)', help: 'לחישוב ההוצאות בדולרים בשקלים. שער משוער – עדכנו מדי פעם.', type: 'number', def: 3.7, min: 1, max: 10 },
 ];

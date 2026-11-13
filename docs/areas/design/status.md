@@ -156,6 +156,8 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
   - `.wz-intro` with `.wz-helper` (the figure on a soft disc; the corner friend hides on that step) or `.wz-alert` (the bar's
     triangle at 2.4×, the same colours, breathing). Above the lines on a phone, beside them from 700px.
   - Checked at 375 and 1280, light and dark, no overflow; the triangle 5.35 light / 6.77 dark.
+- **The bar's triangle without its circle (the owner, 2026-11-13):** only the triangle, 24px, in a new `--alert` token (coral #cc5a46 by
+  day, 3.53:1; pastel #e79a85 at night, 8.77:1); still a 44×44 target, a ring only on keyboard focus. The welcome slide's big one matches.
 - **The tree slide (`.wz-tree`, ai-features 7289525):** the app's own olive (four layers) on the soft disc with five faces on its slots
   (grandparents, parents, "me" in the vine at the top); it grows in gently. Checked at 375 and 1280, no overflow.
 - **The triangle's first showing (`.rp-coach` in reports.css, the owner approved: "a gentle arrow, along the screen, a short note"):**

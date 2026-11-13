@@ -110,7 +110,7 @@
    <div class="wz-intro"><span class="wz-helper" data-f="fennec" aria-hidden="true">(Figure2D, 132)</span>   or   <span class="wz-alert" aria-hidden="true"></span>
      <div class="wz-lines"><p>…</p><p>…</p><p>…</p></div></div>
    The picture on a soft disc above the lines on a phone, beside them on a computer. .wz-alert is the bar's .rp-alert (base.css) at
-   2.4 times: the very same colours, line and triangle, breathing gently so the eye learns it. */
+   2.4 times: the very same triangle and colour (no circle, the owner 2026-11-13), breathing gently so the eye learns it. */
 .wz-intro { display: grid; justify-items: center; gap: 16px; inline-size: 100%; }
 .wz-lines { display: grid; gap: 10px; inline-size: min(100%, 400px); text-align: start; }
 .wz-lines p { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: 1.02rem; line-height: 1.5; }
@@ -119,19 +119,16 @@
   background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 18%, var(--bg)), color-mix(in srgb, var(--primary) 7%, var(--bg)) 72%, transparent); }
 .wz-friend { transition: opacity .3s ease; }
 #wz[data-step="helper"] .wz-friend { opacity: 0; }
-.wz-alert { --s: 2.4; display: grid; place-items: center; inline-size: calc(44px * var(--s)); block-size: calc(44px * var(--s)); color: var(--danger, #9a3b2a); }
-.wz-alert::before { content: ""; grid-area: 1 / 1; inline-size: calc(36px * var(--s)); block-size: calc(36px * var(--s)); border-radius: 50%; box-sizing: border-box;
-  background: color-mix(in srgb, var(--danger, #9a3b2a) 12%, var(--card)); border: calc(1px * var(--s)) solid color-mix(in srgb, var(--danger, #9a3b2a) 40%, var(--line-strong));
-  animation: wz-ping 2s ease-out infinite; }
-.wz-alert::after { content: ""; grid-area: 1 / 1; inline-size: calc(19px * var(--s)); block-size: calc(19px * var(--s)); background: currentColor;
+.wz-alert { --s: 2.4; display: grid; place-items: center; inline-size: calc(44px * var(--s)); block-size: calc(44px * var(--s)); color: var(--alert, #cc5a46); }
+.wz-alert::after { content: ""; inline-size: calc(24px * var(--s)); block-size: calc(24px * var(--s)); background: currentColor; animation: wz-breathe 2.4s ease-in-out infinite;
   -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
-@keyframes wz-ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger, #9a3b2a) 40%, transparent); } 70%, 100% { box-shadow: 0 0 0 18px transparent; } }
+@keyframes wz-breathe { 50% { scale: 1.07; } }
 @media (min-width: 700px) {
   .wz-step:has(.wz-intro) { inline-size: min(100%, 640px); }
   .wz-intro { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 24px; }
 }
 @media (max-height: 700px) { .wz-alert { --s: 1.8; } .wz-helper { min-inline-size: 140px; min-block-size: 140px; } .wz-lines { gap: 6px; } .wz-lines p { font-size: .95rem; } }
-@media (prefers-reduced-motion: reduce) { .wz-alert::before { animation: none; } .wz-friend { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .wz-alert::after { animation: none; } .wz-friend { transition: none; } }
 
 /* the family tree (data-step="tree", ai-features 7289525): <span class="wz-tree" aria-hidden="true"></span>, empty.
    The app's own olive (its four layers, the same drawing as /family/tree/) on the helper's soft disc, with five small faces on

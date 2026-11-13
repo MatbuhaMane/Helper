@@ -1,5 +1,5 @@
 // The family tree's drawn layers (vision: docs/vision/tree.md, spec 1). Run from the repo root: node docs/design/make-tree.mjs
-// Writes public/assets/tree/<kind>/{ground,boughs,trunk,crown}.svg + slots.json, and the shared pieces in public/assets/tree/.
+// Writes public/assets/tree/olive/{ground,boughs,trunk,crown}.svg + slots.json, and the shared pieces in public/assets/tree/.
 // Every layer of a kind shares one 1000 x 1800 box, so they stack exactly and each can move on its own (the crown sways from
 // the trunk's top, the boughs from the trunk). Drawn in the tent's style: an even dark ink outline, flat warm earth colours,
 // hand-drawn wobble baked into the geometry (no SVG filters, so the layers stay cheap to move on a phone).
@@ -47,21 +47,13 @@ const inked = (shapes, fill, ow = OW) => `<g fill="${INK}" stroke="${INK}" strok
 const svg = (body, defs = '', vb = `0 0 ${W} ${H}`) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}">${defs ? `<defs>${defs}</defs>` : ''}${body}</svg>\n`;
 const strokes = (ds, color, w, extra = '') => `<g fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${extra}>${ds.map((d) => `<path d="${d}"/>`).join('')}</g>`;
 
-// ---------- the three kinds of tree ----------
+// ---------- the tree: the olive (the owner's choice, 2026-11-14); KINDS can hold another kind later ----------
 const EARTH = { soil: '#b98b5d', soilDark: '#996b43', soilLight: '#d3a777', grass: '#7d9441', grassDark: '#5d7230', stone: '#d2c5ae', stoneDark: '#a99a82', flower: '#e9c46a', bloom: '#d97a5b' };
 const KINDS = {
   // the olive: a gnarled, twisting trunk and a wide silvery crown; the family's oldest tree of the land
   olive: { seed: 11, bark: '#8d6b50', barkDark: '#664b36', barkLight: '#ad8a69', leaf: '#8b9a5c', leafDark: '#64733e', leafLight: '#b3bf86', fruit: '#4b3a4f',
     trunk: { base: 210, top: 120, topY: 760, sway: 46, twist: 0.12 }, crown: { cx: 500, cy: 520, rx: 450, ry: 300, blobs: 26, r: [95, 150] },
     boughs: [[-1, 1290, 410, 1240, 52], [1, 1250, 420, 1185, 50], [-1, 1015, 380, 950, 42], [1, 985, 395, 925, 42]] },
-  // the Tabor oak: a straight, broad trunk and a deep round crown
-  oak: { seed: 23, bark: '#7b5337', barkDark: '#583a25', barkLight: '#9d6f4a', leaf: '#6f8e3f', leafDark: '#4d6a2a', leafLight: '#97b15d', fruit: '#a8763e',
-    trunk: { base: 230, top: 150, topY: 820, sway: 14, twist: 0.04 }, crown: { cx: 500, cy: 500, rx: 420, ry: 360, blobs: 30, r: [100, 160] },
-    boughs: [[-1, 1300, 420, 1230, 58], [1, 1300, 420, 1230, 58], [-1, 1040, 400, 975, 48], [1, 1040, 400, 975, 48]] },
-  // the acacia of the desert, by the tent: a slim forked trunk and a wide, flat umbrella crown with yellow puffs
-  acacia: { seed: 37, bark: '#9b6c46', barkDark: '#714f2f', barkLight: '#bb8c5f', leaf: '#8ea04b', leafDark: '#6a7a33', leafLight: '#b5c16f', fruit: '#efc649',
-    trunk: { base: 170, top: 96, topY: 700, sway: 30, twist: 0.08 }, crown: { cx: 500, cy: 470, rx: 490, ry: 190, blobs: 30, r: [80, 120] },
-    boughs: [[-1, 1320, 400, 1270, 44], [1, 1280, 410, 1225, 44], [-1, 1050, 410, 990, 38], [1, 1010, 420, 955, 38]] },
 };
 
 const GROUND_Y = 1610;   // where the trunk meets the mound
@@ -168,25 +160,22 @@ function crown(k) {
   // the trunk splits into a few limbs that vanish into the leaves
   const top = k.trunk.topY, wood = [];
   for (const s of [-1, 1, -0.35, 0.4]) wood.push(smooth(limb([T.cl(top + 30), top + 30], [T.cl(top) + s * 40, top - 60], [500 + s * 120, top - 160], [500 + s * c.rx * 0.5, c.cy + 20], k.trunk.top * 0.55, 12, 0.08)));
-  // leaf blobs on an ellipse (edge first, then the middle filled); the acacia's crown is flat and layered
+  // leaf blobs on an ellipse (edge first, then the middle filled)
   for (let i = 0; i < c.blobs; i++) {
     const a = (i / c.blobs) * Math.PI * 2 + rr(-0.1, 0.1), edge = i % 3 !== 0;
     const q = edge ? rr(0.78, 0.92) : rr(0.15, 0.55), r = rr(c.r[0], c.r[1]);
     let x = c.cx + Math.cos(a) * c.rx * q, y = c.cy + Math.sin(a) * c.ry * q;
-    if (k === KINDS.acacia) y = Math.min(y, c.cy + c.ry * 0.55);
-    blobs.push(blob(x, y, r * (k === KINDS.acacia ? 1.35 : 1), r * (k === KINDS.acacia ? 0.7 : 0.92), 11, 0.14));
+    blobs.push(blob(x, y, r, r * 0.92, 11, 0.14));
   }
-  // fruit and details: olives, acorns, the acacia's yellow puffs
+  // fruit: small purple olives
   let extra = '';
   seed = k.seed * 41;
   for (let i = 0; i < 26; i++) {
     const a = rr(0, Math.PI * 2), q = rr(0.1, 0.85), x = c.cx + Math.cos(a) * c.rx * q, y = c.cy + Math.sin(a) * c.ry * q;
-    if (k === KINDS.acacia) extra += inked([smooth(blob(x, y, 9, 9, 8, 0.25))], k.fruit, 3);
-    else if (k === KINDS.oak) { if (i % 2) extra += inked([smooth(blob(x, y, 8, 11, 8, 0.05))], k.fruit, 3) + `<path d="M${f(x - 10)} ${f(y - 8)}q10 -9 20 0z" fill="${k.barkDark}" stroke="${INK}" stroke-width="3"/>`; }
-    else extra += inked([smooth(blob(x, y, 7, 10, 8, 0.05, 0.6))], k.fruit, 3);
+    extra += inked([smooth(blob(x, y, 7, 10, 8, 0.05, 0.6))], k.fruit, 3);
   }
-  // a small nest on the olive and the oak, the place of the youngest
-  if (k !== KINDS.acacia) extra += inked([smooth(blob(c.cx + c.rx * 0.42, c.cy - c.ry * 0.5, 34, 16, 10, 0.12))], k.barkLight, 4) + strokes([`M${c.cx + c.rx * 0.42 - 26} ${c.cy - c.ry * 0.5}q26 10 52 0`], k.barkDark, 4);
+  // a small nest, the place of the youngest
+  extra += inked([smooth(blob(c.cx + c.rx * 0.42, c.cy - c.ry * 0.5, 34, 16, 10, 0.12))], k.barkLight, 4) + strokes([`M${c.cx + c.rx * 0.42 - 26} ${c.cy - c.ry * 0.5}q26 10 52 0`], k.barkDark, 4);
   let s = inked(wood, k.bark) + leafCluster(k, blobs, 'cr', extra);
   return svg(s);
 }
@@ -194,6 +183,7 @@ function crown(k) {
 function slotsFor(k, boughSlots) {
   const c = k.crown, pct = (x, y) => [f(x / W * 100), f(y / H * 100)];
   // tiers from the oldest (by the roots) to the youngest (the crown's top); each a line the app spreads people along.
+  // the crown and top rows stand far enough apart that a phone's smallest leaf and its tag (about 100 px) clear the row below.
   // x, y are percents of the drawing (left to right, top to bottom); a person's leaf hangs from the point.
   const row = (y, half, n) => Array.from({ length: n }, (_, i) => pct(c.cx - half + (2 * half * i) / (n - 1), y));
   return {
@@ -202,8 +192,8 @@ function slotsFor(k, boughSlots) {
       { name: 'roots', note: 'the eldest, the forebears: on the mound by the roots', line: [pct(130, 1655), pct(330, 1640), pct(670, 1640), pct(870, 1655)] },
       { name: 'low', note: 'grandparents: under the low boughs', line: [boughSlots[0], boughSlots[1], boughSlots[3], boughSlots[2]] },
       { name: 'mid', note: 'parents: under the upper boughs', line: [boughSlots[4], boughSlots[5], boughSlots[7], boughSlots[6]] },
-      { name: 'crown', note: 'you, your siblings and cousins: across the crown', line: row(c.cy + Math.max(c.ry * 0.35, 110), c.rx * 0.78, 4) },
-      { name: 'top', note: 'children and grandchildren: the crown top', line: row(c.cy - Math.max(c.ry * 0.3, 125), c.rx * 0.62, 4) },
+      { name: 'crown', note: 'you, your siblings and cousins: across the crown', line: row(c.cy + Math.max(c.ry * 0.42, 125), c.rx * 0.78, 4) },
+      { name: 'top', note: 'children and grandchildren: the crown top', line: row(c.cy - Math.max(c.ry * 0.5, 150), c.rx * 0.62, 4) },
     ],
   };
 }

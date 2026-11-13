@@ -352,7 +352,7 @@
     return true;
   }
   /** Use a clip if this figure has it (animated figures); otherwise nothing happens. */
-  function act(name) { return play(name, false); }
+  function act(name) { if (flat) { if (/talk|bow|point|wave|secret/.test(name)) flat.nod(); return false; } return play(name, false); }
   function baseFor() {
     if (asleep) return 'sleep';
     if (rag || dragging) return 'idle';                 // the ragdoll does the rest
@@ -457,8 +457,29 @@
 
   function wake() { lastActivity = performance.now(); if (asleep) { asleep = false; sleepBadge.hidden = true; } }
 
+  /* ===================== a 2D figure (vision batch 5): design's Figure2D in place of the 3D Ibn Ezra ===================== */
+  // The person's choice is prefs.figure ('' or 'ibn_ezra': the 3D Ibn Ezra, the owner's family only; else a Figure2D id).
+  // A 2D figure walks, is dragged and points like him (the same box moves); three.js is not loaded for it at all.
+  let flat = null, flatFigure = null, flatState = { talk: false, sleep: false, think: false };   // flatFigure: the id shown
+  const wantsFlat = () => !!prefs.figure && prefs.figure !== 'ibn_ezra';
+  async function flatCatalogue() {
+    try { await H.loadOnce('/assets/figure2d.js'); } catch (_) { return []; }
+    if (!document.querySelector('link[href="/assets/figure2d.css"]')) document.head.append(el('link', { rel: 'stylesheet', href: '/assets/figure2d.css' }));
+    return window.Figure2D ? Figure2D.list() : [];
+  }
+  /** each frame: his mouth while he speaks, asleep when left alone, thinking while an answer comes */
+  function flatLife() {
+    voiceBeat();
+    const now = { talk: (!!audioEl && !audioEl.paused) || !!window.speechSynthesis?.speaking, sleep: asleep, think: busy };
+    if (now.talk !== flatState.talk) flat.talk(now.talk);
+    if (now.sleep !== flatState.sleep) flat.sleep(now.sleep);
+    if (now.think !== flatState.think) flat.think(now.think);
+    flatState = now;
+  }
+
   function setMood(m, secs = 2.2) {
     mood = m; moodUntil = performance.now() + secs * 1000;
+    if (flat) { if (m === 'happy' || m === 'proud' || m === 'love') flat.happy(); return; }
     if (parts?.mixer) {
       if (m === 'happy' || m === 'proud' || m === 'love') act('happy');
       else if (m === 'worried') act('shrug');
@@ -530,7 +551,7 @@
     last = now;
     const t = now / 1000;
     if (gone) return;
-    if (!rig || (prefs.minimized && !docked)) { requestAnimationFrame(frame); return; }
+    if ((!rig && !flat) || (prefs.minimized && !docked)) { requestAnimationFrame(frame); return; }
 
     // --- where to be ---
     let moving = false;
@@ -608,6 +629,8 @@
       pastime(now);
     }
     if (!asleep && !busy && balloon.hidden && now - lastActivity > 120000) { asleep = true; sleepBadge.hidden = false; }
+    // a 2D figure draws itself: here only its mouth, sleep and thinking
+    if (flat) { flatLife(); requestAnimationFrame(frame); return; }
 
     // --- the body ---
     const T = reduced ? 0 : t;
@@ -1058,18 +1081,22 @@
 
   function buildUI() {
     canvasBox = el('div', { class: 'dm-stage', role: 'button', tabindex: '0', 'aria-label': 'העוזר שלך – לחצו כדי לדבר' });
-    canvasBox.append(renderer.domElement);
+    if (renderer) canvasBox.append(renderer.domElement);
     sleepBadge = el('span', { class: 'dm-zz', hidden: true, 'aria-hidden': 'true' }, 'z', el('b', {}, 'z'), el('i', {}, 'z'));
     canvasBox.append(sleepBadge);
-    renderer.setSize(box.w, box.h);
-    camera.aspect = 1; camera.updateProjectionMatrix();
+    if (renderer) { renderer.setSize(box.w, box.h); camera.aspect = 1; camera.updateProjectionMatrix(); }   // (no 3D for a 2D figure)
 
     balloonText = el('div', { class: 'dm-say', dir: 'auto' });
     balloonActs = el('div', { class: 'acts' });
     input = el('input', { type: 'text', placeholder: 'מה תרצו לעשות?', 'aria-label': 'הודעה לעוזר' });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) send(input.value); if (e.key === 'Escape') closeBalloon(); });
     micBtn = el('button', { class: 'mini', title: 'דיבור', 'aria-label': 'דיבור', onclick: toggleMic }, svg('mic'));
-    spkBtn = el('button', { class: 'mini', title: 'הקראה בקול', 'aria-label': 'הקראה בקול', 'aria-pressed': String(prefs.speak), onclick: () => { prefs.speak = !prefs.speak; savePrefs(); spkBtn.setAttribute('aria-pressed', String(prefs.speak)); spkBtn.replaceChildren(svg(prefs.speak ? 'speaker' : 'mute')); if (!prefs.speak) stopSpeech(); } }, svg(prefs.speak ? 'speaker' : 'mute'));
+    // silent, or back to the voice mode chosen in the settings (always / the way he is addressed)
+    const loud = () => voiceMode() !== 'silent';
+    spkBtn = el('button', { class: 'mini', title: 'הקראה בקול', 'aria-label': 'הקראה בקול', 'aria-pressed': String(loud()), onclick: () => {
+      if (loud()) { prefs.lastVoice = voiceMode(); prefs.voice = 'silent'; stopSpeech(); } else prefs.voice = prefs.lastVoice || 'always';
+      prefs.speak = loud(); savePrefs(); spkBtn.setAttribute('aria-pressed', String(loud())); spkBtn.replaceChildren(svg(loud() ? 'speaker' : 'mute'));
+    } }, svg(loud() ? 'speaker' : 'mute'));
     nameEl = el('b');
     balloon = el('div', { class: 'dm-balloon', hidden: true, role: 'dialog', 'aria-label': 'שיחה עם העוזר' },
       el('div', { class: 'dm-bhead' }, nameEl, el('span', { class: 'spacer' }),
@@ -1083,7 +1110,8 @@
       el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
     // Folded away: a small tab with his face at the edge of the screen; a tap brings him back.
     tab = el('button', { class: 'dm-tab', hidden: true, title: 'ראב"ע – לפתוח', 'aria-label': 'לפתוח את ראב"ע' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
-    tab.addEventListener('click', () => { minimize(false); openBalloon(); });
+    tab.addEventListener('click', (e) => { if (tabDragged) { tabDragged = false; e.preventDefault(); return; } minimize(false); openBalloon(); });
+    dragTab();
     document.body.append(canvasBox, balloon, tab);
     syncMode();
 
@@ -1171,6 +1199,59 @@
 
   /* Where he is: docked (home in the tent), out (following the person), or folded into the tab. */
   let minBtn, homeBtn, tab, gone = false;
+
+  /* The tab at the screen's edge is dragged (vision batch 5): let go near a side and it docks there, elsewhere it floats.
+     Where it is belongs to this device (CLAUDE.md, principle 2): localStorage, as fractions of the screen. */
+  const TAB_KEY = 'helper.daemon.tab';
+  let tabDragged = false, dockHint = null;
+  const tabSpot = () => { try { return JSON.parse(localStorage.getItem(TAB_KEY) || 'null'); } catch (_) { return null; } };
+  const rtl = () => getComputedStyle(document.documentElement).direction === 'rtl';
+  /** the side a screen x is near, in the page's own terms (design's daemon.css: docked at the end, .dock-start, .free) */
+  const sideAt = (x, near = 56) => (x < near ? (rtl() ? 'end' : 'start') : x > innerWidth - near ? (rtl() ? 'start' : 'end') : null);
+  function placeTab(spot = tabSpot()) {
+    tab.classList.remove('dock-start', 'free');
+    const st = tab.style;
+    st.left = st.top = st.bottom = '';
+    if (!spot) return;                                                    // the stylesheet's place: docked at the end
+    const y = Math.max(8, Math.min(innerHeight - 70, spot.y * innerHeight));
+    st.top = y + 'px'; st.bottom = 'auto';                                // (its height, wherever it is)
+    if (spot.side === 'start') tab.classList.add('dock-start');
+    if (spot.side === 'free') { tab.classList.add('free'); st.left = Math.max(4, Math.min(innerWidth - 64, spot.x * innerWidth)) + 'px'; }
+  }
+  function dragTab() {
+    placeTab();
+    addEventListener('resize', () => placeTab());
+    dockHint = el('div', { class: 'dm-dock-hint', 'aria-hidden': 'true' });
+    document.body.append(dockHint);
+    tab.addEventListener('pointerdown', (e) => {
+      const start = { x: e.clientX, y: e.clientY }, r = tab.getBoundingClientRect(), off = { x: e.clientX - r.left, y: e.clientY - r.top };
+      let moved = false, last = start;
+      try { tab.setPointerCapture(e.pointerId); } catch (_) { /* a pointer that cannot be captured: the moves still come */ }
+      const move = (ev) => {
+        if (!moved && Math.hypot(ev.clientX - start.x, ev.clientY - start.y) < 6) return;
+        moved = true; last = { x: ev.clientX, y: ev.clientY };
+        tab.classList.add('dragging');
+        placeTab({ side: 'free', x: (ev.clientX - off.x) / innerWidth, y: (ev.clientY - off.y) / innerHeight });
+        // where it would dock if let go now: a glow on that edge
+        const side = sideAt(ev.clientX);
+        dockHint.className = 'dm-dock-hint' + (side ? ` ${side} on` : '');
+      };
+      // (where it was last moved to, unless the release has a place: a cancelled pointer comes with none)
+      const up = (ev) => {
+        if (moved && ev.type === 'pointerup' && (ev.clientX || ev.clientY)) last = { x: ev.clientX, y: ev.clientY };
+        tab.removeEventListener('pointermove', move); tab.removeEventListener('pointerup', up); tab.removeEventListener('pointercancel', up);
+        tab.classList.remove('dragging');
+        dockHint.className = 'dm-dock-hint';
+        if (!moved) return;
+        tabDragged = true;                      // the click that follows a drag does not open him
+        const y = (last.y - off.y) / innerHeight, side = sideAt(last.x);
+        const spot = side ? { side, y } : { side: 'free', x: (last.x - off.x) / innerWidth, y };
+        try { localStorage.setItem(TAB_KEY, JSON.stringify(spot)); } catch (_) { /* private mode: it stays for now */ }
+        placeTab(spot);
+      };
+      tab.addEventListener('pointermove', move); tab.addEventListener('pointerup', up); tab.addEventListener('pointercancel', up);
+    });
+  }
   function syncMode() {
     const out = !docked;
     homeBtn.hidden = !out;
@@ -1240,8 +1321,12 @@
     if (audioEl) { audioEl.pause(); audioEl = null; }
     try { speechSynthesis?.cancel(); } catch (_) { /* ignore */ }
   }
+  /** 'always' · 'mirror' (aloud when spoken to, in writing when written to) · 'silent'; older prefs had speak on/off */
+  const voiceMode = () => prefs.voice || (prefs.speak === false ? 'silent' : 'always');
+  let heardByVoice = false, answerByVoice = false;
   async function speak(text, voiceName) {
-    if (!text || (!prefs.speak && !voiceName)) return;
+    // (voiceName: a sample from the voice picker, always heard)
+    if (!text || (!voiceName && (voiceMode() === 'silent' || (voiceMode() === 'mirror' && !answerByVoice)))) return;
     stopSpeech();
     const mine = speechSeq;
     if (cloudVoice) {
@@ -1365,7 +1450,7 @@
     rec.lang = 'he-IL';
     rec.interimResults = true;
     rec.onresult = (e) => { input.value = [...e.results].map((r) => r[0].transcript).join(''); };
-    rec.onend = () => { micBtn.classList.remove('on'); const t = input.value.trim(); rec = null; if (t) send(t); };
+    rec.onend = () => { micBtn.classList.remove('on'); const t = input.value.trim(); rec = null; if (t) { heardByVoice = true; send(t); } };
     rec.onerror = () => { micBtn.classList.remove('on'); rec = null; };
     stopSpeech();
     micBtn.classList.add('on');
@@ -1415,11 +1500,26 @@
     log.scrollTop = log.scrollHeight;
   }
 
+  /** the figure small, for a head: Ibn Ezra's face, or the 2D figure as an icon (or alive: prefs.header 'animated') */
+  const heads = [];
+  function headFigure(cls = 'face', size = 34) {
+    const span = el('span', { class: 'dm-headfig ' + cls, 'aria-hidden': 'true' });
+    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40 }).then((f) => heads.push(f)).catch(() => {});
+    else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: size, height: size }));
+    return span;
+  }
   function updateLabels() {
     const d = state?.daemon;
     if (!d) return;
-    nameEl.textContent = d.name && d.name !== d.form.he ? `${d.name} · ${d.form.he}` : d.form.he;
-    canvasBox.setAttribute('aria-label', `${d.name || d.form.he} – לחצו כדי לדבר`);
+    heads.splice(0).forEach((h) => h.destroy?.());   // the small figures drawn last time
+    const name = flat ? (Figure2D.list().find((f) => f.id === flatFigure)?.name || 'העוזר') : d.form.he;
+    // the figure instead of its name (the name stays for screen readers)
+    nameEl.replaceChildren(headFigure());
+    nameEl.setAttribute('aria-label', name);
+    panel?.querySelector('.dm-head .face')?.replaceWith(headFigure());
+    if (flat) { tab.querySelector('img, .dm-headfig')?.replaceWith(headFigure('tab-fig', 48)); minBtn?.querySelector('img, .dm-headfig')?.replaceWith(headFigure('btn-fig', 22)); }
+    tab.setAttribute('aria-label', `לפתוח את ${name}`); tab.title = `${name} – לפתוח`;
+    canvasBox.setAttribute('aria-label', `${name} – לחצו כדי לדבר`);
   }
 
   /* ---------- without AI (docs/ai/without-ai.md #8): he cannot follow every sentence, but he knows the way – a place on
@@ -1476,6 +1576,7 @@
   async function send(text, event) {
     text = (text || '').trim();
     if ((!text && !event) || busy) return;
+    answerByVoice = heardByVoice; heardByVoice = false;
     if (!state?.ai) { input.value = ''; if (text) addMsg('me', text); return plainReply(text); }
     busy = true;
     wake();
@@ -1501,6 +1602,8 @@
         if (ev.type === 'follow') setTimeout(() => (ev.on ? comeAlong() : sendHome()), 1200);
         if (ev.type === 'recipes_changed') window.dispatchEvent(new Event('helper:recipes-changed'));
       }
+      // something done (the list, the recipes, a plan, a page to open): a moment of joy (a 2D figure smiles and hops)
+      if (r.events.some((e) => ['groceries_changed', 'recipes_changed', 'mail_plan', 'open'].includes(e.type)) && !r.events.some((e) => e.type === 'emote')) setMood('happy');
       updateLabels();
       const reply = r.reply || (pointAt?.say) || 'בוצע.';
       balloonActs.replaceChildren(...actions);
@@ -1543,15 +1646,27 @@
     if (!r.user) return false;
     if (!dock && !prefs.follow) return false;  // at home in his tent: other screens and the desktop see him only when he was asked along
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
-    try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; }
+    // a 2D figure the person chose (and that is drawn already), else the 3D Ibn Ezra
+    // (Ibn Ezra is the owner's family's: anyone else who has not chosen gets the first figure, once figures are drawn)
+    const catalogue = wantsFlat() || state.ibnEzra === false ? await flatCatalogue() : [];
+    const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? catalogue[0]?.id || null : null;
+    if (!flatId) { try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
     if (innerWidth < 600) { box.w = 170; box.h = 170; }
     if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
     buildUI();
     document.body.append(buildPanel());
     for (const m of state.transcript) addMsg(m.who, m.text);
-    const first = bodyFor(state.daemon.form);
-    if (first.figure) { try { figureScenes[first.figure] = await loadFigure(first.figure); } catch (e) { console.warn('figure model missing', e); } }
-    build(first);
+    if (flatId) {
+      const holder = el('div', { class: 'dm-flat' });
+      canvasBox.append(holder);
+      flatFigure = flatId;
+      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true }); } catch (e) { console.warn('2D figure missing', e); return; }
+      parts = { flat: true, wings: [] };   // (the walk asks whether he flies)
+    } else {
+      const first = bodyFor(state.daemon.form);
+      if (first.figure) { try { figureScenes[first.figure] = await loadFigure(first.figure); } catch (e) { console.warn('figure model missing', e); } }
+      build(first);
+    }
     updateLabels();
     const firstMeeting = () => {
       if (!state.transcript.length && dock) send('', 'first meeting: the person just opened the helper and sees you for the first time, standing at the entrance of your tent');

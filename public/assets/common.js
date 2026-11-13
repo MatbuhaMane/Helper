@@ -487,6 +487,7 @@
     if (text !== 1) root.style.fontSize = `${Math.round(text * 100)}%`;
     if (a.spacing === 'wide') root.dataset.spacing = 'wide';
     if (a.font === 'readable') root.dataset.font = 'readable';
+    else if (['heebo', 'round', 'serif'].includes(l.font)) root.dataset.font = l.font;   // the font chosen, before paint
     if (a.contrast === 'high') root.dataset.contrast = 'high';
     if (a.motion === 'reduce') root.dataset.motion = 'reduce';
     if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;

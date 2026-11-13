@@ -31,7 +31,7 @@
 .rs-v.flash { animation: rs-flash 1.8s ease; }
 @keyframes rs-flash { 0%, 35% { background: color-mix(in srgb, #e0b04a 45%, transparent); } }
 .rs-n { font: inherit; font-size: .72rem; font-weight: 700; color: var(--primary); background: none; border: 0; padding: 0 2px; margin-inline-end: 6px; vertical-align: super; cursor: pointer; }
-.rs-he { font-family: "SBL Hebrew", "Ezra SIL", "Taamey Frank CLM", "Noto Serif Hebrew", "David", serif; }
+.rs-he { font-family: "SBL Hebrew", "Ezra SIL", "Taamey Frank CLM", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; }
 .rs-v .w { border-radius: 8px; padding: 0 2px; transition: background .15s; }
 .rs-v .w:hover { background: color-mix(in srgb, var(--primary) 16%, transparent); }
 .rs-v .w.on { background: color-mix(in srgb, var(--primary) 30%, transparent); }
@@ -67,11 +67,11 @@
 .rs-fab-i:active .ic { transform: scale(.92); }
 .rs-fab-i:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; border-radius: 16px; }
 
-.rs-word { margin: 0; font-size: 1.8em; font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; font-weight: 500; }
+.rs-word { margin: 0; font-size: 1.8em; font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; font-weight: 500; }
 .rs-lex { display: grid; gap: 10px; }
 .rs-entry { padding: 12px 14px; border-radius: 20px; background: color-mix(in srgb, var(--text) 4%, transparent); }
 .rs-entry-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.rs-entry-h b { font-size: 1.25em; font-family: "SBL Hebrew", "Noto Serif Hebrew", serif; }
+.rs-entry-h b { font-size: 1.25em; font-family: "SBL Hebrew", "Noto Serif Hebrew", 'Ohel Ivri', serif; }
 .rs-entry-h small { color: var(--muted); font-size: .78em; margin-inline-start: auto; }
 .rs-morph { font-size: .8em; color: var(--muted); }
 .rs-translit { color: var(--muted); font-size: .85em; text-align: end; }
@@ -100,9 +100,9 @@
 .rs-wit-h b { font-size: .92em; }
 .rs-wit-h small { color: var(--muted); font-size: .76em; margin-inline-start: auto; }
 .rs-wit-t { margin: 0; line-height: 1.75; font-size: 1.08em; }
-.rs-wit-t[lang="he"], .rs-wit-t[lang="arc"] { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; }
-.rs-wit-t[lang="syc"] { font-family: "Noto Sans Syriac", "Estrangelo Edessa", serif; font-size: 1.15em; }
-.rs-wit-t[lang="grc"], .rs-wit-t[lang="la"] { font-family: "Noto Serif", "Gentium Plus", "SBL Greek", "Palatino Linotype", serif; }
+.rs-wit-t[lang="he"], .rs-wit-t[lang="arc"] { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; }
+.rs-wit-t[lang="syc"] { font-family: "Noto Sans Syriac", "Estrangelo Edessa", 'Ohel Ivri', serif; font-size: 1.15em; }
+.rs-wit-t[lang="grc"], .rs-wit-t[lang="la"] { font-family: "Noto Serif", "Gentium Plus", "SBL Greek", "Palatino Linotype", 'Ohel Ivri', serif; }
 .rs-wit-t mark { background: color-mix(in srgb, #e0b04a 40%, transparent); color: inherit; border-radius: 4px; padding-inline: 1px; }
 .rs-wit-tr { margin: 0; color: var(--muted); font-size: .86em; line-height: 1.5; }
 
@@ -192,7 +192,7 @@
 .rs-he-facts small { color: var(--muted); }
 .rs-conc { font-size: .88em; color: var(--muted); }
 .rs-conc:empty { display: none; }
-.rs-conc b { color: var(--text); font-family: "SBL Hebrew", "Noto Serif Hebrew", serif; font-size: 1.19em; }
+.rs-conc b { color: var(--text); font-family: "SBL Hebrew", "Noto Serif Hebrew", 'Ohel Ivri', serif; font-size: 1.19em; }
 .rs-lex-h { margin: 4px 0 0; font-size: .9em; color: var(--muted); font-weight: 500; }
 
 /* the chapters of the book */
@@ -262,7 +262,7 @@
 .rs-plain-hit:hover { background: color-mix(in srgb, var(--primary) 7%, transparent); }
 .rs-plain-hit:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
 .rs-plain-hit > b { color: var(--primary); font-weight: 600; font-size: .92em; }
-.rs-plain-hit > span { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; font-size: 1.05em; }
+.rs-plain-hit > span { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; font-size: 1.05em; }
 .rs-plain-hit > span b { font-weight: 600; background: color-mix(in srgb, var(--olive) 34%, transparent); border-radius: 4px; padding-inline: 2px; }
 /* a translation: Sefaria's (plain), a dictionary for the words (plain) and ✨ the assistant's – small, side by side */
 .rs-tr-wrap > .ai-pair { gap: 6px; }

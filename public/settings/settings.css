@@ -83,10 +83,10 @@
 .chip[data-swatch="custom"] { --sw1: var(--primary); --sw2: var(--olive); }
 .chip[data-swatch]:is([data-swatch="sand"], [data-swatch="sage"], [data-swatch="mist"])::before { box-shadow: 0 0 0 3px var(--sw3), 0 0 0 4px rgba(0, 0, 0, .14); }
 /* the font choices show themselves in their own letters */
-.chip[data-font-sample="heebo"] { font-family: 'Heebo', sans-serif; }
-.chip[data-font-sample="round"] { font-family: 'Varela Round', sans-serif; }
-.chip[data-font-sample="serif"] { font-family: 'Frank Ruhl Libre', serif; }
-.chip[data-font-sample="readable"] { font-family: Arial, sans-serif; }
+.chip[data-font-sample="heebo"] { font-family: 'Heebo', 'Ohel Ivri', sans-serif; }
+.chip[data-font-sample="round"] { font-family: 'Varela Round', 'Ohel Ivri', sans-serif; }
+.chip[data-font-sample="serif"] { font-family: 'Frank Ruhl Libre', 'Ohel Ivri', serif; }
+.chip[data-font-sample="readable"] { font-family: Arial, 'Ohel Ivri', sans-serif; }
 /* a switch: the checkbox drawn as a sliding knob (transform only) */
 .st-switch { display: inline-flex; align-items: center; gap: 12px; cursor: pointer; line-height: 1.4; }
 .st-switch input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; position: relative; margin: 0; inline-size: 44px; block-size: 26px; border-radius: 999px;

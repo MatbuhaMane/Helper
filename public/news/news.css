@@ -7,7 +7,7 @@ body.news {
   --paper-edge: #e9e5d6;
   --newsink: #24211a;
   --rule: #cfc9b6;
-  --serif: 'Frank Ruhl Libre', 'Rubik', serif;
+  --serif: 'Frank Ruhl Libre', 'Rubik', 'Ohel Ivri', serif;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.news { --paper: #0c1220; --paper-edge: #1a2335; --newsink: #e7e1d3; --rule: #28344c; } }
 :root[data-theme="dark"] body.news { --paper: #0c1220; --paper-edge: #1a2335; --newsink: #e7e1d3; --rule: #28344c; }
@@ -176,11 +176,11 @@ body.news {
 .a-title-he { font-size: 1.05rem; color: var(--muted); margin: 0 0 6px; }
 .a-byline { color: var(--muted); font-size: .84rem; padding-block-end: 12px; margin-block-end: 14px; border-block-end: 1px solid var(--rule); }
 /* the text itself: plain, modern and comfortable */
-.a-gist, .a-body .content, .translated p, .tg-post { font-family: 'Rubik', system-ui, sans-serif; font-size: 1.04rem; line-height: 1.8; color: var(--text); max-inline-size: 70ch; }
+.a-gist, .a-body .content, .translated p, .tg-post { font-family: 'Rubik', system-ui, 'Ohel Ivri', sans-serif; font-size: 1.04rem; line-height: 1.8; color: var(--text); max-inline-size: 70ch; }
 .a-gist p, .tg-post p { margin: 0 0 .75em; }
 .a-gist { margin-block-end: 6px; }
 .a-body .content p { margin: 0 0 1em; }
-.a-body .content h1, .a-body .content h2, .a-body .content h3, .a-body .content h4 { font-family: 'Rubik', system-ui, sans-serif; font-size: 1.12rem; line-height: 1.4; font-weight: 600; margin: 1.3em 0 .5em; }
+.a-body .content h1, .a-body .content h2, .a-body .content h3, .a-body .content h4 { font-family: 'Rubik', system-ui, 'Ohel Ivri', sans-serif; font-size: 1.12rem; line-height: 1.4; font-weight: 600; margin: 1.3em 0 .5em; }
 .a-body .content strong:only-child { font-weight: 500; }
 .a-body .content img, .a-lead { max-inline-size: 100%; block-size: auto; border-radius: var(--radius); display: block; margin-block: 6px 14px; }
 .a-body .content figcaption { font-size: .82rem; color: var(--muted); margin-block-start: -8px; margin-block-end: 14px; }

@@ -61,25 +61,50 @@ LCP has not moved yet. The causes:
   (375 light, 1280 dark, no overflow). **Merge design's 0cc65ad with it or before it**: without that CSS the messages lose
   their floating place.
 
+- **`tools/perf-cdp.mjs`, the 4G measuring tool** (the owner's choice: CDP, no install). It uses the local Chrome or Edge
+  and Node's WebSocket, loads `tools/perf.js` into every page, and prints a table against the bar.
+  - Options: `--pages`, `--runs`, `--out`, and `--shifts` to see which elements shift.
+  - It refuses any address that is not a local dev server.
+- **The voice**: the owner heard the recording, and רַאבַּ"ע sounds right; the voice prompt (STYLE in `voice.ts`) stays as it is.
+
+- **The family batch (2026-11-13), the first items**:
+  - **niqqud for the voice**: every line read aloud gets full niqqud first, from Gemini, only on a cache miss.
+    - The approved name is put aside before the niqqud and put back after.
+    - The answer is used only if its letters match the line; vav and yod may come and go, as in pointed spelling.
+    - On any doubt, the line is read as it was.
+    - 23 tests, including Gemini's real answer for one line. The screen is not touched.
+  - **neutral language**: a "איך לפנות אליי" field in settings: neutral by default, female or male. The companion addresses
+    the person by it; the UI is mostly neutral plural already, and the gendered wording in the rest of the UI is still to do.
+  - **quiet companions**:
+    - No introduction unasked: a small mark instead, and the first tap offers "נעים להכיר! מה אפשר לעשות איתך?".
+    - A persona per figure: the four animals introduce themselves in a sentence or two, רַאבַּ"ע at more length.
+    - A conversation held with another figure starts fresh, keeping the memory notes (PROMPT_VERSION 12).
+    - A new person (the owner's family too) starts with a random one of the four animals; those who already have רַאבַּ"ע
+      keep him.
+    - Tested as a test user: the lamb was given, no AI call before the tap, and the lamb introduced itself in one sentence.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.
+- **The single record** (design leads): the JS side waits for design's markup and spec. The stump is a dock, and the music
+  stops from the record or from the main player.
+- Next from the batch, in small deploys:
+  - the owner's room: a usage dashboard and the feedback inbox;
+  - a feedback button;
+  - badges for every tool, with שבט for relatives only;
+  - optional on-screen niqqud;
+  - רַאבַּ"ע's astrology as an opt-in;
+  - the gendered UI wording.
+- The calendar's blocking time on 4G: 309 ms after drawing it whole (175 before). The data now arrives all at once; to look
+  into.
 
 ## Blockers
 
-- Measuring on 4G and a slow processor needs a driver outside the page (a page cannot slow itself down). See the next section.
+- None.
 
 ## Needs the owner
 
-**A tool for measuring on 4G** (the master brings it). Two ways:
-
-1. **The Chrome DevTools Protocol, with no new package (recommended).**
-   - What: a short script, `tools/perf-cdp.mjs`, about 80 lines (written, kept outside the repo until approved). It runs the
-     Chrome already installed here, headless, through Node's own WebSocket, and loads `tools/perf.js` into every page.
-   - How it measures: Lighthouse's 4G and 4× slower processor, at 375 and at 1280. The measurement above was made with it.
-   - Installs nothing. A full run of 25 pages × 4 sizes takes about 15 minutes.
-   - Downside: our own numbers, with no Lighthouse "score".
-2. **Lighthouse as a devDependency** (`npm i -D lighthouse`, about 30 MB in `node_modules`).
-   - The standard tool, with concrete advice (unused code, image sizes).
-   - Slower (15–20 s a page), and no fps or INP.
-   - It could be added later, for a one-off check of a single page.
+- Nothing now. Decided on 2026-11-13: the 4G tool is CDP (`tools/perf-cdp.mjs`), with no Lighthouse; the voice prompt
+  stays as it is.
+- For the CEO: an `"perf": "node tools/perf-cdp.mjs"` script in `package.json`, if wanted. Also add the tests
+  `test-weather.mjs` and `test-speech-text.mjs` to `npm test`.

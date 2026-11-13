@@ -25,5 +25,25 @@ eq('other acronyms untouched', S.forSpeech('רמב"ם ורש"י'), 'רמב"ם ו
 eq('the spoken form has no gershayim', /["״]/.test(R), false);
 eq('empty', S.forSpeech(''), '');
 
+/* ---- niqqud for the voice ---- */
+eq('plain Hebrew needs niqqud', S.needsNiqqud('שלום, מה שלומכם היום?'), true);
+eq('pointed Hebrew does not', S.needsNiqqud('שָׁלוֹם, מַה שְּׁלוֹמְכֶם הַיּוֹם?'), false);
+eq('English does not', S.needsNiqqud('Hello there'), false);
+eq('the name alone (pointed) does not', S.needsNiqqud(R), false);
+const p = S.protect(`שלום, אני ${R}. ו${R} שוב`);
+eq('the name is put aside', p.text, 'שלום, אני @@1@@. ו@@2@@ שוב');
+eq('twice', p.kept.length, 2);
+eq('and back', S.restore('שָׁלוֹם, אֲנִי @@1@@. וְ@@2@@ שׁוּב', `שלום, אני ${R}. ו${R} שוב`, p.kept), `שָׁלוֹם, אֲנִי ${R}. וְ${R} שׁוּב`);
+eq('a lost token: the original', S.restore('שָׁלוֹם, אֲנִי.', 'שלום, אני @@1@@.', [R]), 'שלום, אני @@1@@.');
+eq('changed letters: the original', S.restore('שָׁלוֹם רַב', 'שלום', []), 'שלום');
+eq('the same letters with niqqud: used', S.restore('שָׁלוֹם', 'שלום', []), 'שָׁלוֹם');
+eq('deficient spelling (the vav dropped): used', S.restore('בֹּקֶר טוֹב', 'בוקר טוב', []), 'בֹּקֶר טוֹב');
+// (Gemini's real answer for a line, 2026-11-13)
+const line = `בוקר טוב! הוספתי חלב ולחם לרשימת הקניות. ${R} כאן אם תצטרכו עוד משהו.`;
+const pl = S.protect(line);
+eq('a real answer comes back whole', S.restore('בֹּקֶר טוֹב! הוֹסַפְתִּי חָלָב וְלֶחֶם לִרְשִׁימַת הַקְּנִיּוֹת. @@1@@ כָּאן אִם תִּצְטָרְכוּ עוֹד מַשֶּׁהוּ.', line, pl.kept),
+  `בֹּקֶר טוֹב! הוֹסַפְתִּי חָלָב וְלֶחֶם לִרְשִׁימַת הַקְּנִיּוֹת. ${R} כָּאן אִם תִּצְטָרְכוּ עוֹד מַשֶּׁהוּ.`);
+eq('a changed word is still caught', S.restore('בֹּקֶר רַע', 'בוקר טוב', []), 'בוקר טוב');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

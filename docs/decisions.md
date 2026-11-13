@@ -2473,4 +2473,13 @@ the server part is in the master's `server/join.ts` and `join-rules.ts`, in one 
 - **Tests**: 27 new in `server/test-join.mjs` (one use, expiry, an address, the key, only the owner, never the family).
 - **Not changed**: `core.ts`, the gathering's tickets (a cookie without the mark goes the old way), the setting
   `gather.guest_signup` (it closes only the gathering's sign-ups, not the owner's invitations).
-- **For design**: the page `/join/` (`.jn-card`, `.jn-who`, `.jn-fine`) and the panel (`#invites-s`, `.iv-status[data-s]`, `.iv-row`).
+- **For design**: the page `/join/` (`.jn-card`, `.jn-who`, `.jn-fine`); the panel now uses design's `.bd-inv` (2802a9f):
+  `li.bd-inv-row[data-st]` with `sent | opened | joined | expired | cancelled`, and `asked` for an access request;
+  a row's buttons sit in `.bd-inv-acts`; the requests' list is `ul.bd-inv-list.bd-req-list` under an `h3`.
+- **Opened (778aec5, the master's files).** `owner_invites.opened_at` is set the first time someone not signed in opens
+  the page; the list shows "נפתחה". The page itself still sees `sent` while the invitation is open. 4 tests (48 in all).
+- **Access requests answered from the panel (285e61a, a patch to the master's `server/access.ts`).** `decide()`:
+  owner only (`requireOwner` + `requireAdmin('own')`), sets a request to `invited` or `declined`; route appended
+  `POST /api/admin/access-requests/decide`. In the panel, the requests with status `asked` are on top: "הזמן" makes an
+  invitation for that email (the name it gave, else the Google name) and then marks it invited; "דחה" marks it declined
+  (no message is sent). The patch file is in the shared notes folder.

@@ -1,9 +1,16 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (the first user feedback: fun, hakpada, parasha, invitations; and "האוהל התעדכן").
+Last update: 2026-11-13 (second round: the record, access requests, design's classes).
 
 ## Done
+- **Second round (2026-11-13), on `ai-features`, ready to merge:**
+  - **The record** (6f7760b, `music.js`): on the home page it is on the stump from the start, with no player connected,
+    also for someone whose saved place is the menu or whose prefs arrive late; a tap with nothing loaded opens the player.
+  - **Invitations + access requests** (09c214b panel in design's `.bd-inv`; 778aec5 "נפתחה" and 285e61a `access.decide`,
+    both the master's files, for review): pending requests on top with "הזמן" / "דחה"; filters with counts. Tests: join 48.
+  - **Design's classes**: study's marked verses carry `.mk` (+ `data-mk` verse/rest/chapter); fun's remembered tab
+    scrolls into the row. The look needs design's 2802a9f merged too.
 - **The first user feedback, 4 tasks (the CEO, 2026-11-13), on `ai-features`, ready to merge:**
   - **בידור** (68468e7): a "מצחיק ואמיתי" filter (real clips from Reddit/Lemmy, AI and staged words filtered out), infinite
     scroll; a load or refresh brings only what this device has not seen (3 days). Tests: test-fun 17.

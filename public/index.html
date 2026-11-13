@@ -193,7 +193,7 @@
     .moon:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
     /* the moon's secret: a beat of the sky, and the eclipse rising */
     .sun.egg-beat > img, .moon.egg-beat > img { animation: egg-beat .26s ease-out; }
-    @keyframes egg-beat { 40% { scale: 1.16; filter: brightness(1.35); } }
+    @keyframes egg-beat { 40% { scale: 1.16; opacity: .9; } }   /* transform and opacity only: no filter repaint (smooth motion, the readiness bar) */
     .egg-eclipse { position: absolute; left: var(--x); top: var(--y); inline-size: var(--s); block-size: var(--s); margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
       opacity: 0; translate: 0 70%; scale: .7; pointer-events: none; transition: opacity 1.4s ease-out, translate 1.8s cubic-bezier(.2, .7, .2, 1), scale 1.8s cubic-bezier(.2, .7, .2, 1); }
     .egg-eclipse.up { opacity: 1; translate: 0 0; scale: 1; }
@@ -329,7 +329,7 @@
     const wheel = appWheel(H.ringApps());
     root.append(el('div', { class: 'home' },
       greeting(),
-      el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של ראב"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
+      el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של רַאבַּ"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
       wheel.root, wheel.caption,
       el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     wheel.start();
@@ -339,7 +339,7 @@
     const meetHim = () => H.loadDaemon().then((d) => d.mount(null, { dock }));
     const camp = dock.parentElement;
     if (navigator.connection?.saveData) {
-      const hint = el('button', { class: 'btn ghost small wake', onclick: () => { hint.remove(); meetHim(); } }, 'להעיר את ראב"ע');
+      const hint = el('button', { class: 'btn ghost small wake', onclick: () => { hint.remove(); meetHim(); } }, 'להעיר את רַאבַּ"ע');
       camp.append(hint);
     } else {
       // after the page and its pictures have loaded, when the browser is idle

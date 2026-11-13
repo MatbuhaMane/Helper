@@ -150,7 +150,7 @@ textarea.r-title-input:focus, textarea.r-sub-input:focus { box-shadow: none; bor
 .stat span { font-size: .75rem; }
 .meter { margin: 6px 0 10px; }
 .meter-top { display: flex; justify-content: space-between; font-size: .9rem; }
-.meter-track { block-size: 10px; border-radius: 999px; background: var(--bg); overflow: hidden; margin-top: 4px; border: 1px solid var(--line); }
+.meter-track { contain: layout paint; block-size: 10px; border-radius: 999px; background: var(--bg); overflow: hidden; margin-top: 4px; border: 1px solid var(--line); }
 .meter-track i { display: block; block-size: 100%; background: var(--primary); border-radius: 999px; transition: inline-size var(--dur-draw) var(--ease-river); }
 .meter.over .meter-track i { background: var(--bad); }
 .meter.over b { color: var(--bad); }

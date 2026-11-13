@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Quick ideas, wave 1: speed, Google links, notes (vision → master, ai-features, design, research)
+The owner raised eight quick ideas and approved splitting them into three waves. The ideas in full: `docs/vision/later.md`. Status: Decided (the owner).
+- **Wave 1, now:**
+  - **faster AI replies:** streaming, a fast model for everyday chat and prompt caching (master, `server/ai.ts`), and a streaming chat UI (ai-features);
+  - **a feed refreshed in the background** for recipes and entertainment: the server prepares it (ai-features), and the app shows the cached copy first and revalidates (master, `sw.js`). It must stay light on the device;
+  - **no Google links in cards:** each is replaced by a "חיפוש בגוגל" button (ai-features, design);
+  - **notes:**
+    - sorting: drag, by date or A–Z;
+    - four views, including a real post-it board;
+    - sharing out through the phone's share sheet (ai-features, design).
+- **The garage (smart home): a feasibility study first,** by research. The question is how a web app reaches devices on the home network. The study covers the car, the solar heater, the AC, floor heating, the robot vacuum and the TV remote.
+- **Wave 2, after the family launch:**
+  - a training plan and an AI coach in הקפדה;
+  - Telegram-level chat, with floating bubbles and an end-to-end encryption feasibility check.
+- **Wave 3:**
+  - friends and "גבעה ביער" (a friends' social feed) wait for a vision spec with the owner;
+  - the garage build waits for the study.
+
 ## 2026-11-13 – The tools menu order and the experimental tag (vision → master, design)
 The owner's decision during joint test run 1. Status: Decided (the owner).
 - **The order in the tools menu,** by how often the family uses each tool:

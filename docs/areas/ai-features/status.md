@@ -14,6 +14,9 @@ Last update: 2026-11-14 (פרופיל המשפחה).
   and dark: no overflow, no nameless controls; one finding for design (the initial in `.fp-face` is 2.9:1 in light).
   Not checked: an own cover upload on a real phone; the tribe view (no confirmed links in the local DB); `?h=` is accepted
   but nothing links to it yet (the forest will).
+  Merged into main as v98 (89d236a); the push waits for the owner. Open: "חבר/ה במשפחת…" on the person's profile; the
+  forest and gathering doors; the museum exhibit; members' photos instead of initials; whether recipes may be shared
+  outside the household (the owner's question, through the CEO).
 
 - **הרגלי אכילה** (the CEO's queue, item 1): `/food/diet/habits/`, one card per way of eating (ketosis and the five in
   `diets.js`), each with ketosis's big switch, what it shows when on, the rules in short, and a link to its tab while on.

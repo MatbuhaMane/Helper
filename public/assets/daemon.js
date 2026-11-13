@@ -1096,6 +1096,22 @@
   /* ===================== speech balloon & chat ===================== */
   let log, input, micBtn, spkBtn, nameEl, balloonText, balloonActs, panel;
 
+  /** the stage's size is design's (daemon.css: --dm-size by the screen × --dm-scale, the person's own size for a special
+      figure they own); the 3D renderer or the 2D figure follows what the stage measures */
+  const SCALE = [0.75, 1.6];
+  function applyScale() {
+    const s = Number(prefs.scale);
+    if (s && s >= SCALE[0] && s <= SCALE[1] && s !== 1) document.documentElement.style.setProperty('--dm-scale', String(s));
+    else document.documentElement.style.removeProperty('--dm-scale');
+  }
+  function fitStage() {
+    const w = canvasBox?.offsetWidth, h = canvasBox?.offsetHeight;
+    if (!w || !h || (w === box.w && h === box.h)) return;
+    box.w = w; box.h = h;
+    if (renderer) { renderer.setSize(box.w, box.h); camera.aspect = box.w / box.h; camera.updateProjectionMatrix(); }
+    flat?.el?.style.setProperty('--f2-size', Math.min(box.w, box.h) + 'px');
+  }
+  addEventListener('helper:prefs', (e) => { if (e.detail === 'daemon') { applyScale(); fitStage(); if (canvasBox) pos = clampPos(pos); } });
   function buildUI() {
     canvasBox = el('div', { class: 'dm-stage', role: 'button', tabindex: '0', 'aria-label': 'העוזר שלך – לחצו כדי לדבר' });
     if (renderer) canvasBox.append(renderer.domElement);
@@ -1130,6 +1146,7 @@
     tab.addEventListener('click', (e) => { if (tabDragged) { tabDragged = false; e.preventDefault(); return; } minimize(false); openBalloon(); });
     dragTab();
     document.body.append(canvasBox, balloon, tab);
+    fitStage();
     syncMode();
 
     // Click to talk; drag to move.
@@ -1176,7 +1193,7 @@
     });
     canvasBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBalloon(); } });
     window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; lastMouseMove = performance.now(); if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
-    window.addEventListener('resize', () => { pos = clampPos(pos); });
+    window.addEventListener('resize', () => { fitStage(); pos = clampPos(pos); });
   }
 
   function svg(name) {
@@ -1689,9 +1706,8 @@
     // the 3D figure (three.js and a model of ~3 MB) waits until the page itself is in: on a slow connection it took the
     // bandwidth from the page's own pictures (the home page's LCP was 5.5 s on 4G; the readiness bar is 2.5 s)
     if (!flatId) { await pageIn(); try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
-    if (innerWidth < 600) { box.w = 170; box.h = 170; }
-    if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
-    buildUI();
+    applyScale();
+    buildUI();   // (it measures the stage: the size comes from daemon.css, not from here)
     document.body.append(buildPanel());
     for (const m of state.transcript) addMsg(m.who, m.text);
     if (flatId) {

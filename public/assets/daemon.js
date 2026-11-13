@@ -1669,7 +1669,10 @@
       const holder = el('div', { class: 'dm-flat' });
       canvasBox.append(holder);
       flatFigure = flatId;
-      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true }); } catch (e) { console.warn('2D figure missing', e); return; }
+      // the patchwork doll wears the person's own badges (up to 8, design's figures-2d.md)
+      let patches;
+      if (flatId === 'doll') { try { patches = ((await api('/api/goals', { noRedirect: true })).badges?.earned || []).map((e) => e.id || e.badge || e).slice(0, 8); } catch (_) { /* no badges yet */ } }
+      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true, ...(patches ? { patches } : {}) }); } catch (e) { console.warn('2D figure missing', e); return; }
       parts = { flat: true, wings: [] };   // (the walk asks whether he flies)
     } else {
       const first = bodyFor(state.daemon.form);

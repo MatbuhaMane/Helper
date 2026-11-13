@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ברוכים הבאים – אב טיפוס</title>
+  <!-- The first minute (the owner, 2026-11-14: the only guide is this setup – playful, tight, the chosen figure along).
+       Look: /welcome/welcome.css (design). Behaviour below is the prototype for ai-features' welcome.js:
+       - six steps, one question each: name · religion · calendar is part of it · city · colours · figure · family;
+       - each answer: a spring on the tile, a short buzz (navigator.vibrate(8)), the figure glad; Enter or the round button goes on;
+       - the figure speaks each question (talk for about a second) and looks at the field;
+       - choosing colours repaints the page at once (data-palette) with a ripple from the drop; choosing a figure swaps the
+         companion with a hop; the end: stars, one soft sound (the only sound: a success), the tent, then home.
+       - every step may be skipped ("אחר כך" at the top); the answers save as they are given (prefs), so leaving is safe.
+       Serve from the dev server (copy to public/ for a moment). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/welcome/welcome.css">
+</head>
+<body>
+<div class="wz" id="wz" role="dialog" aria-modal="true" aria-label="ברוכים הבאים לאוהל">
+  <header class="wz-top"><nav class="wz-trail" id="trail" aria-label="שלבים"></nav><button class="wz-skip" type="button" id="skip">אחר כך</button></header>
+  <main class="wz-stage" id="stage"></main>
+  <div class="wz-friend" id="friend"></div>
+  <div class="wz-foot"><button class="wz-back" type="button" id="back">חזרה</button><button class="wz-go" type="button" id="go" disabled>הלאה</button></div>
+</div>
+<script src="/assets/figure2d.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id), stage = $('stage'), go = $('go');
+  const A = { name: '', faith: '', cal: '', city: '', palette: '', figure: 'fennec', family: [] };
+  let at = 0, friend = null;
+  const buzz = () => navigator.vibrate?.(8);
+  const tiles = (key, list, multi) => `<div class="wz-tiles" role="${multi ? 'group' : 'radiogroup'}">${list.map(([v, b, s]) =>
+    `<button class="wz-tile" type="button" role="${multi ? 'checkbox' : 'radio'}" aria-checked="false" data-k="${key}" data-v="${v}"><b>${b}</b>${s ? `<small>${s}</small>` : ''}</button>`).join('')}</div>`;
+  const STEPS = [
+    { q: () => 'שלום! איך קוראים לך?', hint: 'ככה אפנה אליך', body: () => `<input class="wz-name" id="name" autocomplete="given-name" placeholder="השם שלך" value="${A.name}">`, ok: () => A.name.trim() },
+    { q: () => `נעים מאוד, ${A.name || 'חבר'}! מה הלוח שלך?`, hint: 'בשביל החגים, השבת והתאריכים', body: () => tiles('cal', [['he', 'עברי ולועזי', 'שבתות וחגים'], ['hijri', 'היג׳רי ולועזי', 'רמדאן והחגים'], ['greg', 'לועזי', 'בלי חגים מיוחדים'], ['all', 'הכול יחד', 'כל החגים']]), ok: () => A.cal },
+    { q: () => 'איפה את/ה גר/ה?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<input class="wz-name" id="city" placeholder="עיר" value="${A.city}" style="font-size:1.5rem"><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
+    { q: () => 'באיזה צבע האוהל שלך?', hint: 'אפשר להחליף בכל רגע בהגדרות', body: () => `<div class="wz-drops" role="radiogroup">${[['', '#55622f', '#c2b04e', 'זית'], ['sea', '#1f5f7a', '#8fc7d4', 'ים'], ['desert', '#9a4a24', '#e0a85a', 'מדבר'], ['vineyard', '#6b2a4a', '#c9a0c0', 'כרם'], ['dusk', '#3d4a8a', '#e8b26a', 'דמדומים'], ['sage', '#3b6634', '#adc58c', 'מרווה'], ['mist', '#3a4d82', '#b7c2e2', 'ערפל']].map(([v, d1, d2, n]) =>
+      `<button class="wz-drop" type="button" role="radio" aria-checked="${A.palette === v && A.paletteSet ? 'true' : 'false'}" aria-label="${n}" title="${n}" data-p="${v}" style="--d1:${d1};--d2:${d2}"></button>`).join('')}</div>`, ok: () => A.paletteSet },
+    { q: () => 'מי ילווה אותך?', hint: 'החבר שלך באוהל. אפשר להחליף בכל רגע', body: () => `<div class="wz-figs" role="radiogroup">${['fennec', 'owl', 'hedgehog', 'lamb'].map((f) => `<button class="wz-tile" type="button" role="radio" aria-checked="${A.figure === f}" data-fig="${f}" aria-label="${Figure2D.FIGURES[f].name}"><span class="wz-mini" data-f="${f}"></span><b>${Figure2D.FIGURES[f].name}</b></button>`).join('')}</div>`, ok: () => A.figure },
+    { q: () => 'מי עוד באוהל שלך?', hint: 'נזמין אותם אחר כך. אפשר גם לדלג', body: () => tiles('family', [['partner', 'בן/בת זוג'], ['kids', 'ילדים'], ['parents', 'הורים'], ['siblings', 'אחים ואחיות'], ['grand', 'סבים וסבתות'], ['friends', 'חברים']], true), ok: () => true },
+  ];
+  // the trail
+  $('trail').innerHTML = STEPS.map(() => '<i></i>').join('');
+  const paintTrail = () => [...$('trail').children].forEach((d, i) => { d.className = i < at ? 'done' : i === at ? 'now' : ''; });
+  function show(dir = 1) {
+    const old = stage.querySelector('.wz-step');
+    if (old) { old.classList.add('out'); setTimeout(() => old.remove(), 260); }
+    const s = STEPS[at], box = document.createElement('section');
+    box.className = 'wz-step in'; box.innerHTML = `<h1 class="wz-q">${s.q()}</h1><p class="wz-hint">${s.hint}</p>${s.body()}`;
+    setTimeout(() => { stage.append(box); wire(box); refresh(); box.querySelector('input')?.focus(); }, old ? 200 : 0);
+    paintTrail(); $('back').style.visibility = at ? 'visible' : 'hidden';
+    go.textContent = at === STEPS.length - 1 ? 'לאוהל' : 'הלאה';
+    if (friend) { friend.talk(true); setTimeout(() => friend.talk(false), 900); }
+  }
+  const refresh = () => { go.disabled = !STEPS[at].ok(); };
+  const glad = () => { buzz(); friend?.happy(); };
+  function wire(box) {
+    box.querySelector('#name')?.addEventListener('input', (e) => { A.name = e.target.value; refresh(); });
+    box.querySelector('#city')?.addEventListener('input', (e) => { A.city = e.target.value; box.querySelectorAll('.wz-chip').forEach((c) => c.setAttribute('aria-pressed', 'false')); refresh(); });
+    box.querySelectorAll('.wz-chip').forEach((c) => c.addEventListener('click', () => { A.city = c.dataset.city; box.querySelector('#city').value = A.city; box.querySelectorAll('.wz-chip').forEach((x) => x.setAttribute('aria-pressed', String(x === c))); glad(); refresh(); }));
+    box.querySelectorAll('.wz-tile[data-k]').forEach((t) => t.addEventListener('click', () => {
+      const k = t.dataset.k, multi = t.getAttribute('role') === 'checkbox';
+      if (multi) { const on = t.getAttribute('aria-checked') !== 'true'; t.setAttribute('aria-checked', String(on)); A[k] = [...box.querySelectorAll('[aria-checked="true"]')].map((x) => x.dataset.v); }
+      else { box.querySelectorAll(`[data-k="${k}"]`).forEach((x) => x.setAttribute('aria-checked', String(x === t))); A[k] = t.dataset.v; }
+      glad(); refresh();
+    }));
+    box.querySelectorAll('.wz-drop').forEach((d) => d.addEventListener('click', (e) => {
+      box.querySelectorAll('.wz-drop').forEach((x) => x.setAttribute('aria-checked', String(x === d)));
+      A.palette = d.dataset.p; A.paletteSet = true;
+      if (A.palette) document.documentElement.dataset.palette = A.palette; else delete document.documentElement.dataset.palette;
+      const r = document.createElement('i'); r.className = 'wz-ripple'; r.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--d1:${d.style.getPropertyValue('--d1')}`; $('wz').append(r); setTimeout(() => r.remove(), 800);
+      glad(); refresh();
+    }));
+    box.querySelectorAll('.wz-mini').forEach((m) => Figure2D.mount(m, m.dataset.f, { size: 78, still: true }));
+    box.querySelectorAll('[data-fig]').forEach((t) => t.addEventListener('click', async () => {
+      box.querySelectorAll('[data-fig]').forEach((x) => x.setAttribute('aria-checked', String(x === t)));
+      A.figure = t.dataset.fig; await meet(A.figure); glad(); refresh();
+    }));
+    box.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !go.disabled) go.click(); }));
+  }
+  async function meet(id) { friend?.destroy(); $('friend').textContent = ''; friend = await Figure2D.mount($('friend'), id, { size: parseInt(getComputedStyle($('wz')).getPropertyValue('--wz-fig')) || 120 }); friend.happy(); }
+  go.addEventListener('click', () => { glad(); if (at < STEPS.length - 1) { at++; show(1); } else finish(); });
+  $('back').addEventListener('click', () => { if (at) { at--; show(-1); } });
+  $('skip').addEventListener('click', () => finish(true));
+  function finish(skipped) {
+    // the end: stars, one soft sound, the tent – then home (welcome.js: location.href = '/')
+    stage.querySelector('.wz-step')?.remove(); paintTrail(); [...$('trail').children].forEach((d) => (d.className = 'done'));
+    if (!skipped && !matchMedia('(prefers-reduced-motion: reduce)').matches) for (let i = 0; i < 26; i++) { const s = document.createElement('i'); s.className = 'wz-star'; const a = i / 26 * 6.283, r = 120 + (i % 5) * 34;
+      s.style.cssText = `--dx:${Math.cos(a) * r}px;--dy:${Math.sin(a) * r}px;--c:${['#f2c14e', '#e0702a', 'var(--primary)', '#8fc7d4'][i % 4]};animation-delay:${(i % 6) * 30}ms`; document.body.append(s); setTimeout(() => s.remove(), 1400); }
+    if (!skipped) try { const c = new AudioContext(), o = c.createOscillator(), g = c.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(660, c.currentTime); o.frequency.exponentialRampToValueAtTime(990, c.currentTime + .12);
+      g.gain.setValueAtTime(.0001, c.currentTime); g.gain.exponentialRampToValueAtTime(.12, c.currentTime + .02); g.gain.exponentialRampToValueAtTime(.0001, c.currentTime + .5); o.connect(g).connect(c.destination); o.start(); o.stop(c.currentTime + .55); } catch (_) {}
+    const box = document.createElement('section'); box.className = 'wz-step wz-done in';
+    box.innerHTML = `<img src="/assets/tent-700.webp" alt=""><h1 class="wz-q">ברוכים הבאים לאוהל${A.name ? ', ' + A.name : ''}!</h1><p class="wz-hint">הכול מוכן. בואו נסתכל מסביב</p>`;
+    stage.append(box); go.textContent = 'לאוהל'; go.disabled = false; go.onclick = () => { /* location.href = '/' */ }; friend?.happy();
+  }
+  meet(A.figure).then(() => show());
+</script>
+</body>
+</html>

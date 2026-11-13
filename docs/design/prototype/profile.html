@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>באנר פרופיל ותארים – אב טיפוס</title>
+  <!-- The game layer's look (block 2): /assets/game.css and /assets/celebrate.js. Markup for ai-features:
+       <article class="pb [t-glow] [t-wings] [t-crown] [t-founder]" data-bg="dunes|night|sunset|oasis|tent">
+         <div class="pb-bg"></div>
+         <div class="pb-av"><span class="pb-face">(the companion's head: Figure2D.mountHead(face, id, { size }) – or an <img>)</span>[<span class="pb-crown"></span> for t-crown]</div>
+         <div class="pb-who"><h2 class="pb-name">NAME</h2><span class="pb-title">TITLE</span></div>
+         <div class="pb-badges"><span class="bdg"><img src="/assets/badges/ID.webp" alt="NAME"></span> ×3 (or .bdg.empty)</div>
+       </article>
+       A badge anywhere: <span class="bdg [locked|new|empty]" style="--bdg:64px"><img …></span>.
+       A title beside a name elsewhere: <span class="who t-glow"><b>NAME</b> …</span>.
+       A finish: Celebrate.at(theButton) (and the companion's happy()). Copy to public/ to view. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/game.css">
+  <style>body { padding: 16px; } .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 18px; max-inline-size: 1040px; margin: 0 auto; }
+    .row { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: center; margin-block: 22px; } h2.sec { text-align: center; margin: 26px 0 0; font-size: 1.1rem; }</style>
+</head>
+<body>
+<div class="grid">
+  <article class="pb" data-bg="dunes"><div class="pb-bg"></div><div class="pb-av" data-fig="fennec"></div>
+    <div class="pb-who"><h2 class="pb-name">שם ומשפחה</h2><span class="pb-title"></span></div>
+    <div class="pb-badges"><span class="bdg"><img src="/assets/badges/fire.webp" alt="מדורה"></span><span class="bdg"><img src="/assets/badges/dawn.webp" alt="עלות השחר"></span><span class="bdg empty"></span></div></article>
+  <article class="pb t-founder t-crown" data-bg="sunset"><div class="pb-bg"></div><div class="pb-av" data-fig="magician"><span class="pb-crown"></span></div>
+    <div class="pb-who"><h2 class="pb-name">שם ומשפחה</h2><span class="pb-title">מייסד/ת</span></div>
+    <div class="pb-badges"><span class="bdg"><img src="/assets/badges/ember.webp" alt=""></span><span class="bdg"><img src="/assets/badges/gifts.webp" alt=""></span><span class="bdg"><img src="/assets/badges/angel.webp" alt=""></span></div></article>
+  <article class="pb t-glow t-wings" data-bg="night"><div class="pb-bg"></div><div class="pb-av" data-fig="owl"></div>
+    <div class="pb-who"><h2 class="pb-name">שם ומשפחה</h2><span class="pb-title">עורך/ת</span></div>
+    <div class="pb-badges"><span class="bdg"><img src="/assets/badges/adviser.webp" alt=""></span><span class="bdg"><img src="/assets/badges/highway.webp" alt=""></span><span class="bdg empty"></span></div></article>
+  <article class="pb" data-bg="oasis"><div class="pb-bg"></div><div class="pb-av" data-fig="lamb"></div>
+    <div class="pb-who"><h2 class="pb-name">שם ומשפחה</h2><span class="pb-title"></span></div>
+    <div class="pb-badges"><span class="bdg empty"></span><span class="bdg empty"></span><span class="bdg empty"></span></div></article>
+  <article class="pb" data-bg="tent"><div class="pb-bg"></div><div class="pb-av" data-fig="hedgehog"></div>
+    <div class="pb-who"><h2 class="pb-name">שם ומשפחה</h2><span class="pb-title">מתרגם/ת</span></div>
+    <div class="pb-badges"><span class="bdg"><img src="/assets/badges/eternal.webp" alt=""></span><span class="bdg empty"></span><span class="bdg empty"></span></div></article>
+</div>
+<h2 class="sec">תגים: רגיל · נעול · חדש</h2>
+<div class="row"><span class="bdg"><img src="/assets/badges/fire.webp" alt="מדורה"></span><span class="bdg locked"><img src="/assets/badges/angel.webp" alt="מלאך דרך (נעול)"></span><span class="bdg new" id="nb"><img src="/assets/badges/dawn.webp" alt="עלות השחר"></span></div>
+<div class="row"><button class="btn primary" id="done" type="button">סיימתי צעד ✓</button><button class="btn" id="again" type="button">תג חדש שוב</button></div>
+<script src="/assets/figure2d.js"></script><script src="/assets/celebrate.js"></script>
+<script>
+  // the avatar: only the companion's head, alive, in the round window (Figure2D.mountHead)
+  document.querySelectorAll('.pb-av[data-fig]').forEach((a) => { const w = document.createElement('span'); w.className = 'pb-face'; a.prepend(w); Figure2D.mountHead(w, a.dataset.fig, { size: a.offsetWidth }); });
+  document.getElementById('done').onclick = (e) => Celebrate.at(e.currentTarget, { label: 'כל הכבוד!' });
+  document.getElementById('again').onclick = () => { const b = document.getElementById('nb'); b.classList.remove('new'); void b.offsetWidth; b.classList.add('new'); };
+</script>
+</body>
+</html>

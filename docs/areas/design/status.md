@@ -35,12 +35,20 @@ _Updated 2026-11-14 (family batch, deploy 1)._
 - **The four animals polished:** the owl's big ringed eyes, a slow owl blink and a far tilt when it thinks; the fennec tosses
   its head, the lamb springs twice, the hedgehog curls into a ball when touched.
 
+- **The setup wizard (block 1):** `public/welcome/welcome.css` + `prototype/welcome.html` – six steps, one question each,
+  big springy answers, the figure speaking and glad, colours repainting the page live, a trail that fills, stars and one
+  soft sound at the end; ai-features to build `/welcome/` from it.
+
+- **The game layer's look (block 2):** `assets/game.css` + `assets/celebrate.js` + `prototype/profile.html` – the profile
+  banner (an embroidered frame, the companion's live head as the avatar via the new `Figure2D.mountHead`, five drawn
+  backgrounds, three badges, the title's plaque), badges as stitched patches (locked, new), titles (a glow behind the
+  name, wings, a crown, the founder's gold), and a small celebration (`Celebrate.at(el)`).
+
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
-- Vision batch 8 (the wizard, the social screens): on hold until the owner decides whether a wizard suits the parents.
 - After the image reset: a simplified small tent for the 32/48 px icons.
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 

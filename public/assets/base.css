@@ -215,8 +215,10 @@ main.wide { max-width: 1200px; }
 .theme-switch[aria-checked="true"] .moon { opacity: 1; }
 .theme-switch[aria-checked="true"] .sun { opacity: .45; }
 .theme-switch .knob { position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 22px; block-size: 22px; border-radius: 50%; background: #fffaf0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: inset-inline-start .4s var(--ease-river), background .4s; }
-.theme-switch[aria-checked="true"] .knob { inset-inline-start: calc(100% - 25px); background: #c9cde0; }
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .3); transition: translate .4s var(--ease-river), background .4s; }
+/* it slides by transform (no layout on each frame): 58 wide − 22 knob − 2×3 inset − 2 border = 28px */
+.theme-switch[aria-checked="true"] .knob { translate: 28px 0; background: #c9cde0; }
+:root[dir="rtl"] .theme-switch[aria-checked="true"] .knob { translate: -28px 0; }
 .theme-switch:hover { border-color: var(--primary); }
 html.theme-fade, html.theme-fade * { transition: background-color .45s ease, color .45s ease, border-color .45s ease !important; }
 

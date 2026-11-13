@@ -111,7 +111,7 @@
 .gl-proc[open] > summary::after { transform: rotate(180deg); }
 .gl-proc .gl-ring-box .gl-ring { --size: 38px; --w: 5px; }
 .gl-proc .gl-ring-box > b { font-size: .7rem; }
-.gl-bar { block-size: 6px; border-radius: 6px; background: var(--gl-track); overflow: hidden; }
+.gl-bar { contain: layout paint; block-size: 6px; border-radius: 6px; background: var(--gl-track); overflow: hidden; }
 .gl-bar > i { display: block; block-size: 100%; inline-size: calc(var(--p, 0) * 1%); background: var(--primary); border-radius: inherit; transition: inline-size .6s var(--ease-river); }
 
 /* the checklist: a big, honest tick; done steps step back, the next one is lit */
@@ -202,8 +202,11 @@
 .gl-mic { position: absolute; inset-block-end: 12px; inset-inline-end: 12px; inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card);
   color: var(--text); cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; }
 .gl-mic:hover { border-color: var(--primary); }
-.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; animation: gl-rec 1.4s ease-in-out infinite; }
-@keyframes gl-rec { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--gl-ember) 22%, transparent); } }
+.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; isolation: isolate; }
+/* recording: a ring that grows and fades (transform and opacity only) */
+.gl-mic[aria-pressed="true"]::after { content: ""; position: absolute; inset: -1px; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: color-mix(in srgb, var(--gl-ember) 30%, transparent); animation: gl-rec 1.4s ease-out infinite; }
+@keyframes gl-rec { from { transform: scale(1); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
 /* three lengths as cards you can pick */
 .gl-lens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 520px) { .gl-lens { grid-template-columns: minmax(0, 1fr); } }
@@ -295,7 +298,7 @@
 @media (prefers-reduced-motion: reduce) {
   .gl-ring, .gl-path::after, .gl-bar > i { transition: none; }
   .gl-goal:hover, .gl-todaycard:hover, .gl-lens button:hover { transform: none; }
-  .gl-tstep .gl-tick[aria-pressed="true"], .gl-mic[aria-pressed="true"], .gl-badge.new img { animation: none; }
+  .gl-tstep .gl-tick[aria-pressed="true"], .gl-mic[aria-pressed="true"]::after, .gl-badge.new img { animation: none; }
   .gl-badge:hover img, .gl-badge[aria-expanded="true"] img { transform: none; }
 }
 
@@ -351,14 +354,14 @@ li.gl-step.small { background: var(--gl-ember-soft); }
 .gl .btn.gl-stuck:hover { color: var(--text); border-style: solid; }
 /* the microphone in the wizard (theirs is a small button beside the field) */
 .btn.gl-mic { border-radius: 999px; }
-.btn.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; animation: gl-rec 1.4s ease-in-out infinite; }
+.btn.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; }
 /* the goals reached */
 .gl > details.gl-done > summary { cursor: pointer; color: var(--muted); font-weight: 600; }
 .gl .gl-empty { text-align: center; justify-items: center; padding: 28px 20px; }
 /* badges in the gallery (a modal): the embroidered picture once there is one (img), else their placeholder */
 .gl-badge .how { display: block; }
 .gl-badge.soon:not(.on) img, .gl-badge.soon:not(.on) > span { opacity: .5; }
-@media (prefers-reduced-motion: reduce) { .btn.gl-mic[aria-pressed="true"] { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .btn.gl-mic[aria-pressed="true"]::after { animation: none; opacity: 0; } }
 /* the research thread of the day, at the foot of "היום" (research step 2) */
 .gl-thread { display: block; text-decoration: none; color: inherit; border-block-start: 1px dashed var(--line); padding-block-start: 8px; border-radius: 0 0 10px 10px; transition: color var(--dur-quick); }
 .gl-thread:hover { color: var(--primary); }

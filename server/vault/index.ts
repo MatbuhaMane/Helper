@@ -208,7 +208,7 @@ export async function unlockPasskey(ctx: Ctx) {
 
 /* ---------------- the tree ---------------- */
 
-export interface PersonRow { id: string; household: string; name_enc: string; details_enc: string; parent1: string | null; parent2: string | null; partner: string | null; member_email: string | null; photo_item: string | null; privacy: string | null; anonymous: number | null; updated_at: number }
+export interface PersonRow { id: string; household: string; name_enc: string; details_enc: string; parent1: string | null; parent2: string | null; partner: string | null; member_email: string | null; photo_item: string | null; privacy: string | null; anonymous: number | null; updated_at: number; deleted_at?: number | null; deleted_by?: string | null; deleted_snap?: string | null }
 
 async function person(ctx: Ctx, u: Member, id: string): Promise<PersonRow> {
   const p = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND household = ? AND deleted_at IS NULL').bind(id, u.household).first<PersonRow>();
@@ -237,7 +237,7 @@ export async function tree(ctx: Ctx) {
     };
   }));
   await audit(ctx, u, 'view:tree', null, null);
-  return json({ people, links, me: u.email, roles: v.roles });
+  return json({ people, links, me: u.email, roles: v.roles, ...(await waiting(ctx, u)) });
 }
 
 const clean = (s: unknown, n: number) => String(s ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
@@ -288,11 +288,17 @@ export async function personSave(ctx: Ctx) {
   const [p1, p2, pa] = existing ? [null, null, null] : await Promise.all([relation(ctx, u, b.parent1), relation(ctx, u, b.parent2), relation(ctx, u, b.partner)]);
   const child = existing || !b.child ? null : await relation(ctx, u, b.child);
   const now = Date.now();
-  const nameEnc = await seal(ctx.env, name, `person:${id}:name`), detEnc = await seal(ctx.env, JSON.stringify(details), `person:${id}:details`);
   if (existing) {
-    await ctx.env.DB.prepare('UPDATE family_people SET name_enc = ?, details_enc = ?, member_email = ?, updated_at = ? WHERE id = ?')
-      .bind(nameEnc, detEnc, member, now, id).run();
+    // another user's card: a proposal that waits for them (kin.approversFor); nothing changes until they say yes
+    const ask = K.approversFor(u.email, [partyOf(v, existing)]);
+    if (ask.length) {
+      const card = await cardOf(ctx, existing);
+      if (!K.changedKeys(card, { name, details }).length && member === existing.member_email) return json({ id });
+      return json({ id, ...(await propose(ctx, u, { household: existing.household, person_id: id, kind: 'edit', payload: { name, details, member, base: existing.updated_at } }, ask)) });
+    }
+    await writeCard(ctx, id, { name, details, member }, now);
   } else {
+    const nameEnc = await seal(ctx.env, name, `person:${id}:name`), detEnc = await seal(ctx.env, JSON.stringify(details), `person:${id}:details`);
     await ctx.env.DB.prepare('INSERT INTO family_people (id, household, name_enc, details_enc, member_email, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .bind(id, u.household, nameEnc, detEnc, member, u.email, now, now).run();
     // the relationship it was added with (never the tribe head's cross-household edit: that one only changes a card)
@@ -308,13 +314,227 @@ export async function personSave(ctx: Ctx) {
 export async function personDelete(ctx: Ctx) {
   const u = await need(ctx, ACCESS.personDelete);
   const p = await person(ctx, u, ctx.params.id);
-  await ctx.env.DB.prepare('UPDATE family_people SET deleted_at = ? WHERE id = ?').bind(Date.now(), p.id).run();
-  await ctx.env.DB.prepare('DELETE FROM family_links WHERE household = ? AND (a = ? OR b = ?)').bind(u.household, p.id, p.id).run();
-  // a person who leaves the tree leaves its links to other trees too
-  await ctx.env.DB.prepare(`UPDATE family_bridges SET status = 'revoked', decided_by = ?, decided_at = ? WHERE status IN ('pending', 'awaiting_person', 'confirmed') AND ((house_a = ? AND person_a = ?) OR (house_b = ? AND person_b = ?))`)
-    .bind(u.email, Date.now(), u.household, p.id, u.household, p.id).run();
+  const v = await viewerOf(ctx, u);
+  const ask = K.approversFor(u.email, [partyOf(v, p)]);
+  if (ask.length) return json(await propose(ctx, u, { household: p.household, person_id: p.id, kind: 'delete', payload: { base: p.updated_at } }, ask));
+  await softDelete(ctx, u.email, p);
   await audit(ctx, u, 'delete:person', null, p.id);
+  return json({ ok: true, undo: K.RESTORE_MS });
+}
+
+/** a deleted card keeps what it had (its links, the bridges it closed), so that bringing it back brings all of it back */
+async function softDelete(ctx: Ctx, by: string, p: PersonRow) {
+  const now = Date.now(), DB = ctx.env.DB;
+  const { results: links } = await DB.prepare('SELECT id, type, a, b, kind, status, since, until, created_by, created_at FROM family_links WHERE household = ? AND (a = ? OR b = ?)').bind(p.household, p.id, p.id).all<Link & { created_by: string; created_at: number }>();
+  const { results: bridges } = await DB.prepare(`SELECT id, status, decided_by, decided_at FROM family_bridges WHERE status IN ${OPEN} AND ((house_a = ? AND person_a = ?) OR (house_b = ? AND person_b = ?))`)
+    .bind(p.household, p.id, p.household, p.id).all<{ id: string; status: string; decided_by: string | null; decided_at: number | null }>();
+  await DB.batch([
+    // what waited for a yes about this card, or about one of its links, waits no more
+    DB.prepare("UPDATE family_changes SET status = 'cancelled', decided_at = ? WHERE status = 'pending' AND (person_id = ? OR target_id IN (SELECT value FROM json_each(?)))").bind(now, p.id, JSON.stringify(links.map((l) => l.id))),
+    DB.prepare('UPDATE family_people SET deleted_at = ?, deleted_by = ?, deleted_snap = ? WHERE id = ?').bind(now, by, JSON.stringify({ links, bridges }), p.id),
+    DB.prepare('DELETE FROM family_links WHERE household = ? AND (a = ? OR b = ?)').bind(p.household, p.id, p.id),
+    // a person who leaves the tree leaves its links to other trees too (the other tree keeps its own card)
+    DB.prepare(`UPDATE family_bridges SET status = 'revoked', decided_by = ?, decided_at = ? WHERE status IN ${OPEN} AND ((house_a = ? AND person_a = ?) OR (house_b = ? AND person_b = ?))`)
+      .bind(by, now, p.household, p.id, p.household, p.id),
+  ]);
+}
+type SnapLink = Link & { created_by: string; created_at: number };
+type SnapBridge = { id: string; status: string; decided_by: string | null; decided_at: number | null };
+/** bring a deleted card back, with the links whose other end is still in the tree and the bridges this delete closed */
+async function restoreCard(ctx: Ctx, p: PersonRow) {
+  const DB = ctx.env.DB, now = Date.now();
+  const snap = JSON.parse(p.deleted_snap || '{}') as { links?: SnapLink[]; bridges?: SnapBridge[] };
+  const ends = [...new Set((snap.links || []).flatMap((l) => [l.a, l.b]).filter((x) => x !== p.id))];
+  const { results: alive } = await DB.prepare('SELECT id FROM family_people WHERE household = ? AND deleted_at IS NULL AND id IN (SELECT value FROM json_each(?))').bind(p.household, JSON.stringify(ends)).all<{ id: string }>();
+  const ok = new Set([p.id, ...alive.map((r) => r.id)]);
+  await DB.batch([
+    DB.prepare('UPDATE family_people SET deleted_at = NULL, deleted_by = NULL, deleted_snap = NULL, updated_at = ? WHERE id = ?').bind(now, p.id),
+    ...(snap.links || []).filter((l) => ok.has(l.a) && ok.has(l.b)).map((l) => DB.prepare('INSERT OR IGNORE INTO family_links (id, household, type, a, b, kind, status, since, until, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(l.id, p.household, l.type, l.a, l.b, l.kind, l.status, l.since, l.until, l.created_by, l.created_at)),
+    // only the bridges closed at that very moment, never one someone closed afterwards
+    ...(snap.bridges || []).map((b) => DB.prepare("UPDATE family_bridges SET status = ?, decided_by = ?, decided_at = ? WHERE id = ? AND status = 'revoked' AND decided_at = ?")
+      .bind(b.status, b.decided_by, b.decided_at, b.id, p.deleted_at ?? 0)),
+  ]);
+}
+/** POST /api/vault/people/:id/restore – the one who deleted it, for a short while (the page's "בטל") */
+export async function personRestore(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.personRestore);
+  const p = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND household = ? AND deleted_at IS NOT NULL').bind(ctx.params.id, u.household).first<PersonRow>();
+  if (!p) throw new HttpError(404, 'not_found');
+  if (!K.mayRestore({ deleted_at: p.deleted_at ?? null, deleted_by: p.deleted_by ?? null }, u.email, false)) throw new HttpError(403, 'restore_closed');
+  await restoreCard(ctx, p);
+  await audit(ctx, u, 'restore:person', null, p.id);
   return json({ ok: true });
+}
+/** the owner, from the back door (server/admin.ts wraps these): the deleted cards, and bringing one back at any time */
+export async function trashList(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.trashList);
+  if (u.role !== 'owner') throw new HttpError(403, 'owner_only');
+  const { results } = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC LIMIT 200').all<PersonRow>();
+  const v = await viewerOf(ctx, u), t = await titles(ctx), n = await names(ctx);
+  const people = await Promise.all(results.map(async (p) => ({
+    id: p.id, name: await nameFor(ctx, v, p), family: titleIn(t, p.household), ours: p.household === u.household,
+    deleted_at: p.deleted_at, by: p.deleted_by ? n.get(p.deleted_by) || p.deleted_by.split('@')[0] : null,
+  })));
+  await audit(ctx, u, 'view:trash', null, null);
+  return json({ people });
+}
+export async function trashRestore(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.trashRestore);
+  if (u.role !== 'owner') throw new HttpError(403, 'owner_only');
+  const p = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND deleted_at IS NOT NULL').bind(ctx.params.id).first<PersonRow>();
+  if (!p) throw new HttpError(404, 'not_found');
+  await restoreCard(ctx, p);
+  await auditAt(ctx, p.household, u, 'restore:person:owner', null, p.id);
+  return json({ ok: true });
+}
+
+/* ---------------- changes that wait for a user's yes (the owner's rule, kin.approversFor) ----------------
+   A change to another user's card, or to a relationship that touches one, is kept here, sealed, one row for each user
+   it waits for (one group). Each of them is told (admin_messages, to them alone) and answers in their own tree:
+   "אשר" applies it once every one of them said yes, "דחה" ends it with nothing changed. Only the one it waits for
+   answers it, and only while that card is still theirs. The one who asked sees "ממתין לאישור" and may take it back. */
+interface ChangeRow { id: string; household: string; person_id: string | null; kind: K.ChangeKind; target_id: string | null; payload_enc: string; grp: string; by_email: string; for_email: string; status: string; created_at: number; decided_at: number | null }
+const partyOf = (v: Viewer, p: PersonRow | null): K.Party => ({ member: p?.member_email || null, user: !!p && isUser(v, p) });
+const ASKS: Record<K.ChangeKind, (who: string) => string> = {
+  edit: (w) => `${w} הציע/ה שינוי בפרטים שלך בעץ המשפחה. שום דבר לא משתנה עד שתאשרו.`,
+  delete: (w) => `${w} ביקש/ה להסיר את הכרטיס שלך מעץ המשפחה. שום דבר לא נמחק עד שתאשרו.`,
+  unlink: (w) => `${w} ביקש/ה להסיר קשר משפחתי שלך בעץ. שום דבר לא משתנה עד שתאשרו.`,
+  relink: (w) => `${w} הציע/ה לשנות קשר משפחתי שלך בעץ. שום דבר לא משתנה עד שתאשרו.`,
+};
+async function tell(ctx: Ctx, to: string, text: string) {
+  const now = Date.now();
+  await ctx.env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
+    .bind(uid(), text, 'info', '/family/', 'system', now, now + 14 * 864e5, to).run();
+}
+async function propose(ctx: Ctx, u: Member, c: { household: string; person_id?: string | null; kind: K.ChangeKind; target_id?: string | null; payload: unknown }, ask: string[]) {
+  const DB = ctx.env.DB, now = Date.now(), grp = uid();
+  const enc = await seal(ctx.env, JSON.stringify(c.payload ?? {}), `change:${grp}`);
+  const who = (await names(ctx)).get(u.email) || u.email.split('@')[0];
+  await DB.batch([
+    // a newer proposal of the same thing takes the place of the one still waiting
+    DB.prepare("UPDATE family_changes SET status = 'cancelled', decided_at = ? WHERE by_email = ? AND kind = ? AND person_id IS ? AND target_id IS ? AND status = 'pending'")
+      .bind(now, u.email, c.kind, c.person_id ?? null, c.target_id ?? null),
+    ...ask.map((to) => DB.prepare('INSERT INTO family_changes (id, household, person_id, kind, target_id, payload_enc, grp, by_email, for_email, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(uid(), c.household, c.person_id ?? null, c.kind, c.target_id ?? null, enc, grp, u.email, to, 'pending', now)),
+  ]);
+  for (const to of ask) await tell(ctx, to, ASKS[c.kind](who));
+  await audit(ctx, u, 'propose:' + c.kind, grp, c.person_id ?? null);
+  return { proposed: true, waiting: ask.length };
+}
+async function writeCard(ctx: Ctx, id: string, c: { name: string; details: Record<string, unknown>; member: string | null }, now = Date.now()) {
+  const nameEnc = await seal(ctx.env, c.name, `person:${id}:name`), detEnc = await seal(ctx.env, JSON.stringify(c.details), `person:${id}:details`);
+  await ctx.env.DB.prepare('UPDATE family_people SET name_enc = ?, details_enc = ?, member_email = ?, updated_at = ? WHERE id = ?').bind(nameEnc, detEnc, c.member, now, id).run();
+}
+async function linkById(ctx: Ctx, household: string, id: string | null) {
+  return id ? ctx.env.DB.prepare('SELECT * FROM family_links WHERE id = ? AND household = ?').bind(id, household).first<Link>() : null;
+}
+/** the cards at both ends of a link */
+async function endsOf(ctx: Ctx, l: Link) {
+  const { results } = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE deleted_at IS NULL AND id IN (?, ?)').bind(l.a, l.b).all<PersonRow>();
+  return results;
+}
+/** is the card (or an end of the link) still the one this change waits for? an email moved since: nobody else answers */
+async function stillTheirs(ctx: Ctx, c: ChangeRow) {
+  if (c.kind === 'edit' || c.kind === 'delete') return (await rowById(ctx, c.person_id))?.member_email === c.for_email;
+  const l = await linkById(ctx, c.household, c.target_id);
+  return !!l && (await endsOf(ctx, l)).some((p) => p.member_email === c.for_email);
+}
+/** apply a change every one said yes to; false when what it was about has changed or gone since */
+async function applyChange(ctx: Ctx, c: ChangeRow, u: Member): Promise<boolean> {
+  const pay = JSON.parse((await unseal(ctx.env, c.payload_enc, `change:${c.grp}`)) || '{}');
+  if (c.kind === 'edit' || c.kind === 'delete') {
+    const p = await rowById(ctx, c.person_id);
+    if (!p || (c.kind === 'edit' && p.updated_at !== pay.base)) return false;
+    if (c.kind === 'edit') await writeCard(ctx, p.id, { name: pay.name, details: pay.details || {}, member: pay.member === undefined ? p.member_email : pay.member });
+    else await softDelete(ctx, c.by_email, p);
+  } else {
+    const l = await linkById(ctx, c.household, c.target_id);
+    if (!l) return false;
+    if (c.kind === 'unlink') await ctx.env.DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(l.id, c.household).run();
+    else await ctx.env.DB.prepare('UPDATE family_links SET kind = ?, status = ?, since = ?, until = ? WHERE id = ?').bind(pay.kind, pay.status, pay.since, pay.until, l.id).run();
+  }
+  await auditAt(ctx, c.household, u, 'approved:' + c.kind, c.grp, c.person_id);
+  return true;
+}
+async function decide(ctx: Ctx, u: Member, yes: boolean) {
+  const DB = ctx.env.DB, now = Date.now();
+  const c = await DB.prepare('SELECT * FROM family_changes WHERE id = ?').bind(ctx.params.id).first<ChangeRow>();
+  if (!c || !K.mayDecide(c, u.email)) throw new HttpError(404, 'not_found');          // nobody answers for someone else
+  const cancelGroup = () => DB.prepare("UPDATE family_changes SET status = 'cancelled', decided_at = ? WHERE grp = ? AND status = 'pending'").bind(now, c.grp).run();
+  if (!(await stillTheirs(ctx, c))) { await cancelGroup(); throw new HttpError(409, 'changed_since'); }
+  const r = await DB.prepare("UPDATE family_changes SET status = ?, decided_at = ? WHERE id = ? AND status = 'pending'").bind(yes ? 'approved' : 'declined', now, c.id).run();
+  if (!r.meta.changes) throw new HttpError(409, 'decided');
+  const who = (await names(ctx)).get(u.email) || u.email.split('@')[0];
+  if (!yes) {
+    await cancelGroup();
+    await auditAt(ctx, c.household, u, 'declined:' + c.kind, c.grp, c.person_id);
+    await tell(ctx, c.by_email, `${who} לא אישר/ה את השינוי שהצעת בעץ המשפחה. שום דבר לא השתנה.`);
+    return json({ ok: true, status: 'declined' });
+  }
+  const { results } = await DB.prepare('SELECT status FROM family_changes WHERE grp = ?').bind(c.grp).all<{ status: string }>();
+  const out = K.groupOutcome(results);
+  if (out !== 'apply') return json({ ok: true, status: out === 'wait' ? 'waiting' : 'declined' });
+  if (!(await applyChange(ctx, c, u))) { await DB.prepare("UPDATE family_changes SET status = 'cancelled' WHERE grp = ?").bind(c.grp).run(); throw new HttpError(409, 'changed_since'); }
+  await tell(ctx, c.by_email, `${who} אישר/ה את השינוי שהצעת בעץ המשפחה.`);
+  return json({ ok: true, status: 'applied' });
+}
+export async function changeApprove(ctx: Ctx) {
+  return decide(ctx, await need(ctx, ACCESS.changeApprove), true);
+}
+export async function changeDecline(ctx: Ctx) {
+  return decide(ctx, await need(ctx, ACCESS.changeDecline), false);
+}
+/** POST /api/vault/changes/:id/cancel – the one who asked takes it back */
+export async function changeCancel(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.changeCancel);
+  const c = await ctx.env.DB.prepare('SELECT grp FROM family_changes WHERE id = ? AND by_email = ?').bind(ctx.params.id, u.email).first<{ grp: string }>();
+  if (!c) throw new HttpError(404, 'not_found');
+  await ctx.env.DB.prepare("UPDATE family_changes SET status = 'cancelled', decided_at = ? WHERE grp = ? AND status = 'pending'").bind(Date.now(), c.grp).run();
+  return json({ ok: true });
+}
+/** the name this viewer may see on a card (or "קרוב/ת משפחה") */
+async function nameFor(ctx: Ctx, v: Viewer, p: PersonRow) {
+  const s = K.view(await cardOf(ctx, p), p.household === v.u.household ? 'household' : K.distance(v.u.household, p.household, v.bridges), whoFor(v, p));
+  return s?.name || 'קרוב/ת משפחה';
+}
+/** for the tree: what I asked that still waits (its badge), and how many wait for my answer */
+async function waiting(ctx: Ctx, u: Member) {
+  const { results } = await ctx.env.DB.prepare("SELECT id, kind, person_id, target_id, by_email, for_email FROM family_changes WHERE status = 'pending' AND (by_email = ? OR for_email = ?) ORDER BY created_at")
+    .bind(u.email, u.email).all<{ id: string; kind: string; person_id: string | null; target_id: string | null; by_email: string; for_email: string }>();
+  return {
+    pending: results.filter((r) => r.by_email === u.email).map(({ id, kind, person_id, target_id }) => ({ id, kind, person: person_id, link: target_id })),
+    asks: results.filter((r) => r.for_email === u.email).length,
+  };
+}
+/** GET /api/vault/changes – what waits for my answer (with what it would change), and what I asked */
+export async function changesList(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.changesList);
+  const DB = ctx.env.DB, v = await viewerOf(ctx, u), n = await names(ctx);
+  const nm = (e: string) => n.get(e) || e.split('@')[0];
+  const { results: forMe } = await DB.prepare("SELECT * FROM family_changes WHERE for_email = ? AND status = 'pending' ORDER BY created_at DESC LIMIT 50").bind(u.email).all<ChangeRow>();
+  const asks = (await Promise.all(forMe.map(async (c) => {
+    if (!(await stillTheirs(ctx, c))) return null;
+    const pay = JSON.parse((await unseal(ctx.env, c.payload_enc, `change:${c.grp}`)) || '{}');
+    const base = { id: c.id, kind: c.kind, by: nm(c.by_email), at: c.created_at };
+    if (c.kind === 'edit' || c.kind === 'delete') {
+      const p = (await rowById(ctx, c.person_id))!, card = await cardOf(ctx, p);     // their own card: they see all of it
+      const keys = c.kind === 'edit' ? K.changedKeys(card, { name: pay.name, details: pay.details || {} }) : [];
+      return { ...base, person: { id: p.id, name: card.name }, changes: keys.map((k) => k === 'name' ? { k, from: card.name, to: pay.name } : { k, from: card.details[k] ?? '', to: pay.details?.[k] ?? '' }) };
+    }
+    const l = (await linkById(ctx, c.household, c.target_id))!, ends = await endsOf(ctx, l);
+    const nameOf = async (id: string) => { const p = ends.find((e) => e.id === id); return p ? nameFor(ctx, v, p) : 'קרוב/ת משפחה'; };
+    return { ...base, link: { type: l.type, a: await nameOf(l.a), b: await nameOf(l.b), kind: l.kind, status: l.status, to: c.kind === 'relink' ? { kind: pay.kind, status: pay.status, since: pay.since, until: pay.until } : null } };
+  }))).filter(Boolean);
+  const { results: mineRows } = await DB.prepare("SELECT * FROM family_changes WHERE by_email = ? AND (status = 'pending' OR decided_at > ?) ORDER BY created_at DESC LIMIT 100").bind(u.email, Date.now() - 7 * 864e5).all<ChangeRow>();
+  const groups = new Map<string, ChangeRow[]>();
+  for (const r of mineRows) (groups.get(r.grp) || groups.set(r.grp, []).get(r.grp)!).push(r);
+  const mine = [...groups.values()].map((g) => ({
+    id: g[0].id, kind: g[0].kind, person: g[0].person_id, link: g[0].target_id, at: g[0].created_at,
+    status: g.some((r) => r.status === 'declined') ? 'declined' : g.every((r) => r.status === 'approved') ? 'applied' : g.some((r) => r.status === 'pending') ? 'pending' : 'cancelled',
+    waitsFor: g.filter((r) => r.status === 'pending').map((r) => nm(r.for_email)),
+  }));
+  return json({ forMe: asks, mine });
 }
 
 /* ---------------- relationships (family_links) ---------------- */
@@ -377,21 +597,32 @@ export async function linkAdd(ctx: Ctx) {
 }
 export async function linkSave(ctx: Ctx) {
   const u = await need(ctx, ACCESS.linkSave);
-  const l = await ctx.env.DB.prepare('SELECT * FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).first<Link>();
+  const l = await linkById(ctx, u.household, ctx.params.id);
   if (!l) throw new HttpError(404, 'not_found');
   const b = await body<{ kind?: string; status?: string; since?: string; until?: string }>(ctx.req);
-  const kind = l.type === 'parent' ? (PARENT_KINDS.has(b.kind || '') ? b.kind : l.kind) : (PARTNER_KINDS.has(b.kind || '') ? b.kind : l.kind);
-  const status = l.type === 'partner' ? (PARTNER_STATUS.has(b.status || '') ? b.status : l.status) : null;
-  await ctx.env.DB.prepare('UPDATE family_links SET kind = ?, status = ?, since = ?, until = ? WHERE id = ?')
-    .bind(kind, status, b.since === undefined ? l.since : isoDay(b.since), b.until === undefined ? l.until : isoDay(b.until), l.id).run();
+  const kind = l.type === 'parent' ? (PARENT_KINDS.has(b.kind || '') ? b.kind! : l.kind) : (PARTNER_KINDS.has(b.kind || '') ? b.kind! : l.kind);
+  const status = l.type === 'partner' ? (PARTNER_STATUS.has(b.status || '') ? b.status! : l.status) : null;
+  const since = b.since === undefined ? l.since : isoDay(b.since), until = b.until === undefined ? l.until : isoDay(b.until);
+  if (kind === l.kind && status === l.status && since === l.since && until === l.until) return json({ ok: true });
+  // a relationship of another user (either end): a proposal that waits for them
+  const v = await viewerOf(ctx, u);
+  const ask = K.approversFor(u.email, (await endsOf(ctx, l)).map((p) => partyOf(v, p)));
+  if (ask.length) return json(await propose(ctx, u, { household: u.household, kind: 'relink', target_id: l.id, payload: { kind, status, since, until } }, ask));
+  await ctx.env.DB.prepare('UPDATE family_links SET kind = ?, status = ?, since = ?, until = ? WHERE id = ?').bind(kind, status, since, until, l.id).run();
   await audit(ctx, u, 'edit:link', l.id, l.b);
   return json({ ok: true });
 }
 export async function linkDelete(ctx: Ctx) {
   const u = await need(ctx, ACCESS.linkDelete);
-  await ctx.env.DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).run();
-  await audit(ctx, u, 'delete:link', ctx.params.id, null);
-  return json({ ok: true });
+  const l = await linkById(ctx, u.household, ctx.params.id);
+  if (!l) throw new HttpError(404, 'not_found');
+  const v = await viewerOf(ctx, u);
+  const ask = K.approversFor(u.email, (await endsOf(ctx, l)).map((p) => partyOf(v, p)));
+  if (ask.length) return json(await propose(ctx, u, { household: u.household, kind: 'unlink', target_id: l.id, payload: {} }, ask));
+  await ctx.env.DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(l.id, u.household).run();
+  await audit(ctx, u, 'delete:link', l.id, null);
+  // what the page needs to put it back ("בטל"): the same relationship, added again
+  return json({ ok: true, link: { type: l.type, a: l.a, b: l.b, kind: l.kind, status: l.status, since: l.since, until: l.until } });
 }
 
 /** the few dates the drawn tree needs from the (already privacy-filtered) details; nothing when there are none */

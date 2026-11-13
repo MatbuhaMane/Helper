@@ -565,6 +565,15 @@ route('POST', '/api/admin/invites/:id/cancel', join.inviteCancel);
 route('POST', '/api/join/check', join.ownerInviteCheck);             // the link's page (/join/#key): no sign-in; rate limited
 route('POST', '/api/join/start', join.ownerInviteStart);
 
+/* the family tree: changes that wait for a user's yes, a soft delete and its undo, the owner's restore (ai-features) */
+route('GET', '/api/vault/changes', vault.changesList);
+route('POST', '/api/vault/changes/:id/approve', vault.changeApprove);
+route('POST', '/api/vault/changes/:id/decline', vault.changeDecline);
+route('POST', '/api/vault/changes/:id/cancel', vault.changeCancel);
+route('POST', '/api/vault/people/:id/restore', vault.personRestore);
+route('GET', '/api/admin/tree-trash', admin.treeTrash);
+route('POST', '/api/admin/tree-trash/:id/restore', admin.treeTrashRestore);
+
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
   // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,

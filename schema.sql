@@ -1194,3 +1194,24 @@ CREATE TABLE IF NOT EXISTS access_requests (
   last_denied_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS access_requests_ticket ON access_requests (ticket_hash);
+
+-- a change to the family tree that waits for a user's yes (server/vault/index.ts, the owner's rule of 2026-11-13):
+-- a card of another user, or a relationship that touches one. One row for each user it waits for (one grp);
+-- what it would change is sealed (payload_enc). Nothing in the tree changes until every one of them approves.
+CREATE TABLE IF NOT EXISTS family_changes (
+  id          TEXT PRIMARY KEY,
+  household   TEXT NOT NULL,
+  person_id   TEXT,                            -- edit | delete: the card
+  kind        TEXT NOT NULL,                   -- edit | delete | unlink | relink
+  target_id   TEXT,                            -- unlink | relink: the family_links id
+  payload_enc TEXT,
+  grp         TEXT NOT NULL,
+  by_email    TEXT NOT NULL,
+  for_email   TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'pending', -- pending | approved | declined | cancelled
+  created_at  INTEGER NOT NULL,
+  decided_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS family_changes_for ON family_changes(for_email, status);
+CREATE INDEX IF NOT EXISTS family_changes_by ON family_changes(by_email, status);
+CREATE INDEX IF NOT EXISTS family_changes_grp ON family_changes(grp);

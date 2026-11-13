@@ -57,6 +57,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['goals', 'repeat', 'TEXT'],                  // a recurring goal: JSON {every: day|week|month|days, n?} (goals-logic.ts)
   ['fridges', 'owner', 'TEXT'],                 // one fridge per person: its owner's email (fridge.ts myFridge); empty: an old shared one, hidden
   ['reports', 'kind', "TEXT NOT NULL DEFAULT 'bug'"],   // bug | idea (הצעה לשיפור), server/reports-rules.ts KINDS (ai-features)
+  ['family_people', 'deleted_by', 'TEXT'],     // who deleted the card (the "בטל" is theirs for ten minutes; vault/index.ts)
+  ['family_people', 'deleted_snap', 'TEXT'],   // JSON {links, bridges} it had, so that a restore brings them back
 ];
 
 let ready: Promise<void> | null = null;

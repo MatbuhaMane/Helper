@@ -2,25 +2,24 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (live in main: the canopy tree and frames, v87; H.modalFrom, v88)._
+_Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's look and its covers)._
 
-**Where we stand (a brief for the next round, after the owner's /compact):**
-- **Holding:** nothing new until the weekly reset at 16:00 Israel. The quota is kept for the owner's tour.
-- **Live in main:** the canopy tree and frames (v87) and H.modalFrom (v88).
-- **Waiting for ai-features:** the keto.js patch for the diet stamps (`design-keto-diet-stamps-2026-11-13.patch` in the notes
-  folder). Its CSS is already in main, so the stamps show once that patch is merged.
-- **Next, after the image quota resets (02:00 Israel):** the 19 badges, one run of `badges-tools-run.sh` from the design scratchpad,
-  then cut each to `/assets/badges/<id>.webp`.
-- **Queued from the owner, via the master (after 16:00, or with the badges after 02:00, whichever comes first): a roulette on the fire.**
-  - A long press (~600ms) on the fire spins the cushions on their ellipse, slowing to a stop (ease-out).
-  - The winner is chosen first with crypto.getRandomValues; the cushion nearest the flame then glows.
-  - It keeps the fire's click, scrolling and the mobile context menu working. With reduced motion, only the winner is shown.
-  - The change is a patch for index.html (the master's), checked at 375 and on desktop.
-- **Queued from vision, batch 10 (the owner's decisions, 2026-11-13; after the launch, when the master schedules them).** The specs are on the vision branch: `docs/vision/story.md` and `docs/vision/family-profile.md`.
-  - **The family story, "a living museum":** the hall in the tent's style, the story card, the exhibition screen, the recorder (a big mic, a live waveform, a haptic at the start and the end) and the map of places. No quests or badges; quiet and respectful for those who passed away. Show the owner a few versions.
-  - **The family profile:** the page, a few cover drawings in the tent's style (or the family's own photo) and a small window onto the tree.
-  - **The tree:** the owner will choose the kind of tree. Vision suggests redrawing the chosen one in full detail with the image tool, after the image quota resets.
-- **Not ours, left alone:** the untracked `public/tree-proto.html` in this checkout, left by the canopy session.
+**Where we stand (a brief for the next round):**
+- **Live in main (v91):**
+  - **The fire roulette.** It is checked:
+    - with the mouse at 375 and 1280, in light mode;
+    - with a real touch long press at 375, in dark mode;
+    - with reduced motion.
+  - **The family profile's look.** It is `public/family/profile.css` with five covers, `/assets/covers/*.svg`.
+- **Waiting for ai-features:**
+  - **The profile page.** Its markup contract is in the header of `docs/design/prototype/family-profile.html`. We adjust the CSS on request.
+  - **The keto.js patch for the diet stamps.** It is `design-keto-diet-stamps-2026-11-13.patch` in the notes folder.
+- **Next, after the image quota resets (02:00 Israel):**
+  1. One run of `badges-tools-run.sh` from the design scratchpad makes the 19 badges.
+  2. Each badge is cut to `/assets/badges/<id>.webp`.
+- **Queued from vision, batch 10, for after the launch when the master schedules it:** the family story, "a living museum" (`docs/vision/story.md`), and the owner's choice of tree.
+- **Tidied:** the untracked `public/tree-proto.html` was a byte-identical copy of `docs/design/prototype/tree.html`, so it was deleted.
+
 
 ## Done
 - **A second family tree, "canopy" (עץ ב׳), beside the olive (the owner's Gemini drawing, 2026-11-13), ready to merge:**

@@ -22,7 +22,16 @@
 .wz-skip { grid-column: 3; justify-self: end; font: inherit; font-size: .88rem; color: var(--muted); background: none; border: 0; padding: 6px 4px; cursor: pointer; }
 
 /* the stage: the step's card in the middle, the figure standing below-start, speaking it */
-.wz-stage { position: relative; display: grid; place-items: center; min-block-size: 0; }
+.wz-stage { position: relative; display: grid; place-items: safe center; min-block-size: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }   /* a long step (who else is in the tent) scrolls inside, never under the button */
+/* …and while there is more below, its bottom edge fades softly (a scroll-driven fade: none when the step fits, none at the end;
+   a browser without scroll timelines simply shows no fade) */
+@property --wz-fade { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@supports (animation-timeline: scroll()) {
+  .wz-stage { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--wz-fade)), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--wz-fade)), transparent);
+    animation: wz-fade linear both; animation-timeline: scroll(self block); }
+  @keyframes wz-fade { 0%, 92% { --wz-fade: 36px; } 100% { --wz-fade: 0px; } }
+}
 .wz-step { inline-size: min(100%, 520px); display: grid; gap: 18px; justify-items: center; text-align: center; }
 .wz-step.in { animation: wz-in .5s cubic-bezier(.2, .9, .25, 1.15) both; }
 .wz-step.out { animation: wz-out .28s ease-in both; }
@@ -39,6 +48,37 @@
   color: var(--text); background: none; border: 0; border-block-end: 3px solid color-mix(in srgb, var(--primary) 45%, var(--line)); border-radius: 0; outline: none; transition: border-color .2s; }
 .wz-name:focus { border-color: var(--primary); }
 .wz-name::placeholder { color: color-mix(in srgb, var(--muted) 70%, transparent); }
+
+/* "איפה הבית?" (welcome.js placeSearch, ai-features; a combobox):
+   <div class="wz-place"><input class="wz-name" id="city" role="combobox" …><ul class="wz-sugg" role="listbox" hidden>
+     <li role="option" aria-selected="true|false"><b>name</b><small class="muted">district</small></li> …</ul></div>
+   <p class="wz-home" aria-live="polite">🏠 <b>name</b> סומן כבית</p>  (empty until a place is picked)
+   The list floats under the line as a card of 44px rows, each with a pin; the row under the arrows or the pointer takes the vine.
+   A picked place shows as a small vine pill with a house; its room is kept while empty, so the chips never jump. Typing without
+   picking is simply free text: nothing extra shows. (welcome.js only adds its plain fallback rules while .wz-sugg is not absolute.) */
+.wz-place { position: relative; inline-size: min(100%, 380px); margin-inline: auto; }
+.wz-place .wz-name { inline-size: 100%; }
+.wz-sugg { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 6px); z-index: 5; display: grid; gap: 2px; margin: 0; padding: 6px; list-style: none;
+  max-block-size: min(46dvh, 290px); overflow-y: auto; overscroll-behavior: contain; text-align: start;
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 16px; box-shadow: 0 18px 36px -16px rgba(20, 16, 10, .5);
+  animation: wz-sugg .16s ease-out both; }
+@keyframes wz-sugg { from { opacity: 0; translate: 0 -4px; } }
+.wz-sugg li { display: flex; align-items: center; gap: 10px; min-block-size: 44px; padding: 6px 12px; border-radius: 10px; cursor: pointer; min-inline-size: 0; }
+.wz-sugg li::before { content: ""; flex: none; inline-size: 18px; block-size: 18px; background: var(--muted);
+  -webkit-mask: url(/assets/bd-icons/pin.svg) center / contain no-repeat; mask: url(/assets/bd-icons/pin.svg) center / contain no-repeat; }
+.wz-sugg b { flex: none; max-inline-size: 70%; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wz-sugg small { min-inline-size: 0; color: var(--muted); font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) { .wz-sugg li:hover { background: color-mix(in srgb, var(--muted) 10%, var(--card)); } }
+.wz-sugg li[aria-selected="true"] { background: color-mix(in srgb, var(--primary) 13%, var(--card)); }
+.wz-sugg li[aria-selected="true"]::before { background: var(--primary); }
+.wz-home { display: flex; align-items: center; gap: 6px; inline-size: fit-content; max-inline-size: 100%; min-block-size: 34px; margin: -6px auto 0; padding: 4px 14px 4px 12px;
+  border-radius: 999px; font-size: .95rem; color: var(--text); background: color-mix(in srgb, var(--primary) 13%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--line)); animation: wz-sugg .25s ease-out both; }
+.wz-home::before { content: ""; flex: none; inline-size: 18px; block-size: 18px; background: var(--primary);
+  -webkit-mask: url(/assets/bd-icons/home.svg) center / contain no-repeat; mask: url(/assets/bd-icons/home.svg) center / contain no-repeat; }
+.wz-home:empty { visibility: hidden; animation: none; }
+.wz-home b { font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .wz-sugg, .wz-home { animation: none; } }
 
 /* choices: big tiles that spring (a press squashes, a choice pops) */
 .wz-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr)); gap: 10px; inline-size: 100%; }

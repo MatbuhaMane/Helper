@@ -5,6 +5,11 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready to merge: "איפה הבית?" in the welcome (v123, main merged in):**
+  - `.wz-place`, `.wz-sugg` and `.wz-home` in welcome.css, plus the icons `bd-icons/pin.svg` and `home.svg`;
+  - the list sits under the input, with 44px rows and a pin on each; the chosen row (`aria-selected`) is in the vine;
+  - a long name gets an ellipsis; the place marked as home is a vine pill with a house; when empty (free text) it is hidden;
+  - checked on a prototype (`?s=city`) at 375 and 1280, light and dark: no overflow, contrast 6.3:1 and up.
 - **Live in main (v91):**
   - **The fire roulette.** It is checked:
     - with the mouse at 375 and 1280, in light mode;

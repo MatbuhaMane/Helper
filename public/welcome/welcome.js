@@ -45,10 +45,10 @@
     `<button class="wz-tile" type="button" role="${multi ? 'checkbox' : 'radio'}" aria-checked="${multi ? A[key].includes(v) : A[key] === v}" data-k="${key}" data-v="${v}"><b>${b}</b>${s ? `<small>${s}</small>` : ''}</button>`).join('')}</div>`;
   const PALETTES = [['', '#55622f', '#c2b04e', 'זית'], ['sea', '#1f5f7a', '#8fc7d4', 'ים'], ['desert', '#9a4a24', '#e0a85a', 'מדבר'], ['vineyard', '#6b2a4a', '#c9a0c0', 'כרם'], ['dusk', '#3d4a8a', '#e8b26a', 'דמדומים'], ['sage', '#3b6634', '#adc58c', 'מרווה'], ['mist', '#3a4d82', '#b7c2e2', 'ערפל']];
   const STEPS = [
-    { id: 'tent', q: () => 'שלום! זה האוהל', hint: 'כל הכלים של המשפחה, במקום אחד', ok: () => true,
+    { id: 'tent', q: () => 'שלום!<br>זה האוהל', hint: 'כל הכלים של המשפחה, במקום אחד', ok: () => true,
       body: () => '<div class="wz-intro"><img class="wz-tent" src="/assets/tent-700.webp" alt=""><div class="wz-lines">'
         + '<p>רשימת הקניות, המתכונים, החדשות, השירון, המייל ועוד: כל מה שהמשפחה צריכה ביום־יום נכנס דרכו.</p>'
-        + '<p>בטלפון הוא אפליקציה, במחשב תוכנה, והכול שלך מכל מכשיר.</p></div></div>' },
+        + '<p>בטלפון הוא אפליקציה, במחשב תוכנה, והכל אתך מכל מכשיר.</p></div></div>' },
     { id: 'helper', q: () => 'הכירו את העוזר החכם', hint: 'החבר שמסתובב איתך באוהל', ok: () => true,
       body: () => `<div class="wz-intro"><span class="wz-helper" data-f="${A.figure}" aria-hidden="true"></span><div class="wz-lines">`
         + '<p>הוא מפעיל בשבילך את הכלים: מוסיף לרשימת הקניות, מוצא מתכון, מסדר את המייל.</p>'
@@ -57,14 +57,15 @@
       body: () => '<div class="wz-intro"><span class="wz-tree" aria-hidden="true"></span><div class="wz-lines">'
         + '<p>מוסיפים הורים, ילדים, סבים ונכדים, ורואים מי קשור למי.</p>'
         + '<p>עולים בענפים עד הסבים והסבתות, ומזמינים את המשפחה לאוהל.</p>'
-        + '<p>הפרטים שמורים בכספת של המשפחה.</p></div></div>' },
+        + '<p>הפרטים שמורים בכספת של המשפחה.</p>'
+        + '<p>ניתן גם לקשר את אמצעי הגיבוי שלכם.</p></div></div>' },
     { id: 'report', q: () => 'האוהל עוד צעיר', hint: 'ואתם עוזרים לו לגדול', ok: () => true,
       body: () => '<div class="wz-intro"><span class="wz-alert" aria-hidden="true"></span><div class="wz-lines">'
         + '<p>המשולש האדום שליד כפתור ההגדרות, בסרגל העליון, שולח פנייה לצוות האוהל.</p>'
         + '<p>משהו לא עובד? יש רעיון לשיפור? מקישים עליו וכותבים. התשובה מגיעה לתיבה שלך.</p>'
         + (matchMedia('(pointer: coarse)').matches ? '<p>בטלפון אפשר גם פשוט לנער אותו.</p>' : '') + '</div></div>' },
     { id: 'name', q: () => 'ועכשיו אליך: איך קוראים לך?', hint: 'ככה אפנה אליך', body: () => `<input class="wz-name" id="name" autocomplete="given-name" maxlength="40" placeholder="השם שלך" aria-label="השם שלך" value="${esc(A.name)}">`, ok: () => A.name.trim() },
-    { q: () => 'מה הלוח שלך?', hint: 'בשביל החגים, השבת והתאריכים', body: () => tiles('cal', [['he', 'עברי ולועזי', 'שבתות וחגים'], ['hijri', 'היג׳רי ולועזי', 'רמדאן והחגים'], ['greg', 'לועזי', 'בלי חגים מיוחדים'], ['all', 'הכול יחד', 'כל החגים']]), ok: () => A.cal },
+    { q: () => 'איך אתה סופר?', hint: 'בשביל החגים, השבת והתאריכים', body: () => tiles('cal', [['he', 'עברי ולועזי', 'שבתות וחגים'], ['hijri', 'היג׳רי ולועזי', 'רמדאן והחגים'], ['greg', 'לועזי', 'בלי חגים מיוחדים'], ['all', 'הכול יחד', 'כל החגים']]), ok: () => A.cal },
     { id: 'city', q: () => 'איפה הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<div class="wz-place"><input class="wz-name" id="city" maxlength="60" placeholder="עיר או יישוב" aria-label="העיר או היישוב" value="${esc(A.city)}" style="font-size:1.5rem" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-sugg"><ul class="wz-sugg" id="city-sugg" role="listbox" aria-label="מקומות שנמצאו" hidden></ul></div><p class="wz-home" id="city-home" aria-live="polite"></p><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
     { q: () => 'באיזה צבע האוהל שלך?', hint: 'אפשר להחליף בכל רגע בהגדרות', body: () => `<div class="wz-drops" role="radiogroup" aria-label="ערכת צבעים">${PALETTES.map(([v, d1, d2, n]) =>
       `<button class="wz-drop" type="button" role="radio" aria-checked="${A.paletteSet && A.palette === v}" aria-label="${n}" title="${n}" data-p="${v}" style="--d1:${d1};--d2:${d2}"></button>`).join('')}</div>`, ok: () => A.paletteSet },

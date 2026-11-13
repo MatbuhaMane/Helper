@@ -31,7 +31,25 @@
 .by-buy { justify-content: center; min-block-size: 50px; font-size: 1.08rem; inline-size: 100%; }
 .by-buy:disabled { opacity: .5; cursor: not-allowed; }
 .by-pay-note { margin: 0; text-align: center; color: var(--muted); font-size: .84rem; }
-/* plans: monthly support beside a one-off */
+/* the wallet: figures and skins are paid in credits. The balance, and what is left after; short of credits, the packs */
+.by-balance { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.by-balance b { font-variant-numeric: tabular-nums; }
+.by-balance small { color: var(--muted); margin-inline-start: auto; }
+.by-balance.low b { color: var(--danger, #b4442f); }
+.by-short { display: grid; gap: 8px; }
+.by-short > span { color: var(--muted); line-height: 1.5; }
+.by-topup { display: grid; gap: 14px; padding: 22px; border-radius: 26px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--lift); }
+.by-topup h2 { margin: 0; font-size: 1.3rem; }
+.by-packs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .by-packs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.by-pack { font: inherit; color: inherit; display: grid; gap: 2px; justify-items: center; padding: 14px 8px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--bg); cursor: pointer;
+  transition: border-color var(--dur-quick), background-color var(--dur-quick); }
+.by-pack:hover { border-color: var(--line-strong); }
+.by-pack[aria-checked="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--card)); box-shadow: inset 0 0 0 1px var(--primary); }
+.by-pack b { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.by-pack small { color: var(--muted); font-size: .8rem; text-align: center; }
+.by-topup .by-seller { margin-block-start: 4px; }
+/* plans: monthly support beside a one-off (for the packs and support page, not a single figure's) */
 .by-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 8px; }
 .by-plan { font: inherit; color: inherit; text-align: start; display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--bg); cursor: pointer;
   transition: border-color var(--dur-quick), background-color var(--dur-quick); }

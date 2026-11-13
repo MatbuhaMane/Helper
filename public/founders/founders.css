@@ -44,5 +44,6 @@
   background: linear-gradient(135deg, color-mix(in srgb, #f6d77a 40%, var(--card)), var(--card)); }
 .fd-million b { font-size: 1.1rem; }
 .fd-million .who-title { flex: none; }
+.fd-million[hidden] { display: none; }   /* an easter egg: shown only once it has happened */
 .fd-note { color: var(--muted); font-size: .88rem; text-align: center; margin: 0; }
 .fd-empty { color: var(--muted); font-style: italic; }

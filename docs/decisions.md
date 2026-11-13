@@ -29,6 +29,13 @@ copying them into `public/` for a moment).
   `.by-price`, `ul.by-gets`, `.by-terms` (the cancellation terms, always before the button), `label.by-agree` with a
   checkbox, `button.btn.primary.by-buy` (disabled until the box is ticked) and `.by-pay-note`. Below it
   `.by-seller` with the dealer's details; `.ph` marks a placeholder until the owner opens a tax file.
+- **Corrected after business's review (same day):** a figure is paid **in credits** – `.by-price` "₪10 בקרדיטים",
+  `.by-balance` (the balance and what is left; `.low` when short), one confirmation; short of credits, `.by-short` and
+  then `section.by-topup` with `.by-packs` > `button.by-pack[role=radio]` (₪5/10/20/50). The card, the receipt, the
+  terms for credits and `.by-seller` belong to the pack purchase only. `.by-plans` (monthly support) is kept for the
+  packs/support page, not a figure's page. The tithe line reads "מעשר: 10% מההכנסה מכל רכישה הולכים לצדקה". Founders:
+  opt-in ("להופיע בדף מי הקים את האוהל?", the city optional), "בתקופת הבטא" in the intro, `.fd-million[hidden]`
+  until it happens; proposed for signed-in users only.
 - Wiring the pages, the routes and the payment provider is ai-features' and the master's. Checked at 375 px and desktop,
   in light and dark (no overflow, contrast clear).
 Status: done (design); waiting for the pages to be wired.

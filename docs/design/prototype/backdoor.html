@@ -4,28 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>הדלת האחורית – אב טיפוס</title>
-  <!-- The back door's look (design): /admin/admin.css (the markup is in its comment) and /assets/bd-icons/. Copy to public/ to view. -->
+  <!-- The back door's look (design): /admin/admin.css (the markup is in its comment) and /assets/bd-icons/, in the structure admin.js builds (ai-features 18cd4ab). Copy to public/ to view. -->
   <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/launcher.css">
   <link rel="stylesheet" href="/admin/admin.css">
 </head>
 <body>
-<main class="wide">
-<section class="ad bd">
-  <header class="bd-head"><h1>הדלת האחורית</h1><p>מה קורה באוהל, ומה צריך ממך</p></header>
+<main class="wide bd">
+  <header class="bd-head"><h1>הדלת האחורית</h1><div class="card ad-bar"><span>בעל האוהל</span><span class="spacer"></span><button class="btn">נעילה</button></div></header>
   <div class="bd-dash">
-    <section class="card bd-state"><h2>מצב האוהל</h2><p>הכול תקין. גיבוי אחרון הלילה ב־03:30.</p></section>
+    <div class="bd-part" id="dash"><section class="card"><h2>מצב האוהל</h2><p>הכול תקין. גיבוי אחרון הלילה ב־03:30.</p></section></div>
     <div class="bd-cards">
       <div class="bd-card"><span class="bd-label">נכנסו היום</span><b class="bd-num">7</b><span class="bd-trend up">+2</span><span class="bd-spark"><i style="--h:0.2"></i><i style="--h:0.35"></i><i style="--h:0.3"></i><i style="--h:0.5"></i><i style="--h:0.45"></i><i style="--h:0.7"></i><i style="--h:0.9"></i></span></div>
       <div class="bd-card good"><span class="bd-label">קרדיטים בקופה</span><b class="bd-num">1,240</b></div>
       <div class="bd-card bad"><span class="bd-label">עלות AI החודש</span><b class="bd-num">$4.80</b><span class="bd-trend down">+18%</span></div>
       <div class="bd-card"><span class="bd-label">פניות פתוחות</span><b class="bd-num">3</b></div>
     </div>
-    <section class="card"><h2>שימוש</h2><p>הכי פתוחים השבוע: קניות, לוח שנה, שירון.</p></section>
-    <section class="card"><h2>פניות · 3 חדשות</h2><p>"אפשר להגדיל את הכתב בשירון?"</p></section>
+    <div class="bd-part"><section class="card"><h2>שימוש</h2><p>הכי פתוחים השבוע: קניות, לוח שנה, שירון.</p></section></div>
+    <div class="bd-part"><section class="card"><h2>פניות · 3 חדשות</h2><p>"אפשר להגדיל את הכתב בשירון?"</p></section></div>
   </div>
-  <nav class="apps-grid bd-apps" aria-label="חלקי הדלת"><a class="app" data-bd="messages" href="#p-messages"><span class="ic"></span><span class="name">הודעות</span></a><a class="app" data-bd="credits" href="#p-credits"><span class="ic"></span><span class="name">כסף וקרדיטים</span></a><a class="app" data-bd="gifts" href="#p-gifts"><span class="ic"></span><span class="name">מתנות קרדיט</span></a><a class="app" data-bd="settings" href="#p-settings"><span class="ic"></span><span class="name">הגדרות האפליקציה</span></a><a class="app" data-bd="members" href="#p-members" aria-current="true"><span class="ic"></span><span class="name">חברים ואישורם</span><span class="bd-count">2</span></a><a class="app" data-bd="features" href="#p-features"><span class="ic"></span><span class="name">תכונות מיוחדות</span></a><a class="app" data-bd="permissions" href="#p-permissions"><span class="ic"></span><span class="name">הרשאת־על</span></a><a class="app" data-bd="ai" href="#p-ai"><span class="ic"></span><span class="name">עלויות AI</span></a><a class="app" data-bd="log" href="#p-log"><span class="ic"></span><span class="name">יומן</span></a></nav>
-  <div class="bd-panel" id="p-members"><a class="bd-back" href="#">‹ כל החלקים</a><section class="card"><h2>חברים</h2><p>שניים מחכים לאישור.</p></section></div>
-</section>
+  <nav class="apps-grid bd-apps" aria-label="חלקי הדלת"><a class="app" data-bd="messages" href="#p-messages"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">הודעות</span></a><a class="app" data-bd="credits" href="#p-credits"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">כסף וקרדיטים</span></a><a class="app" data-bd="gifts" href="#p-gifts"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">מתנות קרדיט</span></a><a class="app" data-bd="settings" href="#p-settings"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">הגדרות האפליקציה</span></a><a class="app" data-bd="members" href="#p-members" aria-current="true"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">חברים ואישורם</span><span class="bd-count">2</span></a><a class="app" data-bd="features" href="#p-features"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">תכונות מיוחדות</span></a><a class="app" data-bd="permissions" href="#p-permissions"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">הרשאת־על</span></a><a class="app" data-bd="ai" href="#p-ai"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">עלויות AI</span></a><a class="app" data-bd="log" href="#p-log"><span class="ic"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span><span class="name">יומן</span></a></nav>
+  <section class="bd-panel" id="members"><section class="card"><h2>חברים</h2><div class="ad-scroll"><table><tr><th>שם</th><th class="num">קרדיט</th></tr><tr><td>דנה</td><td class="num">40</td></tr></table></div></section></section>
 </main>
 </body>
 </html>

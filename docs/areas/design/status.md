@@ -27,8 +27,19 @@ _Updated 2026-11-14 (the back door; images still blocked)._
   (`--dm-size` 140/112/96 px × `--dm-scale`); the sky's blob gone (halos fade as the body sinks) and soft hills on the
   horizon; one record (music.css `.on-stump`). The `index.html` parts are patches for the CEO in the shared notes.
 
-- **The app icon (vision batch 8):** a small tent in all sizes in `public/assets/icons/` (any, maskable, Apple touch);
-  the manifest and the `<link>`s are the master's.
+- **The app icon (94a111c):** a simple tent drawn by hand as SVG (`tent.svg`, `tent-small.svg` for 16–48 px,
+  `tent-maskable.svg`), every PNG size and `tent-favicon.ico` rendered from it (`node docs/design/make-icons.mjs`);
+  checked at 16/32/192/512 on light and dark. The manifest and the `<link>`s are the master's (exact lines sent to the CEO).
+- **The parasha study room on the phone (the owner's tour):** the sheet is half the screen and the verse stays pinned above it;
+  the chapter arrows point the reading way; `--rs-scale` + `.rs-size` for ai-features' A−/A+. The two "הפרק הבא/הקודם"
+  labels at the page's end need their glyphs swapped in study.js:141–142 (ai-features).
+- **News cards on the phone (0b9a857):** opacity and transform only: the hover/press shade fades on a layer under the content,
+  the list no longer clips with a rounded overflow, off-screen rows skip rendering (`content-visibility`). Checked at 375
+  (light, dark, list and cards) and 1280. The JS side (full list rebuilds that replay the entry) is with ai-features.
+- **The phone's tab bar (the owner):** a floating glass capsule, our own round icons in `/assets/tab-icons/` (outline and
+  filled), the current tab in a pale-vine pebble; checked at 375 in light and dark, the menu above it, no overflow.
+- **The cushions away from the fire (the owner):** the ring lower and wider, clear space round the fire; checked at 375 and
+  1280, no overlap, no page overflow. A patch for the master's `index.html`: `design-index-cushions-2026-11-14.patch` in the notes.
 
 - **Settings in folding categories** (settings.css + `prototype/settings.html`): a card per category with its own drawn mark
   and colour, a line of what is set now, closed at first; ai-features to switch `section()` to `<details>`.
@@ -55,16 +66,15 @@ _Updated 2026-11-14 (the back door; images still blocked)._
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
 - After the image reset (00:00 UTC): **the 19 approved badges** (the owner approved the names 2026-11-14; prompts ready in
-  the design scratchpad's `badge.mjs`, one run: `badges-tools-run.sh`, ~$1.30), then cut each to `/assets/badges/<id>.webp`;
-  and a simple small tent for the app icon at every size (1 image).
+  the design scratchpad's `badge.mjs`, one run: `badges-tools-run.sh`, ~$1.30), then cut each to `/assets/badges/<id>.webp`.
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers
 - The companion's size and the single record need ai-features' `daemon.js` / `music.js` changes in the same merge.
-- The image quota for 2026-11-13 is used (40/40, checked again 06:00 UTC): the tent icon and the 19 badges were skipped in this block and wait for 00:00 UTC.
+- The image quota for 2026-11-13 is used (40/40, checked again 06:00 UTC): the 19 badges wait for 00:00 UTC (the tent icon is done as SVG, no image needed).
 
 ## Decided by the owner (2026-11-14, the focus round)
-- The app icon: a simple small tent at **every** size (one drawing, after the image reset).
+- The app icon: a simple small tent at **every** size (done as a hand-drawn SVG, 94a111c).
 - Titles on the banner: **the person chooses** which earned effect to show (glow, wings, crown, the founder's gold).
 - The horizon: only the hills, **low, on the line where the sun and moon meet the ground** (patch for index.html in the notes).
 

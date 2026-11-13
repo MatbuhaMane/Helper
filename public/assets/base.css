@@ -232,27 +232,50 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
   .topnav { display: none; }
   .appbar .brand-text { display: none; }
   .appbar .page-title { display: block; }
+  /* The phone's tab bar: a soft capsule floating over the page (glass, like the menus), our own round icons
+     (/assets/tab-icons/, drawn as masks in the text's colour); the current tab sits in a small pale-vine pebble with its
+     icon filled in, the pebble arriving with a gentle spring. Each tab ≥ 56 × 64 px; the home indicator stays clear. */
   .tabbar {
     display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-    position: fixed; inset-inline: 0; inset-block-end: 0; z-index: var(--z-bar);
-    block-size: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
-    padding-block-end: env(safe-area-inset-bottom);
-    background: var(--card); border-block-start: 1px solid var(--line);
+    position: fixed; z-index: var(--z-bar);
+    inset-inline: max(10px, env(safe-area-inset-left)) max(10px, env(safe-area-inset-right));
+    inset-block-end: max(8px, env(safe-area-inset-bottom));
+    block-size: calc(var(--tabbar-h) - 8px); padding-inline: 4px;
+    border-radius: 24px; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2);
+    box-shadow: var(--lift), inset 0 1px 0 color-mix(in srgb, var(--card) 70%, transparent);
   }
-  .tabbar a { display: grid; place-items: center; align-content: center; gap: 3px; color: var(--muted); text-decoration: none; font-size: .72rem; position: relative; min-inline-size: 0; }
-  .tabbar a span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 1px; }
-  @media (max-width: 400px) { .tabbar a { font-size: .64rem; } .tabbar a svg { inline-size: 22px; block-size: 22px; } }
-  .tabbar a svg { inline-size: 24px; block-size: 24px; }
-  .tabbar a[aria-current="page"] { color: var(--primary); font-weight: 500; }
-  .tabbar a[aria-current="page"]::before { content: ''; position: absolute; inset-block-start: 0; inset-inline: 28%; block-size: 2px; background: var(--primary); }
-  .tabbar a:active { transform: translateY(1px); }
-  /* ניווט and כלים open a menu: buttons that look like the other tabs (the master's minimal styles; design may refine) */
-  .tabbar .tab-menu { display: grid; place-items: center; align-content: center; gap: 3px; color: var(--muted); font: inherit; font-size: .72rem; background: none; border: 0; padding: 0; cursor: pointer; position: relative; min-inline-size: 0; }
-  .tabbar .tab-menu span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 1px; }
-  .tabbar .tab-menu svg { inline-size: 24px; block-size: 24px; }
-  @media (max-width: 400px) { .tabbar .tab-menu { font-size: .64rem; } .tabbar .tab-menu svg { inline-size: 22px; block-size: 22px; } }
-  .tabbar .tab-menu[aria-current="page"], .tabbar .tab-menu[aria-expanded="true"] { color: var(--primary); font-weight: 500; }
-  .tabbar .tab-menu[aria-current="page"]::before { content: ''; position: absolute; inset-block-start: 0; inset-inline: 28%; block-size: 2px; background: var(--primary); }
+  .tabbar > a, .tabbar > .tab-menu, .tabbar > .mu-tab { display: grid; place-items: center; align-content: center; gap: 3px; position: relative; min-inline-size: 0;
+    color: var(--muted); text-decoration: none; font: inherit; font-size: .72rem; background: none; border: 0; padding: 0; cursor: pointer;
+    -webkit-tap-highlight-color: transparent; }
+  .tabbar > a > span, .tabbar > .tab-menu > span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 1px; }
+  .tabbar svg { inline-size: 24px; block-size: 24px; }
+  @media (max-width: 400px) { .tabbar > a, .tabbar > .tab-menu, .tabbar > .mu-tab { font-size: .66rem; } }
+  /* our icons in place of the generic ones, keyed by the tab (data-guide is set by common.js); an unknown tab keeps its svg */
+  .tabbar [data-guide^="tab-"] > svg { display: none; }
+  .tabbar [data-guide^="tab-"]::after { content: ""; order: -1; inline-size: 26px; block-size: 26px; background: currentColor;
+    -webkit-mask: var(--tab-ic) center / contain no-repeat; mask: var(--tab-ic) center / contain no-repeat;
+    transition: transform .3s cubic-bezier(.3, 1.6, .5, 1); }
+  .tabbar [data-guide="tab-home"] { --tab-ic: url(/assets/tab-icons/home.svg); }
+  .tabbar [data-guide="tab-family"] { --tab-ic: url(/assets/tab-icons/family.svg); }
+  .tabbar [data-guide="tab-compass"] { --tab-ic: url(/assets/tab-icons/compass.svg); }
+  .tabbar [data-guide="tab-tools"] { --tab-ic: url(/assets/tab-icons/tools.svg); }
+  .tabbar [data-guide="tab-settings"] { --tab-ic: url(/assets/tab-icons/settings.svg); }
+  .tabbar [data-guide="tab-home"]:is([aria-current="page"], [aria-expanded="true"]) { --tab-ic: url(/assets/tab-icons/home-on.svg); }
+  .tabbar [data-guide="tab-family"]:is([aria-current="page"], [aria-expanded="true"]) { --tab-ic: url(/assets/tab-icons/family-on.svg); }
+  .tabbar [data-guide="tab-compass"]:is([aria-current="page"], [aria-expanded="true"]) { --tab-ic: url(/assets/tab-icons/compass-on.svg); }
+  .tabbar [data-guide="tab-tools"]:is([aria-current="page"], [aria-expanded="true"]) { --tab-ic: url(/assets/tab-icons/tools-on.svg); }
+  .tabbar [data-guide="tab-settings"]:is([aria-current="page"], [aria-expanded="true"]) { --tab-ic: url(/assets/tab-icons/settings-on.svg); }
+  /* the current tab (or the open menu): its colour, a little bolder, and the pebble behind the icon */
+  .tabbar > :is([aria-current="page"], [aria-expanded="true"]) { color: var(--primary); font-weight: 600; }
+  .tabbar > :is(a, .tab-menu)::before { content: ""; position: absolute; z-index: -1; inset-block-start: calc(50% - 25px); inset-inline-start: 50%;
+    inline-size: 54px; block-size: 32px; margin-inline-start: -27px; border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 16%, transparent); opacity: 0; transform: scale(.4, .7); }
+  .tabbar > :is([aria-current="page"], [aria-expanded="true"])::before { opacity: 1; transform: none; animation: tab-pebble .45s cubic-bezier(.3, 1.5, .5, 1); }
+  @keyframes tab-pebble { from { opacity: 0; transform: scale(.4, .7); } }
+  .tabbar > :is(a, .tab-menu):active::after { transform: scale(.86); }
+  .tabbar > :is(a, .tab-menu):focus-visible { outline: none; }
+  .tabbar > :is(a, .tab-menu):focus-visible::before { opacity: 1; transform: none; box-shadow: 0 0 0 2px var(--primary); }
 }
 /* The top bar's menus (ניווט, כלים): a button like the links, its caret turning as it opens; the menu is a glass panel
    that arrives softly under it (on transform and opacity only) – each place an icon on its own pale tile and its name;

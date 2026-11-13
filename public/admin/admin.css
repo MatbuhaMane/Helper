@@ -1,8 +1,8 @@
 @import url("/assets/launcher.css");   /* the back door's parts are apps, in the toolbox tiles (.apps-grid .app .ic) */
 /* החדר של האוהל – the owner's room (moved here from the page; design's from now on) */
-.ad { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 14px 60px; }
-.ad > * { min-inline-size: 0; }
-.ad h2 { margin: 0 0 8px; font-size: 1.15rem; } .ad h3 { margin: 14px 0 6px; font-size: 1rem; }
+:is(.ad, .bd) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 14px 60px; }
+:is(.ad, .bd) > * { min-inline-size: 0; }
+:is(.ad, .bd) h2 { margin: 0 0 8px; font-size: 1.15rem; } :is(.ad, .bd) h3 { margin: 14px 0 6px; font-size: 1rem; }
 .ad-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .ad-bar .spacer { flex: 1; }
 .ad-nav { display: flex; flex-wrap: wrap; gap: 6px; position: sticky; inset-block-start: calc(var(--appbar-h, 56px) + 4px); z-index: 2; padding: 6px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
@@ -12,13 +12,13 @@
 .ad-tile { padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); }
 .ad-tile b { display: block; font-size: 1.35rem; font-variant-numeric: tabular-nums; } .ad-tile small { color: var(--muted); }
 .ad-tile.good b { color: var(--primary); } .ad-tile.bad b { color: var(--danger, #b42318); }
-.ad table { inline-size: 100%; border-collapse: collapse; font-size: .9rem; }
-.ad td, .ad th { padding: 6px 8px; border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
-.ad th { color: var(--muted); font-weight: 500; }
-.ad .num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+:is(.ad, .bd) table { inline-size: 100%; border-collapse: collapse; font-size: .9rem; }
+:is(.ad, .bd) td, :is(.ad, .bd) th { padding: 6px 8px; border-block-end: 1px solid var(--line); text-align: start; vertical-align: top; }
+:is(.ad, .bd) th { color: var(--muted); font-weight: 500; }
+:is(.ad, .bd) .num { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ad-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; margin-block: 10px; }
 .ad-form label { display: grid; gap: 4px; font-size: .88rem; color: var(--muted); }
-.ad input, .ad select, .ad textarea { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); min-inline-size: 0; }
+:is(.ad, .bd) input, :is(.ad, .bd) select, :is(.ad, .bd) textarea { font: inherit; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); min-inline-size: 0; }
 .ad-set { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding-block: 10px; border-block-end: 1px solid var(--line); }
 .ad-set p { grid-column: 1 / -1; margin: 0; }
 .ad-scroll { overflow-x: auto; }
@@ -36,23 +36,24 @@
 .ad-warn[hidden] { display: none; }
 
 /* the AI column of the members: a small switch (on: family, no limit; off: limited to credit), and its words beside it */
-.ad tbody td > label:has(> input[type="checkbox"]) { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; cursor: pointer; font-size: .86rem; }
-.ad tbody td > label > input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: relative; flex: none; margin: 0; cursor: pointer;
+:is(.ad, .bd) tbody td > label:has(> input[type="checkbox"]) { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; cursor: pointer; font-size: .86rem; }
+:is(.ad, .bd) tbody td > label > input[type="checkbox"] { appearance: none; -webkit-appearance: none; position: relative; flex: none; margin: 0; cursor: pointer;
   inline-size: 38px; block-size: 22px; border-radius: 999px; background: var(--line-strong); transition: background .2s var(--ease-river); }
-.ad tbody td > label > input[type="checkbox"]::before { content: ""; position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 16px; block-size: 16px;
+:is(.ad, .bd) tbody td > label > input[type="checkbox"]::before { content: ""; position: absolute; inset-block-start: 3px; inset-inline-start: 3px; inline-size: 16px; block-size: 16px;
   border-radius: 50%; background: var(--card); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .2s var(--ease-river); }
-.ad tbody td > label > input[type="checkbox"]:checked { background: var(--primary); }
-.ad tbody td > label > input[type="checkbox"]:checked::before { transform: translateX(16px); }
-:dir(rtl) .ad tbody td > label > input[type="checkbox"]:checked::before, [dir="rtl"] .ad tbody td > label > input[type="checkbox"]:checked::before { transform: translateX(-16px); }
-.ad tbody td > label > input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
-.ad tbody td > label > input[type="checkbox"]:disabled { opacity: .55; cursor: default; }
-@media (prefers-reduced-motion: reduce) { .ad tbody td > label > input[type="checkbox"], .ad tbody td > label > input[type="checkbox"]::before { transition: none; } }
+:is(.ad, .bd) tbody td > label > input[type="checkbox"]:checked { background: var(--primary); }
+:is(.ad, .bd) tbody td > label > input[type="checkbox"]:checked::before { transform: translateX(16px); }
+:dir(rtl) :is(.ad, .bd) tbody td > label > input[type="checkbox"]:checked::before, [dir="rtl"] :is(.ad, .bd) tbody td > label > input[type="checkbox"]:checked::before { transform: translateX(-16px); }
+:is(.ad, .bd) tbody td > label > input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
+:is(.ad, .bd) tbody td > label > input[type="checkbox"]:disabled { opacity: .55; cursor: default; }
+@media (prefers-reduced-motion: reduce) { :is(.ad, .bd) tbody td > label > input[type="checkbox"], :is(.ad, .bd) tbody td > label > input[type="checkbox"]::before { transition: none; } }
 
 /* ── הדלת האחורית – the back door (the owner's name for the room, 2026-11-14). The look is design's; admin.js (ai-features) wires it:
    <section class="ad bd">
      <header class="bd-head"><h1>הדלת האחורית</h1><p>…</p></header>   (the .ad-bar may follow it)
      <div class="bd-dash">                                        the dashboard, always on top:
-       <section class="card bd-state">מצב האוהל…</section>      the tent's state, across the whole width
+       <div class="bd-part" id="dash">…</div> <div class="bd-part">שימוש</div> <div class="bd-part">פניות</div>   (as admin.js builds it, 18cd4ab;
+                                                                  the first across the whole width; or the older <section class="card bd-state">)
        <div class="bd-cards"><div class="bd-card [good|bad]"><span class="bd-label">…</span><b class="bd-num">…</b>
          [<span class="bd-trend up|down">+12%</span>] [<span class="bd-spark"><i style="--h:.4"></i>…</span>]</div>…</div>
        <section class="card">שימוש</section> <section class="card">פניות</section>
@@ -62,7 +63,8 @@
          <span class="ic"></span><span class="name">…</span>[<span class="bd-count">3</span>]</a> …</nav>
      <div class="bd-panel" id="…" [hidden]><a class="bd-back" href="#">‹ כל החלקים</a> the opened part (its section.card)</div>
    </section>
-   The icon and the colours come from data-bd (the icons in /assets/bd-icons/), so the tile needs no markup inside .ic. */
+   The icon and the colours come from data-bd (the icons in /assets/bd-icons/), so the tile needs no markup inside .ic (a line icon
+   put there is hidden for these nine). The page's <main class="wide bd"> takes the room's old .ad rules too (tables, forms). */
 .bd { gap: 22px; }
 .bd-head { display: grid; gap: 4px; text-align: center; padding-block: 6px 0; }
 .bd-head h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); line-height: 1.15; text-wrap: balance; }
@@ -71,8 +73,10 @@
 .bd-dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (min-width: 760px) { .bd-dash { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .bd-dash > * { min-inline-size: 0; margin: 0; }
-.bd-dash > .bd-state, .bd-dash > .bd-cards { grid-column: 1 / -1; }
-.bd-state { border-block-start: 4px solid var(--primary); }
+.bd-dash > .bd-state, .bd-dash > .bd-cards, .bd-dash > .bd-part:first-child { grid-column: 1 / -1; }
+.bd-state, .bd-dash > #dash > .card { border-block-start: 4px solid var(--primary); }
+.bd-part { display: grid; gap: 14px; min-inline-size: 0; }
+.bd-part > .card, .bd-panel section.card { margin: 0; }
 .bd-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
 @media (max-width: 420px) { .bd-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .bd-card { position: relative; display: grid; gap: 2px; align-content: start; padding: 12px 14px; border-radius: 16px; min-inline-size: 0;
@@ -95,8 +99,12 @@
 
 /* the parts as apps (the toolbox's tiles): each one's colours and line icon from data-bd */
 .bd-apps { padding-block: 6px; inline-size: 100%; max-inline-size: 640px; margin-inline: auto; }   /* as wide as the toolbox: 5 + 4 on a computer, 3 × 3 on a phone */
-.bd-apps .app .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
+.bd-apps .app:is([data-bd="messages"], [data-bd="credits"], [data-bd="gifts"], [data-bd="settings"], [data-bd="members"], [data-bd="features"],
+  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"]) .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
   -webkit-mask: var(--bd-ic) center / contain no-repeat; mask: var(--bd-ic) center / contain no-repeat; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+/* only design's icon: a line icon the page put inside the tile is hidden for these nine */
+.bd-apps .app:is([data-bd="messages"], [data-bd="credits"], [data-bd="gifts"], [data-bd="settings"], [data-bd="members"], [data-bd="features"],
+  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"]) .ic > svg { display: none; }
 .bd-apps .app[data-bd="messages"]    { --c1: #ffb56e; --c2: #c4621e; --bd-ic: url(/assets/bd-icons/messages.svg); }
 .bd-apps .app[data-bd="credits"]     { --c1: #f2cf5b; --c2: #a3721a; --bd-ic: url(/assets/bd-icons/credits.svg); }
 .bd-apps .app[data-bd="gifts"]       { --c1: #ff9fb8; --c2: #c4476a; --bd-ic: url(/assets/bd-icons/gifts.svg); }

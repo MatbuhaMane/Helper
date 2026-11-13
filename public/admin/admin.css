@@ -207,17 +207,17 @@
 .ad-combo { position: relative; max-inline-size: 30rem; }
 .ad-combo .ad-search { display: block; }
 .ad-combo input[type="search"] { inline-size: 100%; box-sizing: border-box; }
-#ad-sugg { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 4px); z-index: var(--z-menu); margin: 0; padding: 4px; list-style: none;
+:is(#ad-sugg, .ad-sugg) { position: absolute; inset-inline: 0; inset-block-start: calc(100% + 4px); z-index: var(--z-menu); margin: 0; padding: 4px; list-style: none;
   display: grid; gap: 2px; max-block-size: min(20rem, 60vh); overflow-y: auto; overscroll-behavior: contain;
   background: var(--card); color: var(--text); border: 1px solid var(--line-strong); border-radius: var(--radius); box-shadow: 0 12px 32px rgba(20, 16, 8, .18); }
-#ad-sugg[hidden] { display: none; }
-#ad-sugg li { display: grid; gap: 2px; align-content: center; min-block-size: 44px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
-#ad-sugg li b { font-weight: 500; overflow-wrap: anywhere; }
-#ad-sugg li small { font-size: .84rem; overflow-wrap: anywhere; }
-#ad-sugg li[aria-selected="true"] { background: color-mix(in srgb, var(--primary) 14%, transparent); }
-#ad-sugg li[aria-selected="true"] b { color: var(--primary); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #ad-sugg { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); } }
-:root[data-theme="dark"] #ad-sugg { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); }
+:is(#ad-sugg, .ad-sugg)[hidden] { display: none; }
+:is(#ad-sugg, .ad-sugg) li { display: grid; gap: 2px; align-content: center; min-block-size: 44px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; }
+:is(#ad-sugg, .ad-sugg) li b { font-weight: 500; overflow-wrap: anywhere; }
+:is(#ad-sugg, .ad-sugg) li small { font-size: .84rem; overflow-wrap: anywhere; }
+:is(#ad-sugg, .ad-sugg) li[aria-selected="true"] { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+:is(#ad-sugg, .ad-sugg) li[aria-selected="true"] b { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(#ad-sugg, .ad-sugg) { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); } }
+:root[data-theme="dark"] :is(#ad-sugg, .ad-sugg) { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); }
 /* The members search's advanced filters (the CEO, v110): <details class="ad-adv"><summary>חיפוש מתקדם</summary><div>select × 3</div></details>.
    The row and the selects need no inline style. Under 600px the selects share the row two and one, each wide enough to tap. */
 .ad-adv { max-inline-size: 40rem; }
@@ -226,3 +226,17 @@
 .ad-adv > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; border-radius: var(--radius-sm); }
 .ad-adv > div { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 8px; }
 .ad-adv select { flex: 1 1 10rem; inline-size: auto; min-inline-size: 0; max-inline-size: 100%; min-block-size: 40px; }
+/* The usage card folded to one line (the CEO, v111): <details class="ad-fold"><summary><h2>שימוש</h2> <span class="muted small">…</span></summary>…</details>.
+   The heading and its line share the row (the line wraps under it on a phone); a chevron at the end turns when it opens. */
+.ad-fold > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; min-block-size: 44px; padding-block: 8px; cursor: pointer; list-style: none; }
+.ad-fold > summary::-webkit-details-marker { display: none; }
+.ad-fold > summary h2 { display: inline; margin: 0; }
+.ad-fold > summary .muted { margin: 0; }
+.ad-fold > summary::after { content: ""; align-self: center; flex: none; margin-inline-start: auto; inline-size: 18px; block-size: 18px; background: var(--muted);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition: transform var(--dur-quick, .15s) ease; }
+.ad-fold[open] > summary::after { transform: rotate(180deg); }
+.ad-fold[open] > summary { margin-block-end: 6px; }
+.ad-fold > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; border-radius: var(--radius-sm); }
+@media (prefers-reduced-motion: reduce) { .ad-fold > summary::after { transition: none; } }

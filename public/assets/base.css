@@ -538,3 +538,22 @@ body:has(.fab-wrap) .owner-msgs { inset-block-end: calc(var(--tabbar-h, 0px) + e
 .owner-msg.warn .owner-msg-ico { background: color-mix(in srgb, #e0a83a 20%, var(--card)); }
 .owner-msg.warn .owner-msg-ico::before { background: #b5791a; }
 .owner-msg > .btn { flex: none; }
+
+/* ── The back door's tab (admin-tab.js, on every page while the owner's back door is open): a vine tag at the inline-start
+   edge under the top bar; the companion's tab is at the other edge. A door line icon (the emoji in .ad-edge-ic is hidden);
+   on a phone only the icon shows, the words open on hover or focus. <a class="ad-edge" href="/admin/" [hidden]>
+   <span class="ad-edge-ic">🚪</span><span class="ad-edge-text">דלת אחורית</span></a> */
+.ad-edge { position: fixed; z-index: var(--z-float); inset-inline-start: 0; inset-block-start: calc(var(--appbar-h) + env(safe-area-inset-top, 0px) + 14px);
+  display: flex; align-items: center; gap: 7px; min-block-size: 44px; padding-block: 0; padding-inline: max(12px, env(safe-area-inset-right, 0px)) 14px;
+  background: var(--primary); color: var(--primary-ink); border-start-end-radius: 999px; border-end-end-radius: 999px;
+  font-size: .86rem; font-weight: 600; text-decoration: none; box-shadow: var(--lift); transition: padding var(--dur-quick) var(--ease-river); }
+.ad-edge[hidden] { display: none; }
+.ad-edge-ic { flex: none; inline-size: 20px; block-size: 20px; font-size: 0; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/door.svg) center / contain no-repeat; mask: url(/assets/bd-icons/door.svg) center / contain no-repeat; }
+.ad-edge:hover { color: var(--primary-ink); background: color-mix(in srgb, var(--primary) 88%, var(--text)); }
+.ad-edge:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+@media (max-width: 599px) {
+  .ad-edge { padding-inline-end: 12px; }
+  .ad-edge:not(:hover, :focus-visible) .ad-edge-text { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ad-edge { transition: none; } }

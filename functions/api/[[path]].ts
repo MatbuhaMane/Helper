@@ -69,6 +69,7 @@ route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
 route('POST', '/api/access/request', access.request);              // asking the owner for access, no session (server/access.ts)
 route('GET', '/api/admin/access-requests', access.list);
+route('POST', '/api/admin/access-requests/decide', access.decide);   // the owner: invited / declined (ai-features, for the master)
 route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
 route('POST', '/api/auth/passkey', lock.login);
 /* the app lock and the tree lock (the master's, server/lock.ts) */

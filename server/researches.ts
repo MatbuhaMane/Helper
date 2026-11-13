@@ -16,6 +16,7 @@ import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 import * as C from './research-cite';
 import * as S from './research-share';
 import { plainTitle } from './notes-plain';
+import { childOf } from './members';
 import { setting } from './settings';
 
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
@@ -434,8 +435,11 @@ export async function invite(ctx: Ctx) {
   ]);
   const check = S.inviteCheck({ exists: !!who, sameHousehold: !!who && !!owner && who.household === owner.household });
   if (!check.ok) throw new HttpError(403, check.why!);
-  // (later, partners from outside the household: S.mayJoin, with the children's rule once the members' age is kept)
-  const j = { outside: false };
+  // the children's rule (server/members.ts childOf, by the birth year the owner set): a child is never added from outside
+  // the family, nor a child's research opened to outsiders – today the household rule above already keeps them in
+  const [inviteeChild, ownerChild] = await Promise.all([childOf(ctx.env, d.email), childOf(ctx.env, a0.owner)]);
+  const j = S.mayJoin({ sameHousehold: !!who && !!owner && who.household === owner.household, inviteeChild, ownerChild });
+  if (!j.ok) throw new HttpError(403, 'not_same_household');   // (the same answer as above: nothing told)
   const had = await db.prepare('SELECT status FROM research_members WHERE owner = ? AND research_id = ? AND email = ?').bind(a0.owner, a0.r.id, d.email).first<{ status: string }>();
   if (had) throw new HttpError(409, 'already_in');
   await db.prepare('INSERT INTO research_members (owner, research_id, email, role, status, outside, invited_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')

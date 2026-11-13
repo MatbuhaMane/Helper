@@ -466,8 +466,10 @@
   const defaultFigure = (list) => (list.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : list[0]?.id || null);
   /** the figures this person may have: not hidden for their religion, and a paid one only once it is theirs (vision batch 6) */
   const mayHave = (f) => { const m = { ...(window.Figure2D?.FIGURES?.[f.id] || {}), ...f };
-    return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!(m.paid || m.tier === 'paid') || (state?.owned || []).includes(f.id))
-      && (!(m.tags || []).includes('horror') || !!prefs.showHorror); };
+    return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!(m.paid || m.tier === 'paid' || shop.paid.includes(f.id)) || shop.owned.includes(f.id))
+      && (!(m.tags || []).includes('horror') || (!isChild && !!prefs.showHorror)); };
+  // what this person owns of the paid figures (server/figures.ts), and whether they are a child (/api/me: under 12)
+  let shop = { owned: [], paid: [] }, isChild = false;
   async function flatCatalogue() {
     try { await H.loadOnce('/assets/figure2d.js'); } catch (_) { return []; }
     return window.Figure2D ? Figure2D.list().filter(mayHave) : [];
@@ -1653,6 +1655,8 @@
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
     // a 2D figure the person chose (and that is drawn already), else the 3D Ibn Ezra
     // (Ibn Ezra is the owner's family's: anyone else who has not chosen gets the first figure, once figures are drawn)
+    isChild = !!r.child;
+    if (wantsFlat()) { try { shop = await api('/api/daemon/figures', { noRedirect: true }); } catch (_) { /* nothing paid is theirs */ } }
     const catalogue = wantsFlat() || state.ibnEzra === false ? await flatCatalogue() : [];
     const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? defaultFigure(catalogue) : null;
     if (!flatId) { try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }

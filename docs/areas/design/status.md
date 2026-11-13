@@ -17,6 +17,10 @@ _Updated 2026-11-14._
   drawing, the eclipse). With the campfire, style-check items 1–4 are ✅ (`docs/design/style-check.md`).
 - **Readiness bar, condition 2 (motion), first pass:** layout-driven animations made transforms, animated shadows made
   fading rings, no animated blur; the list in `style-check.md`.
+- **Readiness bar, speed (from ai-features' measurement):** the home page's pictures made lighter (535 → 348 KB for the
+  stump, cushions and fire; the tent in 700/1000 px versions and a 7 KB mask, for the master's `index.html`).
+- **The owner's messages** (`.owner-msgs`/`.owner-msg` in base.css: floating cards, drawn marks by level, above the
+  groceries' cart button) and **the weather page** (`weather.css`, `.wx-*`): ready for ai-features to move off inline styles.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
@@ -26,7 +30,6 @@ _Updated 2026-11-14._
 
 ## Blockers
 - The image quota for 2026-11-13 is used (40/40).
-- Asked of ai-features: `music.js` to grow the music bar by transform (`.mu-bar.scaled`, `--p`); the mail page's bar.
 
 ## Needs the owner
 - Nothing open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>מזג אוויר – אב טיפוס</title>
+  <!-- The weather page's markup with weather.css (.wx-*), and the owner's messages (.owner-msgs, in base.css). Sample data.
+       Serve from the dev server (copy to public/ for a moment). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/tools/weather/weather.css">
+  <style>body { padding: 0 16px; } :root { --tabbar-h: 0px; }</style>
+</head>
+<body>
+<main class="wx">
+  <div class="wx-where">
+    <div class="wx-place"><b>ירושלים</b><small class="muted">לא נקבעה עיר, אז מוצגת ירושלים. <a href="#">לקבוע עיר בהגדרות</a></small></div>
+    <div class="wx-find"><input type="search" placeholder="עיר אחרת" aria-label="חיפוש עיר אחרת"><button class="btn small" type="button">הצגה</button></div>
+  </div>
+  <section class="wx-card wx-now" aria-label="עכשיו">
+    <div class="wx-ico" aria-hidden="true">⛅</div>
+    <div class="wx-temp"><b>18°</b><span>מעונן חלקית</span></div>
+    <div class="wx-meta">מרגיש כמו 16° · רוח 14 קמ״ש · לחות 62%</div>
+    <div class="wx-advice" role="note"><p>ערב קריר: כדאי לקחת סוודר.</p><p>מחר בבוקר סיכוי לטפטוף, מטרייה קטנה בתיק.</p></div>
+  </section>
+  <section class="wx-card" aria-labelledby="wx-h"><h2 id="wx-h">השעות הקרובות</h2><ol class="wx-strip" id="strip" tabindex="0" aria-label="24 השעות הקרובות"></ol></section>
+  <section class="wx-card" aria-labelledby="wx-d"><h2 id="wx-d">השבוע</h2><ul class="wx-days" id="days"></ul><p class="wx-sun">זריחה 06:12 · שקיעה 16:44 · קרינת UV 4</p></section>
+  <p class="wx-credit">התחזית מ־<a href="#">Open-Meteo</a></p>
+</main>
+<div class="owner-msgs" role="region" aria-label="הודעות מהאוהל">
+  <div class="notice owner-msg party" role="status"><span class="owner-msg-ico" aria-hidden="true"></span><span>מפגש חנוכה בשבת בערב אצל סבתא. <a href="#">לאשר הגעה</a></span><button class="btn small ghost" type="button" aria-label="סגירת ההודעה">✕</button></div>
+  <div class="notice owner-msg warn" role="status"><span class="owner-msg-ico" aria-hidden="true"></span><span>הלילה עדכון קצר, האוהל ייסגר לכמה דקות.</span><button class="btn small ghost" type="button" aria-label="סגירת ההודעה">✕</button></div>
+</div>
+<script>
+  const H = [['עכשיו', '⛅', 18, 0], ['15:00', '☀️', 19, 0], ['16:00', '☀️', 18, 0], ['17:00', '🌥', 16, 10], ['18:00', '🌥', 15, 20], ['19:00', '☁️', 14, 30], ['20:00', '🌧', 13, 60], ['21:00', '🌧', 13, 70], ['22:00', '☁️', 12, 40], ['23:00', '☁️', 12, 20]];
+  document.getElementById('strip').innerHTML = H.map(([t, i, c, r], n) => `<li class="wx-hour${n ? '' : ' now'}"><small>${t}</small><span class="wx-ico" aria-hidden="true">${i}</span><b>${c}°</b><small class="wx-rain">${r >= 20 ? r + '%' : ''}</small></li>`).join('');
+  const D = [['היום', '⛅', 11, 19, 10], ['מחר', '🌧', 10, 15, 70], ['שבת', '🌥', 9, 16, 30], ['ראשון', '☀️', 10, 20, 0], ['שני', '☀️', 12, 22, 0], ['שלישי', '⛅', 12, 21, 10], ['רביעי', '🌧', 10, 16, 60]];
+  const lo = 9, span = 13;
+  document.getElementById('days').innerHTML = D.map(([d, i, a, b, r]) => `<li class="wx-day"><b>${d}</b><span class="wx-ico" aria-hidden="true">${i}</span><div class="wx-range" aria-hidden="true"><small>${a}°</small><div class="wx-track"><i style="--a:${(a - lo) / span * 100};--w:${(b - a) / span * 100}"></i></div><small>${b}°</small></div><small class="wx-rain">${r >= 20 ? r + '%' : ''}</small></li>`).join('');
+</script>
+</body>
+</html>

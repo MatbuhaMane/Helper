@@ -668,7 +668,7 @@
         subbed: { kosher: orig !== 'ok' && now === 'ok', keto: ketoSubbed },
         onFix: (focus) => result && openFix(focus),
       }));
-      ketoSlot.replaceChildren(...[Keto.recipePanel(eff)].filter(Boolean));
+      ketoSlot.replaceChildren(...[Keto.dietStamps(eff), Keto.recipePanel(eff)].filter(Boolean));
       const kosherAt = new Map((result?.kosher || []).map((x) => [x.index, x]));
       const ketoAt = new Map(Keto.enabled ? (result?.keto || []).map((x) => [x.index, x]) : []);
       const ingredients = recipe.ingredients.map((i, n) => {
@@ -952,7 +952,7 @@
       if (Keto.enabled) res.keto.forEach((x) => mark(x, 'keto'));
       const st = RecipeFix.kosherStatus(res, new Map());
       bstatus.replaceChildren(RecipeFix.statusRows({ kosherOrig: st, kosherNow: st, keto: rec, onFix: openBookFix }));
-      ketoSlot.replaceChildren(...[Keto.recipePanel(rec)].filter(Boolean));
+      ketoSlot.replaceChildren(...[Keto.dietStamps(rec), Keto.recipePanel(rec)].filter(Boolean));
     }
     const openBookFix = (focus) => lastResult && RecipeFix.openFix({
       focus, recipe: currentRecipe(), result: lastResult, subs: new Map(),
@@ -1078,30 +1078,43 @@
 
   /* ================= לשוניות ================= */
   let ketoMounted = false, tabNow = 'list';
-  /* ketosis is the person's choice (the owner, 2026-11-13): its tab shows only once it is on, or while it is open – it is
-     reached from its app in תנועה ותזונה (/groceries/#keto), where its switch is */
-  const ketoTab = () => { $('#tabKeto').hidden = !(Keto.enabled || tabNow === 'keto'); };
+  // The tabs: the list, the book, ketosis and each other way of eating (diets.js). A diet's tab shows once it is on, or
+  // while it is open: it is reached from its app in תנועה ותזונה (/groceries/#atkins…), where its switch is. Ketosis too
+  // is the person's choice (the owner, 2026-11-13).
+  const bar = $('.tabs[role=tablist]');
+  for (const d of Diets.all) {
+    bar.insertBefore(el('button', { role: 'tab', id: 'tab-' + d.id, 'aria-selected': 'false', hidden: true, onclick: () => showTab(d.id) }, d.name), bar.querySelector('.spacer'));
+    $('main').append(el('section', { id: 'view-' + d.id, class: 'diet-view', hidden: true, 'aria-label': d.name }));
+  }
+  const TABS = [['list', '#tabList', '#viewList'], ['book', '#tabBook', '#viewBook'], ['keto', '#tabKeto', '#viewKeto'],
+    ...Diets.all.map((d) => [d.id, '#tab-' + d.id, '#view-' + d.id])];
+  const tabFromHash = () => (TABS.some(([n]) => n !== 'list' && location.hash === '#' + n) ? location.hash.slice(1) : 'list');
+  const mounted = new Set();
+  const ketoTab = () => {
+    $('#tabKeto').hidden = !(Keto.enabled || tabNow === 'keto');
+    for (const d of Diets.all) $('#tab-' + d.id).hidden = !(Diets.isOn(d.id) || tabNow === d.id);
+  };
   // Each tab is a step in the history (the owner's tour, 2026-11-13): the back gesture or key returns to the previous tab,
   // not out of the page. how: 'push' (a tap), 'replace' (the first draw), 'pop' (back/forward, the history moved already).
   function showTab(which, how = 'push') {
     const was = tabNow;
     tabNow = which; ketoTab();
-    for (const [tab, view, name] of [['#tabList', '#viewList', 'list'], ['#tabBook', '#viewBook', 'book'], ['#tabKeto', '#viewKeto', 'keto']]) {
+    for (const [name, tab, view] of TABS) {
       $(tab).setAttribute('aria-selected', String(which === name));
       $(view).hidden = which !== name;
     }
     if (which === 'book') { if (!book) loadBook(); else renderBook(); }
     if (which === 'keto' && !ketoMounted) { ketoMounted = true; Keto.mount($('#viewKeto')); }
+    if (Diets.get(which) && !mounted.has(which)) { mounted.add(which); Diets.mount($('#view-' + which), which); }
     const url = which === 'list' ? location.pathname : '#' + which;
     if (how === 'replace' || (how === 'push' && which === was)) history.replaceState({ tab: which }, '', url);
     else if (how === 'push') history.pushState({ tab: which }, '', url);
   }
   H.showTab = showTab;
   window.addEventListener('popstate', (e) => {
-    const tab = e.state?.tab || (['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list');
+    const tab = e.state?.tab || tabFromHash();
     if (tab !== tabNow) showTab(tab, 'pop');
   });
-
   // A sideways swipe moves to the next tab: in Hebrew the next one is on the left, so a swipe to the right brings it.
   // Not from the screen's edges (the phone's own back gesture), not in a field, a sheet, a dialog or a sideways scroller.
   let swipe = null;
@@ -1116,7 +1129,7 @@
     const ok = Math.abs(dx) > 70 && Math.abs(dy) < Math.abs(dx) * 0.5 && Date.now() - swipe.at < 700;
     swipe = null;
     if (!ok || document.querySelector('dialog[open], .modal-glass')) return;
-    const tabs = ['list', 'book', 'keto'].filter((n) => !$(n === 'list' ? '#tabList' : n === 'book' ? '#tabBook' : '#tabKeto').hidden);
+    const tabs = TABS.filter(([, tab]) => !$(tab).hidden).map(([n]) => n);
     const rtl = getComputedStyle(document.documentElement).direction === 'rtl';
     const next = tabs[tabs.indexOf(tabNow) + ((dx > 0) === rtl ? 1 : -1)];
     if (next) showTab(next);
@@ -1129,9 +1142,10 @@
   $('#tabBook').addEventListener('click', () => showTab('book'));
   $('#tabKeto').addEventListener('click', () => showTab('keto'));
   window.addEventListener('keto:changed', (e) => { ketoTab(); if (e.detail !== 'state' || Keto.enabled) render(); });
+  window.addEventListener('diets:changed', () => { ketoTab(); render(); });
 
   render();
-  showTab(['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list', 'replace');
+  showTab(tabFromHash(), 'replace');
   await flush();
   await pull();
 

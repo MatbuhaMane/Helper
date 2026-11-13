@@ -136,6 +136,16 @@ LCP has not moved yet. The causes:
   - the recipe book opens with six home recipes (שקשוקה, מג'דרה, סלט קצוץ, עוף בתנור, אורז כרובית, עוגיות טחינה) from
     `public/groceries/starter.json`, once per person (`prefs.groceries.starters`); a book emptied on purpose stays empty.
     Checked at 375 as a new household: six cards, no second seeding on reload.
+  - the list: one small titled pie per diet beside each item, instead of the small numbers; a tap enlarges it (8328533);
+  - recipes: servings ("מנות − 4 +") and units (as written / grams / cups and spoons) over the ingredients
+    (`public/groceries/measure.js`, 44 tests; 8de2b83);
+  - the groceries tabs: a swipe moves between them, and back returns to the previous tab (66dead5);
+  - **diets as apps** in תנועה ותזונה: אטקינס, פליאו, דל פחמימות, דל סוכר (עומס גליקמי נמוך, "אינו ייעוץ רפואי") and
+    צום לסירוגין (`public/groceries/diets.js`, 21 tests). Each opens its tab with its switch (per person, `prefs.diets`);
+    on, it adds its own pie and verdict beside each list item and a stamp on recipes; fasting is an eating-window clock.
+    The verdicts are rules of thumb from net carbs per 100 g or per serving and from the ingredients' names.
+  - The look of all of these is design's: the class contract is in the notes folder (ai-features-diet-pie-contract.md).
+    Unstyled until then: the pie buttons are 45 px tall.
 
 ## In progress
 

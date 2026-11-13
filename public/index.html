@@ -854,15 +854,17 @@
         if (!strumBufs) strumBufs = [98, 123.47, 146.83, 196, 246.94, 392].map((f) => {
           const sr = ac.sampleRate, n = Math.floor(sr * 2.2), buf = ac.createBuffer(1, n, sr), d = buf.getChannelData(0);
           const p = Math.round(sr / f), line = new Float32Array(p);
-          for (let i = 0; i < p; i++) line[i] = (Math.random() * 2 - 1) * (0.5 + 0.5 * Math.sin(Math.PI * i / p));   // a soft pick
+          for (let i = 0; i < p; i++) line[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / p);   // a soft pick (a thumb, not a plectrum)
+          for (let k = 0; k < 3; k++) for (let i = 1; i < p; i++) line[i] = 0.5 * (line[i] + line[i - 1]);   // rounder: fewer high overtones
           for (let i = 0, j = 0; i < n; i++, j = (j + 1) % p) { const next = line[(j + 1) % p]; d[i] = line[j]; line[j] = 0.4985 * (line[j] + next); }
           return buf;
         });
-        const out = ac.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 3200;
-        const vol = ac.createGain(); vol.gain.value = 0.16;
+        const out = ac.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 1500; out.Q.value = 0.5;
+        const vol = ac.createGain(), t = ac.currentTime;
+        vol.gain.setValueAtTime(0.0001, t); vol.gain.exponentialRampToValueAtTime(0.07, t + 0.03); vol.gain.setTargetAtTime(0.0001, t + 1.2, 0.5);
         out.connect(vol).connect(ac.destination);
         const t0 = ac.currentTime + 0.01;
-        strumBufs.forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * 0.028); });
+        strumBufs.forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * 0.05); });
       } catch { /* no sound here */ }
     }
 

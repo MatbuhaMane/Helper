@@ -11,6 +11,33 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Shabbat and holidays, notifications and the daily rhythm (vision → design, ai-features, master)
+The owner's decisions in the vision meeting. The spec: `docs/vision/shabbat-notifications.md`. Status: Decided (the owner).
+
+**Shabbat and holidays** (for users whose tradition in settings keeps Shabbat)
+- **Quiet Shabbat mode:** from candle lighting to havdalah, by the city in settings:
+  - no notifications to the user;
+  - nothing is sent from them;
+  - opening the app shows a calm Shabbat screen;
+  - the emergency button always works.
+- **Before Shabbat and before a holiday:** one notification on Friday morning, with the candle-lighting time in the user's city, the shopping list, and who is coming and who brings what.
+- **Holidays:**
+  - the tent dresses for the holiday in its style (a sukkah roof, a hanukkiah);
+  - the holiday's recipes and songs move to the top;
+  - a "נתכנס לחג" button opens a gathering.
+- **Other traditions get the same by their own days and holidays:** Friday, Ramadan and Eid; Sunday, Christmas and Easter. The names and decorations are set with a source or partner from that tradition.
+
+**Notifications and the daily rhythm**
+- **The daily summary:** no morning notification. It sits at the top of the home screen at the first open of the day.
+- **Push during the day only for:**
+  - a personal message from the family;
+  - a gathering invitation or a change to it;
+  - a reminder the user set;
+  - a family birthday or memorial day, on the day;
+  - an emergency.
+  Everything else waits for the summary.
+- **Quiet hours:** 22:00–07:00 by default, and each user can change them. An emergency passes through quiet hours, and also through Shabbat mode.
+
 ## 2026-11-13 – Grandparents mode, the emergency button and kids mode (vision → design, ai-features, master)
 The owner's decisions in the vision meeting. The spec: `docs/vision/grandparents-kids.md`. Status: Decided (the owner).
 

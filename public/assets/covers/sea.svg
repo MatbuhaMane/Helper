@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><title>חוף הים</title>
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#bcdbe6"/><stop offset="1" stop-color="#eef0dc"/></linearGradient>
+<linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5f98ad"/><stop offset="1" stop-color="#8fc0c8"/></linearGradient></defs>
+<rect width="1200" height="400" fill="url(#s)"/><circle cx="240" cy="96" r="44" fill="#fff7dc"/>
+<g fill="#f7f6f0" opacity=".85"><ellipse cx="760" cy="80" rx="70" ry="18"/><ellipse cx="820" cy="68" rx="50" ry="20"/><ellipse cx="420" cy="140" rx="54" ry="12"/></g>
+<path d="M-20 200Q600 186 1220 200V420H-20Z" fill="url(#w)"/>
+<g fill="none" stroke="#e8f3f2" stroke-width="3" stroke-linecap="round" opacity=".8"><path d="M120 230q20-8 40 0t40 0"/><path d="M520 222q20-8 40 0t40 0"/><path d="M880 240q20-8 40 0t40 0"/><path d="M300 262q24-9 48 0t48 0"/></g>
+<g transform="translate(700 214)"><path d="M-34 0Q0 14 34 0Q30 10 0 12Q-30 10-34 0Z" fill="#7a5a3c"/><path d="M-2-4Q-4-46 2-70Q20-40 22-6Z" fill="#f4ecd8"/><path d="M-6-6Q-24-30-6-56Z" fill="#e9c58a"/></g>
+<path d="M-20 300C200 270 420 280 640 300S1000 300 1220 280V420H-20Z" fill="#e8d4a4"/>
+<path d="M-20 300C200 270 420 280 640 300S1000 300 1220 280" fill="none" stroke="#f7f6f0" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+<path d="M-20 350C260 320 560 340 820 352S1100 340 1220 336V420H-20Z" fill="#d9bd85"/>
+<g stroke="#8a9a52" stroke-width="4" stroke-linecap="round" fill="none"><path d="M120 360q-6-30 4-50M128 360q8-26 22-38M112 362q-14-20-30-26"/><path d="M1030 352q-6-30 4-50M1038 352q8-26 22-38"/></g>
+</svg>

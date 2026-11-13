@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>פרופיל המשפחה – אב טיפוס</title>
+  <!-- The family profile's look (vision's spec, docs/vision/family-profile.md): /family/profile.css. Markup for ai-features:
+       <main class="fp">
+         <header class="fp-cover"><img class="fp-cover-img" src="/assets/covers/olive.svg | the family's photo" alt="">
+           [<button class="fp-cover-btn">החלפת תמונה</button> – heads only]</header>
+         <div class="fp-id"><span class="fp-seal">ש</span> (or .fp-seal.has-img > img)
+           <div class="fp-who"><h1 class="fp-name">משפחת …</h1><p class="fp-line">…</p><span class="fp-sees">(eye) בני הבית בלבד</span></div></div>
+         [<p class="fp-suggest">…</p> – a member who is not a head]
+         <ul class="fp-people"><li><a class="fp-person"><span class="fp-face"><img|initial></span><span>NAME</span></a></li> (or li.fp-person.fp-gap)</ul>
+         <div class="fp-grid">
+           <section class="fp-card"><h2 class="fp-h">(svg) מאיפה באנו</h2>
+             <ol class="fp-road"><li><span class="fp-stop"><b>PLACE</b><small>YEARS</small></span></li>…</ol></section>
+           <section class="fp-card"><h2 class="fp-h">העץ שלנו</h2><a class="fp-window" href="/family/"><span class="fp-mini">(the tree, small)</span><span class="fp-go">לעץ</span></a></section>
+           <section class="fp-card"><h2 class="fp-h">מסורות</h2><p class="fp-said">…</p></section>
+           <section class="fp-card [wide]"><h2 class="fp-h">המתכונים שלנו</h2><ul class="fp-dishes"><li><a class="fp-dish"><img>NAME</a></li> (or li > span.fp-dish.fp-gap)</ul></section>
+           <section class="fp-card fp-gap" aria-hidden="true"></section> – an item the viewer may not see
+           An empty card: <p class="fp-empty">…</p><button class="fp-add">+ …</button>
+         </div></main>
+       The cover window: <div class="fp-covers"><button class="fp-cover-opt" aria-pressed="true|false"><img src="/assets/covers/ID.svg" alt="">NAME</button>…
+         <label class="fp-cover-opt"><span class="fp-own">+</span>תמונה שלכם<input type="file" accept="image/*"></label></div>
+       Elsewhere: <a class="fp-link" href="…">חבר/ה במשפחת …</a>.  Copy to public/ to view. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/family/profile.css">
+  <style>body { margin: 0; } .demo-h { max-inline-size: 980px; margin: 28px auto 10px; padding-inline: 16px; font-size: 1rem; color: var(--muted); }
+    .demo-covers { max-inline-size: 980px; margin: 0 auto 40px; padding-inline: 16px; }
+    .mini-tree { position: absolute; inset: 0; } .mini-tree img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: contain; object-position: 50% 100%; }</style>
+</head>
+<body>
+<main class="fp">
+  <header class="fp-cover"><img class="fp-cover-img" src="/assets/covers/olive.svg" alt=""><button class="fp-cover-btn" type="button">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h3l2-3h6l2 3h3v12H4z"/><circle cx="12" cy="13" r="4"/></svg>החלפת תמונה</button></header>
+  <div class="fp-id"><span class="fp-seal" aria-hidden="true">ל</span>
+    <div class="fp-who"><h1 class="fp-name">משפחת לוי</h1><p class="fp-line">שולחן ארוך, הרבה צחוק, ותמיד מקום לעוד אחד.</p>
+      <span class="fp-sees"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>בני הבית בלבד</span></div></div>
+  <ul class="fp-people">
+    <li><a class="fp-person" href="#"><span class="fp-face">ד</span><span>דוד</span></a></li>
+    <li><a class="fp-person" href="#"><span class="fp-face">ר</span><span>רחל</span></a></li>
+    <li><a class="fp-person" href="#"><span class="fp-face">נ</span><span>נועה</span></a></li>
+    <li><a class="fp-person" href="#"><span class="fp-face">א</span><span>איתי</span></a></li>
+    <li><span class="fp-person fp-gap" aria-hidden="true"></span></li>
+  </ul>
+  <div class="fp-grid">
+    <section class="fp-card"><h2 class="fp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>מאיפה באנו</h2>
+      <ol class="fp-road"><li><span class="fp-stop"><b>מרקש</b><small>עד 1956</small></span></li><li><span class="fp-stop"><b>קריית שמונה</b><small>1956–1972</small></span></li><li><span class="fp-stop"><b>ירושלים</b><small>מאז</small></span></li></ol></section>
+    <section class="fp-card"><h2 class="fp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 22v-8M12 14c-4 0-7-2.5-7-6a7 7 0 0 1 14 0c0 3.5-3 6-7 6z"/></svg>העץ שלנו</h2>
+      <a class="fp-window" href="#"><span class="fp-mini"><span class="mini-tree"><img src="/assets/tree/olive/ground.svg" alt=""><img src="/assets/tree/olive/trunk.svg" alt=""><img src="/assets/tree/olive/boughs.svg" alt=""><img src="/assets/tree/olive/crown.svg" alt=""></span></span><span class="fp-go">לעץ המשפחה</span></a></section>
+    <section class="fp-card"><h2 class="fp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3c1.5 3 4 4 4 8a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-7z"/></svg>מסורות</h2>
+      <p class="fp-said">ביום שישי כל הבית אצל סבתא, מופלטה במוצאי פסח, ובחנוכה כל אחד מדליק חנוכייה משלו.
+      הניגון של סבא לפני הקידוש.</p></section>
+    <section class="fp-card wide"><h2 class="fp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18M5 12a7 7 0 0 0 14 0M12 5v2"/></svg>המתכונים שלנו</h2>
+      <ul class="fp-dishes"><li><a class="fp-dish" href="#"><span class="fp-plate"></span>קוסקוס של סבתא</a></li><li><a class="fp-dish" href="#"><span class="fp-plate"></span>חריימה</a></li>
+        <li><a class="fp-dish" href="#"><span class="fp-plate"></span>מופלטה</a></li><li><span class="fp-dish fp-gap" aria-hidden="true"></span></li></ul></section>
+    <section class="fp-card fp-gap" aria-hidden="true"></section>
+    <section class="fp-card"><h2 class="fp-h">תערוכה מהמוזיאון</h2><p class="fp-empty">עוד אין כאן תערוכה. אפשר לבחור אחת מסיפור המשפחה.</p><button class="fp-add" type="button">+ בחירת תערוכה</button></section>
+  </div>
+</main>
+<h2 class="demo-h">בחירת הקאבר</h2>
+<div class="demo-covers"><div class="fp-covers">
+  <button class="fp-cover-opt" type="button" aria-pressed="true"><img src="/assets/covers/olive.svg" alt="">כרם זיתים</button>
+  <button class="fp-cover-opt" type="button" aria-pressed="false"><img src="/assets/covers/hills.svg" alt="">הרי ירושלים</button>
+  <button class="fp-cover-opt" type="button" aria-pressed="false"><img src="/assets/covers/sea.svg" alt="">חוף הים</button>
+  <button class="fp-cover-opt" type="button" aria-pressed="false"><img src="/assets/covers/desert.svg" alt="">לילה במדבר</button>
+  <button class="fp-cover-opt" type="button" aria-pressed="false"><img src="/assets/covers/fields.svg" alt="">שדות באביב</button>
+  <label class="fp-cover-opt"><span class="fp-own">+</span>תמונה שלכם<input type="file" accept="image/*"></label>
+</div></div>
+<script>document.querySelectorAll('.fp-cover-opt[aria-pressed]').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.fp-cover-opt[aria-pressed]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  document.querySelector('.fp-cover-img').src = b.querySelector('img').src; }));</script>
+</body>
+</html>

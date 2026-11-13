@@ -27,10 +27,11 @@ Last update: 2026-11-13.
 
 ## In progress
 
-- **The "בקרוב" pages:** the owner answered ai-features' list (`docs/ai/ready-soon.md`).
-  - Finish: weather.
-  - Hide: ChatGPT and the goals' family signals.
-  - Keep: the languages stay "בקרוב" (the owner's earlier choice) and the credit card stays.
+- **The "בקרוב" pages:** done on ai-features (580dc1a), waiting for the master's merge.
+  - Weather is finished.
+  - ChatGPT and the goals' family signals are hidden.
+  - The languages stay "בקרוב", and the credit card stays.
+- **Icons and emoji:** the owner said yes. Small line icons stay; emoji are replaced gradually. Sent to design.
 
 - **Batch 7, the readiness bar:**
   - the master builds the speed and motion measurement;

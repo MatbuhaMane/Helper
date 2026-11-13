@@ -2350,6 +2350,7 @@ The CEO's task: in the חברים section the owner edits each member's name, ho
      goes through `/api/admin/people`), and role owner only for OWNER_EMAIL.
 Status: ready on `ai-features`, waiting for the master's review.
 
+<<<<<<< HEAD
 ## 2026-11-13 – The back door's tab, the usage line, a message to one member (ai-features → master; the lock and the session for review)
 
 1. **A new route, `GET /api/admin/room`** (appended to `functions/api/[[path]].ts`): `{open, until, left}` for this device's
@@ -2372,3 +2373,30 @@ Status: ready on `ai-features`, waiting for the master's review.
 5. **A message to one member**: `POST /api/admin/messages` takes `to` (an email); it must be on the members list (400
    `not_member`), goes into `admin_messages.to_email`, and is logged as `message:one`. The room's list now shows personal
    messages too (with `to_name`), except the room's own notes to the owner (`by_email = 'system'`).
+=======
+## 2026-11-13 – Messages between members, הודעות v1 (a side session for the CEO; data exposure, for review)
+
+The owner asked for messaging between users. One on one, text only, no groups.
+- **Who may write to whom** (the CEO's default; the owner may change it): the members of one's household, and the users of
+  the app in the trees joined by confirmed bridges (the tribe). No one else can be found or written to. Outside the
+  household a contact comes only from the forest as `forestFor` shows it (a user, not anonymous, identity not hidden), so the
+  list never shows more than the forest search. Without the tree open on the device, the list is the household only.
+  The reach rule is checked again on every send: an undone bridge or a block stops the writing, never the reading.
+- **Privacy.** Only the two sides read a conversation; to anyone else, the owner included, it is a 404. The page never gets
+  an email (names, opaque ids). The back door has `GET /api/admin/dm-stats`: four counts, no name or word. A block works both
+  ways. Rate limits (`rateLimit`): 20 messages a minute, 500 a day, 30 new conversations an hour, 30 contact lists a minute.
+- **Files.** New `server/dm.ts`, `server/dm-rules.ts` (tests: `server/test-dm.mjs`), `public/messages/` (the page),
+  `public/assets/dm.js` (the chip's dot and the tools menu entry, polling `/api/dm/unread` once a minute while in front).
+  Appended: the tables `dm_threads`, `dm_messages`, `dm_blocks` to `schema.sql`; one import and the `/api/dm*` routes plus
+  `/api/admin/dm-stats` to `functions/api/[[path]].ts`.
+- **ai-features' file:** `forestFor` in `server/vault/index.ts` returns one more field, `emailOf(p)` (the user behind a card,
+  server side only, never sent to a page). Two added lines; nothing else changes there.
+- **For the master** (shared files, as a patch in the side session's notes, `dm-ceo-hooks.patch`): load `/assets/dm.js` in
+  `common.js` next to `reports.js`; the "הודעות" tile in `apps.js` (`ic: 'mail'` until design draws an icon); `test-dm.mjs`
+  in `npm test` and `test:dm`. CACHE not bumped.
+- **For design:** the page holds its layout with an inline `<style>` (`.dm`, `.dm-list`, `.dm-thread`, `.dm-row`, `.dm-msgs`,
+  `.dm-msg.mine|theirs`, `.dm-day`, `.dm-compose`, `.dm-pick`, `.dm-note`); please move it into a `messages.css` with the real
+  look. `dm.js` injects `.dm-dot` (the reports' `.mi-dot` look, its own class so `reports.js` never clears it, at the chip's
+  bottom corner) until it is in `base.css`. An icon for the tile. Which side "mine" sits on (now the start, the right) is yours.
+Status: on the side session's branch, waiting for the CEO's review and the owner's OK before any push.
+>>>>>>> claude/clever-mclaren-48bdc5

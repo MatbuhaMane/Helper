@@ -1002,6 +1002,8 @@ export async function forestFor(ctx: Ctx) {
     u, people: f.people, me, kin: k,
     label, title: (h: string) => titleIn(t, h),
     user: (p: ForestPerson) => users.has(f.idOf.get(p.pid) || ''),
+    // messages between members (server/dm.ts): the user behind a card, for the server only; it never goes to a page
+    emailOf: (p: ForestPerson) => { const id = f.idOf.get(p.pid) || ''; return users.has(id) ? owners.find((r) => r.id === id)!.member_email : null; },
     audit: (houses: Set<string>, action: string) => (houses.size > 1 || !houses.has(u.household) ? auditForest(ctx, u, houses, action) : Promise.resolve()),
   };
 }

@@ -58,6 +58,15 @@ ok('a visit: half an hour at most', !A.entryAlive({ ...visit, created_at: now - 
 ok('stay unlocked: open after an idle hour', A.entryAlive({ ...own, stay: 1, created_at: now - 70 * 60e3, last_at: now - 60 * 60e3 }, now));
 ok('stay unlocked: still two hours at most', !A.entryAlive({ ...own, stay: 1, created_at: now - 2.1 * 3600e3, last_at: now - 1000 }, now));
 ok("stay unlocked is ignored on someone else's account", !A.entryAlive({ ...visit, stay: 1, created_at: now - 5 * 60e3, last_at: now - 181e3 }, now));
+// until when the back door's tab may show (GET /api/admin/room)
+ok('until: the idle minutes from the last action', A.entryUntil({ ...own, created_at: now - 60e3, last_at: now - 60e3 }) === now - 60e3 + 180e3);
+ok('until: never after two hours', A.entryUntil({ ...own, created_at: now - 2 * 3600e3 + 60e3, last_at: now }) === now + 60e3);
+ok('until: stay unlocked is the two hours', A.entryUntil({ ...own, stay: 1, created_at: now - 60e3, last_at: now - 60e3 }) === now - 60e3 + 2 * 3600e3);
+ok("until: stay is ignored on someone else's account", A.entryUntil({ ...visit, stay: 1, created_at: now - 60e3, last_at: now - 60e3 }) === now - 60e3 + 180e3);
+ok('until agrees with alive', [0, 100e3, 179e3, 181e3].every((idle) => {
+  const e = { ...own, created_at: now - 10 * 60e3, last_at: now - idle };
+  return A.entryAlive(e, now) === (A.entryUntil(e) > now);
+}));
 
 /* ---- settings ---- */
 const s = (o) => ({ key: 'k', label: 'k', help: '', group: 'g', def: 0, ...o });

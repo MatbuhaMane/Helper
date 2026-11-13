@@ -2,9 +2,13 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (vision batch 14: the wizard centred, the sky blotch found, arrange mode, the experimental tag, the Google button, four notes views)._
+_Updated 2026-11-14 (vision batch 15: the "בקרוב" pictures and note; batch 14: the wizard centred, the sky blotch found, arrange mode, the experimental tag, the Google button, four notes views)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: vision batch 15, design part (2026-11-14).**
+  - e414817 `public/assets/soon/hill.svg` and `garage.svg`, drawn in the tent's look from `docs/design/soon/soon.py`.
+  - 86d725d base.css adds one note `.tag-soon` (`--soon`, dusk blue), the home's strip "בקרוב ליד האוהל" under the ring, the serious home's last group "בקרוב", and the tap sheet `.soon-sheet`. It also styles `.app-tag` after a name on the serious home.
+  - Contract `docs/design/soon.md`. Recommendation: the strip under the ring, not in the tent's picture (the ring and the sky are there). The master wires index.html.
 - **Ready: vision batch 14, design part (2026-11-14).**
   - Test-run fixes:
     - 1573cc3 centres "הלאה" on every wizard step;

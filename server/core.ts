@@ -113,10 +113,13 @@ export async function loadUser(env: Env, req: Request): Promise<Member | null> {
   return row || null;
 }
 
-async function createSession(env: Env, email: string): Promise<string> {
-  const id = uid() + uid();
-  await env.DB.prepare('INSERT INTO sessions (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-    .bind(id, email, Date.now() + SESSION_DAYS * 86400_000, Date.now()).run();
+/** a new session. A sign-in (Google or a passkey) is a fresh proof for the lock (server/lock.ts): the session starts open, and
+    a code closed after ten wrong tries opens again – "שכחתי את הקוד" is a new sign-in with the person's Google account. */
+export async function createSession(env: Env, email: string): Promise<string> {
+  const id = uid() + uid(), now = Date.now();
+  await env.DB.prepare('INSERT INTO sessions (id, email, expires_at, created_at, last_active, lock_proof_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, email, now + SESSION_DAYS * 86400_000, now, now, now).run();
+  await env.DB.prepare('UPDATE user_locks SET fails = 0, pause_until = 0, closed = 0 WHERE email = ?').bind(email).run().catch(() => {});
   return cookie('sid', id, SESSION_DAYS * 86400);
 }
 

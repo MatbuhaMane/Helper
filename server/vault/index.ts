@@ -15,6 +15,7 @@ import { challenge, verifyAssertion, verifyRegistration } from './webauthn';
 import { backupStatus, driveDelete, nightly, readWithFailover, replicate, setState } from './backup';
 import * as K from './kin';
 import { ACCESS, Level, TRUST_MS, deviceLabel, trusted } from './access';
+import { treeOpen } from '../lock';
 
 const IDLE = 15 * 60e3, MAX = 2 * 3600e3, FRESH = 10 * 60e3, KEEP_DELETED = 30 * 864e5;
 const MAX_FILE = 25 * 1024 * 1024;
@@ -62,17 +63,13 @@ async function requireUnlocked(ctx: Ctx): Promise<Member> {
   return u;
 }
 
-/** a trusted session (it once unlocked the vault, and was used within 30 days) opens the tree with no unlock and no idle
-    lock; each use renews it (server/vault/access.ts, the owner's decision). An open vault counts too. */
+/** the tree: open to a signed-in member of the household, unless the person locked it (a code or a passkey; server/lock.ts) –
+    then opened by that lock for 15 minutes from its last use. The owner's decision, docs/decisions.md "Locks and privacy":
+    it replaces the trusted device. Documents and the rest stay 'fresh' (a passkey, or a Google sign-in from the last 10 minutes). */
 async function requireTree(ctx: Ctx): Promise<Member> {
   const u = requireUser(ctx);
-  const now = Date.now();
-  const s = await ctx.env.DB.prepare('SELECT vault_trust_until FROM sessions WHERE id = ? AND email = ?').bind(sid(ctx), u.email).first<{ vault_trust_until: number | null }>();
-  if (trusted(s?.vault_trust_until, now)) {
-    ctx.waitUntil(ctx.env.DB.prepare('UPDATE sessions SET vault_trust_until = ?, vault_trust_used = ? WHERE id = ?').bind(now + TRUST_MS, now, sid(ctx)).run().then(() => {}));
-    return u;
-  }
-  return requireUnlocked(ctx);
+  if (await treeOpen(ctx, u.email)) return u;
+  throw new HttpError(423, 'tree_locked');
 }
 /** the level a route needs, from the one table that decides it (access.ts ACCESS) */
 const need = (ctx: Ctx, level: Level) => (level === 'tree' ? requireTree(ctx) : requireUnlocked(ctx));

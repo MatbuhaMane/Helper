@@ -37,7 +37,7 @@ The owner's design. It replaces "the trusted device" for the tree.
 - The lock is enforced on the server, not just drawn over the page: a locked session gets 423 app_locked from every route except the lock's own, /api/me and signing in and out.
 
 **The code**
-- 4 digits. Stored as PBKDF2-SHA256 (210,000 rounds) with a salt per person and a pepper derived from VAULT_KEY, so the database alone cannot be guessed through.
+- 4 digits. Stored as PBKDF2-SHA256 (100,000 rounds, the most Workers allow) with a salt per person and a pepper derived from VAULT_KEY, so the database alone cannot be guessed through.
 - Wrong codes:
   - 5 wrong codes: a 15-minute pause;
   - 10 wrong codes: the code is closed until the person signs in with Google again.

@@ -1071,3 +1071,29 @@ CREATE TABLE IF NOT EXISTS family_profile_suggestions (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS family_profiles_link ON family_profiles(link_hash);
+
+-- הסיפור המשפחתי (server/story.ts): a household's stories, recordings, readings, documents and photos; read only through
+-- the view filter in server/story-rules.ts. Sealed with the vault key like vault_items; a file only as ciphertext, at
+-- story/<household>/<id> in the vault's store. level: private (only owner_email) | household (the default) | tribe.
+CREATE TABLE IF NOT EXISTS story_items (
+  id          TEXT PRIMARY KEY,
+  household   TEXT NOT NULL,
+  kind        TEXT NOT NULL,                    -- story | recording | reading | doc | photo
+  level       TEXT NOT NULL DEFAULT 'household',
+  owner_email TEXT NOT NULL,
+  title_enc   TEXT,
+  text_enc    TEXT,                             -- the story, or what was said (typed or transcribed)
+  when_text   TEXT NOT NULL DEFAULT '',         -- as the person wrote it, even rough ("שנות ה-50")
+  year        INTEGER,                          -- story-rules.yearOf(when_text), for the timeline
+  place_enc   TEXT,
+  people      TEXT NOT NULL DEFAULT '[]',       -- JSON [family_people id] of this household's tree
+  mime        TEXT,
+  size        INTEGER,                          -- counts toward the household's 2 GB
+  store       TEXT,
+  object_key  TEXT,
+  dek         TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  deleted_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS story_items_house ON story_items(household, created_at);

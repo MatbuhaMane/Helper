@@ -42,6 +42,7 @@ import * as voice from '../../server/voice';
 import { ensureSchema } from '../../server/schema';
 import * as vault from '../../server/vault';
 import * as familyProfile from '../../server/family-profile';
+import * as story from '../../server/story';
 import * as usage from '../../server/usage';
 import { featureOf, metered } from '../../server/meter';
 import * as weather from '../../server/weather';
@@ -509,6 +510,13 @@ route('POST', '/api/family/profile/open', familyProfile.open);                //
 route('POST', '/api/family/profile/suggestions/:id', familyProfile.decide);   // { approve }
 route('PUT', '/api/family/profile/cover', familyProfile.coverPut);
 route('GET', '/api/family/profile/cover', familyProfile.coverGet);
+/* the family story (server/story.ts): read only through its view filter (server/story-rules.ts) */
+route('GET', '/api/story', story.list);                                        // ?h=household (another one's tribe items)
+route('POST', '/api/story', story.add);                                        // multipart: kind, title, text, when, place, people, level, file?
+route('PUT', '/api/story/:id', story.save);                                    // the one who added it
+route('DELETE', '/api/story/:id', story.remove);
+route('POST', '/api/story/:id/restore', story.restore);
+route('GET', '/api/story/:id/file', story.file);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

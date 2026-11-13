@@ -60,9 +60,10 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-head .face { inline-size: 34px; block-size: 34px; border-radius: 50%; box-shadow: 0 0 0 2px var(--card); flex-shrink: 0; }
 /* the companion in the chat's head, instead of its name (vision batch 5): the drawn figure, small – alive (.f2, Figure2D
    with size 44) or still as an icon (the same, mounted with { still: true }); the name stays for screen readers */
-.dm-head .f2 { --f2-size: 44px; flex-shrink: 0; margin-block: -6px -4px; }
-.dm-head .f2::after { display: none; }
-.dm-head .dm-name-sr { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.dm-head .dm-headfig { display: inline-grid; place-items: end center; flex-shrink: 0; margin-block: -8px -4px; }
+.dm-head .f2::after, .dm-tab .f2::after { display: none; }   /* no ground shadow in a head or a tab */
+/* the tab with a drawn figure: the figure peeks out of the round, its head above the edge */
+.dm-tab .f2 { pointer-events: none; }
 .dm-compose { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px 12px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--card) 70%, transparent); }
 .dm-compose textarea { flex: 1; min-inline-size: 0; resize: none; border-radius: 18px; padding: 10px 14px; line-height: 1.45; font: inherit; max-block-size: 140px; }
 .dm-compose .btn { border-radius: 50%; inline-size: 44px; block-size: 44px; padding: 0; display: grid; place-items: center; flex-shrink: 0; }

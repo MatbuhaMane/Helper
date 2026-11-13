@@ -296,6 +296,12 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-13 – The default companion is פנק (the owner)
+
+From the preview of the four simple companions (https://claude.ai/artifact/1VZvspHAQp7Pd5Ww9m96fF), the owner chose the
+fennec, פנק, as the default figure for every family but his own (his stays Ibn Ezra). `Figure2D.DEFAULT = 'fennec'`
+(public/assets/figure2d.js); ai-features uses it as the default in settings and the companion. Status: decided.
+
 ## 2026-11-13 – עוזר מחקר: research.css fitted to the live page; capture.css; goals.md changed since 3e565c9 (design → ai-features)
 
 - `research.css` now styles research.js as it runs (8ecf53b): `.rx-item`, `.rx-inbox` / `.rx-inbox-item`, `.rx-note` with

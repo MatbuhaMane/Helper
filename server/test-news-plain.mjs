@@ -38,5 +38,15 @@ eq('a text with no stop', N.lead('בלי נקודה בסוף'), ['בלי נקו�
 eq('about 500 characters at most', N.lead(('מילה '.repeat(150) + '. ') + 'שני.').length, 1);
 eq('empty', N.lead(''), []);
 
+// feedMedia: the list's picture is the smallest at least 300 wide, the hero the widest; videos left out
+const guardian = '<media:content width="140" url="https://i/140.jpg"/><media:content width="460" url="https://i/460.jpg"/><media:content width="1200" url="https://i/1200.jpg"/>';
+eq('several sizes', N.feedMedia(guardian), { small: 'https://i/460.jpg', full: 'https://i/1200.jpg' });
+eq('the full size listed first', N.feedMedia('<media:content url="https://i/big.jpg" width="1200"/><media:thumbnail url="https://i/s.jpg" width="320"/>'), { small: 'https://i/s.jpg', full: 'https://i/big.jpg' });
+eq('all too small: the widest', N.feedMedia('<media:thumbnail url="https://i/a.jpg" width="100"/><media:thumbnail url="https://i/b.jpg" width="200"/>'), { small: 'https://i/b.jpg', full: 'https://i/b.jpg' });
+eq('no widths: the first', N.feedMedia('<media:thumbnail url="https://i/a.jpg"/><media:content url="https://i/b.jpg"/>'), { small: 'https://i/a.jpg', full: 'https://i/a.jpg' });
+eq('a video is left out', N.feedMedia('<media:content url="https://v/x.mp4" type="video/mp4" width="640"/><media:thumbnail url="https://i/t.jpg" width="480"/>'), { small: 'https://i/t.jpg', full: 'https://i/t.jpg' });
+eq('none', N.feedMedia('<title>x</title>'), { small: null, full: null });
+eq('media:group is not a picture', N.feedMedia('<media:group><media:content url="https://i/g.jpg" width="600"/></media:group>'), { small: 'https://i/g.jpg', full: 'https://i/g.jpg' });
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

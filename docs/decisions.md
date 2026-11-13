@@ -2611,3 +2611,12 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - When something waited in the last day, one morning notification goes out: "סיכום היום מהאוהל".
   - It is sent by the cron `0 5 * * *` (07:00 in winter, 08:00 in summer) through `push.morning`, with kind `summary`.
   - Shabbat or the person's quiet hours skip it.
+
+## 2026-11-14 · Lighter pictures: news sizes and cached recipe images (ai-features, the CEO's request)
+
+- New column (appended to COLUMNS in server/schema.ts): `news_items.image_full TEXT`. Holds the feed's widest picture, for the article's hero.
+- `image` is now the smallest media:content or media:thumbnail that is at least 300 wide (`feedMedia` in server/news-plain.ts, with tests in test-news-plain).
+- Older rows have no image_full, so the hero falls back to image.
+- World recipes: og:image is cached per page in the Cloudflare Cache API. The key is under `<origin>/__og/`. A found picture is kept a week; none found, a day.
+- A plain search waits at most 1.5 s for the pictures.
+- A saved search fills its missing pictures from the cache.

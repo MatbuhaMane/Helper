@@ -51,3 +51,19 @@ export function lead(text: string, n = 3): string[] {
   }
   return out;
 }
+
+const mediaAttr = (tag: string, name: string) => new RegExp(`\\b${name}=["']([^"']+)`, 'i').exec(tag)?.[1] ?? null;
+/** the item's pictures (media:content and media:thumbnail; videos left out). Several feeds (the Guardian, the BBC, the
+    NYT) list one picture in several sizes, the first often the full ~1200px: the list gets the smallest that is at
+    least 300 wide (else the widest there is; without widths, the first), the article's hero the widest. */
+export function feedMedia(b: string): { small: string | null; full: string | null } {
+  const all = [...b.matchAll(/<media:(?:content|thumbnail)\b[^>]*>/gi)].map((m) => m[0])
+    .filter((t) => !/medium=["'](?:video|audio)|type=["'](?:video|audio)\//i.test(t))
+    .map((t) => ({ url: mediaAttr(t, 'url'), w: +(mediaAttr(t, 'width') || 0) }))
+    .filter((m): m is { url: string; w: number } => !!m.url);
+  if (!all.length) return { small: null, full: null };
+  const sized = all.filter((m) => m.w > 0).sort((a, b) => a.w - b.w);
+  if (!sized.length) return { small: all[0].url, full: all[0].url };
+  const small = sized.find((m) => m.w >= 300) || sized[sized.length - 1];
+  return { small: small.url, full: sized[sized.length - 1].url };
+}

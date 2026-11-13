@@ -484,6 +484,8 @@
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !m.hidden) closeModal(); });
       document.body.append(m);
     }
+    m.querySelector('.modal-glass').getAnimations().forEach((a) => a.cancel());   // a window still shrinking away opens again at once
+    m.classList.remove('grow', 'shrinking'); modalOrigin = null;
     const b = document.getElementById('modalBody');
     b.textContent = '';
     b.append(...content);
@@ -492,9 +494,36 @@
     document.body.classList.add('modal-open');
     b.scrollTop = 0;
   }
+  /** The modal, grown out of the thing it was opened from (a pie, a card) and shrunk back into it when it closes. */
+  let modalOrigin = null;
+  function modalFrom(origin, ...content) {
+    modal(...content);
+    const m = document.getElementById('modal');
+    if (zoom(m, origin, false)) { m.classList.add('grow'); modalOrigin = origin; }
+  }
+  /** FLIP between the origin's box and the glass: one uniform scale, so the window's content never stretches. */
+  function zoom(m, origin, back) {
+    const g = m?.querySelector('.modal-glass');
+    if (!g?.animate || !origin?.isConnected || matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce') return null;
+    const a = origin.getBoundingClientRect(), b = g.getBoundingClientRect();
+    if (!a.width || !b.width) return null;
+    const k = Math.max(a.width / b.width, a.height / b.height, 0.04);
+    const from = { transform: `translate(${a.left + a.width / 2 - (b.left + b.width / 2)}px, ${a.top + a.height / 2 - (b.top + b.height / 2)}px) scale(${k})`, opacity: 0.2, borderRadius: `${Math.round(Math.min(b.width, b.height) / 2)}px` };
+    const to = { transform: 'none', opacity: 1, borderRadius: getComputedStyle(g).borderRadius };
+    return g.animate(back ? [to, { ...from, opacity: 0 }] : [from, to], back
+      ? { duration: 220, easing: 'cubic-bezier(0.4, 0, 1, 1)' }
+      : { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+  }
   function closeModal() {
     const m = document.getElementById('modal');
-    if (m) m.hidden = true;
+    const shrink = m && !m.hidden && modalOrigin ? zoom(m, modalOrigin, true) : null;
+    modalOrigin = null;
+    if (shrink) {   // hidden when the shrink ends, or after 400 ms whatever happens (a tab in the background never runs its frames)
+      m.classList.add('shrinking');
+      const gone = () => { if (!m.classList.contains('shrinking')) return; shrink.cancel(); m.hidden = true; m.classList.remove('grow', 'shrinking'); };
+      shrink.onfinish = gone; setTimeout(gone, 400);
+    }
+    else if (m) { m.hidden = true; m.classList.remove('grow', 'shrinking'); }
     document.body.classList.remove('modal-open');
     if (modalStep) { const s = modalStep; modalStep = 0; back.done(s); }
   }
@@ -541,7 +570,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

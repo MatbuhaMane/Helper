@@ -130,7 +130,9 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-calm { margin: 0; font-size: .95rem; color: var(--muted); }
 /* more than three things today: the rest behind one quiet line */
 .dsum-more { display: inline-flex; align-items: center; min-block-size: 40px; padding-inline: 2px; font-size: .92rem; font-weight: 500;
-  color: var(--primary); text-decoration: none; }
+  color: var(--primary); text-decoration: none;
+  /* a link or a button (index.html builds a button): no native button face */
+  background: none; border: 0; font-family: inherit; cursor: pointer; justify-self: start; }
 .dsum-more:hover { text-decoration: underline; text-underline-offset: 3px; }
 .dsum-more:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
 /* the day itself (vision batch 16): every day, with or without messages. A small calendar leaf beside the title (the Hebrew

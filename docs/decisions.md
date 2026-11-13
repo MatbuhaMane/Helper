@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Recurring goals: a fresh round each period (ai-features → master, design)
+
+The owner: "בניהול מטרות, אפשר הגדרת מטרות מחזוריות".
+- A goal may repeat every day, week (from Sunday), month (from the 1st) or every n days (2–60, counted from the goal's
+  first day). New column `goals.repeat` (JSON `{every, n?}`, appended to `COLUMNS` in `server/schema.ts`); `null` is a
+  plain goal, as before.
+- Its steps count as done only within the running period, so each period opens a fresh round of the same steps.
+  New table `goal_rounds (email, goal_id, period, done, total, updated_at)` (appended to `schema.sql`) keeps each round's
+  count, written whenever a step is ticked or unticked; it feeds the history (the last 8 rounds) and the streak of whole
+  rounds. An open round never breaks the streak. The logic and its tests are in `server/goals-logic.ts` / `test-goals.mjs`.
+- `PUT /api/goals/steps/:id` returns `roundDone`; a recurring goal never returns `goalDone` (it is ended by hand).
+- For design: the page draws `.gl-rounds` and its dots `.gl-round-dot` (`.whole`, `.part`, `.now`) with small inline
+  styles for now; they are free to be replaced in `tasks.css`.
+Status: done (on `ai-features`).
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**

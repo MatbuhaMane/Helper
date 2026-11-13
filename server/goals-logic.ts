@@ -305,3 +305,59 @@ export function earned(s: Stats): string[] {
   }
   return out;
 }
+
+/* ---------------- recurring goals (the owner, 2026-11-13: "אפשר הגדרת מטרות מחזוריות") ----------------
+   A recurring goal starts a fresh round each period: its steps count as done only when they were done within the
+   current period. Each round's count is kept (goal_rounds), for the history and the streak of whole rounds. */
+
+export type Repeat = { every: 'day' | 'week' | 'month' | 'days'; n?: number };
+
+export const parseRepeat = (s: string | null | undefined): Repeat | null => {
+  try {
+    const r = JSON.parse(s || 'null');
+    if (!r || !['day', 'week', 'month', 'days'].includes(r.every)) return null;
+    return r.every === 'days' ? { every: 'days', n: Math.min(60, Math.max(2, Math.round(Number(r.n) || 2))) } : { every: r.every };
+  } catch { return null; }
+};
+
+/** the first day of the period that holds `day` (weeks start on Sunday; "every n days" counts from the goal's first day) */
+export function periodStart(r: Repeat, anchor: string, day: string): string {
+  if (r.every === 'day') return day;
+  if (r.every === 'week') return addDays(day, -weekday(day));
+  if (r.every === 'month') return day.slice(0, 7) + '-01';
+  const n = r.n || 2, k = Math.floor(daysBetween(anchor, day) / n);
+  return addDays(anchor, k * n);
+}
+
+/** the period before the one that starts on `start` */
+export function prevPeriod(r: Repeat, start: string): string {
+  if (r.every === 'day') return addDays(start, -1);
+  if (r.every === 'week') return addDays(start, -7);
+  if (r.every === 'days') return addDays(start, -(r.n || 2));
+  const [y, m] = start.split('-').map(Number);
+  return m === 1 ? `${y - 1}-12-01` : `${y}-${String(m - 1).padStart(2, '0')}-01`;
+}
+
+export interface Round { period: string; done: number; total: number }
+const whole = (x?: Round) => !!x && x.total > 0 && x.done >= x.total;
+
+/** whole rounds in a row: the running round counts once it is whole, and does not break the run while it is still open */
+export function roundStreak(r: Repeat, anchor: string, today: string, rounds: Round[]): number {
+  const by = new Map(rounds.map((x) => [x.period, x]));
+  const first = periodStart(r, anchor, anchor);
+  let p = periodStart(r, anchor, today), n = 0;
+  if (!whole(by.get(p))) p = prevPeriod(r, p);
+  for (let i = 0; i < 400 && p >= first && whole(by.get(p)); i++) { n++; p = prevPeriod(r, p); }
+  return n;
+}
+
+/** the last rounds, newest first (a round with no record: nothing done), from the goal's first period on */
+export function roundHistory(r: Repeat, anchor: string, today: string, rounds: Round[], total: number, max = 8): (Round & { whole: boolean })[] {
+  const by = new Map(rounds.map((x) => [x.period, x]));
+  const first = periodStart(r, anchor, anchor), out: (Round & { whole: boolean })[] = [];
+  for (let p = periodStart(r, anchor, today); out.length < max && p >= first; p = prevPeriod(r, p)) {
+    const x = by.get(p) || { period: p, done: 0, total };
+    out.push({ ...x, whole: whole(x) });
+  }
+  return out;
+}

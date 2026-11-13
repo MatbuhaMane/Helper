@@ -20,17 +20,20 @@ async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infe
 const Kind = z.enum(['short', 'regular', 'long']);
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const Text = (max: number) => z.string().trim().min(1).max(max);
+const RepeatZ = z.object({ every: z.enum(['day', 'week', 'month', 'days']), n: z.number().int().min(2).max(60).optional() }).nullable().optional();
 const NewGoal = z.object({
   title: Text(200), why: z.string().trim().max(1000).default(''), kind: Kind.default('regular'),
   due: Day.nullable().optional(), days: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(),
   time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(), template: z.string().max(30).nullable().optional(),
   processes: z.array(z.object({ title: Text(160), steps: z.array(Text(300)).max(40).default([]) })).max(20).default([]),
+  repeat: RepeatZ,   // a recurring goal: a fresh round each day / week / month / n days
 });
 const GoalEdit = z.object({
   title: Text(200).optional(), why: z.string().trim().max(1000).optional(), kind: Kind.optional(), due: Day.nullable().optional(),
   days: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(), time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   status: z.enum(['active', 'done', 'archived']).optional(),
   shared: z.boolean().optional(),   // share its progress with the household (goal-social.ts)
+  repeat: RepeatZ,
 });
 
 /** the person's rest day: their own choice in prefs 'goals', else by the tradition in prefs 'me' */
@@ -88,10 +91,23 @@ export async function list(ctx: Ctx) {
   const [data, rest] = await Promise.all([all(ctx, u.email), restOf(ctx, u.email)]);
   const today = L.dayOf(Date.now());
   const done: L.Done = new Set(data.steps.filter((s) => s.done_at).map((s) => L.dayOf(s.done_at)));
-  const steps = data.steps.map((s) => ({ id: s.id, goal: s.goal_id, process: s.process_id, text: s.text, sort: s.sort, done: !!s.done_at, small: !!s.small, doneAt: s.done_at || null }));
+  // a recurring goal: its steps count as done only within the running round (the first day of its period)
+  const rep = new Map<string, { r: L.Repeat; anchor: string; start: string }>();
+  for (const g of data.goals) { const r = L.parseRepeat(g.repeat); if (r) { const anchor = L.dayOf(g.created_at); rep.set(g.id, { r, anchor, start: L.periodStart(r, anchor, today) }); } }
+  const doneNow = (s: any) => !!s.done_at && (!rep.has(s.goal_id) || L.dayOf(s.done_at) >= rep.get(s.goal_id)!.start);
+  const steps = data.steps.map((s) => ({ id: s.id, goal: s.goal_id, process: s.process_id, text: s.text, sort: s.sort, done: doneNow(s), small: !!s.small, doneAt: s.done_at || null }));
+  const rounds = rep.size ? (await ctx.env.DB.prepare('SELECT goal_id, period, done, total FROM goal_rounds WHERE email = ? ORDER BY period DESC LIMIT 3000')
+    .bind(u.email).all<{ goal_id: string; period: string; done: number; total: number }>().catch(() => ({ results: [] as { goal_id: string; period: string; done: number; total: number }[] }))).results : [];
+  const roundOf = (id: string) => {
+    const x = rep.get(id);
+    if (!x) return {};
+    const mine = steps.filter((s) => s.goal === id), now = { period: x.start, done: mine.filter((s) => s.done).length, total: mine.length };
+    const past = [...rounds.filter((r) => r.goal_id === id && r.period !== x.start), now];   // the running round: live
+    return { repeat: x.r, round: now, history: L.roundHistory(x.r, x.anchor, today, past, mine.length), roundStreak: L.roundStreak(x.r, x.anchor, today, past) };
+  };
   const goals = data.goals.map((g) => ({
     id: g.id, title: g.title, why: g.why || '', kind: g.kind, due: g.due || null, days: parseDays(g.days), time: g.time || null, status: g.status,
-    template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null, shared: !!g.shared,
+    template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null, shared: !!g.shared, repeat: null, ...roundOf(g.id),
     processes: data.processes.filter((p) => p.goal_id === g.id).map((p) => ({ id: p.id, title: p.title, sort: p.sort, steps: steps.filter((s) => s.process === p.id) })),
   }));
   const today3 = L.todays(goals.map((g) => ({ ...g })), data.processes.map((p) => ({ id: p.id, goal: p.goal_id, sort: p.sort })), steps, today, rest);
@@ -141,8 +157,8 @@ export async function insertGoal(ctx: Ctx, email: string, g: z.infer<typeof NewG
   const now = Date.now(), id = uid(), db = ctx.env.DB;
   const count = await db.prepare("SELECT COUNT(*) AS n FROM goals WHERE email = ? AND status != 'deleted'").bind(email).first<{ n: number }>();
   if ((count?.n || 0) >= 200) throw new HttpError(400, 'too_many_goals');
-  const stmts = [db.prepare('INSERT INTO goals (email, id, title, why, kind, due, status, days, time, template, sort, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-    .bind(email, id, g.title, g.why, g.kind, g.due || null, 'active', g.days ? JSON.stringify(g.days) : null, g.time || null, g.template || null, now, now, now)];
+  const stmts = [db.prepare('INSERT INTO goals (email, id, title, why, kind, due, status, days, time, template, sort, created_at, updated_at, repeat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(email, id, g.title, g.why, g.kind, g.due || null, 'active', g.days ? JSON.stringify(g.days) : null, g.time || null, g.template || null, now, now, now, g.repeat ? JSON.stringify(g.repeat) : null)];
   g.processes.forEach((pr, i) => {
     const pid = uid();
     stmts.push(db.prepare('INSERT INTO goal_processes (email, goal_id, id, title, sort, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(email, id, pid, pr.title, i, now));
@@ -168,6 +184,7 @@ export async function update(ctx: Ctx) {
   if (d.time !== undefined) put('time', d.time);
   if (d.status !== undefined) { put('status', d.status); put('done_at', d.status === 'done' ? Date.now() : null); }
   if (d.shared !== undefined) put('shared', d.shared ? 1 : 0);
+  if (d.repeat !== undefined) put('repeat', d.repeat ? JSON.stringify(d.repeat) : null);
   if (!sets.length) return json({ ok: true });
   put('updated_at', Date.now());
   const r = await ctx.env.DB.prepare(`UPDATE goals SET ${sets.join(', ')} WHERE email = ? AND id = ? AND status != 'deleted'`).bind(...vals, u.email, ctx.params.id).run();
@@ -237,12 +254,27 @@ export async function editStep(ctx: Ctx) {
   if (b.text !== undefined) await ctx.env.DB.prepare('UPDATE goal_steps SET text = ? WHERE email = ? AND id = ?').bind(b.text, u.email, s.id).run();
   if (b.done === undefined) return json({ ok: true });
   await ctx.env.DB.prepare('UPDATE goal_steps SET done_at = ? WHERE email = ? AND id = ?').bind(b.done ? Date.now() : null, u.email, s.id).run();
+  const g = await ctx.env.DB.prepare('SELECT created_at, repeat FROM goals WHERE email = ? AND id = ?').bind(u.email, s.goal_id).first<{ created_at: number; repeat: string | null }>();
+  const r = L.parseRepeat(g?.repeat);
+  const roundDone = r && g ? await keepRound(ctx, u.email, s.goal_id, r, L.dayOf(g.created_at)) : false;
   if (!b.done) return json({ ok: true });
   await Social.progress(ctx, u, s.goal_id, 'step');   // (a shared goal: the household's feed)
   const [data, rest] = await Promise.all([all(ctx, u.email), restOf(ctx, u.email)]);
   const { fresh } = await newBadges(ctx, u.email, data, rest, L.dayOf(Date.now()));
   const left = data.steps.filter((x) => x.goal_id === s.goal_id && !x.done_at).length;
-  return json({ ok: true, fresh, goalDone: left === 0 });
+  // a recurring goal is never "done": its round is (and a new one opens next period)
+  return json({ ok: true, fresh, goalDone: !r && left === 0, roundDone });
+}
+
+/** a recurring goal's running round, kept after every step ticked or unticked; true when the round is whole */
+async function keepRound(ctx: Ctx, email: string, goalId: string, r: L.Repeat, anchor: string) {
+  const start = L.periodStart(r, anchor, L.dayOf(Date.now()));
+  const { results } = await ctx.env.DB.prepare('SELECT done_at FROM goal_steps WHERE email = ? AND goal_id = ?').bind(email, goalId).all<{ done_at: number | null }>();
+  const done = results.filter((x) => x.done_at && L.dayOf(x.done_at) >= start).length;
+  await ctx.env.DB.prepare(`INSERT INTO goal_rounds (email, goal_id, period, done, total, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(email, goal_id, period) DO UPDATE SET done = excluded.done, total = excluded.total, updated_at = excluded.updated_at`)
+    .bind(email, goalId, start, done, results.length, Date.now()).run();
+  return results.length > 0 && done >= results.length;
 }
 /** DELETE /api/goals/steps/:id */
 export async function removeStep(ctx: Ctx) {

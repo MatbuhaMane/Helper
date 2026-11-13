@@ -1,9 +1,15 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (second round: the record, access requests, design's classes).
+Last update: 2026-11-13 (third round: the family tree's delete and approvals).
 
 ## Done
+- **Third round (2026-11-13): the family tree (Ivri could not delete), on `ai-features`, ready to merge:**
+  faa5744 rules + tests, 5f9f12d `vault/access.ts` (the master's, patch in the shared notes), b59e54b server/table/routes,
+  c0151e5 the pages. A non-user goes at once with "בטל" (10 s); another user's card or relationship waits for their
+  "אשר"/"דחה" (a message is sent; the proposer sees "ממתין לאישור"); the owner restores from the back door
+  ("שחזור מהעץ"). Delete and edit are now also on the tree's own card. Tests: kin 95, access 204, e2e 30. Checked at
+  375 and desktop; the look waits for design (`.fm-undo` is not floating yet).
 - **Second round (2026-11-13), on `ai-features`, ready to merge:**
   - **The record** (6f7760b, `music.js`): on the home page it is on the stump from the start, with no player connected,
     also for someone whose saved place is the menu or whose prefs arrive late; a tap with nothing loaded opens the player.

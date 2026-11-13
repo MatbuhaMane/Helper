@@ -2483,3 +2483,22 @@ the server part is in the master's `server/join.ts` and `join-rules.ts`, in one 
   `POST /api/admin/access-requests/decide`. In the panel, the requests with status `asked` are on top: "הזמן" makes an
   invitation for that email (the name it gave, else the Google name) and then marks it invited; "דחה" marks it declined
   (no message is sent). The patch file is in the shared notes folder.
+
+## 2026-11-13 – ai-features: the family tree's changes (who may change what, delete with undo)
+
+The owner's rule: someone who is not a user is changed or deleted at once by anyone who may edit the tree; another
+user's card or relationship is a proposal that waits for their "אשר"; my own card is mine to change. A delete is soft,
+with "בטל" for 10 seconds, and the owner can restore from the back door.
+- **Appended (ai-features' feature):** table `family_changes` in `schema.sql`; columns `family_people.deleted_by` and
+  `deleted_snap` in `COLUMNS`; routes `GET /api/vault/changes`, `POST /api/vault/changes/:id/approve|decline|cancel`,
+  `POST /api/vault/people/:id/restore`, `GET /api/admin/tree-trash`, `POST /api/admin/tree-trash/:id/restore` (owner only).
+- **The master's file `server/vault/access.ts` (5f9f12d, patch `vault-access-tree-delete.patch` in the shared notes):**
+  `personDelete` and `linkDelete` move from a fresh unlock to `tree` (that was why Ivri could not delete), and the new
+  handlers are at `tree`. Deleting a file stays at a fresh unlock. test-access 204.
+- **Rules in `kin.ts`** (`approversFor`, `mayDecide`, `groupOutcome`, `mayRestore`, `changedKeys`), 24 new tests; an
+  end-to-end check with two test users: 30 passed (nobody approves for someone else; a decline changes nothing).
+- **For design (no CSS yet):** `.fm-undo` (the 10-second bar, appended to `body`; needs to float at the bottom, it is now
+  static at the page's end), `.fm-acts` with `.fm-del` (in the panel's header and on the tree's card `.mc`), `.fm-pending`
+  ("ממתין לאישור" + "ביטול הבקשה"), `.fm-asks-slot` > `section.card.fm-asks` > `ul.fm-ask-list` > `li.fm-ask[data-kind]`
+  with `.fm-ask-what`, `ul.fm-ask-diff` (b, s → span), `.fm-ask-acts`; back door `section.bd-trash` > `ul.bd-trash-list` >
+  `li.bd-trash-row` (`.bd-trash-who`), `p.bd-trash-empty`.

@@ -7,6 +7,30 @@ table or route. Newest first. The master reads this before each merge.
 Format:
 
 ```
+## 2026-11-14 – Vision batch 5, ai-features' part: the companion's name, figure, voice and tab; themes of one's own (ai-features → master, design, vision)
+
+- **The name is ראב"ע only** (9b8893c): "אזי" was saved by the companion's `rename` tool in `daemons.name`. The tool is
+  gone (prompt version 10: stored conversations start over, memory notes carry over), a saved name is ignored on load.
+  No data was changed.
+- **Figures** (75883e5): `/api/daemon` returns `ibnEzra` (the owner's household, by `OWNER_EMAIL`). Settings has a figure
+  picker (ראב"ע for the family; design's Figure2D figures by `kind`: simple, generic, badge – unlocked by `unlock`, a badge
+  id from the goals engine – and holiday), all free. The choice is prefs `daemon.figure` (server, per person). daemon.js
+  draws a 2D figure in place of the 3D one (three.js not loaded); anyone outside the family who has not chosen gets the
+  first 2D figure. Until design's `figure2d.js` and figures reach main, everyone keeps ראב"ע. The engine does not load
+  `figure2d.css` itself; the callers add it (design may prefer the engine to).
+- **Voice** prefs `daemon.voice`: `always` · `mirror` (aloud when spoken to, in writing when written to) · `silent`
+  (`speak` kept in step for older code). **The chat's head** shows the figure, prefs `daemon.header`: `icon` · `animated`.
+- **The side tab** (be7a676, 8878c5b) is dragged: docked at the start or the end, or free; design's `.dock-start`,
+  `.free`, `.dragging`, `.dm-dock-hint`. Its place is the device's: localStorage `helper.daemon.tab`.
+- **Themes** (4f809bc): prefs `look.font` (`heebo` · `round` · `serif`; accessibility's readable font wins) and
+  `look.palette: 'custom'` with `look.custom: { primary, field, ground }`; apply.js sets the tokens from design's
+  `H.palette.derive()`, by day or by night.
+- **For the master:** common.js's early copy of the settings could set `data-font` from `look.font` too, so the font does
+  not flash in. A custom theme comes in once apply.js and palette.js load (a short flash of the default); if that shows,
+  apply.js can keep the derived tokens in the prefs for the early copy to set.
+- "דרוזים" is "התווחיד" (التوحيد for the Arabic version; the value stays `druze`).
+Status: done on `ai-features`; the looks come with design's 31f8ed0 and its figures.
+
 ## YYYY-MM-DD – short title (area)
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```

@@ -11,34 +11,6 @@
   const root = document.querySelector('main');
   const MAX = 2000;
 
-  document.head.append(el('style', {}, `
-    .dm { display: grid; gap: 14px; }
-    @media (min-width: 900px) { .dm { grid-template-columns: minmax(260px, 340px) 1fr; align-items: start; } .dm-back { display: none; } }
-    @media (max-width: 899px) { .dm[data-open] .dm-list { display: none; } .dm:not([data-open]) .dm-thread { display: none; } }
-    .dm-list, .dm-thread { margin: 0; padding: 12px; min-inline-size: 0; }
-    .dm-list-head, .dm-thread-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; margin-block-end: 8px; }
-    .dm-list-head h2, .dm-thread-head h2 { margin: 0; font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dm-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-    .dm-row { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; inline-size: 100%; text-align: start; padding: 10px; border-radius: var(--radius-sm);
-      background: transparent; border: 1px solid transparent; color: var(--text); font: inherit; cursor: pointer; }
-    .dm-row:hover, .dm-row[aria-current="true"] { background: var(--tint); border-color: var(--line); }
-    .dm-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dm-row small { grid-column: 1 / -1; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .dm-row time { color: var(--muted); font-size: .8rem; }
-    .dm-row.unread b::after { content: ''; display: inline-block; inline-size: 8px; block-size: 8px; border-radius: 50%; background: #c2412d; margin-inline-start: 6px; vertical-align: middle; }
-    .dm-msgs { display: flex; flex-direction: column; gap: 6px; max-block-size: min(62vh, 640px); min-block-size: 200px; overflow-y: auto; padding: 4px; }
-    .dm-msg { max-inline-size: 82%; padding: 8px 12px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }
-    .dm-msg.mine { align-self: flex-start; background: var(--primary); color: var(--primary-ink); border-end-start-radius: 4px; }
-    .dm-msg.theirs { align-self: flex-end; background: var(--tint); color: var(--text); border: 1px solid var(--line); border-end-end-radius: 4px; }
-    .dm-msg time { display: block; font-size: .72rem; opacity: .75; margin-block-start: 2px; }
-    .dm-day { align-self: center; color: var(--muted); font-size: .8rem; margin: 6px 0; }
-    .dm-compose { display: flex; gap: 8px; align-items: flex-end; margin-block-start: 10px; }
-    .dm-compose textarea { flex: 1; min-block-size: 44px; max-block-size: 160px; resize: none; }
-    .dm-note, .dm-empty { color: var(--muted); font-size: .9rem; margin: 8px 0; }
-    .dm-pick { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; max-block-size: 50vh; overflow-y: auto; }
-    .dm-pick h3 { font-size: .85rem; color: var(--muted); margin: 10px 0 2px; }
-  `));
-
   /* ---------- times ---------- */
   const hm = (t) => new Date(t).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
   const dayName = (t) => {

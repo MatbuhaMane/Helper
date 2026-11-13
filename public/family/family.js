@@ -148,7 +148,10 @@
     const find = el('input', { type: 'search', class: 'fv-find', placeholder: 'חיפוש בעץ', 'aria-label': 'חיפוש בעץ', list: 'fv-names' });
     find.addEventListener('change', () => { const p = S.people.find((x) => x.name === find.value.trim()) || S.people.find((x) => x.name.includes(find.value.trim())); if (p) { setView('family'); focusOn(p.id); find.value = ''; } });
     const views = el('div', { class: 'fv-views', role: 'tablist', 'aria-label': 'תצוגה' },
-      VIEWS.map(([v, n]) => el('button', { role: 'tab', 'data-v': v, 'aria-selected': String((S.view || VIEWS[0][0]) === v), onclick: () => { setView(v); draw(); } }, n)));
+      VIEWS.map(([v, n]) => el('button', { role: 'tab', 'data-v': v, 'aria-selected': String((S.view || VIEWS[0][0]) === v), onclick: () => {
+        const was = S.view || VIEWS[0][0];
+        if (v !== was && H.back) H.back.push(() => { setView(was); draw(); });   // back returns to the view before
+        setView(v); draw(); } }, n)));
     const bar = el('div', { class: 'fv-bar' },
       el('h1', {}, 'עץ המשפחה'),
       el('span', { class: 'spacer' }),
@@ -777,7 +780,7 @@
         relationsBox(p, () => draw(tab)),
         treesBox(p),
         privacyBox(p),
-        el('nav', { class: 'fv-tabs', role: 'tablist' }, TABS.map(([k, label]) => el('button', { role: 'tab', 'aria-selected': String(k === t), class: k === t ? 'on' : '', onclick: () => draw(k) }, label, el('small', {}, String(list.items.filter((x) => x.kind === k).length))))),
+        el('nav', { class: 'fv-tabs', role: 'tablist' }, TABS.map(([k, label]) => el('button', { role: 'tab', 'aria-selected': String(k === t), class: k === t ? 'on' : '', onclick: () => { if (k !== tab && H.back) { const was = tab; H.back.push(() => { if (body.isConnected) draw(was); }); } draw(k); } }, label, el('small', {}, String(list.items.filter((x) => x.kind === k).length))))),
         ...(list.locked ? [el('div', { class: 'card fv-docs-locked' },
           el('p', {}, 'המסמכים, התמונות והפרטים של ' + p.name + ' נפתחים באישור שזה אתה.'),
           el('button', { class: 'btn primary', type: 'button', onclick: async () => { try { await stepUp(); H.sheet.close(); panel(id, tab); } catch (e) { say(e); } } }, 'פתיחת המסמכים'))] : [

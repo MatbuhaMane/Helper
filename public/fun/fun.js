@@ -172,7 +172,7 @@
     if (!old) { const first = board.firstElementChild; S.page = 0; more().then(() => first?.classList.contains('fun-wait') && first.remove()); }
     else more();
   }
-  tabs.append(...CATS.map(([cat, name, ic, tint]) => el('button', { role: 'tab', class: 'fun-tab', 'data-cat': cat, style: `--tint:${tint}`, onclick: () => open(cat) },
+  tabs.append(...CATS.map(([cat, name, ic, tint]) => el('button', { role: 'tab', class: 'fun-tab', 'data-cat': cat, style: `--tint:${tint}`, onclick: () => { const was = P.cat; if (cat !== was && H.back) H.back.push(() => open(was)); open(cat); } },
     el('span', { class: 'ic' }, H.icon(ic)), el('span', {}, name))));
   open(CATS.some((c) => c[0] === P.cat) ? P.cat : 'tv');
 

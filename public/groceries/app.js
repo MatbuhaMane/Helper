@@ -1261,6 +1261,7 @@
   fab.addEventListener('click', (e) => { e.stopPropagation(); setFab(fabMenu.hidden); if (!fabMenu.hidden) fabMenu.querySelector('button').focus(); });
   document.addEventListener('click', (e) => { if (!fabMenu.hidden && !e.target.closest('#bookFabMenu')) setFab(false); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !fabMenu.hidden) { setFab(false); fab.focus(); } });
+  H.back?.watch?.(fabMenu, () => setFab(false));   // the back gesture closes the menu
   $('#bookNew').addEventListener('click', () => { setFab(false); openBookRecipe({ title: '', subtitle: '', image: '', source_url: '', ingredients: [], steps: [], notes: '', tags: [] }, fab); });
   $('#bookImport').addEventListener('click', () => { setFab(false); importDialog(); });
 

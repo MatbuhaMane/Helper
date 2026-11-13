@@ -639,6 +639,7 @@
     const lang = it.lang || feedOf(it)?.lang || 'he';
     const tool = (icon, label, title, fn, extra = {}) => el('button', { class: 'tool', title, onclick: fn, ...extra }, el('span', { class: 'tool-i', 'aria-hidden': 'true' }, icon), el('span', { class: 'tool-l' }, label));
     const moreMenu = el('div', { class: 'tool-menu', role: 'menu', hidden: true });
+    H.back?.watch?.(moreMenu, () => { moreMenu.hidden = true; });
     const moreBtn = tool(ICON.more, 'עוד', 'עוד פעולות', (e) => { e.stopPropagation(); moreMenu.hidden = !moreMenu.hidden; }, { 'aria-haspopup': 'menu' });
     const item = (label, fn) => el('button', { role: 'menuitem', onclick: () => { moreMenu.hidden = true; fn(); } }, label);
     moreMenu.append(
@@ -809,6 +810,7 @@
   $('#refresh').addEventListener('click', () => { history = null; $('#histSw').checked = false; $('#webResults').hidden = true; load(); });
   $('#menuBtn').addEventListener('click', () => { const open = !$('#side').classList.contains('open'); $('#side').classList.toggle('open', open); $('#sideShade').hidden = !open; $('#menuBtn').setAttribute('aria-expanded', String(open)); });
   $('#sideShade').addEventListener('click', closeSide);
+  H.back?.watch?.($('#side'), closeSide, () => $('#side').classList.contains('open'));   // the back gesture closes the side menu
   $('#markAll').addEventListener('click', async () => {
     const list = visible().filter((i) => !i.read);
     if (!list.length) return toast('הכל כבר נקרא');

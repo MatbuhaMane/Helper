@@ -306,7 +306,10 @@
     } catch (_) { toast('לא הצלחתי לקרוא את התמונה'); }
   }
   function drawSubjects() {
-    subjectRow.replaceChildren(...CALC_SUBJECTS.map(([id, name]) => el('button', { type: 'button', role: 'tab', class: 'cx-subj', 'aria-selected': String(P.subject === id), onclick: () => { P.subject = id; save(); drawSubjects(); } }, name)));
+    subjectRow.replaceChildren(...CALC_SUBJECTS.map(([id, name]) => el('button', { type: 'button', role: 'tab', class: 'cx-subj', 'aria-selected': String(P.subject === id), onclick: () => {
+      const was = P.subject;
+      if (id !== was && H.back) H.back.push(() => { P.subject = was; save(); drawSubjects(); });   // back: the subject before
+      P.subject = id; save(); drawSubjects(); } }, name)));
     const list = P.subject === 'auto' ? Object.values(CALC_FORMULAS).map((l) => l[0]) : CALC_FORMULAS[P.subject] || [];
     bubbles.replaceChildren(...list.map(([name, f]) => {
       const b = el('button', { type: 'button', class: 'cx-bubble', title: 'להוסיף לשאלה', onclick: () => {
@@ -459,7 +462,7 @@
   const views = { calc: calcView, smart: smartView };
   function show(t) {
     P.tab = t; save();
-    tabs.replaceChildren(...[['calc', '🧮 מחשבון'], ['smart', '✨ מחשבון חכם']].map(([id, n]) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(t === id), onclick: () => show(id) }, n)));
+    tabs.replaceChildren(...[['calc', '🧮 מחשבון'], ['smart', '✨ מחשבון חכם']].map(([id, n]) => el('button', { type: 'button', role: 'tab', 'aria-selected': String(t === id), onclick: () => { if (id !== t && H.back) H.back.push(() => show(t)); show(id); } }, n)));
     calcView.hidden = t !== 'calc'; smartView.hidden = t !== 'smart';
     (t === 'calc' ? exprIn : problem).focus({ preventScroll: true });
   }

@@ -1529,8 +1529,10 @@
       el('div', { class: 'dm-compose' }, panelInput, el('button', { class: 'btn primary', 'aria-label': 'שלח', onclick: () => { send(panelInput.value); panelInput.value = ''; grow(); } }, svg('send'))));
     return panel;
   }
-  let panelInput;
+  let panelInput, panelWatched = false;
   function togglePanel(open) {
+    // the back gesture closes the chat panel (H.back.watch in common.js)
+    if (!panelWatched && panel && H.back?.watch) { panelWatched = true; H.back.watch(panel, () => togglePanel(false)); }
     panel.hidden = !(open ?? panel.hidden);
     if (!panel.hidden) {
       // the balloon's draft moves into the big panel

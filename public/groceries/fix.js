@@ -11,8 +11,12 @@
   const { el, api } = H;
 
   // Its own small window, above the full-page recipe, so the search results underneath stay as they were.
-  let dlg = null;
-  function closeDialog() { if (dlg) { dlg.remove(); dlg = null; document.removeEventListener('keydown', onKey, true); } }
+  let dlg = null, step = 0;   // step: the back gesture closes the window (H.back in common.js)
+  function closeDialog(fromBack) {
+    if (!dlg) return;
+    dlg.remove(); dlg = null; document.removeEventListener('keydown', onKey, true);
+    if (step && fromBack !== true) { const s = step; step = 0; H.back.done(s); }
+  }
   function onKey(e) { if (e.key === 'Escape') { e.stopImmediatePropagation(); closeDialog(); } }
   function dialog(...content) {
     closeDialog();
@@ -21,6 +25,7 @@
       el('div', { class: 'modal-glass' }, el('button', { class: 'modal-close', 'aria-label': 'סגור', onclick: closeDialog }, '✕'), el('div', { class: 'fix-body' }, ...content)));
     document.body.append(dlg);
     document.addEventListener('keydown', onKey, true);
+    if (!step && H.back) step = H.back.push(() => { step = 0; closeDialog(true); });
     dlg.querySelector('button:not(.modal-close)')?.focus();
   }
   const modal = dialog;

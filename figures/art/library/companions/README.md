@@ -41,3 +41,10 @@ A cute small collectible figure for a family app: Isaac Newton, the English scie
 ## The special ones (paid; the owner's choice, 2026-11-13)
 
 The magician (and his dove), the astronomer, the patchwork doll – 4 × $0.069. Each has its own move in Figure2D (`special()`, which also plays when it is glad): the magician lifts a dove out of his hat in a burst of sparks; the astronomer's shawl wakes with twinkling stars at night and a shooting star crosses when she is glad; the doll wears the person's own badges, sewn on, and stitches a new one in when it is earned. Prompts in `C:/Users/User/AppData/Local/Temp/claude/c428b42837d3f372/19117706-22e2-40a4-bdb5-1a2b2687b32f/scratchpad/special.mjs`.
+
+**2026-11-13, later.** The magician redrawn after the owner's picture (a desert wizard: white turban and beard, a blue robe;
+the market magician with the tarboosh is kept as `magician-market.webp`), and four more paid wizards after the owner's
+pictures: `nightwizard`, `forestwitch`, `littlewizard`, `littlewitch` – 5 × $0.069, each the first try. The astronomer's
+`public/figures/2d/astronomer/figure.webp` now has white hair baked in, and `hair.webp` beside it is the hair alone for
+tinting (made from this master by `hair.py` in the scratchpad: the dark grey hair inside the shawl lifted to white, the
+outlines kept, small specks dropped). This master still has her original dark hair.

@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>מי הקים את האוהל – אב טיפוס</title>
-  <!-- The founders' page (docs/business/founders.md). Placeholder names: the real list exists at the end of the beta. Serve from the
+  <!-- The founders' page (docs/business/founders.md). Opt-in: whoever qualifies is asked "להופיע בדף מי הקים את האוהל?"; the city
+       is optional. Proposed for signed-in users only. Placeholder names: the real list exists at the end of the beta. Serve from the
        dev server (copy to public/ for a moment) so /assets/base.css and /founders/founders.css load. -->
   <link rel="stylesheet" href="/assets/base.css">
   <link rel="stylesheet" href="/founders/founders.css">
@@ -15,7 +16,7 @@
   <header class="fd-head">
     <img src="/assets/tent.webp" alt="">
     <h1>מי הקים את האוהל</h1>
-    <p>האנשים שהביאו את המשפחה שלהם לאוהל כשהוא עוד היה בבנייה. כל שם כאן נכנס כשמפגש שהוא ארגן הגיע לחמישה אישורי הגעה.</p>
+    <p>האנשים שהביאו את המשפחה שלהם לאוהל כשהוא עוד היה בבנייה. בתקופת הבטא, מי שארגן מפגש שהגיע לחמישה אישורי הגעה נעשה מייסד. מופיעים כאן רק מי שבחרו בכך.</p>
   </header>
 
   <section class="fd-tier" aria-labelledby="t1">
@@ -49,8 +50,9 @@
     <ul class="fd-supporters"><li>שם ומשפחה</li><li>שם ומשפחה</li><li>שם ומשפחה</li><li>משפחת …</li></ul>
   </section>
 
-  <div class="fd-million"><span class="who-title gold">המיליון</span><b>שם ומשפחה</b><small class="muted">המשתמש המיליון של האוהל</small></div>
-  <p class="fd-note">השמות כאן לתמיד. מי שלא רוצה להופיע, יכול להסתיר את השם בהגדרות.</p>
+  <!-- an easter egg: hidden until it happens, never listed in advance. The millionth person to meet the founders' condition. -->
+  <div class="fd-million" hidden><span class="who-title gold">המיליון</span><b>שם ומשפחה</b><small class="muted">האחד במיליון</small></div>
+  <p class="fd-note">מופיעים כאן רק מי שבחרו בכך, ואפשר להסתיר בכל רגע בהגדרות. העיר לא חובה.</p>
 </main>
 <script>
   const pegs = document.getElementById('pegs'), ropes = document.getElementById('ropes');

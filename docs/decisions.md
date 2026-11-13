@@ -11,6 +11,20 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Four more paid wizards, the magician redrawn, the astronomer's hair chosen (design → master, ai-features, business)
+
+The owner's word (2026-11-13), after the owner's pictures: the doll and the astronomer approved; **the magician redrawn**
+as a kind old desert wizard (white turban and beard; same id `magician`, same name and dove); **four new paid figures**
+in Figure2D, `kind: 'special'`, `tier: 'paid'`: `nightwizard` קוסם הלילה, `forestwitch` קוסמת היער, `littlewizard`
+הקוסם הקטן, `littlewitch` הקוסמת הקטנה (their staffs glow; when glad, sparks). **The astronomer's hair** is chosen by
+the person, white by default: `Figure2D.list()` gives `hair` and `hairDefault`, `mount(el, 'astronomer', { hair })`,
+`f.setHair(color)`. Details in `docs/design/figures-2d.md`.
+- ai-features: the four in the "מיוחדות" group; under the astronomer, a row of hair swatches, saved per person
+  (e.g. `H.prefs('daemon').hair`).
+- business and the master: the paid list now has 7 special figures (magician, astronomer, doll and the four wizards)
+  besides the four paid people; prices are business's.
+Status: done (design).
+
 ## 2026-11-14 – The founders page and the purchase page: their look (design → business, ai-features, master)
 
 At business's request (`docs/business/founders.md` §4–5, `docs/business/monetization.md` §4.3). CSS only, plus two
@@ -29,6 +43,13 @@ copying them into `public/` for a moment).
   `.by-price`, `ul.by-gets`, `.by-terms` (the cancellation terms, always before the button), `label.by-agree` with a
   checkbox, `button.btn.primary.by-buy` (disabled until the box is ticked) and `.by-pay-note`. Below it
   `.by-seller` with the dealer's details; `.ph` marks a placeholder until the owner opens a tax file.
+- **Corrected after business's review (same day):** a figure is paid **in credits** – `.by-price` "₪10 בקרדיטים",
+  `.by-balance` (the balance and what is left; `.low` when short), one confirmation; short of credits, `.by-short` and
+  then `section.by-topup` with `.by-packs` > `button.by-pack[role=radio]` (₪5/10/20/50). The card, the receipt, the
+  terms for credits and `.by-seller` belong to the pack purchase only. `.by-plans` (monthly support) is kept for the
+  packs/support page, not a figure's page. The tithe line reads "מעשר: 10% מההכנסה מכל רכישה הולכים לצדקה". Founders:
+  opt-in ("להופיע בדף מי הקים את האוהל?", the city optional), "בתקופת הבטא" in the intro, `.fd-million[hidden]`
+  until it happens; proposed for signed-in users only.
 - Wiring the pages, the routes and the payment provider is ai-features' and the master's. Checked at 375 px and desktop,
   in light and dark (no overflow, contrast clear).
 Status: done (design); waiting for the pages to be wired.

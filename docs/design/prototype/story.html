@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>הסיפור המשפחתי – אב טיפוס</title>
+  <!-- story.css on sample markup shaped like story.js (branch claude/story-4cc985). Sample people, no real ones.
+       Copy to public/ to view (not committed there). ?form=add|interview opens a form in H.modal. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/family/story/story.css">
+</head>
+<body>
+<main class="st">
+  <div class="st-head"><h1>הסיפור המשפחתי</h1><p class="muted">המוזיאון החי של המשפחה: סיפורים, הקלטות, מסמכים ותמונות.</p></div>
+  <div class="st-add" role="group" aria-label="הוספה">
+    <button type="button" class="btn primary" id="iv">ראיון מודרך</button>
+    <button type="button" class="btn" id="add">סיפור</button><button type="button" class="btn">הקלטה</button><button type="button" class="btn">הקראה</button><button type="button" class="btn">תמונה</button><button type="button" class="btn">מסמך</button>
+  </div>
+  <p class="st-storage">נוצלו 0.31 מתוך 2.0 GB<meter min="0" max="2" value="0.31" aria-label="המקום של הבית"></meter></p>
+  <div class="tabs st-views" role="tablist" aria-label="איך מסתובבים במוזיאון"><button type="button" role="tab" class="st-view" aria-selected="true">ציר זמן</button><button type="button" role="tab" class="st-view" aria-selected="false">לפי אדם</button><button type="button" role="tab" class="st-view" aria-selected="false">לפי מקום</button></div>
+  <input type="search" class="st-search" placeholder="חיפוש בכל הסיפור" aria-label="חיפוש">
+  <section class="st-list" aria-live="polite">
+    <h2 class="st-group">שנות ה-50</h2>
+    <article class="card st-item st-quiet" data-kind="story"><header class="st-item-head"><span class="st-kind">סיפור</span><span class="muted">1952</span><span class="muted">· בגדד</span><button type="button" class="mini" aria-label="עריכה"><span aria-hidden="true">✎</span></button></header>
+      <h3>העלייה של סבא יוסף</h3><p class="st-text">סבא סיפר שיצאו בלילה, עם מזוודה אחת לכל המשפחה. בשדה התעופה חיכו שעות, והוא זכר בעיקר את הריח של התפוזים כשירדו מהמטוס בלוד.
+הוא תמיד אמר שהיום הראשון בארץ היה היום הארוך ביותר בחייו, ושעד היום הוא לא מבין איך סבתא החזיקה את כולם יחד. אחר כך הגיעו למעברה.</p>
+      <div class="st-media"></div><div class="st-tags"><a class="chip" href="#">יוסף</a><a class="chip" href="#">רחל</a><span class="chip st-gap" aria-hidden="true"></span></div></article>
+    <article class="card st-item" data-kind="photo"><header class="st-item-head"><span class="st-kind">תמונה</span><span class="muted">1958</span><span class="st-level">כל השבט</span></header>
+      <h3>החתונה של ההורים</h3><div class="st-media"><img class="st-img" alt="החתונה של ההורים" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 280'%3E%3Crect width='400' height='280' fill='%23b9ad95'/%3E%3Ccircle cx='160' cy='110' r='34' fill='%238d8170'/%3E%3Ccircle cx='240' cy='104' r='34' fill='%237a6f60'/%3E%3Crect x='120' y='150' width='80' height='130' rx='30' fill='%23efe9dc'/%3E%3Crect x='200' y='146' width='80' height='134' rx='30' fill='%23524a3e'/%3E%3C/svg%3E"></div>
+      <div class="st-tags"><a class="chip" href="#">דוד</a><a class="chip" href="#">מרים</a></div></article>
+    <h2 class="st-group">שנות ה-90</h2>
+    <article class="card st-item" data-kind="recording"><header class="st-item-head"><span class="st-kind">הקלטה</span><span class="muted">1994</span><span class="muted">· קיבוץ דגניה</span><button type="button" class="mini" aria-label="עריכה"><span aria-hidden="true">✎</span></button></header>
+      <h3>איפה גדלת?</h3><div class="st-media"><button type="button" class="btn">השמעה</button></div><div class="st-tags"><a class="chip" href="#">מרים</a></div></article>
+    <article class="card st-item" data-kind="reading"><header class="st-item-head"><span class="st-kind">הקראה</span><span class="st-level">רק אני</span></header>
+      <h3>המכתב מאמא, 1996</h3><p class="st-text">"ילדים יקרים, כשתקראו את זה…"</p><div class="st-media"><button type="button" class="btn">השמעה</button></div></article>
+    <article class="card st-item" data-kind="doc"><header class="st-item-head"><span class="st-kind">מסמך</span><span class="muted">1999</span></header>
+      <h3>תעודת העלייה</h3><div class="st-media"><button type="button" class="btn">פתיחה</button></div><div class="st-tags"><a class="chip" href="#">יוסף</a></div></article>
+  </section>
+</main>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const { el } = H;
+  const field = (l, i) => el('label', { class: 'field' }, el('span', {}, l), i);
+  const people = () => el('div', { class: 'st-people', role: 'group', 'aria-label': 'מי בסיפור' }, ...['יוסף', 'רחל', 'דוד', 'מרים', 'נועה', 'איתי'].map((n, i) => el('button', { type: 'button', class: 'chip', 'aria-pressed': String(i < 2) }, n)));
+  const rec = (on) => el('div', { class: 'st-rec' }, el('button', { type: 'button', class: 'st-mic' + (on ? ' on' : ''), 'aria-pressed': String(on), 'aria-label': 'התחלת הקלטה' }, H.icon('mic')),
+    el('canvas', { class: 'st-wave', width: 600, height: 80, style: 'max-inline-size: 100%; block-size: auto', 'aria-hidden': 'true' }), el('span', { class: 'st-time' }, on ? '0:42' : '0:00'));
+  const add = () => H.modal(el('form', { class: 'st-form', onsubmit: (e) => e.preventDefault() }, el('h2', {}, 'הקלטה חדשה'),
+    field('כותרת', el('input', { type: 'text' })), el('div', {}, rec(true), field('או קובץ שמע קיים', el('input', { type: 'file' }))), el('p', { class: 'hint' }, 'ההקלטה מוכנה לשמירה.'),
+    field('הטקסט', el('textarea', { rows: 3 })), el('div', { class: 'st-two' }, field('מתי', el('input', { type: 'text', placeholder: 'למשל 1952, או שנות ה-50' })), field('איפה', el('input', { type: 'text', placeholder: 'למשל בגדד' }))),
+    el('div', { class: 'field' }, el('span', {}, 'מי בסיפור'), people()), field('מי רואה', el('select', {}, el('option', {}, 'בני הבית'))),
+    el('div', { class: 'row' }, el('button', { type: 'submit', class: 'btn primary' }, 'שמירה'))));
+  const iv = () => H.modal(el('div', { class: 'st-form' }, el('h2', {}, 'ראיון מודרך'), field('את מי מראיינים', el('select', {}, el('option', {}, 'סבתא רחל'))),
+    el('p', { class: 'muted' }, 'שאלה 2 מתוך 12'), el('p', { class: 'st-question' }, 'איך הכרתם, את וסבא?'), el('div', {}, rec(false)),
+    el('div', { class: 'row' }, el('button', { type: 'button', class: 'btn primary' }, 'שמירה והשאלה הבאה'), el('button', { type: 'button', class: 'btn ghost' }, 'דילוג'))));
+  document.getElementById('add').onclick = add; document.getElementById('iv').onclick = iv;
+  const f = new URLSearchParams(location.search).get('form'); if (f === 'add') add(); if (f === 'interview') iv();
+})();
+</script>
+</body>
+</html>

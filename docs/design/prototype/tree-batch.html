@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>חיפוש ביער ואיך אנחנו קשורים – אב טיפוס</title>
+  <!-- The tree batch (ai-features' family.js): the tools row with the forest search, the related picker (?m=rel),
+       and the vault modal from settings (?m=vault, settings.css). Sample names. Copy to public/ to view (not committed there). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <link rel="stylesheet" href="/settings/settings.css">
+</head>
+<body>
+<main class="fv" id="root">
+  <div class="fv-tools">
+    <div class="fv-views" role="tablist" aria-label="תצוגה"><button type="button" role="tab" data-v="tree" aria-selected="true">העץ</button><button type="button" role="tab" data-v="list" aria-selected="false">רשימה</button></div>
+  </div>
+  <p><button type="button" class="btn" id="rel">איך אנחנו קשורים?</button> <button type="button" class="btn" id="vault">מפתחות גישה</button></p>
+</main>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const { el } = H;
+  const fs = (label = 'חיפוש ביער', open = false) => {
+    const box = el('label', { class: 'fs-box' }, el('input', { type: 'search', class: 'fs-input', placeholder: label, 'aria-label': label }));
+    const kin = el('label', { class: 'fs-kin' }, el('input', { type: 'checkbox' }), el('span', {}, 'רק קרובים'));
+    const list = el('ul', { class: 'fs-results', role: 'listbox', 'aria-label': 'תוצאות', hidden: !open },
+      ...[['רחל כהן', 'סבתא · באוהל'], ['רחל לוי', 'בת דודה']].map(([n, s]) => el('li', {}, el('button', { type: 'button', role: 'option', class: 'fs-hit kin' }, el('span', { class: 'fs-face' }, n.slice(0, 1)), el('span', { class: 'fs-text' }, el('b', {}, n), el('small', {}, s))))));
+    return el('div', { class: 'fs' }, box, kin, list);
+  };
+  document.querySelector('.fv-tools').append(fs());
+  const rel = () => {
+    const out = el('div', { class: 'fv-rel-out' }, el('div', {}, el('p', { class: 'fv-rel-name' }, 'נועה: נכדה של אברהם כהן'),
+      el('ol', { class: 'fv-rel-path' }, ['נועה', 'דוד', 'אברהם כהן'].map((n) => el('li', {}, n)))));
+    H.modal(el('div', { class: 'fv-form fv-related' }, el('h2', {}, 'איך אנחנו קשורים?'), el('div', { class: 'fv-two' },
+      el('div', { class: 'fv-pick' }, el('span', { class: 'fv-pick-label' }, 'מ־'), el('span', { class: 'fv-chosen' }, el('b', {}, 'אברהם בן יעקב כהן־אלמוג'), el('button', { type: 'button', class: 'btn small ghost' }, 'החלפה'))),
+      el('div', { class: 'fv-pick' }, el('span', { class: 'fv-pick-label' }, 'אל'), fs('חיפוש שם…', true))),
+      el('p', { class: 'muted small' }, 'חיפוש בכל היער: גם מי שבעצים המקושרים, לפי מה שכל אחד הרשה לראות ממנו.'), out));
+  };
+  const vault = () => H.modal(el('div', { class: 'fv-form' }, el('h2', {}, 'מפתחות הגישה שלי'), el('p', { class: 'muted small' }, 'המכשירים שפותחים את הכספת.'),
+    el('ul', { class: 'fv-list' }, ['הטלפון של דנה', 'המחשב בבית'].map((n) => el('li', { class: 'fv-item' }, el('b', {}, n), el('span', { class: 'muted small' }, 'נוסף ב־3 בנובמבר'),
+      el('button', { type: 'button', class: 'btn small ghost danger' }, 'הסרה')))),
+    el('div', { class: 'fv-acts' }, el('button', { type: 'button', class: 'btn primary' }, 'הוספת המכשיר הזה'), el('button', { type: 'button', class: 'btn ghost' }, 'סגירה'))));
+  document.getElementById('rel').onclick = rel; document.getElementById('vault').onclick = vault;
+  const m = new URLSearchParams(location.search).get('m'); if (m === 'rel') rel(); if (m === 'vault') vault();
+})();
+</script>
+</body>
+</html>

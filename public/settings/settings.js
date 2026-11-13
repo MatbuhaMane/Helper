@@ -166,9 +166,11 @@
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
     /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
     const price = Number(shop.priceIls) || 10;
-    const buy = (f) => H.modal(el('h2', {}, `${f.name}`), preview2d(f),
-      el('p', {}, `דמות בתשלום: ₪${price}, מהקרדיט שלך. במשפחה – בלי תשלום.`),
-      el('p', { class: 'muted small' }, 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
+    // the family (no limit) gets it for nothing: they see that, not a price (the server decides either way)
+    const buy = async (f) => { let free = false; try { free = !(await api('/api/me/ai')).limited; } catch (_) { /* not known: the price */ }
+      H.modal(el('h2', {}, `${f.name}`), preview2d(f),
+      el('p', {}, free ? 'בחינם, במשפחה.' : `דמות בתשלום: ₪${price}, מהקרדיט שלך.`),
+      el('p', { class: 'muted small' }, free ? 'היא שלך בכל מכשיר.' : 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
       el('div', { class: 'row' },
         el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
           e.target.disabled = true;
@@ -181,8 +183,8 @@
               el('div', { class: 'row' }, el('a', { class: 'btn primary', href: '#services', onclick: () => H.closeModal() }, 'לחיבור לשירותים'))); }
             else toast('הקנייה לא הצליחה – נסו שוב');
           }
-        } }, `לקנות ב־₪${price}`),
-        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו')));
+        } }, free ? 'לקחת אותה' : `לקנות ב־₪${price}`),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו'))); };
     const card = (id, name, sub, preview, ok = true, onBuy = null) => el('button', {
       type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
       title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),

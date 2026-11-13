@@ -194,3 +194,18 @@ details.st-sec[open] > .st-body { animation: st-open .3s var(--ease-river) both;
   :root:not([data-theme="light"]) .st-ico[data-ico="account"] { --ico: #a9b3c8; }
   :root:not([data-theme="light"]) .st-ico[data-ico="palette"] { --ico: #f0a07a; }
 }
+
+/* the vault's modals (vault-keys.js: מפתחות גישה, גיבויים) open from here; they use the tree page's form classes, the minimum copied
+   from /family/family.css so the settings page needn't load it. */
+.fv-form { display: grid; gap: 12px; min-inline-size: min(440px, 80vw); }
+.fv-form h2 { margin: 0; }
+.fv-form .small { font-size: .88rem; }
+.fv-form label:where(:not(.fs *)) { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.fv-form input:where(:not(.fs *)), .fv-form select { font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; padding: 9px 12px; min-inline-size: 0; }
+.fv-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.fv-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fv-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--card); display: grid; gap: 6px; min-inline-size: 0; overflow-wrap: anywhere; }
+.fv-item > b { font-weight: 500; }
+.fv-item > .btn, .fv-item > .row { justify-self: start; }
+.fv-form .btn.danger { color: var(--danger, #b3261e); }
+.st-vault .btn { min-block-size: 40px; }

@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Recurring goals: a fresh round each period (ai-features → master, design)
+
+The owner: "בניהול מטרות, אפשר הגדרת מטרות מחזוריות".
+- A goal may repeat every day, week (from Sunday), month (from the 1st) or every n days (2–60, counted from the goal's
+  first day). New column `goals.repeat` (JSON `{every, n?}`, appended to `COLUMNS` in `server/schema.ts`); `null` is a
+  plain goal, as before.
+- Its steps count as done only within the running period, so each period opens a fresh round of the same steps.
+  New table `goal_rounds (email, goal_id, period, done, total, updated_at)` (appended to `schema.sql`) keeps each round's
+  count, written whenever a step is ticked or unticked; it feeds the history (the last 8 rounds) and the streak of whole
+  rounds. An open round never breaks the streak. The logic and its tests are in `server/goals-logic.ts` / `test-goals.mjs`.
+- `PUT /api/goals/steps/:id` returns `roundDone`; a recurring goal never returns `goalDone` (it is ended by hand).
+- For design: the page draws `.gl-rounds` and its dots `.gl-round-dot` (`.whole`, `.part`, `.now`) with small inline
+  styles for now; they are free to be replaced in `tasks.css`.
+Status: done (on `ai-features`).
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**
@@ -52,6 +67,19 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-14 – Groceries: saved lists, templates and an archive (ai-features → master, design)
+
+- A template ("קניות שבועיות", "שבת") or a finished list is a `grocery_lists` row of kind `template` or `archive`. Its items
+  are ordinary `grocery_items` rows with `list` set to its id, so they sync like the rest and never touch the main list. No new table or column.
+- Routes (appended): `POST /api/groceries/lists/:id/save {kind, name?}` (`:id` may be `main`) and
+  `POST /api/groceries/lists/:id/use {into: 'new' | 'main' | <list id>}`. The code is in `server/grocery-lists.ts`.
+- Finishing the main list moves only the checked items into a new archive entry. A named list moves to the archive whole.
+  The archive keeps the last 30. Any member may save, finish or use; deleting one keeps the rule (the opener or an admin).
+- Copying back adds the items unchecked and skips a name already waiting on the target list.
+- Design: in the lists bar, `.chip.list-saved` "📚 שמורות" opens `.saved-lists`. Inside: `.modal-acts`, then `h3` headings,
+  then `ul.saved-list > li.saved-row` rows, each with `span.saved-name` (`small` count) and `span.saved-acts` (three small buttons).
+  The template form adds `.list-suggest` (name chips).
+
 ## 2026-11-14 – Groceries: named lists, and deleting one with undo (ai-features → master, design)
 The owner asked to delete a list; the groceries had one list per household, so named lists come first.
 - **Data.** A new table `grocery_lists` (appended to `schema.sql`) and a column `grocery_items.list` (appended to `COLUMNS`).

@@ -85,5 +85,21 @@ eq('a research finished: גשש', G.earned({ ...base, doneAt: [], researchesDone
 eq('גשש is no longer "soon"', !!G.BADGES.find((b) => b.id === 'tracker').soon, false);
 eq('the research template', G.templateById('research').processes.map((p) => p.title)[0], 'לברר מה השאלה');
 
+/* ---- recurring goals ---- */
+const R = (every, n) => (n ? { every, n } : { every });
+eq('repeat: parse', [G.parseRepeat('{"every":"week"}'), G.parseRepeat('{"every":"days","n":99}'), G.parseRepeat('{"every":"year"}'), G.parseRepeat(null)], [{ every: 'week' }, { every: 'days', n: 60 }, null, null]);
+eq('period: a day', G.periodStart(R('day'), '2026-11-01', '2026-11-13'), '2026-11-13');
+eq('period: a week starts on Sunday', [G.periodStart(R('week'), '2026-11-01', '2026-11-13'), G.periodStart(R('week'), '2026-11-01', '2026-11-15')], ['2026-11-08', '2026-11-15']);
+eq('period: a month', G.periodStart(R('month'), '2026-10-20', '2026-11-13'), '2026-11-01');
+eq('period: every 3 days from the first day', [G.periodStart(R('days', 3), '2026-11-10', '2026-11-12'), G.periodStart(R('days', 3), '2026-11-10', '2026-11-13')], ['2026-11-10', '2026-11-13']);
+eq('the period before', [G.prevPeriod(R('month'), '2026-01-01'), G.prevPeriod(R('week'), '2026-11-15'), G.prevPeriod(R('days', 3), '2026-11-13')], ['2025-12-01', '2026-11-08', '2026-11-10']);
+const rd = (period, done, total = 2) => ({ period, done, total });
+eq('streak: the open round does not break it', G.roundStreak(R('day'), '2026-11-01', '2026-11-13', [rd('2026-11-12', 2), rd('2026-11-11', 2), rd('2026-11-13', 1)]), 2);
+eq('streak: the whole round today counts', G.roundStreak(R('day'), '2026-11-01', '2026-11-13', [rd('2026-11-12', 2), rd('2026-11-13', 2)]), 2);
+eq('streak: a missed round breaks it', G.roundStreak(R('week'), '2026-10-01', '2026-11-13', [rd('2026-11-01', 2), rd('2026-10-18', 2)]), 1);
+eq('streak: never before the first period', G.roundStreak(R('day'), '2026-11-12', '2026-11-13', [rd('2026-11-12', 2), rd('2026-11-11', 2)]), 1);
+const hist = G.roundHistory(R('week'), '2026-10-20', '2026-11-13', [rd('2026-11-01', 2)], 2);
+eq('history: newest first, from the first period, missing rounds empty', hist.map((h) => [h.period, h.done, h.whole]), [['2026-11-08', 0, false], ['2026-11-01', 2, true], ['2026-10-25', 0, false], ['2026-10-18', 0, false]]);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

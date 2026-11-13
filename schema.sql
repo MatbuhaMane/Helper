@@ -1034,3 +1034,15 @@ CREATE TABLE IF NOT EXISTS grocery_lists (
   deleted    INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (household, id)
 );
+
+-- Recurring goals (ai-features, 2026-11-13; server/goals.ts): a recurring goal (goals.repeat) starts a fresh round each
+-- period; each round's count is kept here, for the history and the streak of whole rounds.
+CREATE TABLE IF NOT EXISTS goal_rounds (
+  email      TEXT NOT NULL,
+  goal_id    TEXT NOT NULL,
+  period     TEXT NOT NULL,              -- the period's first day, YYYY-MM-DD
+  done       INTEGER NOT NULL DEFAULT 0, -- steps done within the period
+  total      INTEGER NOT NULL DEFAULT 0, -- the goal's steps then
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (email, goal_id, period)
+);

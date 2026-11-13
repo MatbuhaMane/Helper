@@ -197,6 +197,8 @@
       textBox.replaceChildren(...out);
     }
     textBox.addEventListener('click', (e) => {
+      const n = e.target.closest('.rs-n');
+      if (n) { tapNumber(+n.dataset.i); return; }
       const w = e.target.closest('.w');
       if (w) { pickWord(+w.dataset.i, +w.dataset.wi, w.textContent); return; }
       const v = e.target.closest('[data-i]');
@@ -209,7 +211,35 @@
        to the book, chapter and verse) and copying it. */
     const markBar = el('div', { class: 'rs-markbar', role: 'toolbar', 'aria-label': 'הטקסט המסומן', hidden: true });
     root.append(markBar);
-    let marked = null;   // { text, from, to } – the verses' indexes
+    let marked = null;      // { text, from, to, verse } – the verses' indexes; verse: marked whole by its number
+    let verseMark = null;   // { from, to }: the verses the numbers marked, until the reader marks something else
+    let snap;               // what was marked when a finger touched a verse number (the touch itself may clear it)
+    let barTouch = 0;
+    markBar.addEventListener('pointerdown', (e) => { barTouch = Date.now(); if (e.pointerType === 'mouse') e.preventDefault(); });
+    const hideMark = () => { marked = null; verseMark = null; markBar.hidden = true; };
+    const versesText = (a, b) => S.verses.slice(a, b + 1).map((v) => (P.teamim ? v.he : v.he.replace(TEAMIM, ''))).join('\n');
+    /* a verse number (the owner, 2026-11-14): a tap marks the whole verse; another tap on it, or on the next or the
+       previous number, stretches the marking a verse further. A tap on a word still opens the dictionary. */
+    textBox.addEventListener('pointerdown', (e) => { if (e.target.closest('.rs-n')) snap = marked; }, true);
+    function tapNumber(i) {
+      const prev = snap !== undefined ? snap : marked;
+      snap = undefined;
+      let a = i, b = i;
+      if (prev?.verse) {
+        if (i >= prev.from && i <= prev.to) { a = prev.from; b = Math.min(prev.to + 1, S.verses.length - 1); }
+        else if (i === prev.to + 1) { a = prev.from; b = i; }
+        else if (i === prev.from - 1) { a = i; b = prev.to; }
+      }
+      S.sel = i; S.word = null; mark();
+      if (root.classList.contains('open')) openTab(S.tab === 'word' ? 'links' : S.tab);   // the open tools follow the verse
+      markVerses(a, b);
+    }
+    function markVerses(a, b) {
+      const ha = textBox.querySelector(`.rs-v[data-i="${a}"] .rs-he`), hb = textBox.querySelector(`.rs-v[data-i="${b}"] .rs-he`);
+      if (!ha || !hb) return;
+      verseMark = { from: a, to: b };
+      getSelection().setBaseAndExtent(ha, 0, hb, hb.childNodes.length);
+    }
     const verseAt = (node) => (node?.nodeType === 1 ? node : node?.parentElement)?.closest('.rs-v');
     const rangeName = (a, b) => {
       const book = root.querySelector('.rs-ref').textContent.split(' ')[0];
@@ -220,15 +250,25 @@
     function onMark() {
       const sel = getSelection();
       const inside = sel.rangeCount && !sel.isCollapsed && textBox.contains(sel.anchorNode) && textBox.contains(sel.focusNode);
-      const text = inside ? sel.toString().replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : '';
-      if (!text) { if (marked) { marked = null; markBar.hidden = true; } return; }
+      let text = inside ? sel.toString().replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : '';
+      if (!text) {
+        if (!marked) return;
+        // a tap on the bar may clear the selection before its click arrives: keep the marking a moment longer
+        if (Date.now() - barTouch < 700) { setTimeout(onMark, 750); return; }
+        hideMark(); return;
+      }
       const ia = +(verseAt(sel.anchorNode)?.dataset.i ?? -1), ib = +(verseAt(sel.focusNode)?.dataset.i ?? -1);
       const from = Math.max(0, Math.min(ia, ib)), to = Math.max(ia, ib, from);
-      marked = { text, from, to };
+      const verse = !!verseMark && verseMark.from === from && verseMark.to === to;
+      if (verse) text = versesText(from, to); else verseMark = null;   // whole verses: their text, without the numbers
+      marked = { text, from, to, verse };
+      const more = to < S.verses.length - 1;
       markBar.replaceChildren(
         el('span', { class: 'rs-mark-ref' }, rangeName(from, to)),
+        more ? el('button', { type: 'button', class: 'btn small ghost rs-mark-more', onclick: () => markVerses(from, to + 1) }, '＋ הפסוק הבא') : '',
         el('button', { type: 'button', class: 'btn small', onclick: copyMarked }, '📋 העתקה'),
-        el('button', { type: 'button', class: 'btn small primary', onclick: (e) => saveMarked(e.currentTarget) }, '📝 שמירה כפתק'));
+        el('button', { type: 'button', class: 'btn small primary', onclick: (e) => saveMarked(e.currentTarget) }, '📝 שמירה כפתק'),
+        el('button', { type: 'button', class: 'btn small ghost rs-mark-x', 'aria-label': 'ביטול הסימון', onclick: () => { hideMark(); getSelection().removeAllRanges(); } }, '✕'));
       markBar.hidden = false;
     }
     document.addEventListener('selectionchange', onMark);
@@ -247,7 +287,7 @@
       try {
         await H.api('/api/notes', { body: { title: name, body: `${m.text}\n\n— ${name}`, source: { url: back.pathname + back.search, title: 'פרשה: ' + name } } });
         toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
-        getSelection().removeAllRanges();
+        hideMark(); getSelection().removeAllRanges();
       } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
     }
 

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ספר המתכונים: שלי ושותפו איתי</title>
+  <!-- A sample of the recipe book's tab menu (vision batch 16): the tab opens a small menu with "ספר המתכונים שלי" (the recipes
+       marked with a heart) and "מתכונים ששותפו איתי". Copy to public/ to view (not committed there).
+       ?menu=1 opens the menu · ?book=shared shows the shared book · &empty=1 an empty book · &theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/groceries/style.css">
+  <style> body { opacity: 1 !important; visibility: visible !important; } </style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const SV = (d, c = 'icon') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const HEART = '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>';
+  const SHARED = '<path d="M4 13.5V18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.5"/><path d="M12 3.5v11M8 10.5l4 4 4-4"/>';
+  const CARET = '<path d="M6 9.5l6 6 6-6"/>';
+  let book = q.get('book') === 'shared' ? 'shared' : 'mine';
+  const empty = q.get('empty') === '1';
+  const MINE = [['🥘', 'שקשוקה ירוקה', 'ישראלי · 30 דק׳'], ['🍝', 'קרבונרה', 'איטלקי · 25 דק׳'], ['🍲', 'מרק עדשים', 'מזרחי · 45 דק׳'], ['🥗', 'סלט קינואה', 'קל · 15 דק׳'], ['🍰', 'עוגת גבינה', 'אפייה · 70 דק׳']];
+  const SHR = [['🥧', 'פשטידת תרד', 'סבתא רבקה'], ['🍜', 'ראמן ביתי', 'דנה'], ['🫓', 'מלאווח', 'יוסי']];
+  const card = (r, shared) => `<button class="book-card" type="button"><div class="ph">${r[0]}</div><b>${r[1]}</b>${shared ? `<span class="from">נשלח מ${r[2]}</span>` : `<small>${r[2]}</small>`}</button>`;
+  const draw = () => {
+    const list = book === 'mine' ? MINE : SHR, shared = book === 'shared';
+    document.querySelector('.book-which').innerHTML = `${shared ? 'מתכונים ששותפו איתי' : 'ספר המתכונים שלי'}<small>${empty ? 0 : list.length} מתכונים</small>`;
+    document.getElementById('bookGrid').innerHTML = empty
+      ? `<div class="book-empty">${SV(shared ? SHARED : HEART)}<b>${shared ? 'עוד לא שלחו לך מתכונים' : 'הספר עוד ריק'}</b><span>${shared ? 'מתכון שמישהו מהמשפחה ישלח לך יופיע כאן.' : 'מסמנים לב על מתכון, והוא נכנס לספר.'}</span></div>`
+      : list.map((r) => card(r, shared)).join('');
+    document.querySelectorAll('#bookMenu [role=menuitemradio]').forEach((b) => b.setAttribute('aria-checked', b.dataset.book === book));
+  };
+  document.body.insertAdjacentHTML('beforeend', `<main>
+    <div class="tabs-wrap">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tabList" aria-selected="false">רשימת קניות</button>
+        <button role="tab" id="tabBook" aria-selected="true" aria-haspopup="menu" aria-expanded="false" aria-controls="bookMenu">ספר מתכונים<span class="tab-dot" title="מתכון חדש ששותף איתך"></span>${SV(CARET, 'tab-caret')}</button>
+        <button role="tab" id="tabKeto" aria-selected="false">קטוזיס</button>
+        <span class="spacer"></span>
+      </div>
+      <div id="bookMenu" class="tab-menu" role="menu" aria-label="ספר מתכונים" hidden>
+        <button role="menuitemradio" aria-checked="true" data-book="mine">${SV(HEART)}<span><b>ספר המתכונים שלי</b><small>המתכונים שסימנת בלב</small></span><b class="tab-menu-n">${empty ? 0 : MINE.length}</b></button>
+        <button role="menuitemradio" aria-checked="false" data-book="shared">${SV(SHARED)}<span><b>מתכונים ששותפו איתי</b><small>מה שהמשפחה שלחה לך</small></span><b class="tab-menu-n">${empty ? 0 : SHR.length}</b></button>
+      </div>
+    </div>
+    <section id="viewBook">
+      <h2 class="book-which"></h2>
+      <div class="card book-tools"><input id="bookSearch" type="search" placeholder="חיפוש בספר המתכונים…" aria-label="חיפוש מתכון שמור"></div>
+      <div id="bookGrid" class="book-grid"></div>
+    </section></main>`);
+  const tab = document.getElementById('tabBook'), menu = document.getElementById('bookMenu'), wrap = document.querySelector('.tabs-wrap');
+  // where the menu sits: under the tab, from its inline-start edge (RTL: its right side)
+  const place = () => { const w = wrap.getBoundingClientRect(), t = tab.getBoundingClientRect();
+    menu.style.setProperty('--x', (getComputedStyle(wrap).direction === 'rtl' ? w.right - t.right : t.left - w.left) + 'px'); };
+  const setOpen = (o) => { if (o) place(); menu.hidden = !o; tab.setAttribute('aria-expanded', o); if (o) menu.querySelector('[aria-checked=true]').focus(); };
+  tab.onclick = () => setOpen(menu.hidden);
+  menu.onclick = (e) => { const b = e.target.closest('[data-book]'); if (!b) return; book = b.dataset.book; draw(); setOpen(false); tab.focus(); };
+  document.addEventListener('click', (e) => { if (!menu.hidden && !e.target.closest('.tabs-wrap')) setOpen(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { setOpen(false); tab.focus(); } });
+  draw();
+  if (q.get('menu') === '1') setOpen(true);
+})();
+</script>
+</body>
+</html>

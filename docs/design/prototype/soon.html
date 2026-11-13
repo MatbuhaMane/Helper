@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>בקרוב ליד האוהל</title>
+  <!-- A sample for the big ideas that wait (vision batch 15): the "בקרוב" strip under the ring, the serious home's group,
+       the one note (.tag-soon) beside the others, and the sheet a tap opens. Copy to public/ to view (not committed there).
+       ?theme=dark · ?sheet=hill|garage opens the sheet · ?view=list shows the serious home as a list -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>
+    body { opacity: 1 !important; visibility: visible !important; }
+    main { display: grid; gap: 30px; justify-items: center; padding: 14px max(16px, env(safe-area-inset-left)) 40px; }
+    h2.demo { margin: 0; justify-self: stretch; font-size: .85rem; color: var(--muted); font-weight: 500; border-block-start: 1px solid var(--line); padding-block-start: 10px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+    .sr-home { inline-size: 100%; padding: 0; }
+  </style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const SV = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const SPROUT = SV('<path d="M12 20.5v-8"/><path d="M12 12.5C12 8.6 9.2 6.5 5 6.5c0 3.9 2.8 6 7 6Z"/><path d="M12 14.5c0-3.2 2.4-5.2 6.5-5.2 0 3.2-2.4 5.2-6.5 5.2Z"/>');
+  const FLASK = SV('<path d="M9.5 3.5h5M10.5 3.5v5.2L5.4 17.6A2 2 0 0 0 7.1 20.5h9.8a2 2 0 0 0 1.7-2.9l-5.1-8.9V3.5"/><path d="M7.6 14.5h8.8"/>');
+  const soonTag = (note) => `<span class="tag-soon">${SPROUT}${note}</span>`;
+  const SOON = H.SOON || [
+    { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
+    { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' }];
+  const pic = (s) => `/assets/soon/${s.id}.svg`;
+  const view = q.get('view') || 'grid';
+  document.body.insertAdjacentHTML('beforeend', `<main>
+    <h2 class="demo">הבית: רצועה מתחת לגלגל הכריות</h2>
+    <section class="soon-row" aria-labelledby="soon-h"><h2 id="soon-h">בקרוב ליד האוהל</h2>
+      <ul>${SOON.map((s) => `<li><button class="soon-card" type="button" data-id="${s.id}"><img src="${pic(s)}" alt=""><b>${s.name}</b>${soonTag(s.note)}</button></li>`).join('')}</ul></section>
+
+    <h2 class="demo">התגיות</h2>
+    <div class="tags">${soonTag('בקרוב')}${soonTag('בפיתוח')}<span class="tag-exp">${FLASK}ניסיוני</span></div>
+
+    <h2 class="demo">הבית הרציני: הקבוצה האחרונה, והתגית שאחרי השם</h2>
+    <div class="sr-home">
+      <section class="sr-group"><h2>המקומות</h2><ul class="sr-tools" data-view="${view}">
+        <li><a class="sr-tool" href="#"><span class="sr-ic">${H.icon('mail').outerHTML}</span><span class="sr-txt"><b>סידור המייל<span class="app-tag">ניסיוני</span></b><small>ממיין את תיבת הדואר</small></span></a></li>
+        <li><a class="sr-tool" href="#"><span class="sr-ic">${H.icon('note').outerHTML}</span><span class="sr-txt"><b>פתקים</b><small>רשימות ומחשבות</small></span></a></li></ul></section>
+      <section class="sr-group sr-soon"><h2>בקרוב</h2><ul class="sr-tools" data-view="${view}">
+        ${SOON.map((s) => `<li><button class="sr-tool" type="button" data-id="${s.id}"><span class="sr-ic"><img src="${pic(s)}" alt=""></span><span class="sr-txt"><b>${s.name}<span class="tag-soon">${s.note}</span></b><small>${s.line}</small></span></button></li>`).join('')}</ul></section>
+    </div>
+  </main>`);
+  const open = (id) => { const s = SOON.find((x) => x.id === id); const d = document.createElement('div'); d.className = 'soon-sheet';
+    d.innerHTML = `<img src="${pic(s)}" alt=""><h2>${s.name}</h2>${soonTag(s.note)}<p>${s.line}</p>`; H.modal(d); };
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) open(b.dataset.id); });
+  if (q.get('sheet')) open(q.get('sheet'));
+})();
+</script>
+</body>
+</html>

@@ -101,7 +101,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
   border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
 .dsum-close:hover { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 .dsum-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-.dsum-close .icon { inline-size: 20px; block-size: 20px; }
+.dsum-close svg { inline-size: 20px; block-size: 20px; }
 .dsum-body { display: grid; gap: 10px; margin-block-start: 10px; }
 .dsum-body > section { min-inline-size: 0; }
 .dsum-sub { margin: 0 0 4px; font-size: .82rem; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
@@ -112,7 +112,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-list a:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .dsum-ic { --c: var(--primary); flex: none; display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 50%;
   background: color-mix(in srgb, var(--c) 15%, var(--card)); color: color-mix(in srgb, var(--c) 72%, var(--text)); }
-.dsum-ic .icon { inline-size: 20px; block-size: 20px; stroke-width: 1.7; }
+.dsum-ic svg { inline-size: 20px; block-size: 20px; stroke-width: 1.7; }   /* any svg: index.html builds them without .icon */
 .dsum-txt { flex: 1; min-inline-size: 0; display: grid; }
 .dsum-txt b { font-weight: 500; line-height: 1.35; }
 /* a long title or line keeps to two lines, so the time stays beside it and the card stays short */
@@ -130,11 +130,44 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-calm { margin: 0; font-size: .95rem; color: var(--muted); }
 /* more than three things today: the rest behind one quiet line */
 .dsum-more { display: inline-flex; align-items: center; min-block-size: 40px; padding-inline: 2px; font-size: .92rem; font-weight: 500;
-  color: var(--primary); text-decoration: none; }
+  color: var(--primary); text-decoration: none;
+  /* a link or a button (index.html builds a button): no native button face */
+  background: none; border: 0; font-family: inherit; cursor: pointer; justify-self: start; }
 .dsum-more:hover { text-decoration: underline; text-underline-offset: 3px; }
 .dsum-more:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+/* the day itself (vision batch 16): every day, with or without messages. A small calendar leaf beside the title (the Hebrew
+   day in letters, the month under it), then one row of facts: the weather, the sunset (on a Friday the candles). */
+.dsum-leaf { flex: none; display: grid; place-content: center; justify-items: center; inline-size: 50px; block-size: 54px; margin-block-start: -2px;
+  border-radius: 10px; background: var(--card); border: 1px solid var(--line); border-block-start: 5px solid var(--primary);
+  line-height: 1.1; box-shadow: 0 2px 6px rgb(46 42 30 / .06); }
+.dsum-leaf b { font-size: 1.3rem; font-weight: 600; color: var(--text); }
+.dsum-leaf small { font-size: .72rem; font-weight: 500; color: var(--muted); }
+.dsum-facts { --c: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.dsum-facts > li { flex: 1 1 0; min-inline-size: 0; display: flex; align-items: center; gap: 10px; min-block-size: 52px;
+  padding: 6px 12px 6px 10px; border-radius: var(--radius); background: color-mix(in srgb, var(--c) 9%, var(--card)); }
+.dsum-facts .icon { flex: none; inline-size: 28px; block-size: 28px; stroke-width: 1.6; color: color-mix(in srgb, var(--c) 78%, var(--text)); }
+.dsum-facts span { min-inline-size: 0; display: grid; }
+.dsum-facts b { font-size: 1.05rem; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dsum-facts small { font-size: .84rem; color: var(--muted); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dsum-facts a { flex: 1; min-inline-size: 0; display: flex; align-items: center; gap: inherit; align-self: stretch; color: inherit; text-decoration: none; }
+.dsum-facts a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 6px; }
+.dsum-fact-wx { --c: #b07a1e; }
+/* the weather has the longest line and takes the room; a time keeps to its own size */
+.dsum-facts > li:not(.dsum-fact-wx) { flex: 0 1 auto; }
+.dsum-fact-wx[data-sky="cloud"], .dsum-fact-wx[data-sky="fog"] { --c: #6b6a75; }
+.dsum-fact-wx[data-sky="rain"], .dsum-fact-wx[data-sky="storm"], .dsum-fact-wx[data-sky="snow"] { --c: #2a7fa8; }
+.dsum-fact-wx[data-sky="moon"] { --c: #5a5f9a; }
+.dsum-fact-sun { --c: #b8572e; }
+.dsum-fact-candles { --c: #b07a1e; }
+/* the facts span the whole card, above "היום" and "מאז" */
+.dsum-body > .dsum-facts, .dsum-body > .dsum-calm { grid-column: 1 / -1; }
+.dsum-calm .icon { inline-size: 18px; block-size: 18px; vertical-align: -4px; margin-inline-end: 6px; color: var(--primary); }
 /* on a phone the card stays short, so the tent still shows: the chips run in one row that scrolls sideways */
 @media (max-width: 759px) {
+  .dsum-leaf { inline-size: 46px; block-size: 50px; }
+  .dsum-facts { gap: 6px; }
+  .dsum-facts > li { gap: 8px; padding-inline: 8px 10px; min-block-size: 48px; }
+  .dsum-facts .icon { inline-size: 24px; block-size: 24px; }
   .dsum-list > li > * { min-block-size: 44px; padding-block: 4px; }
   .dsum-quiet { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; padding-block: 2px;
     -webkit-mask: linear-gradient(to left, transparent, #000 16px, #000 calc(100% - 16px), transparent);
@@ -146,6 +179,8 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
   .dsum { padding: 16px 20px 14px; }
   .dsum-body { grid-template-columns: 1.35fr 1fr; gap: 20px; align-items: start; }
   .dsum-body > section + section { padding-inline-start: 20px; border-inline-start: 1px solid var(--line); }
+  /* one section alone (a quiet day: only "היום") takes the whole width */
+  .dsum-body > section:only-of-type { grid-column: 1 / -1; }
 }
 :root[data-motion="reduce"] .dsum, :root[data-motion="reduce"] .dsum.leaving { animation: none; }
 @media (prefers-reduced-motion: reduce) { .dsum, .dsum.leaving { animation: none; } }

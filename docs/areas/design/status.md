@@ -2,9 +2,70 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (vision batch 14: the wizard centred, the sky blotch found, arrange mode, the experimental tag, the Google button, four notes views)._
+_Updated 2026-11-14 (vision batch 17b: the toast fits v148, no control on another, למקרר and the drag; batch 17: the toast at the top, the lists panel, choosing many, a category icon; batch 16: a smoother recipe flip and animation audit, "סיכום היום" every day, the recipe book's tab menu; batch 15: the "בקרוב" pictures and note)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: vision batch 17b, after v148 (2026-11-14).**
+  - **a474983, the toast:** fits the v148 `H.toast` (centred by margin, so `translate` is the swipe alone; `.dragging` without
+    transition; pointer cursor, touch-action none). For the master: clear `translate` only after the fade (`docs/design/toast.md`).
+  - **4fc5227, no control on another (`campfire.css`, `docs/design/no-overlap.md`):**
+    - the home ring's cushions are pressed on their core only; swept over a whole turn at 375: no two cores touch;
+    - the music corner: the slot under the parked record and the songbook's part under it no longer take a press;
+    - for ai-features: the book's ＋ into the top row, and the daemon's resting spot (a test with `elementsFromPoint`, three
+      fallback spots, then fold to the tab);
+    - for the master: the audit can't see hit areas made of pseudo-elements.
+  - **e95ed41, the shopping list part 2 (`groceries/style.css`, `shopping-lists.md` §2b, §2c, §5):** "למקרר" in the choosing bar
+    (two lines on a phone), a grip to drag rows while choosing (translate only, drop into a category or a list chip, arrows
+    without a pointer), the book's "＋ מתכון" button. Checked at 375 and 1024, light and dark.
+  - **Not tested:** the swipe and the drag on a real touch screen; the daemon (it doesn't show locally); the ring at desktop.
+- **Ready: vision batch 17, design part (2026-11-14).**
+  - **The toast (base.css):**
+    - a light glass pill under the app bar, middle, never over its buttons;
+    - the swipe and click hooks (`--dx`, `--dy`, `--o`, `.dragging`);
+    - the contract is `docs/design/toast.md` (master: `H.toast` times 2.6 s and 5 s, click and swipe to close).
+  - **The shopping list (groceries/style.css):**
+    - the lists panel (`.lists-track` and `.lists-btn`, the menu reusing `.tab-menu`);
+    - choosing many (`#list.selecting`, `.sel-box`, `.sel-cat`, the sticky `.sel-bar`);
+    - the icon picker (`.icon-pick`);
+    - the contract is `docs/design/shopping-lists.md` (ai-features); the sample is `docs/design/prototype/shopping-lists.html`.
+  - **Checked:**
+    - 375 and desktop, light and dark;
+    - no overflow, and no overlapping buttons on the shopping page's three views at the bottom of the scroll;
+    - the current flat lists markup still wraps until app.js changes.
+  - **v147 daily card:** checked with candles and calendar rows; `.dsum-more` fixed as a button (eb66171).
+- **Ready: vision batch 16, design part (2026-11-14).**
+  - **e456754, the recipe card flip (sheet.css):**
+    - a lighter shadow;
+    - no rounded clip on the turning back;
+    - the body contained;
+    - will-change on the flip and the fade while `.moving`.
+    The rest of the stutter is in sheet.js, which is ai-features'. Sent there:
+    - no aim on a re-open or a resize mid-flip;
+    - fill the body after the turn;
+    - a double rAF before `.open`.
+    Not measured here (the pane is hidden, so rAF does not run). The test is the owner's phone.
+  - **01df868, the animation audit:** endless animations now use transform and opacity only:
+    - the chosen cushion's glow;
+    - the wizard's current step;
+    - the reports coach.
+    Left on purpose:
+    - two tiny strips (dm-flow, cx-dots), and the admin egg.
+    - Progress bars that animate `inline-size` (care, music, groceries, parnasa, goals) wait for ai-features to set `--p`, so they can scale instead.
+  - **53d2b38, "סיכום היום" every day (seasons.css):**
+    - the day's leaf (the Hebrew day and month);
+    - a facts row: the weather by its sky, the sunset, or the candles on a Friday;
+    - the calendar in "היום";
+    - a calm line for a quiet day.
+    Contract `docs/design/daily.md`; the master wires it.
+  - **fbb1cbf, the recipe book's tab menu:**
+    - in base.css, a tab that opens its own menu (`.tab-menu`), usable by any tab;
+    - "ספר המתכונים שלי" and "מתכונים ששותפו איתי", with the book's heading, an empty book and the sender on a shared card.
+    Contract `docs/design/recipe-book-menu.md`; ai-features builds the lists.
+  - Checked at 375 and desktop width, light and dark.
+- **Ready: vision batch 15, design part (2026-11-14).**
+  - e414817 `public/assets/soon/hill.svg` and `garage.svg`, drawn in the tent's look from `docs/design/soon/soon.py`.
+  - 86d725d base.css adds one note `.tag-soon` (`--soon`, dusk blue), the home's strip "בקרוב ליד האוהל" under the ring, the serious home's last group "בקרוב", and the tap sheet `.soon-sheet`. It also styles `.app-tag` after a name on the serious home.
+  - Contract `docs/design/soon.md`. Recommendation: the strip under the ring, not in the tent's picture (the ring and the sky are there). The master wires index.html.
 - **Ready: vision batch 14, design part (2026-11-14).**
   - Test-run fixes:
     - 1573cc3 centres "הלאה" on every wizard step;

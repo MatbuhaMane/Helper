@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>רשימת הקניות: חלונית הרשימות, בחירה מרובה, הודעות</title>
+  <!-- A sample for vision batch 17: the toast at the top (light, swipe or click to dismiss), the lists panel above the add form,
+       choosing many (all, or a whole category) and the icon picker for a category of one's own.
+       Copy to public/ to view (not committed there).
+       ?sel=1 starts in choosing mode · ?menu=1 opens the lists menu · ?pick=1 shows the icon picker · ?toast=1 shows a toast · &theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/groceries/style.css">
+  <style> body { opacity: 1 !important; visibility: visible !important; } main { padding: 14px max(16px, env(safe-area-inset-left)) 120px; max-inline-size: 760px; margin-inline: auto; } </style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const SV = (d, c = 'icon') => `<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const PLUS = '<path d="M12 5v14M5 12h14"/>', DOTS = '<circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/>';
+  const SAVED = '<path d="M6.5 4h11a1 1 0 0 1 1 1v15l-6.5-4-6.5 4V5a1 1 0 0 1 1-1z"/>', PEN = '<path d="M4 20h4L19 9l-4-4L4 16z"/>';
+  const TRASH = '<path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/>', X = '<path d="M6 6l12 12M18 6 6 18"/>';
+  const LISTS = [['🛒 הרשימה', true], ['שבת', false], ['מסיבה של נועה', false], ['טיול לגליל', false]];
+  const CATS = [['🥬', 'ירקות ופירות', ['עגבניות', 'מלפפונים', 'בצל סגול', 'לימונים']], ['🧀', 'מוצרי חלב', ['חלב 3%', 'גבינה לבנה', 'יוגורט']], ['🍞', 'מאפים', ['לחם מחמצת', 'פיתות']]];
+  const item = (n, i) => `<li class="item"><button class="sel-box" type="button" role="checkbox" aria-checked="false" aria-label="בחירת ${n}"></button>
+    <label class="main"><input type="checkbox" aria-label="סמן ${n}"><span class="name">${n}</span></label>
+    <span class="qty"><button class="mini" aria-label="הפחת">−</button><b>${i % 3 + 1}</b><button class="mini" aria-label="הוסף">+</button></span>
+    <select class="cat-select" aria-label="שנה קטגוריה"><option>🥬 ירקות</option></select>
+    <button class="mini" title="עריכה" aria-label="ערוך">✎</button><button class="mini danger" title="מחיקה" aria-label="מחק ${n}">✕</button>
+    <button class="drag-h" type="button" aria-label="הזזת ${n}" title="לגרור, או חצים למעלה ולמטה"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button></li>`;
+  const ICONS = [['🧴', 'בקבוק'], ['🧹', 'ניקיון'], ['🐶', 'חיות'], ['🍼', 'תינוק'], ['💊', 'בית מרקחת'], ['🌿', 'תבלינים'], ['🍷', 'יין'], ['🎉', 'מסיבה'],
+    ['🧊', 'קפואים'], ['🥫', 'שימורים'], ['🍫', 'מתוקים'], ['🧃', 'שתייה'], ['🥜', 'אגוזים'], ['🐟', 'דגים'], ['🕯️', 'שבת'], ['🎒', 'בית ספר']];
+  document.body.insertAdjacentHTML('beforeend', `<main><section id="viewList">
+    <nav class="lists-bar card" aria-label="הרשימות">
+      <div class="lists-track">
+        ${LISTS.map(([n, on]) => `<button type="button" class="chip list-chip" aria-pressed="${on}">${n}</button>`).join('')}
+        <button type="button" class="chip list-auto" aria-pressed="false">🤖 אוטומטית<span class="list-auto-n">4</span></button>
+      </div>
+      <button type="button" class="lists-btn list-new" aria-label="רשימה חדשה" title="רשימה חדשה">${SV(PLUS)}</button>
+      <button type="button" class="lists-btn" id="listsMore" aria-haspopup="menu" aria-expanded="false" aria-controls="listsMenu" aria-label="ניהול הרשימות" title="ניהול הרשימות">${SV(DOTS)}</button>
+      <div id="listsMenu" class="tab-menu lists-menu" role="menu" aria-label="ניהול הרשימות" hidden>
+        <button role="menuitem">${SV(SAVED)}<span><b>רשימות שמורות</b><small>תבניות וארכיון</small></span></button>
+        <button role="menuitem">${SV(PEN)}<span><b>שינוי שם</b><small>הרשימה "הרשימה"</small></span></button>
+        <button role="menuitem" class="danger">${SV(TRASH)}<span><b>מחיקת הרשימה</b><small>אפשר לבטל לכמה שניות</small></span></button>
+      </div>
+    </nav>
+    <form class="card add-form" onsubmit="return false"><input type="text" placeholder="הוסף פריט… (אפשר כמה, מופרדים בפסיק)" aria-label="פריט חדש">
+      <select aria-label="קטגוריה"><option>קטגוריה אוטומטית</option></select><button type="submit" class="btn primary">הוסף</button></form>
+    <div class="toolbar"><label class="toggle"><input type="checkbox"> הסתר פריטים שסומנו</label>
+      <button id="selOn" class="btn ghost" type="button">בחירה</button><button class="btn ghost" type="button">שיתוף</button></div>
+    <section id="list" aria-label="רשימת קניות">
+      ${CATS.map(([ic, n, its]) => `<div class="card category"><h2><span>${ic} ${n}</span><button class="sel-cat" type="button" aria-pressed="false">בחירת הקטגוריה</button></h2>
+        <ul>${its.map(item).join('')}</ul></div>`).join('')}
+    </section>
+    <div class="sel-bar" role="toolbar" aria-label="בחירה מרובה" hidden>
+      <b class="sel-n" aria-live="polite">לא נבחר כלום</b>
+      <button class="btn ghost small" type="button" id="selAll">בחירת הכל</button>
+      <span class="sel-acts">
+        <button class="btn ghost small sel-fridge" type="button" id="selFridge" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="2"/><path d="M6 10h12M9 6.5v1.5M9 13v3"/></svg>למקרר</button>
+        <button class="btn danger small" type="button" id="selDel" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4.5h4V7M7 7l1 13h8l1-13"/></svg>מחיקה</button>
+      </span>
+      <button class="sel-x" type="button" aria-label="סיום הבחירה">${SV(X)}</button>
+    </div>
+    <div class="card" id="pickCard" style="padding:16px" ${q.get('pick') ? '' : 'hidden'}>
+      <h3 style="margin:0 0 6px">קטגוריה חדשה</h3>
+      <input type="text" value="חיות הבית" aria-label="שם הקטגוריה" style="inline-size:100%">
+      <div class="icon-pick" role="radiogroup" aria-label="אייקון לקטגוריה">
+        ${ICONS.map(([e, n], i) => `<button type="button" role="radio" aria-checked="${i === 2}" aria-label="${n}" tabindex="${i === 2 ? 0 : -1}">${e}</button>`).join('')}
+      </div>
+    </div>
+    <p><button class="btn ghost" type="button" id="tShort">הודעה קצרה</button> <button class="btn ghost" type="button" id="tAct">הודעה עם "בטל"</button></p>
+  </section></main>`);
+
+  // ---- choosing many ----
+  const list = document.getElementById('list'), bar = document.querySelector('.sel-bar');
+  const count = () => { const n = list.querySelectorAll('.sel-box[aria-checked=true]').length, all = list.querySelectorAll('.sel-box').length;
+    bar.querySelector('.sel-n').textContent = n ? (n === 1 ? 'פריט אחד נבחר' : `${n} פריטים נבחרו`) : 'לא נבחר כלום';
+    document.getElementById('selDel').disabled = document.getElementById('selFridge').disabled = !n;
+    document.getElementById('selAll').textContent = n === all ? 'ביטול הבחירה' : 'בחירת הכל';
+    list.querySelectorAll('.category').forEach((c) => c.querySelector('.sel-cat').setAttribute('aria-pressed', [...c.querySelectorAll('.sel-box')].every((b) => b.getAttribute('aria-checked') === 'true'))); };
+  const sel = (on) => { list.classList.toggle('selecting', on); bar.hidden = !on; if (!on) list.querySelectorAll('.sel-box').forEach((b) => b.setAttribute('aria-checked', 'false')); count(); };
+  document.getElementById('selOn').onclick = () => sel(true);
+  bar.querySelector('.sel-x').onclick = () => sel(false);
+  document.getElementById('selAll').onclick = () => { const all = [...list.querySelectorAll('.sel-box')], on = all.some((b) => b.getAttribute('aria-checked') !== 'true'); all.forEach((b) => b.setAttribute('aria-checked', on)); count(); };
+  list.addEventListener('click', (e) => { if (!list.classList.contains('selecting')) return;
+    const c = e.target.closest('.sel-cat'); if (c) { const bs = [...c.closest('.category').querySelectorAll('.sel-box')], on = c.getAttribute('aria-pressed') !== 'true'; bs.forEach((b) => b.setAttribute('aria-checked', on)); count(); return; }
+    if (e.target.closest('.drag-h')) return; const li = e.target.closest('.item'); if (!li) return; e.preventDefault(); const b = li.querySelector('.sel-box'); b.setAttribute('aria-checked', b.getAttribute('aria-checked') !== 'true'); count(); });
+
+  // ---- the drag (reference for app.js): a grip, pointer events, FLIP by `translate`; arrows on the grip move a row one place ----
+  document.getElementById('selFridge').onclick = () => { const n = list.querySelectorAll('.sel-box[aria-checked=true]').length; toast(n === 1 ? 'פריט אחד עבר למקרר' : `${n} פריטים עברו למקרר`, 'בטל'); sel(false); };
+  let dr = null;
+  list.addEventListener('pointerdown', (e) => { const h = e.target.closest('.drag-h'); if (!h || !list.classList.contains('selecting')) return;
+    e.preventDefault(); const li = h.closest('.item'); h.setPointerCapture(e.pointerId);
+    dr = { li, h, y0: e.clientY, rows: [...list.querySelectorAll('.item')].map((r) => [r, r.getBoundingClientRect()]) };
+    list.classList.add('dragging'); li.classList.add('lifted'); });
+  list.addEventListener('pointermove', (e) => { if (!dr) return; const dy = e.clientY - dr.y0; dr.li.style.translate = `0 ${dy}px`;
+    const me = dr.rows.find(([r]) => r === dr.li)[1], mid = me.top + me.height / 2 + dy, i0 = dr.rows.findIndex(([r]) => r === dr.li);
+    dr.rows.forEach(([r, b], i) => { if (r === dr.li) return; const c = b.top + b.height / 2;
+      r.style.translate = i > i0 && c < mid ? `0 ${-me.height}px` : i < i0 && c > mid ? `0 ${me.height}px` : ''; });
+    list.querySelectorAll('.category').forEach((c) => { const b = c.getBoundingClientRect(); c.classList.toggle('drop-into', c !== dr.li.closest('.category') && mid > b.top && mid < b.bottom); }); });
+  const drop = () => { if (!dr) return; list.querySelectorAll('.item').forEach((r) => (r.style.translate = '')); list.querySelectorAll('.drop-into').forEach((c) => c.classList.remove('drop-into'));
+    dr.li.classList.remove('lifted'); list.classList.remove('dragging'); dr = null; /* app.js: move the row in the data, render, announce */ };
+  list.addEventListener('pointerup', drop); list.addEventListener('pointercancel', drop);
+  list.addEventListener('keydown', (e) => { const h = e.target.closest('.drag-h'); if (!h || !/^Arrow(Up|Down)$/.test(e.key)) return; e.preventDefault();
+    const li = h.closest('.item'), to = e.key === 'ArrowUp' ? li.previousElementSibling : li.nextElementSibling;
+    if (to) { e.key === 'ArrowUp' ? to.before(li) : to.after(li); h.focus(); } });
+
+  // ---- the lists menu ----
+  const more = document.getElementById('listsMore'), menu = document.getElementById('listsMenu');
+  const open = (o) => { menu.hidden = !o; more.setAttribute('aria-expanded', o); if (o) menu.querySelector('button').focus(); };
+  more.onclick = () => open(menu.hidden);
+  document.addEventListener('click', (e) => { if (!menu.hidden && !e.target.closest('.lists-bar')) open(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { open(false); more.focus(); } });
+
+  // ---- the icon picker (a radiogroup: arrows move, the choice follows) ----
+  document.querySelector('.icon-pick').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return;
+    b.parentElement.querySelectorAll('button').forEach((x) => { x.setAttribute('aria-checked', x === b); x.tabIndex = x === b ? 0 : -1; }); });
+
+  // ---- the toast: a reference for H.toast (common.js, the master's) ----
+  
+  // the toast is H.toast from common.js (v148): short, at the top, closed by a click or a swipe
+  const toast = (msg, label, action) => H.toast(msg, label, action || (() => {}));
+  document.getElementById('tShort').onclick = () => toast('נוסף לרשימה: עגבניות');
+  document.getElementById('tAct').onclick = () => toast('3 פריטים נמחקו', 'בטל', () => {});
+  if (q.get('sel')) { sel(true); [...list.querySelectorAll('.sel-box')].slice(0, 3).forEach((b) => b.setAttribute('aria-checked', 'true')); count(); }
+  if (q.get('menu')) open(true);
+  if (q.get('toast')) toast('3 פריטים נמחקו', 'בטל', () => {});
+})();
+</script>
+</body>
+</html>

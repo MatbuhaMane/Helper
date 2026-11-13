@@ -8,6 +8,9 @@ Updated by the department at the end of every meaningful round of work. Short: t
   founding-supporters campaign at the public launch; then Tnufa or a small SAFE; then a community round. No VC or IPO in
   the horizon. Legal points are marked for a lawyer and an accountant.
 
+- **The owner's answers (2026-11-14):** the levels are named by number only; self-funded with fundraising only after
+  metrics; payment quotes from many providers plus a web comparison (the next task for business).
+
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.
   - The trial is about ₪1–2.

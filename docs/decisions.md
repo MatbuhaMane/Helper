@@ -11,6 +11,31 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
+
+**Decided (the owner):**
+1. **The founding members' levels are named by number only, with no metaphor:**
+   - "מהעשרה הראשונים" (the first 10);
+   - "מהחמישים הראשונים" (11–50);
+   - "מהמאה הראשונים" (51–100);
+   - and "חבר/ה מייסד/ת" for the rest in the window.
+   - The draft names עמוד / יתד / חבל are dropped.
+2. **Fundraising:** self-funded, and outside money only after the metrics. This is the roadmap in
+   `docs/business/business-plan.md`, section 9.3:
+   - no equity before the beta passes;
+   - a founding-supporters campaign at the public launch;
+   - then Tnufa or a small friends-and-family SAFE at about 1,000 families;
+   - a community round at about 10,000 families.
+3. **The payment provider:** quotes from many providers, not only three, plus a web comparison of their published
+   prices. Then choose before the public launch.
+
+**Affects:**
+- **design:** the founders page and the title pills use the number titles.
+- **ai-features:** the title strings.
+- **The owner:** asking for quotes. The business department does the web comparison.
+
+**Status:** Decided (the owner).
+
 ## 2026-11-14 – Colour palettes are never sold; free users choose a basic palette too (business, the owner)
 
 **Decided:** palettes are not a paid item. The owner's words: "זה גרידי".

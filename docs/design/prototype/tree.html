@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>עץ המשפחה – שלוש גרסאות</title>
+  <title>עץ המשפחה – הזית</title>
   <!-- The family tree, spec 1 (docs/vision/tree.md): /assets/tree.css, /assets/tree-sound.js and the layers in /assets/tree/.
-       The markup is in tree.css's header. This page shows the three trees with a sample family (no real people):
+       The markup is in tree.css's header. This page shows the olive (the owner's choice, 2026-11-14) with a sample family (no real people):
        the eldest by the roots, a memorial candle there today, a birthday glowing in the crown, a "+" bud beside "me".
        People are spread along each tier's line from slots.json; that placing is ai-features' to write in the real page.
        Copy to public/ to view (it is not committed there). -->
@@ -13,24 +13,15 @@
   <link rel="stylesheet" href="/assets/tree.css">
   <style>
     body { margin: 0; }
-    .bar { position: sticky; inset-block-start: 0; z-index: 5; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; padding: 10px 16px;
-      background: color-mix(in srgb, var(--bg) 88%, transparent); border-block-end: 1px solid var(--line); }
-    .bar .btn[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
     .stage { padding: 12px max(8px, env(safe-area-inset-right)) 40px max(8px, env(safe-area-inset-left)); }
     .note { text-align: center; color: var(--muted); font-size: .85rem; margin: 6px 16px 0; }
   </style>
 </head>
 <body>
-<div class="bar" role="group" aria-label="סוג העץ">
-  <button class="btn" type="button" data-kind="olive">זית</button>
-  <button class="btn" type="button" data-kind="oak">אלון התבור</button>
-  <button class="btn" type="button" data-kind="acacia">שיטה</button>
-</div>
-<p class="note" id="note"></p>
+<p class="note">זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.</p>
 <div class="stage"><div class="tree" id="tree"></div></div>
 <script src="/assets/tree-sound.js"></script>
 <script>
-  const NOTES = { olive: 'זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.', oak: 'אלון התבור: גזע ישר ורחב, צמרת עגולה ועמוקה ובלוטים.', acacia: 'שיטה: העץ של המדבר ליד האוהל, גזע דק וצמרת שטוחה כמו מטרייה, עם פרחים צהובים.' };
   // a sample family by tier, oldest first (no real people)
   const FAMILY = {
     roots: [{ n: 'אברהם', d: 'תר״ן–תשכ״ב', passed: 1 }, { n: 'שרה', d: 'תרנ״ה–תשל״א', passed: 1, candle: 1 }],
@@ -72,9 +63,7 @@
   function tap(b, p) { b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); setTimeout(() => b.classList.remove('tap'), 900); p.passed ? TreeSound.quiet() : TreeSound.leaf(); }
   // the tree sways a little more while it is moved, then settles with a faint rustle
   let still; addEventListener('scroll', () => { tree.classList.add('moving'); clearTimeout(still); still = setTimeout(() => { tree.classList.remove('moving'); TreeSound.settle(); }, 260); }, { passive: true });
-  document.querySelectorAll('.bar .btn').forEach((b) => b.addEventListener('click', () => pick(b.dataset.kind)));
-  function pick(kind) { document.querySelectorAll('.bar .btn').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === kind))); document.getElementById('note').textContent = NOTES[kind]; draw(kind); }
-  pick(new URLSearchParams(location.search).get('kind') || 'olive');
+  draw('olive');
 </script>
 </body>
 </html>

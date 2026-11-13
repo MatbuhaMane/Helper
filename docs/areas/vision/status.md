@@ -30,8 +30,8 @@ Last update: 2026-11-13.
 
 - **The personal profile and the back door** (`docs/vision/profile.md`): decided and sent (batch 11) to design, ai-features and the CEO.
 - **Serious mode** (`docs/vision/serious-mode.md`): decided and sent (batch 11) to design, ai-features and the CEO.
-- **Grandparents mode, the emergency button and kids mode** (`docs/vision/grandparents-kids.md`): decided, in the batch queue.
-- **The tree drawing (the app's default tree), Sigd and Novy God, the test run after the next merge:** decided, in the batch queue.
+- **Grandparents mode, the emergency button and kids mode** (`docs/vision/grandparents-kids.md`): decided and sent (batch 12).
+- **The tree drawing (the app's default tree), Sigd and Novy God, the test run after the next merge:** decided and sent (batch 12).
 
 - **The family tree, spec 1** (`docs/vision/tree.md`): decided and sent (batch 9) to design, ai-features and the CEO.
   - A fixed drawn tree, with people as leaves.

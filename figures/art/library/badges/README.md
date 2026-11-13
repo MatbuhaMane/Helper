@@ -27,8 +27,10 @@ A round embroidered patch badge, drawn in exactly the same illustrated style as 
 - **highway** (path): a straight road running to the horizon with small milestone stones on its sides
 - **way_of_life** (path): a winding road leading to a tree with full leaves and a few pomegranates
 - **the_way** (secret): a radiant tree of life with deep roots and spreading branches, a road winding through its roots, small stars around it
-- **kings_way** (secret): a crown hovering above a long ancient road paved with stones that stretches to the horizon
+- **kings_way** (secret): a crown hovering above a long ancient road paved with stones that stretches to the horizon *Edited by hand:* the model topped the crown with a cross; it was covered with the patch's own velvet, with one gold jewel stitch at the peak.
 - **tribe** (kin): four small tents standing together in a circle around a little fire
 - **angel** (kin): a pair of embroidered wings around a small glowing lantern lighting a path
 - **adviser** (kin): an ancient clay oil lamp with a small bright flame and a tiny heart above it
 - **shoulder** (kin): two hands clasped firmly together in a handshake of support
+
+All 23 done on 2026-11-13; the last eight after the image tool's daily cap reset (8 × $0.0686).

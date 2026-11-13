@@ -5,6 +5,11 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready to merge: the users' feedback round (v127, main merged in):**
+  - **Marking verses** (study.css): `.rs-v.mk` is a see-through honey wash with no frame, and marked verses in a row join into one band. It looks the same at all three levels, and the browser's selection is a quiet honey. The verse numbers are faint pebbles that say "tap me". Checked on Genesis 1 at 375 and 1280, light and dark.
+  - **The invitations card** (admin.css `.bd-inv`): the inbox's filter pills, quiet rows, and a state pill (sent grey, opened honey, joined vine, expired red). Checked on `docs/design/prototype/invites.html` at 375 and 1280, light and dark, contrast 9:1 and up.
+  - **Fun:** a two-word tab ("מצחיק ואמיתי") stays one line at 375; the tile widens and the row scrolls.
+  - **Waiting on ai-features:** `.mk` in study.js and the `.bd-inv` markup (the classes were sent to them).
 - **Ready to merge: the messages inbox in the top bar (v125, main merged in):** `.dm-inbox` in base.css with `bd-icons/envelope.svg`:
   - the triangle's twin: 44×44, a 24px line envelope at stroke 1.9, no circle, in the text's ink, the vine on hover;
   - the unread `.dm-dot` sits on the envelope's corner, and the two icons sit a little closer to each other than to the chip;

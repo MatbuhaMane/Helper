@@ -157,13 +157,13 @@
 @media (min-width: 900px) { .rx { grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); } }
 @media (max-width: 899px) { .rx[data-view="thread"] > .rx-side, .rx:not([data-view="thread"]) > .rx-thread { display: none; } }
 .rx-side { display: grid; gap: 10px; }
-.rx-filters, .rx-state { display: flex; flex-wrap: wrap; gap: 6px; }
-.rx-filters button, .rx-state button { font: inherit; font-size: .86rem; min-block-size: 36px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+.rx-filters, .rx-state, .bd-inv-f { display: flex; flex-wrap: wrap; gap: 6px; }
+.rx-filters button, .rx-state button, .bd-inv-f button { font: inherit; font-size: .86rem; min-block-size: 36px; padding: 0 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--line-strong); background: var(--card); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
-.rx-filters button span { min-inline-size: 20px; block-size: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
+.rx-filters button span, .bd-inv-f button span { min-inline-size: 20px; block-size: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
   color: #fff; background: #c2412d; font-variant-numeric: tabular-nums; }
-.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink, #fff); }   /* dark ink on the light vine at night */
-.rx-filters button:focus-visible, .rx-state button:focus-visible, .rx-row:focus-visible, .rx-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"], .bd-inv-f button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink, #fff); }   /* dark ink on the light vine at night */
+.rx-filters button:focus-visible, .rx-state button:focus-visible, .bd-inv-f button:focus-visible, .rx-row:focus-visible, .rx-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .rx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 @media (min-width: 900px) { .rx-list { max-block-size: min(70dvh, 720px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; } }
 .rx-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; inline-size: 100%; padding: 10px 12px;
@@ -243,3 +243,36 @@
 .ad-fold[open] > summary { margin-block-end: 6px; }
 .ad-fold > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; border-radius: var(--radius-sm); }
 @media (prefers-reduced-motion: reduce) { .ad-fold > summary::after { transition: none; } }
+
+/* ── הזמנות – invitations outside the family (the users, 2026-11-14), a part of the dashboard (admin.js, ai-features):
+   <div class="bd-part" id="invites"><section class="card bd-inv"><h2>הזמנות</h2>
+     <div class="bd-inv-tools">(.ad-combo, the members search) <div class="bd-inv-f" role="group" aria-label="סינון"><button aria-pressed="true">הכל</button>…</div></div>
+     <ul class="bd-inv-list"><li class="bd-inv-row" data-st="sent|opened|joined|expired">
+       <span class="bd-inv-who"><b>name or address</b><small class="muted">הזמין: … · 14.11</small></span>
+       <span class="bd-inv-st">נשלחה</span> [<button class="btn small ghost">שליחה שוב</button>]</li></ul>
+     <p class="bd-inv-empty" hidden>…</p></section></div>
+   Like the dashboard's other cards: the filters are the inbox's pills (.rx-filters above); each invitation a quiet row, its state a
+   small pill whose colour tells the way: sent grey, opened honey, joined vine, expired the alert's red, faded. The search box
+   and the filters share a row on a computer and stack on a phone. */
+.bd-inv { display: grid; gap: 10px; padding: 14px 16px; }
+@media (max-width: 520px) { .bd-inv { padding: 12px; } }
+.bd-inv h2 { margin: 0; }
+.bd-inv-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.bd-inv-tools > .ad-combo { flex: 1 1 16rem; min-inline-size: 0; }
+.bd-inv-list { list-style: none; margin: 0; padding: 0; display: grid; max-block-size: min(26rem, 60vh); overflow-y: auto; overscroll-behavior: contain; }
+.bd-inv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 10px; min-block-size: 52px; padding: 8px 4px; border-block-end: 1px solid var(--line); }
+.bd-inv-row:last-child { border-block-end: 0; }
+.bd-inv-who { display: grid; gap: 1px; min-inline-size: 0; }
+.bd-inv-who b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-inv-who small { font-size: .82rem; overflow-wrap: anywhere; }
+.bd-inv-st { --st: var(--muted); justify-self: end; padding: 1px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; line-height: 1.7; white-space: nowrap;
+  color: var(--text); background: color-mix(in srgb, var(--st) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st) 40%, transparent); }
+.bd-inv-st::before { content: ""; display: inline-block; inline-size: 7px; block-size: 7px; margin-inline-end: 6px; border-radius: 50%; background: var(--st); vertical-align: 1px; }
+.bd-inv-row[data-st="opened"] .bd-inv-st { --st: #d39a2c; }
+.bd-inv-row[data-st="joined"] .bd-inv-st { --st: var(--primary); }
+.bd-inv-row[data-st="expired"] .bd-inv-st { --st: var(--alert, #cc5a46); }
+.bd-inv-row[data-st="expired"] .bd-inv-who { opacity: .7; }
+.bd-inv-row .btn { min-block-size: 36px; }
+.bd-inv-empty { margin: 0; padding: 18px 12px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+/* a phone: the name and its line at the start, the state and the button stacked at the end */
+@media (max-width: 520px) { .bd-inv-row { grid-template-columns: minmax(0, 1fr) auto; } .bd-inv-who { grid-row: span 2; } .bd-inv-row .btn { justify-self: end; min-block-size: 32px; } }

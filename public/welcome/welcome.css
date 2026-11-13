@@ -104,3 +104,70 @@
   .wz-step.in, .wz-step.out, .wz-tile[aria-checked="true"], .wz-trail i.now, .wz-ripple, .wz-star, .wz-done img { animation: none; }
   .wz-star, .wz-ripple { display: none; }
 }
+
+/* ── Three showing slides (the owner, 2026-11-13), before the last one: how to report, who the helper is, the family tree.
+   Each step's body is a picture in a card (.wz-show, aria-hidden: the words carry the meaning) and up to three short points.
+   <ul class="wz-points"><li>…</li></ul>                       (a vine dot before each; text, not buttons)
+
+   1. The triangle: a small copy of the top bar, the real .rp-alert of base.css, breathing, so it is the same one they will see.
+   <div class="wz-show wz-report" aria-hidden="true">
+     <div class="wz-bar"><b>הָאֹהֶל</b><span class="wz-bar-end"><span class="rp-alert"></span><span class="userchip">דנה</span></span></div>
+     <div class="wz-kinds"><span class="bug">תקלה</span><span class="idea">הצעה לשיפור</span></div></div> */
+.wz-show { inline-size: min(100%, 340px); box-sizing: border-box; display: grid; gap: 12px; justify-items: center; padding: 14px;
+  border-radius: 22px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 12px 26px -18px rgba(30, 24, 12, .55); }
+.wz-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; inline-size: min(100%, 380px); text-align: start; }
+.wz-points li { display: flex; align-items: baseline; gap: 10px; font-size: .98rem; line-height: 1.45; }
+.wz-points li::before { content: ""; flex: none; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--primary); translate: 0 -1px; }
+.wz-bar { inline-size: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-block-size: 52px;
+  padding-block: 6px; padding-inline: 12px 8px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.wz-bar > b { font-size: 1.05rem; font-weight: 700; }
+.wz-bar-end { display: flex; align-items: center; gap: 8px; }
+.wz-bar .userchip { cursor: default; }
+.wz-bar .rp-alert { cursor: default; }
+.wz-bar .rp-alert::before { animation: wz-ping 1.8s ease-out infinite; }
+@keyframes wz-ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger, #9a3b2a) 45%, transparent); } 70%, 100% { box-shadow: 0 0 0 12px transparent; } }
+.wz-kinds { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.wz-kinds span { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font-size: .9rem; font-weight: 500;
+  border: 1px solid var(--line-strong); background: var(--card); }
+.wz-kinds span::before { content: ""; inline-size: 17px; block-size: 17px; background: var(--danger, #9a3b2a);
+  -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
+.wz-kinds .idea::before { background: var(--primary); -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
+
+/* 2. The helper: the chosen figure big, on a soft disc, saying one example; the corner friend steps aside meanwhile.
+   <div class="wz-show wz-helper" aria-hidden="true"><span class="wz-hero" data-f="owl"></span><p class="wz-say">"תוסיף חלב לרשימה"</p></div>
+   (mount it like the tiles: Figure2D.mount(hero, id, { size: parseInt(getComputedStyle(hero).getPropertyValue('--hero')) || 140 })) */
+.wz-hero { --hero: 140px; display: grid; place-items: center; inline-size: calc(var(--hero) + 28px); aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 16%, var(--card)), color-mix(in srgb, var(--primary) 6%, var(--card)) 70%, transparent); }
+.wz-hero > * { max-inline-size: 100%; }
+.wz-say { position: relative; margin: 0; padding: 8px 14px; border-radius: 16px; font-size: .98rem; max-inline-size: 100%;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line)); }
+.wz-say::before { content: ""; position: absolute; inset-block-start: -7px; inset-inline-start: calc(50% - 6px); inline-size: 12px; block-size: 12px; rotate: 45deg;
+  background: inherit; border-block-start: inherit; border-inline-start: inherit; }
+.wz-friend { transition: opacity .3s ease; }
+.wz:has(.wz-hero) .wz-friend { opacity: 0; }
+
+/* 3. The tree: the olive drawing small, with the person and a few kin hanging from it (the tree page's own layers, back to front).
+   <div class="wz-show wz-tree" aria-hidden="true"><div class="wz-tree-box">
+     <img src="/assets/tree/olive/ground.svg" alt=""> (+ boughs, trunk, crown, in that order)
+     <i>סבא</i><i>סבתא</i><i>אמא</i><i>אבא</i><i class="me">אני</i></div></div>
+   The five faces sit on the olive's slots (slots.json: low, mid, crown), in the drawing's own left/top, which a mirror would break. */
+.wz-tree-box { position: relative; block-size: min(34dvh, 280px); aspect-ratio: 1000 / 1800; }
+.wz-tree-box img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
+.wz-tree-box i { position: absolute; translate: -50% -50%; display: grid; place-items: center; inline-size: 38px; aspect-ratio: 1; border-radius: 50%;
+  font-style: normal; font-size: .66rem; font-weight: 600; line-height: 1; color: var(--text); background: var(--card);
+  border: 2px solid color-mix(in srgb, var(--primary) 55%, var(--line-strong)); box-shadow: 0 3px 8px -3px rgba(30, 24, 12, .5); }
+.wz-tree-box i:nth-of-type(1) { left: 31%; top: 71.4%; }
+.wz-tree-box i:nth-of-type(2) { left: 72.7%; top: 69.2%; }
+.wz-tree-box i:nth-of-type(3) { left: 30.6%; top: 56.2%; }
+.wz-tree-box i:nth-of-type(4) { left: 68.9%; top: 54.5%; }
+.wz-tree-box i.me, .wz-tree-box i:nth-of-type(5) { left: 50%; top: 35.9%; inline-size: 46px; font-size: .78rem; background: var(--primary); color: var(--primary-ink); border-color: var(--card); }
+
+@media (max-width: 600px) { .wz-hero { --hero: 112px; } .wz-show { padding: 12px; } }
+@media (max-height: 700px) { .wz-tree-box { block-size: min(28dvh, 220px); } .wz-hero { --hero: 96px; } .wz-points { gap: 4px; } .wz-points li { font-size: .92rem; } }
+@media (prefers-reduced-motion: reduce) { .wz-bar .rp-alert::before { animation: none; } .wz-friend { transition: none; } }
+/* with the showing slides the trail has up to nine stops: closer together on a phone, so "אחר כך" keeps its line */
+@media (max-width: 600px) {
+  .wz-trail:has(i:nth-child(8)) i + i { margin-inline-start: 15px; }
+  .wz-trail:has(i:nth-child(8)) i + i::before { inline-size: 11px; }
+  .wz-skip { white-space: nowrap; }
+}

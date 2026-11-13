@@ -182,20 +182,30 @@
 .navmenu-phone .navmenu-reports .rp-entry small { display: none; }
 .navmenu-phone .navmenu-reports .mi-count { min-inline-size: 20px; block-size: 20px; padding: 0 5px; font-size: .72rem; }
 
-/* ── The warning triangle in the top bar (the owner, 2026-11-13): beside the settings chip, it opens the report sheet.
-   <button class="rp-alert" type="button" aria-label="דיווח על בעיה" title="דיווח על בעיה"></button>  (no children needed:
-   the disc and the triangle are drawn here; an H.icon put inside is hidden). A 44×44 target around a 36px pastel-red disc,
-   a line border like the chip's, so it weighs the same as the chip beside it; --danger is a deep brick by day, a pastel at night. */
-.rp-alert { display: inline-grid; place-items: center; flex: none; inline-size: 44px; block-size: 44px; margin-block: -4px; margin-inline: -2px;
-  padding: 0; border: 0; background: none; color: var(--danger, #9a3b2a); cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.rp-alert::before { content: ""; grid-area: 1 / 1; inline-size: 36px; block-size: 36px; border-radius: 50%;
-  background: color-mix(in srgb, var(--danger, #9a3b2a) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger, #9a3b2a) 40%, var(--line-strong));
-  transition: background var(--dur-quick, .15s) ease, border-color var(--dur-quick, .15s) ease; }
-.rp-alert::after { content: ""; grid-area: 1 / 1; inline-size: 19px; block-size: 19px; background: currentColor;
+/* The warning triangle in the top bar (.rp-alert) is in base.css, so the welcome wizard's slide draws the very same one. */
+
+/* ── The kind of report (the owner, 2026-11-13): a fault or a suggestion, two segments above the text. Real radios, so the
+   arrows and the form read them:
+   <div class="rp-kind" role="radiogroup" aria-label="מה שולחים?">
+     <label class="bug"><input type="radio" name="kind" value="bug" checked><span>תקלה</span></label>
+     <label class="idea"><input type="radio" name="kind" value="idea"><span>הצעה לשיפור</span></label></div>
+   A fault is the red of the triangle, a suggestion the vine; the sheet's head icon turns into the bulb when it is a suggestion. */
+.rp-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: color-mix(in srgb, var(--muted) 10%, var(--card));
+  border: 1px solid var(--line); }
+.rp-kind label { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-block-size: 44px; padding: 6px 10px; border-radius: 12px;
+  color: var(--muted); font-weight: 500; cursor: pointer; text-align: center; line-height: 1.2; border: 1px solid transparent;
+  transition: background-color var(--dur-quick, .15s) ease, color var(--dur-quick, .15s) ease; -webkit-tap-highlight-color: transparent; }
+.rp-kind input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.rp-kind label::before { content: ""; flex: none; inline-size: 20px; block-size: 20px; background: currentColor;
   -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
-.rp-alert > :is(svg, .icon) { display: none; }
-.rp-alert:hover::before { background: color-mix(in srgb, var(--danger, #9a3b2a) 22%, var(--card)); border-color: var(--danger, #9a3b2a); }
-.rp-alert:focus-visible { outline: none; }
-.rp-alert:focus-visible::before { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger, #9a3b2a) 45%, transparent); }
-.rp-alert[hidden] { display: none; }
-@media (prefers-reduced-motion: reduce) { .rp-alert::before { transition: none; } }
+.rp-kind label.idea::before { -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
+@media (hover: hover) { .rp-kind label:hover { color: var(--text); } }
+.rp-kind label:has(:checked) { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 2px 8px -4px rgba(30, 24, 12, .35); }
+.rp-kind label.bug:has(:checked) { border-color: color-mix(in srgb, var(--danger, #9a3b2a) 45%, var(--line)); }
+.rp-kind label.bug:has(:checked)::before { background: var(--danger, #9a3b2a); }
+.rp-kind label.idea:has(:checked) { border-color: color-mix(in srgb, var(--primary) 50%, var(--line)); }
+.rp-kind label.idea:has(:checked)::before { background: var(--primary); }
+.rp-kind label:has(:focus-visible) { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; }
+.rp:has(.rp-kind .idea :checked) .rp-ic { background: color-mix(in srgb, var(--primary) 16%, var(--card)); color: var(--primary); }
+.rp:has(.rp-kind .idea :checked) .rp-ic::before { -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
+@media (prefers-reduced-motion: reduce) { .rp-kind label { transition: none; } }

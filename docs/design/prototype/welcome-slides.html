@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ברוכים הבאים – שלוש שקופיות הסבר</title>
+  <!-- The three showing slides of /welcome/ (the triangle, the helper, the tree) and the report sheet's kind choice.
+       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=report|helper|tree|sheet -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/reports.css">
+  <link rel="stylesheet" href="/welcome/welcome.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; } .sheetdemo { max-inline-size: 500px; margin: 20px auto; padding: 20px max(16px, env(safe-area-inset-right, 0px)); }</style>
+</head>
+<body>
+<div class="wz" id="wz">
+  <header class="wz-top"><nav class="wz-trail" id="trail"><i class="done"></i><i class="done"></i><i class="done"></i><i class="now"></i><i></i><i></i><i></i><i></i><i></i></nav><button class="wz-skip" type="button">אחר כך</button></header>
+  <main class="wz-stage" id="stage"></main>
+  <div class="wz-friend" id="friend" aria-hidden="true"></div>
+  <div class="wz-foot"><button class="wz-back" type="button">חזרה</button><button class="wz-go" type="button">הלאה</button></div>
+</div>
+<script src="/assets/common.js"></script>
+<script src="/assets/figure2d.js"></script>
+<script>
+(() => {
+  const s = new URLSearchParams(location.search).get('s') || 'report';
+  const pts = (a) => `<ul class="wz-points">${a.map((t) => `<li>${t}</li>`).join('')}</ul>`;
+  const S = {
+    report: ['האוהל עוד צעיר', 'משהו לא עובד, או שיש לך רעיון?', `<div class="wz-show wz-report" aria-hidden="true"><div class="wz-bar"><b>הָאֹהֶל</b><span class="wz-bar-end"><span class="rp-alert"></span><span class="userchip">דנה</span></span></div>
+      <div class="wz-kinds"><span class="bug">תקלה</span><span class="idea">הצעה לשיפור</span></div></div>` + pts(['המשולש האדום למעלה, בכל דף', 'אפשר גם לנער את הטלפון', 'כל דיווח מגיע לצוות האוהל, והתשובה לתיבה שלך'])],
+    helper: ['זה העוזר החכם', 'החבר שלך באוהל', `<div class="wz-show wz-helper" aria-hidden="true"><span class="wz-hero" data-f="owl"></span><p class="wz-say">"תוסיף חלב לרשימה" – וזה כבר שם</p></div>` + pts(['מדברים אליו או כותבים לו, מכל דף', 'הוא עושה בשבילך: רשימות, תזכורות, מתכונים', 'לוחצים עליו כשצריך עזרה'])],
+    tree: ['עץ המשפחה', 'כל המשפחה על עץ אחד', `<div class="wz-show wz-tree" aria-hidden="true"><div class="wz-tree-box">${['ground', 'boughs', 'trunk', 'crown'].map((l) => `<img src="/assets/tree/olive/${l}.svg" alt="">`).join('')}<i>סבא</i><i>סבתא</i><i>אמא</i><i>אבא</i><i class="me">אני</i></div></div>` + pts(['מוסיפים קרובים, והעץ גדל', 'ימי הולדת ואזכרות מגיעים ללוח', 'כל אחד רואה רק את מה שמותר לו'])],
+  };
+  if (s === 'sheet') {
+    document.getElementById('wz').remove();
+    document.body.insertAdjacentHTML('beforeend', `<div class="card sheetdemo"><form class="rp" onsubmit="event.preventDefault()"><header class="rp-head"><span class="rp-ic" aria-hidden="true"></span><div><h2>דיווח על בעיה</h2><p class="rp-to">הולך ל<b>צוות האוהל</b></p></div></header>
+      <div class="rp-kind" role="radiogroup" aria-label="מה שולחים?"><label class="bug"><input type="radio" name="kind" value="bug" checked><span>תקלה</span></label><label class="idea"><input type="radio" name="kind" value="idea"><span>הצעה לשיפור</span></label></div>
+      <label class="rp-field"><span>מה קרה?</span><textarea class="rp-text" rows="3"></textarea></label><div class="rp-actions"><button class="btn primary">שליחה</button><button class="btn ghost" type="button">ביטול</button></div></form></div>`);
+    return;
+  }
+  const [q, hint, body] = S[s];
+  const box = document.createElement('section'); box.className = 'wz-step'; box.innerHTML = `<h1 class="wz-q">${q}</h1><p class="wz-hint">${hint}</p>${body}`;
+  document.getElementById('stage').append(box);
+  const fr = document.getElementById('friend');
+  Figure2D.mount(fr, 'owl', { size: parseInt(getComputedStyle(document.getElementById('wz')).getPropertyValue('--wz-fig')) || 120 }).catch(() => {});
+  box.querySelectorAll('.wz-hero').forEach((h) => Figure2D.mount(h, h.dataset.f, { size: parseInt(getComputedStyle(h).getPropertyValue('--hero')) || 140 }).catch(() => {}));
+})();
+</script>
+</body>
+</html>

@@ -56,6 +56,11 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
 
 
 ## Done
+- **The kind of report and three welcome slides (the owner, 2026-11-13):** `.rp-kind` in reports.css (תקלה / הצעה לשיפור, real radios; a fault in
+  the triangle's red, a suggestion in the vine with a new bulb icon `bd-icons/idea.svg`; the sheet's head icon turns into the bulb). `.rp-alert` moved
+  from reports.css to base.css so /welcome/ draws the very same triangle. welcome.css: `.wz-show`, `.wz-points`, the report slide (a mini top bar
+  with the breathing triangle), the helper slide (`.wz-hero`, the figure big, the corner friend steps aside), the tree slide (the olive with five faces),
+  and a tighter trail for nine stops on a phone. Markup in the comments and in `docs/design/prototype/welcome-slides.html`. 375/1280 checked.
 - **/messages/ has its own look (`public/messages/messages.css`, 2026-11-13):** list and thread side by side from 900px, one at a time
   on a phone (`data-open`); my bubbles in the vine at the start, theirs on a warm neutral; "נקרא" under my last one; a pill send button.
   `.dm-msg`/`.dm-compose` collide with daemon.css, so they are scoped under `.dm-thread`. `.dm-dot` (the unread dot on the chip) moved to base.css.

@@ -41,6 +41,20 @@ docs/vision/batch.md 8: "רשימה אוטומטית" is a fixed list built from
   `.low`, `.listed`), `.auto-name`, `.auto-acts`. There is no CSS for them yet.
 Status: done (on `ai-features`).
 
+## 2026-11-14 – The family tree: the drawn tree, from a set chosen by a pref (ai-features → master, design)
+The family page opens on a new first view, "העץ": the people as leaves on a drawing (vision `docs/vision/tree.md`,
+markup `public/assets/tree.css`). No code knows any one drawing: the set is `/assets/tree/<set>/` with its layers and
+`slots.json`; the list of sets is `/assets/tree/sets.json`; the person's choice is the pref `family.treeSet`.
+- **design:** please add `public/assets/tree/sets.json`, `[{ "id": "olive", "name": "זית" }, …]`; until it exists the page
+  falls back to one constant (`FIRST_SET` in `family.js`). With two sets or more, a picker appears above the tree (class
+  `.fv-views.tr-sets`, buttons with `role=radio` and `aria-checked`). Optional keys `slots.json` may add: `self` (the
+  tier name of "me"; default: the second from the top), `layers` (default ground, boughs, trunk, crown), `candle` ([x, y];
+  default under the trunk pivot), `perRow` (default 6) and `rowGap` (in %, default 7).
+- **master (vault, read only):** `GET /api/vault/tree` now sends each person's `life` (born, died, after sunset, birthday
+  by), taken from the details after the privacy filter (`K.view`), so a viewer sees only what they could see on the card.
+  It feeds the birthday glow, the quiet leaf of the passed and the yahrzeit candle (by the Hebrew date).
+- Leaves that would touch make the tree wider (up to about three screens); the board scrolls sideways, centred on me.
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**

@@ -27,7 +27,7 @@ Status: proposed.
 ## 2026-11-13 – The family tree: עץ ב׳ (canopy) is the default (the owner → master, design, ai-features)
 
 The owner chose עץ ב׳. `public/assets/tree/sets.json` lists canopy first, so it is the default for everyone who has not
-picked a tree; the olive stays as the second choice in the tree's settings (pref `family.treeSet`). Status: done (v96).
+picked a tree; the olive, renamed עץ א׳ by the owner, stays as the second choice in the tree's settings (pref `family.treeSet`). Status: done (v96).
 
 ## 2026-11-13 – Recurring goals: a fresh round each period (ai-features → master, design)
 

@@ -9,6 +9,9 @@ import * as gather from '../../server/gather';
 import * as join from '../../server/join';
 import * as admin from '../../server/admin';
 import * as credits from '../../server/credits';
+import * as figures from '../../server/figures';
+import { childOf } from '../../server/members';
+import { birthYear } from '../../server/figures-rules';
 import * as designImages from '../../server/design-images';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
@@ -57,7 +60,8 @@ route('GET', '/api/auth/desktop/poll', desktopPoll);
 route('GET', '/api/me', async (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
   // The person's preferences come with "who am I", so every page has them before it draws anything.
-  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email) });
+  // child: under 12 by the birth year the owner set (the year itself stays private)
+  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email) });
 });
 route('GET', '/api/prefs', prefs.getPrefs);
 route('PUT', '/api/prefs/:ns', prefs.putPrefs);
@@ -66,7 +70,7 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
   await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
-  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role FROM members ORDER BY household, email').all();
+  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role, birth_year FROM members ORDER BY household, email').all();
   return json({ members: results });
 });
 route('PUT', '/api/members/:email/name', async (ctx) => {
@@ -75,6 +79,15 @@ route('PUT', '/api/members/:email/name', async (ctx) => {
   const name = heName((await body<{ he_name?: string }>(ctx.req)).he_name);
   await ctx.env.DB.prepare('UPDATE members SET he_name = ? WHERE email = ?').bind(name, decodeURIComponent(ctx.params.email).toLowerCase()).run();
   return json({ ok: true, he_name: name });
+});
+/** A member's birth year (private: only here, in the owner's room). Under 12 hides horror figures and keeps a child in the family. */
+route('PUT', '/api/members/:email/birth-year', async (ctx) => {
+  requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
+  let year: number | null;
+  try { year = birthYear((await body<{ birth_year?: unknown }>(ctx.req)).birth_year, Date.now()); } catch { throw new HttpError(400, 'bad_year'); }
+  await ctx.env.DB.prepare('UPDATE members SET birth_year = ? WHERE email = ?').bind(year, decodeURIComponent(ctx.params.email).toLowerCase()).run();
+  return json({ ok: true, birth_year: year });
 });
 /** The Hebrew name the helper calls someone by: set by the family's owner (on the admin page). */
 const heName = (v: unknown) => {
@@ -115,6 +128,8 @@ route('GET', '/api/daemon', daemon.getDaemon);
 route('POST', '/api/daemon/chat', daemon.chat);
 route('POST', '/api/daemon/reset', daemon.resetChat);
 route('GET', '/api/daemon/form/:slug', daemon.formImage);
+route('GET', '/api/daemon/figures', figures.list);           // paid figures: what this person has, and the price
+route('POST', '/api/daemon/figures/:id/buy', figures.buy);   // { confirm: true }: the family for nothing, others from their credits
 
 /* songbook */
 route('GET', '/api/songs/search', songs.search);

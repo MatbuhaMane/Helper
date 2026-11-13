@@ -11,6 +11,40 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Paid figures bought with credits; a private birth year; figures everyone agrees on (master)
+The owner's decisions, built by the master.
+
+**Buying a paid figure**
+- Paid figures can now be bought with credits (server/figures.ts, rules and 29 tests in figures-rules.ts and test-figures.mjs).
+- The owner's family gets a paid figure for nothing, at the owner's cost, like the AI.
+- A limited account pays the setting `figures.price_ils` (default ₪10, a draft until business decides) from its credits.
+- The purchase counts as spent in credits.balance().
+- Every purchase needs `{ confirm: true }`. Buying twice charges nothing.
+- The routes:
+  - `GET /api/daemon/figures` → { owned, paid, priceIls }
+  - `POST /api/daemon/figures/:id/buy` { confirm: true } → { ok, how, owned }, or 400 not_paid | confirm_needed, or 402 not_enough_credit
+- Table `figure_owned`.
+- The list of paid figures lives on the server (`figures-rules.ts` PAID). Design tells the master when a figure becomes paid.
+
+**A private birth year**
+- Column `members.birth_year`. Only the owner sets and sees it, in the room: `PUT /api/members/:email/birth-year`, and `/api/members` returns it.
+- Everyone else gets only `child` (under 12) from `/api/me`.
+- On the server, `childOf(env, email)` in server/members.ts gives the same answer.
+
+**ai-features, please**
+- The figure picker: a buy button with a confirmation that shows the price, `/api/daemon/figures` for what is owned (in place of `owned: []` in /api/daemon), and a 402 that leads to "חיבור לשירותים".
+- Hide horror figures when `child` is true (the person's switch stays for adults).
+- Pass `childOf` into research-share's mayJoin (inviteeChild / ownerChild).
+- In the owner's room, a birth-year field per member.
+
+**Figures everyone agrees on (design, vision)**
+- Prophets appear only in a representation everyone accepts. If one might hurt anyone, leave it out.
+- The same goes for the library as a whole: prefer figures nobody objects to over hiding them by religion.
+
+**Approved as they are:** Open Food Facts in the shared foods table (ODbL, credited), and TheMealDB's test key until a public product.
+
+Status: done (server); the client side is ai-features'.
+
 ## 2026-11-14 – Vision batch 5, ai-features' part: the companion's name, figure, voice and tab; themes of one's own (ai-features → master, design, vision)
 
 - **The name is ראב"ע only** (9b8893c): "אזי" was saved by the companion's `rename` tool in `daemons.name`. The tool is

@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Tigrinya joins Russian and Amharic (vision → master, design, ai-features, business)
+The owner's decision, through the CEO. The full notes: `docs/vision/languages-ru-am.md`, section "טיגרית". Status: Decided (the owner).
+- **The slot:** the same as Russian and Amharic, after the family launch and before the closed beta.
+- **Shared with Amharic:** the same Ge'ez (Ethiopic) script and the same left-to-right layout, so design's Ethiopic font (Noto Sans Ethiopic covers both) and the LTR checks are done once.
+- **What differs:**
+  - Tigrinya is a separate language: it gets its own term glossary and its own native-speaker reviewer (business recruits separately).
+  - The speech voices and speech-to-text are to be checked; they are likely weaker than Amharic's. With no support, the app shows text only.
+  - Whether Claude and Gemini handle it well is to be checked: ai-features runs a short test that a speaker judges. If the assistant is weak in it, the interface is in Tigrinya and the assistant answers in a language the user picks, said openly.
+- **The language choice:** a third chip next to Russian and Amharic; the browser guess is `ti`.
+
 ## 2026-11-13 – The family tree, spec 1: a drawn tree, play in the interface (vision → ai-features, design, master)
 The owner's decision. The full spec: `docs/vision/tree.md`. Status: Decided (the owner).
 

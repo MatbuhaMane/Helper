@@ -26,10 +26,10 @@
   const BASE = '/figures/2d/';
   const FIGURES = {
     // the generic ones: free for everyone (docs/design/figures-2d.md; drawn with the image tool, 2026-11-13)
-    fennec: { name: 'פנק', kind: 'generic', neck: 0.6, pivot: [0.5, 0.58], eyes: [[0.39, 0.47], [0.61, 0.47]], eyeR: 0.055, mouth: [0.5, 0.535], mouthW: 0.1, cheek: '#e89a7a' },
-    owl: { name: 'ינשוף', kind: 'generic', neck: 0.57, pivot: [0.5, 0.55], eyes: [[0.33, 0.33], [0.67, 0.33]], eyeR: 0.085, mouth: [0.5, 0.435], mouthW: 0.07, mouthFill: '#c8862a', cheek: null },
-    hedgehog: { name: 'קיפוד', kind: 'generic', neck: 0.53, pivot: [0.5, 0.5], eyes: [[0.4, 0.38], [0.6, 0.38]], eyeR: 0.05, mouth: [0.5, 0.465], mouthW: 0.09, cheek: '#eaa092' },
-    lamb: { name: 'טלה', kind: 'generic', neck: 0.53, pivot: [0.515, 0.5], eyes: [[0.42, 0.385], [0.61, 0.385]], eyeR: 0.05, mouth: [0.515, 0.465], mouthW: 0.09, cheek: '#eaa092' },
+    fennec: { name: 'פנק', kind: 'generic', neck: 0.6, pivot: [0.5, 0.58], eyes: [[0.39, 0.47], [0.61, 0.47]], eyeR: 0.055, mouth: [0.5, 0.535], mouthW: 0.1, cheek: '#e89a7a', trait: 'toss' },
+    owl: { name: 'ינשוף', kind: 'generic', neck: 0.57, pivot: [0.5, 0.55], eyes: [[0.335, 0.335], [0.665, 0.335]], eyeR: 0.105, eyeRing: '#fbf3df', mouth: [0.5, 0.445], mouthW: 0.07, mouthFill: '#c8862a', cheek: null, trait: 'owl' },
+    hedgehog: { name: 'קיפוד', kind: 'generic', neck: 0.53, pivot: [0.5, 0.5], eyes: [[0.4, 0.38], [0.6, 0.38]], eyeR: 0.05, mouth: [0.5, 0.465], mouthW: 0.09, cheek: '#eaa092', trait: 'curl' },
+    lamb: { name: 'טלה', kind: 'generic', neck: 0.53, pivot: [0.515, 0.5], eyes: [[0.42, 0.385], [0.61, 0.385]], eyeR: 0.05, mouth: [0.515, 0.465], mouthW: 0.09, cheek: '#eaa092', trait: 'pronk' },
     // people and characters (vision batch 6; likeness notes in the historic-figures skill), kind 'person'. paid: true for a
     // paid one (tier too); hideFor: the religion settings it is hidden for (the owner's call); tags: what settings may leave
     // out (horror). sway < 1: a gentler nod where a beard, a prop or a friend crosses the neck.
@@ -189,6 +189,7 @@
     const er = (cfg.eyeR || 0.07) * W;
     const eyes = cfg.eyes.map(([x, y]) => {
       const g = svgEl('g', { class: 'f2-eye', transform: `translate(${x * W} ${y * Hh})` });
+      if (cfg.eyeRing) g.append(svgEl('circle', { r: er * 1.55, fill: cfg.eyeRing, opacity: '.9' }));
       const lid = svgEl('g', { class: 'f2-lid' });
       lid.append(svgEl('ellipse', { rx: er, ry: er * 1.12, fill: ink }));
       const look = svgEl('g', { class: 'f2-look' });
@@ -253,14 +254,14 @@
       const lift = hop > 0 ? Math.sin(Math.min(1, hop) * Math.PI) * 10 : 0;
       if (hop > 0) hop = Math.max(0, hop - dt * 2.2);
       body.style.transform = `translateY(${-lift}%) scale(${1 + breath * 0.012}, ${1 - breath * 0.012 + (hop > 0.85 ? -0.06 : 0)})`;
-      let target = still() ? 0 : breath * 1.6 + (now < nodUntil ? Math.sin((nodUntil - now) / 1000 * 2 * Math.PI * 2.2) * 9 : 0) + (mood === 'think' ? 7 : 0) + (mood === 'sleep' ? 12 : 0);
+      let target = still() ? 0 : breath * 1.6 + (now < nodUntil ? Math.sin((nodUntil - now) / 1000 * 2 * Math.PI * 2.2) * 9 : 0) + (mood === 'think' ? (cfg.trait === 'owl' ? 16 : 7) : 0) + (mood === 'sleep' ? 12 : 0);
       target *= (cfg.sway ?? 1);   // a long beard, a prop or a friend across the neck: a gentler nod, so the cut never shows
       headV += ((target - headA) * 90 - headV * 11) * dt; headA += headV * dt;
       head.style.transform = `translateY(${(-lift - breath * 0.6).toFixed(2)}%) rotate(${headA.toFixed(2)}deg)`;
       // the eyes: blink now and then; look toward the pointer (or wander a little)
       if (now >= nextBlink && blinkT < 0 && mood !== 'sleep') blinkT = 0;
       let lidS = mood === 'sleep' ? 0.08 : 1;
-      if (blinkT >= 0) { blinkT += dt; const k = blinkT / 0.16; lidS = k < 1 ? 1 - Math.sin(k * Math.PI) * 0.92 : 1; if (k >= 1) { blinkT = -1; nextBlink = now + (still() ? rnd(5000, 9000) : rnd(1800, 5200)) * (Math.random() < 0.15 ? 0.2 : 1); } }
+      if (blinkT >= 0) { blinkT += dt; const k = blinkT / (cfg.trait === 'owl' ? 0.34 : 0.16); lidS = k < 1 ? 1 - Math.sin(k * Math.PI) * 0.92 : 1; if (k >= 1) { blinkT = -1; nextBlink = now + (still() ? rnd(5000, 9000) : rnd(1800, 5200)) * (Math.random() < 0.15 ? 0.2 : 1); } }
       lx += (lookX - lx) * Math.min(1, dt * 6); ly += (lookY - ly) * Math.min(1, dt * 6);
       for (const e of eyes) { e.lid.setAttribute('transform', `scale(1 ${lidS.toFixed(3)})`); e.look.setAttribute('transform', `translate(${(lx * er * 0.32).toFixed(2)} ${(ly * er * 0.28).toFixed(2)})`); }
       // the mouth: while talking, it opens and closes in syllables
@@ -323,6 +324,10 @@
       box.classList.add('glad'); smile = 1.5; if (!still()) hop = 1;
       clearTimeout(happy.t); happy.t = setTimeout(() => { box.classList.remove('glad'); smile = 1; }, ms);
       if (cfg.special) special();
+      if (still()) return;
+      if (cfg.trait === 'toss') headV += 160;
+      else if (cfg.trait === 'pronk') { hop = 1.25; clearTimeout(happy.p); happy.p = setTimeout(() => { hop = 1; }, 430); }
+      else if (cfg.trait === 'curl') { box.classList.remove('curl'); void box.offsetWidth; box.classList.add('curl'); clearTimeout(happy.c); happy.c = setTimeout(() => box.classList.remove('curl'), 760); }
     };
     box.addEventListener('pointerdown', () => { happy(); navigator.vibrate?.(8); });
 

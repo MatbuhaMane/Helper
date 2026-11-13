@@ -62,3 +62,7 @@
 .f2.proud .f2-patch { animation: f2-proud .7s ease-in-out 2; }
 @keyframes f2-proud { 50% { transform: scale(1.12) rotate(-6deg); } }
 @media (prefers-reduced-motion: reduce) { .f2-stars i, .f2-patch.fresh, .f2.proud .f2-patch { animation: none; } }
+/* the hedgehog curls into a ball when touched, then pops out (transform only) */
+.f2.curl { animation: f2-curl .74s cubic-bezier(.3, 1.5, .5, 1); transform-origin: 50% 100%; }
+@keyframes f2-curl { 30% { transform: scale(1.1, .78); } 55% { transform: scale(.94, 1.06); } }
+@media (prefers-reduced-motion: reduce) { .f2.curl { animation: none; } }

@@ -6,6 +6,8 @@
      const f = await Figure2D.mount(element, 'fennec' | config, { size?: 160, look?: true, still?: false })   (still: an icon)
      f.talk(true | false)   the mouth moves while the companion speaks
      f.nod()  f.happy()  f.think(on)  f.sleep(on)
+     f.special()        a special figure's own move (it also plays in happy()); f.sew('peg') sews a badge on the doll
+     mount(…, { patches: ['peg', 'ember'] })   the doll wears the badges the person has
      f.destroy()
      Figure2D.list()  → the catalogue (id, name, kind, unlock?, season?)
 
@@ -39,6 +41,16 @@
     maryshelley: { name: 'מרי שלי', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.46, pivot: [0.5, 0.44], eyes: [[0.39, 0.3], [0.61, 0.3]], eyeR: 0.042, mouth: [0.5, 0.4], mouthW: 0.07, cheek: '#e89a86', sway: 0.7 },
     leonardo: { name: 'לאונרדו דה וינצ׳י', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.5, pivot: [0.52, 0.48], eyes: [[0.41, 0.335], [0.63, 0.335]], eyeR: 0.04, mouth: [0.52, 0.465], mouthW: 0.06, cheek: null, sway: 0.35 },
     cleopatra: { name: 'קליאופטרה', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.44, pivot: [0.52, 0.42], eyes: [[0.42, 0.3], [0.62, 0.3]], eyeR: 0.042, mouth: [0.52, 0.39], mouthW: 0.07, cheek: '#d98a7a', sway: 0.7 },
+    // the special ones (paid, the owner's choice 2026-11-13): each has its own move – special() – which also plays when it is glad
+    magician: { name: 'הקוסם מהשוק', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'dove', trickFrom: [0.47, 0.06],
+      neck: 0.58, pivot: [0.49, 0.56], eyes: [[0.38, 0.38], [0.6, 0.38]], eyeR: 0.044, mouth: [0.49, 0.525], mouthW: 0.07, cheek: '#e8a08a', sway: 0.6 },
+    astronomer: { name: 'האסטרונומית', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'stars',
+      stars: [[0.2, 0.55], [0.27, 0.66], [0.17, 0.74], [0.25, 0.83], [0.79, 0.55], [0.74, 0.64], [0.83, 0.72], [0.77, 0.82], [0.32, 0.5], [0.68, 0.5],
+        [0.14, 0.62], [0.86, 0.63], [0.21, 0.9], [0.8, 0.9], [0.3, 0.6], [0.7, 0.71], [0.12, 0.84], [0.88, 0.8], [0.35, 0.86], [0.66, 0.86]],
+      neck: 0.45, pivot: [0.49, 0.43], eyes: [[0.41, 0.315], [0.58, 0.315]], eyeR: 0.038, mouth: [0.49, 0.4], mouthW: 0.065, cheek: '#e89a86', sway: 0.6 },
+    doll: { name: 'בובת הטלאים', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'patches',
+      slots: [[0.4, 0.585, 0.082], [0.38, 0.725, 0.082], [0.645, 0.725, 0.082], [0.17, 0.665, 0.066], [0.87, 0.665, 0.066], [0.4, 0.857, 0.06], [0.63, 0.857, 0.06], [0.515, 0.808, 0.058]],
+      neck: 0.47, pivot: [0.52, 0.45], eyes: [[0.43, 0.3], [0.61, 0.3]], eyeR: 0.05, mouth: [0.52, 0.385], mouthW: 0.09, cheek: '#ea9a86', sway: 0.8 },
     dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', paid: true, hideFor: [], tags: ['horror'], neck: 0.52, pivot: [0.51, 0.5], eyes: [[0.405, 0.29], [0.62, 0.29]], eyeR: 0.04, mouth: [0.51, 0.455], mouthW: 0.06, cheek: null, eyeColor: '#3a1c1c', sway: 0.35 },
   };
   const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -57,7 +69,8 @@
     if (!cfg || !cfg.neck) throw new Error('Figure2D: no such figure ' + which);
     const src = cfg.src || `${BASE}${cfg.id}/figure.webp`;
     const img = new Image(); img.decoding = 'async'; img.src = src;
-    await img.decode().catch(() => {});
+    // load, not decode: decode() can wait forever in a background tab; a slow network never holds the page up for long
+    await new Promise((ok) => { if (img.complete && img.naturalWidth) return ok(); img.onload = img.onerror = () => ok(); setTimeout(ok, 5000); });
     const ratio = (img.naturalHeight || 1) / (img.naturalWidth || 1);
     const W = 100, Hh = 100 * ratio;                       // the figure's own units: 100 wide
     const box = document.createElement('div');
@@ -97,6 +110,25 @@
     face.append(mouth);
     head.append(face);
     box.append(body, head);
+    // the special ones: their own layer
+    const fx = document.createElement('div'); fx.className = 'f2-fx';
+    if (cfg.special === 'stars') {
+      // the astronomer's shawl: stars that wake at night and twinkle, each at its own pace
+      const sky = document.createElement('div'); sky.className = 'f2-stars';
+      cfg.stars.forEach(([x, y], i) => { const st = document.createElement('i'); st.style.cssText = `left:${x * 100}%;top:${y * 100}%;--tw:${(2.2 + (i * 0.37) % 2.4).toFixed(2)}s;--d:${(-(i * 0.53) % 3).toFixed(2)}s`; sky.append(st); });
+      body.append(sky);
+    }
+    const patches = [];
+    const sew = (badge, fresh) => {
+      // the doll: a badge sewn on a free spot, a stitched ring round it
+      const slot = cfg.slots?.[patches.length]; if (!slot) return false;
+      const p = document.createElement('span'); p.className = 'f2-patch' + (fresh ? ' fresh' : '');
+      p.style.cssText = `left:${slot[0] * 100}%;top:${slot[1] * 100}%;width:${slot[2] * 200}%`;
+      const im = document.createElement('img'); im.alt = ''; im.src = `/assets/badges/${badge}.webp`; im.draggable = false;
+      p.append(im); body.append(p); patches.push(badge); return true;
+    };
+    if (cfg.special === 'patches') (opts.patches || []).forEach((b) => sew(b, false));
+    box.append(fx);
     host.append(box);
 
     /* ---------- the mouth: a smile that opens (o: 0 closed … 1 open) ---------- */
@@ -160,10 +192,36 @@
       lookY = Math.max(-1, Math.min(1, (e.clientY - (r.top + r.height * 0.35)) / (r.height * 2)));
     };
     addEventListener('pointermove', onMove, { passive: true });
-    // a touch: it squashes, hops and is glad
+    // its own move: the magician's dove, a shooting star over the astronomer, the doll's patches shining
+    function special() {
+      if (still()) return;
+      const sparks = (n, x, y) => {
+        for (let i = 0; i < n; i++) {
+          const k = document.createElement('i'); k.className = 'f2-spark';
+          k.style.cssText = `left:${x * 100}%;top:${y * 100}%;--dx:${(Math.cos(i / n * 6.283) * 34).toFixed(0)}px;--dy:${(Math.sin(i / n * 6.283) * 34 - 10).toFixed(0)}px;--delay:${i * 40}ms`;
+          fx.append(k); setTimeout(() => k.remove(), 1200);
+        }
+      };
+      if (cfg.special === 'dove') {
+        const [x, y] = cfg.trickFrom;
+        sparks(9, x, y);
+        const d = document.createElement('img'); d.className = 'f2-dove'; d.alt = ''; d.src = `${BASE}${cfg.id}/dove.webp`;
+        d.style.left = x * 100 + '%'; d.style.top = y * 100 + '%'; fx.append(d);
+        d.animate([{ transform: 'translate(-50%, -30%) scale(.15)', opacity: 0 }, { transform: 'translate(-50%, -80%) scale(.9)', opacity: 1, offset: 0.3 },
+          { transform: 'translate(-160%, -190%) scale(.75) rotate(-8deg)', opacity: 1, offset: 0.75 }, { transform: 'translate(-230%, -260%) scale(.6) rotate(-14deg)', opacity: 0 }],
+        { duration: 1700, easing: 'cubic-bezier(.3,.7,.3,1)' }).onfinish = () => d.remove();
+      } else if (cfg.special === 'stars') {
+        const k = document.createElement('i'); k.className = 'f2-shoot'; fx.append(k); setTimeout(() => k.remove(), 1300);
+        box.classList.add('starlit'); clearTimeout(special.t); special.t = setTimeout(() => box.classList.remove('starlit'), 2600);
+      } else if (cfg.special === 'patches') {
+        box.classList.add('proud'); clearTimeout(special.t); special.t = setTimeout(() => box.classList.remove('proud'), 1400);
+      }
+    }
+    // a touch: it squashes, hops and is glad (and a special one does its move)
     const happy = (ms = 1100) => {
       box.classList.add('glad'); smile = 1.5; if (!still()) hop = 1;
       clearTimeout(happy.t); happy.t = setTimeout(() => { box.classList.remove('glad'); smile = 1; }, ms);
+      if (cfg.special) special();
     };
     box.addEventListener('pointerdown', () => { happy(); navigator.vibrate?.(8); });
 
@@ -171,7 +229,9 @@
       el: box,
       talk(on) { talking = !!on; if (on) talkPhase = 0; },
       nod() { if (!still()) nodUntil = performance.now() + 900; },
-      happy,
+      happy, special,
+      /** the doll: sew a newly earned badge on (it stitches itself in); false when there is no room left */
+      sew(badge) { return sew(badge, true); },
       think(on) { mood = on ? 'think' : 'idle'; box.classList.toggle('thinking', !!on); },
       sleep(on) { mood = on ? 'sleep' : 'idle'; box.classList.toggle('sleeping', !!on); },
       destroy() { stop(); io.disconnect(); document.removeEventListener('visibilitychange', vis); removeEventListener('pointermove', onMove); box.remove(); },

@@ -37,3 +37,7 @@ A cute small collectible figure for a family app: Isaac Newton, the English scie
 - **leonardo**: Leonardo da Vinci in old age: long flowing white hair and a long white beard, a soft red cap, a long dark-red robe, holding a notebook of sketches and a small wooden model of a flying machine
 - **cleopatra**: Cleopatra, the queen of ancient Egypt, regal and dignified: dark hair drawn back into a bun under a golden royal diadem with a small cobra on the brow, a broad gold collar, a long white pleated linen gown with modest sleeves, holding a small papyrus scroll
 - **dracula**: Count Dracula as described in Bram Stoker\'s original novel (NOT the Universal film, not Bela Lugosi): a tall courtly old aristocrat, a long white moustache, a high domed forehead with swept-back white hair, pointed ears, dressed all in black with a long black cloak, holding an old silver candelabrum; charismatic, not scary, no blood, no fangs
+
+## The special ones (paid; the owner's choice, 2026-11-13)
+
+The magician (and his dove), the astronomer, the patchwork doll – 4 × $0.069. Each has its own move in Figure2D (`special()`, which also plays when it is glad): the magician lifts a dove out of his hat in a burst of sparks; the astronomer's shawl wakes with twinkling stars at night and a shooting star crosses when she is glad; the doll wears the person's own badges, sewn on, and stitches a new one in when it is earned. Prompts in `C:/Users/User/AppData/Local/Temp/claude/c428b42837d3f372/19117706-22e2-40a4-bdb5-1a2b2687b32f/scratchpad/special.mjs`.

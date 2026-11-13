@@ -11,6 +11,15 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The tree drawing, Sigd and Novy God, the test run (vision → design, ai-features, master)
+The owner's decisions in the vision meeting. Status: Decided (the owner).
+
+- **The tree drawing:** the family tree (spec 1, `docs/vision/tree.md`) uses the default tree the app already has.
+  None of design's three new versions (olive, Tabor oak, acacia) is chosen.
+- **The calendar:** Sigd joins the calendar, for the families of Ethiopian origin, and Novy God joins as an optional family event, for Russian speakers.
+  This was a proposal in "Russian and Amharic" and is now decided. The calendar logic belongs to ai-features (`server/hebdate.ts` and the calendar).
+- **Joint test run 1** (paused at the wizard) resumes after the next merge into `main`. The master tells vision when that merge is live.
+
 ## 2026-11-13 – The personal profile, frames and the back door (vision → design, ai-features, master)
 The owner's decision. The spec: `docs/vision/profile.md`. Status: Decided (the owner).
 
@@ -1249,7 +1258,7 @@ The owner approved the order through the CEO.
 - **ai-features:** the prompts and voice per language.
 - **Business:** recruiting the native speakers.
 
-**Proposed, not yet decided:** Sigd in the calendar, and Novy God as an optional family event.
+**Sigd in the calendar, and Novy God as an optional family event:** decided by the owner on 2026-11-13 (see the entry above).
 
 Status: Decided (the owner).
 

@@ -9,22 +9,22 @@
   box-sizing: border-box; min-block-size: calc(100svh - var(--appbar-h, 54px) - var(--tabbar-h, 64px) - 44px);
   display: grid; align-content: center; justify-items: center; gap: 12px; text-align: center;
   max-inline-size: 34rem; margin-inline: auto; padding-block: 20px 28px; padding-inline: 12px; }
-.side-pic { position: relative; display: grid; place-items: center; inline-size: min(100%, 440px); margin-block-end: 6px; }
+.pager-page .side-pic { position: relative; display: grid; place-items: center; inline-size: min(100%, 440px); margin-block-end: 6px; }
 /* a soft pool of light on the ground under the picture, in the ground's own colours */
-.side-pic::before { content: ""; position: absolute; inset: 18% 4% 2%; z-index: -1; border-radius: 50%;
+.pager-page .side-pic::before { content: ""; position: absolute; inset: 18% 4% 2%; z-index: -1; border-radius: 50%;
   background: radial-gradient(closest-side, color-mix(in srgb, var(--card) 85%, transparent), transparent); }
-.side-pic img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; object-fit: contain;
+.pager-page .side-pic img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; object-fit: contain;
   filter: drop-shadow(0 10px 14px rgba(42, 28, 18, .14)); }
-.side h2 { margin: 0; font-size: clamp(1.7rem, 7vw, 2.3rem); font-weight: 700; line-height: 1.15; color: var(--text); text-wrap: balance; }
-.side .tag-soon { font-size: .85rem; }
-.side-line { margin: 2px 0 0; max-inline-size: 30ch; font-size: 1.05rem; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+.pager-page > .side > h2 { margin: 0; font-size: clamp(1.7rem, 7vw, 2.3rem); font-weight: 700; line-height: 1.15; color: var(--text); text-wrap: balance; }
+.pager-page > .side > .tag-soon { font-size: .85rem; }
+.pager-page .side-line { margin: 2px 0 0; max-inline-size: 30ch; font-size: 1.05rem; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
 
 /* גבעה ביער: only the hill, large, a little taller than the garage's wide scene */
-.side-hill .side-pic { inline-size: min(100%, 480px); }
+.pager-page > .side-hill > .side-pic { inline-size: min(100%, 480px); }
 
 /* dark: the picture keeps its own paint, a touch dimmed with the night like the tent */
-:root[data-theme="dark"] .side-pic img { filter: brightness(.88) drop-shadow(0 10px 16px rgba(0, 0, 0, .35)); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .side-pic img { filter: brightness(.88) drop-shadow(0 10px 16px rgba(0, 0, 0, .35)); } }
+:root[data-theme="dark"] .pager-page .side-pic img { filter: brightness(.88) drop-shadow(0 10px 16px rgba(0, 0, 0, .35)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pager-page .side-pic img { filter: brightness(.88) drop-shadow(0 10px 16px rgba(0, 0, 0, .35)); } }
 
 /* ---- the entrance: when a side page comes into view (.is-here) its parts rise and fade in one after another by --i.
    Out of view they rest hidden with no transition, so the entrance plays again on every visit. */

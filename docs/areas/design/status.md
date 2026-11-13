@@ -20,7 +20,7 @@ _Updated 2026-11-14._
 - **Readiness bar, speed (from ai-features' measurement):** the home page's pictures made lighter (535 → 348 KB for the
   stump, cushions and fire; the tent in 700/1000 px versions and a 7 KB mask, for the master's `index.html`).
 - **The owner's messages** (`.owner-msgs`/`.owner-msg` in base.css: floating cards, drawn marks by level, above the
-  groceries' cart button) and **the weather page** (`weather.css`, `.wx-*`): wired by ai-features (ad8ecf0), off inline styles.
+  groceries' cart button) and **the weather page** (`weather.css`, `.wx-*`): wired by ai-features (34be7be), off inline styles.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12

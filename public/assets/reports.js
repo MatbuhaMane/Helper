@@ -4,7 +4,8 @@
    Loaded by the shell once someone is signed in (common.js), and by the settings and the back door themselves.
      H.report()            the report sheet          H.myInbox()        the person's inbox (and a thread in it)
      H.reportEntries()     the two menu buttons      H.reportThread()   a thread's messages (the back door uses it too)
-     H.shakeOn(), H.setShake(on)   the "נענוע לדיווח" switch (a per-user pref; iOS asks for motion on a tap) */
+     H.shakeOn(), H.setShake(on)   the "נענוע לדיווח" switch (a per-user pref; iOS asks for motion on a tap)
+   The ways in: shaking the phone, the warning triangle next to the settings button in the top bar, the menu's entry. */
 (() => {
   if (!window.H || window.H.report) return;
   const H = window.H, { el, api, toast } = H;
@@ -71,9 +72,7 @@
   }
 
   /* ---------------- the report sheet ---------------- */
-  let opening = false;
   function report(opts = {}) {
-    if (opening) return;
     const via = opts.via === 'shake' ? 'shake' : 'menu';
     const page = { path: location.pathname + location.search, title: pageName(), theme: theme(), width: innerWidth };
     let shot = null;
@@ -197,46 +196,91 @@
     }
   }).observe(document.body, { childList: true });
 
-  /* ---------------- shaking the phone ---------------- */
-  const shakeOn = () => (prefs.shake === 'auto' ? canShake && !needsAsk : !!prefs.shake && canShake);
-  let peaks = [], lastOpen = 0, prev = null, listening = false;
+  /* ---------------- shaking the phone ----------------
+     The motion permission: iOS asks the person, and only from a tap; newer Chrome (Android too) has the same call and
+     answers "granted" at once. So on load it is asked quietly (Chrome: on at once), and otherwise on the first tap anywhere
+     (iOS: the browser's question appears then, once). A clear "no" turns the automatic choice off, so it is not asked on
+     every page; the switch in the settings can still turn it on. A failure that is not a "no" (a tap that was a scroll)
+     waits for the next tap.
+     The shake itself (as Square's seismic detector): over the last half second, at least three quarters of the samples are
+     strong (the whole acceleration, gravity included, above 13 m/s²), across at least a quarter second. A walk, a tap on the
+     screen or putting the phone down does not do that; two or three firm shakes do. */
+  const wantShake = () => canShake && (prefs.shake === 'auto' || prefs.shake === true);
+  let granted = !needsAsk;
+  const shakeOn = () => wantShake() && granted;
+  const STRONG = 13, WINDOW = 500, SPAN = 250;
+  let samples = [], lastOpen = 0;
   function onMotion(e) {
-    const a = e.accelerationIncludingGravity || e.acceleration;
-    if (!a || a.x == null) return;
-    if (prev) {
-      const jerk = Math.abs(a.x - prev.x) + Math.abs(a.y - prev.y) + Math.abs(a.z - prev.z);
-      const now = Date.now();
-      if (jerk > 28) {                                             // a sharp turn of the hand, not a walk or a tap
-        peaks = peaks.filter((t) => now - t < 900); peaks.push(now);
-        const busy = document.body.classList.contains('modal-open');
-        if (peaks.length >= 3 && now - lastOpen > 4000 && !busy && document.visibilityState === 'visible') {
-          lastOpen = now; peaks = [];
-          navigator.vibrate?.(40);
-          report({ via: 'shake' });
-        }
-      }
-    }
-    prev = { x: a.x, y: a.y, z: a.z };
+    const g = e.accelerationIncludingGravity, a = e.acceleration;
+    let x, y, z;
+    if (g && g.x != null) { x = g.x; y = g.y; z = g.z; }
+    else if (a && a.x != null) { x = a.x; y = a.y; z = a.z + 9.81; }       // no gravity in it: a rough one
+    else return;
+    const now = Date.now();
+    samples.push({ t: now, strong: x * x + y * y + z * z > STRONG * STRONG });
+    while (samples.length && now - samples[0].t > WINDOW) samples.shift();
+    if (samples.length < 4 || now - samples[0].t < SPAN) return;
+    const strong = samples.filter((s) => s.strong).length;
+    if (strong < samples.length * 0.75) return;
+    samples = [];
+    const m = document.getElementById('modal');
+    const busy = document.body.classList.contains('modal-open') || (m && !m.hidden);   // a sheet is open already
+    if (now - lastOpen < 4000 || busy || document.visibilityState !== 'visible') return;
+    lastOpen = now;
+    navigator.vibrate?.(40);
+    report({ via: 'shake' });
   }
+  let listening = false;
   function listen(on) {
     if (on === listening) return;
-    listening = on;
+    listening = on; samples = [];
     if (on) addEventListener('devicemotion', onMotion); else removeEventListener('devicemotion', onMotion);
   }
+  /** the motion permission: 'granted', 'denied', or null when it could not be asked now (not from a tap) */
+  async function askMotion() {
+    try { return await DeviceMotionEvent.requestPermission(); } catch (_) { return null; }
+  }
+  // asked quietly on load, then on the first tap (capture: before the page's own handlers, and a tap on anything counts)
+  function askOnTap() {
+    if (granted || !wantShake()) return;
+    const ask = async () => {
+      off();
+      const r = await askMotion();
+      if (r === 'granted') { granted = true; listen(shakeOn()); }
+      else if (r === 'denied') { if (prefs.shake === 'auto') { prefs.shake = false; H.savePrefs('reports'); } }
+      else askOnTap();                                             // not taken as a tap: the next one
+    };
+    const off = () => { removeEventListener('touchend', ask, true); removeEventListener('click', ask, true); };
+    addEventListener('touchend', ask, true); addEventListener('click', ask, true);
+  }
+  if (needsAsk && wantShake()) askMotion().then((r) => { if (r === 'granted') { granted = true; listen(shakeOn()); } else askOnTap(); });
   /** the switch in the settings; on iOS the browser asks for motion now, on this tap. Resolves to whether shaking is on. */
   async function setShake(on) {
-    if (on && !canShake) { toast('במכשיר הזה אין חיישן תנועה. אפשר לדווח מהתפריט.'); return false; }
-    if (on && needsAsk) {
-      let r = 'denied';
-      try { r = await DeviceMotionEvent.requestPermission(); } catch (_) { /* not from a tap, or refused */ }
-      if (r !== 'granted') { toast('הטלפון לא אישר גישה לתנועה. אפשר לאשר בהגדרות הדפדפן, או לדווח מהתפריט.'); return false; }
+    if (on && !canShake) { toast('במכשיר הזה אין חיישן תנועה. אפשר לדווח מהתפריט או מהמשולש שבסרגל העליון.'); return false; }
+    if (on && needsAsk && !granted) {
+      const r = await askMotion();
+      if (r !== 'granted') { toast('הטלפון לא אישר גישה לתנועה. אפשר לאשר בהגדרות הדפדפן, או לדווח מהמשולש שבסרגל העליון.'); return false; }
+      granted = true;
     }
     prefs.shake = !!on; H.savePrefs('reports');
     listen(shakeOn());
     return shakeOn();
   }
   listen(shakeOn());
-  addEventListener('helper:prefs', (e) => { if (e.detail === 'reports') listen(shakeOn()); });
+  addEventListener('helper:prefs', (e) => { if (e.detail === 'reports') { listen(shakeOn()); askOnTap(); } });
+
+  /* ---------------- the warning triangle in the top bar (the owner, 2026-11-13) ----------------
+     Next to the settings button, on every page that loads this file: a tap opens the same report sheet. The look is
+     design's (.rp-alert in reports.css: pastel red, 44×44); the triangle is drawn here so it shows before the CSS. */
+  function alertButton() {
+    const chip = document.getElementById('userchip');
+    if (!chip || document.querySelector('.rp-alert')) return;
+    const svg = new DOMParser().parseFromString('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">'
+      + '<path d="M12 3.5 2.6 19.8a1 1 0 0 0 .87 1.5h17.06a1 1 0 0 0 .87-1.5L12 3.5Z" fill="currentColor" fill-opacity=".22" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>'
+      + '<path d="M12 9.5v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor"/></svg>', 'image/svg+xml').documentElement;
+    chip.before(el('button', { class: 'rp-alert', type: 'button', title: 'דיווח על תקלה', 'aria-label': 'דיווח על תקלה', onclick: () => report() }, document.importNode(svg, true)));
+  }
+  alertButton();
 
   Object.assign(H, { report, myInbox, reportEntries, reportThread, shakeOn, setShake, canShake: () => canShake });
   refreshUnread();

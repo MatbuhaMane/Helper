@@ -1021,3 +1021,16 @@ CREATE TABLE IF NOT EXISTS post_advice (
   hearted INTEGER NOT NULL DEFAULT 0,     -- the advised marked it good: the adviser badge
   deleted INTEGER NOT NULL DEFAULT 0
 );
+
+-- named grocery lists beside the household's main one (grocery-lists.ts); an item's list column points here
+CREATE TABLE IF NOT EXISTS grocery_lists (
+  household  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'list',   -- list (later: template, archive, auto)
+  owner      TEXT NOT NULL,                  -- who opened it: they, or a household admin, may delete it
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (household, id)
+);

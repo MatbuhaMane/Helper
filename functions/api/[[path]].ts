@@ -16,6 +16,7 @@ import { childOf } from '../../server/members';
 import { birthYear } from '../../server/figures-rules';
 import * as designImages from '../../server/design-images';
 import * as fridge from '../../server/fridge';
+import * as groceryLists from '../../server/grocery-lists';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
 import * as food from '../../server/food';
@@ -184,6 +185,9 @@ route('GET', '/api/voice/sample/:voice', voice.sample);
 /* groceries & recipes */
 route('GET', '/api/groceries', kitchen.listGroceries);
 route('POST', '/api/groceries/ops', kitchen.applyGroceryOps);
+route('POST', '/api/groceries/lists', groceryLists.createList);
+route('DELETE', '/api/groceries/lists/:id', groceryLists.deleteList);
+route('POST', '/api/groceries/lists/:id/restore', groceryLists.restoreList);
 route('GET', '/api/recipes', kitchen.listRecipes);
 route('POST', '/api/recipes', kitchen.saveRecipe);
 route('PUT', '/api/recipes/:id', kitchen.saveRecipe);

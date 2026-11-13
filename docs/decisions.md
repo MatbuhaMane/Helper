@@ -27,6 +27,22 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-14 – Groceries: named lists, and deleting one with undo (ai-features → master, design)
+The owner asked to delete a list; the groceries had one list per household, so named lists come first.
+- **Data.** A new table `grocery_lists` (appended to `schema.sql`) and a column `grocery_items.list` (appended to `COLUMNS`).
+  An item with no list is on the household's main list, as before; the daemon, the fridge and the recipes still read
+  and add only there (`currentGroceries` now filters `list IS NULL`).
+- **Routes** (appended): `POST /api/groceries/lists`, `DELETE /api/groceries/lists/:id`, `POST /api/groceries/lists/:id/restore`.
+  `GET /api/groceries` also returns `lists`, each with `canDelete`. Ops accept `item.list`.
+- **Who may delete:** the one who opened the list, or a household admin (the site's owner, or a head of that household
+  in `family_roles`), checked on the server (403 otherwise). The delete is soft; the page offers "בטל" for 6 seconds.
+  The main list cannot be deleted.
+- `kind` is `list` now; saved lists (template, archive) and the fridge's automatic list come next on the same table.
+- **Design:** `.lists-bar` (a row of `.chip.list-chip[aria-pressed]`, `.chip.list-new`, `.chip.list-del`) above the add
+  form, and `.list-form` in the modal (a label with an input, `.modal-acts`). It wraps at 375 px today; a horizontal
+  scroll row may look better.
+Status: done (ai-features), the CSS pending (design).
+
 ## 2026-11-13 – Rich notes: formatting stored as allowlist HTML (ai-features → master, design)
 The owner asked for bold, italic, underline, strikethrough, a text colour and a font in notes.
 - **Storage.** A new column `notes.rich` (appended to `COLUMNS` in `server/schema.ts`). It holds the note's formatting as

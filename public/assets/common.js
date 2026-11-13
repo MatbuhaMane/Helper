@@ -412,6 +412,9 @@
       if (!r.offline && !vault) loadCapture();
       if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
       if (!r.offline && !vault && !embedded) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
+      // the back door, opened on this device (ai-features' /assets/admin-tab.js): a tab back to it while the room is still open
+      let room = null; try { room = localStorage.getItem('helper.adminRoom'); } catch (_) { /* no storage */ }
+      if (room && !r.offline && !vault && !embedded && !location.pathname.startsWith('/admin/')) loadOnce('/assets/admin-tab.js').catch(() => {});
     });
     return bar;
   }

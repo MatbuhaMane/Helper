@@ -252,18 +252,6 @@
           el('div', { class: 'rs-he-facts' }, x.root ? el('span', {}, el('small', {}, 'שורש '), el('b', {}, x.root)) : '', x.grammar ? el('span', {}, el('small', {}, 'צורה '), x.grammar) : '',
             x.lang && x.lang !== 'עברית' ? el('span', {}, el('small', {}, 'לשון '), x.lang) : ''),
           x.note ? el('p', { class: 'rs-fine' }, x.note) : '',
-          el('button', { class: 'rs-tr-b rs-word-save', onclick: async (e) => {
-            const btn = e.currentTarget;
-            btn.disabled = true;
-            const lines = [`${word} (${root.querySelector('.rs-ref').textContent.split(' ')[0]} ${heNum(verse.ch)}:${heNum(verse.v)})`, '', x.meaning,
-              x.root ? 'שורש: ' + x.root : '', x.grammar ? 'צורה: ' + x.grammar : '', x.lang && x.lang !== 'עברית' ? 'לשון: ' + x.lang : '', x.note || '',
-              concBox.textContent ? concBox.textContent.replace(' · לכל המופעים', '') : '', '', 'הפסוק: ' + verse.he.replace(TEAMIM, '')].filter((l, i, a) => l || a[i - 1]);
-            try {
-              await H.api('/api/notes', { body: { title: `${word} – פירוש מילה`, body: lines.join('\n'), source: { url: location.href, title: 'עיון: ' + verse.ref } } });
-              btn.textContent = '✓ נשמר בפתקים';
-              toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
-            } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
-          } }, '📝 שמירה כפתק'),
           aiNote(() => ai().then(offer)));
       }).catch((e) => (e?.code === 'ai_credit_needed' ? ai().then((st) => offer({ ...st, out: true })) : heBox.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לפרש בעברית כרגע.')))); };
       ai().then((st) => (st.free ? explain() : offer(st)));
@@ -633,19 +621,9 @@
         a.terms.length ? el('div', { class: 'rs-terms' }, a.terms.map((t) => el('span', { class: 'rs-term' }, el('b', { dir: 'auto' }, t.word), t.translit ? el('i', { dir: 'ltr' }, ' ' + t.translit) : '', t.gloss ? ' – ' + t.gloss : '', t.lang ? el('small', {}, ' (' + t.lang + ')') : ''))) : '',
         a.sources.length ? el('details', { class: 'rs-src-list', open: true }, el('summary', {}, `מקורות (${a.sources.length})`), srcList) : el('p', { class: 'muted' }, 'לא צוינו מקורות.'),
         el('div', { class: 'rs-a-acts' },
-          el('button', { class: 'btn', onclick: (e) => saveNote(e.currentTarget, q, a, focus) }, '📝 שמירה כפתק'),
           el('button', { class: 'btn ghost', onclick: () => { askBox.value = q; card.remove(); S.talk = S.talk.filter((t) => t.q !== q); send(true); } }, '↻ תשובה חדשה'),
           el('small', { class: 'muted' }, a.cached ? 'מהזיכרון' : a.by === 'gemini' ? 'Gemini' : '')),
         a.followups.length ? el('div', { class: 'rs-sugg' }, a.followups.map((f) => el('button', { class: 'rs-chip', onclick: () => { askBox.value = f; send(); } }, f))) : '');
-    }
-    async function saveNote(btn, q, a, focus) {
-      btn.disabled = true;
-      const lines = [q, '', a.title, '', a.answer, '', ...a.terms.map((t) => `${t.word} (${t.lang}${t.translit ? ', ' + t.translit : ''}) – ${t.gloss}`), '', 'מקורות:', ...a.sources.map((s, i) => `[${s.n || i + 1}] ${s.sbl}${s.url ? ' ' + s.url : ''}`)];
-      try {
-        await H.api('/api/notes', { body: { title: a.title || q.slice(0, 80), body: lines.join('\n').replace(/\n{3,}/g, '\n\n'), source: { url: location.href, title: 'עיון: ' + (label || ref) + (focus ? ' · ' + focus : '') } } });
-        toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
-        btn.textContent = '✓ נשמר';
-      } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
     }
 
     S.tab = 'links';

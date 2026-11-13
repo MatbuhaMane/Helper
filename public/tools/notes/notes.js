@@ -1,5 +1,7 @@
 /* פתקים: dated notes with a title the helper writes, each editable.
-   Text marked anywhere on the site comes here with "שמירה כפתק" (assets/capture.js), with a link back to where it was.
+   Pasting (the owner, 2026-11-13, in place of the old "שמירה כפתק" popup on marked text): Ctrl+V anywhere on the page outside a
+   field opens a new note with the text (or adds it to the open note), and "הדבקה" reads the clipboard where the browser lets
+   it, or opens an empty note with the cursor in it for a long-press paste. The explicit "שמירה כפתק" buttons elsewhere stay.
    Editing (vision batch 4, item 5): a note changes only when it is saved ("שמירה", or Ctrl+S), so an existing note is never
    spoiled by accident. Closing with changes asks "לבטל את השינויים?", leaving the page asks too, and until then the draft
    is kept on this device. A new note reaches the server only when it is first saved. A star puts a note first.
@@ -58,7 +60,7 @@
 
   function drawList() {
     const shown = notes.filter((n) => n.id && (!q || norm(n.title + ' ' + n.body).includes(norm(q))) && (!onlyStars || n.starred) && (!tag || (n.tags || []).includes(tag)));
-    if (!notes.some((n) => n.id)) { listBox.replaceChildren(el('div', { class: 'nt-empty' }, el('p', {}, 'עוד אין פתקים.'), el('p', { class: 'muted' }, 'סמנו טקסט בכל מקום באתר – כתבה, מתכון, שיר – ולחצו "שמירה כפתק". או כתבו פתק חדש.'))); return; }
+    if (!notes.some((n) => n.id)) { listBox.replaceChildren(el('div', { class: 'nt-empty' }, el('p', {}, 'עוד אין פתקים.'), el('p', { class: 'muted' }, 'העתיקו טקסט מכל מקום – כתבה, מתכון, שיר – והדביקו כאן (Ctrl+V או "הדבקה"), והוא נפתח כפתק חדש. או כתבו פתק חדש.'))); return; }
     if (!shown.length) { listBox.replaceChildren(el('p', { class: 'muted nt-none' }, onlyStars && !q && !tag ? 'עוד אין פתקים מסומנים בכוכב.' : 'לא נמצא פתק כזה.')); return; }
     const groups = new Map();
     const starred = shown.filter((n) => n.starred);
@@ -161,7 +163,14 @@
     drawMeta(); drawStar(); paint();
     editor.hidden = false; document.body.classList.add('nt-editing');
     drawList();
-    setTimeout(() => (text.value ? text : title).focus(), 30);
+    open.paste = (s) => {                                  // pasted outside the fields: to the end of this note
+      text.value = text.value ? text.value.replace(/\s*$/, '') + '\n\n' + s : s;
+      paint(); text.focus(); text.setSelectionRange(text.value.length, text.value.length);
+    };
+    setTimeout(() => {
+      const f = text.value ? text : title; f.focus();
+      if (f === text && draft && !n.id) { text.setSelectionRange(text.value.length, text.value.length); text.scrollTop = text.scrollHeight; }
+    }, 30);
   }
 
   /** leaving the note being edited: with changes, ask first; `then` runs once it is closed. False while asking. */
@@ -178,17 +187,40 @@
     return false;
   }
   function close() { open = null; drawStar = null; keepDraft(null); editor.hidden = true; document.body.classList.remove('nt-editing'); drawList(); }
-  function newNote() {
+  /** a new note; `body` is pasted text it starts with (not yet saved) */
+  function newNote(body) {
     const n = { id: null, title: '', body: '', source: null, starred: false, createdAt: Date.now(), updatedAt: Date.now() };
-    if (open) { if (!leave(() => edit(n))) return; }
-    else edit(n);
+    const draft = body ? { title: '', body } : undefined;
+    if (open) { if (!leave(() => edit(n, draft))) return; }
+    else edit(n, draft);
+  }
+  const field = (t) => !!t?.closest?.('input, textarea, select, [contenteditable=""], [contenteditable="true"]');
+  // Ctrl+V outside a field: the open note gets the text, or a new note starts with it
+  addEventListener('paste', (e) => {
+    if (field(e.target) || document.querySelector('#modal:not([hidden])')) return;
+    const s = (e.clipboardData?.getData('text/plain') || '').trim();
+    if (!s) return;
+    e.preventDefault();
+    if (open?.paste) open.paste(s); else newNote(s);
+  });
+  /** "הדבקה": the clipboard where the browser allows reading it; otherwise an empty note, ready for a long-press paste */
+  async function pasteBtn() {
+    let s = '';
+    try { s = (await navigator.clipboard?.readText?.() || '').trim(); } catch (_) { /* not allowed here */ }
+    if (s) { if (open?.paste && !open.note.id && !open.changed()) open.paste(s); else newNote(s); return; }
+    if (!open || open.note.id || open.changed()) newNote();
+    setTimeout(() => { if (open && !open.note.id) editor.querySelector('.nt-body')?.focus(); }, 60);   // after edit()'s own focus
+    toast(/Mobi|Android|iPhone|iPad/.test(navigator.userAgent) ? 'לחיצה ארוכה בפתק ← "הדבקה"' : 'הדביקו בפתק עם Ctrl+V');
   }
   addEventListener('beforeunload', (e) => { if (open?.changed()) { e.preventDefault(); e.returnValue = ''; } });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && open && !document.querySelector('#modal:not([hidden])')) leave(); });
 
   root.append(el('div', { class: 'nt' },
     el('a', { class: 'folder-back', href: '/tools/' }, '‹ כלים'),
-    el('div', { class: 'nt-head' }, el('h1', {}, 'פתקים'), el('button', { class: 'btn primary', type: 'button', onclick: newNote }, '+ פתק חדש')),
+    el('div', { class: 'nt-head' }, el('h1', {}, 'פתקים'),
+      el('div', { class: 'nt-head-acts' },
+        el('button', { class: 'btn ghost', type: 'button', title: 'הדבקה מהלוח לפתק חדש', onclick: pasteBtn }, '📋 הדבקה'),
+        el('button', { class: 'btn primary', type: 'button', onclick: () => newNote() }, '+ פתק חדש'))),
     el('div', { class: 'nt-cols' }, el('div', { class: 'nt-side' }, el('div', { class: 'nt-search' }, search, starFilter), tagBox, listBox), editor)));
   try { notes = (await api('/api/notes')).notes; } catch (_) { listBox.replaceChildren(el('p', {}, 'הפתקים לא נטענו.')); return; }
   drawTags(); drawList();

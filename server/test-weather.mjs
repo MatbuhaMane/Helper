@@ -35,7 +35,7 @@ eq('now: rounded, the hour and minute', f.now, { time: '14:15', temp: 22, feels:
 eq('the hours start at the current hour', f.hours[0].time, '14:00');
 eq('24 hours', f.hours.length, 24);
 eq('an hour at night has the moon', f.hours.find((h) => h.time === '20:00').sky.icon, '🌙');
-eq('a day', f.days[0], { date: '2026-11-13', max: 23, min: 15, rain: 70, sky: { text: 'גשם', icon: '🌧️' }, sunrise: '06:12', sunset: '16:42', uv: 4 });
+eq('a day', f.days[0], { date: '2026-11-13', max: 23, min: 15, rain: 70, sky: { text: 'גשם', icon: '🌧️' }, sunrise: '06:12', sunset: '16:42', uv: 4, wind: 0, windDir: null });   // the raw has no wind: 0 and unknown
 eq('a missing rain chance is 0, a missing UV is null', [f.days[1].rain, f.days[1].uv], [0, null]);
 eq('the advice: an umbrella, with the hour', f.advice, ['כדאי לקחת מטריה: גשם צפוי סביב 17:00.']);
 

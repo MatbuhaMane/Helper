@@ -398,7 +398,7 @@
     const current = (n) => (n.href === '/' ? here === '/' : (n.href && here.startsWith(n.href)) || !!n.also?.some((a) => here.startsWith(a)));
     // a menu entry is a button that opens its list; the others are links
     const entry = (n, phone) => n.menu
-      ? el('button', { type: 'button', class: phone ? 'tab-menu' : 'ink-nav nav-menu', 'aria-expanded': 'false', 'aria-controls': 'navmenu-' + n.menu, 'aria-current': current(n) ? 'page' : null,
+      ? el('button', { type: 'button', class: phone ? 'tab-pick' : 'ink-nav nav-menu', 'aria-expanded': 'false', 'aria-controls': 'navmenu-' + n.menu, 'aria-current': current(n) ? 'page' : null,
         'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'פתיחת ' + n.label, onclick: (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, n.menu, phone); } },
         phone ? icon(n.icon) : null, el('span', {}, n.short || n.label), phone ? null : el('span', { class: 'nav-caret', 'aria-hidden': 'true' }, '▾'))
       : el('a', { class: phone ? null : 'ink-nav', href: n.href, 'aria-current': current(n) ? 'page' : null, 'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'מעבר ל' + n.label },

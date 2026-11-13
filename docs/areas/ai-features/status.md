@@ -300,9 +300,9 @@ LCP has not moved yet. The causes:
 
 ## In progress
 
-- Next by the owner's order:
-  - the family goal with roles, and "שבט" for family-tree relatives only (slice D);
-  - on-screen niqqud as a choice. Its cost: every screen's text through the vocalizer, so it needs a cache per text.
+- Set aside by the owner (2026-11-13, through the CEO): the family goal with roles and "שבט" for relatives (slice D) is
+  for later; on-screen niqqud as a choice is not critical. (Its cost when it comes: every screen's text through the
+  vocalizer, so a cache per text.)
 - Later, from design:
   - the founders page, built from `docs/design/prototype/founders.html` and `founders.css`, with the levels by number;
   - the profile banner: the person chooses which earned title effect to show (glow, wings, crown, founder). The owner's
@@ -315,7 +315,7 @@ LCP has not moved yet. The causes:
   - the owner's room: a usage dashboard and the feedback inbox;
   - a feedback button;
   - badges for every tool, with שבט for relatives only;
-  - optional on-screen niqqud;
+  - optional on-screen niqqud (not critical, the owner);
   - רַאבַּ"ע's astrology as an opt-in;
   - the gendered UI wording.
 - The calendar's blocking time on 4G: 309 ms after drawing it whole (175 before). The data now arrives all at once; to look

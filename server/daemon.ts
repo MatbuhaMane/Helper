@@ -12,6 +12,7 @@ import type { BetaContentBlock, BetaMessageParam, BetaToolResultBlockParam, Beta
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, Env, HttpError, Member, body, json, requireUser } from './core';
+import { myFridge } from './fridge';
 import { GROCERY_CATEGORIES, addGroceries, checkGroceries, currentGroceries, findRecipes, insertRecipe } from './kitchen';
 import { buildPlan } from './mail';
 import { collectItems } from './news';
@@ -127,7 +128,7 @@ function systemFor(figure: string) {
 }
 const figureOf = (f: unknown) => (typeof f === 'string' && f in ANIMALS ? f : 'ibn_ezra');
 
-const COMMON = `You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it).
+const COMMON = `You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own fridge (to read what is in it), their own news feeds, and their mailbox (only to prepare plans, never to change it).
 
 How you talk:
 - Your words are shown in a chat bubble and may be read aloud. Answer briefly: one to three short sentences, unless asked for more. No markdown, headings or tables. Short lists are fine when listing items.
@@ -146,7 +147,7 @@ What you never do: act behind their back on anything important. You cannot send,
 Each message from the person starts with a <state> note (time, page, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. You are quiet: you never introduce yourself unasked. On the first tap the app offers the person a question like "נעים להכיר! מה אפשר לעשות איתך?"; then introduce yourself as described above, and what you can help with is: the shopping list, recipes, news, the web, tidying the mailbox.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 13;   // 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked; 13: send_feedback
+const PROMPT_VERSION = 14;   // 14: fridge_list, open_app fridge; 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked; 13: send_feedback
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -174,6 +175,7 @@ const TOOLS: BetaToolUnion[] = [
   tool('grocery_check', 'Mark items as bought (checked) or put them back on the list (unchecked).', {
     names: { type: 'array', items: { type: 'string' } }, bought: { type: 'boolean' },
   }),
+  tool('fridge_list', "Read what is in the person's own fridge: each item with its amount and use-by date (soonest first). Read only; they change it on the fridge screen.", {}),
   tool('recipe_find', 'Search the household recipe book. Empty query lists recent recipes.', { query: str('Words to look for in titles, notes and ingredients') }),
   tool('recipe_save', 'Save a recipe to the household recipe book (e.g. one found on the web). Keep the language of the source, Hebrew preferred.', {
     title: str('Recipe title'),
@@ -191,7 +193,7 @@ const TOOLS: BetaToolUnion[] = [
   tool('propose_mail_plan', "Prepare a plan for tidying the person's Gmail from their request. Nothing changes: the plan opens in the mail screen, where they review the counts and examples and approve it themselves.", {
     request: str('What they want, in their own words'),
   }),
-  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['food', 'groceries', 'recipes', 'keto', 'news', 'songs', 'tools', 'mail', 'computer', 'home'] } }),
+  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['food', 'groceries', 'fridge', 'recipes', 'keto', 'news', 'songs', 'tools', 'mail', 'computer', 'home'] } }),
 ];
 
 const APP_LINKS: Record<string, { href: string; label: string }> = {
@@ -200,6 +202,7 @@ const APP_LINKS: Record<string, { href: string; label: string }> = {
   keto: { href: '/groceries/#keto', label: '🥑 לקטוזיס' },
   tools: { href: '/tools/', label: '🧰 לכלים' },
   recipes: { href: '/groceries/#book', label: '📖 לספר המתכונים' },
+  fridge: { href: '/food/fridge/', label: '🧊 למקרר' },
   news: { href: '/news/', label: '📰 לחדשות' },
   songs: { href: '/songs/', label: '🎵 לשירון' },
   mail: { href: '/mail/', label: '📬 לסידור המייל' },
@@ -255,6 +258,13 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
       const r = await checkGroceries(env, u.household, u.email, input.names || [], !!input.bought);
       events.push({ type: 'groceries_changed' });
       return r;
+    }
+    case 'fridge_list': {
+      // the person's own fridge only (one per person, fridge.ts)
+      const f = await myFridge(ctx, u);
+      const items = (await env.DB.prepare('SELECT name, qty, unit, expires FROM fridge_items WHERE fridge = ? AND deleted = 0 ORDER BY expires IS NULL, expires, name LIMIT 200')
+        .bind(f.id).all<{ name: string; qty: number | null; unit: string | null; expires: string | null }>()).results;
+      return { fridge: f.name, items: items.map((i) => ({ name: i.name, qty: i.qty, unit: i.unit || undefined, use_by: i.expires || undefined })) };
     }
     case 'recipe_find': {
       const list = await findRecipes(env, u.household, String(input.query || ''));

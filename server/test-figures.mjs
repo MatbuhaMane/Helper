@@ -29,7 +29,7 @@ eq('credits: not enough', F.decide({ ...base, left: 2.69 }), { ok: false, error:
 eq('credits: nothing left', F.decide({ ...base, left: 0 }), { ok: false, error: 'not_enough_credit' });
 eq('a zero price is refused for credits (a setting error, never free by mistake)', F.decide({ ...base, priceUsd: 0 }), { ok: false, error: 'not_enough_credit' });
 eq('a negative price is refused', F.decide({ ...base, priceUsd: -1 }), { ok: false, error: 'not_enough_credit' });
-ok('the seven paid figures', ['maryshelley', 'leonardo', 'cleopatra', 'dracula', 'magician', 'astronomer', 'doll'].every(F.isPaid) && F.PAID.length === 7);
+ok('the eleven paid figures', ['maryshelley', 'leonardo', 'cleopatra', 'dracula', 'magician', 'astronomer', 'doll', 'nightwizard', 'forestwitch', 'littlewizard', 'littlewitch'].every(F.isPaid) && F.PAID.length === 11);
 
 eq("a special figure costs the special price", F.priceIlsOf("magician", 10, 20), 20);
 eq("the doll is special", F.priceIlsOf("doll", 10, 20), 20);

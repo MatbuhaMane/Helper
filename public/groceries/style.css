@@ -26,6 +26,17 @@
 }
 
 
+/* which book is open (vision batch 16): "ספר המתכונים שלי" or "מתכונים ששותפו איתי", chosen from the tab's menu */
+.book-which { display: flex; align-items: baseline; gap: 8px; margin: 16px 2px 8px; font-size: 1.15rem; font-weight: 600; line-height: 1.3; text-wrap: balance; }
+.book-which small { font-size: .9rem; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+/* a book with nothing in it yet: one calm line and the way to fill it */
+.book-empty { grid-column: 1 / -1; display: grid; justify-items: center; gap: 6px; padding: 28px 16px; text-align: center; color: var(--muted);
+  border: 1.5px dashed var(--line); border-radius: var(--radius); }
+.book-empty .icon { inline-size: 32px; block-size: 32px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.book-empty b { color: var(--text); font-weight: 500; }
+/* a recipe someone shared: who sent it, on the card */
+.book-card .from { display: flex; align-items: center; gap: 6px; padding: 0 10px 10px; font-size: .8rem; color: var(--muted); }
+.book-card .from img { inline-size: 20px; block-size: 20px; border-radius: 50%; object-fit: cover; }
 .book-tools { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px; }
 .book-tools input { flex: 1 1 200px; }
 .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }

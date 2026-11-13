@@ -2,9 +2,38 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (vision batch 15: the "בקרוב" pictures and note; batch 14: the wizard centred, the sky blotch found, arrange mode, the experimental tag, the Google button, four notes views)._
+_Updated 2026-11-14 (vision batch 16: a smoother recipe flip and animation audit, "סיכום היום" every day, the recipe book's tab menu; batch 15: the "בקרוב" pictures and note)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: vision batch 16, design part (2026-11-14).**
+  - **e456754, the recipe card flip (sheet.css):**
+    - a lighter shadow;
+    - no rounded clip on the turning back;
+    - the body contained;
+    - will-change on the flip and the fade while `.moving`.
+    The rest of the stutter is in sheet.js, which is ai-features'. Sent there:
+    - no aim on a re-open or a resize mid-flip;
+    - fill the body after the turn;
+    - a double rAF before `.open`.
+    Not measured here (the pane is hidden, so rAF does not run). The test is the owner's phone.
+  - **01df868, the animation audit:** endless animations now use transform and opacity only:
+    - the chosen cushion's glow;
+    - the wizard's current step;
+    - the reports coach.
+    Left on purpose:
+    - two tiny strips (dm-flow, cx-dots), and the admin egg.
+    - Progress bars that animate `inline-size` (care, music, groceries, parnasa, goals) wait for ai-features to set `--p`, so they can scale instead.
+  - **53d2b38, "סיכום היום" every day (seasons.css):**
+    - the day's leaf (the Hebrew day and month);
+    - a facts row: the weather by its sky, the sunset, or the candles on a Friday;
+    - the calendar in "היום";
+    - a calm line for a quiet day.
+    Contract `docs/design/daily.md`; the master wires it.
+  - **fbb1cbf, the recipe book's tab menu:**
+    - in base.css, a tab that opens its own menu (`.tab-menu`), usable by any tab;
+    - "ספר המתכונים שלי" and "מתכונים ששותפו איתי", with the book's heading, an empty book and the sender on a shared card.
+    Contract `docs/design/recipe-book-menu.md`; ai-features builds the lists.
+  - Checked at 375 and desktop width, light and dark.
 - **Ready: vision batch 15, design part (2026-11-14).**
   - e414817 `public/assets/soon/hill.svg` and `garage.svg`, drawn in the tent's look from `docs/design/soon/soon.py`.
   - 86d725d base.css adds one note `.tag-soon` (`--soon`, dusk blue), the home's strip "בקרוב ליד האוהל" under the ring, the serious home's last group "בקרוב", and the tap sheet `.soon-sheet`. It also styles `.app-tag` after a name on the serious home.

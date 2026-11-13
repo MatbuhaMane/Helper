@@ -225,7 +225,11 @@
 .rp-coach { --gap: clamp(110px, 22dvh, 200px); --ink: var(--primary); position: fixed; inset: 0; z-index: var(--z-menu, 50); cursor: pointer;
   background: radial-gradient(circle at var(--x, 40px) var(--y, 28px), transparent 26px, rgba(20, 16, 10, .38) 30px); animation: rp-veil .35s ease both; }
 .rp-coach::after { content: ""; position: absolute; left: calc(var(--x, 40px) - 26px); top: calc(var(--y, 28px) - 26px); inline-size: 52px; block-size: 52px;
-  border-radius: 50%; border: 2px solid var(--ink); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ink) 60%, transparent); animation: rp-breathe 1.8s .9s ease-out infinite; }
+  border-radius: 50%; border: 2px solid var(--ink); }
+/* its pulse: a second ring that widens and fades (transform and opacity only) */
+.rp-coach::before { content: ""; position: absolute; left: calc(var(--x, 40px) - 26px); top: calc(var(--y, 28px) - 26px); inline-size: 52px; block-size: 52px;
+  border-radius: 50%; border: 3px solid color-mix(in srgb, var(--ink) 60%, transparent); opacity: 0; pointer-events: none;
+  animation: rp-breathe 1.8s .9s ease-out infinite; will-change: transform, opacity; }
 /* the arrow: down from under the triangle, a soft bend, then across to above the note's middle */
 .rp-coach-line { position: absolute; left: calc(var(--x, 40px) - 1px); top: calc(var(--y, 28px) + 42px); inline-size: max(0px, calc(50% - var(--x, 40px)));
   block-size: var(--gap); border: 0 dashed var(--ink); border-left-width: 2px; border-bottom-width: 2px; border-bottom-left-radius: min(56px, 40%) 56px;
@@ -241,5 +245,5 @@
 @keyframes rp-veil { from { opacity: 0; } }
 @keyframes rp-rise { from { opacity: 0; translate: -50% 10px; } }
 @keyframes rp-draw { 0% { clip-path: inset(100% -14px -14px 100%); } 45% { clip-path: inset(82% -14px -14px -14px); } 100% { clip-path: inset(-14px); } }
-@keyframes rp-breathe { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ink) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 14px transparent; } }
-@media (prefers-reduced-motion: reduce) { .rp-coach, .rp-coach-line, .rp-coach-card, .rp-coach::after { animation: none; } }
+@keyframes rp-breathe { 0% { opacity: 1; transform: scale(1); } 70%, 100% { opacity: 0; transform: scale(1.55); } }
+@media (prefers-reduced-motion: reduce) { .rp-coach, .rp-coach-line, .rp-coach-card, .rp-coach::after { animation: none; } .rp-coach::before { display: none; } }

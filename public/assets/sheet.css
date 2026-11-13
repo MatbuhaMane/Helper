@@ -11,10 +11,11 @@
   transition: transform 1050ms cubic-bezier(.45, .05, .2, 1); }
 .rsheet.open .rs-flip { transform: translate(0px, 0px) scale(1, 1) rotateY(180deg); }
 .rsheet.moving .rs-flip { will-change: transform; }
+.rsheet.moving .rs-body { will-change: opacity; }
 /* growing from a panel to the large panel (already flipped): a little quicker */
 .rsheet.open.sized .rs-flip { transition-duration: 900ms; }
 .rsheet.instant .rs-flip, .rsheet.instant .rs-shade { transition: none; }
-.rs-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 18px 50px rgba(46, 42, 30, .18); }
+.rs-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: var(--radius-lg); overflow: hidden; box-shadow: 0 12px 32px rgba(46, 42, 30, .16); }
 .rs-front { background: var(--card); }
 .rs-front { overflow: hidden; }
 /* the card's copy at the card's own size, scaled up with the face (--fx/--fy), so it does not reflow on the way */
@@ -24,11 +25,13 @@
    would show through the back of the sheet once it has turned. */
 .rs-copy, .rs-copy * { animation: none !important; transition: none !important; }
 .rs-copy * { transform: none !important; }
-.rs-back { transform: rotateY(180deg); background: var(--card); display: flex; flex-direction: column; border-radius: 0; }
+.rs-back { transform: rotateY(180deg); background: var(--card); display: flex; flex-direction: column; border-radius: 0; overflow: visible; }
+/* (the back needs no clipping: its body scrolls inside itself. A rounded clip on a face that turns in 3D costs a mask layer every frame.) */
 .rsheet:not(.open) .rs-back, .rsheet.sized .rs-back { border-radius: var(--radius-lg); }
 /* overflow-anchor: none – a picture that loads above must not push the reader down past it */
 .rs-body { flex: 1; overflow-y: auto; overflow-anchor: none; -webkit-overflow-scrolling: touch; padding: 22px max(16px, calc((100vw - 760px) / 2)) calc(40px + env(safe-area-inset-bottom));
-  opacity: 0; transition: opacity 500ms ease 0ms; }
+  opacity: 0; transition: opacity 500ms ease 0ms;
+  contain: content; overscroll-behavior: contain; }   /* content: what loads inside (a picture, the recipe after "פותח…") is laid out and drawn there only */
 .rsheet.open .rs-body { opacity: 1; transition: opacity 650ms ease 520ms; }
 .rsheet.instant .rs-body { transition: none; opacity: 1; }
 .rsheet.sized .rs-body { padding: 22px 24px 28px; }

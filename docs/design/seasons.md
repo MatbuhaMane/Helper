@@ -130,6 +130,8 @@ Vision decided that the names, the dates and the look are set with a source or p
 
 ## 3. "סיכום היום" (the top of the home)
 
+From vision batch 16 it shows every day, with the day's leaf and a facts row (weather, sunset or candles): see `docs/design/daily.md`.
+
 ### When it shows
 - On the first open of the day, after the greeting and before the tent.
 - Once closed, it doesn't come back until tomorrow. Remember this per user on the server, not in `localStorage`, so it follows the person between devices.

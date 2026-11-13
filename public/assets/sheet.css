@@ -2,7 +2,7 @@
    into the card. Slow and soft on purpose (about a second, gentle easing, deep perspective); with reduced motion it simply opens.
    Smooth on a phone: the sheet stands where it opens (sheet.js sets its place), and only its transform moves – folded
    onto the card (--dx/--dy/--sx/--sy), then turned over – so nothing is laid out again while it moves. */
-.rsheet { position: fixed; inset: 0; z-index: 40; perspective: 2600px; }
+.rsheet { position: fixed; inset: 0; z-index: var(--z-sheet); perspective: 2600px; }
 .rsheet[hidden] { display: none; }
 .rs-shade { position: absolute; inset: 0; background: rgba(46, 42, 30, .34); opacity: 0; transition: opacity 900ms cubic-bezier(.4, 0, .2, 1); }
 .rsheet.open .rs-shade { opacity: 1; }

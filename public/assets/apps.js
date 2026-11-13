@@ -34,6 +34,7 @@
     { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a' },
     { href: '/food/diet/', ic: 'diet', name: 'תנועה ותזונה', sub: 'הקפדה, הדרך שבה אוכלים, ומה מתאים לה', pillow: 'p10', c2: '#9c2a2a' },
     { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', sub: 'מה שהחלטתם לשמור עליו, יום אחר יום', pillow: 'p12', c2: '#c4501e' },
+    { href: '/food/diet/habits/', ic: 'habits', name: 'הרגלי אכילה', sub: 'קטו, אטקינס, פליאו ועוד – מתג לכל דרך אכילה', pillow: 'p13', c2: '#1f8f8a' },
     { href: '/food/fridge/', ic: 'fridge', name: 'מקרר', sub: 'מה יש בבית, ומה לבשל ממנו', pillow: 'p06', c2: '#9c2a2a' },
   ];
   const DEFAULT_PINS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];   // the parts the ring always had

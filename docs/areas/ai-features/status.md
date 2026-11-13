@@ -1,9 +1,19 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (הרגלי אכילה).
+Last update: 2026-11-14 (פרופיל המשפחה).
 
 ## Done
+
+- **פרופיל המשפחה** (the CEO's queue, item 2): `/family/profile.html` on design's markup, a door at the top of the tree.
+  Server `server/family-profile.ts`, the view filter `server/family-profile-rules.ts` with 31 tests
+  (`server/test-family-profile.mjs`; the master adds it to `npm test`). Default household only; a head opens it to the
+  tribe or makes an invitation link (hash kept, shown once); it never widens: people outside only by their card's identity
+  level, recipes and the tree household only, each hidden item an empty spot. Heads edit; members' changes become
+  suggestions a head approves. Checked on the dev server: member, head and link-holder flows; audit at 375 and 1280, light
+  and dark: no overflow, no nameless controls; one finding for design (the initial in `.fp-face` is 2.9:1 in light).
+  Not checked: an own cover upload on a real phone; the tribe view (no confirmed links in the local DB); `?h=` is accepted
+  but nothing links to it yet (the forest will).
 
 - **הרגלי אכילה** (the CEO's queue, item 1): `/food/diet/habits/`, one card per way of eating (ketosis and the five in
   `diets.js`), each with ketosis's big switch, what it shows when on, the rules in short, and a link to its tab while on.

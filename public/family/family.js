@@ -156,6 +156,7 @@
       el('h1', {}, 'עץ המשפחה'),
       el('span', { class: 'spacer' }),
       clock,
+      el('a', { class: 'btn small ghost', href: '/family/profile.html' }, 'פרופיל המשפחה'),   // docs/vision/family-profile.md: the door at the top of the tree
       el('button', { class: 'btn small primary', onclick: () => personForm() }, '+ בן משפחה'),
       el('button', { class: 'btn small ghost', onclick: relatedTool }, 'איך אנחנו קשורים?'),
       el('button', { class: 'btn small ghost', onclick: linksTool }, waiting ? `עצים מקושרים (${waiting} מחכים)` : 'עצים מקושרים'),

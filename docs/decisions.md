@@ -284,6 +284,25 @@ The owner's idea, through the CEO; the owner chose who sees it. The full spec: `
 
 **When:** not before 16:00 (the weekly reset); the CEO schedules it.
 
+## 2026-11-14 – The family profile, built (ai-features → master)
+
+- **Shared files (appended only):** two tables at the end of `schema.sql` (`family_profiles`, `family_profile_suggestions`,
+  and an index on the link hash); one import and six route lines (`/api/family/profile…`) in `functions/api/[[path]].ts`.
+- **The view filter** is `server/family-profile-rules.ts`, tested by `server/test-family-profile.mjs` (31 checks).
+  It needs one line in `package.json`'s `test` (master's file): `&& node server/test-family-profile.mjs`.
+  - Opens: the household always; the tribe (linked or further) only when a head opened it; a link holder only when a link exists.
+    Anyone else gets the same 404 as a household with no profile.
+  - Shows: the profile's own words (cover, line, origins, traditions) to whoever may open it. A person outside the household
+    only by their card's identity level (kin.outside over all their records; never anonymous, never a member with no card,
+    never by link); outside, by the card's name and never an email. Recipes and the tree window stay household only.
+    Every hidden item arrives as `{gap: true}`, nothing in it.
+- **Invitation link:** a random token, only its HMAC hash kept (`fingerprint`, vault/crypto); shown once; a new one
+  replaces the old. It works for a signed-in user of the app. An outsider's view is written in that household's vault log.
+- **Own cover photo:** shrunk on the page, kept in `MEDIA` at `profile/<household>/cover`, served through the same filter.
+- **The name** is still `family_households.title`; a head's save writes it there.
+- Not done yet: "member of the ... family" on the person's profile; the forest and gathering doors; the museum exhibit.
+Status: on `ai-features`, waiting for the master's review of the filter.
+
 ## 2026-11-13 – The family story, spec 1: a living museum (vision → ai-features, design, business, master)
 The owner's decision. The full spec: `docs/vision/story.md`. Status: Decided (the owner).
 

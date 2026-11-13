@@ -1046,3 +1046,28 @@ CREATE TABLE IF NOT EXISTS goal_rounds (
   updated_at INTEGER NOT NULL,
   PRIMARY KEY (email, goal_id, period)
 );
+
+-- פרופיל המשפחה: what a household publishes about itself (server/family-profile.ts); read only through its view filter
+-- (server/family-profile-rules.ts). The name is family_households.title.
+CREATE TABLE IF NOT EXISTS family_profiles (
+  household  TEXT PRIMARY KEY,
+  line       TEXT NOT NULL DEFAULT '',
+  cover      TEXT NOT NULL DEFAULT 'olive',     -- one of the drawn covers, or 'own'
+  cover_own  INTEGER NOT NULL DEFAULT 0,        -- an own photo is in MEDIA at profile/<household>/cover
+  origins    TEXT NOT NULL DEFAULT '[]',        -- JSON [{place, years}]
+  traditions TEXT NOT NULL DEFAULT '',
+  dishes     TEXT NOT NULL DEFAULT '[]',        -- JSON [recipe id], from the household's book
+  open_tribe INTEGER NOT NULL DEFAULT 0,        -- a head opened it to the linked households
+  link_hash  TEXT,                              -- the invitation link's hash (null: no link)
+  updated_by TEXT,
+  updated_at INTEGER NOT NULL
+);
+-- a change a member who is not a head suggests; a head takes it in or lets it go
+CREATE TABLE IF NOT EXISTS family_profile_suggestions (
+  id         TEXT PRIMARY KEY,
+  household  TEXT NOT NULL,
+  email      TEXT NOT NULL,
+  patch      TEXT NOT NULL,                     -- JSON, cleaned as family-profile-rules.cleanPatch
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS family_profiles_link ON family_profiles(link_hash);

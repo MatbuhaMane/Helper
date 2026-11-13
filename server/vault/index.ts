@@ -952,3 +952,31 @@ export async function deviceRevoke(ctx: Ctx) {
   await audit(ctx, u, signout ? 'trust:revoke+signout' : 'trust:revoke', hit.label, null);
   return json({ ok: true });
 }
+
+/* ---------------- the family profile (server/family-profile.ts): who of a household may show on it ---------------- */
+
+/** the users of a household, each with what of their tree card may leave it (kin.outside over all their records),
+    and the confirmed links; the profile's view filter (server/family-profile-rules.ts) decides from these */
+export async function profilePeople(ctx: Ctx, house: string) {
+  const [bridges, { results: mem }, { results: rows }, users] = await Promise.all([
+    confirmedBridges(ctx),
+    ctx.env.DB.prepare('SELECT email, name, he_name FROM members WHERE household = ? ORDER BY created_at').bind(house).all<{ email: string; name: string | null; he_name: string | null }>(),
+    ctx.env.DB.prepare('SELECT * FROM family_people WHERE household = ? AND member_email IS NOT NULL AND deleted_at IS NULL').bind(house).all<PersonRow>(),
+    ctx.env.DB.prepare('SELECT email FROM members').all<{ email: string }>(),
+  ]);
+  const userSet = new Set(users.results.map((r) => r.email));
+  const houseOf = housesIn(bridges, rows.map((r) => [r.id, r.household] as [string, string]));
+  const people = [];
+  for (const m of mem) {
+    const name = m.he_name || m.name || m.email.split('@')[0];
+    const own = rows.find((r) => r.member_email === m.email);
+    if (!own) { people.push({ email: m.email, name, cardName: null, outside: null }); continue; }
+    const ids = K.recordsOf(own.id, bridges, houseOf).map((r) => r.id);
+    const { results: recs } = await ctx.env.DB.prepare(`SELECT * FROM family_people WHERE id IN (${ids.map(() => '?').join(', ')}) AND deleted_at IS NULL`).bind(...ids).all<PersonRow>();
+    const outside = K.outside(recs.map((r) => ({ privacy: K.parsePrivacy(r.privacy), anonymous: !!r.anonymous, user: !!r.member_email && userSet.has(r.member_email) })));
+    people.push({ email: m.email, name, cardName: (await cardOf(ctx, own)).name, outside });
+  }
+  return { people, bridges };
+}
+/** someone from outside opened a household's profile: written in that household's log */
+export const auditProfile = (ctx: Ctx, house: string, u: Member, how: string) => auditAt(ctx, house, u, 'view:profile:' + how, null, null);

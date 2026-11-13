@@ -4,6 +4,10 @@ Updated by the department at the end of every meaningful round of work. Short: t
 Last update: 2026-11-13 (לשונית הדלת האחורית, שימוש מקופל, הודעה לחבר אחד).
 
 ## Done
+- **"איפה הבית?" from Google (2026-11-13):** while typing in the welcome's city step, up to 5 towns in Israel (Places
+  Autocomplete, key on the server); a pick saves me.city and me.place {id, name, lat, lng, at}; the weather uses the point
+  (30 days, then again by the ID); free text when not found or with no key. Tests: test-places 37. Checked at 375 with a
+  stubbed answer (no key locally); a real Google call is not checked yet.
 
 - **דיווח על תקלה, הצעה לשיפור, המשולש, שתי שקופיות** (the CEO for the owner, 2026-11-13), on `ai-features`:
   - shake works where `requestPermission` exists (iOS, newer Chrome): asked on load, else on the first tap; a seismic-style

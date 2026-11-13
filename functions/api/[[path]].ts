@@ -257,6 +257,8 @@ route('GET', '/api/food/highlights', food.highlights);
 route('GET', '/api/restaurants', restaurants.list);
 route('GET', '/api/restaurants/search', places.status);
 route('POST', '/api/restaurants/search', places.search);
+route('POST', '/api/places/home/suggest', places.homeSuggest);   // ai-features: "איפה הבית?" in the welcome (docs/decisions.md 2026-11-13)
+route('POST', '/api/places/home/pick', places.homePick);
 route('POST', '/api/restaurants', restaurants.save);
 route('PUT', '/api/restaurants/:id', restaurants.save);
 route('DELETE', '/api/restaurants/:id', restaurants.remove);

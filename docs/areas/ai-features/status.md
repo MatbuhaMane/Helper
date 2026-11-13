@@ -1,9 +1,17 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13.
+Last update: 2026-11-14.
 
 ## Done
+
+- **The CEO's quick queue (2026-11-14)**:
+  - toolbox long press (78e73e2);
+  - groceries named lists with delete and undo (a69ba3d);
+  - rich notes (0dd842d);
+  - save-as-note only in the parasha, as a bottom bar for marked text with a link back to the verse (281e711);
+  - groceries templates and an archive (bfbc416).
+  - Next: easier parasha marking, then the automatic list from the fridge, then the tree (olive).
 
 - **Locks and privacy, aligned to design** (4d7c7c3, in main, v61): the lock screen on `Lock.screen`, the tree tip on
   `Lock.warnCard`, settings in design's classes. Tested end to end locally (code, wrong code, the tree, the tip).

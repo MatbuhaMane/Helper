@@ -32,7 +32,8 @@
           // a drawn tool (a silhouette): pastel fill, a soft rounded outline
           ? el('span', { class: 'ic art', style: `--tint:${a.tint};--line:${a.line}` }, el('span', { class: 'shape', style: `-webkit-mask-image:url(${a.art});mask-image:url(${a.art})` }))
           : el('span', { class: 'ic' }, icon(a.ic)),
-        el('span', { class: 'name' }, a.name), a.soon ? el('span', { class: 'soon' }, 'בקרוב') : null)));
+        el('span', { class: 'name' }, a.name), a.soon ? el('span', { class: 'soon' }, 'בקרוב')
+          : H.expTag?.(a.tag ? a : (H.APPS || []).find((x) => x.href === a.href)) || null)));   // the "ניסיוני" tag of H.APPS (v142), where .soon sits
     // the head: the title and its line – or, with a hero picture, a window in the tent's style with the title on it
     const head = hero
       ? el('div', { class: 'folder-hero' },

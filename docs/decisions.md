@@ -11,6 +11,25 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Family story storage: for now, on what we have, with no extra spending (business, the owner)
+
+**Decided (the owner):** "התבסס כרגע על מה שיש לנו בלי השקעה נוספת" (for now, build on what we have, with no extra
+investment). Business read this as:
+- **Storage:** the story's media goes in the existing R2 bucket. The account's free 10 GB a month covers the family stage.
+- **Quota:** 2 GB per household. Uploads are compressed: voice as Opus at 32–48 kbps; photos as WebP, at most 2560 px.
+- **No paid extra storage for now:** no purchase flow is built. The prices in `docs/business/story-storage.md`
+  (+10 GB for ₪3/month, +50 GB for ₪10/month) stay a proposal until a payment provider is live.
+- **Content is never deleted** for going over the quota or for non-payment. Only new uploads stop.
+- **Flag to the owner** when total R2 storage nears 8 GB above today's base.
+
+**Affects:**
+- **ai-features:** the quota check, upload compression, and the "storage full" state, in which content can still be
+  viewed and downloaded.
+- **design:** the storage meter and the "full" message.
+- **vision:** `docs/vision/story.md`.
+
+**Status:** Decided (the owner).
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**

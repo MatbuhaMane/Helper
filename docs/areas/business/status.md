@@ -22,7 +22,9 @@ Updated by the department at the end of every meaningful round of work. Short: t
 
 - **Family story storage (2026-11-14, from vision batch 10, not urgent):** `docs/business/story-storage.md`.
   Proposal: 2 GB free per household; +10 GB for ₪3/month or +50 GB for ₪10/month from the wallet, also yearly; content
-  is never deleted for non-payment. Proposes upload compression to ai-features. Waiting for the owner.
+  is never deleted for non-payment. Proposes upload compression to ai-features.
+  - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
+    household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.

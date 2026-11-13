@@ -700,7 +700,7 @@
   }
 
   function openPanel(tab) {
-    if (!panel) buildPanel();
+    if (!panel) { buildPanel(); H.back?.watch?.(panel, closePanel); }   // the back gesture closes it
     panel.hidden = false;
     panel.showTab(tab || (E.st.source === 'youtube' ? 'youtube' : 'spotify'));
     paint(E.st);
@@ -721,6 +721,7 @@
       songwin = el('section', { class: 'songwin', role: 'dialog', 'aria-label': 'השירון' }, head, frame);
       songwin.parts = { name, full, frame };
       document.body.append(songwin);
+      H.back?.watch?.(songwin, () => { songwin.hidden = true; songFollow = false; });
       head.addEventListener('pointerdown', (e) => {
         if (e.target.closest('a, button') || innerWidth < 600) return;
         const r = songwin.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;

@@ -290,6 +290,15 @@
     open = { note: n, changed, save, stop: () => document.removeEventListener('selectionchange', onSel) };
     drawMeta(); drawStar(); paint();
     editor.hidden = false; document.body.classList.add('nt-editing');
+    // the back gesture closes the note; changes are saved first, as on a phone's notes app (a failed save keeps it open)
+    if (!editor.dataset.back && H.back?.watch) {
+      editor.dataset.back = '1';
+      const sync = H.back.watch(editor, async () => {
+        if (!open) return;
+        if (!open.changed()) return close();
+        if (await open.save()) { close(); toast('הפתק נשמר'); } else sync();
+      });
+    }
     drawList();
     open.paste = (s) => {                                  // pasted outside the fields: to the end of this note
       if (empty()) text.replaceChildren();

@@ -36,3 +36,7 @@ that affects other areas; don't reopen settled decisions without new information
 - Who pays: subscriptions through the app stores, Stripe, or both?
 - What must stay free so a family can try it?
 - What does the forest (families linked by marriage) mean commercially, and what does privacy cost there?
+
+## Status file
+At the end of every meaningful round of work, update `docs/areas/business/status.md` on your branch and commit it: what was done,
+what is in progress, blockers, and what you need from the owner. Keep it short; the master reads it for the board meeting.

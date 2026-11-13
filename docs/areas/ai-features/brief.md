@@ -40,3 +40,7 @@ feature, never editing existing lines, and log it in `docs/decisions.md`. CSS be
 
 - Linking households: who invites whom, and how is the same person in two trees matched (an email, a confirmed invitation)?
 - Who sets the privacy of someone who is not a user (a grandparent, a child)?
+
+## Status file
+At the end of every meaningful round of work, update `docs/areas/ai-features/status.md` on your branch and commit it: what was done,
+what is in progress, blockers, and what you need from the owner. Keep it short; the master reads it for the board meeting.

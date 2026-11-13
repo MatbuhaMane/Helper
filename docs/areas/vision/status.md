@@ -27,6 +27,11 @@ Last update: 2026-11-13.
 
 ## In progress
 
+- **The heads' round** (decided):
+  - the joint test run starts now;
+  - the parents see it first;
+  - the wizard is built before the social layer.
+
 - **Batch 8, sent:**
   - the social layer, which unblocks goals part 2 (`docs/vision/social.md`);
   - the first-minute wizard, in a game feel (`docs/vision/first-minute.md`);
@@ -51,7 +56,6 @@ Last update: 2026-11-13.
 
 ## Needs the owner
 
-- **The joint test run:** when to start it, now or after the first measurement.
 - **The master is now the new CEO session** (the owner, 2026-11-13). From now on, copies go there only.
 - **Through the other departments:**
   - business: approving the founders' "free for life" track;

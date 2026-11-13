@@ -1089,6 +1089,22 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-13 – The road to the parents: the joint run now, the parents first, the wizard first (vision, the owner)
+
+Answered in the department heads' round:
+1. **The joint test run** (readiness bar, condition 5) starts now, in parallel with the CEO's speed measurement.
+2. **The parents see הָאֹהֶל first,** once it passes the bar: a small, forgiving circle, before the extended family. It
+   is a first step inside business decision 10 (the beta in the owner's extended family), not a change to it.
+3. **The first-minute wizard is built before the social layer,** since it is what the parents see first. The social
+   layer (goals part 2) follows.
+
+**Affects:**
+- **ai-features and design:** the wizard first.
+- **Business:** the beta begins with the parents; its clock and metrics start with the extended family.
+- **Vision:** the joint run starts now.
+
+Status: Decided (the owner).
+
 ## 2026-11-13 – The social layer, the first minute, and the app icon (vision, the owner)
 
 Three decisions, read back and confirmed together. Details: `docs/vision/social.md` and `docs/vision/first-minute.md`.

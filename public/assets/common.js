@@ -680,8 +680,7 @@
     if (want === ancientOn) return;
     ancientOn = want;
     if (want) {
-      if (!document.getElementById('phn-font')) document.head.append(el('link', { id: 'phn-font', rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Noto+Sans+Phoenician&display=swap' }));
-      document.documentElement.classList.add('ancient-ui'); if (!document.getElementById('phn-css')) document.head.append(el('style', { id: 'phn-css' }, ".ancient-ui .phn { font-family: 'Noto Sans Phoenician', var(--font, Rubik), sans-serif; }"));
+      document.documentElement.classList.add('ancient-ui'); if (!document.getElementById('phn-css')) document.head.append(el('style', { id: 'phn-css' }, ".ancient-ui .phn { font-family: 'Ohel Ivri', var(--font, Rubik), sans-serif; }"));
       ancientWalk(document.body);
       ancientObs = new MutationObserver((ms) => { for (const m of ms) { if (m.type === 'characterData') { if (!orig.has(m.target)) ancientNode(m.target); } else m.addedNodes.forEach(ancientWalk); } });
       ancientObs.observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -722,7 +721,7 @@
     if (text !== 1) root.style.fontSize = `${Math.round(text * 100)}%`;
     if (a.spacing === 'wide') root.dataset.spacing = 'wide';
     if (a.font === 'readable') root.dataset.font = 'readable';
-    else if (['heebo', 'round', 'serif'].includes(l.font)) root.dataset.font = l.font;   // the font chosen, before paint
+    else if (['heebo', 'round', 'serif', 'alef'].includes(l.font)) root.dataset.font = l.font;   // the font chosen, before paint
     if (a.contrast === 'high') root.dataset.contrast = 'high';
     if (a.motion === 'reduce') root.dataset.motion = 'reduce';
     if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;

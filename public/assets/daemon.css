@@ -58,6 +58,12 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-head { position: relative; display: flex; align-items: center; gap: 10px; padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
 .dm-head b { font-size: 1.05rem; font-weight: 500; }
 .dm-head .face { inline-size: 34px; block-size: 34px; border-radius: 50%; box-shadow: 0 0 0 2px var(--card); flex-shrink: 0; }
+/* the companion in the chat's head, instead of its name (vision batch 5): the drawn figure, small – alive (.f2, Figure2D
+   with size 44) or still as an icon (the same, mounted with { still: true }); the name stays for screen readers */
+.dm-head .dm-headfig { display: inline-grid; place-items: end center; flex-shrink: 0; margin-block: -8px -4px; }
+.dm-head .f2::after, .dm-tab .f2::after { display: none; }   /* no ground shadow in a head or a tab */
+/* the tab with a drawn figure: the figure peeks out of the round, its head above the edge */
+.dm-tab .f2 { pointer-events: none; }
 .dm-compose { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px 12px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--card) 70%, transparent); }
 .dm-compose textarea { flex: 1; min-inline-size: 0; resize: none; border-radius: 18px; padding: 10px 14px; line-height: 1.45; font: inherit; max-block-size: 140px; }
 .dm-compose .btn { border-radius: 50%; inline-size: 44px; block-size: 44px; padding: 0; display: grid; place-items: center; flex-shrink: 0; }
@@ -70,6 +76,23 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-tab[hidden] { display: none; }
 .dm-tab:hover, .dm-tab:focus-visible { padding-inline-end: 18px; }
 .dm-tab img { display: block; inline-size: 48px; block-size: 48px; border-radius: 50%; }
+/* The tab can be dragged (vision batch 5): docked to the end (the default above), docked to the start, or floating free
+   anywhere on the screen. daemon.js sets the state class and, while floating, the position (top/left, set on the element);
+   the place is kept per device. While dragged it lifts; let go near an edge and it docks there. */
+.dm-tab.dock-start { inset-inline-end: auto; inset-inline-start: 0; border-inline-end: 1px solid var(--line-strong); border-inline-start: 0;
+  border-start-start-radius: 0; border-end-start-radius: 0; border-start-end-radius: 30px; border-end-end-radius: 30px; padding-inline-end: 5px; padding-inline-start: 10px; }
+.dm-tab.dock-start:hover, .dm-tab.dock-start:focus-visible { padding-inline-end: 5px; padding-inline-start: 18px; }
+.dm-tab.free { inset: auto; border: 1px solid var(--line-strong); border-radius: 50%; padding: 5px; }
+.dm-tab.free:hover, .dm-tab.free:focus-visible { padding: 5px; transform: scale(1.05); }
+.dm-tab { touch-action: none; }
+.dm-tab.dragging { cursor: grabbing; transition: none; animation: none; transform: scale(1.1); box-shadow: 0 18px 40px -10px rgba(30, 20, 10, .45); border-radius: 50%; border: 1px solid var(--line-strong); padding: 5px; }
+/* where it would dock if let go: a soft glow on that edge */
+.dm-dock-hint { position: fixed; z-index: 15; inset-block: 0; inline-size: 6px; pointer-events: none; opacity: 0; transition: opacity .2s;
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--primary) 55%, transparent), transparent); }
+.dm-dock-hint.start { inset-inline-start: 0; }
+.dm-dock-hint.end { inset-inline-end: 0; }
+.dm-dock-hint.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .dm-tab.dragging, .dm-tab.free:hover { transform: none; } }
 .dm-stage[hidden] { display: none; }
 .dm-stage.leaving { transition: opacity .4s ease, transform .4s ease; opacity: 0; }
 body.dm-folded main { padding-block-end: 0; }
@@ -101,3 +124,7 @@ body.dm-folded main { padding-block-end: 0; }
 .dm-voice .name small { font-size: 11px; color: var(--olive, #c2b04e); font-weight: 700; }
 .dm-voice .play { width: 36px; padding: 0; display: grid; place-items: center; }
 .dm-voice .play .icon { width: 16px; height: 16px; fill: currentColor; }
+
+/* the companion's ways (without AI, docs/ai/without-ai.md #8): where to go, as round pills; the ✨ one stands out as the upgrade */
+.dm-balloon .acts .btn, .dm-msg .acts .btn { border-radius: 999px; font-size: .86rem; padding: 5px 12px; }
+.dm-balloon .acts .btn[href="/settings/"], .dm-msg .acts .btn[href="/settings/"] { background: color-mix(in srgb, var(--accent) 22%, var(--card)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--text); }

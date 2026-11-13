@@ -84,5 +84,12 @@ ok('ics: the place, escaped', un.includes('LOCATION:אצל דוד משה\\, חי
 ok('ics: lines of at most 75 octets', text.split('\r\n').every((l) => new TextEncoder().encode(l).length <= 75));
 ok('ics: all day without an hour', G.ics({ ...g, time: null }, 'a', 'u').includes('DTSTART;VALUE=DATE:20261205') && !G.ics({ ...g, time: null }, 'a', 'u').includes('PT2H'));
 
+/* ---- founding members: five invitees who confirmed ---- */
+const yes = (email = null) => ({ coming: 'yes', email });
+eq('five invitees confirmed', G.reachedFounding([yes(), yes(), yes(), yes('a@x'), yes('b@x')], 'host@x'), true);
+eq('the organiser\'s own answer does not count', G.confirmedGuests([yes('HOST@x'), yes(), yes(), yes(), yes()], 'host@x'), 4);
+eq('no and maybe do not count', G.confirmedGuests([yes(), { coming: 'no', email: null }, { coming: 'maybe', email: null }], 'host@x'), 1);
+eq('answers, not heads', G.reachedFounding([yes(), yes(), yes(), yes()], 'host@x'), false);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

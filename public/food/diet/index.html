@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#efeee6">
-  <title>דיאטה</title>
+  <title>תנועה ותזונה</title>
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/base.css">
@@ -15,10 +15,11 @@
   <script src="/assets/common.js"></script>
   <script src="/assets/launcher.js"></script>
   <script>
-  // Diet: the ways of eating the family follows; ketosis is the first (its dashboard lives in the groceries app).
-  H.folder({ title: 'דיאטה', sub: 'מעקב ותכנון לפי הדרך שבה אוכלים', back: { href: '/food/', label: 'אוכל' }, look: 'flat', apps: [
-    { href: '/groceries/#keto', ic: 'keto', name: 'קטוזיס', tint: '#c8f0ea', c1: '#6fe0d0', c2: '#1f8f8a' },
+  // תנועה ותזונה (vision batch 4, item 1; it was "דיאטה", the address stays): every tool for the ways of eating, הקפדה first;
+  // ketosis's dashboard lives in the groceries app. The new modes (batch 2, item 1) join here when they are built.
+  H.folder({ title: 'תנועה ותזונה', sub: 'הקפדה, הדרך שבה אוכלים, ומה מתאים לה', back: { href: '/food/', label: 'אוכל' }, look: 'flat', apps: [
     { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', tint: '#ffd9c2', c1: '#ffb07a', c2: '#e0533d' },
+    { href: '/groceries/#keto', ic: 'keto', name: 'קטוזיס', tint: '#c8f0ea', c1: '#6fe0d0', c2: '#1f8f8a' },
   ] });
   </script>
 </body>

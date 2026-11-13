@@ -1,11 +1,15 @@
 // Ketosis: each person's diet settings, meal log (eaten and planned), weight, and the nutrition values
 // (per 100 g) that the calculator and the shopping list use. Unknown foods are estimated by AI once and cached;
 // a family's own corrections override the shared estimate.
+// Without AI (docs/ai/without-ai.md #3; keto-plain.ts): a food's values come from Open Food Facts (label values, the
+// median of the matches; ODbL, so the page says where they came from), and a recipe's are worked out from its amounts
+// and the values per 100 g we have, saying which ingredients it could not tell.
 
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, sha1Hex, uid } from './core';
 import { normalizeName } from './kitchen';
+import { offValues, recipeFromFoods } from './keto-plain';
 
 const Settings = z.object({
   enabled: z.boolean(),
@@ -113,6 +117,31 @@ async function foodsFor(ctx: Ctx, household: string, keys?: string[]) {
   return out;
 }
 
+/** a food's values per 100 g from Open Food Facts (packaged products, Israeli ones in Hebrew too), or null */
+async function offLookup(name: string) {
+  try {
+    const url = `https://search.openfoodfacts.org/search?q=${encodeURIComponent(name)}&page_size=8&fields=product_name,nutriments,countries_tags`;
+    const r = await fetch(url, { headers: { accept: 'application/json', 'user-agent': 'HaOhel-keto/1.0 (family app)' }, cf: { cacheTtl: 86400 } } as RequestInit);
+    if (!r.ok) return null;
+    const d = (await r.json()) as { hits?: any[] };
+    return offValues(d.hits || [], name);
+  } catch { return null; }
+}
+/** the values of foods the AI could not estimate (none connected, no credit, or it failed), from Open Food Facts; kept
+    in the shared table as source 'off' (label values: better than a guess, so a later AI estimate does not replace them) */
+async function offFoods(ctx: Ctx, missing: Array<[string, string]>, known: Map<string, ReturnType<typeof toFood>>) {
+  const found = await Promise.all(missing.slice(0, 12).map(async ([key, name]) => [key, name, await offLookup(name)] as const));
+  const now = Date.now(), stmts = [];
+  for (const [key, name, v] of found) {
+    if (!v) continue;
+    const row: FoodRow = { household: '', key, name, ...v, unit_g: null, is_food: 1, source: 'off' };
+    known.set(key, toFood(row));
+    stmts.push(ctx.env.DB.prepare(`INSERT INTO foods (household, key, name, fat, protein, carbs, fiber, unit_g, is_food, source, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(household, key) DO NOTHING`).bind('', key, name, v.fat, v.protein, v.carbs, v.fiber, null, 1, 'off', now));
+  }
+  if (stmts.length) await ctx.env.DB.batch(stmts);
+}
+
 export async function listFoods(ctx: Ctx) {
   const u = requireUser(ctx);
   return json({ foods: [...(await foodsFor(ctx, u.household)).values()] });
@@ -140,13 +169,16 @@ export async function estimateFoods(ctx: Ctx) {
   const byKey = new Map(names.map((n) => [normalizeName(n) || n.toLowerCase(), n]));
   const known = await foodsFor(ctx, u.household, [...byKey.keys()]);
   const missing = [...byKey].filter(([k]) => !known.has(k));
-  if (missing.length) {
-    const est = await aiJson(ctx.env, {
-      prefer: 'gemini',
-      system: ESTIMATE_SYSTEM,
-      prompt: `Foods:\n${missing.map(([, n], i) => `${i + 1}. ${n}`).join('\n')}`,
-      schema: Estimate,
-    });
+  let via = 'ai';
+  const est = missing.length ? await aiJson(ctx.env, {
+    prefer: 'gemini',
+    system: ESTIMATE_SYSTEM,
+    prompt: `Foods:\n${missing.map(([, n], i) => `${i + 1}. ${n}`).join('\n')}`,
+    schema: Estimate,
+  }).catch(() => null) : null;
+  // without AI (none connected, no credit, or it failed): the labels in Open Food Facts
+  if (missing.length && !est) { via = 'off'; await offFoods(ctx, missing, known); }
+  if (missing.length && est) {
     const now = Date.now();
     const stmts = [];
     for (let i = 0; i < missing.length; i++) {
@@ -166,7 +198,7 @@ export async function estimateFoods(ctx: Ctx) {
     }
     if (stmts.length) await ctx.env.DB.batch(stmts);
   }
-  return json({ foods: [...byKey].map(([k, n]) => ({ ...(known.get(k) || { key: k, name: n, fat: 0, protein: 0, carbs: 0, fiber: 0, unit_g: null, is_food: false, source: 'none' }), asked: n })) });
+  return json({ via, foods: [...byKey].map(([k, n]) => ({ ...(known.get(k) || { key: k, name: n, fat: 0, protein: 0, carbs: 0, fiber: 0, unit_g: null, is_food: false, source: 'none' }), asked: n })) });
 }
 
 /* ---------------- a whole recipe ---------------- */
@@ -185,8 +217,8 @@ Keep each "name" as given, in the same order.`;
 
 /** Values per serving for a recipe (cached by its ingredients), for the ketosis pie at the top of a recipe. */
 export async function recipeNutrition(ctx: Ctx) {
-  requireUser(ctx);
-  const b = await body<{ title?: string; servings?: string; ingredients: { name: string; measure: string }[] }>(ctx.req);
+  const u = requireUser(ctx);
+  const b = await body<{ title?: string; servings?: string; ingredients: { name: string; measure: string }[]; known?: Record<string, unknown> }>(ctx.req);
   const ingredients = (Array.isArray(b.ingredients) ? b.ingredients : []).map((i) => ({ name: String(i.name || '').trim().slice(0, 160), measure: String(i.measure || '').trim().slice(0, 60) })).filter((i) => i.name).slice(0, 60);
   if (!ingredients.length) throw new HttpError(400, 'No ingredients');
   const key = await sha1Hex(JSON.stringify({ s: (b.servings || '').trim(), i: ingredients }));
@@ -198,7 +230,8 @@ export async function recipeNutrition(ctx: Ctx) {
     system: RECIPE_SYSTEM,
     prompt: `Recipe: ${(b.title || '').slice(0, 200)}\nServings stated: ${(b.servings || 'not stated').slice(0, 60)}\nIngredients:\n${ingredients.map((i, n) => `${n + 1}. ${i.measure ? i.measure + ' ' : ''}${i.name}`).join('\n')}`,
     schema: RecipeEstimate,
-  });
+  }).catch(() => null);
+  if (!est) return json(await plainRecipe(ctx, u.household, ingredients, b.servings || '', b.known));
   const clamp = (n: number) => Math.max(0, Math.min(5000, round1(Number(n) || 0)));
   const items = est.items.slice(0, ingredients.length).map((x, n) => ({
     name: ingredients[n]?.name || x.name, grams: clamp(x.grams), fat: clamp(x.fat), protein: clamp(x.protein), carbs: clamp(x.carbs), fiber: Math.min(clamp(x.fiber), clamp(x.carbs)),
@@ -213,6 +246,26 @@ export async function recipeNutrition(ctx: Ctx) {
   };
   await ctx.env.DB.prepare('INSERT INTO recipe_nutrition (key, data, created_at) VALUES (?, ?, ?) ON CONFLICT(key) DO NOTHING').bind(key, JSON.stringify(data), Date.now()).run();
   return json(data);
+}
+
+/** a recipe's values without AI: its amounts in grams, times the values per 100 g in our table (or Open Food Facts');
+    not cached, so that an AI can do it better later */
+async function plainRecipe(ctx: Ctx, household: string, ingredients: { name: string; measure: string }[], servings: string, sent?: Record<string, unknown>) {
+  const keyOf = (n: string) => normalizeName(n) || n.toLowerCase();
+  const known = await foodsFor(ctx, household, [...new Set(ingredients.map((i) => keyOf(i.name)))]);
+  // the values the page already knows (its built-in table): used for this sum only, never stored
+  const v = (x: unknown) => { const n = Number(x); return Number.isFinite(n) && n >= 0 && n <= 100 ? n : null; };
+  for (const i of ingredients) {
+    const f = (sent || {})[i.name] as Record<string, unknown> | undefined, k = keyOf(i.name);
+    if (!f || known.has(k)) continue;
+    const fat = v(f.fat), protein = v(f.protein), carbs = v(f.carbs), fiber = v(f.fiber) ?? 0, unit = Number(f.unit_g);
+    if (fat === null || protein === null || carbs === null) continue;
+    known.set(k, { key: k, name: i.name, fat, protein, carbs, fiber: Math.min(fiber, carbs), unit_g: unit > 0 && unit < 5000 ? unit : null, is_food: true, source: 'page' });
+  }
+  const missing = [...new Map(ingredients.filter((i) => !known.has(keyOf(i.name))).map((i) => [keyOf(i.name), i.name])).entries()];
+  if (missing.length) await offFoods(ctx, missing.slice(0, 10), known);
+  const r = recipeFromFoods(ingredients, (n) => { const f = known.get(keyOf(n)); return f && f.is_food ? f : null; }, servings);
+  return { ...r, via: 'plain' };
 }
 
 const FoodInput = z.object({

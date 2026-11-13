@@ -128,3 +128,14 @@ export function ics(g: Gathering, uid: string, url: string, now = new Date()) {
   lines.push('END:VEVENT', 'END:VCALENDAR');
   return lines.filter(Boolean).map(HD.fold).join('\r\n') + '\r\n';
 }
+
+/* Founding members (docs/business/founders.md, the owner's decision of 2026-11-13): the moment a gathering first has five
+   invitees who confirmed they are coming is recorded once, with its organiser, and kept forever – the founders' order and
+   "the millionth" are counted from it, and it cannot be rebuilt afterwards. Answers count, not heads; the organiser's own
+   answer does not. */
+export const FOUNDING_CONFIRMED = 5;
+/** how many invitees confirmed: answers "yes", each answer once, not the organiser's own */
+export function confirmedGuests(rsvps: Array<{ coming: string; email: string | null }>, hostEmail: string): number {
+  return rsvps.filter((r) => r.coming === 'yes' && (r.email || '').toLowerCase() !== hostEmail.toLowerCase()).length;
+}
+export const reachedFounding = (rsvps: Array<{ coming: string; email: string | null }>, hostEmail: string) => confirmedGuests(rsvps, hostEmail) >= FOUNDING_CONFIRMED;

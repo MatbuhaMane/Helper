@@ -11,10 +11,13 @@
 .app .ic { position: relative; inline-size: 76px; block-size: 76px; border-radius: 22px; display: grid; place-items: center; color: #fff;
   background: radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, .38), transparent 55%), linear-gradient(150deg, var(--c1), var(--c2));
   box-shadow: 0 10px 18px -8px color-mix(in srgb, var(--c2) 75%, transparent), inset 0 -3px 8px rgba(0, 0, 0, .12);
-  transition: transform .3s var(--ease-river), box-shadow .3s var(--ease-river); }
+  transition: transform .3s var(--ease-river); }
+.app .ic::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity .3s var(--ease-river);
+  box-shadow: 0 16px 24px -10px color-mix(in srgb, var(--c2) 80%, transparent); }
+.app:hover .ic::after { opacity: 1; }
 .app .ic .icon { inline-size: 36px; block-size: 36px; stroke-width: 1.9; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
 .app .name { font-size: .98rem; font-weight: 500; text-align: center; line-height: 1.25; }
-.app:hover .ic, .app:focus-visible .ic { transform: translateY(-3px) scale(1.04); box-shadow: 0 16px 24px -10px color-mix(in srgb, var(--c2) 80%, transparent), inset 0 -3px 8px rgba(0, 0, 0, .12); }
+.app:hover .ic, .app:focus-visible .ic { transform: translateY(-3px) scale(1.04); }
 .app:active .ic { transform: scale(.93); }
 .app:focus-visible { outline: none; }
 .app:focus-visible .ic { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--primary); }
@@ -50,6 +53,7 @@
 .apps-grid.flat .app .ic .icon { inline-size: 72px; block-size: 72px; stroke-width: 1.5; filter: none;
   fill: var(--tint, color-mix(in srgb, var(--c1) 55%, #fff)); stroke-linejoin: round; stroke-linecap: round; transition: transform .35s var(--ease-river); }
 .apps-grid.flat .app:hover .ic, .apps-grid.flat .app:focus-visible .ic { box-shadow: none; transform: translateY(-3px); }
+.apps-grid.flat .app .ic::after, .app .ic.art::after { display: none; }   /* (no shadow under a flat icon or a drawn tool) */
 .apps-grid.flat .app:hover .ic .icon { transform: rotate(-6deg) scale(1.06); }
 .apps-grid.flat .app:focus-visible .ic { outline: 3px solid var(--primary); outline-offset: 4px; }
 
@@ -69,3 +73,110 @@
 /* the tools themselves; the rail in soil, over the colours */
 .folder:has(> .apps-grid[aria-label="כלים"]) > .folder-head::after {
   background: linear-gradient(var(--soil), var(--soil)) 0 0 / 100% 3px no-repeat, linear-gradient(to right, #ffc062 0px 28px, #8cc4f5 28px 56px, #ff9ab8 56px 84px, #ffd65c 84px 112px, #86d9a0 112px 140px, #b9a3ff 140px 168px, #ffb68a 168px 196px); }
+/* The arrange mode (launcher.js): a long press, a right click or "סידור" – the tiles wiggle a little to say they can move,
+   a finger drags them (the page does not scroll under it), and each has a pin for the home page's ring */
+.apps-grid .app { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.folder-head .arrange-open { margin-block-start: 10px; } .folder-head .arrange-open[hidden] { display: none; }
+.arrange-bar { position: sticky; inset-block-start: calc(var(--appbar-h) + 8px); z-index: 6; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 8px 12px; margin-block-end: 18px; padding: 10px 12px 10px 16px; border-radius: 16px; background: var(--glass); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: var(--lift); font-size: .9rem; line-height: 1.5; }
+.arrange-bar[hidden] { display: none; }
+.apps-grid.arranging .app { touch-action: none; cursor: grab; animation: app-wiggle .9s ease-in-out infinite; animation-delay: calc(var(--n, 0) * -137ms); }
+.apps-grid.arranging .app:nth-child(even) { animation-direction: reverse; }
+@keyframes app-wiggle { 0%, 100% { rotate: -1.2deg; } 50% { rotate: 1.2deg; } }
+.apps-grid .app.dragging { z-index: 10; cursor: grabbing; animation: none; }
+.apps-grid .app.dragging .ic { box-shadow: 0 18px 30px -12px rgba(46, 42, 30, .45); }
+.apps-grid.arranging .app:focus-visible { outline: 3px solid var(--primary); outline-offset: 6px; border-radius: 18px; }
+/* the pin: faint when the tile is not on the ring, bright when it is */
+.app-pin { position: absolute; inset-block-start: -8px; inset-inline-start: 0; z-index: 2; inline-size: 32px; block-size: 32px; border-radius: 50%; display: grid; place-items: center;
+  font-size: .95rem; line-height: 1; cursor: pointer; border: 1px solid var(--line-strong); background: var(--card); box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .35);
+  filter: grayscale(1); opacity: .6; transition: opacity .2s, filter .2s, transform .2s var(--ease-river); touch-action: manipulation; }
+.app-pin[aria-pressed="true"] { filter: none; opacity: 1; border-color: color-mix(in srgb, var(--olive) 70%, var(--line)); background: color-mix(in srgb, var(--olive) 22%, var(--card)); }
+.app-pin:hover { opacity: 1; transform: scale(1.08); }
+.app-pin:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .apps-grid.arranging .app { animation: none; } }
+/* A folder's hero (H.folder({ hero })): the picture runs from edge to edge under the bar and fades into the page's own
+   background, so it is part of the page and not a card on it; the title stands in the fade, in the page's ink, with a
+   halo of the background behind its letters. It settles in with a slow, slight zoom (transform only). */
+.folder.with-hero { max-inline-size: 860px; }
+.folder-hero { position: relative; display: grid; grid-template: minmax(0, 1fr) / minmax(0, 1fr); isolation: isolate; overflow: hidden;
+  margin-inline: calc(50% - 50vw); margin-block: 0 18px; block-size: clamp(270px, 44vw, 560px); }
+.folder.with-hero:has(> .folder-hero:first-child) { padding-block-start: 0; }   /* the picture starts right under the bar */
+.folder-hero img { grid-area: 1 / 1; display: block; inline-size: 100%; block-size: 100%; object-fit: cover; object-position: 50% 60%;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 46%, rgba(0, 0, 0, .6) 68%, rgba(0, 0, 0, .18) 86%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 46%, rgba(0, 0, 0, .6) 68%, rgba(0, 0, 0, .18) 86%, transparent 100%);
+  animation: hero-in 1.6s var(--ease-river) both; }
+@keyframes hero-in { from { transform: scale(1.06); opacity: .6; } }
+.folder-hero .folder-hero-cap { grid-area: 1 / 1; z-index: 2; align-self: end; justify-self: center; inline-size: min(100% - 32px, 860px);
+  margin: 0; padding: 0 0 2px; text-align: start; display: grid; gap: 2px; color: var(--text);
+  text-shadow: 0 0 18px var(--bg), 0 0 6px var(--bg), 0 0 2px var(--bg); }
+.folder-hero .folder-hero-cap h1 { color: inherit; font-size: clamp(2.1rem, 1.3rem + 2.8vw, 3.2rem); }
+.folder-hero .folder-hero-cap p { color: var(--muted); font-size: clamp(.98rem, .88rem + .4vw, 1.12rem); }
+/* at night the daylit picture is dimmed a little, so it does not glare */
+:root[data-theme="dark"] .folder-hero img { filter: brightness(.82) saturate(.9); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .folder-hero img { filter: brightness(.82) saturate(.9); } }
+@media (max-width: 600px) { .folder-hero { block-size: clamp(250px, 72vw, 340px); margin-block-end: 14px; } }
+@media (prefers-reduced-motion: reduce) { .folder-hero img { animation: none; } }
+/* H.strip: a slider of cards under a folder's head. The cards snap; the edges fade where there is more to see; arrows on a
+   computer. A recipe or a place is a picture card; a note from the fridge is a small paper note. */
+.strip { margin-block: 4px 26px; display: grid; gap: 10px; min-inline-size: 0; }
+.strip[hidden] { display: none; }
+.strip-head { display: flex; align-items: center; gap: 10px; }
+.strip-head h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.strip-head .spacer { flex: 1; }
+.strip-more { color: var(--primary); text-decoration: none; font-size: .92rem; }
+.strip-more:hover { text-decoration: underline; }
+.strip-arrows { display: none; gap: 6px; }
+@media (hover: hover) and (pointer: fine) { .strip-arrows { display: inline-flex; } }
+.strip-arrow { inline-size: 34px; block-size: 34px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); font-family: inherit; font-size: 1.2rem; font-weight: 600; line-height: 1;
+  cursor: pointer; display: grid; place-items: center; transition: border-color var(--dur-quick), color var(--dur-quick), opacity var(--dur-quick); }
+.strip-arrow:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
+.strip-arrow:disabled { opacity: .35; cursor: default; }
+.strip-arrow:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.strip-track { display: flex; gap: 12px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; scrollbar-width: none;
+  padding: 4px 16px 12px; margin-inline: -16px; scroll-padding-inline: 16px; outline: none;
+  --fade-s: 26px; --fade-e: 26px;
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--fade-s), #000 calc(100% - var(--fade-e)), transparent);
+  mask-image: linear-gradient(to left, transparent, #000 var(--fade-s), #000 calc(100% - var(--fade-e)), transparent); }
+.strip-track::-webkit-scrollbar { display: none; }
+.strip.at-start .strip-track { --fade-s: 0px; }
+.strip.at-end .strip-track { --fade-e: 0px; }
+.strip-card { flex: 0 0 auto; inline-size: 220px; scroll-snap-align: start; display: grid; grid-template-rows: auto 1fr; overflow: hidden; text-align: start;
+  border-radius: 18px; border: 1px solid var(--line); background: var(--card); color: var(--text); text-decoration: none; font: inherit; padding: 0; cursor: pointer;
+  box-shadow: 0 1px 2px rgba(46, 42, 30, .06); transition: transform var(--dur-quick) var(--ease-river), border-color var(--dur-quick); }
+.strip-card:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+.strip-card:active { transform: scale(.98); }
+.strip-card:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.strip-pic { display: block; aspect-ratio: 4 / 3; background: color-mix(in srgb, var(--olive) 18%, var(--card)); overflow: hidden; }
+.strip-pic img { display: block; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.strip-pic.emoji { display: grid; place-items: center; font-size: 3rem; }
+.strip-body { display: grid; gap: 3px; align-content: start; padding: 10px 12px 12px; min-inline-size: 0; }
+.strip-kicker { font-size: .74rem; font-weight: 600; letter-spacing: .02em; color: var(--olive-ink); }
+.strip-card.kind-recipe .strip-kicker { color: var(--primary); }
+.strip-card.kind-place .strip-kicker { color: #9a4a2a; }
+:root[data-theme="dark"] .strip-card.kind-place .strip-kicker { color: #f0a080; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .strip-card.kind-place .strip-kicker { color: #f0a080; } }
+.strip-title { font-weight: 600; font-size: .98rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.strip-sub { color: var(--muted); font-size: .84rem; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/* a note from the fridge: no picture, a warm paper with a folded corner */
+.strip-card.kind-fridge { inline-size: 200px; grid-template-rows: 1fr; align-self: start; border-color: color-mix(in srgb, var(--olive) 45%, var(--line));
+  background: linear-gradient(225deg, color-mix(in srgb, var(--olive) 30%, var(--card)) 0 14px, transparent 14px), color-mix(in srgb, var(--olive) 12%, var(--card)); }
+.strip-card.kind-fridge .strip-body { padding: 14px 14px 14px; gap: 5px; }
+.strip-card.kind-fridge .strip-kicker { color: var(--text); font-size: .8rem; }
+/* what is urgent: about to go off (amber), already gone off (the danger colour) */
+.strip-card.tone-soon { border-color: color-mix(in srgb, #e0a83a 65%, var(--line)); }
+.strip-card.tone-soon .strip-kicker { color: #8a5a0c; }
+.strip-card.tone-gone { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
+.strip-card.tone-gone .strip-kicker { color: var(--danger); }
+:root[data-theme="dark"] .strip-card.tone-soon .strip-kicker { color: #f0c47c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .strip-card.tone-soon .strip-kicker { color: #f0c47c; } }
+.strip-pic.emoji { color: var(--olive-ink); font-weight: 600; }
+/* while the page fetches: quiet cards that breathe */
+.strip-card.waiting { cursor: default; pointer-events: none; }
+.strip-card.waiting .strip-pic { background: color-mix(in srgb, var(--text) 6%, var(--card)); }
+.strip-card.waiting i { display: block; block-size: 10px; border-radius: 6px; background: color-mix(in srgb, var(--text) 8%, var(--card)); }
+.strip-card.waiting i + i { inline-size: 60%; }
+.strip-card.waiting { animation: strip-breathe 1.4s ease-in-out infinite alternate; }
+@keyframes strip-breathe { to { opacity: .55; } }
+@media (max-width: 600px) { .strip-card { inline-size: min(72vw, 240px); } .strip-card.kind-fridge { inline-size: min(60vw, 210px); } }
+@media (prefers-reduced-motion: reduce) { .strip-card:hover { transform: none; } .strip-card.waiting { animation: none; } }

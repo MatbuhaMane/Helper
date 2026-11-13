@@ -204,3 +204,16 @@ body.mu-drop-left::before, body.mu-drop-right::after { inline-size: 26px; backgr
 .mu-unit.empty .lybtn { display: none; }
 .mu-btn.lybtn { color: var(--muted); }
 .mu-btn.lybtn:hover { color: var(--primary); }
+
+/* a gentle word from the side (a song recognised; vision batch 4, item 10): music.js slides it in and out from the
+   screen's edge; it sits above the tab bar on a phone */
+.mu-peek { position: fixed; z-index: 60; inset-inline-end: 12px; inset-block-end: calc(var(--tabbar-h, 0px) + 16px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; gap: 8px; max-inline-size: min(340px, calc(100vw - 24px)); padding: 10px 10px 10px 14px; padding-inline: 14px 10px;
+  border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-border); box-shadow: var(--lift); color: var(--text);
+  -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); touch-action: pan-y; }
+.mu-peek > span { flex: 1; font-size: .92rem; line-height: 1.4; min-inline-size: 0; }
+
+/* moods: a row of chips (a tap searches for it) */
+.mu-moods { display: flex; flex-wrap: wrap; gap: 6px; margin-block: 8px; }
+.mu-moods .chip { white-space: nowrap; }
+@media (max-width: 520px) { .mu-moods { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding-inline: 4px; } .mu-moods::-webkit-scrollbar { display: none; } }

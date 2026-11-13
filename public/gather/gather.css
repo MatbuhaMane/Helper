@@ -93,10 +93,20 @@ main.wide > .ga > p.muted { margin: 0; line-height: 1.55; }
 .ga .folder-back:hover { color: var(--primary); }
 .ga > section > h2 { margin-block-end: 8px; }
 .ga-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.ga-row { gap: 6px !important; }
+.ga-row { gap: 6px !important; position: relative; transition: transform var(--dur-quick) var(--ease-river), border-color var(--dur-quick); }
 .ga-row h3 { margin: 0; font-size: 1.05rem; }
 .ga-row h3 a { color: var(--text); text-decoration: none; }
-.ga-row h3 a:hover { color: var(--primary); }
+/* the whole card opens the gathering (its title's link covers it); it lifts under the pointer and gives under a finger –
+   on transform only, so nothing is laid out again while it moves */
+.ga-row h3 a::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.ga-row h3 a:focus-visible { outline: none; }
+.ga-row:has(h3 a:focus-visible) { outline: 3px solid var(--primary); outline-offset: 2px; }
+.ga-row:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+.ga-row:hover h3 a { color: var(--primary); }
+.ga-row:active { transform: scale(.98); }
+/* from the list to a gathering and back: the page crossfades instead of flashing (a View Transition; both are /gather/) */
+@view-transition { navigation: auto; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; animation-timing-function: var(--ease-river); }
 .ga-row p { margin: 0; }
 .ga-empty { display: flex !important; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0; }
 .ga-ideas ul, .ga-coming ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -123,4 +133,4 @@ main.wide > .ga > p.muted { margin: 0; line-height: 1.55; }
 .ga-check { display: flex !important; align-items: center; gap: 8px; color: var(--text) !important; font-size: .95rem !important; }
 .ga-check input { inline-size: 18px; block-size: 18px; margin: 0; accent-color: var(--primary); }
 @media (max-width: 520px) { .ga-two { grid-template-columns: minmax(0, 1fr); } .ga .card { padding: 16px 14px 14px; border-radius: 20px; } }
-@media (prefers-reduced-motion: reduce) { .ga * { transition: none !important; } }
+@media (prefers-reduced-motion: reduce) { .ga * { transition: none !important; } .ga-row:hover, .ga-row:active { transform: none; } @view-transition { navigation: none; } }

@@ -1,13 +1,15 @@
 // Recipes from all over the world: Claude searches the web in the languages the dish is cooked in,
 // the results come back ranked by relevance, and an opened recipe is translated into comfortable Hebrew
 // (metric units, clear steps) by Gemini, falling back to Claude. Both searches and translations are cached.
+// Without AI (docs/ai/without-ai.md #5): the page searches an open recipe database (TheMealDB, groceries/app.js), and a
+// recipe page that holds a structured recipe opens as it is written, in its own language, with Google's translation.
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { BetaContentBlock, BetaMessageParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser } from './core';
-import { recipeFromJsonLd } from './kitchen';
+import { recipeFromJsonLd, recipeFromPage } from './recipe-parse';
 import { fetchPage, readable } from './web';
 
 const SEARCH_MODEL = 'claude-sonnet-5-5';
@@ -352,7 +354,8 @@ export async function open(ctx: Ctx) {
   if (cached && Date.now() - cached.created_at < RECIPE_TTL) return json({ recipe: JSON.parse(cached.data), cached: true });
 
   const page = await fetchPage(url);
-  const ld = recipeFromJsonLd(page.html, url);
+  // what the page itself holds (its structured recipe, or the lists under its headings) is cleaner material than the raw text
+  const ld = recipeFromJsonLd(page.html, url) || recipeFromPage(page.html, url);
   let material: string;
   if (ld && ld.ingredients.length) {
     material = JSON.stringify({ title: ld.title, description: ld.notes, ingredients: ld.ingredients.map((i) => [i.measure, i.name].filter(Boolean).join(' ')), steps: ld.steps });
@@ -361,11 +364,21 @@ export async function open(ctx: Ctx) {
     material = `Page title: ${art?.title || ''}\n\n${(art?.textContent || '').replace(/\s+\n/g, '\n').slice(0, 28000)}`;
     if (material.length < 250) throw new HttpError(422, 'no_recipe_found');
   }
-  const t = await aiJson(ctx.env, { prefer: 'gemini', fast: true, effort: 'low', system: TRANSLATE_SYSTEM, prompt: `Recipe page: ${url}\n\n${material}`, schema: Translated });
-  if (!t.found || !t.ingredients.length) throw new HttpError(422, 'no_recipe_found');
+  const t = await aiJson(ctx.env, { prefer: 'gemini', fast: true, effort: 'low', system: TRANSLATE_SYSTEM, prompt: `Recipe page: ${url}\n\n${material}`, schema: Translated }).catch(() => null);
 
   let host = '';
   try { host = new URL(page.finalUrl || url).hostname.replace(/^www\./, ''); } catch { /* ignore */ }
+  if (!t) {
+    // no AI to translate: the page's own structured recipe, as written (not kept, so it is translated once there is AI)
+    if (!ld || !ld.ingredients.length) throw new HttpError(503, 'ai_not_configured');
+    const site = (b.site || host).trim();
+    return json({ recipe: {
+      title: ld.title || site, subtitle: `מקור: ${site} · בשפת המקור (בלי תרגום)`, image: ld.image || page.image || null, source_url: url,
+      ingredients: ld.ingredients.filter((i) => i.name.trim()), steps: ld.steps.filter((s) => s.trim()), notes: ld.notes || null, tags: [],
+      meta: { site, untranslated: true, translate: `https://translate.google.com/translate?sl=auto&tl=iw&u=${encodeURIComponent(url)}` },
+    } });
+  }
+  if (!t.found || !t.ingredients.length) throw new HttpError(422, 'no_recipe_found');
   const site = (b.site || host).trim();
   const country = (t.country || b.country || '').trim();
   const recipe = {

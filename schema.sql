@@ -725,3 +725,244 @@ CREATE TABLE IF NOT EXISTS invite_joins (
   exp        INTEGER NOT NULL,
   used       INTEGER NOT NULL DEFAULT 0
 );
+
+-- מסעדות שלנו: the household's own list of restaurants (server/restaurants.ts)
+CREATE TABLE IF NOT EXISTS restaurants (
+  household  TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  place      TEXT,
+  cuisine    TEXT,
+  kosher     TEXT,             -- '' (not known), kosher, mehadrin, no
+  link       TEXT,
+  phone      TEXT,
+  note       TEXT,
+  place_id   TEXT,             -- Google's place ID, when it came from a search (the only thing of Google's that may be kept)
+  fav        INTEGER NOT NULL DEFAULT 0,
+  visited_at INTEGER,
+  visited_by TEXT,
+  created_by TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  deleted    INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (household, id)
+);
+
+-- restaurants from Google Places: searches per person per month (server/places.ts), nothing of the answers
+CREATE TABLE IF NOT EXISTS places_usage (
+  email TEXT NOT NULL,
+  month TEXT NOT NULL,          -- YYYY-MM
+  n     INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (email, month)
+);
+
+-- ניהול מטרות: goals → processes (checklists) → small daily steps, each person's own (server/goals.ts)
+CREATE TABLE IF NOT EXISTS goals (
+  email      TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  why        TEXT,
+  kind       TEXT NOT NULL,      -- short (under a day), regular, long (over a year)
+  due        TEXT,               -- YYYY-MM-DD
+  status     TEXT NOT NULL,      -- active, done, archived, deleted
+  days       TEXT,               -- JSON [weekday 0-6]: the days to work on it (none: every day but the rest day)
+  time       TEXT,               -- HH:MM
+  template   TEXT,
+  sort       INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  done_at    INTEGER,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS goal_processes (
+  email      TEXT NOT NULL,
+  goal_id    TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  sort       REAL NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS goal_steps (
+  email      TEXT NOT NULL,
+  goal_id    TEXT NOT NULL,
+  process_id TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  sort       REAL NOT NULL DEFAULT 0,
+  small      INTEGER NOT NULL DEFAULT 0,   -- 1: a 5-minute version ("נתקעתי")
+  done_at    INTEGER,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS goal_reviews (
+  email      TEXT NOT NULL,
+  week       TEXT NOT NULL,      -- the day of the review, YYYY-MM-DD
+  good       TEXT,
+  stuck      TEXT,
+  change     TEXT,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, week)
+);
+CREATE TABLE IF NOT EXISTS goal_badges (
+  email     TEXT NOT NULL,
+  badge     TEXT NOT NULL,
+  earned_at INTEGER NOT NULL,
+  PRIMARY KEY (email, badge)
+);
+
+-- עוזר מחקר: researches; their notes are the hub's own notes (research_notes links them, a note in several researches);
+-- questions and threads; sources as CSL-JSON (Crossref's and OpenAlex's metadata, no abstracts). server/researches.ts
+CREATE TABLE IF NOT EXISTS researches (
+  email      TEXT NOT NULL,
+  id         TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  purpose    TEXT NOT NULL,      -- paper, book, talk, post, work, personal, family
+  aim        TEXT,
+  style      TEXT NOT NULL,      -- apa, mla, chicago
+  status     TEXT NOT NULL,      -- active, deleted
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS research_notes (
+  email       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  note_id     TEXT NOT NULL,
+  sort        REAL NOT NULL DEFAULT 0,
+  added_at    INTEGER NOT NULL,
+  PRIMARY KEY (email, research_id, note_id)
+);
+CREATE TABLE IF NOT EXISTS research_threads (
+  email       TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  text        TEXT NOT NULL,
+  status      TEXT NOT NULL,     -- open, answered, parked
+  answer      TEXT,
+  note_id     TEXT,
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE TABLE IF NOT EXISTS research_sources (
+  email       TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  csl         TEXT NOT NULL,     -- JSON, CSL fields
+  doi         TEXT,
+  oa_url      TEXT,              -- an open copy (OpenAlex)
+  retracted   INTEGER NOT NULL DEFAULT 0,
+  cited       INTEGER,
+  note        TEXT,
+  reliability INTEGER,           -- 1-5, the person's own mark
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+
+-- עוזר מחקר, step 2: a journal of a few lines a day, and drafts written from the notes (server/research-writing.ts)
+CREATE TABLE IF NOT EXISTS research_journal (
+  email       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  day         TEXT NOT NULL,     -- YYYY-MM-DD
+  text        TEXT NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, research_id, day)
+);
+CREATE TABLE IF NOT EXISTS research_drafts (
+  email       TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  title       TEXT NOT NULL,
+  body        TEXT NOT NULL,     -- Markdown, with [@source id] citations and [[note]] links
+  drive_id    TEXT,              -- the Google Doc it was saved as
+  template    TEXT,              -- imrad, seminar, essay, talk, post (research-pack.ts)
+  target      INTEGER,           -- the length to aim for, in words
+  numbered    INTEGER NOT NULL DEFAULT 0,   -- 1: numbered headings, cross-references by number
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+
+-- עוזר מחקר, step 3, shared research (server/researches.ts, research-share.ts): members in roles, the history of changes
+-- (to restore), and comments. Rows are kept under the research owner's address (owner).
+CREATE TABLE IF NOT EXISTS research_members (
+  owner       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  email       TEXT NOT NULL,
+  role        TEXT NOT NULL,            -- editor, contributor, reader
+  status      TEXT NOT NULL,            -- invited, active
+  outside     INTEGER NOT NULL DEFAULT 0, -- 1: not of the owner's household (joins only on their own approval)
+  invited_by  TEXT,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (owner, research_id, email)
+);
+CREATE INDEX IF NOT EXISTS research_members_email ON research_members (email, status);
+CREATE TABLE IF NOT EXISTS research_history (
+  owner       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  at          INTEGER NOT NULL,
+  by          TEXT NOT NULL,
+  kind        TEXT NOT NULL,            -- note, thread, source, draft, member
+  item_id     TEXT NOT NULL,
+  action      TEXT NOT NULL,            -- add, edit, remove, restore
+  before      TEXT,                     -- JSON: how it was (what a restore brings back)
+  after       TEXT,
+  PRIMARY KEY (owner, research_id, id)
+);
+CREATE INDEX IF NOT EXISTS research_history_id ON research_history (id);
+CREATE TABLE IF NOT EXISTS research_comments (
+  owner       TEXT NOT NULL,
+  research_id TEXT NOT NULL,
+  id          TEXT NOT NULL,
+  on_kind     TEXT NOT NULL,            -- research, note, thread, source, draft
+  on_id       TEXT NOT NULL DEFAULT '',
+  by          TEXT NOT NULL,
+  text        TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (owner, research_id, id)
+);
+CREATE INDEX IF NOT EXISTS research_comments_id ON research_comments (id);
+
+-- Paid companion figures a person has (server/figures.ts): bought with credits (usd, counted as spent in
+-- credits.balance), or given to the owner's family at the owner's cost (how = 'family', usd 0).
+CREATE TABLE IF NOT EXISTS figure_owned (
+  email     TEXT NOT NULL,
+  figure    TEXT NOT NULL,                     -- Figure2D's id (figures-rules.ts PAID)
+  usd       REAL NOT NULL DEFAULT 0,
+  how       TEXT NOT NULL,                     -- family | credits
+  bought_at INTEGER NOT NULL,
+  PRIMARY KEY (email, figure)
+);
+
+-- Founding members (docs/business/founders.md; the owner's decision of 2026-11-13): the moment each gathering first had five
+-- invitees who confirmed, and its organiser. Written once and never rewritten – it cannot be rebuilt afterwards. seq runs
+-- forever ("the millionth" is counted from it, also after the beta window); dev: from a dev server, never counted. The owner
+-- approves the founders' list in the room at the end of the window (fake gatherings filtered there). server/gather.ts
+CREATE TABLE IF NOT EXISTS gathering_milestones (
+  seq        INTEGER PRIMARY KEY AUTOINCREMENT,
+  gathering  TEXT NOT NULL UNIQUE,
+  host_email TEXT NOT NULL,
+  household  TEXT NOT NULL,
+  reached_at INTEGER NOT NULL,
+  confirmed  INTEGER NOT NULL,
+  dev        INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS gathering_milestones_host ON gathering_milestones(host_email, reached_at);
+
+-- The app lock and the tree lock, per person (server/lock.ts; the owner's design, docs/decisions.md "Locks and privacy").
+-- The 4-digit code only as PBKDF2 over an HMAC with a pepper from VAULT_KEY, salted per person.
+CREATE TABLE IF NOT EXISTS user_locks (
+  email       TEXT PRIMARY KEY,
+  app         TEXT NOT NULL DEFAULT 'off',     -- off | pin | bio
+  tree        TEXT NOT NULL DEFAULT 'off',     -- off | pin | bio
+  autolock    INTEGER NOT NULL DEFAULT 5,      -- minutes away before the app locks itself: 1 | 5 | 15 | 60
+  pin_hash    TEXT,
+  pin_salt    TEXT,
+  fails       INTEGER NOT NULL DEFAULT 0,
+  pause_until INTEGER NOT NULL DEFAULT 0,
+  closed      INTEGER NOT NULL DEFAULT 0,      -- 1: ten wrong codes, open again with a new Google sign-in
+  tip_hidden  INTEGER NOT NULL DEFAULT 0,      -- "לא להציג שוב" on the tree's security tip
+  updated_at  INTEGER NOT NULL
+);

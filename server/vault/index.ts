@@ -14,6 +14,8 @@ import { defaultStore, store, StoreName } from './store';
 import { challenge, verifyAssertion, verifyRegistration } from './webauthn';
 import { backupStatus, driveDelete, nightly, readWithFailover, replicate, setState } from './backup';
 import * as K from './kin';
+import { ACCESS, Level, TRUST_MS, deviceLabel, trusted } from './access';
+import { treeOpen } from '../lock';
 
 const IDLE = 15 * 60e3, MAX = 2 * 3600e3, FRESH = 10 * 60e3, KEEP_DELETED = 30 * 864e5;
 const MAX_FILE = 25 * 1024 * 1024;
@@ -61,11 +63,27 @@ async function requireUnlocked(ctx: Ctx): Promise<Member> {
   return u;
 }
 
+/** the tree: open to a signed-in member of the household, unless the person locked it (a code or a passkey; server/lock.ts) –
+    then opened by that lock for 15 minutes from its last use. The owner's decision, docs/decisions.md "Locks and privacy":
+    it replaces the trusted device. Documents and the rest stay 'fresh' (a passkey, or a Google sign-in from the last 10 minutes). */
+async function requireTree(ctx: Ctx): Promise<Member> {
+  const u = requireUser(ctx);
+  if (await treeOpen(ctx, u.email)) return u;
+  throw new HttpError(423, 'tree_locked');
+}
+/** the level a route needs, from the one table that decides it (access.ts ACCESS) */
+const need = (ctx: Ctx, level: Level) => (level === 'tree' ? requireTree(ctx) : requireUnlocked(ctx));
+
 async function unlock(ctx: Ctx, u: Member, how: string) {
   const now = Date.now();
   await ctx.env.DB.prepare('INSERT INTO vault_unlocks (sid, email, until, hard_until) VALUES (?, ?, ?, ?) ON CONFLICT(sid) DO UPDATE SET email = excluded.email, until = excluded.until, hard_until = excluded.hard_until')
     .bind(sid(ctx), u.email, now + IDLE, now + MAX).run();
+  // this device is now trusted for the tree, 30 days from each use (a coarse name for the list, never the whole User-Agent)
+  const was = await ctx.env.DB.prepare('SELECT vault_trust_until FROM sessions WHERE id = ?').bind(sid(ctx)).first<{ vault_trust_until: number | null }>();
+  await ctx.env.DB.prepare('UPDATE sessions SET vault_trust_until = ?, vault_trust_used = ?, vault_trust_since = CASE WHEN ? THEN vault_trust_since ELSE ? END, vault_trust_label = ? WHERE id = ?')
+    .bind(now + TRUST_MS, now, trusted(was?.vault_trust_until, now) ? 1 : 0, now, deviceLabel(ctx.req.headers.get('user-agent')), sid(ctx)).run();
   await audit(ctx, u, 'unlock:' + how, null, null);
+  if (!trusted(was?.vault_trust_until, now)) await audit(ctx, u, 'trust:device', deviceLabel(ctx.req.headers.get('user-agent')), null);
 }
 
 /* ---------------- status, locking ---------------- */
@@ -73,20 +91,24 @@ async function unlock(ctx: Ctx, u: Member, how: string) {
 export async function status(ctx: Ctx) {
   const u = requireUser(ctx);
   const now = Date.now();
-  const [row, keys, age] = await Promise.all([
+  const [row, keys, age, s] = await Promise.all([
     ctx.env.DB.prepare('SELECT until, hard_until FROM vault_unlocks WHERE sid = ?').bind(sid(ctx)).first<{ until: number; hard_until: number }>(),
     ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM passkeys WHERE email = ?').bind(u.email).first<{ n: number }>(),
     sessionAge(ctx),
+    ctx.env.DB.prepare('SELECT vault_trust_until FROM sessions WHERE id = ?').bind(sid(ctx)).first<{ vault_trust_until: number | null }>(),
   ]);
   const open = !!row && row.until > now && row.hard_until > now;
-  return json({ unlocked: open, until: open ? Math.min(row!.until, row!.hard_until) : null, passkeys: keys?.n || 0, fresh: age < FRESH, configured: !!(ctx.env.VAULT_KEY || ctx.env.DEV_MODE === '1') });
+  return json({ unlocked: open, until: open ? Math.min(row!.until, row!.hard_until) : null, trusted: trusted(s?.vault_trust_until, now), passkeys: keys?.n || 0, fresh: age < FRESH, configured: !!(ctx.env.VAULT_KEY || ctx.env.DEV_MODE === '1') });
 }
 
 export async function lock(ctx: Ctx) {
   const u = requireUser(ctx);
   await ctx.env.DB.prepare('DELETE FROM vault_unlocks WHERE sid = ?').bind(sid(ctx)).run();
-  // a lock is a lock: the recent Google sign-in no longer counts – opening again takes a passkey or a new sign-in
-  await ctx.env.DB.prepare('UPDATE sessions SET created_at = 0 WHERE id = ?').bind(sid(ctx)).run();
+  // a lock is a lock: the recent Google sign-in no longer counts – opening again takes a passkey or a new sign-in –
+  // and this device is no longer trusted for the tree. With ?keep=1 (the page, after five minutes away) only the
+  // documents' unlock closes and the device stays trusted.
+  const keep = ctx.url.searchParams.get('keep') === '1';
+  await ctx.env.DB.prepare(keep ? 'UPDATE sessions SET created_at = 0 WHERE id = ?' : 'UPDATE sessions SET created_at = 0, vault_trust_until = NULL WHERE id = ?').bind(sid(ctx)).run();
   await audit(ctx, u, 'lock', null, null);
   return json({ ok: true });
 }
@@ -152,12 +174,12 @@ export async function passkeyAdd(ctx: Ctx) {
 }
 
 export async function passkeyList(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.passkeyList);
   const { results } = await ctx.env.DB.prepare('SELECT id, label, created_at, last_used FROM passkeys WHERE email = ? ORDER BY created_at').bind(u.email).all();
   return json({ passkeys: results });
 }
 export async function passkeyRemove(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.passkeyRemove);
   await ctx.env.DB.prepare('DELETE FROM passkeys WHERE id = ? AND email = ?').bind(decodeURIComponent(ctx.params.id), u.email).run();
   await audit(ctx, u, 'passkey:remove', ctx.params.id.slice(0, 8), null);
   return json({ ok: true });
@@ -195,7 +217,7 @@ async function person(ctx: Ctx, u: Member, id: string): Promise<PersonRow> {
 }
 
 export async function tree(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.tree);
   // the deleted files whose 30 days have passed go for good (their ciphertext too)
   ctx.waitUntil(purge(ctx));
   const v = await viewerOf(ctx, u);
@@ -220,7 +242,7 @@ export async function tree(ctx: Ctx) {
 const clean = (s: unknown, n: number) => String(s ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
 
 export async function personGet(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.personGet);
   const p = await person(ctx, u, ctx.params.id);
   const v = await viewerOf(ctx, u), who = whoFor(v, p), card = await cardOf(ctx, p);
   const s = K.view(card, 'household', who)!;
@@ -242,7 +264,7 @@ async function relation(ctx: Ctx, u: Member, id: unknown) {
 }
 
 export async function personSave(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.personSave);
   const b = await body<{ name?: string; details?: Record<string, string>; parent1?: string; parent2?: string; partner?: string; child?: string; member?: string }>(ctx.req);
   const id = ctx.params.id || uid();
   const v = await viewerOf(ctx, u);
@@ -283,7 +305,7 @@ export async function personSave(ctx: Ctx) {
 }
 
 export async function personDelete(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.personDelete);
   const p = await person(ctx, u, ctx.params.id);
   await ctx.env.DB.prepare('UPDATE family_people SET deleted_at = ? WHERE id = ?').bind(Date.now(), p.id).run();
   await ctx.env.DB.prepare('DELETE FROM family_links WHERE household = ? AND (a = ? OR b = ?)').bind(u.household, p.id, p.id).run();
@@ -348,12 +370,12 @@ async function addLink(ctx: Ctx, u: Member, b: { type: string; a: string; b: str
 }
 
 export async function linkAdd(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.linkAdd);
   const b = await body<{ type: string; a: string; b: string; kind?: string; status?: string; since?: string; until?: string }>(ctx.req);
   return json({ id: await addLink(ctx, u, b) });
 }
 export async function linkSave(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.linkSave);
   const l = await ctx.env.DB.prepare('SELECT * FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).first<Link>();
   if (!l) throw new HttpError(404, 'not_found');
   const b = await body<{ kind?: string; status?: string; since?: string; until?: string }>(ctx.req);
@@ -365,7 +387,7 @@ export async function linkSave(ctx: Ctx) {
   return json({ ok: true });
 }
 export async function linkDelete(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.linkDelete);
   await ctx.env.DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).run();
   await audit(ctx, u, 'delete:link', ctx.params.id, null);
   return json({ ok: true });
@@ -403,7 +425,7 @@ const view = async (ctx: Ctx, it: ItemRow) => ({
 });
 
 export async function items(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.items);
   const p = await person(ctx, u, ctx.params.id);
   if (await filesHidden(ctx, u, p)) return json({ items: [], hidden: true });
   const trash = ctx.url.searchParams.get('trash') === '1';
@@ -413,7 +435,7 @@ export async function items(ctx: Ctx) {
 }
 
 export async function itemAdd(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.itemAdd);
   await rateLimit(ctx, 'upload:' + u.email, 120, 3600e3);
   const form = await ctx.req.formData();
   const p = await person(ctx, u, String(form.get('person') || ''));
@@ -448,7 +470,7 @@ export async function itemAdd(ctx: Ctx) {
 
 /** A file, decrypted for the person who may see it: never cached, never run, always a download (the page shows it from memory). */
 export async function itemFile(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.itemFile);
   const it = await item(ctx, u, ctx.params.id);
   if (!it.object_key || !it.dek) throw new HttpError(404, 'no_file');
   const owner = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND household = ?').bind(it.person_id, u.household).first<PersonRow>();
@@ -464,7 +486,7 @@ export async function itemFile(ctx: Ctx) {
 }
 
 export async function itemSave(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.itemSave);
   const it = await item(ctx, u, ctx.params.id);
   const b = await body<{ title?: string; note?: string; private?: boolean; photo?: boolean }>(ctx.req);
   // only the one who added it may make it private or shared again
@@ -478,7 +500,7 @@ export async function itemSave(ctx: Ctx) {
 }
 
 export async function itemDelete(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.itemDelete);
   const it = await item(ctx, u, ctx.params.id);
   await ctx.env.DB.prepare('UPDATE vault_items SET deleted_at = ? WHERE id = ?').bind(Date.now(), it.id).run();
   await ctx.env.DB.prepare('UPDATE family_people SET photo_item = NULL WHERE photo_item = ?').bind(it.id).run();
@@ -487,7 +509,7 @@ export async function itemDelete(ctx: Ctx) {
 }
 
 export async function itemRestore(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.itemRestore);
   const it = await item(ctx, u, ctx.params.id, true);
   if (!it.deleted_at) return json({ ok: true });
   await ctx.env.DB.prepare('UPDATE vault_items SET deleted_at = NULL WHERE id = ?').bind(it.id).run();
@@ -534,7 +556,7 @@ export async function driveDisconnect(ctx: Ctx) {
 /* ---------------- the audit log ---------------- */
 
 export async function auditLog(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.auditLog);
   // everyone sees what was done in the family's vault – except what others did with their own private items
   const { results } = await ctx.env.DB.prepare(`SELECT email, action, target, person_id, at FROM vault_audit WHERE household = ? AND (private = 0 OR email = ?) ORDER BY at DESC LIMIT 200`)
     .bind(u.household, u.email).all();
@@ -626,7 +648,7 @@ const rowById = (ctx: Ctx, id: string | null) => (id ? ctx.env.DB.prepare('SELEC
 /* ---- roles and the household's name ---- */
 
 export async function roles(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.roles);
   const v = await viewerOf(ctx, u), n = await names(ctx), t = await titles(ctx);
   const { results: people } = await ctx.env.DB.prepare('SELECT email, role FROM members WHERE household = ? ORDER BY email').bind(u.household).all<{ email: string; role: string }>();
   const { results: rs } = await ctx.env.DB.prepare('SELECT r.household, r.email, r.role, m.household AS home FROM family_roles r LEFT JOIN members m ON m.email = r.email').all<{ household: string; email: string; role: string; home: string | null }>();
@@ -639,7 +661,7 @@ export async function roles(ctx: Ctx) {
   });
 }
 export async function roleSave(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.roleSave);
   const v = await viewerOf(ctx, u);
   const b = await body<{ email?: string; role?: string; on?: boolean }>(ctx.req);
   const email = clean(b.email, 120).toLowerCase();
@@ -659,7 +681,7 @@ export async function roleSave(ctx: Ctx) {
   return json({ ok: true });
 }
 export async function householdSave(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.householdSave);
   if (!(await rolesOf(ctx, u)).head) throw new HttpError(403, 'only_a_head');
   const title = clean((await body<{ title?: string }>(ctx.req)).title, 60);
   if (!title) throw new HttpError(400, 'title_required');
@@ -673,7 +695,7 @@ export async function householdSave(ctx: Ctx) {
 
 /** PUT /api/vault/people/:id/privacy {privacy: {identity, dates, notes, files}, anonymous} */
 export async function privacySave(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.privacySave);
   const v = await viewerOf(ctx, u);
   const b = await body<{ privacy?: unknown; anonymous?: unknown }>(ctx.req);
   const p = await rowById(ctx, ctx.params.id);
@@ -701,7 +723,7 @@ export async function privacySave(ctx: Ctx) {
 
 /** POST /api/vault/bridges {person, email, note}: any member asks; nothing of the tree goes with it but the note */
 export async function bridgeAsk(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.bridgeAsk);
   await rateLimit(ctx, 'bridge:' + u.email, 20, 864e5);
   const b = await body<{ person?: string; email?: string; note?: string }>(ctx.req);
   const p = await person(ctx, u, String(b.person || ''));
@@ -722,7 +744,7 @@ export async function bridgeAsk(ctx: Ctx) {
 
 /** GET /api/vault/bridges: what waits for me, what we asked, our links, and (the tribe head) the tribe's links */
 export async function bridges(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.bridges);
   const v = await viewerOf(ctx, u), t = await titles(ctx), n = await names(ctx);
   const { results } = await ctx.env.DB.prepare(`SELECT b.*, m.household AS to_house FROM family_bridges b LEFT JOIN members m ON m.email = b.to_email
     WHERE b.status IN ('pending', 'awaiting_person', 'confirmed', 'declined') AND (b.house_a = ? OR b.house_b = ? OR m.household = ? OR b.consent_email = ?) ORDER BY b.created_at DESC LIMIT 200`)
@@ -753,7 +775,7 @@ function consentNeeded(v: Viewer, x: PersonRow, y: PersonRow, asker: string, app
 
 /** POST /api/vault/bridges/:id/approve {person}: a head of the household the request was sent to */
 export async function bridgeApprove(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.bridgeApprove);
   const v = await viewerOf(ctx, u);
   const r = await bridgeRow(ctx, ctx.params.id);
   if (r.status !== 'pending' || (await householdOf(ctx, r.to_email)) !== u.household) throw new HttpError(404, 'not_found');
@@ -773,7 +795,7 @@ export async function bridgeApprove(ctx: Ctx) {
 }
 /** POST /api/vault/bridges/:id/consent: the person themself */
 export async function bridgeConsent(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.bridgeConsent);
   const v = await viewerOf(ctx, u);
   const r = await bridgeRow(ctx, ctx.params.id);
   if (r.status !== 'awaiting_person' || r.consent_email !== u.email || !r.house_b || !r.person_b) throw new HttpError(404, 'not_found');
@@ -785,7 +807,7 @@ export async function bridgeConsent(ctx: Ctx) {
 }
 /** POST /api/vault/bridges/:id/decline: a head where it was sent, or the person whose consent it waits for */
 export async function bridgeDecline(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.bridgeDecline);
   const r = await bridgeRow(ctx, ctx.params.id);
   const mayDecline = r.status === 'pending' ? (await householdOf(ctx, r.to_email)) === u.household && (await rolesOf(ctx, u)).head : r.status === 'awaiting_person' && r.consent_email === u.email;
   if (!mayDecline) throw new HttpError(404, 'not_found');
@@ -795,7 +817,7 @@ export async function bridgeDecline(ctx: Ctx) {
 }
 /** DELETE /api/vault/bridges/:id: whoever asked, a head of either side, the person, or the tribe head; it ends at once */
 export async function bridgeRevoke(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.bridgeRevoke);
   const v = await viewerOf(ctx, u);
   const r = await bridgeRow(ctx, ctx.params.id);
   if (!['pending', 'awaiting_person', 'confirmed'].includes(r.status)) throw new HttpError(404, 'not_found');
@@ -856,7 +878,7 @@ const houseLabel = (u: Member, houses: Set<string>) => { const sorted = [...hous
 
 /** GET /api/vault/forest: the tribe's households, their people (as the viewer may see them), the links, and who is the same person */
 export async function forest(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.forest);
   const v = await viewerOf(ctx, u), f = await forestOf(ctx, v), t = await titles(ctx);
   const pid = (id: string) => f.pidOf.get(id)!, label = houseLabel(u, f.houses);
   const out = {
@@ -871,7 +893,7 @@ export async function forest(ctx: Ctx) {
 
 /** GET /api/vault/related?from=&to=: how two people are related over the joined trees, named in Hebrew */
 export async function related(ctx: Ctx) {
-  const u = await requireUnlocked(ctx);
+  const u = await need(ctx, ACCESS.related);
   const v = await viewerOf(ctx, u), f = await forestOf(ctx, v);
   const from = f.idOf.get(ctx.url.searchParams.get('from') || ''), to = f.idOf.get(ctx.url.searchParams.get('to') || '');
   if (!from || !to) throw new HttpError(404, 'not_found');
@@ -892,4 +914,33 @@ export async function related(ctx: Ctx) {
 export async function seenAtHome(ctx: Ctx, u: Member, rows: PersonRow[]): Promise<K.Seen[]> {
   const v = await viewerOf(ctx, u);
   return Promise.all(rows.map(async (p) => K.view(await cardOf(ctx, p), 'household', whoFor(v, p))!));
+}
+
+/* ---------------- recognized devices (settings → "מכשירים מוכרים") ---------------- */
+
+/** a device's id for the page: a fingerprint of its session, never the session itself */
+const deviceId = (ctx: Ctx, id: string) => fingerprint(ctx.env, 'device:' + id);
+
+/** GET /api/vault/devices – this person's trusted devices: their name, since when, last used, and which one is this */
+export async function devices(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const { results } = await ctx.env.DB.prepare('SELECT id, vault_trust_label AS label, vault_trust_since AS since, vault_trust_used AS used, vault_trust_until AS until FROM sessions WHERE email = ? AND vault_trust_until > ? ORDER BY vault_trust_used DESC')
+    .bind(u.email, Date.now()).all<{ id: string; label: string | null; since: number | null; used: number | null; until: number }>();
+  return json({ devices: await Promise.all(results.map(async (d) => ({ id: await deviceId(ctx, d.id), label: d.label || 'מכשיר', since: d.since, used: d.used, here: d.id === sid(ctx) }))) });
+}
+/** DELETE /api/vault/devices/:id (?signout=1) – that device is no longer trusted, at once (and, if asked, signed out) */
+export async function deviceRevoke(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const { results } = await ctx.env.DB.prepare('SELECT id, vault_trust_label AS label FROM sessions WHERE email = ? AND vault_trust_until IS NOT NULL').bind(u.email).all<{ id: string; label: string | null }>();
+  let hit: { id: string; label: string | null } | null = null;
+  for (const d of results) if ((await deviceId(ctx, d.id)) === ctx.params.id) hit = d;
+  if (!hit) throw new HttpError(404, 'not_found');
+  const signout = ctx.url.searchParams.get('signout') === '1';
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare('UPDATE sessions SET vault_trust_until = NULL WHERE id = ?').bind(hit.id),
+    ctx.env.DB.prepare('DELETE FROM vault_unlocks WHERE sid = ?').bind(hit.id),
+    ...(signout ? [ctx.env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(hit.id)] : []),
+  ]);
+  await audit(ctx, u, signout ? 'trust:revoke+signout' : 'trust:revoke', hit.label, null);
+  return json({ ok: true });
 }

@@ -4,7 +4,11 @@
    tap a word for the dictionary; and "החוקר" – a critical scholar who answers from the sources, citing them in SBL style.
    Texts are fetched from Sefaria's public API (open CORS); the researcher is /api/research/ask.
    The tools stay closed until the reader taps a verse or a word (or asks the researcher), and can be minimised again.
-   H.study(ref, label, { select }) opens it (select: a verse to mark, e.g. "Genesis 28:12"); /parasha/?study=<ref> opens it straight away. */
+   H.study(ref, label, { select }) opens it (select: a verse to mark, e.g. "Genesis 28:12"); /parasha/?study=<ref> opens it straight away.
+   Without AI (docs/ai/without-ai.md #7): the dictionaries, the concordance, the commentaries and Sefaria's own translations
+   are all there; "🔎 חיפוש בספריא" searches the sources by a question's key words (plain.js). The AI is on ✨: the
+   researcher, a word explained in Hebrew (by itself only for whoever has the AI with no limit), and a translation into
+   Hebrew. With no AI left, ✨ invites to connect one (design's .ai-pair / .ai-up.offer). */
 (() => {
   const { el, toast } = H;
   const API = '/api/sefaria';   // Sefaria through our own lasting copy (server/sefaria.ts)
@@ -14,6 +18,14 @@
   const TEAMIM = /[֑-ֽ֯׀׃-׆]/g;   // cantillation, meteg, paseq, sof pasuq and the like
   const strip = (s) => String(s || '').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&[a-z]+;/g, ' ').trim();
   const cache = new Map();
+  /* the AI here: free (the family, or the person's own key) – the word's Hebrew explanation comes by itself; limited – on
+     ✨ only, so a tap on a word spends nothing; out of it, with no key – ✨ invites */
+  let aiP = null;
+  const ai = () => (aiP ||= H.api('/api/me/ai').then((me) => { const own = Object.keys(me.keys || {}).length > 0; return { free: !me.limited || own, out: !!me.out && !own }; })
+    .catch(() => ({ free: false, out: false })));
+  const invite = () => H.loadOnce('/assets/ai-invite.js').then(() => H.aiInvite?.()).catch(() => toast('אפשר לחבר AI בהגדרות ← חיבור לשירותים'));
+  /** design's mark on what the AI wrote; "ביטול" takes it away */
+  const aiNote = (onUndo) => el('p', { class: 'ai-note' }, '✨ הוצע בעזרת העוזר החכם', onUndo ? [' · ', el('button', { type: 'button', onclick: onUndo }, 'ביטול')] : null);
   async function get(url) {
     if (cache.has(url)) return cache.get(url);
     const p = fetch(url).then((r) => { if (!r.ok) throw new Error('sefaria ' + r.status); return r.json(); });
@@ -190,8 +202,11 @@
 
     async function drawWord(verse, word) {
       // in Hebrew first: what the word means here, its root and its form (Gemini, kept for a month)
-      const heBox = el('section', { class: 'rs-he-word' }, loading('מפרש בעברית…'));
-      H.api('/api/research/word', { body: { word, verse: verse.he.replace(TEAMIM, ''), ref: verse.ref } }).then((x) => {
+      const heBox = el('section', { class: 'rs-he-word' });
+      const offer = (st) => heBox.replaceChildren(el('div', { class: 'ai-pair' },
+        el('button', { class: 'btn ai-up' + (st.out ? ' offer' : ''), type: 'button', onclick: () => (st.out ? invite() : explain()) }, '✨ פירוש בעברית')),
+        el('p', { class: 'rs-fine' }, 'המילונים והקונקורדנציה כאן למטה, בלי AI.'));
+      const explain = () => { heBox.replaceChildren(loading('מפרש בעברית…')); H.api('/api/research/word', { body: { word, verse: verse.he.replace(TEAMIM, ''), ref: verse.ref } }).then((x) => {
         heBox.replaceChildren(el('h4', {}, 'פירוש בעברית'), el('p', { class: 'rs-he-mean' }, x.meaning),
           el('div', { class: 'rs-he-facts' }, x.root ? el('span', {}, el('small', {}, 'שורש '), el('b', {}, x.root)) : '', x.grammar ? el('span', {}, el('small', {}, 'צורה '), x.grammar) : '',
             x.lang && x.lang !== 'עברית' ? el('span', {}, el('small', {}, 'לשון '), x.lang) : ''),
@@ -207,8 +222,10 @@
               btn.textContent = '✓ נשמר בפתקים';
               toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
             } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
-          } }, '📝 שמירה כפתק'));
-      }).catch(() => heBox.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לפרש בעברית כרגע.')));
+          } }, '📝 שמירה כפתק'),
+          aiNote(() => ai().then(offer)));
+      }).catch((e) => (e?.code === 'ai_credit_needed' ? ai().then((st) => offer({ ...st, out: true })) : heBox.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לפרש בעברית כרגע.')))); };
+      ai().then((st) => (st.free ? explain() : offer(st)));
       // the word in the whole Tanakh, from our concordance
       const concBox = el('div', { class: 'rs-conc' });
       H.concord?.lookup(word).then((info) => {
@@ -239,23 +256,70 @@
     const NONHE = /[\u0370-\u03FF\u1F00-\u1FFF\u0700-\u074F]|[A-Za-z]{3,}/;
     const ARAMAIC = /(?:^|\s)(?:דין|ליה|ביה|תנא|תניא|הכא|התם|מאי|קא|אית|לית|יתיה|ית|וית|דהוא|ארי|ואמר|אנא|אתון|אנון|דא|דנא|כדין|הדין|בגין|דילמא|אמאי)(?=\s|$|[.,:])/g;
     function looksForeign(text, cat) { return ['Targum', 'Talmud', 'Kabbalah'].includes(cat) || NONHE.test(text) || (text.match(ARAMAIC) || []).length >= 3; }
-    function translateBtn(text, { lang, ref: src } = {}) {
+    /** Sefaria's own translation of a source (usually English), when it has one */
+    async function sefariaTranslation(ref) {
+      const d = await get(`${API}/v3/texts/${enc(ref)}?version=translation&return_format=text_only`);
+      const v = (d.versions || [])[0];
+      const flat = (t) => (Array.isArray(t) ? t.flatMap(flat) : [t]);
+      const text = v ? flat(v.text || []).map(strip).filter(Boolean).join(' ') : '';
+      return text ? { text: text.slice(0, 4000), title: v.versionTitle || '', lang: v.actualLanguage || v.language || 'en' } : null;
+    }
+    /** each word of a Hebrew-script text in Sefaria's dictionaries (Jastrow for Aramaic, BDB, Klein): its entry and first sense */
+    async function glossary(text) {
+      const words = window.ParashaPlain?.lookupWords(text) || [];
+      const rows = await Promise.all(words.map(async (w) => {
+        try {
+          const list = await get(`${API}/words/${enc(w)}?never_split=1`);
+          const x = (Array.isArray(list) ? list : []).find((e) => e.content);
+          let def = '';
+          const walk = (ss) => (ss || []).some((s2) => { if (s2.definition) { def = strip(s2.definition); return true; } return walk(s2.senses); });
+          if (x) walk(x.content.senses);
+          return x ? [w, x.headword || w, def.slice(0, 120), x.parent_lexicon || ''] : [w, '', '', ''];
+        } catch (_) { return [w, '', '', '']; }
+      }));
+      return rows;
+    }
+    function translateBtn(text, { lang, ref: src, sefaria = false } = {}) {
       const out = el('div', { class: 'rs-tr' });
-      const label = '🔤 תרגום לעברית';
-      const btn = el('button', { class: 'rs-tr-b', onclick: async () => {
-        if (out.childElementCount) { out.replaceChildren(); btn.textContent = label; return; }
+      const label = '✨ תרגום לעברית';
+      const hebrewScript = /[א-ת]/.test(text);
+      // the plain ones first: Sefaria's own translation (of a Sefaria source), and the words in its dictionaries
+      const plain = sefaria ? el('button', { class: 'rs-tr-plain btn small', type: 'button', onclick: async () => {
+        plain.disabled = true;
+        out.replaceChildren(loading('מביא את התרגום של ספריא…'));
+        let t = null;
+        try { t = await sefariaTranslation(src); } catch (_) { /* below */ }
+        out.replaceChildren(t ? el('div', { class: 'rs-tr-sef' }, el('p', { class: 'rs-tr-t', dir: 'auto', lang: t.lang }, t.text), el('p', { class: 'rs-fine' }, 'התרגום של ספריא' + (t.title ? ` (${t.title})` : '') + (t.lang === 'en' ? ', באנגלית' : '') + '.'))
+          : el('p', { class: 'muted' }, 'לספריא אין תרגום למקור הזה.' + (hebrewScript ? ' אפשר לחפש את המילים במילון.' : '')));
+        plain.disabled = false;
+      } }, '📖 התרגום של ספריא') : null;
+      const gloss = hebrewScript ? el('button', { class: 'rs-tr-gloss btn small', type: 'button', onclick: async () => {
+        gloss.disabled = true;
+        out.replaceChildren(loading('מחפש את המילים במילונים…'));
+        const rows = await glossary(text);
+        out.replaceChildren(el('div', { class: 'rs-terms' }, rows.map(([w, head, def, lex]) => el('span', { class: 'rs-term' }, el('b', { lang: 'he' }, w),
+          head && head !== w ? el('span', { lang: 'he' }, ' (' + head + ')') : '', def ? el('span', { dir: 'ltr' }, ' – ' + def) : el('span', { class: 'muted' }, ' – לא במילון'), lex ? el('small', { class: 'muted' }, ' · ' + lex) : ''))),
+          el('p', { class: 'rs-fine' }, 'מהמילונים של ספריא (באנגלית): ג׳סטרו לארמית ולתלמוד, BDB וקליין לעברית.'));
+        gloss.disabled = false;
+      } }, '📚 מילון למילים') : null;
+      const btn = el('button', { class: 'rs-tr-b btn small ai-up', type: 'button', onclick: async () => {
+        if ((await ai()).out) return invite();
+        if (out.dataset.ai) { out.replaceChildren(); delete out.dataset.ai; btn.textContent = label; return; }
         btn.disabled = true; btn.replaceChildren(spin(), 'מתרגם…');
         try {
           const t = await H.api('/api/research/translate', { body: { text: text.slice(0, 6000), lang: lang || null, ref: src || null } });
           out.replaceChildren(el('p', { class: 'rs-tr-t', lang: 'he' }, t.translation),
             t.words.length ? el('div', { class: 'rs-terms' }, t.words.map((w) => el('span', { class: 'rs-term' }, el('b', { dir: 'auto' }, w.word), w.translit ? el('i', { dir: 'ltr' }, ' ' + w.translit) : '', ' – ' + w.gloss))) : '',
             t.note ? el('p', { class: 'rs-fine' }, t.note) : '',
-            el('p', { class: 'rs-fine' }, 'תרגום ממוכן מ' + (t.lang || 'המקור') + ' – כדאי לבדוק מול המקור.'));
+            el('p', { class: 'rs-fine' }, 'תרגום ממוכן מ' + (t.lang || 'המקור') + ' – כדאי לבדוק מול המקור.'),
+            aiNote(() => { out.replaceChildren(); delete out.dataset.ai; btn.textContent = label; }));
+          out.dataset.ai = '1';
           btn.textContent = 'הסתרת התרגום';
-        } catch (_) { btn.textContent = label; toast('התרגום לא הצליח כרגע'); }
+        } catch (e) { btn.textContent = label; if (e?.code !== 'ai_credit_needed') toast('התרגום לא הצליח כרגע'); }
         btn.disabled = false;
       } }, label);
-      return el('div', { class: 'rs-tr-wrap' }, btn, out);
+      ai().then((st) => btn.classList.toggle('offer', st.out));
+      return el('div', { class: 'rs-tr-wrap' }, el('div', { class: 'ai-pair' }, plain, gloss, btn), out);
     }
 
     async function verseLinks(verse) { return get(`${API}/links/${enc(verse.ref)}?with_text=0`); }
@@ -288,7 +352,7 @@
           const txt = flat(d.versions?.[0]?.text || []).map(strip).join(' ').slice(0, 1600);
           return el('div', { class: 'rs-src-part' }, el('p', { lang: 'he' }, txt || '—'),
             el('a', { href: sefariaUrl(l.ref), target: '_blank', rel: 'noopener' }, (l.sourceHeRef || l.ref) + ' ↗'),
-            txt && looksForeign(txt, l.category) ? translateBtn(txt, { lang: l.category === 'Targum' ? 'Aramaic' : null, ref: l.ref }) : '');
+            txt && looksForeign(txt, l.category) ? translateBtn(txt, { lang: l.category === 'Targum' ? 'Aramaic' : null, ref: l.ref, sefaria: true }) : '');
         } catch (_) { return el('p', { class: 'muted' }, 'לא נטען'); }
       }));
       box.replaceChildren(...parts, ls.length > 4 ? el('p', { class: 'muted' }, `ועוד ${ls.length - 4} בספריא`) : '');
@@ -309,7 +373,7 @@
         if (!ls.length) return null;
         const texts = await Promise.all(ls.slice(0, 3).map((l) => get(`${API}/v3/texts/${enc(l.ref)}?version=hebrew&return_format=text_only`).then((d) => { const f = (t) => (Array.isArray(t) ? t.flatMap(f) : [t]); return f(d.versions?.[0]?.text || []).map(strip).join(' '); }).catch(() => '')));
         return el('section', { class: 'rs-group' }, el('h4', {}, title), ...texts.map((t, i) => (t ? el('div', {}, el('p', { class: 'rs-quote', lang: 'he' }, t, ' ', el('a', { href: sefariaUrl(ls[i].ref), target: '_blank', rel: 'noopener' }, '↗')),
-          /Onkelos/i.test(ls[i].index_title || '') ? translateBtn(t, { lang: 'Aramaic', ref: ls[i].ref }) : '') : '')).filter(Boolean));
+          /Onkelos/i.test(ls[i].index_title || '') ? translateBtn(t, { lang: 'Aramaic', ref: ls[i].ref, sefaria: true }) : '') : '')).filter(Boolean));
       };
       const parts = await Promise.all([block('מנחת שי – הערות על נוסח המסורה', shai), block('תרגום אונקלוס', onk)]);
       if (S.tab !== 'nusach' || S.verses[S.sel] !== verse) return;
@@ -391,9 +455,9 @@
           if (!text) return;
           const holder = translateBtn(text, { lang: trLang.value || null, ref: S.ref });
           trOut.replaceChildren(holder);
-          holder.querySelector('.rs-tr-b').click();
+          ai().then((st) => holder.querySelector(st.free ? '.rs-tr-b' : '.rs-tr-gloss')?.click());
         } }, 'תרגום')), trOut,
-        el('p', { class: 'rs-fine' }, 'מתאים לתרגומים הארמיים, לתלמוד ולזוהר, לתרגום השבעים, לוולגטה ולפשיטתא. תרגום ממוכן – כדאי לבדוק מול המקור.'));
+        el('p', { class: 'rs-fine' }, 'מתאים לתרגומים הארמיים, לתלמוד ולזוהר, לתרגום השבעים, לוולגטה ולפשיטתא. "מילון למילים" מחפש כל מילה במילונים של ספריא (באותיות עבריות); "✨ תרגום לעברית" הוא תרגום ממוכן – כדאי לבדוק מול המקור.'));
     }
 
     /* the researcher */
@@ -415,13 +479,43 @@
         el('p', { class: 'rs-at' }, v ? `על ${root.querySelector('.rs-ref').textContent.split(' ')[0]} ${heNum(v.ch)}, ${heNum(v.v)}` : 'על הקטע כולו', v ? el('button', { class: 'rs-link', onclick: () => { S.sel = -1; S.word = null; mark(); drawAsk(); } }, ' · לקטע כולו') : ''),
         talkBox,
         el('div', { class: 'rs-sugg' }, suggestions().map((s) => el('button', { class: 'rs-chip', onclick: () => { askBox.value = s; send(); } }, s))),
-        el('div', { class: 'rs-askrow' }, askBox, el('button', { class: 'btn primary', onclick: () => send() }, 'שאלה')),
-        el('p', { class: 'rs-fine' }, 'החוקר שולף את הטקסטים מספריא ובודק מחקר וסימוכין (DOI) ברשת, ומצטט בסגנון SBL. תשובה לוקחת עד דקה או שתיים. בכל זאת כדאי לבדוק את המקורות.'));
+        el('div', { class: 'rs-askrow' }, askBox),
+        el('div', { class: 'ai-pair rs-ask-acts' },
+          el('button', { class: 'btn primary', type: 'button', onclick: () => plainSearch() }, '🔎 חיפוש בספריא'), askBtn),
+        v ? el('button', { class: 'rs-link', type: 'button', onclick: () => openTab('links') }, '📚 מה כתבו המפרשים על הפסוק') : '',
+        el('p', { class: 'rs-fine' }, '"חיפוש בספריא" מחפש את המילים החשובות בשאלה בכל המקורות של ספריא, בלי AI. "✨ החוקר" שולף את הטקסטים מספריא ובודק מחקר וסימוכין (DOI) ברשת, ומצטט בסגנון SBL; תשובה לוקחת עד דקה או שתיים, ובכל זאת כדאי לבדוק את המקורות.'));
+      ai().then((st) => askBtn.classList.toggle('offer', st.out));
+    }
+    const askBtn = el('button', { class: 'btn ai-up', type: 'button', onclick: () => send() }, '✨ שאלה לחוקר');
+    /** the question's key words searched in all of Sefaria's sources (no AI): the whole set, else its two longest words */
+    async function plainSearch() {
+      const q = askBox.value.trim();
+      if (!q) { askBox.focus(); return; }
+      const P = window.ParashaPlain;
+      let words = P ? P.keywords(q) : q.split(/\s+/).slice(0, 4);
+      if (S.word && !words.includes(S.word.text)) words = [S.word.text, ...words].slice(0, 4);
+      if (!words.length) { toast('לא מצאתי בשאלה מילים לחפש. נסו לכתוב שם, מושג או מילה מהפסוק.'); return; }
+      const list = el('div', { class: 'rs-plain-hits' }, loading('מחפש בספריא…'));
+      const card = el('article', { class: 'rs-a card rs-plain' }, el('p', { class: 'rs-a-q' }, q), el('p', { class: 'rs-fine' }, 'חיפוש במקורות: ' + words.join(' ')), list);
+      talkBox.append(card);
+      card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      const find = (ws) => H.api('/api/research/search', { body: { q: ws.join(' '), part: '', lang: 'he', from: 0, size: 15 } });
+      try {
+        let d = await find(words), used = words;
+        if (!d.count && words.length > 2 && P) { used = P.narrower(words); d = await find(used); }
+        if (used !== words) card.querySelector('.rs-fine').textContent = 'חיפוש במקורות: ' + used.join(' ');
+        list.replaceChildren(...(d.count ? [
+          el('p', { class: 'rs-fine' }, `${d.capped ? 'יותר מ־' : ''}${d.count.toLocaleString('he-IL')} מקומות. הנה הראשונים:`),
+          ...d.hits.map((h) => el('a', { class: 'rs-plain-hit', href: sefariaUrl(h.ref), target: '_blank', rel: 'noopener' },
+            el('b', {}, h.heRef), el('br'), el('span', { lang: 'he', html: h.snip })))]
+          : [el('p', {}, 'לא נמצאו מקורות למילים האלה. נסו מילה אחרת, או "✨ שאלה לחוקר".')]));
+      } catch (_) { list.replaceChildren(el('p', {}, 'ספריא לא ענתה כרגע. נסו שוב בעוד רגע.')); }
     }
     let busy = false;
     async function send(fresh) {
       const q = askBox.value.trim();
       if (!q || busy) return;
+      if ((await ai()).out) return invite();
       busy = true;
       const v = S.verses[S.sel];
       const focus = S.word ? `${v.ref}, the word ${S.word.text}` : v ? v.ref : null;
@@ -437,6 +531,7 @@
         });
         S.talk.push({ q, a: a.answer });
         drawAnswer(card, q, a, focus);
+        card.append(aiNote(() => card.remove()));
       } catch (e) {
         card.querySelector('.rs-loading').textContent = e?.message === 'refused' ? 'החוקר לא יכול לענות על השאלה הזו.' : 'לא הצלחתי לקבל תשובה כרגע. נסו שוב בעוד רגע.';
       } finally { busy = false; }

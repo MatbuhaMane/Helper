@@ -1,7 +1,10 @@
 /* שירון: one search over Shironet (lyrics), Tab4u (chords), the Shabbat zemirot and the family's own songbook, shown
    as cards (in the style of Inoreader's card view); a song opens in a reader inside the app: full lyrics, or chords
    with transpose and guitar / piano diagrams. Shironet and Tab4u songs are fetched live from their sites when opened
-   and credited there; the family's songbook keeps links and its own chord sheets. */
+   and credited there; the family's songbook keeps links and its own chord sheets.
+   Vision batch 4, item 10: a song opens in the hub's flip sheet (H.sheet); a double tap on a card is a heart (❤ אהובים,
+   each person's own, H.prefs); "🎸 אני מנגן" puts first the songs that have chords as well as words; a song we added can
+   be deleted from its reader. Outside songs stay links (decided 2026-11-12): nothing of theirs is copied. */
 (async () => {
   'use strict';
   const { el, api, toast } = H;
@@ -11,11 +14,12 @@
   const C = window.Chords;
 
   // Per person, synced through the server (the old per-device copy is carried over once).
-  const prefs = H.prefs('songs', { size: 1, instrument: 'guitar' }, 'helper.songs.prefs');
+  const prefs = H.prefs('songs', { size: 1, instrument: 'guitar', plays: false, favs: [] }, 'helper.songs.prefs');
+  if (!Array.isArray(prefs.favs)) prefs.favs = [];
   const savePrefs = () => H.savePrefs('songs');
 
   const TABS = [
-    ['all', 'הכל'], ['lyrics', 'מילים'], ['chords', 'אקורדים'], ['zemirot', 'זמירות שבת'], ['mine', 'השירון שלנו'], ['dict', 'מילון אקורדים'],
+    ['all', 'הכל'], ['lyrics', 'מילים'], ['chords', 'אקורדים'], ['zemirot', 'זמירות שבת'], ['mine', 'השירון שלנו'], ['favs', '❤ אהובים'], ['dict', 'מילון אקורדים'],
   ];
   let tab = (location.hash.slice(1) || 'all');
   if (!TABS.some((t) => t[0] === tab)) tab = 'all';
@@ -49,6 +53,27 @@
     render();
   }
 
+  /* ---------- favourites (❤): each person's own, a link and a name – never the song itself ---------- */
+  const favKey = (f) => f.url || (f.zemer ? 'z:' + f.zemer : f.own ? 'own:' + f.own : '');
+  const isFav = (f) => prefs.favs.some((x) => favKey(x) === favKey(f));
+  function setFav(f, on) {
+    const k = favKey(f);
+    if (!k) return;
+    prefs.favs = prefs.favs.filter((x) => favKey(x) !== k);
+    if (on) prefs.favs.unshift({ title: f.title, artist: f.artist || '', url: f.url || null, source: f.source || null, zemer: f.zemer || null, own: f.own || null, at: Date.now() });
+    prefs.favs = prefs.favs.slice(0, 300);
+    savePrefs();
+  }
+  /** the heart's burst over a card (the same gesture as the recipe book) */
+  function burst(node) {
+    const h = el('span', { class: 'heart-burst', 'aria-hidden': 'true' }, '❤');
+    if (getComputedStyle(node).position === 'static') node.style.position = 'relative';
+    node.append(h);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setTimeout(() => h.remove(), 500); return; }
+    h.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.35 }, { transform: 'scale(1)', opacity: 1, offset: 0.6 }, { transform: 'scale(1.25)', opacity: 0 }],
+      { duration: 800, easing: 'ease-out' }).onfinish = () => h.remove();
+  }
+
   /* ---------- cards ---------- */
   const COVER_COLORS = ['#55622f', '#9c7a55', '#7a8a45', '#6b5a3e', '#4f6a5c', '#8a6a4a'];
   function cover(title, image, source) {
@@ -66,7 +91,9 @@
       return el('div', { class: 'letter', style: `background: linear-gradient(135deg, ${color}, color-mix(in srgb, ${color} 60%, #2e2a1e))` }, ch);
     }
   }
-  function card({ title, artist, snippet, image, source, onOpen, saved, onSave, extra }) {
+  function card({ title, artist, snippet, image, source, onOpen, saved, onSave, extra, fav }) {
+    const heartBtn = fav ? el('button', { class: 'mini fav', type: 'button', 'aria-pressed': String(isFav(fav)), title: isFav(fav) ? 'באהובים' : 'לאהובים', 'aria-label': 'לאהובים',
+      onclick: (e) => { e.stopPropagation(); const on = !isFav(fav); setFav(fav, on); heartBtn.textContent = on ? '❤' : '♡'; heartBtn.setAttribute('aria-pressed', String(on)); if (on) burst(node); if (tab === 'favs') render(); } }, isFav(fav) ? '❤' : '♡') : null;
     const node = el('article', { class: 'scard', tabindex: '0', role: 'button', 'aria-label': `${title}${artist ? ' – ' + artist : ''}` },
       cover(source === 'shironet' || source === 'tab4u' ? (artist || title) : title, image, source),
       el('div', { class: 'cbody' },
@@ -76,10 +103,23 @@
       el('div', { class: 'cfoot' },
         extra || el('span', { class: 'src' }, SOURCES[source]?.label || ''),
         el('span', { class: 'spacer' }),
+        heartBtn,
         onSave ? el('button', { class: 'mini star', title: saved ? 'בשירון שלנו' : 'שמירה לשירון שלנו', 'aria-label': 'שמירה', 'aria-pressed': String(!!saved),
           onclick: (e) => { e.stopPropagation(); onSave(e.currentTarget); } }, saved ? '★' : '☆') : null));
-    node.addEventListener('click', onOpen);
-    node.addEventListener('keydown', (e) => { if (e.key === 'Enter') onOpen(); });
+    // one tap opens (the card flips into the sheet); a quick second tap is a heart, as on Instagram
+    let tapTimer = 0;
+    node.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      if (tapTimer && fav) {
+        clearTimeout(tapTimer); tapTimer = 0;
+        burst(node);
+        if (!isFav(fav)) { setFav(fav, true); if (heartBtn) { heartBtn.textContent = '❤'; heartBtn.setAttribute('aria-pressed', 'true'); } toast('נשמר באהובים'); }
+        return;
+      }
+      if (!fav) { onOpen(node); return; }
+      tapTimer = setTimeout(() => { tapTimer = 0; onOpen(node); }, 260);
+    });
+    node.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === node) onOpen(node); });
     return node;
   }
   const savedUrl = (url) => mine.some((s) => s.url === url);
@@ -108,13 +148,15 @@
       title: vs[0].title, artist: artists.slice(0, 2).join(', ') + (artists.length > 2 ? ` ועוד ${artists.length - 2}` : ''),
       snippet: vs[0].snippet, image: h.image, source: vs[0].source,
       extra: el('span', { class: 'src' }, el('span', { class: 'vers' }, `${vs.length} ביצועים`), ' · ', vs[0].source === 'tab4u' ? 'Tab4u' : 'שירונט'),
-      onOpen: () => openRemote(vs[0], vs),
+      fav: { url: vs[0].url, title: vs[0].title, artist: vs[0].artist, source: vs[0].source },
+      onOpen: (from) => openRemote(vs[0], vs, from),
     });
   };
   const hitCard = (h) => card({
     title: h.title, artist: h.artist, snippet: h.snippet, image: h.image, source: h.source,
     extra: el('span', { class: 'src' }, h.source === 'tab4u' ? 'אקורדים · Tab4u' : 'מילים · שירונט', h.rating ? el('span', { class: 'rate' }, ' ★' + h.rating) : null),
-    saved: savedUrl(h.url), onSave: (b) => saveLink(h, b), onOpen: () => openRemote(h),
+    saved: savedUrl(h.url), onSave: (b) => saveLink(h, b), onOpen: (from) => openRemote(h, null, from),
+    fav: { url: h.url, title: h.title, artist: h.artist, source: h.source },
   });
   const googleCard = (kind) => card({
     title: `${query} – ${kind === 'chords' ? 'אקורדים' : 'מילים'}`, artist: 'חיפוש בגוגל', source: 'google',
@@ -123,17 +165,30 @@
   });
   const zemerCard = (z) => card({
     title: z.title, artist: zemirot.sections[z.section], source: 'zemirot',
-    snippet: z.lines.slice(0, 2).map((l) => l.t).join(' '), onOpen: () => openZemer(z),
+    snippet: z.lines.slice(0, 2).map((l) => l.t).join(' '), onOpen: (from) => openZemer(z, from),
+    fav: { zemer: z.title, title: z.title, artist: zemirot.sections[z.section], source: 'zemirot' },
   });
   const mineCard = (s) => card({
     title: s.title, artist: s.artist, source: s.url ? (/tab4u/.test(s.url) ? 'tab4u' : 'shironet') : 'mine',
     snippet: s.body ? s.body.split('\n').filter((l) => l.trim() && !C.isChordLine(l)).slice(0, 2).join(' ') : (s.url ? 'נשמר מ' + (/tab4u/.test(s.url) ? 'Tab4u' : 'שירונט') : ''),
     extra: el('span', { class: 'src' }, s.body ? (s.kind === 'chords' ? 'אקורדים שלנו' : 'מילים שלנו') : 'קישור שמור'),
-    saved: true, onSave: () => removeMine(s), onOpen: () => (s.body ? openOwn(s) : openRemote({ ...s, source: /tab4u/.test(s.url) ? 'tab4u' : 'shironet' })),
+    saved: true, onSave: () => removeMine(s), onOpen: (from) => (s.body ? openOwn(s, from) : openRemote({ ...s, source: /tab4u/.test(s.url) ? 'tab4u' : 'shironet' }, null, from)),
+    fav: s.url ? { url: s.url, title: s.title, artist: s.artist, source: /tab4u/.test(s.url) ? 'tab4u' : 'shironet' } : { own: s.id, title: s.title, artist: s.artist, source: 'mine' },
   });
+  /** a favourite's card: opened by where it lives (a site, the zemirot, our songbook) */
+  const favCard = (f) => {
+    if (f.zemer) { const z = zemirot?.songs.find((x) => x.title === f.zemer); if (z) return zemerCard(z); }
+    if (f.own) { const s = mine.find((x) => x.id === f.own); if (s) return mineCard(s); return null; }
+    if (!f.url) return null;
+    const source = f.source || (/tab4u/.test(f.url) ? 'tab4u' : 'shironet');
+    return card({ title: f.title, artist: f.artist, source, fav: f,
+      extra: el('span', { class: 'src' }, source === 'tab4u' ? 'אקורדים · Tab4u' : 'מילים · שירונט'),
+      saved: savedUrl(f.url), onSave: (b) => saveLink({ ...f, source }, b), onOpen: (from) => openRemote({ ...f, source }, null, from) });
+  };
   async function removeMine(s) {
     if (!confirm(`להסיר את "${s.title}" מהשירון שלנו?`)) return;
     await api(`/api/songs/${s.id}`, { method: 'DELETE' });
+    if (s.id) setFav({ own: s.id }, false);
     await loadMine(); render();
     toast('הוסר');
   }
@@ -145,7 +200,9 @@
 
   /* ---------- the page ---------- */
   function renderTabs() {
-    $('#tabs').replaceChildren(...TABS.map(([k, label]) => el('button', { class: 'chip', 'aria-pressed': String(k === tab), onclick: () => { tab = k; history.replaceState(null, '', '#' + k); render(); } }, label)));
+    $('#tabs').replaceChildren(...TABS.map(([k, label]) => el('button', { class: 'chip', 'aria-pressed': String(k === tab), onclick: () => { tab = k; history.replaceState(null, '', '#' + k); render(); } }, label)),
+      el('button', { class: 'chip plays', 'aria-pressed': String(!!prefs.plays), title: 'כשמסומן, החיפוש מקדים שירים שיש להם גם מילים וגם אקורדים',
+        onclick: () => { prefs.plays = !prefs.plays; savePrefs(); render(); toast(prefs.plays ? 'מעכשיו שירים עם אקורדים קודמים' : 'החיפוש חזר לסדר הרגיל'); } }, '🎸 אני מנגן'));
   }
   function render() {
     renderTabs();
@@ -166,6 +223,12 @@
       out.append(el('p', { class: 'credit' }, zemirot.credit));
       return;
     }
+    if (tab === 'favs') {
+      const cards = prefs.favs.filter((f) => matches(q, f.title, f.artist)).map(favCard).filter(Boolean);
+      out.append(section('❤ אהובים', cards));
+      if (!cards.length) out.append(el('p', { class: 'muted empty' }, 'עוד אין כאן שירים. הקישו פעמיים על שיר (או על ♡) כדי לשמור אותו באהובים.'));
+      return;
+    }
     if (tab === 'mine') {
       out.append(section('השירון שלנו', mine.filter((s) => matches(q, s.title, s.artist, s.body)).map(mineCard),
         el('div', { class: 'secacts' }, el('button', { class: 'btn primary small', onclick: () => editOwn() }, '+ שיר חדש עם אקורדים'))));
@@ -177,48 +240,50 @@
     for (const e of results.errors) out.append(el('p', { class: 'warn' }, e));
     const own = mine.filter((s) => matches(q, s.title, s.artist, s.body)).map(mineCard);
     const zs = (zemirot?.songs || []).filter((z) => matches(q, z.title, z.lines.map((l) => l.t).join(' '))).map(zemerCard);
-    if (tab === 'all' || tab === 'lyrics') {
-      const s = section('מילים', [...groupHits(results.lyrics).map(groupCard), googleCard('lyrics')]);
-      if (s && !results.loading) out.append(s);
-    }
-    if (tab === 'all' || tab === 'chords') {
-      const s = section('אקורדים', [...groupHits(results.chords).map(groupCard), googleCard('chords')]);
-      if (s && !results.loading) out.append(s);
-    }
+    const key = (h) => norm(h.title).replace(/[^א-תa-z0-9]+/g, ' ').trim();
+    const withChords = new Set(results.chords.map(key));
+    let lyricGroups = groupHits(results.lyrics);
+    if (prefs.plays) lyricGroups = [...lyricGroups.filter((g) => withChords.has(key(g[0]))), ...lyricGroups.filter((g) => !withChords.has(key(g[0])))];
+    const lyricsSec = (tab === 'all' || tab === 'lyrics') ? section(prefs.plays ? 'מילים · קודם אלה שיש להם גם אקורדים' : 'מילים', [...lyricGroups.map(groupCard), googleCard('lyrics')]) : null;
+    const chordsSec = (tab === 'all' || tab === 'chords') ? section('אקורדים', [...groupHits(results.chords).map(groupCard), googleCard('chords')]) : null;
+    if (!results.loading) for (const sec of prefs.plays ? [chordsSec, lyricsSec] : [lyricsSec, chordsSec]) if (sec) out.append(sec);
     if (tab === 'all') {
       const s1 = section('בשירון שלנו', own); if (s1) out.append(s1);
       const s2 = section('בזמירות שבת', zs); if (s2) out.append(s2);
     }
   }
 
-  /* ---------- the reader ---------- */
-  const reader = $('#reader');
-  function openReader(head, body, tools = []) {
-    reader.replaceChildren(
+  /* ---------- the reader: the hub's flip sheet (the card turns over into it, and back when it closes) ---------- */
+  const sheet = H.sheet;
+  let readerFrom = null;
+  const bodyOf = () => sheet.body.querySelector('.rbody');
+  function openReader(head, body, tools = [], from) {
+    if (from) readerFrom = from;
+    const content = el('div', { class: 'sreader-in', 'data-guide': 'song-reader', 'data-guide-label': 'השיר הפתוח' },
       el('div', { class: 'rbar' },
-        el('button', { class: 'mini', 'aria-label': 'חזרה', title: 'חזרה', onclick: closeReader }, '→'),
         el('div', { class: 'rtitle' }, head),
         el('span', { class: 'spacer' }),
         ...tools,
         el('button', { class: 'mini', title: 'הקטנת הכתב', 'aria-label': 'הקטנת הכתב', onclick: () => size(-1) }, 'א-'),
         el('button', { class: 'mini', title: 'הגדלת הכתב', 'aria-label': 'הגדלת הכתב', onclick: () => size(1) }, 'א+')),
       el('div', { class: 'rbody', style: `--fs:${prefs.size}` }, body));
-    reader.hidden = false;
+    sheet.open(readerFrom, content, { size: 'large', className: 'songs-sheet', onLeave: () => setTimeout(() => {
+      // closed (not just a new song in it): the back button's step goes too
+      if (!sheet.isOpen) { readerFrom = null; document.body.classList.remove('reading'); if (history.state?.reader) history.back(); }
+    }) });
     document.body.classList.add('reading');
-    reader.querySelector('.rbody').scrollTop = 0;
     if (!history.state?.reader) history.pushState({ reader: true }, '');
   }
   function size(d) {
     prefs.size = Math.max(0.8, Math.min(2, Math.round((prefs.size + d * 0.15) * 100) / 100)); savePrefs();
-    reader.querySelector('.rbody')?.style.setProperty('--fs', prefs.size);
+    bodyOf()?.style.setProperty('--fs', prefs.size);
   }
-  function closeReader() { reader.hidden = true; document.body.classList.remove('reading'); if (history.state?.reader) history.back(); }
-  window.addEventListener('popstate', () => { if (!reader.hidden) { reader.hidden = true; document.body.classList.remove('reading'); } });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !reader.hidden) closeReader(); });
+  function closeReader() { sheet.close(); }
+  window.addEventListener('popstate', () => { if (sheet.isOpen) sheet.close(); });
   const head = (title, sub) => el('div', {}, el('b', {}, title), sub ? el('small', {}, sub) : null);
 
-  async function openRemote(hit, versions = null) {
-    openReader(head(hit.title, hit.artist), el('p', { class: 'muted' }, 'טוען את השיר…'));
+  async function openRemote(hit, versions = null, from) {
+    openReader(head(hit.title, hit.artist), el('p', { class: 'muted' }, 'טוען את השיר…'), [], from);
     let song;
     try { song = await api(`/api/songs/page?url=${encodeURIComponent(hit.url)}`); }
     catch (e) {
@@ -231,21 +296,28 @@
     const picker = versions && versions.length > 1 ? el('select', { class: 'vpick', 'aria-label': 'ביצוע / גרסה', onchange: (e) => openRemote(versions[Number(e.target.value)], versions) },
       versions.map((v, i) => el('option', { value: String(i), selected: v.url === hit.url }, (v.artist || 'גרסה ' + (i + 1)) + (v.rating ? ` ★${v.rating}` : '')))) : null;
     const star = el('button', { class: 'mini', title: 'שמירה לשירון שלנו', 'aria-label': 'שמירה לשירון שלנו', onclick: () => saveLink({ ...hit, title: song.title || hit.title, artist: song.artist || hit.artist }, star) }, savedUrl(hit.url) ? '★' : '☆');
+    const fav = { url: hit.url, title: song.title || hit.title, artist: song.artist || hit.artist, source: song.source };
+    const heart = el('button', { class: 'mini fav', 'aria-pressed': String(isFav(fav)), title: 'לאהובים', 'aria-label': 'לאהובים',
+      onclick: () => { const on = !isFav(fav); setFav(fav, on); heart.textContent = on ? '❤' : '♡'; heart.setAttribute('aria-pressed', String(on)); } }, isFav(fav) ? '❤' : '♡');
+    // a link we saved can be removed from here too
+    const ours = mine.find((m) => m.url === hit.url);
+    const del = ours ? el('button', { class: 'mini wide', title: 'הסרה מהשירון שלנו', onclick: async () => { closeReader(); await removeMine(ours); } }, '🗑 הסרה') : null;
+    const tools = [picker, heart, star, del].filter(Boolean);
     if (song.kind === 'chords') {
-      showSheet(head(song.title || hit.title, song.artist || hit.artist), song.text, [picker, star].filter(Boolean), credit);
+      showSheet(head(song.title || hit.title, song.artist || hit.artist), song.text, tools, credit);
     } else {
-      openReader(head(song.title || hit.title, song.artist || hit.artist), el('div', {}, lyricsView(song.text), credit), [picker, star].filter(Boolean));
+      openReader(head(song.title || hit.title, song.artist || hit.artist), el('div', {}, lyricsView(song.text), credit), tools);
     }
   }
   function lyricsView(text) {
     return el('div', { class: 'lyrics', dir: dirOf(text) }, text.split(/\n{2,}/).map((st) => el('p', { class: 'stanza' }, st.split('\n').flatMap((l, i) => (i ? [el('br'), l] : [l])))));
   }
 
-  function openZemer(z) {
+  function openZemer(z, from) {
     const body = el('div', { class: 'zemer' },
       z.lines.map((l) => el('p', { class: l.r ? 'refrain' : '' }, l.t)),
       el('p', { class: 'credit' }, zemirot.credit, ' · ', el('a', { href: z.source, target: '_blank', rel: 'noopener' }, 'בספריא')));
-    openReader(head(z.title, zemirot.sections[z.section]), body);
+    openReader(head(z.title, zemirot.sections[z.section]), body, [], from);
   }
 
   /** Which way a song reads: left to right when its words are mostly Latin letters (English and the like). */
@@ -302,7 +374,7 @@
     }
     return out;
   }
-  function showSheet(headNode, text, extraTools = [], footer = null) {
+  function showSheet(headNode, text, extraTools = [], footer = null, from) {
     let steps = 0;
     const items = parseSheet(text);
     const dir = dirOf(text);
@@ -316,11 +388,11 @@
       }
       return set;
     };
-    const sheet = el('div', { class: 'sheet', dir });
+    const sheetEl = el('div', { class: 'sheet', dir });
     const diagrams = el('div', { class: 'diagrams' });
     const keyLabel = el('span', { class: 'key' });
     const draw = () => {
-      sheet.replaceChildren(...items.map((it) => {
+      sheetEl.replaceChildren(...items.map((it) => {
         if (it.t === 'gap') return el('div', { class: 'gap' });
         if (it.t === 'tab') return el('pre', { class: 'tab', dir: 'ltr' }, it.l);
         if (it.t === 'def') return el('div', { class: 'cdef', dir: 'ltr' }, it.l);
@@ -350,12 +422,14 @@
       inst, ...extraTools,
     ];
     draw();
-    openReader(headNode, el('div', {}, diagrams, sheet, footer), tools);
+    openReader(headNode, el('div', {}, diagrams, sheetEl, footer), tools, from);
   }
-  function openOwn(s) {
+  function openOwn(s, from) {
     const edit = el('button', { class: 'mini wide', onclick: () => editOwn(s) }, '✎ עריכה');
-    if (s.kind === 'chords') showSheet(head(s.title, s.artist), s.body || '', [edit]);
-    else openReader(head(s.title, s.artist), lyricsView(s.body || ''), [edit]);
+    // a song we added: deleted from its own reader (vision batch 4, item 10)
+    const del = el('button', { class: 'mini wide', title: 'מחיקת השיר מהשירון שלנו', onclick: async () => { closeReader(); await removeMine(s); } }, '🗑 מחיקה');
+    if (s.kind === 'chords') showSheet(head(s.title, s.artist), s.body || '', [edit, del], null, from);
+    else openReader(head(s.title, s.artist), lyricsView(s.body || ''), [edit, del], from);
   }
   function editOwn(s = null) {
     const title = el('input', { type: 'text', value: s?.title || '', placeholder: 'שם השיר', required: true });

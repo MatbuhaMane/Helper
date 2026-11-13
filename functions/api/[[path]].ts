@@ -9,10 +9,21 @@ import * as gather from '../../server/gather';
 import * as join from '../../server/join';
 import * as admin from '../../server/admin';
 import * as credits from '../../server/credits';
+import * as figures from '../../server/figures';
+import * as lock from '../../server/lock';
+import { setting } from '../../server/settings';
+import { childOf } from '../../server/members';
+import { birthYear } from '../../server/figures-rules';
 import * as designImages from '../../server/design-images';
 import * as fridge from '../../server/fridge';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
+import * as food from '../../server/food';
+import * as restaurants from '../../server/restaurants';
+import * as places from '../../server/places';
+import * as goals from '../../server/goals';
+import * as researches from '../../server/researches';
+import * as writing from '../../server/research-writing';
 import * as keto from '../../server/keto';
 import * as kitchen from '../../server/kitchen';
 import * as world from '../../server/worldrecipes';
@@ -43,6 +54,16 @@ function route(method: string, path: string, h: Handler) {
 route('GET', '/api/auth/login', googleLogin);
 route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
+route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
+route('POST', '/api/auth/passkey', lock.login);
+/* the app lock and the tree lock (the master's, server/lock.ts) */
+route('GET', '/api/lock', lock.status);
+route('PUT', '/api/lock', lock.save);
+route('PUT', '/api/lock/pin', lock.setPin);
+route('POST', '/api/lock/lock', lock.lockNow);
+route('POST', '/api/lock/unlock', lock.unlock);
+route('POST', '/api/lock/passkey/options', lock.passkeyOptions);
+route('POST', '/api/lock/passkey', lock.passkeyUnlock);
 route('GET', '/api/auth/handoff', previewHandoff);
 route('POST', '/api/auth/logout', logout);
 route('POST', '/api/auth/desktop/start', desktopStart);
@@ -51,7 +72,10 @@ route('GET', '/api/auth/desktop/poll', desktopPoll);
 route('GET', '/api/me', async (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
   // The person's preferences come with "who am I", so every page has them before it draws anything.
-  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email) });
+  // child: under 12 by the birth year the owner set (the year itself stays private)
+  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
+    shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
+    ...(await lock.meLock(ctx.env, ctx.req)) });   // appLock: off | pin | bio (the padlock in the bar); locked: the lock screen   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);
 route('PUT', '/api/prefs/:ns', prefs.putPrefs);
@@ -60,7 +84,7 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
   await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
-  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role FROM members ORDER BY household, email').all();
+  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role, birth_year, first_seen, approved_at FROM members ORDER BY household, email').all();
   return json({ members: results });
 });
 route('PUT', '/api/members/:email/name', async (ctx) => {
@@ -69,6 +93,31 @@ route('PUT', '/api/members/:email/name', async (ctx) => {
   const name = heName((await body<{ he_name?: string }>(ctx.req)).he_name);
   await ctx.env.DB.prepare('UPDATE members SET he_name = ? WHERE email = ?').bind(name, decodeURIComponent(ctx.params.email).toLowerCase()).run();
   return json({ ok: true, he_name: name });
+});
+/** A member's birth year (private: only here, in the owner's room). Under 12 hides horror figures and keeps a child in the family. */
+route('PUT', '/api/members/:email/birth-year', async (ctx) => {
+  requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
+  let year: number | null;
+  try { year = birthYear((await body<{ birth_year?: unknown }>(ctx.req)).birth_year, Date.now()); } catch { throw new HttpError(400, 'bad_year'); }
+  await ctx.env.DB.prepare('UPDATE members SET birth_year = ? WHERE email = ?').bind(year, decodeURIComponent(ctx.params.email).toLowerCase()).run();
+  return json({ ok: true, birth_year: year });
+});
+/** The owner approves a member (after their first sign-in, core.ts firstSignIn): full access – the AI with no limit and every
+    special feature (admin.FEATURES). Undo: mark them limited, or take a feature away, in the room. */
+route('POST', '/api/members/:email/approve', async (ctx) => {
+  const me = requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
+  const email = decodeURIComponent(ctx.params.email).toLowerCase();
+  const m = await ctx.env.DB.prepare('SELECT email FROM members WHERE email = ?').bind(email).first();
+  if (!m) throw new HttpError(404, 'Not found');
+  const now = Date.now();
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare('UPDATE members SET approved_at = ? WHERE email = ?').bind(now, email),
+    ctx.env.DB.prepare('UPDATE ai_allowance SET limited = 0, updated_by = ?, updated_at = ? WHERE email = ?').bind(me.email, now, email),
+    ...admin.FEATURES.map((f) => ctx.env.DB.prepare('INSERT OR IGNORE INTO user_features (email, feature, by_email, created_at) VALUES (?, ?, ?, ?)').bind(email, f.key, me.email, now)),
+  ]);
+  return json({ ok: true, approved_at: now });
 });
 /** The Hebrew name the helper calls someone by: set by the family's owner (on the admin page). */
 const heName = (v: unknown) => {
@@ -109,6 +158,8 @@ route('GET', '/api/daemon', daemon.getDaemon);
 route('POST', '/api/daemon/chat', daemon.chat);
 route('POST', '/api/daemon/reset', daemon.resetChat);
 route('GET', '/api/daemon/form/:slug', daemon.formImage);
+route('GET', '/api/daemon/figures', figures.list);           // paid figures: what this person has, and the price
+route('POST', '/api/daemon/figures/:id/buy', figures.buy);   // { confirm: true }: the family for nothing, others from their credits
 
 /* songbook */
 route('GET', '/api/songs/search', songs.search);
@@ -145,6 +196,8 @@ route('GET', '/api/notes', notes.list);
 route('POST', '/api/notes', notes.create);
 route('PUT', '/api/notes/:id', notes.update);
 route('DELETE', '/api/notes/:id', notes.remove);
+route('GET', '/api/notes/drive', notes.driveStatus);
+route('POST', '/api/notes/:id/drive', notes.toDrive);
 
 /* בידור: recommendations by medium, with where to watch */
 route('GET', '/api/fun/picks', fun.picks);
@@ -168,6 +221,7 @@ route('POST', '/api/research/word', research.word);
 
 /* the smart calculator */
 route('POST', '/api/calc/solve', calc.solve);
+route('GET', '/api/calc/rates', calc.currencyRates);
 
 /* fridges (shared by the whole family) */
 route('GET', '/api/fridges', fridge.listFridges);
@@ -177,6 +231,71 @@ route('DELETE', '/api/fridges/:id', fridge.deleteFridge);
 route('GET', '/api/fridges/:id/items', fridge.listItems);
 route('POST', '/api/fridges/:id/ops', fridge.applyOps);
 route('GET', '/api/fridges/:id/history', fridge.history);
+route('GET', '/api/food/highlights', food.highlights);
+route('GET', '/api/restaurants', restaurants.list);
+route('GET', '/api/restaurants/search', places.status);
+route('POST', '/api/restaurants/search', places.search);
+route('POST', '/api/restaurants', restaurants.save);
+route('PUT', '/api/restaurants/:id', restaurants.save);
+route('DELETE', '/api/restaurants/:id', restaurants.remove);
+route('POST', '/api/restaurants/:id/fav', restaurants.fav);
+route('POST', '/api/restaurants/:id/visit', restaurants.visit);
+route('GET', '/api/goals', goals.list);
+route('POST', '/api/goals', goals.create);
+route('GET', '/api/goals/template', goals.template);
+route('POST', '/api/goals/review', goals.review);
+route('POST', '/api/goals/ai/plan', goals.aiPlan);
+route('POST', '/api/goals/ai/stuck', goals.aiStuck);
+route('PUT', '/api/goals/:id', goals.update);
+route('DELETE', '/api/goals/:id', goals.remove);
+route('POST', '/api/goals/:id/processes', goals.addProcess);
+route('PUT', '/api/goals/processes/:id', goals.editProcess);
+route('DELETE', '/api/goals/processes/:id', goals.removeProcess);
+route('POST', '/api/goals/processes/:id/steps', goals.addStep);
+route('PUT', '/api/goals/steps/:id', goals.editStep);
+route('DELETE', '/api/goals/steps/:id', goals.removeStep);
+route('GET', '/api/research/list', researches.list);
+route('GET', '/api/research/find', researches.find);
+route('POST', '/api/research/new', researches.create);
+route('GET', '/api/research/r/:id', researches.get);
+route('PUT', '/api/research/r/:id', researches.update);
+route('DELETE', '/api/research/r/:id', researches.remove);
+route('GET', '/api/research/r/:id/export', researches.exportResearch);
+route('POST', '/api/research/r/:id/notes', researches.addNote);
+route('DELETE', '/api/research/r/:id/notes/:noteId', researches.removeNote);
+route('GET', '/api/research/of-note/:noteId', researches.ofNote);
+route('POST', '/api/research/r/:id/threads', researches.addThread);
+route('PUT', '/api/research/threads/:id', researches.editThread);
+route('DELETE', '/api/research/threads/:id', researches.removeThread);
+route('POST', '/api/research/r/:id/sources', researches.addSource);
+route('PUT', '/api/research/sources/:id', researches.editSource);
+route('DELETE', '/api/research/sources/:id', researches.removeSource);
+route('POST', '/api/research/r/:id/goal', writing.asGoal);
+route('POST', '/api/research/r/:id/done', writing.setDone);
+route('GET', '/api/research/r/:id/journal', writing.journal);
+route('PUT', '/api/research/r/:id/journal', writing.writeJournal);
+route('GET', '/api/research/r/:id/drafts', writing.drafts);
+route('POST', '/api/research/r/:id/drafts', writing.newDraft);
+route('POST', '/api/research/r/:id/ai/directions', writing.aiDirections);
+route('POST', '/api/research/r/:id/ai/draft', writing.aiDraft);
+route('GET', '/api/research/drafts/:id', writing.getDraft);
+route('PUT', '/api/research/drafts/:id', writing.saveDraft);
+route('DELETE', '/api/research/drafts/:id', writing.removeDraft);
+route('GET', '/api/research/drafts/:id/export', writing.exportDraft);
+route('POST', '/api/research/drafts/:id/drive', writing.draftToDrive);
+route('POST', '/api/research/r/:id/ai/search', writing.aiSearch);
+route('POST', '/api/research/r/:id/ai/compare', writing.aiCompare);
+route('POST', '/api/research/sources/:id/ai/summary', writing.aiSummary);
+route('POST', '/api/research/drafts/:id/ai/edit', writing.aiEdit);
+route('PUT', '/api/research/r/:id/notes/:noteId', researches.editNote);
+route('PUT', '/api/research/r/:id/notes/:noteId/share', researches.shareNote);
+route('POST', '/api/research/r/:id/members', researches.invite);
+route('POST', '/api/research/r/:id/join', researches.join);
+route('PUT', '/api/research/r/:id/members/:email', researches.setRole);
+route('DELETE', '/api/research/r/:id/members/:email', researches.removeMember);
+route('POST', '/api/research/r/:id/comments', researches.comment);
+route('DELETE', '/api/research/comments/:id', researches.removeComment);
+route('POST', '/api/research/history/:id/restore', researches.restore);
 
 /* ketosis */
 route('GET', '/api/keto', keto.getState);
@@ -348,6 +467,10 @@ route('PUT', '/api/admin/allowances', admin.allowanceSave);
 route('GET', '/api/admin/gifts', admin.gifts);
 route('POST', '/api/admin/gifts', admin.giftAdd);
 
+/* the family tree on a trusted device (ai-features, server/vault/access.ts): the person's recognized devices */
+route('GET', '/api/vault/devices', vault.devices);
+route('DELETE', '/api/vault/devices/:id', vault.deviceRevoke);
+
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
   // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,
@@ -365,6 +488,8 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil })
     try {
       await ensureSchema(env);
       const user = await loadUser(env, request);
+      // the app lock: a locked session reaches only the lock itself, /api/me and signing in and out (423 app_locked)
+      if (user) await lock.gate(env, request, user.email, url.pathname, waitUntil);
       // every AI call made while answering is metered: who, from which feature (server/meter.ts)
       return await metered({ env, email: user?.email || null, feature: featureOf(url.pathname), waitUntil }, () => h({ req: request, env, url, params, user, waitUntil }));
     } catch (err) {

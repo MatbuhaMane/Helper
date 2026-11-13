@@ -3,7 +3,7 @@
   vine for links, focus and the active state, olive only as a colour field, a pale Shechinah blue for decoration.
   One typeface (Rubik). Flat surfaces framed by thin lines; motion arrives slowly and leaves quickly.
 */
-@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&family=Heebo:wght@400;500;600&family=Varela+Round&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap');
 
 :root {
   --icon-ink: #2e2a1e;   /* the line of the pastel icons: dark ink in both themes, so the pastel fill keeps its colour at night too */
@@ -87,6 +87,71 @@
     color-scheme: dark;
   }
 @media (max-width: 899px) { :root { --tabbar-h: 64px; --appbar-h: 54px; } }
+/* Colour themes (הגדרות › ערכות צבעים; settings/apply.js sets <html data-palette>). Each changes the two colours that carry
+   the hub: the active one (--primary: buttons, links, what is chosen) and the field (--olive: the "extra", the ring, the
+   tags), by day and at night; the stone and the basalt stay, so every page keeps its calm. Text contrast is checked
+   for each: the active colour on the page 5:1 and more, ink on the field 6:1 and more (as the default).
+     ''         אבן ובזלת      vine and olive (the default)
+     sea        ים התיכון      deep sea and sand
+     desert     מדבר           terracotta and dune gold
+     vineyard   כרם            wine and grape blossom
+     dusk       בין הערביים    indigo and lamp amber */
+:root[data-palette="sea"] { --vine: #1f5f7a; --primary: #1f5f7a; --olive: #8fc7d4; --tint: #d8ecf2; }
+:root[data-palette="desert"] { --vine: #9a4a24; --primary: #9a4a24; --olive: #e0a85a; --tint: #f5e4cf; }
+:root[data-palette="vineyard"] { --vine: #6b2a4a; --primary: #6b2a4a; --olive: #c9a0c0; --tint: #f0e0ea; }
+:root[data-palette="dusk"] { --vine: #3d4a8a; --primary: #3d4a8a; --olive: #e8b26a; --tint: #e2e5f5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="sea"] { --primary: #8cc4d8; --ok: #8cc4d8; --tint: #10283a; }
+  :root:not([data-theme="light"])[data-palette="desert"] { --primary: #e6a17a; --ok: #e6a17a; --tint: #2e1c14; }
+  :root:not([data-theme="light"])[data-palette="vineyard"] { --primary: #d9a0bf; --ok: #d9a0bf; --tint: #2a1624; }
+  :root:not([data-theme="light"])[data-palette="dusk"] { --primary: #a9b4ec; --ok: #a9b4ec; --tint: #161c3a; }
+}
+:root[data-theme="dark"][data-palette="sea"] { --primary: #8cc4d8; --ok: #8cc4d8; --tint: #10283a; }
+:root[data-theme="dark"][data-palette="desert"] { --primary: #e6a17a; --ok: #e6a17a; --tint: #2e1c14; }
+:root[data-theme="dark"][data-palette="vineyard"] { --primary: #d9a0bf; --ok: #d9a0bf; --tint: #2a1624; }
+:root[data-theme="dark"][data-palette="dusk"] { --primary: #a9b4ec; --ok: #a9b4ec; --tint: #161c3a; }
+
+/* Themes that change the background too (vision batch 5): the whole room in another light – its ground, its cards, its
+   lines and its ink – by day and at night. Contrast checked: text 12:1 and more, the active colour 5.5:1, ink on the field 7:1.
+     sand   חול     a warm dune: sand ground, terracotta
+     sage   מרווה   a garden: sage ground, deep leaf green
+     mist   ערפל    a cool morning: mist-grey ground, slate blue */
+:root[data-palette="sand"] { --bg: #efe5d1; --card: #f9f3e7; --chalk: #efe5d1; --chalk-raised: #f9f3e7; --text: #2e2418; --ink: #2e2418; --muted: #66543a;
+  --line: #ddd0b6; --line-strong: #c9b998; --vine: #8a461c; --primary: #8a461c; --olive: #dba65a; --tint: #f5e4cf; --glass: rgba(249, 243, 231, .84); }
+:root[data-palette="sage"] { --bg: #e5ebdf; --card: #f3f6ef; --chalk: #e5ebdf; --chalk-raised: #f3f6ef; --text: #232b20; --ink: #232b20; --muted: #525e4a;
+  --line: #d0dac8; --line-strong: #b9c7ae; --vine: #3b6634; --primary: #3b6634; --olive: #adc58c; --tint: #dfeedd; --glass: rgba(243, 246, 239, .84); }
+:root[data-palette="mist"] { --bg: #e8e9ee; --card: #f5f6f9; --chalk: #e8e9ee; --chalk-raised: #f5f6f9; --text: #23252e; --ink: #23252e; --muted: #545867;
+  --line: #d4d6df; --line-strong: #bfc2ce; --vine: #3a4d82; --primary: #3a4d82; --olive: #b7c2e2; --tint: #e0e5f5; --glass: rgba(245, 246, 249, .84); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-palette="sand"] { --bg: #15100a; --card: #201912; --text: #ecdfc8; --muted: #b8a688; --line: #2e251a; --line-strong: #43372a; --primary: #e8a878; --ok: #e8a878; --primary-ink: #15100a; --tint: #2e1c14; --glass: rgba(32, 25, 18, .88); }
+  :root:not([data-theme="light"])[data-palette="sage"] { --bg: #0a110c; --card: #121b14; --text: #dde6d6; --muted: #a6b4a0; --line: #1c2a1f; --line-strong: #2b3e2f; --primary: #9fd29a; --ok: #9fd29a; --primary-ink: #0a110c; --tint: #142a18; --glass: rgba(18, 27, 20, .88); }
+  :root:not([data-theme="light"])[data-palette="mist"] { --bg: #0b0d14; --card: #141722; --text: #dfe1ea; --muted: #a9adbd; --line: #1e2232; --line-strong: #2d3349; --primary: #a8b8ee; --ok: #a8b8ee; --primary-ink: #0b0d14; --tint: #161c3a; --glass: rgba(20, 23, 34, .88); }
+}
+:root[data-theme="dark"][data-palette="sand"] { --bg: #15100a; --card: #201912; --text: #ecdfc8; --muted: #b8a688; --line: #2e251a; --line-strong: #43372a; --primary: #e8a878; --ok: #e8a878; --primary-ink: #15100a; --tint: #2e1c14; --glass: rgba(32, 25, 18, .88); }
+:root[data-theme="dark"][data-palette="sage"] { --bg: #0a110c; --card: #121b14; --text: #dde6d6; --muted: #a6b4a0; --line: #1c2a1f; --line-strong: #2b3e2f; --primary: #9fd29a; --ok: #9fd29a; --primary-ink: #0a110c; --tint: #142a18; --glass: rgba(18, 27, 20, .88); }
+:root[data-theme="dark"][data-palette="mist"] { --bg: #0b0d14; --card: #141722; --text: #dfe1ea; --muted: #a9adbd; --line: #1e2232; --line-strong: #2d3349; --primary: #a8b8ee; --ok: #a8b8ee; --primary-ink: #0b0d14; --tint: #161c3a; --glass: rgba(20, 23, 34, .88); }
+/* A theme of one's own (data-palette="custom"): settings sets --primary, --olive, --bg and --card on <html> from
+   H.palette.derive() (palette.js), which already keeps the contrast; by night the derived night values come in the same way. */
+
+/* The fonts to choose from (data-font): Rubik is the hub's own; each of the others loads only for whoever picks it. */
+:root[data-font="heebo"] body, :root[data-font="heebo"] :is(button, input, select, textarea) { font-family: 'Heebo', system-ui, sans-serif; }
+:root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, sans-serif; }
+:root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', serif; }
+:root[data-font="serif"] :is(h1, h2, h3) { font-weight: 700; }
+
+/* Reading comfort (הגדרות › נגישות; settings/apply.js marks <html>): the text size is the root's font size (every rem grows
+   with it); these are the rest. */
+:root[data-spacing="wide"] body { line-height: 1.8; word-spacing: .14em; letter-spacing: .015em; }
+:root[data-spacing="wide"] :is(p, li, dd, label, small, .muted) { line-height: 1.8; }
+:root[data-font="readable"] body, :root[data-font="readable"] :is(button, input, select, textarea) { font-family: Arial, 'Segoe UI', system-ui, sans-serif; }
+:root[data-contrast="high"] { --text: #14120c; --muted: #3b3528; --line: #a9a28c; --line-strong: #77705b; }
+:root[data-contrast="high"][data-theme="dark"] { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; }
+@media (prefers-color-scheme: dark) { :root[data-contrast="high"]:not([data-theme="light"]) { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; } }
+:root[data-contrast="high"] :is(.card, .btn, input, select, textarea) { border-width: 1.5px; }
+/* less motion than the device asks for: as prefers-reduced-motion does, for whoever chose it here */
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after {
+  animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent; background: var(--bg); overflow-x: clip; }
@@ -126,7 +191,7 @@ main.wide { max-width: 1200px; }
 /* the name, הָאֹ֔הֶל: short, so it can be big; room above and below for its vowels and its accent */
 .brand-text { font-size: 1.7rem; font-weight: 600; line-height: 1.3; padding-block: 2px 4px; }
 .appbar .page-title { display: none; font-weight: 500; font-size: 1.05rem; margin: 0; }
-.topnav { display: flex; gap: 22px; margin-inline-start: 12px; }
+.topnav { display: flex; align-items: center; gap: 22px; margin-inline-start: 12px; }
 .topnav a { color: var(--text); text-decoration: none; font-size: .98rem; padding-block: 6px; white-space: nowrap; }
 /* nine entries on a narrow PC window: a little tighter, so the names stay on one line */
 @media (min-width: 900px) and (max-width: 1099px) { .topnav { gap: 14px; margin-inline-start: 4px; } .topnav a { font-size: .92rem; } }
@@ -175,7 +240,57 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
   .tabbar a[aria-current="page"] { color: var(--primary); font-weight: 500; }
   .tabbar a[aria-current="page"]::before { content: ''; position: absolute; inset-block-start: 0; inset-inline: 28%; block-size: 2px; background: var(--primary); }
   .tabbar a:active { transform: translateY(1px); }
+  /* ניווט and כלים open a menu: buttons that look like the other tabs (the master's minimal styles; design may refine) */
+  .tabbar .tab-menu { display: grid; place-items: center; align-content: center; gap: 3px; color: var(--muted); font: inherit; font-size: .72rem; background: none; border: 0; padding: 0; cursor: pointer; position: relative; min-inline-size: 0; }
+  .tabbar .tab-menu span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-inline: 1px; }
+  .tabbar .tab-menu svg { inline-size: 24px; block-size: 24px; }
+  @media (max-width: 400px) { .tabbar .tab-menu { font-size: .64rem; } .tabbar .tab-menu svg { inline-size: 22px; block-size: 22px; } }
+  .tabbar .tab-menu[aria-current="page"], .tabbar .tab-menu[aria-expanded="true"] { color: var(--primary); font-weight: 500; }
+  .tabbar .tab-menu[aria-current="page"]::before { content: ''; position: absolute; inset-block-start: 0; inset-inline: 28%; block-size: 2px; background: var(--primary); }
 }
+/* The top bar's menus (ניווט, כלים): a button like the links, its caret turning as it opens; the menu is a glass panel
+   that arrives softly under it (on transform and opacity only) – each place an icon on its own pale tile and its name;
+   the tools in two columns on a computer. On a phone the menu rises above the tab bar as a grid, like a phone's apps. */
+.topnav .nav-menu { font: inherit; font-size: .98rem; color: var(--text); background-color: transparent; border: 0; padding: 6px 0; cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 5px; }
+.topnav .nav-menu[aria-expanded="true"] { color: var(--primary); }
+/* "עץ המשפחה" on two lines, one word over the other (the master's markup in common.js): centred, close, a touch smaller than one line */
+.topnav .nav-two { display: inline-grid; justify-items: center; line-height: 1.06; text-align: center; font-size: .92em; }
+.nav-caret { display: inline-block; font-size: .7em; opacity: .7; transition: transform .25s var(--ease-river); }
+.nav-menu[aria-expanded="true"] .nav-caret { transform: rotate(180deg); opacity: 1; }
+.navmenu { position: fixed; z-index: 40; min-inline-size: 240px; max-inline-size: min(340px, calc(100vw - 32px)); max-block-size: min(72vh, 540px); overflow: auto;
+  padding: 8px; border-radius: 20px; color: var(--text); background: color-mix(in srgb, var(--card) 94%, transparent); border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1); backdrop-filter: blur(20px) saturate(1.1); box-shadow: var(--lift), 0 2px 0 rgba(46, 42, 30, .03);
+  transform-origin: 50% 0; animation: navmenu-in .2s var(--ease-river) both; overscroll-behavior: contain; }
+@keyframes navmenu-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
+.navmenu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.navmenu a { display: flex; align-items: center; gap: 12px; padding: 7px 10px 7px 12px; border-radius: 14px; color: var(--text); text-decoration: none; font-size: .98rem;
+  transition: background-color .15s; }
+/* the icon on its own pale tile */
+.navmenu li > a > .icon { box-sizing: content-box; inline-size: 20px; block-size: 20px; padding: 7px; border-radius: 11px; flex: none;
+  color: var(--icon-ink); background: color-mix(in srgb, var(--olive) 26%, #f7f6f0); stroke-width: 1.7; }   /* a pastel tile, in ink, by day and at night */
+.navmenu a:hover, .navmenu a:focus-visible { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); outline: none; }
+.navmenu a:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
+.navmenu a[aria-current="page"] { color: var(--primary); font-weight: 500; }
+.navmenu a[aria-current="page"] > .icon { background: color-mix(in srgb, #55622f 28%, #f7f6f0); }
+.navmenu .navmenu-all { justify-content: center; gap: 6px; margin-block-start: 6px; padding-block: 10px; border-radius: 12px; font-size: .9rem; color: var(--muted);
+  background: color-mix(in srgb, var(--text) 4%, transparent); }
+/* the tools: two columns on a computer */
+@media (min-width: 900px) { #navmenu-tools { min-inline-size: 440px; max-inline-size: min(480px, calc(100vw - 32px)); } #navmenu-tools ul { grid-template-columns: 1fr 1fr; } }
+/* a phone: above the tab bar, a grid of places (icon on top, name under it) */
+.navmenu-phone { inset-inline: 12px; inset-block-start: auto !important; inset-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 10px); max-inline-size: none;
+  min-inline-size: 0; padding: 10px; border-radius: 24px; transform-origin: 50% 100%; animation-name: navmenu-up; }
+@keyframes navmenu-up { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.navmenu-phone ul { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.navmenu-phone li > a { flex-direction: column; justify-content: flex-start; gap: 6px; padding: 10px 4px 9px; text-align: center; font-size: .84rem; line-height: 1.25; }
+.navmenu-phone li > a > .icon { inline-size: 24px; block-size: 24px; padding: 10px; border-radius: 15px; }
+.navmenu-phone li > a > span { overflow-wrap: anywhere; }
+.navmenu-phone .navmenu-all { flex-direction: row; }
+/* the settings: the person's chip, its gear turning a little under the pointer */
+.userchip .icon { inline-size: 17px; block-size: 17px; transition: transform .45s var(--ease-river); }
+.userchip:hover .icon { transform: rotate(60deg); }
+.userchip[aria-current="page"] { border-color: var(--primary); color: var(--primary); }
+@media (prefers-reduced-motion: reduce) { .navmenu, .navmenu-phone { animation: none; } .nav-caret, .userchip .icon { transition: none; } }
 .icon { inline-size: 20px; block-size: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 
 .stats { color: var(--muted); font-size: .9rem; white-space: nowrap; }
@@ -208,6 +323,11 @@ textarea { width: 100%; resize: vertical; }
 .btn.accent { background: var(--accent); color: var(--accent-ink); }
 .btn.accent:hover { background: color-mix(in srgb, var(--accent) 88%, var(--ink)); }
 .btn.ghost { border-color: var(--line-strong); }
+/* a plain button (no primary, accent, ghost or ✨): a soft fill and a quiet edge, so a secondary action reads as a button
+   and not as bare text – by day and at night (it used to be transparent with no edge) */
+.btn:where(:not(.primary, .accent, .ghost, .ai-up)) { background: color-mix(in srgb, var(--text) 6%, var(--card)); border-color: color-mix(in srgb, var(--text) 14%, transparent); }
+.btn:where(:not(.primary, .accent, .ghost, .ai-up)):hover { background: color-mix(in srgb, var(--text) 10%, var(--card)); border-color: var(--primary); }
+.btn:where(:not(.primary, .accent, .ghost, .ai-up)):disabled { opacity: .55; }
 .btn.ghost:hover { border-color: var(--primary); color: var(--primary); }
 .btn.small { padding: 6px 12px; font-size: .88rem; }
 .btn:disabled { opacity: .55; cursor: default; }
@@ -219,6 +339,21 @@ textarea { width: 100%; resize: vertical; }
 .banner { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--olive); background: color-mix(in srgb, var(--olive) 14%, var(--card)); }
 .chip { font: inherit; font-size: .88rem; cursor: pointer; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); padding: 5px 12px; transition: border-color var(--dur-quick); }
 .chip:hover { border-color: var(--primary); color: var(--primary); }
+/* A person's name with their one title and the badges they chose to show (business, 2026-11-13: the profile, the tree,
+   the RSVPs). <span class="who"><b>שם</b> <span class="who-title founder">חבר מייסד</span>
+   <span class="who-badges"><img src="/assets/badges/peg.webp" alt="יתד ראשונה">…</span></span>
+   Titles: plain (עמוד האוהל, יתד האוהל, חבל האוהל, תומך קבוע, מלאך…), .founder (חבר/ה מייסד/ת, תומך/ת מייסד/ת, האור לפני
+   המחנה), .gold (the one-off "המיליון"). Up to five badges; their names are the images' alt. */
+.who { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-inline-size: 0; }
+.who-title { display: inline-flex; align-items: center; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; line-height: 1.5; white-space: nowrap;
+  background: color-mix(in srgb, var(--text) 7%, var(--card)); color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); }
+.who-title.founder { background: color-mix(in srgb, var(--olive) 28%, var(--card)); border-color: color-mix(in srgb, var(--olive) 60%, transparent); }
+.who-title.gold { background: linear-gradient(135deg, #f6d77a, #d9a63a); border-color: #b9862a; color: #3a2a0c; }
+.who-badges { display: inline-flex; align-items: center; }
+.who-badges img { inline-size: 22px; block-size: 22px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(30, 20, 10, .25)); }
+.who-badges img + img { margin-inline-start: -4px; }
+.chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.chip[aria-pressed="true"]:hover, .chip[aria-checked="true"]:hover { background: color-mix(in srgb, var(--primary) 88%, var(--text)); color: var(--primary-ink); }
 
 /* ---------- the glass sheet (recipes and dialogs) ---------- */
 .modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; }
@@ -317,3 +452,14 @@ html.embedded body { padding-block-end: 0; }
 .ai-invite p { margin: 0; line-height: 1.6; color: var(--muted); max-inline-size: 34ch; }
 .ai-invite .sky-acts { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-block-start: 8px; inline-size: 100%; }
 .ai-invite .sky-acts .btn { flex: 1 1 140px; justify-content: center; min-block-size: 44px; }
+/* A tool without AI is a whole tool; the AI is an upgrade inside it (docs/design/ai-upgrade.md): the plain action and its
+   ✨ upgrade side by side, the upgrade quieter, in the olive field; with no AI it is an offer (a small "חדש"), never a lock;
+   and what the AI made is marked under it */
+.ai-pair { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.btn.ai-up { background: color-mix(in srgb, var(--accent) 22%, var(--card)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--text); }
+.btn.ai-up:hover { background: color-mix(in srgb, var(--accent) 34%, var(--card)); border-color: var(--accent); }
+.btn.ai-up.offer { position: relative; }
+.btn.ai-up.offer::after { content: "חדש"; position: absolute; inset-block-start: -8px; inset-inline-end: -6px; padding: 1px 7px; border-radius: 999px;
+  font-size: .68rem; font-weight: 600; background: var(--accent); color: var(--accent-ink); box-shadow: 0 2px 6px rgba(0, 0, 0, .15); }
+.ai-note { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 6px 0 0; font-size: .82rem; color: var(--muted); }
+.ai-note button { font: inherit; border: 0; background: none; padding: 0; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }

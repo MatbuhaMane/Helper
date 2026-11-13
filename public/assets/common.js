@@ -39,6 +39,8 @@
       if (res.status === 401 && !opts.noRedirect) location.href = '/?next=' + encodeURIComponent(location.pathname);
       // the AI credit ran out (server/credits.ts): an invitation to connect one's own AI, not a broken button
       if (res.status === 402 && code === 'ai_credit_needed') loadOnce('/assets/ai-invite.js').then(() => window.H.aiInvite?.()).catch(() => {});
+      // the app or the tree is locked (server/lock.ts): the lock screen, then the page again (once, however many calls failed)
+      if (res.status === 423 && (code === 'app_locked' || code === 'tree_locked')) showLock(code === 'tree_locked' ? 'tree' : 'app');
       throw err;
     }
     return data;
@@ -154,6 +156,21 @@
     }
   }
   window.addEventListener('online', schedulePrefFlush);
+  /** Leaving the page (or hiding it, as a phone does when switching apps) before the 400 ms flush: what changed goes out now,
+      with keepalive so the browser finishes the request after the page is gone. It stays marked unsent until a later page
+      confirms it, and the server keeps the newer of two copies (by their time), so sending twice is harmless. */
+  function flushPrefsNow() {
+    if (!prefsApplied) return;
+    clearTimeout(prefTimer);
+    for (const ns of Object.keys(prefStore.dirty)) {
+      try {
+        fetch('/api/prefs/' + ns, { method: 'PUT', keepalive: true, credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ data: prefStore.data[ns], at: prefStore.at[ns] }) }).catch(() => { /* the next page sends it */ });
+      } catch (_) { /* the next page sends it */ }
+    }
+  }
+  window.addEventListener('pagehide', flushPrefsNow);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushPrefsNow(); });
 
   /* ---------- Day and night: the app follows the sun (sunrise → day, sunset → night) ----------
      A press on the switch picks the other one until the next sunrise or sunset, then the sun leads again;
@@ -247,6 +264,7 @@
 
   /* Line icons (one stroke weight, like the ShemRivers drawings). */
   const ICONS = {
+    unlocked: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/><circle cx="12" cy="16" r="1.2"/>',
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
     cart: '<path d="M3 4h2l2.2 11h10.6L20 7H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
     news: '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M7 8.5h10M7 12h10M7 15.5h6"/>',
@@ -274,6 +292,11 @@
     target: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>',
     diet: '<path d="M12 7.5c-1.6-1.3-5.5-1.6-6.8 1.8-1.3 3.4.4 8.5 3.4 10.3 1.3.8 2.4.4 3.4.1 1 .3 2.1.7 3.4-.1 3-1.8 4.7-6.9 3.4-10.3-1.3-3.4-5.2-3.1-6.8-1.8z"/><path d="M12 7.5c0-2 .8-3.4 2.6-4.2"/><path d="M12.4 5.6c1.6-.3 2.9.2 3.6 1.3-1.6.4-2.9 0-3.6-1.3z"/>',
     keto: '<path d="M12 3c4 3 6.5 6.5 6.5 10a6.5 6.5 0 0 1-13 0C5.5 9.5 8 6 12 3z"/><circle cx="12" cy="14" r="2.6"/>',
+    // a gear for הגדרות, and a compass for ניווט (after Feather, MIT)
+    settings: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>',
+    compass: '<circle cx="12" cy="12" r="9.5"/><path d="M15.8 8.2l-2 5.6-5.6 2 2-5.6z"/>',
+    // a fork and a knife, for the restaurants (design's drawing)
+    restaurant: '<path d="M7 3v6.5a2 2 0 0 0 4 0V3M9 3v5.5M9 11.5V21"/><path d="M17 21V3c-1.9 1-3 3.3-3 6.5V14h3"/>',
   };
   // SVG needs its namespace, so it's parsed from markup rather than built with createElement.
   const icon = (name, cls = 'icon') => {
@@ -281,17 +304,48 @@
     t.innerHTML = `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
     return t.content.firstChild;
   };
+  /* The top bar and the phone's tab bar: five items (the owner's decision) – בית, עץ המשפחה, ניווט (a menu of the tent's
+     parts), כלים (a menu of every tool) and הגדרות. The menus are read from the catalogue in /assets/apps.js (design's),
+     loaded when a menu first opens. `also`: the pages that light up an entry. */
+  const PARTS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];
   const NAV = [
     { href: '/', label: 'בית', icon: 'home' },
-    { href: '/family/', label: 'עץ המשפחה', short: 'משפחה', icon: 'family' },
-    // (also: the pages that live inside a folder light up the folder's entry)
-    { href: '/food/', label: 'אוכל', icon: 'food', also: ['/groceries/'] },
-    { href: '/news/', label: 'חדשות', icon: 'news' },
-    { href: '/fun/', label: 'בידור', icon: 'fun' },
-    { href: '/parasha/', label: 'פרשת השבוע', short: 'פרשה', icon: 'torah' },   // short: the phone's tab bar
-    { href: '/songs/', label: 'שירון', icon: 'music' },
-    { href: '/tools/', label: 'כלים', icon: 'tools', also: ['/mail/', '/pc/'] },
+    { href: '/family/', label: 'עץ המשפחה', lines: ['עץ', 'המשפחה'], short: 'משפחה', icon: 'family' },   // lines: two lines on PC (the owner's choice)
+    { menu: 'parts', label: 'ניווט', icon: 'compass', also: [...PARTS, '/groceries/'] },
+    { menu: 'tools', href: '/tools/', label: 'כלים', icon: 'tools', also: ['/tools/', '/mail/', '/pc/', '/gather/'] },
+    { href: '/settings/', label: 'הגדרות', icon: 'settings', tab: true },   // on PC: the gear with the person's name
   ];
+  /** a menu of the tent's parts or of its tools, under its button (PC) or above the tab bar (phone) */
+  let openMenuEl = null;
+  function closeMenu() {
+    if (!openMenuEl) return;
+    openMenuEl.btn.setAttribute('aria-expanded', 'false');
+    openMenuEl.box.remove();
+    openMenuEl = null;
+  }
+  async function toggleMenu(btn, kind, phone) {
+    if (openMenuEl?.btn === btn) return closeMenu();
+    closeMenu();
+    try { await loadOnce('/assets/apps.js'); } catch (_) { location.href = kind === 'tools' ? '/tools/' : '/'; return; }
+    const here = location.pathname;
+    const items = (window.H.APPS || []).filter((a) => (kind === 'parts' ? PARTS.includes(a.href) : !a.fixed && !PARTS.includes(a.href)));
+    const link = (a) => el('li', {}, el('a', { href: a.href, 'aria-current': here.startsWith(a.href.split('#')[0]) && a.href !== '/' ? 'page' : null }, icon(a.ic), el('span', {}, a.name)));
+    const box = el('div', { class: 'navmenu' + (phone ? ' navmenu-phone' : ''), id: 'navmenu-' + kind },
+      el('ul', {}, items.map(link)),
+      kind === 'tools' ? el('a', { class: 'navmenu-all', href: '/tools/' }, 'כל הכלים, וסידור ›') : null);
+    if (!phone) {
+      const r = btn.getBoundingClientRect();
+      box.style.top = Math.round(r.bottom + 6) + 'px';
+      box.style.insetInlineStart = Math.round(document.documentElement.dir === 'rtl' || getComputedStyle(document.documentElement).direction === 'rtl' ? innerWidth - r.right : r.left) + 'px';
+    }
+    document.body.append(box);
+    btn.setAttribute('aria-expanded', 'true');
+    openMenuEl = { btn, box };
+    box.querySelector('a')?.focus({ preventScroll: true });
+  }
+  addEventListener('click', (e) => { if (openMenuEl && !openMenuEl.box.contains(e.target) && !openMenuEl.btn.contains(e.target)) closeMenu(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape' && openMenuEl) { const b = openMenuEl.btn; closeMenu(); b.focus(); } });
+  addEventListener('resize', closeMenu);
   // the family's logo (in the old Hebrew script), drawn in the ink of the theme
   const BRAND = '<svg class="brand-mark" viewBox="0 0 1082 340" aria-hidden="true"><path fill="currentColor" fill-rule="evenodd" d="M1017.0 331.2Q1012.0 334.1 1010.4 334.1Q1008.9 334.0 1007.9 331.5Q1006.9 329.0 1006.7 324.5Q1006.4 320.0 1007.2 314.0Q1007.9 308.0 1013.6 295.0Q1019.2 282.0 1023.9 266.0Q1028.5 250.0 1035.7 215.0Q1042.9 180.0 1044.2 169.0Q1045.4 158.0 1045.3 147.5Q1045.2 137.0 1041.5 108.5Q1037.9 80.0 1037.8 72.5Q1037.7 65.0 1038.6 61.5Q1039.5 58.0 1037.3 57.8Q1035.0 57.5 1030.5 59.6Q1026.0 61.6 998.2 78.8Q970.4 96.0 966.9 97.5Q963.3 99.0 958.7 99.6Q954.0 100.3 951.0 99.6Q948.0 98.9 945.3 96.4Q942.6 94.0 934.4 76.5Q926.2 59.0 923.6 55.9Q921.0 52.9 919.5 52.5Q918.0 52.2 908.2 58.6Q898.4 65.0 879.7 81.7Q861.0 98.4 854.0 103.5Q847.0 108.5 843.0 104.3Q839.0 100.0 833.2 91.5Q827.3 83.0 818.1 66.0Q808.9 49.0 805.9 39.5Q802.9 30.0 802.0 23.5Q801.1 17.0 801.6 13.0Q802.2 9.0 803.6 7.4Q805.0 5.8 807.0 5.7Q809.0 5.6 813.0 8.8Q816.9 12.0 824.6 21.5Q832.2 31.0 839.9 43.0Q847.6 55.0 850.3 56.7Q853.0 58.5 856.0 57.8Q859.0 57.1 864.0 54.1Q869.0 51.1 894.5 32.5Q920.0 13.9 928.5 9.4Q937.1 5.0 942.0 4.9Q947.0 4.8 949.0 6.5Q951.0 8.2 952.0 11.6Q953.1 15.0 954.1 35.0Q955.1 55.0 956.6 57.7Q958.0 60.4 960.0 61.3Q962.0 62.3 969.5 59.8Q977.0 57.2 988.5 51.3Q1000.0 45.3 1016.5 35.1Q1033.0 25.0 1047.1 15.0Q1061.2 5.0 1064.1 4.7Q1067.0 4.5 1068.6 5.7Q1070.2 7.0 1071.8 11.0Q1073.4 15.0 1074.9 28.5Q1076.3 42.0 1076.3 111.5Q1076.2 181.0 1074.5 194.5Q1072.8 208.0 1068.7 224.5Q1064.6 241.0 1053.7 271.0Q1042.8 301.0 1039.9 306.5Q1037.1 312.0 1033.5 316.7Q1030.0 321.3 1026.0 324.8Q1022.0 328.2 1017.0 331.2ZM195.7 293.1Q162.0 331.2 138.0 331.5Q114.0 331.8 112.0 330.9Q110.0 330.0 74.2 248.0Q38.4 166.0 27.3 138.5Q16.1 111.0 10.6 93.0Q5.0 75.0 5.0 59.2Q5.0 43.4 7.5 45.7Q10.0 48.0 58.7 121.0Q107.4 194.0 121.4 213.5Q135.3 233.0 142.7 241.8Q150.0 250.6 158.5 242.3Q167.0 234.0 195.5 203.0Q224.0 171.9 233.0 163.2Q242.0 154.5 250.0 148.6Q258.0 142.7 259.5 142.4Q261.0 142.1 263.0 142.7Q265.0 143.4 274.0 150.5Q283.0 157.6 295.9 171.8Q308.9 186.0 311.6 190.5Q314.3 195.0 314.9 197.5Q315.4 200.0 317.1 200.0Q318.9 200.0 329.0 190.5Q339.1 181.0 377.1 138.0Q415.1 95.0 438.6 70.9Q462.0 46.8 471.0 39.5Q480.0 32.2 489.0 26.9Q498.0 21.7 507.5 19.1Q517.0 16.6 521.1 17.8Q525.2 19.0 525.6 21.0Q526.0 23.0 524.0 26.5Q522.1 30.0 493.0 70.5Q464.0 111.0 418.1 172.0Q372.3 233.0 359.9 248.5Q347.5 264.0 339.4 272.5Q331.4 281.0 327.2 283.9Q323.0 286.9 319.0 287.6Q315.0 288.3 307.5 287.8Q300.0 287.2 298.0 285.8Q296.0 284.4 293.3 280.7Q290.6 277.0 280.3 252.1Q270.0 227.1 268.5 224.5Q267.0 221.9 265.5 221.5Q264.0 221.2 246.7 238.1Q229.5 255.0 195.7 293.1ZM844.5 324.4Q836.0 328.2 831.0 328.1Q826.0 328.1 820.5 326.0Q815.0 324.0 808.5 318.8Q802.0 313.6 791.7 297.8Q781.3 282.0 768.3 257.0Q755.3 232.0 751.6 227.7Q748.0 223.4 743.5 220.1Q739.0 216.8 732.5 215.3Q726.0 213.7 718.0 214.0Q710.0 214.3 666.0 222.9Q622.0 231.5 622.8 229.2Q623.7 227.0 632.8 220.3Q642.0 213.6 675.5 195.2Q709.0 176.8 713.0 173.2Q717.0 169.6 718.1 167.3Q719.2 165.0 719.6 162.5Q720.0 160.0 718.6 152.5Q717.3 145.0 713.8 134.0Q710.3 123.0 703.3 107.5Q696.2 92.0 691.1 83.7Q686.0 75.3 683.5 72.5Q681.0 69.8 679.5 69.2Q678.0 68.7 675.0 69.2Q672.0 69.8 662.0 73.6Q652.0 77.4 584.6 106.2Q517.3 135.0 508.6 137.7Q500.0 140.4 499.9 138.7Q499.8 137.0 510.9 125.8Q522.0 114.5 530.0 108.0Q538.0 101.5 549.0 94.3Q560.0 87.2 578.5 76.9Q597.0 66.6 612.0 59.3Q627.0 52.0 648.0 43.6Q669.0 35.3 685.5 31.5Q702.0 27.7 706.5 27.5Q711.0 27.4 712.3 29.2Q713.7 31.0 731.7 82.0Q749.7 133.0 763.7 167.5Q777.6 202.0 790.1 228.5Q802.6 255.0 808.0 264.5Q813.5 274.0 818.7 281.3Q824.0 288.6 826.5 290.5Q829.0 292.3 830.5 292.5Q832.0 292.7 841.0 290.7Q850.0 288.8 862.5 283.9Q875.0 279.0 906.5 263.8Q938.0 248.5 942.0 246.9Q946.0 245.3 947.1 245.7Q948.3 246.0 947.6 248.3Q947.0 250.7 938.5 259.2Q930.0 267.8 916.4 278.4Q902.7 289.0 887.4 299.4Q872.0 309.7 862.5 315.2Q853.0 320.7 844.5 324.4Z"/></svg>';
 
@@ -301,17 +355,22 @@
   if (embedded) document.documentElement.classList.add('embedded');
   function header(title) {
     const here = location.pathname.replace(/index\.html$/, '');
-    const current = (href) => (href === '/' ? here === '/' : here.startsWith(href) || !!NAV.find((n) => n.href === href)?.also?.some((a) => here.startsWith(a)));
+    const current = (n) => (n.href === '/' ? here === '/' : (n.href && here.startsWith(n.href)) || !!n.also?.some((a) => here.startsWith(a)));
+    // a menu entry is a button that opens its list; the others are links
+    const entry = (n, phone) => n.menu
+      ? el('button', { type: 'button', class: phone ? 'tab-menu' : 'ink-nav nav-menu', 'aria-expanded': 'false', 'aria-controls': 'navmenu-' + n.menu, 'aria-current': current(n) ? 'page' : null,
+        'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'פתיחת ' + n.label, onclick: (e) => { e.stopPropagation(); toggleMenu(e.currentTarget, n.menu, phone); } },
+        phone ? icon(n.icon) : null, el('span', {}, n.short || n.label), phone ? null : el('span', { class: 'nav-caret', 'aria-hidden': 'true' }, '▾'))
+      : el('a', { class: phone ? null : 'ink-nav', href: n.href, 'aria-current': current(n) ? 'page' : null, 'data-guide': (phone ? 'tab-' : 'nav-') + n.icon, 'data-guide-label': 'מעבר ל' + n.label },
+        phone ? icon(n.icon) : null, phone ? el('span', {}, n.short || n.label) : n.lines ? el('span', { class: 'nav-two' }, el('span', {}, n.lines[0]), ' ', el('span', {}, n.lines[1])) : n.label);
     const bar = el('header', { class: 'appbar' },
       el('a', { class: 'brand', href: '/', 'aria-label': 'הָאֹ֔הֶל, לדף הבית' }, el('span', { html: BRAND }), el('span', { class: 'brand-text' }, 'הָאֹ֔הֶל')),
       title ? el('h1', { class: 'page-title' }, title) : null,
-      el('nav', { class: 'topnav', 'aria-label': 'ניווט ראשי', hidden: true }, NAV.map((n) =>
-        el('a', { class: 'ink-nav', href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'nav-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, n.label))),
+      el('nav', { class: 'topnav', 'aria-label': 'ניווט ראשי', hidden: true }, NAV.filter((n) => !n.tab).map((n) => entry(n, false))),
       el('span', { class: 'spacer' }),
-      // (day and night: the sun and moon's orbit on the home page is the switch; elsewhere the app follows the sun)
-      el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, title: 'הגדרות', hidden: true }, '…'));
-    const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) =>
-      el('a', { href: n.href, 'aria-current': current(n.href) ? 'page' : null, 'data-guide': 'tab-' + n.icon, 'data-guide-label': 'מעבר ל' + n.label }, icon(n.icon), el('span', {}, n.short || n.label))));
+      // הגדרות on PC: the gear with the person's name (day and night: the sun and moon's orbit on the home page is the switch)
+      el('button', { class: 'userchip', id: 'userchip', onclick: userMenu, title: 'הגדרות', 'aria-label': 'הגדרות', 'aria-current': here.startsWith('/settings/') ? 'page' : null, hidden: true }, icon('settings'), el('span', { class: 'userchip-name' }, '…')));
+    const tabs = el('nav', { class: 'tabbar', 'aria-label': 'ניווט', hidden: true }, NAV.map((n) => entry(n, true)));
     document.body.prepend(bar);
     document.body.append(tabs);
     me().then((r) => {
@@ -320,7 +379,15 @@
       tabs.hidden = false;
       const chip = document.getElementById('userchip');
       chip.hidden = false;
-      chip.textContent = r.user.he_name || (r.user.name || r.user.email).split(' ')[0];
+      chip.querySelector('.userchip-name').textContent = r.user.he_name || (r.user.name || r.user.email).split(' ')[0];
+      // the app lock (server/lock.ts): locked already – the lock screen; a lock set – the open padlock in the bar, to lock now
+      if (r.locked) showLock('app');
+      if (r.appLock && r.appLock !== 'off' && !embedded) {
+        chip.before(el('button', { type: 'button', class: 'navlock', title: 'לנעול את האוהל', 'aria-label': 'לנעול את האוהל', onclick: async () => {
+          try { await api('/api/lock/lock', { method: 'POST' }); } catch (_) { /* the screen locks anyway */ }
+          showLock('app', true);
+        } }, icon('unlocked')));
+      }
       // the family vault (data-vault): no player, no capture – nothing from outside runs next to the documents
       const vault = document.body.dataset.vault === '1';
       if (!r.offline && !embedded && !vault) loadMusic();
@@ -328,6 +395,14 @@
       if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
     });
     return bar;
+  }
+
+  /** the lock screen (ai-features' /assets/lock-screen.js), once however many calls were refused; opened, the page again */
+  let lockShown = false;
+  function showLock(scope, animate = false) {
+    if (lockShown) return;
+    lockShown = true;
+    loadOnce('/assets/lock-screen.js').then(() => window.H.lockScreen?.({ scope, animate })).then(() => location.reload()).catch(() => { lockShown = false; });
   }
 
   /** the name in the bar opens the person's settings (the account, signing out, חיבור לשירותים) */
@@ -342,8 +417,13 @@
   /** a script of our own, once per page */
   function loadOnce(src) {
     const had = document.querySelector(`script[src="${src}"]`);
-    if (had) return had.dataset.loaded ? Promise.resolve() : new Promise((ok, no) => { had.addEventListener('load', ok); had.addEventListener('error', no); });
-    return new Promise((ok, no) => { const s = el('script', { src }); s.addEventListener('load', () => { s.dataset.loaded = '1'; ok(); }); s.addEventListener('error', no); document.head.append(s); });
+    if (had) {
+      if (had.dataset.loaded) return Promise.resolve();
+      // a page's own <script> tag (not added here): it has run by the time the document is parsed (a "load" already passed)
+      if (!had.dataset.dyn) return document.readyState === 'loading' ? new Promise((ok) => document.addEventListener('DOMContentLoaded', () => ok(), { once: true })) : Promise.resolve();
+      return new Promise((ok, no) => { had.addEventListener('load', ok); had.addEventListener('error', no); });
+    }
+    return new Promise((ok, no) => { const s = el('script', { src, 'data-dyn': '1' }); s.addEventListener('load', () => { s.dataset.loaded = '1'; ok(); }); s.addEventListener('error', no); document.head.append(s); });
   }
 
   /* Glass modal shared by apps */
@@ -415,4 +495,22 @@
   else setTimeout(autoDaemon);
 
   window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+
+  /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
+     page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then
+     apply.js loads and owns them from there (H.applySettings, H.reducedMotion, H.vibrate, H.soundsOn), re-applying when
+     the prefs change on another device. Keep this early copy in step with apply.js. */
+  (function earlySettings() {
+    const d = prefStore.data || {}, a = d.access || {}, l = d.look || {}, m = d.me || {}, root = document.documentElement;
+    const text = Math.min(1.6, Math.max(0.85, Number(a.text) || 1));
+    if (text !== 1) root.style.fontSize = `${Math.round(text * 100)}%`;
+    if (a.spacing === 'wide') root.dataset.spacing = 'wide';
+    if (a.font === 'readable') root.dataset.font = 'readable';
+    else if (['heebo', 'round', 'serif'].includes(l.font)) root.dataset.font = l.font;   // the font chosen, before paint
+    if (a.contrast === 'high') root.dataset.contrast = 'high';
+    if (a.motion === 'reduce') root.dataset.motion = 'reduce';
+    if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;
+    if (/^[a-z]{1,16}$/.test(m.religion || '')) root.dataset.religion = m.religion;
+  })();
+  if (!embedded) loadOnce('/settings/apply.js').catch(() => { /* the early marks stay */ });
 })();

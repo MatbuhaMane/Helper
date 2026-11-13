@@ -8,7 +8,7 @@
 (() => {
   'use strict';
   const { el } = H;
-  const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduceMotion = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   let made = null;
 
   function make() {
@@ -28,22 +28,40 @@
       const h = phone ? Math.round(vh * (s === 'large' ? 0.94 : 0.84)) : Math.min(s === 'large' ? vh - 48 : Math.round(vh * 0.82), s === 'large' ? 1200 : 760);
       return { x: Math.round((vw - w) / 2), y: phone ? vh - h : Math.round((vh - h) / 2), w, h };
     };
-    const aim = (s) => {
+    /* The sheet sits where it opens, always; only a transform moves it (FLIP), so nothing is laid out again while it
+       moves. Closed, the transform folds it onto the card (a translation and a scale, from its centre); open, it is
+       turned over (rotateY 180°) with no translation or scale. --dx/--dy/--sx/--sy are that fold. The card's copy on the
+       front is drawn at the card's own size and scaled up with the face, so it does not reflow on the way. */
+    let cur = target('full');
+    const setRect = (t) => { cur = t;   // (measured screen pixels: physical left/top on purpose)
+      flip.style.left = t.x + 'px'; flip.style.top = t.y + 'px'; flip.style.width = t.w + 'px'; flip.style.height = t.h + 'px'; };
+    const moving = () => { root.classList.add('moving'); clearTimeout(moving.t); moving.t = setTimeout(() => root.classList.remove('moving'), 1400); };
+    /** the fold from the sheet's place onto a rectangle r (the card, or the sheet's previous place) */
+    const fold = (r) => {
+      const t = cur;
+      flip.style.setProperty('--dx', (r.left + r.width / 2 - (t.x + t.w / 2)).toFixed(1) + 'px');
+      flip.style.setProperty('--dy', (r.top + r.height / 2 - (t.y + t.h / 2)).toFixed(1) + 'px');
+      flip.style.setProperty('--sx', (r.width / t.w).toFixed(4)); flip.style.setProperty('--sy', (r.height / t.h).toFixed(4));
+      flip.style.setProperty('--w', r.width + 'px'); flip.style.setProperty('--h', r.height + 'px');
+      flip.style.setProperty('--fx', (t.w / r.width).toFixed(4)); flip.style.setProperty('--fy', (t.h / r.height).toFixed(4));
+    };
+    /** Aim the sheet at a size; when it is already open and `animate`, it grows there from where it was (FLIP). */
+    const aim = (s, animate) => {
+      const was = animate && root.classList.contains('open') && !reduceMotion() ? flip.getBoundingClientRect() : null;
       size = s;
-      const t = target(s);
-      flip.style.setProperty('--tx', t.x + 'px'); flip.style.setProperty('--ty', t.y + 'px');
-      flip.style.setProperty('--tw', t.w + 'px'); flip.style.setProperty('--th', t.h + 'px');
+      setRect(target(s));
       root.classList.toggle('sized', s !== 'full');
       root.dataset.size = s;
+      if (!was) return;
+      const t = cur, k = (was.width / t.w).toFixed(4), l = (was.height / t.h).toFixed(4);
+      flip.style.transition = 'none';
+      flip.style.transform = `translate(${(was.left + was.width / 2 - (t.x + t.w / 2)).toFixed(1)}px, ${(was.top + was.height / 2 - (t.y + t.h / 2)).toFixed(1)}px) scale(${k}, ${l}) rotateY(180deg)`;
+      void flip.offsetWidth;
+      moving();
+      flip.style.transition = ''; flip.style.transform = '';
     };
-    addEventListener('resize', () => { if (!root.hidden) aim(size); });
-    // Where the card is, in logical terms: --x is its distance from the start edge (the right, in Hebrew).
-    const place = (r) => {
-      const rtl = getComputedStyle(document.documentElement).direction === 'rtl';
-      flip.style.setProperty('--x', (rtl ? document.documentElement.clientWidth - r.right : r.left) + 'px');
-      flip.style.setProperty('--y', r.top + 'px');
-      flip.style.setProperty('--w', r.width + 'px'); flip.style.setProperty('--h', r.height + 'px');
-    };
+    addEventListener('resize', () => { if (!root.hidden) aim(size, false); });
+    const copy = (card) => el('div', { class: 'rs-copy' }, card.cloneNode(true));
     const leave = () => { const f = onLeave; onLeave = null; if (f) f(); };
     function open(from, content, opts = {}) {
       leave();
@@ -53,17 +71,18 @@
       if (extra) root.classList.add(...extra.split(' '));
       body.replaceChildren(...[].concat(content).filter(Boolean));
       body.scrollTop = 0;
-      if (!root.hidden && !closing) { aim(opts.size || size); return; } // already open: new content (and maybe a new size), animated
+      if (!root.hidden && !closing) { aim(opts.size || size, true); return; } // already open: new content (and maybe a new size), animated
       closing = false;
-      aim(opts.size || 'full');
+      aim(opts.size || 'full', false);
       origin = from && document.body.contains(from) ? from : null;
       root.hidden = false;
       document.body.classList.add('sheet-open');
       if (!origin || reduceMotion()) { root.classList.add('open', 'instant'); return; }
-      front.replaceChildren(origin.cloneNode(true));
-      place(origin.getBoundingClientRect());
+      front.replaceChildren(copy(origin));
+      fold(origin.getBoundingClientRect());
       root.classList.remove('open', 'instant');
-      void flip.offsetWidth; // start from the card, then animate to the full page
+      void flip.offsetWidth; // start folded onto the card, then unfold
+      moving();
       requestAnimationFrame(() => root.classList.add('open'));
     }
     function close() {
@@ -72,8 +91,9 @@
       closing = true;
       const done = () => { if (!closing) return; closing = false; root.hidden = true; root.classList.remove('open', 'instant'); document.body.classList.remove('sheet-open'); body.replaceChildren(); };
       if (origin && document.body.contains(origin) && !reduceMotion() && !root.classList.contains('instant')) {
-        front.replaceChildren(origin.cloneNode(true));
-        place(origin.getBoundingClientRect());
+        front.replaceChildren(copy(origin));
+        fold(origin.getBoundingClientRect());
+        moving();
         root.classList.remove('open');
         const onEnd = (e) => { if (e.target === flip && e.propertyName === 'transform') { flip.removeEventListener('transitionend', onEnd); done(); } };
         flip.addEventListener('transitionend', onEnd);
@@ -83,7 +103,7 @@
     closeBtn.addEventListener('click', close);
     root.querySelector('.rs-shade').addEventListener('click', close);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !root.hidden) { e.stopImmediatePropagation(); close(); } }, true);
-    return { open, close, body, resize: (s) => { if (!root.hidden) aim(s); }, get size() { return size; }, get isOpen() { return !root.hidden && !closing; } };
+    return { open, close, body, resize: (s) => { if (!root.hidden) aim(s, true); }, get size() { return size; }, get isOpen() { return !root.hidden && !closing; } };
   }
 
   const get = () => (made = made || make());

@@ -1,0 +1,64 @@
+/* רכישה – an honest purchase page (business: docs/business/monetization.md §4.3). The thing itself first (a figure alive,
+   credits, support), then in plain sight before the button: the final price, exactly what you get, the cancellation terms,
+   and who you are buying from. Nothing in small print that matters. */
+.by { max-inline-size: 980px; margin: 0 auto; padding-block: 18px 56px; display: grid; gap: 18px; }
+.by-head h1 { margin: 0; font-size: clamp(1.8rem, 1.2rem + 2.2vw, 2.4rem); }
+.by-head p { margin: 4px 0 0; color: var(--muted); }
+.by-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 18px; align-items: start; }
+@media (max-width: 760px) { .by-main { grid-template-columns: minmax(0, 1fr); } }
+/* the thing: a stage for a figure (Figure2D), or a picture for credits and support */
+.by-item { display: grid; place-items: end center; min-block-size: 300px; padding: 24px 16px 22px; border-radius: 26px; background: var(--card); border: 1px solid var(--line);
+  background-image: radial-gradient(60% 14% at 50% 92%, color-mix(in srgb, var(--olive) 34%, transparent), transparent 70%); }
+.by-item figcaption { margin-block-start: 10px; text-align: center; display: grid; gap: 2px; }
+.by-item figcaption b { font-size: 1.25rem; }
+.by-item figcaption small { color: var(--muted); }
+/* the offer: price, what you get, the terms, the button */
+.by-offer { display: grid; gap: 16px; padding: 22px; border-radius: 26px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--lift); }
+.by-price { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.by-price b { font-size: 2.4rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.by-price small { color: var(--muted); }
+.by-gets { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.by-gets li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; line-height: 1.5; }
+.by-gets li::before { content: "✓"; display: grid; place-items: center; inline-size: 22px; block-size: 22px; border-radius: 50%; font-size: .8rem; font-weight: 700;
+  background: color-mix(in srgb, var(--primary) 14%, var(--card)); color: var(--primary); }
+/* the terms, before the button, never after: a plain notice */
+.by-terms { display: grid; gap: 6px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, #e0a83a 10%, var(--card));
+  border: 1px solid color-mix(in srgb, #e0a83a 45%, var(--line)); line-height: 1.55; font-size: .93rem; }
+.by-terms b { font-weight: 600; }
+.by-terms p { margin: 0; }
+.by-agree { display: flex; align-items: flex-start; gap: 10px; font-size: .93rem; line-height: 1.5; cursor: pointer; }
+.by-agree input { margin-block-start: 3px; inline-size: 18px; block-size: 18px; accent-color: var(--primary); flex: none; }
+.by-buy { justify-content: center; min-block-size: 50px; font-size: 1.08rem; inline-size: 100%; }
+.by-buy:disabled { opacity: .5; cursor: not-allowed; }
+.by-pay-note { margin: 0; text-align: center; color: var(--muted); font-size: .84rem; }
+/* the wallet: figures and skins are paid in credits. The balance, and what is left after; short of credits, the packs */
+.by-balance { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; padding: 10px 14px; border-radius: 14px; background: var(--bg); border: 1px solid var(--line); }
+.by-balance b { font-variant-numeric: tabular-nums; }
+.by-balance small { color: var(--muted); margin-inline-start: auto; }
+.by-balance.low b { color: var(--danger, #b4442f); }
+.by-short { display: grid; gap: 8px; }
+.by-short > span { color: var(--muted); line-height: 1.5; }
+.by-topup { display: grid; gap: 14px; padding: 22px; border-radius: 26px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--lift); }
+.by-topup h2 { margin: 0; font-size: 1.3rem; }
+.by-packs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 480px) { .by-packs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.by-pack { font: inherit; color: inherit; display: grid; gap: 2px; justify-items: center; padding: 14px 8px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--bg); cursor: pointer;
+  transition: border-color var(--dur-quick), background-color var(--dur-quick); }
+.by-pack:hover { border-color: var(--line-strong); }
+.by-pack[aria-checked="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--card)); box-shadow: inset 0 0 0 1px var(--primary); }
+.by-pack b { font-size: 1.4rem; font-variant-numeric: tabular-nums; }
+.by-pack small { color: var(--muted); font-size: .8rem; text-align: center; }
+.by-topup .by-seller { margin-block-start: 4px; }
+/* plans: monthly support beside a one-off (for the packs and support page, not a single figure's) */
+.by-plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 8px; }
+.by-plan { font: inherit; color: inherit; text-align: start; display: grid; gap: 2px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--bg); cursor: pointer;
+  transition: border-color var(--dur-quick), background-color var(--dur-quick); }
+.by-plan:hover { border-color: var(--line-strong); }
+.by-plan[aria-checked="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--card)); box-shadow: inset 0 0 0 1px var(--primary); }
+.by-plan b { font-size: 1.05rem; }
+.by-plan small { color: var(--muted); }
+.by-plan .by-cancel { color: var(--primary); font-weight: 500; }
+/* who you buy from: the dealer's details, as the law asks */
+.by-seller { display: grid; gap: 4px; padding: 14px 18px; border-radius: 18px; border: 1px dashed var(--line-strong); color: var(--muted); font-size: .9rem; line-height: 1.6; }
+.by-seller b { color: var(--text); }
+.by-seller .ph { padding: 0 6px; border-radius: 6px; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); font-family: ui-monospace, Consolas, monospace; font-size: .85em; }

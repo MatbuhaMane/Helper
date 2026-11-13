@@ -112,3 +112,21 @@ export async function solve(ctx: Ctx) {
   if (!ctx.env.ANTHROPIC_API_KEY && !ctx.env.GEMINI_API_KEY) throw new HttpError(503, 'ai_not_configured');
   throw lastErr instanceof HttpError ? lastErr : new HttpError(502, 'ai_failed');
 }
+
+/* ---------------- currency rates, for the calculator without AI ---------------- */
+// The European Central Bank's daily reference rates through Frankfurter (open, no key, nothing about the person is
+// sent). Kept for six hours in the Worker's memory and Cloudflare's cache; the page turns them into mathjs units.
+let rates: { at: number; data: { base: string; date: string; rates: Record<string, number> } } | null = null;
+const RATES_TTL = 6 * 3600_000;
+
+/** GET /api/calc/rates → { base: 'ILS', date, rates: { USD: 0.31, … } } (how much of each currency one shekel buys) */
+export async function currencyRates(ctx: Ctx) {
+  requireUser(ctx);
+  if (!rates || Date.now() - rates.at > RATES_TTL) {
+    const res = await fetch('https://api.frankfurter.dev/v1/latest?base=ILS', { cf: { cacheTtl: 21600, cacheEverything: true } } as RequestInit);
+    if (!res.ok) { if (rates) return json(rates.data); throw new HttpError(502, 'rates_unavailable'); }
+    const d = (await res.json()) as { base: string; date: string; rates: Record<string, number> };
+    rates = { at: Date.now(), data: { base: d.base, date: d.date, rates: d.rates } };
+  }
+  return json(rates.data);
+}

@@ -29,6 +29,28 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['admin_messages', 'to_email', 'TEXT'],    // a message for one person (a gift's note); empty: for everyone
   ['design_images', 'usd', 'REAL'],          // what this picture cost (from Gemini's answer, priced as the meter prices it)
   ['design_images', 'started_at', 'INTEGER'], // when its batch started (the same for each picture of a batch)
+  ['sessions', 'vault_trust_until', 'INTEGER'], // the family tree opens on this device with no unlock until then (30 days from its last use)
+  ['sessions', 'vault_trust_since', 'INTEGER'], // when this device became trusted
+  ['sessions', 'vault_trust_used', 'INTEGER'],  // when it last opened the tree
+  ['sessions', 'vault_trust_label', 'TEXT'],    // a coarse name for the list ("Chrome · Windows"), never the whole User-Agent
+  ['notes', 'starred', 'INTEGER'],              // 1: the person starred this note (shown first)
+  ['notes', 'drive_id', 'TEXT'],                // the Google Doc this note was saved as, in the person's own Drive
+  ['notes', 'drive_at', 'INTEGER'],             // when it was last saved there
+  ['notes', 'inbox', 'INTEGER'],                // 1: captured from anywhere (/capture/), waiting to be sorted into a research
+  ['researches', 'goal_id', 'TEXT'],           // the goal it became (the goals engine: its steps come to "היום")
+  ['researches', 'done_at', 'INTEGER'],         // finished ("גשש")
+  ["members", "birth_year", "INTEGER"],         // private: only the owner sees it (the room); under 12 hides horror figures and keeps a child in the family
+  ["members", "first_seen", "INTEGER"],         // their first sign-in (the owner is told, core.ts firstSignIn)
+  ["members", "approved_at", "INTEGER"],        // the owner approved them in the room: full access, every special feature
+  ["sessions", "app_locked", "INTEGER"],       // 1: the app is locked in this session (server/lock.ts)
+  ["sessions", "last_active", "INTEGER"],      // the app lock's clock of "left alone"
+  ["sessions", "tree_open_until", "INTEGER"],  // the family tree opened by its lock, until
+  ["sessions", "lock_proof_at", "INTEGER"],    // the last code, passkey or sign-in: changes to the locks need one from the last 5 minutes
+  ['research_notes', 'note_email', 'TEXT'],     // shared research: whose note it is (empty: the research's owner)
+  ['research_notes', 'shared', 'INTEGER'],      // 0: a private note – the others see only that there is one
+  ['research_threads', 'created_by', 'TEXT'],   // who wrote it (empty: the owner)
+  ['research_sources', 'created_by', 'TEXT'],   // who added it (empty: the owner)
+  ['research_drafts', 'created_by', 'TEXT'],    // who started it (empty: the owner)
 ];
 
 let ready: Promise<void> | null = null;

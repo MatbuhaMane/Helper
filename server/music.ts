@@ -228,10 +228,13 @@ export async function youtubeSearch(ctx: Ctx) {
     console.error('YouTube search', r.status, (await r.text()).slice(0, 200));
   }
   // No YouTube key: Gemini searches Google and lists the videos it found; each one is checked with YouTube's oEmbed.
+  // Without AI either (docs/ai/without-ai.md #10): the search on YouTube itself, to open there.
+  const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
   const res = await geminiGrounded(ctx.env, {
     system: 'You find music videos on YouTube. Answer with JSON only: {"urls": ["https://www.youtube.com/watch?v=..."]}, up to 8 real video addresses that play the requested music (official uploads first).',
     prompt: `Music to play: ${q}`,
-  });
+  }).catch(() => null);
+  if (!res) return json({ videos: [], searchUrl });
   let urls: string[] = [];
   try { urls = (jsonIn(res.text).urls || []) as string[]; } catch (_) { /* fall back to the sources */ }
   urls.push(...res.sources.map((s) => s.url));

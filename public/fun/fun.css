@@ -87,8 +87,9 @@ html:has(.fun) { overscroll-behavior-y: contain; }
 
 /* a recommendation opens: a tap anywhere on the card flips it over into the whole page (the shared sheet, as in the
    recipe book); the card lifts a little under the pointer to say so */
-.fun-pick { cursor: pointer; transition: transform .35s var(--ease-river), box-shadow .35s var(--ease-river); }
-.fun-pick:hover { transform: translateY(-3px); box-shadow: 0 18px 36px -18px rgba(46, 42, 30, .45); }
+.fun-pick { cursor: pointer; transition: transform .35s var(--ease-river); }
+/* only the card lifts; its shadow stays as it is (a shadow that changes is painted again on every frame) */
+.fun-pick:hover { transform: translateY(-3px); }
 .fun-pick:active { transform: translateY(-1px) scale(.995); }
 .fun-open { all: unset; cursor: pointer; }
 .fun-open:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 6px; }

@@ -153,8 +153,8 @@
 
 /* תרגום: the button under a foreign-language text, and its translation */
 .rs-tr-wrap { display: grid; gap: 6px; justify-items: start; margin-block-start: 4px; }
-.rs-tr-b { font: inherit; font-size: .82rem; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; }
-.rs-tr-b:hover { border-color: var(--primary); }
+.rs-tr-b:not(.btn) { font: inherit; font-size: .82rem; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; }
+.rs-tr-b:not(.btn):hover { border-color: var(--primary); }
 .rs-tr-b:disabled { opacity: .6; cursor: progress; }
 .rs-tr { display: grid; gap: 6px; justify-self: stretch; }
 .rs-tr:empty { display: none; }
@@ -215,3 +215,29 @@
 /* the verse number: a target a finger can hit */
 .rs-n { min-inline-size: 26px; min-block-size: 26px; padding: 0 4px; border-radius: 8px; }
 .rs-n:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+
+/* ---------- the study room without AI and with it (ai-upgrade.md): the plain action first, ✨ beside it ---------- */
+/* under the question: "🔎 חיפוש בספריא" and "✨ שאלה לחוקר", round like the room's other buttons; on a phone they share the row */
+.rs-ask-acts { justify-content: flex-end; }
+.rs-ask-acts .btn { border-radius: 999px; }
+@media (max-width: 600px) { .rs-ask-acts > .btn { flex: 1; } }
+/* a search in Sefaria's sources: the question, then each source as a quiet row – its name, then the passage with the
+   words found marked in the field colour */
+.rs-plain-hits { display: grid; }
+.rs-plain-hits > p { margin: 0; }
+.rs-plain-hit { display: block; padding: 9px 10px; margin-inline: -10px; border-radius: 14px; text-decoration: none; color: inherit; line-height: 1.7;
+  transition: background-color var(--dur-quick); }
+.rs-plain-hit + .rs-plain-hit { border-block-start: 1px solid var(--line); }
+.rs-plain-hit:hover { background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.rs-plain-hit:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
+.rs-plain-hit > b { color: var(--primary); font-weight: 600; font-size: .92rem; }
+.rs-plain-hit > span { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; font-size: 1.05rem; }
+.rs-plain-hit > span b { font-weight: 600; background: color-mix(in srgb, var(--olive) 34%, transparent); border-radius: 4px; padding-inline: 2px; }
+/* a translation: Sefaria's (plain), a dictionary for the words (plain) and ✨ the assistant's – small, side by side */
+.rs-tr-wrap > .ai-pair { gap: 6px; }
+.rs-tr-wrap .btn.small { border-radius: 999px; font-size: .82rem; padding: 4px 12px; }
+.rs-tr-wrap .btn.small:not(.ai-up), .rs-he-word .ai-pair .btn:not(.ai-up) { background: var(--bg); border-color: var(--line-strong); color: var(--text); }   /* the plain ones read as buttons too, first */
+.rs-tr-wrap .btn.small:not(.ai-up):hover, .rs-he-word .ai-pair .btn:not(.ai-up):hover { border-color: var(--primary); color: var(--primary); }
+.rs-tr-sef { display: grid; gap: 4px; justify-self: stretch; }
+.rs-he-word .ai-pair .btn { border-radius: 999px; }
+.rs-a .ai-note, .rs-tr-wrap .ai-note, .rs-he-word .ai-note { margin: 0; }

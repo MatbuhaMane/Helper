@@ -1,0 +1,364 @@
+/* ניהול מטרות – the look (vision: docs/vision/goals.md, spec v1; markup: docs/design/goals.md, prototype:
+   docs/design/prototype/goals.html). The tool is measured by whether people come back tomorrow, so it is calm, warm and
+   quick: a goal is a ring that fills and a path of stations along a thread; today is two or three big steps you can tick;
+   consistency forgives (4 of 7, the rest day a candle, never a broken chain); the rewards are embroidered patches in the
+   tent's style. The plain version first, ✨ beside it (docs/design/ai-upgrade.md). */
+.gl {
+  --gl-ember: #c8642a;                     /* consistency: the fire of the streak */
+  --gl-ember-soft: color-mix(in srgb, var(--gl-ember) 16%, var(--card));
+  --gl-track: color-mix(in srgb, var(--text) 9%, transparent);
+  --gl-rest: #8a6fb0;                      /* the rest day: a quiet violet, a candle's evening */
+  max-inline-size: 1100px; margin: 0 auto; padding-block: 14px 48px; display: grid; gap: 18px;
+}
+:root[data-theme="dark"] .gl { --gl-ember: #f0915a; --gl-rest: #b9a3e0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gl { --gl-ember: #f0915a; --gl-rest: #b9a3e0; } }
+.gl .card { margin: 0; border-radius: 24px; border-color: color-mix(in srgb, var(--line) 80%, transparent); box-shadow: 0 14px 32px -26px rgba(46, 42, 30, .5); }
+.gl h1 { margin: 0; font-size: clamp(1.8rem, 1.2rem + 2.2vw, 2.5rem); line-height: 1.12; }
+.gl h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.gl-back { justify-self: start; color: var(--muted); text-decoration: none; font-size: .95rem; }
+.gl-back:hover { color: var(--primary); }
+.gl-head { display: flex; align-items: center; justify-content: space-between; gap: 10px 14px; flex-wrap: wrap; }
+.gl-head p { margin: 4px 0 0; color: var(--muted); }
+.gl-sec { display: grid; gap: 12px; }
+.gl-sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.gl-sec-head a { color: var(--primary); text-decoration: none; font-size: .92rem; }
+.gl-sec-head a:hover { text-decoration: underline; }
+
+/* ---------- the whole goal filling up: a ring (--p: 0–100; it eases when it grows) ---------- */
+@property --p { syntax: "<number>"; inherits: true; initial-value: 0; }
+.gl-ring { --p: 0; --size: 64px; --w: 7px; flex: none; position: relative; inline-size: var(--size); block-size: var(--size); border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--primary) calc(var(--p) * 1%), var(--gl-track) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--w) - .5px), #000 calc(100% - var(--w)));
+  mask: radial-gradient(farthest-side, transparent calc(100% - var(--w) - .5px), #000 calc(100% - var(--w)));
+  transition: --p .9s var(--ease-river); }
+.gl-ring-box { position: relative; display: grid; place-items: center; flex: none; }
+.gl-ring-box > b { position: absolute; font-size: .95rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gl-ring-box.big .gl-ring { --size: 112px; --w: 10px; }
+.gl-ring-box.big > b { font-size: 1.5rem; }
+.gl-ring.done { background: var(--primary); }
+.gl-ring-box:has(.gl-ring.done) > b { color: var(--primary); }
+
+/* ---------- the week: forgiving consistency ("השבוע 4 מתוך 7"), the rest day a candle, today ringed ---------- */
+.gl-week { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gl-days { display: flex; gap: 5px; }
+.gl-day { inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--gl-track); position: relative; }
+.gl-day.done { background: var(--gl-ember); }
+.gl-day.today { box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--gl-ember); }
+.gl-day.rest { background: none; }
+.gl-day.rest::before { content: ""; position: absolute; inset: 1px 4px; border-radius: 2px 2px 3px 3px; background: var(--gl-rest); }
+.gl-day.rest::after { content: ""; position: absolute; inset-block-start: -3px; inset-inline-start: 4px; inline-size: 4px; block-size: 5px; border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: #f2b43c; }
+.gl-week small { color: var(--muted); font-size: .86rem; }
+.gl-week small b { color: var(--text); font-weight: 600; }
+
+/* ---------- the dashboard: today's steps on top, then each goal with its ring, its why and its path ---------- */
+.gl-todaycard { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 22px; text-decoration: none; color: var(--text);
+  background: linear-gradient(135deg, var(--gl-ember-soft), color-mix(in srgb, var(--olive) 12%, var(--card))); border: 1px solid color-mix(in srgb, var(--gl-ember) 30%, var(--line));
+  transition: transform var(--dur-quick) var(--ease-river); }
+.gl-todaycard:hover { transform: translateY(-2px); }
+.gl-todaycard:active { transform: scale(.985); }
+.gl-todaycard .gl-flame { font-size: 1.8rem; line-height: 1; }
+.gl-todaycard > div { flex: 1; min-inline-size: 0; display: grid; gap: 2px; }
+.gl-todaycard b { font-size: 1.05rem; }
+.gl-todaycard small { color: var(--muted); }
+.gl-todaycard .gl-go { font-weight: 600; color: var(--primary); white-space: nowrap; }
+
+.gl-goals { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); align-items: start; }
+.gl-goal { position: relative; display: grid; gap: 14px; padding: 18px 18px 16px; transition: transform var(--dur-quick) var(--ease-river), border-color var(--dur-quick); }
+.gl-goal:hover { transform: translateY(-3px); border-color: var(--line-strong); }
+.gl-goal:active { transform: scale(.985); }
+.gl-goal-top { display: flex; align-items: center; gap: 14px; }
+.gl-goal-top > div { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.gl-goal h3 { margin: 0; font-size: 1.15rem; line-height: 1.3; }
+.gl-goal h3 a { color: inherit; text-decoration: none; }
+.gl-goal h3 a::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }   /* the whole card opens the goal */
+.gl-goal h3 a:focus-visible { outline: none; }
+.gl-goal:has(h3 a:focus-visible) { outline: 3px solid var(--primary); outline-offset: 2px; }
+.gl-reason { margin: 0; color: var(--muted); font-size: .92rem; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gl-reason::before { content: "למה: "; font-weight: 600; color: var(--olive-ink); }
+.gl-len { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600;
+  background: color-mix(in srgb, var(--olive) 22%, var(--card)); color: var(--text); }
+.gl-len.short { background: color-mix(in srgb, #f2b43c 26%, var(--card)); }
+.gl-len.long { background: color-mix(in srgb, var(--gl-rest) 20%, var(--card)); }
+.gl-next { display: flex; align-items: center; gap: 8px; margin: 0; font-size: .92rem; padding: 9px 12px; border-radius: 14px; background: color-mix(in srgb, var(--text) 4%, transparent); }
+.gl-next::before { content: "←"; color: var(--primary); font-weight: 700; }
+.gl-next b { font-weight: 500; }
+.gl-goal .gl-week { position: relative; z-index: 1; }
+
+/* the path: the processes as stations on a thread, the thread filled up to where you are (RTL: it runs from the start side) */
+.gl-path { --n: 4; --at: 1; position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 4px; padding-block-start: 4px; list-style: none; margin: 0; padding-inline: 0; }
+.gl-path::before, .gl-path::after { content: ""; position: absolute; inset-block-start: 12px; block-size: 3px; border-radius: 3px; inset-inline-start: calc(50% / var(--n)); }
+.gl-path::before { inset-inline-end: calc(50% / var(--n)); background: var(--gl-track); }
+.gl-path::after { inline-size: calc((100% - 100% / var(--n)) * var(--at) / max(1, var(--n) - 1)); background: var(--primary); transition: inline-size .8s var(--ease-river); }
+.gl-stop { position: relative; z-index: 1; display: grid; justify-items: center; gap: 5px; text-align: center; min-inline-size: 0; }
+.gl-stop i { inline-size: 20px; block-size: 20px; border-radius: 50%; background: var(--card); border: 3px solid var(--gl-track); display: grid; place-items: center; font-style: normal; font-size: .7rem; color: var(--primary-ink); }
+.gl-stop.done i { background: var(--primary); border-color: var(--primary); }
+.gl-stop.done i::before { content: "✓"; font-weight: 700; }
+.gl-stop.now i { border-color: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 18%, transparent); }
+.gl-stop span { font-size: .76rem; line-height: 1.25; color: var(--muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.gl-stop.now span { color: var(--text); font-weight: 600; }
+
+/* a goal's own page: the ring large, the why, the week; then each process with its checklist */
+.gl-hero { display: flex; align-items: center; gap: 20px; padding: 20px; flex-wrap: wrap; }
+.gl-hero > div { flex: 1; min-inline-size: 220px; display: grid; gap: 8px; }
+.gl-hero .gl-reason { -webkit-line-clamp: 4; font-size: 1rem; }
+.gl-procs { display: grid; gap: 12px; }
+.gl-proc { padding: 0; overflow: hidden; }
+.gl-proc > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 14px 16px; }
+.gl-proc > summary::-webkit-details-marker { display: none; }
+.gl-proc > summary h3 { margin: 0; font-size: 1.02rem; }
+.gl-proc > summary small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.gl-proc > summary::after { content: "▾"; color: var(--muted); transition: transform var(--dur-quick) var(--ease-river); }
+.gl-proc[open] > summary::after { transform: rotate(180deg); }
+.gl-proc .gl-ring-box .gl-ring { --size: 38px; --w: 5px; }
+.gl-proc .gl-ring-box > b { font-size: .7rem; }
+.gl-bar { block-size: 6px; border-radius: 6px; background: var(--gl-track); overflow: hidden; }
+.gl-bar > i { display: block; block-size: 100%; inline-size: calc(var(--p, 0) * 1%); background: var(--primary); border-radius: inherit; transition: inline-size .6s var(--ease-river); }
+
+/* the checklist: a big, honest tick; done steps step back, the next one is lit */
+.gl-checks { list-style: none; margin: 0; padding: 4px 16px 14px; display: grid; gap: 2px; }
+.gl-check { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 12px; }
+.gl-check:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.gl-check input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; margin: 0; inline-size: 26px; block-size: 26px; border-radius: 9px; border: 2px solid var(--line-strong);
+  background: var(--card); cursor: pointer; display: grid; place-items: center; transition: background-color var(--dur-quick), border-color var(--dur-quick), transform var(--dur-press); }
+.gl-check input[type="checkbox"]::before { content: ""; inline-size: 11px; block-size: 6px; border: solid var(--primary-ink); border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg) scale(0); margin-block-start: -3px;
+  transition: transform .25s var(--ease-river); }
+.gl-check input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+.gl-check input[type="checkbox"]:checked::before { transform: rotate(-45deg) scale(1); }
+.gl-check input[type="checkbox"]:active { transform: scale(.9); }
+.gl-check input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.gl-check label { flex: 1; min-inline-size: 0; cursor: pointer; line-height: 1.45; }
+.gl-check:has(input:checked) label { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.gl-check.next { background: color-mix(in srgb, var(--primary) 7%, transparent); }
+.gl-check.next label { font-weight: 500; }
+.gl-check .gl-stuckbtn { flex: none; }
+.gl-check-add { display: flex; gap: 8px; padding: 6px 6px 0; }
+.gl-check-add input { flex: 1; min-inline-size: 0; }
+
+/* ---------- today: two or three big steps, nothing more ---------- */
+.gl-today { display: grid; gap: 12px; max-inline-size: 640px; inline-size: 100%; justify-self: center; }
+.gl-tstep { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; padding: 16px 18px; }
+.gl-tstep .gl-tick { inline-size: 48px; block-size: 48px; border-radius: 50%; border: 2.5px solid var(--line-strong); background: var(--card); cursor: pointer; display: grid; place-items: center;
+  font-size: 1.4rem; color: transparent; transition: background-color .25s, border-color .25s, color .25s, transform var(--dur-press); }
+.gl-tstep .gl-tick:hover { border-color: var(--primary); color: color-mix(in srgb, var(--primary) 45%, transparent); }
+.gl-tstep .gl-tick:active { transform: scale(.9); }
+.gl-tstep .gl-tick:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.gl-tstep .gl-tick[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); animation: gl-pop .45s var(--ease-river); }
+@keyframes gl-pop { 40% { transform: scale(1.18); } }
+.gl-tstep > div { display: grid; gap: 3px; min-inline-size: 0; }
+.gl-tstep b { font-size: 1.08rem; font-weight: 600; line-height: 1.35; }
+.gl-tstep small { color: var(--muted); }
+.gl-tstep .gl-tstep-acts { grid-column: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.gl-tstep:has(.gl-tick[aria-pressed="true"]) b { color: var(--muted); text-decoration: line-through; }
+.gl-tstep:has(.gl-tick[aria-pressed="true"]) { border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); }
+/* all done for today */
+.gl-alldone { text-align: center; padding: 26px 18px; display: grid; gap: 6px; justify-items: center; background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+.gl-alldone[hidden] { display: none; }
+.gl-alldone .gl-flame { font-size: 2.4rem; line-height: 1; }
+.gl-alldone p { margin: 0; }
+/* the why comes back (two days without a step): no scolding – the person's own words, and one tiny step */
+.gl-whyback { display: grid; gap: 10px; padding: 18px 20px; border-inline-start: 4px solid var(--olive); background: color-mix(in srgb, var(--olive) 10%, var(--card)); }
+.gl-whyback blockquote { margin: 0; font-size: 1.12rem; line-height: 1.6; font-weight: 500; }
+.gl-whyback blockquote::before { content: "”"; color: var(--olive-ink); font-size: 1.6em; line-height: 0; vertical-align: -.3em; margin-inline-end: 4px; }
+.gl-whyback p { margin: 0; color: var(--muted); }
+
+/* "נתקעתי" – a quiet way out, never a red button */
+.gl-stuckbtn { font: inherit; font-size: .84rem; padding: 4px 11px; border-radius: 999px; border: 1px dashed var(--line-strong); background: none; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.gl-stuckbtn:hover { color: var(--text); border-style: solid; }
+.gl-stuckbox { display: grid; gap: 12px; }
+.gl-stuckbox h2 { font-size: 1.2rem; }
+.gl-stuckbox .gl-from { margin: 0; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--text) 4%, transparent); color: var(--muted); }
+.gl-stuckbox .gl-from b { color: var(--text); font-weight: 500; }
+.gl-stuckbox .gl-q { margin: 0; font-size: 1.05rem; font-weight: 500; }
+.gl-five { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; background: var(--gl-ember-soft); color: var(--text); }
+
+/* ---------- the weekly review: one minute, three questions, quick answers ---------- */
+.gl-review { display: grid; gap: 16px; padding: 20px; max-inline-size: 680px; inline-size: 100%; justify-self: center; }
+.gl-review > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.gl-minute { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; font-size: .82rem; background: color-mix(in srgb, var(--gl-rest) 16%, var(--card)); }
+.gl-rq { display: grid; gap: 8px; }
+.gl-rq > label { font-weight: 600; }
+.gl-rq .gl-quick { display: flex; flex-wrap: wrap; gap: 6px; }
+.gl-rq .gl-quick .chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.gl-rq textarea { min-block-size: 64px; }
+
+/* ---------- a new goal: five short steps ---------- */
+.gl-new { display: grid; gap: 18px; padding: 22px; max-inline-size: 720px; inline-size: 100%; justify-self: center; }
+.gl-steps { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.gl-steps li { flex: 1; display: grid; gap: 6px; font-size: .76rem; color: var(--muted); text-align: center; }
+.gl-steps li::before { content: ""; block-size: 5px; border-radius: 5px; background: var(--gl-track); transition: background-color .4s; }
+.gl-steps li.done::before, .gl-steps li.now::before { background: var(--primary); }
+.gl-steps li.now { color: var(--text); font-weight: 600; }
+@media (max-width: 520px) { .gl-steps li span { display: none; } .gl-steps li.now span { display: inline; position: absolute; inset-inline-start: 22px; } .gl-steps { position: relative; padding-block-end: 20px; } }
+.gl-new h2 { font-size: 1.35rem; }
+.gl-new .gl-lead { margin: -8px 0 0; color: var(--muted); }
+.gl-field { display: grid; gap: 6px; }
+.gl-field > span { font-size: .86rem; font-weight: 600; color: var(--muted); }
+.gl-field textarea, .gl-field input[type="text"], .gl-field input[type="date"], .gl-field input[type="time"] { inline-size: 100%; }
+.gl input[type="date"], .gl input[type="time"] { font: inherit; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); color-scheme: inherit; }
+.gl input[type="date"]:focus, .gl input[type="time"]:focus { outline: none; border-color: var(--primary); }
+.gl-write { position: relative; }
+.gl-write textarea { min-block-size: 110px; font-size: 1.1rem; line-height: 1.6; padding-inline-end: 64px; }
+/* the microphone: a round button inside the box; while recording it breathes in the ember colour */
+.gl-mic { position: absolute; inset-block-end: 12px; inset-inline-end: 12px; inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card);
+  color: var(--text); cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; }
+.gl-mic:hover { border-color: var(--primary); }
+.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; animation: gl-rec 1.4s ease-in-out infinite; }
+@keyframes gl-rec { 50% { box-shadow: 0 0 0 9px color-mix(in srgb, var(--gl-ember) 22%, transparent); } }
+/* three lengths as cards you can pick */
+.gl-lens { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .gl-lens { grid-template-columns: minmax(0, 1fr); } }
+.gl-lens button { font: inherit; display: grid; gap: 4px; justify-items: start; text-align: start; padding: 14px 16px; border-radius: 18px; border: 1.5px solid var(--line); background: var(--card); color: var(--text); cursor: pointer;
+  transition: border-color var(--dur-quick), background-color var(--dur-quick), transform var(--dur-quick) var(--ease-river); }
+.gl-lens button:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.gl-lens button[aria-checked="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card)); box-shadow: inset 0 0 0 1px var(--primary); }
+.gl-lens button .gl-em { font-size: 1.6rem; line-height: 1; }
+.gl-lens button b { font-size: 1.02rem; }
+.gl-lens button small { color: var(--muted); }
+/* the processes, editable; from a template, or ✨ */
+.gl-plist { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; counter-reset: gl-p; }
+.gl-plist li { counter-increment: gl-p; display: flex; align-items: center; gap: 8px; }
+.gl-plist li::before { content: counter(gl-p); flex: none; inline-size: 28px; block-size: 28px; border-radius: 50%; display: grid; place-items: center; font-size: .85rem; font-weight: 600;
+  color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); }
+.gl-plist li input { flex: 1; min-inline-size: 0; }
+.gl-plist li .gl-x { flex: none; inline-size: 32px; block-size: 32px; border-radius: 50%; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 1rem; }
+.gl-plist li .gl-x:hover { background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); }
+.gl-from-tpl { margin: 0; font-size: .86rem; color: var(--muted); }
+/* the rhythm: the days (the rest day marked, not a gap) and the hour */
+.gl-wdays { display: flex; flex-wrap: wrap; gap: 6px; }
+.gl-wdays button { font: inherit; inline-size: 46px; block-size: 46px; border-radius: 50%; border: 1.5px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; font-weight: 500;
+  transition: background-color var(--dur-quick), border-color var(--dur-quick); }
+.gl-wdays button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.gl-wdays button.rest { border-style: dashed; border-color: var(--gl-rest); color: var(--gl-rest); position: relative; }
+.gl-wdays button.rest::after { content: "מנוחה"; position: absolute; inset-block-start: calc(100% + 3px); inset-inline: -10px; font-size: .66rem; text-align: center; color: var(--gl-rest); }
+.gl-new-acts { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding-block-start: 6px; border-block-start: 1px solid var(--line); }
+.gl-new-acts .spacer { flex: 1; }
+
+/* ---------- the badges: embroidered patches on a felt wall ---------- */
+.gl-wall { display: grid; gap: 22px; }
+.gl-shelf { display: grid; gap: 12px; }
+.gl-shelf h3 { margin: 0; font-size: .95rem; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+.gl-patches { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; list-style: none; margin: 0; padding: 0; }
+@media (max-width: 520px) { .gl-patches { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.gl-badge { position: relative; display: grid; justify-items: center; gap: 6px; font: inherit; color: var(--text); background: none; border: 0; padding: 4px; cursor: pointer; text-align: center;
+  -webkit-tap-highlight-color: transparent; }
+.gl-badge img { inline-size: 100%; max-inline-size: 104px; aspect-ratio: 1; object-fit: contain; display: block; filter: drop-shadow(0 6px 6px rgba(30, 20, 10, .28));
+  transition: transform .35s var(--ease-river), filter .35s; }
+.gl-badge:hover img, .gl-badge[aria-expanded="true"] img { transform: translateY(-4px) rotate(-4deg) scale(1.04); }
+.gl-badge:focus-visible { outline: none; }
+.gl-badge:focus-visible img { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 50%; }
+.gl-badge > b { font-size: .8rem; font-weight: 600; line-height: 1.25; }
+/* not yet earned: faded and greyed – visible, and its way told on hover or a tap */
+.gl-badge:not(.on):not(.secret) img { filter: grayscale(1) opacity(.38); }
+.gl-badge:not(.on):not(.secret) > b { color: var(--muted); font-weight: 500; }
+.gl-badge:not(.on):not(.secret):hover img, .gl-badge:not(.on):not(.secret)[aria-expanded="true"] img { filter: grayscale(.4) opacity(.75); }
+/* a secret: only its silhouette, no name, no way */
+.gl-badge.secret img { filter: opacity(.3); }
+:root[data-theme="dark"] .gl-badge.secret img { filter: invert(1) opacity(.28); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .gl-badge.secret img { filter: invert(1) opacity(.28); } }
+.gl-badge.secret > b { color: var(--muted); letter-spacing: .3em; }
+/* how far along a locked one is: a thin thread under it */
+.gl-badge .gl-bar { inline-size: 64%; block-size: 4px; }
+/* a new one: it stitches itself onto the wall */
+.gl-badge.new img { animation: gl-stitch 1.1s var(--ease-river) both; }
+@keyframes gl-stitch { 0% { transform: scale(.2) rotate(-40deg); opacity: 0; } 60% { transform: scale(1.12) rotate(6deg); opacity: 1; } 100% { transform: none; } }
+
+/* the way to a badge: a light, transparent card (glass) – above the patch on a computer, from the bottom on a phone */
+.gl-tip { position: absolute; z-index: 30; inset-block-end: calc(100% + 6px); inset-inline-start: 50%; translate: 50% 6px; inline-size: max-content; max-inline-size: 240px;
+  padding: 12px 14px; border-radius: 16px; text-align: start; display: grid; gap: 4px; pointer-events: none; opacity: 0;
+  background: color-mix(in srgb, var(--card) 72%, transparent); border: 1px solid var(--glass-border); box-shadow: var(--lift);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3); transition: opacity .2s, translate .25s var(--ease-river); }
+:root[dir="ltr"] .gl-tip { translate: -50% 6px; }
+.gl-badge:hover .gl-tip, .gl-badge[aria-expanded="true"] .gl-tip { opacity: 1; translate: 50% 0; }
+:root[dir="ltr"] .gl-badge:hover .gl-tip, :root[dir="ltr"] .gl-badge[aria-expanded="true"] .gl-tip { translate: -50% 0; }
+.gl-tip b { font-size: .95rem; }
+.gl-tip span { font-size: .86rem; line-height: 1.45; color: var(--text); }
+.gl-tip small { font-size: .78rem; color: var(--muted); }
+.gl-tip q { font-style: italic; quotes: "„" "”"; font-size: .82rem; color: var(--muted); }
+@media (hover: none), (max-width: 600px) {
+  .gl-tip { position: fixed; inset-block-end: calc(var(--tabbar-h, 0px) + 12px + env(safe-area-inset-bottom)); inset-inline: 12px; inset-block-start: auto; max-inline-size: none;
+    inline-size: auto; translate: 0 12px; padding: 16px 18px; border-radius: 20px; }
+  :root[dir="ltr"] .gl-tip { translate: 0 12px; }
+  .gl-badge:hover .gl-tip { opacity: 0; translate: 0 12px; }
+  .gl-badge[aria-expanded="true"] .gl-tip, :root[dir="ltr"] .gl-badge[aria-expanded="true"] .gl-tip { opacity: 1; translate: 0 0; pointer-events: auto; }
+}
+
+/* the dashboard's shelf: the last patches earned, in a row */
+.gl-mine { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 6px; }
+.gl-mine .gl-badge { flex: none; inline-size: 84px; }
+.gl-mine .gl-badge img { max-inline-size: 72px; }
+
+@media (max-width: 520px) {
+  .gl .card { border-radius: 20px; }
+  .gl-goal { padding: 16px 14px 14px; }
+  .gl-new, .gl-review { padding: 18px 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gl-ring, .gl-path::after, .gl-bar > i { transition: none; }
+  .gl-goal:hover, .gl-todaycard:hover, .gl-lens button:hover { transform: none; }
+  .gl-tstep .gl-tick[aria-pressed="true"], .gl-mic[aria-pressed="true"], .gl-badge.new img { animation: none; }
+  .gl-badge:hover img, .gl-badge[aria-expanded="true"] img { transform: none; }
+}
+
+/* ===================== ai-features' markup in goals.js (daaabe2) =====================
+   The same look for the classes the page draws today. Where it still carries inline layout, that layout wins until
+   ai-features drops it; colours, edges and motion come from here. */
+.gl > .folder-back, .gl-one > .folder-back { justify-self: start; color: var(--muted); text-decoration: none; font-size: .95rem; background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.gl > .folder-back:hover, .gl-one > .folder-back:hover { color: var(--primary); }
+.gl :is(.gl-today, .gl-why, .gl-review-due, .gl-process, .gl-empty) { padding: 16px 18px; display: grid; gap: 10px; }
+/* today: the ember card on top; on the rest day, a quiet violet one */
+.gl .gl-today { background: linear-gradient(135deg, var(--gl-ember-soft), color-mix(in srgb, var(--olive) 10%, var(--card))); border-color: color-mix(in srgb, var(--gl-ember) 30%, var(--line)); }
+.gl .gl-today > b:first-child { font-size: 1.1rem; }
+.gl .gl-today.rest { background: color-mix(in srgb, var(--gl-rest) 12%, var(--card)); border-color: color-mix(in srgb, var(--gl-rest) 35%, var(--line)); }
+/* the why comes back */
+.gl .gl-why { border-inline-start: 4px solid var(--olive); background: color-mix(in srgb, var(--olive) 10%, var(--card)); }
+.gl .gl-why > p { font-weight: 500; line-height: 1.6; }
+.gl-why-line { color: var(--muted); font-style: italic; }
+/* the weekly review is due */
+.gl .gl-review-due { background: color-mix(in srgb, var(--gl-rest) 10%, var(--card)); border-color: color-mix(in srgb, var(--gl-rest) 30%, var(--line)); }
+/* the pulse: the week, the streak and the badges as three quiet tiles */
+.gl .gl-pulse { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); background: none; border: 0; box-shadow: none; padding: 0; }
+.gl-pulse > div { display: grid; gap: 2px; align-content: start; padding: 14px 16px; border-radius: 18px; background: var(--card); border: 1px solid color-mix(in srgb, var(--line) 80%, transparent); }
+.gl-pulse > div > div { font-size: 1.6rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.gl-pulse > div:first-child > div { color: var(--gl-ember); }
+.gl-pulse .btn { justify-self: start; margin-block-start: 4px; }
+/* a goal card (a button) */
+.gl .gl-goal { font: inherit; color: inherit; text-align: start; cursor: pointer; inline-size: 100%; }
+.gl .gl-goal:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.gl-kind { flex: none; display: inline-flex; align-items: center; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; border: 0 !important;
+  background: color-mix(in srgb, var(--olive) 22%, var(--card)); color: var(--text); }
+.gl-kind.short { background: color-mix(in srgb, #f2b43c 26%, var(--card)); }
+.gl-kind.long { background: color-mix(in srgb, var(--gl-rest) 20%, var(--card)); }
+.gl-bar { background: var(--gl-track) !important; }   /* (over the temporary inline --line) */
+.gl-bar > span { display: block; block-size: 100%; background: var(--primary); border-radius: inherit; transition: inline-size .6s var(--ease-river); }
+.gl-goal:has(.gl-bar[aria-valuenow="100"]) .gl-bar > span { background: var(--gl-ember); }
+/* a process and its steps (li.gl-step: a checkbox, the words, נתקעתי) */
+.gl .gl-process.done { border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); background: color-mix(in srgb, var(--primary) 5%, var(--card)); }
+.gl .gl-process.done > div:first-child > b::after { content: " ✓"; color: var(--primary); }
+li.gl-step { padding: 6px 4px; border-radius: 12px; align-items: center !important; }
+li.gl-step:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+li.gl-step input[type="checkbox"] { appearance: none; -webkit-appearance: none; flex: none; margin: 0; inline-size: 24px; block-size: 24px; border-radius: 8px; border: 2px solid var(--line-strong);
+  background: var(--card); cursor: pointer; display: grid; place-items: center; transition: background-color var(--dur-quick), border-color var(--dur-quick), transform var(--dur-press); }
+li.gl-step input[type="checkbox"]::before { content: ""; inline-size: 10px; block-size: 5px; border: solid var(--primary-ink); border-width: 0 0 2.5px 2.5px; transform: rotate(-45deg) scale(0); margin-block-start: -3px;
+  transition: transform .25s var(--ease-river); }
+li.gl-step input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+li.gl-step input[type="checkbox"]:checked::before { transform: rotate(-45deg) scale(1); }
+li.gl-step input[type="checkbox"]:active { transform: scale(.9); }
+li.gl-step input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+li.gl-step.small > span > span:first-child { font-weight: 500; }
+li.gl-step.small { background: var(--gl-ember-soft); }
+/* נתקעתי: quiet and dashed, never alarming */
+.gl .btn.gl-stuck { border-style: dashed; color: var(--muted); border-radius: 999px; }
+.gl .btn.gl-stuck:hover { color: var(--text); border-style: solid; }
+/* the microphone in the wizard (theirs is a small button beside the field) */
+.btn.gl-mic { border-radius: 999px; }
+.btn.gl-mic[aria-pressed="true"] { background: var(--gl-ember); border-color: var(--gl-ember); color: #fff; animation: gl-rec 1.4s ease-in-out infinite; }
+/* the goals reached */
+.gl > details.gl-done > summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.gl .gl-empty { text-align: center; justify-items: center; padding: 28px 20px; }
+/* badges in the gallery (a modal): the embroidered picture once there is one (img), else their placeholder */
+.gl-badge .how { display: block; }
+.gl-badge.soon:not(.on) img, .gl-badge.soon:not(.on) > span { opacity: .5; }
+@media (prefers-reduced-motion: reduce) { .btn.gl-mic[aria-pressed="true"] { animation: none; } }
+/* the research thread of the day, at the foot of "היום" (research step 2) */
+.gl-thread { display: block; text-decoration: none; color: inherit; border-block-start: 1px dashed var(--line); padding-block-start: 8px; border-radius: 0 0 10px 10px; transition: color var(--dur-quick); }
+.gl-thread:hover { color: var(--primary); }

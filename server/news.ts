@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, sha1Hex, uid } from './core';
+import { lead } from './news-plain';
 import { fetchText, readable, sanitize } from './web';
 
 /**
@@ -400,13 +401,15 @@ export async function summarize(ctx: Ctx) {
     title = art?.title || '';
   }
   if (content.length < 120) throw new HttpError(422, 'not_readable');
+  // without AI (none connected, no credit, or it failed): the article's own opening sentences, said to be just that
   const res = await aiJson(ctx.env, {
     prefer: 'gemini',
     fast: true,
     system: 'You summarize news articles for an Israeli family. Always answer in Hebrew, neutrally and accurately, without adding facts that are not in the article.',
     prompt: `Summarize this article in 3-5 short bullet points in Hebrew.\nTitle: ${title}\n\n${content}`,
     schema: z.object({ bullets: z.array(z.string()) }),
-  });
+  }).catch(() => null);
+  if (!res) return json({ bullets: lead(content, 3), via: 'lead' });
   return json(res);
 }
 

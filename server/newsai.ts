@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { aiJson, geminiGrounded, jsonIn, resolveRedirect } from './ai';
 import { Ctx, HttpError, body, json, requireUser, sha1Hex } from './core';
+import { sameStory } from './news-plain';
 import { DEFAULT_FEEDS, feedsOf, ownerOf } from './news';
 
 /* ---------------- headlines only, into Hebrew ---------------- */
@@ -58,27 +59,34 @@ export async function corroborate(ctx: Ctx) {
   let groups: number[][];
   if (hit) groups = await hit.json();
   else {
+    // without AI: the headlines that share enough words (one language at a time; not cached, it is cheap)
     const res = await aiJson(ctx.env, {
       prefer: 'gemini', fast: true,
       system: `You group news headlines that report the SAME specific event or statement (the same incident, decision or announcement), whatever the language (Hebrew, Arabic, English).
 Different events on the same broad topic are NOT the same story. Return only groups of 2 or more, as lists of the headline numbers.`,
       prompt: items.map((i, n) => `${n + 1}. ${i.title.slice(0, 200)}`).join('\n'),
       schema: z.object({ groups: z.array(z.array(z.number())) }),
-    });
+    }).catch(() => null);
+    if (!res) return answer(sameStory(items.map((i) => i.title)), 'words');
     groups = res.groups.map((g) => [...new Set(g.map((n) => n - 1).filter((n) => n >= 0 && n < items.length))]).filter((g) => g.length > 1);
     ctx.waitUntil(cache.put(key, new Response(JSON.stringify(groups), { headers: { 'cache-control': 'max-age=1800', 'content-type': 'application/json' } })));
   }
-  const byId: Record<string, { others: number; outlets: string[] }> = {};
-  for (const g of groups) {
-    const members = g.map((n) => ({ item: items[n], feed: feeds.get(items[n].feedId) })).filter((m) => m.feed);
-    for (const m of members) {
-      const mine = ownerOf(m.feed!.url);
-      const outlets = new Map<string, string>();
-      for (const o of members) { const w = ownerOf(o.feed!.url); if (w !== mine && !outlets.has(w)) outlets.set(w, o.feed!.title); }
-      byId[m.item.id] = { others: outlets.size, outlets: [...outlets.values()].slice(0, 6) };
+  return answer(groups, 'ai');
+
+  /** each headline's other outlets telling the same story */
+  function answer(groups: number[][], via: string) {
+    const byId: Record<string, { others: number; outlets: string[] }> = {};
+    for (const g of groups) {
+      const members = g.map((n) => ({ item: items[n], feed: feeds.get(items[n].feedId) })).filter((m) => m.feed);
+      for (const m of members) {
+        const mine = ownerOf(m.feed!.url);
+        const outlets = new Map<string, string>();
+        for (const o of members) { const w = ownerOf(o.feed!.url); if (w !== mine && !outlets.has(w)) outlets.set(w, o.feed!.title); }
+        byId[m.item.id] = { others: outlets.size, outlets: [...outlets.values()].slice(0, 6) };
+      }
     }
+    return json({ byId, via });
   }
-  return json({ byId });
 }
 
 /* ---------------- one article, checked on the web ---------------- */

@@ -23,10 +23,39 @@
     already_asked: 'כבר נשלחה בקשה כזו, והיא עוד מחכה.', already_linked: 'השניים כבר מקושרים.', two_in_one_tree: 'אותו אדם כבר מופיע בעץ הזה בכרטיס אחר.',
     different_people: 'לשני הכרטיסים כתובות מייל שונות – אלה שני אנשים.', gone: 'הכרטיס בצד השני כבר לא קיים.', not_member: 'אין משתמש בכתובת הזו.', title_required: 'צריך שם למשפחה.',
   };
-  const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
+  const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
   const call = async (path, opts = {}) => {
-    try { return await api(path, { ...opts, noRedirect: true }); } catch (e) { if (e.code === 'vault_locked') { lockView('הכספת ננעלה. פתחו אותה שוב.'); } throw e; }
+    try { return await api(path, { ...opts, noRedirect: true }); } catch (e) {
+      // the person locked the tree (Locks and privacy): their code or passkey, then the same call again
+      if (e.code === 'tree_locked' && !opts.again) {
+        await H.loadOnce('/assets/lock-screen.js');
+        await H.lockScreen({ scope: 'tree' });
+        return call(path, { ...opts, again: true });
+      }
+      if (e.code !== 'vault_locked') throw e;
+      // on a trusted device the tree stays open: this step (documents, privacy, linking, a delete) asks for a fresh unlock
+      if (S.trusted && !opts.again) { await stepUp(); return call(path, { ...opts, again: true }); }
+      if (!S.trusted) lockView('הכספת ננעלה. פתחו אותה שוב.');
+      throw e;
+    }
   };
+  /** a fresh unlock for one special step, without leaving the tree: a passkey, or signing in to Google again */
+  function stepUp() {
+    return new Promise((resolve, reject) => {
+      let done = false;
+      const ok = async () => { done = true; H.closeModal(); const st = await api('/api/vault/status', { noRedirect: true }); S.until = st.until || 0; schedule(); resolve(); };
+      const box = el('div', { class: 'fv-form fv-stepup' },
+        el('h2', {}, 'צריך לאשר שזה אתה'),
+        el('p', { class: 'muted' }, 'העץ פתוח במכשיר הזה. מסמכים, פרטיות, קישור עצים ומחיקה מבקשים אישור בכל פעם (ואחריו רבע שעה בלי לשאול שוב).'),
+        el('div', { class: 'fv-acts' },
+          passkeysWork() ? el('button', { class: 'btn primary', type: 'button', onclick: async (e) => { e.target.disabled = true; try { await unlockWithPasskey(); await ok(); } catch (err) { if (err?.name !== 'NotAllowedError') say(err); e.target.disabled = false; } } }, 'אישור בטביעת אצבע, בפנים או ב־Windows Hello') : null,
+          el('button', { class: 'btn ghost', type: 'button', onclick: reauth }, 'כניסה מחדש עם Google')));
+      H.modal(box);
+      const m = document.getElementById('modal');
+      const watch = new MutationObserver(() => { if (m.hidden) { watch.disconnect(); if (!done) { const err = new Error('לא אושר'); err.code = 'step_cancelled'; reject(err); } } });
+      watch.observe(m, { attributes: true, attributeFilter: ['hidden'] });
+    });
+  }
 
   /* ---------- passkeys (WebAuthn) ---------- */
   const toBuf = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0)).buffer;
@@ -76,7 +105,7 @@
     if (!acts) return st;
     acts.replaceChildren();
     if (!st.configured) { acts.append(el('p', {}, ERR.vault_not_configured)); return st; }
-    if (st.unlocked) { open(); return st; }
+    if (st.unlocked || st.trusted) { open(); return st; }
     const fresh = new URLSearchParams(location.search).has('fresh');
     if (fresh) history.replaceState(null, '', '/family/');
     if (st.passkeys && passkeysWork()) {
@@ -104,7 +133,9 @@
   /* ---------- open: עץ המשפחה ---------- */
   async function open() {
     const [t, st] = await Promise.all([call('/api/vault/tree'), call('/api/vault/status')]);
-    S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until; S.roles = t.roles || {};
+    // the tree is open to the household (Locks and privacy: no trusted device any more); documents, privacy, linking and a
+    // delete still ask for a fresh unlock – the page's "trusted" path, which asks only for that step
+    S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until || 0; S.roles = t.roles || {}; S.trusted = true;
     // what waits for me in the links between trees (a request to approve, my own consent)
     const inbox = await call('/api/vault/bridges').catch(() => null);
     const waiting = inbox ? inbox.incoming.length + inbox.consent.length : 0;
@@ -132,15 +163,20 @@
     const tools = el('div', { class: 'fv-tools' }, views, find, el('datalist', { id: 'fv-names' }, S.people.map((p) => el('option', { value: p.name }))));
     const board = el('div', { class: 'fv-tree' });
     root.replaceChildren(el('section', { class: 'fv' }, bar, S.people.length ? tools : null, board));
-    tickTimer = setInterval(() => { const s = Math.max(0, Math.round((S.until - Date.now()) / 1000)); clock.textContent = `ננעלת בעוד ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 1000);
+    tickTimer = setInterval(() => {
+      const s = Math.max(0, Math.round((S.until - Date.now()) / 1000)), mm = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      // on a trusted device the tree does not lock; only the documents' unlock runs out
+      clock.textContent = S.trusted ? (s ? `המסמכים פתוחים עוד ${mm}` : '') : `ננעלת בעוד ${mm}`;
+    }, 1000);
     draw();
   }
   function schedule() {
     clearTimeout(lockTimer);
+    if (S.trusted) { lockTimer = setTimeout(() => { S.until = 0; }, Math.max(0, S.until - Date.now())); return; }   // the tree stays; the documents close
     lockTimer = setTimeout(() => lockView('הכספת ננעלה אחרי רבע שעה בלי פעולה.'), Math.max(0, S.until - Date.now()));
   }
   /** each action on the server extends the unlock; the page keeps its own clock in step */
-  const touched = () => { S.until = Math.min(Date.now() + 15 * 60e3, S.until + 15 * 60e3); schedule(); };
+  const touched = () => { if (!S.until) return; S.until = Math.min(Date.now() + 15 * 60e3, S.until + 15 * 60e3); schedule(); };
   async function lockNow() { await call('/api/vault/lock', { method: 'POST' }).catch(() => {}); lockView('הכספת נעולה.'); }
 
   /* ---------- who is whose: the relationships ---------- */
@@ -377,7 +413,7 @@
   const initials = (name) => (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('');
   async function blobUrl(id) {
     const r = await fetch(`/api/vault/items/${encodeURIComponent(id)}/file`, { cache: 'no-store' });
-    if (r.status === 423) { lockView('הכספת ננעלה. פתחו אותה שוב.'); throw new Error('locked'); }
+    if (r.status === 423) { if (!S.trusted) lockView('הכספת ננעלה. פתחו אותה שוב.'); throw new Error('locked'); }
     if (!r.ok) throw new Error('file');
     touched();
     const u = URL.createObjectURL(await r.blob());
@@ -537,7 +573,9 @@
   const TABS = [['doc', 'מסמכים'], ['photo', 'תמונות'], ['info', 'מידע']];
   async function panel(id, tab = 'doc') {
     let p, list;
-    try { [p, list] = await Promise.all([call(`/api/vault/people/${id}`), call(`/api/vault/people/${id}/items`)]); } catch (e) { return say(e); }
+    try { p = await call(`/api/vault/people/${id}`); } catch (e) { return say(e); }
+    if (S.trusted && !(S.until > Date.now())) list = { items: [], locked: true };
+    else try { list = await api(`/api/vault/people/${id}/items`, { noRedirect: true }); } catch (e) { if (e.code === 'vault_locked') list = { items: [], locked: true }; else return say(e); }
     touched();
     const panelBlobs = new Set();
     const body = el('div', { class: 'fv-panel' });
@@ -552,9 +590,12 @@
         treesBox(p),
         privacyBox(p),
         el('nav', { class: 'fv-tabs', role: 'tablist' }, TABS.map(([k, label]) => el('button', { role: 'tab', 'aria-selected': String(k === t), class: k === t ? 'on' : '', onclick: () => draw(k) }, label, el('small', {}, String(list.items.filter((x) => x.kind === k).length))))),
-        adder(t),
-        t === 'photo' ? el('div', { class: 'fv-photos' }, items.map(photoTile)) : el('ul', { class: 'fv-list' }, items.map(row)),
-        items.length ? null : el('p', { class: 'muted fv-none' }, t === 'doc' ? 'אין מסמכים עדיין.' : t === 'photo' ? 'אין תמונות עדיין.' : 'אין פרטים עדיין.'),
+        ...(list.locked ? [el('div', { class: 'card fv-docs-locked' },
+          el('p', {}, 'המסמכים, התמונות והפרטים של ' + p.name + ' נפתחים באישור שזה אתה.'),
+          el('button', { class: 'btn primary', type: 'button', onclick: async () => { try { await stepUp(); H.sheet.close(); panel(id, tab); } catch (e) { say(e); } } }, 'פתיחת המסמכים'))] : [
+          adder(t),
+          t === 'photo' ? el('div', { class: 'fv-photos' }, items.map(photoTile)) : el('ul', { class: 'fv-list' }, items.map(row)),
+          items.length ? null : el('p', { class: 'muted fv-none' }, t === 'doc' ? 'אין מסמכים עדיין.' : t === 'photo' ? 'אין תמונות עדיין.' : 'אין פרטים עדיין.')]),
         el('button', { class: 'btn small ghost fv-trash', onclick: () => trash(p) }, 'סל המחזור (30 יום)')].filter(Boolean));   // (null would print as text)
       const pic = body.querySelector('.fv-ph .fv-pic');
       if (p.photo) photoInto(p.photo, pic);
@@ -583,6 +624,7 @@
             if (!r.ok) { const d = await r.json().catch(() => ({})); throw Object.assign(new Error(d.error), { code: d.error }); }
           }
           toast('נשמר בכספת'); await reload(); await refreshTree();
+          if (priv.checked) privateTip();
         } catch (err) { say(err); } finally { btn.disabled = false; }
       };
       return el('form', { class: 'fv-add', onsubmit: go }, title, note, file,
@@ -833,9 +875,40 @@
   /* ---------- leaving the page alone ---------- */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') hiddenAt = Date.now();
-    else if (hiddenAt && Date.now() - hiddenAt > 5 * 60e3 && S.until) lockNow();     // five minutes away: locked
+    else if (hiddenAt && Date.now() - hiddenAt > 5 * 60e3 && S.until) {               // five minutes away: locked
+      if (S.trusted) { api('/api/vault/lock?keep=1', { method: 'POST', noRedirect: true }).catch(() => {}); S.until = 0; schedule(); }
+      else lockNow();
+    }
   });
   addEventListener('pagehide', () => wipe());
 
-  H.requireLogin().then(() => lockView()).catch(() => {});
+  /* ---------- locks and privacy (docs/decisions.md): a tip to protect the tree, and a code for a private document ---------- */
+  /** the first time in the tree (and until "לא להציג שוב", kept on the server): protecting it is recommended */
+  async function treeTip() {
+    try { if (sessionStorage.getItem('helper.treeTip')) return; } catch (_) { /* private mode: shown once a page */ }
+    let lock; try { lock = await api('/api/lock', { noRedirect: true }); } catch (_) { return; }
+    if (lock.tree !== 'off' || lock.tipHidden) return;
+    const later = () => { try { sessionStorage.setItem('helper.treeTip', '1'); } catch (_) { /* fine */ } H.closeModal(); };
+    const never = async () => { H.closeModal(); try { await api('/api/lock', { method: 'PUT', body: { tip: true }, noRedirect: true }); } catch (_) { later(); } };
+    // design's window (/assets/lock.js), else a plain one
+    try { await H.loadOnce('/assets/lock.js'); } catch (_) { /* the plain one */ }
+    if (window.Lock?.warnCard) return H.modal(Lock.warnCard({ onSetup: () => { location.href = '/settings/#privacy'; }, onLater: later, onNever: never }));
+    H.modal(el('div', { class: 'fv-locktip' },
+      el('h2', {}, '🔒 להגן על עץ המשפחה?'),
+      el('p', {}, 'העץ פתוח לבני הבית שמחוברים. אפשר לנעול אותו בקוד בן 4 ספרות או בטביעת אצבע, כך שמי שמחזיק את המכשיר לא ייכנס בלעדיך.'),
+      el('div', { class: 'row' },
+        el('a', { class: 'btn primary', href: '/settings/#privacy' }, 'להגדיר עכשיו'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: later }, 'אחר כך'),
+        el('button', { class: 'linklike', type: 'button', onclick: never }, 'לא להציג שוב'))));
+  }
+  /** after a private document is saved, if the tree has no lock: a code is recommended */
+  async function privateTip() {
+    let lock; try { lock = await api('/api/lock', { noRedirect: true }); } catch (_) { return; }
+    if (lock.tree === 'off') toast('מסמך פרטי: כדאי לנעול את העץ בקוד', 'להגדיר', () => { location.href = '/settings/#privacy'; });
+  }
+
+  H.requireLogin().then(async () => {
+    try { await open(); } catch (e) { lockView(); }   // (the tree straight away; the old screen only when it cannot open)
+    setTimeout(treeTip, 1200);
+  }).catch(() => {});
 })();

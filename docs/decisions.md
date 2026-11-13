@@ -28,6 +28,710 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 
 **Status:** Decided (the owner).
 
+## 2026-11-14 – Locks and privacy: a simple entry to the tree, an app lock like Telegram's, fingerprint sign-in (master → ai-features, design)
+The owner's design. It replaces "the trusted device" for the tree.
+
+**Signing in**
+- Sign-in stays Google only. The account is a Google account.
+- Once a person has a passkey (fingerprint, face, Windows Hello), they can also sign in with it, without Google: "כניסה בטביעת אצבע".
+
+**The family tree**
+- Open by default to a signed-in member of the household. There is no unlock and no trusted device.
+- The person can lock it, with a 4-digit code or a passkey. This is an option in the privacy settings.
+- On the first entry to the tree, a small warning window recommends turning on protection, with three buttons:
+  - "להגדיר עכשיו";
+  - "אחר כך" (closes for now);
+  - "לא להציג שוב".
+- When someone creates a private document, the app recommends setting a code.
+
+**Always behind a passkey**
+- Restricted documents and files, privacy changes, deletes, linking trees, backups and the owner's room. This is level 'fresh', unchanged.
+- No privacy setting opens these.
+
+**The app lock (like Telegram)**
+- Each person may lock the whole app, with a 4-digit code or a passkey, and choose when it locks itself: after 1, 5, 15 or 60 minutes away.
+- With a lock on, an open padlock appears in the menu. Pressing it plays a locking animation and locks the app.
+- The lock is enforced on the server, not just drawn over the page: a locked session gets 423 app_locked from every route except the lock's own, /api/me and signing in and out.
+
+**The code**
+- 4 digits. Stored as PBKDF2-SHA256 (100,000 rounds, the most Workers allow) with a salt per person and a pepper derived from VAULT_KEY, so the database alone cannot be guessed through.
+- Wrong codes:
+  - 5 wrong codes: a 15-minute pause;
+  - 10 wrong codes: the code is closed until the person signs in with Google again.
+- Changing the code, or turning a lock off, needs the current code, or a code/passkey/Google proof from the last 5 minutes.
+- **Forgotten code:** "שכחתי את הקוד" signs the person out. A new sign-in with the Google account they use is the proof, and then they set a new code. Recovery goes through the email they signed in with, and no mail is sent.
+
+**Privacy level**
+- Low ("הכל פתוח"): no app lock and no tree lock. Not recommended, and the settings say so.
+- Even at low, documents, credentials and personal details stay behind a passkey.
+
+**The server (master)**
+- server/lock.ts and lock-rules.ts, table `user_locks`, and session columns.
+- The routes:
+  - `GET/PUT /api/lock`
+  - `PUT /api/lock/pin`
+  - `POST /api/lock/lock`
+  - `POST /api/lock/unlock`
+  - `POST /api/lock/passkey/options`
+  - `POST /api/lock/passkey`
+  - `POST /api/auth/passkey/options`
+  - `POST /api/auth/passkey`
+- The details are in server/lock.ts.
+
+**ai-features: the pages**
+- A "פרטיות ואבטחה" section in /settings/: the app lock (off / code / passkey) with its timer, the tree lock, the code (set or change, "שכחתי את הקוד"), and the low level with its warning.
+- The lock screen: 4 dots and a keypad, plus a passkey button.
+- The padlock in the menu. When 423 app_locked comes back, show the lock screen.
+- The warning window on the tree.
+- "כניסה בטביעת אצבע" on the sign-in screen.
+
+**design**
+- The lock screen, the keypad, the padlock and its locking animation (open → closed), and the warning window.
+
+Status: accepted; the server is being built.
+
+## 2026-11-14 – The payments switch, and the family's first sign-in (master)
+The owner asked for two things.
+
+**The payments switch**
+- A switch in the owner's room hides every payment option for now: `money.shop_open`, off by default.
+- While it is off:
+  - `/api/me` and `/api/daemon/figures` return `shop: false`;
+  - a limited account cannot buy (403 shop_closed);
+  - the family still takes any paid figure for nothing (`/api/daemon/figures` returns `family: true` for them).
+
+**The family's first sign-in**
+- A member the owner added has full access from their first sign-in.
+- At that first sign-in the owner gets a message only the owner sees, with a link to /admin/#members (core.ts firstSignIn, `members.first_seen`).
+- People who used the tent before this change are only marked, and the owner gets no message about them.
+- The owner then approves them with `POST /api/members/:email/approve` (owner only, room open). Approving:
+  - sets `approved_at`;
+  - lifts any AI limit;
+  - turns on every special feature (admin.FEATURES).
+- `/api/members` returns `first_seen` and `approved_at`.
+
+**ai-features, please**
+- When `shop` is false, hide prices, buy buttons, credit packs and the links to the purchase page.
+- When `family` is true, show every paid figure as theirs to take, with no price.
+- In the room, next to each member: "התחבר/ה לראשונה" and an "אישור" button.
+
+Status: done (server).
+
+## 2026-11-14 – The locks' look (design → ai-features, master)
+
+For "Locks and privacy": `/assets/lock.js` + `lock.css` (design) give the padlock and its locking move, the lock screen
+(dots, keypad, passkey key, wrong code / pause / unlocked states, keyboard digits, the page made inert) and the window
+for the first visit to the tree; `settings.css` gains `.st-code`, `.st-warn`, `.st-safe` and the low level's chip for the
+"פרטיות ואבטחה" section. ai-features wires them to the routes (the API in `docs/design/locks.md`, the markup in
+`docs/design/prototype/lock.html`). Status: done (design); waiting for ai-features to build the pages.
+
+## 2026-11-14 – Dracula drawn again, younger (design → master, business)
+
+The owner: Dracula younger and more attractive, Cleopatra's counterpart. Redrawn as a handsome young count (black swept
+hair, a red-lined cape, a red waistcoat), elegant rather than frightening. Same id `dracula`, same name, still paid,
+no longer tagged `horror` (the owner: remove the tag – he is not scary now, so he is never hidden by that filter). His
+palette tints the lining and the waistcoat. Status: done (design).
+
+## 2026-11-14 – A basic palette for every free figure (design → ai-features, master, business)
+
+Following the owner's decision that palettes are never sold: the 12 free figures (fennec, owl, lamb, hedgehog, Ibn Sina,
+the Rambam, Newton, Juha, Hershele, Scheherazade, Ali Baba, Peter Pan) have 5 colourways each, the first as drawn.
+`Figure2D.list()` → `palettes` for them too; the same `mount(…, { palette })` / `f.setPalette(i)` and the same swatch row
+as for the wizards, saved per person (`H.prefs('daemon').palette`). Free for everyone. Then business's rule, the same day: **every figure gets its
+palettes, included** – the paid ones too (Shelley, Leonardo, Cleopatra, Dracula, the magician, the seer, the little
+pair), all but the doll, whose patches are her look. Status: done (design).
+
+## 2026-11-14 – הקוסם, הרואה, palettes and pranks (design → master, ai-features, business)
+
+The owner's word (2026-11-13):
+- **Names:** `magician` is now **הקוסם** (was הקוסם מהשוק), `astronomer` is now **הרואה** (was האסטרונומית). The ids stay.
+  The master: please update the names wherever the server keeps them (e.g. `server/figures-rules.ts`).
+- **The magician** drawn again, taller and stronger, still old and warm. **The seer and the little witch** swapped skin
+  tones. **The night wizard's eyes** lowered to the right height.
+- **Palettes:** the night wizard and the forest witch can be dressed in other colours (5 each, the first as drawn):
+  `list()` → `palettes`, `mount(…, { palette })`, `f.setPalette(i)`. Part of the figure, no extra price (business may
+  decide otherwise).
+- **Pranks:** the gimmick of the little wizard and the little witch – small harmless tricks on the page while the app is
+  used, a feature the person can switch off. `/assets/pranks.js` (design); wiring and the switch are ai-features'
+  (`Pranks.start(f, { id })`, `H.prefs('daemon').pranks`, on by default). Details in `docs/design/figures-2d.md`.
+Status: done (design); waiting for ai-features (palette swatches, the pranks switch) and the master (the names).
+
+## 2026-11-14 – Four more paid wizards, the magician redrawn, the astronomer's hair chosen (design → master, ai-features, business)
+
+The owner's word (2026-11-13), after the owner's pictures: the doll and the astronomer approved; **the magician redrawn**
+as a kind old desert wizard (white turban and beard; same id `magician`, same name and dove); **four new paid figures**
+in Figure2D, `kind: 'special'`, `tier: 'paid'`: `nightwizard` קוסם הלילה, `forestwitch` קוסמת היער, `littlewizard`
+הקוסם הקטן, `littlewitch` הקוסמת הקטנה (their staffs glow; when glad, sparks). **The astronomer's hair** is chosen by
+the person, white by default: `Figure2D.list()` gives `hair` and `hairDefault`, `mount(el, 'astronomer', { hair })`,
+`f.setHair(color)`. Details in `docs/design/figures-2d.md`.
+- ai-features: the four in the "מיוחדות" group; under the astronomer, a row of hair swatches, saved per person
+  (e.g. `H.prefs('daemon').hair`).
+- business and the master: the paid list now has 7 special figures (magician, astronomer, doll and the four wizards)
+  besides the four paid people; prices are business's.
+Status: done (design).
+
+## 2026-11-14 – The founders page and the purchase page: their look (design → business, ai-features, master)
+
+At business's request (`docs/business/founders.md` §4–5, `docs/business/monetization.md` §4.3). CSS only, plus two
+prototypes with the markup in `docs/design/prototype/founders.html` and `buy.html` (serve them from the dev server by
+copying them into `public/` for a moment).
+
+- **`/founders/`**: link `/founders/founders.css` after base.css. `main.fd` > `header.fd-head` (the tent, h1, a line on
+  how a name gets in), then one `section.fd-tier` per tier with `header` (a badge img + h2 + small):
+  1–10 עמודי האוהל `ol.fd-poles` > `li.fd-pole` (`.fd-num`, `b` name, `small` place · month), 5 columns, 2 on phones;
+  11–50 יתדות `ol.fd-pegs` > `li.fd-peg` (`.fd-num`, `b`); 51–100 חבלים `ol.fd-ropes` > `li` (`.fd-num` + name);
+  then `ul.fd-supporters` > `li`, `.fd-million` (with `.who-title.gold`), `p.fd-note`, and `.fd-empty` for a tier not
+  filled yet. The badges used are pole, peg, tribe and shoulder from `/assets/badges/`.
+- **`/buy/`**: link `/buy/buy.css`. `main.by` > `.by-head`, `.by-main` (two columns, stacked under 760 px):
+  `figure.by-item` (a Figure2D stage, or a picture for credits or support) and `section.by-offer` with, in this order,
+  `.by-plans` (`role="radiogroup"`, `button.by-plan[role=radio][aria-checked]`, `.by-cancel` on the monthly one),
+  `.by-price`, `ul.by-gets`, `.by-terms` (the cancellation terms, always before the button), `label.by-agree` with a
+  checkbox, `button.btn.primary.by-buy` (disabled until the box is ticked) and `.by-pay-note`. Below it
+  `.by-seller` with the dealer's details; `.ph` marks a placeholder until the owner opens a tax file.
+- **Corrected after business's review (same day):** a figure is paid **in credits** – `.by-price` "₪10 בקרדיטים",
+  `.by-balance` (the balance and what is left; `.low` when short), one confirmation; short of credits, `.by-short` and
+  then `section.by-topup` with `.by-packs` > `button.by-pack[role=radio]` (₪5/10/20/50). The card, the receipt, the
+  terms for credits and `.by-seller` belong to the pack purchase only. `.by-plans` (monthly support) is kept for the
+  packs/support page, not a figure's page. The tithe line reads "מעשר: 10% מההכנסה מכל רכישה הולכים לצדקה". Founders:
+  opt-in ("להופיע בדף מי הקים את האוהל?", the city optional), "בתקופת הבטא" in the intro, `.fd-million[hidden]`
+  until it happens; proposed for signed-in users only.
+- Wiring the pages, the routes and the payment provider is ai-features' and the master's. Checked at 375 px and desktop,
+  in light and dark (no overflow, contrast clear).
+Status: done (design); waiting for the pages to be wired.
+
+## 2026-11-14 – Founding members: the moment a gathering has five confirmed invitees is recorded (ai-features → business, master)
+
+Business's urgent item (the owner's decision of 2026-11-13, docs/business/founders.md on `business`): before the first real
+gathering goes out, record when each gathering first has five invitees who confirmed, and its organiser.
+- Table `gathering_milestones` (appended to schema.sql): `seq` (AUTOINCREMENT, runs forever – "the millionth"),
+  `gathering` (unique), `host_email`, `household`, `reached_at`, `confirmed`, `dev`. Written once (INSERT OR IGNORE),
+  never rewritten: a later "no" does not move it.
+- The rule (`server/gather-rules.ts` `confirmedGuests` / `reachedFounding`, tests in test-gather.mjs): answers "yes",
+  each answer once, not heads, and not the organiser's own answer.
+- Recorded in `rsvp()` (server/gather.ts) on every "yes"; a failure is logged and never fails the answer.
+- Test gatherings: `dev = 1` on a dev server. On the live site a test gathering is a real row; the owner's approval of the
+  list in the room (founders.md) filters it, or a "test" mark when a gathering is created – business/the owner to decide.
+- For the founders' order: a person's first moment is `MIN(reached_at)` by `host_email` (the room's list, the master's).
+Status: done on `ai-features`.
+
+## 2026-11-14 – Paid figures bought with credits; a private birth year; figures everyone agrees on (master)
+The owner's decisions, built by the master.
+
+**Buying a paid figure**
+- Paid figures can now be bought with credits (server/figures.ts, rules and 29 tests in figures-rules.ts and test-figures.mjs).
+- The owner's family gets a paid figure for nothing, at the owner's cost, like the AI.
+- A limited account pays the setting `figures.price_ils` (default ₪10, a draft until business decides) from its credits.
+- The purchase counts as spent in credits.balance().
+- Every purchase needs `{ confirm: true }`. Buying twice charges nothing.
+- The routes:
+  - `GET /api/daemon/figures` → { owned, paid, priceIls }
+  - `POST /api/daemon/figures/:id/buy` { confirm: true } → { ok, how, owned }, or 400 not_paid | confirm_needed, or 402 not_enough_credit
+- Table `figure_owned`.
+- The list of paid figures lives on the server (`figures-rules.ts` PAID). Design tells the master when a figure becomes paid.
+
+**A private birth year**
+- Column `members.birth_year`. Only the owner sets and sees it, in the room: `PUT /api/members/:email/birth-year`, and `/api/members` returns it.
+- Everyone else gets only `child` (under 12) from `/api/me`.
+- On the server, `childOf(env, email)` in server/members.ts gives the same answer.
+
+**ai-features, please**
+- The figure picker: a buy button with a confirmation that shows the price, `/api/daemon/figures` for what is owned (in place of `owned: []` in /api/daemon), and a 402 that leads to "חיבור לשירותים".
+- Hide horror figures when `child` is true (the person's switch stays for adults).
+- Pass `childOf` into research-share's mayJoin (inviteeChild / ownerChild).
+- In the owner's room, a birth-year field per member.
+
+**Figures everyone agrees on (design, vision)**
+- Prophets appear only in a representation everyone accepts. If one might hurt anyone, leave it out.
+- The same goes for the library as a whole: prefer figures nobody objects to over hiding them by religion.
+
+**Approved as they are:** Open Food Facts in the shared foods table (ODbL, credited), and TheMealDB's test key until a public product.
+
+Status: done (server); the client side is ai-features'.
+
+## 2026-11-14 – Vision batch 5, ai-features' part: the companion's name, figure, voice and tab; themes of one's own (ai-features → master, design, vision)
+
+- **The name is ראב"ע only** (9b8893c): "אזי" was saved by the companion's `rename` tool in `daemons.name`. The tool is
+  gone (prompt version 10: stored conversations start over, memory notes carry over), a saved name is ignored on load.
+  No data was changed.
+- **Figures** (75883e5): `/api/daemon` returns `ibnEzra` (the owner's household, by `OWNER_EMAIL`). Settings has a figure
+  picker (ראב"ע for the family; design's Figure2D figures by `kind`: simple, generic, badge – unlocked by `unlock`, a badge
+  id from the goals engine – and holiday), all free. The choice is prefs `daemon.figure` (server, per person). daemon.js
+  draws a 2D figure in place of the 3D one (three.js not loaded); anyone outside the family who has not chosen gets the
+  first 2D figure. Until design's `figure2d.js` and figures reach main, everyone keeps ראב"ע. The engine does not load
+  `figure2d.css` itself; the callers add it (design may prefer the engine to).
+- **Voice** prefs `daemon.voice`: `always` · `mirror` (aloud when spoken to, in writing when written to) · `silent`
+  (`speak` kept in step for older code). **The chat's head** shows the figure, prefs `daemon.header`: `icon` · `animated`.
+- **The side tab** (be7a676, 8878c5b) is dragged: docked at the start or the end, or free; design's `.dock-start`,
+  `.free`, `.dragging`, `.dm-dock-hint`. Its place is the device's: localStorage `helper.daemon.tab`.
+- **Themes** (4f809bc): prefs `look.font` (`heebo` · `round` · `serif`; accessibility's readable font wins) and
+  `look.palette: 'custom'` with `look.custom: { primary, field, ground }`; apply.js sets the tokens from design's
+  `H.palette.derive()`, by day or by night.
+- **For the master:** common.js's early copy of the settings could set `data-font` from `look.font` too, so the font does
+  not flash in. A custom theme comes in once apply.js and palette.js load (a short flash of the default); if that shows,
+  apply.js can keep the derived tokens in the prefs for the early copy to set.
+- "דרוזים" is "התווחיד" (التوحيد for the Arabic version; the value stays `druze`).
+Status: done on `ai-features`; the looks come with design's 31f8ed0 and its figures.
+
+## 2026-11-14 – Shared research: within the household only, for now (master)
+The owner decided that a research is shared only within its household for now, and later with others too. The reason is
+that members have no age yet, so the "under 12 only with the family" rule cannot be enforced.
+
+ai-features does the following before step 3 (b24e1c1, 9376809, 46d5e59) is merged:
+- invite() refuses an invitee from another household (403 not_same_household).
+- An invitation does not reveal whether an address is registered: it gives the same answer for "not a member" and
+  "another household".
+- Members are shown by name, not by email address. The owner of the research still sees addresses.
+
+Opening sharing to other households waits for a child marker or a birth year on members (the master owns members), and
+then for the owner's OK. Status: accepted.
+
+## 2026-11-14 – The research assistant, step 3: shared research (ai-features → master for a security review, design)
+
+The owner's go-ahead ("כן, שלב 3"), from vision's spec (`docs/vision/research.md`):
+- **Roles** (`server/research-share.ts`, 24 tests in `server/test-research-share.mjs`): owner (everything: invite,
+  roles, remove, delete, settings, the goal), editor (anyone's notes, questions, sources and drafts; restores from the
+  history; invites readers), contributor (adds, and changes only what they wrote), reader (sees and comments). The server
+  checks every write through `access()` in `server/researches.ts`; someone not in a research gets 404, as if it were not
+  there. The page offers only what the role allows.
+- **Joining (after the master's review, a47e3c5):** within the owner's household only, for now (the master's entry
+  above). The owner (or an editor, for readers) invites someone of the household who is already in הָאֹהֶל; whoever is
+  not – not registered, or of another household – gets the very same 403 `not_same_household` (`inviteCheck`), so an
+  invitation never tells whether an address exists. No mail goes out; it counts only once accepted. Members are shown
+  by name; their addresses go only to the research's owner (`memberView`). The children's rule waits in `mayJoin()`
+  for when sharing opens beyond the household.
+- **Private notes:** a note keeps living in its author's פתקים (`research_notes.note_email`). When a note of mine joins a
+  research that is shared (or one that isn't mine), the server answers 409 `ask_share` and the page asks each time
+  whether to share it. If not, the others see "a private note of X": no title, no text, not in drafts, ✨ or exports. Only
+  its author can open it later, and a restore cannot reopen it.
+- **History and restore:** each add, change and removal is kept with how it was before (`research_history`); a draft is
+  kept at most once every ten minutes per person (it saves as one types), and at once when someone else writes. An
+  editor restores a removed thread, source, note link or draft, or an earlier text.
+- **Comments** on the research or on a note, question or source (`research_comments`); the writer or an editor deletes.
+- **The journal** stays personal: each member keeps their own lines about a shared research. The goal and "done" are the
+  owner's. A draft saved to Drive by someone else goes to their own Drive, as a new Doc.
+- **Appended:** tables `research_members`, `research_history`, `research_comments` (`schema.sql`); `COLUMNS` →
+  `research_notes.note_email`, `research_notes.shared`, `created_by` on `research_threads`, `research_sources` and
+  `research_drafts`; nine routes (`/api/research/r/:id/members|join|comments`, `…/notes/:noteId` PUT and `/share`,
+  `/api/research/comments/:id`, `/api/research/history/:id/restore`).
+- **For the master (a security review):** this lets one member read another member's rows for the first time, outside the
+  vault. Worth a look: `access()` and `item()` in `researches.ts` (rows keyed by the owner, the member found through
+  `research_members` with `status = 'active'`), `visibleNotes()` (the hidden note's body never leaves the server), and the
+  `invite()` checks (only existing members, the household compared on the server).
+- **For design:** new classes `.rx-invites`, `.rx-sharing`, `.rx-role` (a role pill), `.rx-shared` (on a research card),
+  `.rx-private` (a note that wasn't shared), `.rx-comments`, `.rx-comment`, `.rx-history`. Inline rules hold the layout for
+  now. Also fixed: `.rx-preview` no longer has an inline `display`, so the `[hidden]` guard in research.css can go.
+Status: done on `ai-features`; reviewed by the master, with the three changes in a47e3c5.
+
+## 2026-11-14 – The research assistant, step 2 completed: the academic pack, docx and slides, and the ✨ tools (ai-features → master, design)
+
+The owner's scope for step 2 (vision): beyond 6d9a822, now also
+- **The academic formatting and writing pack** (`server/research-pack.ts`, 20 tests in `server/test-research-pack.mjs`):
+  draft templates (IMRaD, a seminar paper, an essay, a talk, a post) with their sections and a length to aim for;
+  numbered headings and cross-references (`{#label}` on a heading, `[ref:label]` → "סעיף 2.1"); footnotes `^[…]` (with
+  citations inside them; LaTeX `\footnote`); a word count against the target; a checklist before handing in (the
+  template's sections, the length, citations that point nowhere, places still to complete, the abstract, broken
+  references); Hebrew and English kept in order in HTML (`dir="auto"` paragraphs, `<bdi>` for English runs).
+- **Export:** a real **.docx** written here with no library (a stored zip with its CRC; checked with a zip reader and an
+  XML parser), right to left, headings styled, notes and bibliography; **slides** as one HTML page (a slide per `##`).
+- **✨ (own AI or credit):** focused search (the AI writes 2–3 OpenAlex searches), a source's summary and a comparison of
+  2–5 sources – both from abstracts read live from OpenAlex and never stored (a work without an open abstract is said so)
+  – and language editing (the citation, link and footnote marks must come back unchanged, or it is not offered).
+- Columns in the new table `research_drafts` (not yet live, so in its CREATE): `template`, `target`, `numbered`.
+  Routes: `/api/research/r/:id/ai/{search,compare}`, `/api/research/sources/:id/ai/summary`, `/api/research/drafts/:id/ai/edit`.
+  `searchOpenAlex` and `abstractOf` are exported from researches.ts.
+- **For the master:** `test:research-pack` in `npm test`.
+- **For design:** `.rx-format` (numbering, the target, the template, ✨ editing), `.rx-words`, `.rx-checks` (a `<details>`,
+  `li.ok` / `li.todo`); the docx and slides have their own styles inside them.
+Status: done (on `ai-features`).
+
+## 2026-11-14 – The research assistant, step 2: persistence and writing (ai-features → master, design)
+
+- **One engine with the goals:** "🎯 להפוך למטרה" makes a goal from a research (the new "מחקר" template; `insertGoal`
+  in goals.ts is shared), so its steps come to "היום", the weekly review, "נתקעתי" and the badges; "היום" also shows one
+  open research thread a day (`threadOfDay`); "🏁 סיימתי" finishes the research (and its goal) and earns "גשש" (no longer
+  "soon"). A research journal of a few lines a day.
+- **Writing:** drafts – an outline from the notes (no AI), an empty one, or ✨ a draft from the notes; citations as
+  `[@source]` (with a page), written out in the research's style with the bibliography of what is cited; a formatted
+  preview; export to Markdown, HTML (to print or save as PDF), Word (an HTML .doc; a real .docx would need a library –
+  I would ask first), LaTeX with `references.bib`, and a Google Doc (`saveToDrive` in notes.ts, now shared by notes and
+  drafts: the same drive.file grant, a folder "האוהל · מחקרים").
+- **✨ (the person's own AI or credit):** directions (questions worth asking, small next steps – to the threads or the
+  goal) and a first draft; without AI, guided questions and the outline.
+- Tables appended: `research_journal`, `research_drafts`; COLUMNS: `researches.goal_id`, `researches.done_at`. Routes:
+  `/api/research/r/:id/{goal,done,journal,drafts,ai/directions,ai/draft}`, `/api/research/drafts/:id` (+ `/export`, `/drive`).
+  Tests: research 24 (drafts, LaTeX, HTML), goals 40.
+- **For the master:** a review of `saveToDrive` (moved out of `toDrive`, the same calls; HTML now converts to a formatted
+  Doc). Nothing else of yours.
+- **For design:** `.rx-persist`, `.rx-directions`, `.rx-dir-out`, `.rx-drafts`, `.rx-draft-item`, the draft screen
+  `.rx-draft` (`.rx-toolbar`, `.rx-preview` with an iframe of the export, `.rx-export`), `.rx-journal`
+  (`.rx-journal-entry`); in goals, `.gl-thread` (the thread of the day under "היום").
+Status: done (on `ai-features`).
+
+## 2026-11-14 – The research assistant, step 1: the core (ai-features → master, design, vision)
+
+Vision's spec v1 (`docs/vision/research.md`), step 1 of 4. In `/tools/research/` ("עוזר מחקר", a new tile in the tools box):
+- **Researches** with a purpose and a citation style (APA, MLA, Chicago); **notes** are the hub's own notes, linked by
+  `research_notes`, so one note is in several researches (the same note); `[[title]]` links and backlinks among all of
+  a person's notes; **questions and threads** (open, answered, parked) and one list of every open one; **sources** by a DOI
+  (Crossref's metadata, OpenAlex's open copy, retraction mark and citation count) or typed in by hand, with the
+  bibliography and the in-text citation in the chosen style; a search of OpenAlex by words; **export** to Markdown and
+  BibTeX.
+- **Capture:** `/capture/?title=&text=&url=` keeps what was shared as a note in the inbox (`notes.inbox`, a column in
+  COLUMNS) or straight in a research. **For the master:** `share_target` in `manifest.json` → `{ action: '/capture/',
+  method: 'GET', params: { title: 'title', text: 'text', url: 'url' } }`.
+- **The engine:** the open sources and citations are in `server/researches.ts` and `server/research-cite.ts` (16 tests,
+  `server/test-research.mjs`); the Torah researcher (`research.ts`) is its Sefaria pack, as you suggested. The styles are
+  formatted by our own code (no citeproc). Crossref's and PubMed's abstracts are not stored; OpenAlex is the backbone;
+  Semantic Scholar not used. The contact address is the app setting `research.contact_email` (empty until the owner
+  chooses one; then sent as mailto to OpenAlex and Crossref).
+- Tables appended: `researches`, `research_notes`, `research_threads`, `research_sources`; routes `/api/research/list`,
+  `/find`, `/new`, `/r/:id` (and its `notes`, `threads`, `sources`, `export`), `/threads/:id`, `/sources/:id`,
+  `/of-note/:noteId` (next to the Torah researcher's `/api/research/ask|search|translate|word`, untouched).
+- **For the master:** add `test:research` to `npm test`; `share_target` as above.
+- **For design:** `research.css` for `.rx` (`.rx-item`, `.rx-inbox`, `.rx-threads`, `.rx-thread.open|answered|parked`,
+  `.rx-note`, `.rx-links`, `.rx-backlinks`, `.rx-found-item`, `.rx-retracted`, `.rx-bib`, `.rx-source.retracted`,
+  `.rx-cite` (the citation, left to right, its title in `<i>`), `.rx-add`); and `.cap` on `/capture/`. A new prefix,
+  `rx-`, apart from the study room's and the restaurants' `rs-`.
+- **Next steps:** 2, persistence and writing (the goals engine: a research as a goal, its daily thread; an outline
+  from notes with citations; ✨ summaries, directions and drafts); 3, shared research (roles, history); 4, the toolkit and
+  the field packs.
+Status: done (on `ai-features`).
+
+## 2026-11-13 – The research assistant: order, one engine, and the open sources' terms (master)
+
+- **Order (ai-features):** goals part 1 is live; the research assistant v1 comes next; goals part 2 (the social layer) waits
+  for a design proposal, since it needs the friends/approval and under-12 rules.
+- **One engine:** `server/research.ts` becomes a shared core (sources, search, citations); the Torah researcher is one source
+  pack (Sefaria), the academic researcher another. PDFs to Drive use the same incremental `drive.file` grant as notes.
+  "Share to הָאֹהֶל" from the phone: ai-features builds a receiving page (`/capture/`, GET title/text/url), then the master
+  adds `share_target` to `manifest.json`.
+- **The sources' terms (checked by the master):** OpenAlex (CC0, polite pool with a contact email) is the backbone; Crossref and
+  PubMed metadata are free, but abstracts are publishers' copyright – shown, not stored in bulk; PubMed: `tool` and `email`,
+  3 requests/s without a key; arXiv: metadata CC0, one request per 3 s, their acknowledgment shown; Unpaywall: an email
+  parameter, CC0. **Semantic Scholar is not used:** its API licence allows non-commercial research only (commercial needs an
+  expanded licence from AI2), and the public version will be paid. **CSL styles** are CC BY-SA 3.0; **citeproc-js** is
+  CPAL/AGPL (copyleft) and is not adopted without the master – the few styles needed (APA, MLA, Chicago, Hebrew) are
+  formatted by our own code from CSL data.
+- **Open with the owner:** which contact email the APIs get (not the owner's private address); a setting holds it until then.
+Status: Decided (master), the email open.
+
+## 2026-11-13 – Goal management v1, the first part (ai-features → master, design, vision)
+
+Vision's spec v1 (`docs/vision/goals.md`). Built in `/tools/tasks/` ("ניהול מטרות"; the tools tile is live, no
+longer "בקרוב"):
+- **The structure:** goals (short, regular, long) → processes (checklists) → small steps, each person's own.
+  Tables appended to schema.sql: `goals`, `goal_processes`, `goal_steps`, `goal_reviews`, `goal_badges`. Routes
+  `/api/goals` (the dashboard's data, add, change, delete), `/api/goals/template`, `/api/goals/review`, processes and
+  steps, and ✨ `/api/goals/ai/plan` and `/api/goals/ai/stuck`.
+- **The logic** (`server/goals-logic.ts`, 34 tests in `server/test-goals.mjs`): the rest day by tradition (prefs
+  `me.religion`, or the person's own in prefs `goals.rest`), the forgiving week ("1 מתוך 6", the rest day out of the
+  count), a streak the rest day never breaks, the "why" after two quiet working days, the weekly review on the day
+  before the rest day, today's 2–3 steps, eleven templates without AI (the tent itself among them), and the badges.
+  The family badges and "גשש" are listed as "בקרוב".
+- **The page:** the dashboard; a new goal in five steps (written or spoken through the browser's own speech-to-text);
+  "היום"; a goal's checklists; "נתקעתי" (a guided question and starters, or ✨ suggestions) that adds a 5-minute step
+  before the stuck one; the weekly minute; the badges gallery (secret ones a silhouette); the rest-day picker.
+  For the owner, the empty dashboard offers "⛺ להתחיל במטרה של האוהל".
+- **Not in this part:** sharing, following a friend, advice and likes, family goals with roles, family templates; a step
+  as a calendar event, a shopping item or a gathering; ✨ better transcription; push reminders. The reminders for now
+  are in the app itself (today's steps and the "why" on opening).
+- **For the master:** add `test:goals` to `npm test`; in `apps.js` (design's) the tile's name "ניהול מטרות". For push
+  reminders later: web push in `public/sw.js` and VAPID keys (yours and the owner's); the goal's `time` is stored ready.
+- **For design:** `goals.css` for `.gl` (`.gl-today`, `.gl-why`, `.gl-review-due`, `.gl-pulse`, `.gl-goals`, `.gl-goal`,
+  `.gl-kind.short|regular|long`, `.gl-bar`, `.gl-process`, `.gl-step` (`.done`, `.small`), `.gl-stuck`, `.gl-mic`,
+  `.gl-badge` (`.on`, `.secret`, `.soon`), `.gl-empty`); the embroidered badge patches (the spec's style); the inline
+  rules only hold the layout until then.
+Status: done (on `ai-features`); the second part waits for the owner to try this one.
+
+## 2026-11-13 – The recipe check without AI (docs/ai/without-ai.md #4) (ai-features → master, design)
+
+`POST /api/recipes/check` now checks by word lists first (`server/recipe-rules.ts`, 17 tests in
+`server/test-recipe-rules.mjs`): non-kosher foods, seafood, shrimp, meat with dairy (the dairy marked, with its
+substitutes), high-carb foods for keto, and the ingredients with no amount (`missing`). The answer has the same shape
+plus `method: 'rules' | 'ai'`. The AI checks by itself only when it is free for the person (the family, or their own
+key), as before; otherwise on request (`{ai: true}`, "✨ בדיקה חכמה" in the fix window, an invitation when no AI is
+left). An AI answer already cached for the same ingredients is used for anyone at no cost.
+- **For the master:** add `test:recipe-rules` to `npm test`. No route or table.
+- **For design:** `.fix-smart` (an `.ai-pair` with ✨ and a short note), `.fix-missing` (the ingredients with no amount).
+Status: done (on `ai-features`).
+
+## 2026-11-13 – The study room without AI (docs/ai/without-ai.md #7) (ai-features → master, design)
+
+The dictionaries, the concordance and the commentaries already worked without AI. Now:
+- **The researcher:** "🔎 חיפוש בספריא" (primary) searches all of Sefaria's sources by the question's key words
+  (`public/parasha/plain.js`, 13 tests in `server/test-parasha-plain.mjs`; through the existing `/api/research/search`),
+  beside "✨ שאלה לחוקר" (`.ai-up`, `offer` when no AI is left); a link to the verse's commentaries.
+- **A word:** the Hebrew explanation (AI) comes by itself only when the AI is free for this person (the family, or their
+  own key); a limited account gets "✨ פירוש בעברית" and spends nothing on a tap.
+- **Translation:** "📖 התרגום של ספריא" (Sefaria's own translation of a Sefaria source, e.g. the Metsudah Onkelos) and
+  "📚 מילון למילים" (each word in Sefaria's dictionaries) beside "✨ תרגום לעברית". AI results carry `.ai-note`.
+- **For the master:** `public/parasha/index.html` loads `plain.js` before `study.js`; add `test:parasha-plain` to
+  `npm test`. No route or table.
+- **For design:** `.rs-ask-acts` (the researcher's two buttons, on their own row), `.rs-plain` and `.rs-plain-hit`
+  (the search results; an inline rule holds them until then), `.rs-tr-plain`, `.rs-tr-gloss`, `.rs-tr-sef`.
+Status: done (on `ai-features`).
+
+## 2026-11-12 – Restaurants: the family's list (A) and Google Places (C) (ai-features → master, design)
+
+The owner chose A, then C (docs/ai/restaurants.md); for C, the place is both the city in the settings and the device's
+location, and Google is open to everyone with a monthly limit.
+- **A, מסעדות שלנו** (`/food/restaurants/`): table `restaurants` (appended to schema.sql), routes `/api/restaurants`
+  (list, add, change, delete, `/:id/fav`, `/:id/visit`), 5 tests (`server/test-restaurants.mjs`). In the food
+  portal: a tile, and in the slider the favourites not visited for 30 days and the new ones.
+- **C, Google Places** (`server/places.ts`, 14 tests in `server/test-places.mjs`): `GET/POST /api/restaurants/search`,
+  on request only. A text search around the city (`prefs me.city`, a new "המקום שלי" in the settings) or a nearby
+  search around the device's point (asked with its permission, used for that one call, not kept). Only the "Pro"
+  fields. Nothing of Google's answer is stored; a restaurant added from it keeps Google's place ID
+  (`restaurants.place_id`, allowed indefinitely). Results are marked "Google Maps". Limits: 20 searches a month for a
+  limited person, none for the family (`ai_allowance.limited`), and 4,500 a month for the whole site (Google's free
+  tier is 5,000), counted in the new table `places_usage`.
+- **For the owner:** a Google Maps Platform API key restricted to "Places API (New)", with a daily quota cap in Google
+  Cloud, entered as the secret `GOOGLE_MAPS_API_KEY`. Until then the page says the search is not set up.
+- **For the master:** add `GOOGLE_MAPS_API_KEY?: string` to `Env` in core.ts (places.ts reads it through a local type
+  until then); add `test:restaurants` and `test:places` to `npm test`. Google's terms (the master's answer): only the
+  place ID is kept. "Add to our list" shows Google's name and address for reference, and the person types the name in
+  their own words; the link saved is `https://www.google.com/maps/place/?q=place_id:<id>` (a URL, no API call).
+- **For design:** `.rs`, `.rs-card`, `.rs-fav`, `.rs-filters`, `.rs-tags`, `.rs-kosher` (`kosher`, `mehadrin`, `no`),
+  `.rs-near`, `.rs-place`, `.rs-attrib` (Google's attribution: keep it visible), `.fs-restaurant`; and a restaurant
+  icon for the portal tile (it uses `food` now).
+Status: done (on `ai-features`); C waits for the key.
+
+## 2026-11-12 – Vision batch 4 on ai-features: what was built, and what others are asked (ai-features → master, design)
+
+Built on `ai-features` (each commit names its item):
+- **(1, 8) תנועה ותזונה**: the folder "דיאטה" is renamed (its address `/food/diet/` stays), with הקפדה first; הקפדה
+  is in the tools box too; the food portal's subtitle follows. **For the master:** `public/assets/apps.js` still says
+  `name: 'דיאטה', sub: 'קטוזיס, הקפדה, ומה מתאים'` (and `'… דיאטה והמקרר'` for אוכל). Proposed: `'תנועה ותזונה'` /
+  `'הקפדה, קטוזיס, ומה מתאים'` / `'רשימת קניות, ספר מתכונים, תנועה ותזונה והמקרר'`, and a הקפדה entry
+  (`/food/diet/hakpada/`, ic `target`) so it can be pinned to the ring.
+- **(5) Notes**: saved only on "שמירה" (or Ctrl+S); closing with changes asks "לבטל את השינויים?"; a ✕; a star.
+  Column `notes.starred`. **Drive**: "☁ ל־Drive" makes a Google Doc in "האוהל · פתקים" through the existing
+  `/api/auth/login?drive=1` (drive.file, sealed in `google_tokens`). Routes appended: `GET /api/notes/drive`,
+  `POST /api/notes/:id/drive`; columns `notes.drive_id`, `notes.drive_at`. `mail.mailStatus` now counts Gmail as
+  connected only with the Gmail scope, since a Drive-only grant shares the row. **For the master:** a review of the
+  token use. It was not tried against Google (sign-in needs port 8788), and the Drive upload needs a test on a preview.
+- **(6) Settings**: in the owner's order, kept per person (prefs `ui`, `access`, `look`, `me`, `daemon`).
+  **For the master:** `public/settings/apply.js` defines `H.applySettings()`, `H.reducedMotion()`, `H.vibrate()`,
+  `H.soundsOn()`; please run it from `common.js` right after the prefs load (inline it, or `loadOnce` it early), so
+  every page gets the text size and the marks before it paints. **For design:** CSS for `:root[data-spacing="wide"]`,
+  `[data-font="readable"]`, `[data-contrast="high"]`, `[data-motion="reduce"]`, `[data-palette="…"]` (the palettes'
+  ids go in `PALETTES` in settings.js); in `settings.css`, `.st-sec`, `.st-choices` / `.st-jump` (rows of `.chip`, the
+  chosen one `aria-checked="true"`), `.st-services-grid`, `.st-field`, `.st-skins`, `.st-soon`. The inline rules in
+  settings.js only hold the layout until then.
+- **(10) Songbook**: the reader is the hub's flip sheet (`H.sheet`, so `/songs/` loads `sheet.css` and `sheet.js`; the
+  old `#reader` section is gone, and the guide's `song-reader` mark moved to the sheet's content); ❤ on a double tap or
+  ♡ (prefs `songs.favs`, links only); "🎸 אני מנגן" (prefs `songs.plays`); delete from the reader. In
+  `public/assets/music.js`, "the words are in the songbook" is a side popup `.mu-peek` that slides in and out (inline
+  styles until design). **For design:** `.scard .fav`, `.chip.plays`, `.heart-burst`, `.mu-peek`, `.songs-sheet`.
+  Shared songbooks are not built: they need a sharing model (between households, by link?), which goes to the master
+  first.
+- **(11) The food portal's slider**: `GET /api/food/highlights` (route appended, `server/food.ts`, 11 tests in
+  `server/test-food.mjs`): what goes off within three days in the household's fridges, then its own recipes that use
+  it, then recent ones. `public/food/slider.js` puts it under the header. **For design:** `.food-slider`, `.fs-track`,
+  `.fs-item` (`.fs-fridge.soon`, `.gone`, `.fs-recipe`). **For the master:** add `node server/test-food.mjs` to
+  `npm test`. Restaurants: a proposal for the owner in `docs/ai/restaurants.md`; nothing built.
+- **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
+Status: done (on `ai-features`), except the items marked for others.
+
+## 2026-11-13 – Three special companions, paid (the owner)
+
+The owner wants all the figures, and three special paid ones – a man, a woman and neither – worth paying for. From the
+options design proposed (each special in a different way) he chose: הקוסם מהשוק (a trick: a dove from his hat when
+something is achieved), האסטרונומית (her shawl lights up with stars at night) and בובת הטלאים (the person's own badges
+sewn on her – a figure that looks different for everyone). Drawn and built on design (00bdf33); how to wire them is in
+docs/design/figures-2d.md. Status: done (design), for ai-features to wire.
+
+## 2026-11-13 – The default companion is פנק (the owner)
+
+From the preview of the four simple companions (https://claude.ai/artifact/1VZvspHAQp7Pd5Ww9m96fF), the owner chose the
+fennec, פנק, as the default figure for every family but his own (his stays Ibn Ezra). `Figure2D.DEFAULT = 'fennec'`
+(public/assets/figure2d.js); ai-features uses it as the default in settings and the companion. Status: decided.
+
+## 2026-11-13 – עוזר מחקר: research.css fitted to the live page; capture.css; goals.md changed since 3e565c9 (design → ai-features)
+
+- `research.css` now styles research.js as it runs (8ecf53b): `.rx-item`, `.rx-inbox` / `.rx-inbox-item`, `.rx-note` with
+  `.rx-links` / `.rx-backlinks`, `.rx-add`, `.rx-thread.open/.answered/.parked` with `.rx-status`, `.rx-found-item`,
+  `.rx-retracted`, `.rx-bib > .rx-source(.retracted)` and `.rx-cite` (left to right, the title in italics). Design's own
+  prototype classes moved off them (`.rx-caps`, `.rx-q`, `.rx-qstate`, `.rx-notefull`, `.rx-srcs` / `.rx-src`, `.rx-fn`).
+  Checked against the page (sample data) at 375, light and dark. The page needs
+  `<link rel="stylesheet" href="/tools/research/research.css">`.
+- `public/capture/capture.css` for "שמירה לאוהל" (`.cap`, `.cap-done`): the page needs
+  `<link rel="stylesheet" href="/capture/capture.css">`.
+- **Goals, before moving goals.js onto docs/design/goals.md:** goals.md changed after 3e565c9 – badges are earned with
+  `.on` (no `.locked`), the badge files carry the server's ids (`/assets/badges/peg.webp` …, the secret one
+  `the_way.acc4adef.webp`), and design's today card is `.gl-tstep` (yours, `li.gl-step`, keeps its name). Read the current
+  goals.md. Two badges were redrawn at the owner's word (dawn, standing); eight more come after the image tool's cap.
+
+## 2026-11-13 – עוזר מחקר: the look of the core; goals fitted to the live page (design → ai-features)
+
+- **The research assistant, step 1 (the core):** `public/tools/research/research.css`, the prototype
+  `docs/design/prototype/research.html` and the markup in `docs/design/research.md`: quick capture and the inbox, one
+  thread a day, each research as a card with a small constellation of its notes (a preview of the knowledge map), a note
+  with its links, citations, sources with reliability marks (in words), the researches it lives in, and its backlinks; all
+  the open threads by research; and "לשתף את הפתק הפרטי הזה?". Prefix `.rx-`. The map, the PDF reader, the writing view,
+  the matrix and the timeline come with the later steps.
+- **Goals:** `goals.css` now styles goals.js as it runs (daaabe2), and design's own names moved off the classes it uses
+  (`.gl-tstep`, `.gl-alldone`, `.gl-reason`, `.gl-stuckbox`; badges are earned with `.on`). The badge files carry the
+  server's ids (`peg.webp`, `ember.webp` …, the secret one `the_way.acc4adef.webp`). For ai-features: link goals.css in
+  `public/tools/tasks/index.html`, show `<img src="/assets/badges/<id>.webp">` instead of 🏅 (secret: `secret.webp` until
+  earned), and drop the inline styles. The recipe check's `.fix-smart` and `.fix-missing` are styled in groceries' style.css.
+Status: done (design's part).
+
+## 2026-11-13 – ניהול מטרות: the look, the prototype and the embroidered badges (design → ai-features)
+
+For the goal-management spec v1 (vision, approved by the owner). Design's part is ready for ai-features to build on:
+- `public/tools/tasks/goals.css` – every screen: the dashboard (each goal a filling ring and a path of stations on a
+  thread, the forgiving week "4 מתוך 6" with the rest day as a candle), a goal's page with a checklist per process,
+  today's 2–3 big steps, the why coming back, "נתקעתי", the weekly review, the five-step new goal (write or record,
+  length, processes, first steps, rhythm), and the badge wall with a glass card for the way to each badge.
+- `docs/design/prototype/goals.html` – all of it working, with the owner's first goal (the tent) as the example;
+  `docs/design/goals.md` – the markup for each part (ai-features copies it), and how to show a badge earned, in
+  progress, secret or just earned.
+- The badges: 15 of 23 embroidered so far with the image tool ($1.03); the other 8 after the tool's daily cap resets
+  (listed in goals.md; `secret.webp` stands in meanwhile). The secret badge's real picture has an unguessable name, to
+  be sent only once earned.
+For ai-features: the page (`public/tools/tasks/index.html` and its JS) needs `<link rel="stylesheet" href="/tools/tasks/goals.css">`.
+Status: done (design's part); ai-features builds the logic.
+
+## 2026-11-12 – Vision batch 4, design's part: done; what ai-features can now drop or switch (design → ai-features, master)
+
+Done on `design` (each checked at 375 px and on desktop, light and dark, with the page audit): the calculator redesigned
+(2); the light of the sun and the moon on the tent and the cushions farther from the fire (3, 4 – in `public/index.html`,
+the master's); "עץ המשפחה" on two lines in the bar (9 – base.css only, NAV unchanged); the food header and `H.strip` (11);
+smoother card motion (7: transform-only lifts everywhere, the gathering's whole card opens it, and the list and a gathering
+crossfade with `@view-transition` in gather.css); the palettes and the reading marks (6); styles for the notes, the
+settings, the songbook's heart and the song popup (5, 6, 10), written against ai-features' branch at 62b7751.
+For ai-features – the looks are in place, so the stopgaps can go:
+- **The food slider** (`public/food/slider.js`): hand the slides to `H.strip` instead of building the row, e.g.
+  `H.strip({ title: 'עכשיו במטבח', items: api('/api/food/highlights').then((r) => r.slides.map(card)) })`, placed with
+  `H.folder({ ..., under: thatStrip })`, where a fridge slide is `{ kind: 'fridge', emoji: '🧊', kicker: 'מהמקרר · ' + fridgeName,
+  title: name, sub: when(days), tone: days < 0 ? 'gone' : days <= 1 ? 'soon' : null, href: '/food/fridge/' }` and a recipe is
+  `{ kind: 'recipe', img: image, kicker: '🍳 כדאי לבשל עכשיו' | '📖 מהספר שלנו', title, sub: 'משתמש ב…', href }` (a broken
+  picture falls back to the title's first letter by itself). No inline styles are needed.
+- **Settings**: the palettes are `[['', 'אבן ובזלת'], ['sea', 'ים התיכון'], ['desert', 'מדבר'], ['vineyard', 'כרם'], ['dusk', 'בין הערביים']]`
+  (drop the "בקרוב" one); give each palette chip `data-swatch="<id>"` and it shows its two colours. The inline `style`s on
+  `.st-choices`, the chosen chip (it painted `--vine`; settings.css fills the chosen one with `--primary`), `.st-jump`
+  and the grids can go.
+- **Notes** (`.nt-row`, `.nt-ed-head`), **the heart** (`.heart-burst`: keep the `animate()`, drop the style) and **the
+  song popup** (`.mu-peek` in music.css: keep the slide, drop the style): the inline styles can go.
+- **The gathering**: for the real flip, open a gathering from its card in `H.sheet.open(card, content)` as the recipe
+  book does; until then the crossfade carries it.
+- `H.reducedMotion()` (apply.js) is used by the fire, the sheet and the arranging when it is there.
+For the master: `public/index.html` changed (the tent's light, the ring's depth), and `common.js` should call
+`H.applySettings()` (ai-features' note in apply.js). Status: done (design); the switches above are ai-features'.
+
+## 2026-11-12 – The food window: a full-width header, and `H.strip` for the slider under it (design → ai-features)
+
+Vision batch 4, item 11. The food folder's picture (`H.folder({ hero })`) is now a header from edge to edge that fades
+into the page's background, with the title in the fade; nothing changes in `public/food/index.html` for it.
+The slider under it is a ready component in `public/assets/launcher.js`; its look is design's, what goes in it is
+ai-features':
+```
+H.folder({ ..., hero: {...}, under: H.strip({
+  title: 'מה מבשלים היום', more: { href: '/groceries/#book', label: 'לספר המתכונים' },   // more: optional
+  items: api('/api/...').then(toCards),    // an array, or a promise of one: three placeholder cards wait meanwhile
+}) })
+// a card: { href? | onclick?, kind: 'recipe' | 'place' | 'fridge', kicker: 'מתכון מומלץ', title, sub?, img? (4:3), emoji? }
+```
+`kind: 'fridge'` is a small paper note with no picture (its emoji goes before the kicker): "החלב פג מחר", "נשארו 2
+ביצים". An empty list (or a failed promise) hides the strip. The calculator was also redesigned (batch 4, item 2), in
+`calc.css` only, with every class calc.js uses kept. Status: done (design), waiting for ai-features' content.
+
+## 2026-11-12 – The calculator without AI: percentages, currencies, fractions, equations (ai-features → master, design)
+
+The second tool of `docs/ai/without-ai.md`. The calculator reads "15% מ-80", "100 דולר בשקלים" / "$50 + 20 €" (today's
+European Central Bank rates as mathjs units) and shows a simple fraction under a decimal. The smart tab has "🧮 חישוב"
+(primary): an equation's real roots (π/6 for trig), a function's derivative and zeros, or an expression's value, on the
+device; "✨ פתרון" is `.ai-up` (`offer` → the AI invitation when a limited account has no credit and no key of its own).
+The pure helpers are in `public/tools/calc/plain.js` (loaded by calc.js, so `index.html` is unchanged).
+- Route appended: `GET /api/calc/rates` → `calc.currencyRates` (Frankfurter, `api.frankfurter.dev`; no key, nothing about
+  the person is sent; six hours in memory and in Cloudflare's cache). No table.
+- For the master: add `node server/test-calc-plain.mjs` to `npm test` (and `"test:calc-plain"`) in `package.json`.
+- For design (it was there before this change): at phone width the smart tab's formula bubbles (`.cx-bubbles`) widen the
+  page to about 2200 px; a KaTeX `\sqrt` path inside a bubble is 7000 px wide and only its own `svg` clips it. Something
+  like `.cx-bubble { overflow: hidden; }` or `contain: paint` in `calc.css` should fix it.
+Status: done (on `ai-features`); the bubbles: proposed to design.
+
+## 2026-11-12 – Recipe import works without AI; the AI only on ✨ (ai-features → master)
+
+The first tool of `docs/ai/without-ai.md`. `POST /api/recipes/import {url}` now reads the page without AI
+(`server/recipe-parse.ts`): its schema.org JSON-LD, its microdata, or the lists under headings like "מצרכים" and
+"אופן ההכנה" (Hebrew and English). Nothing found: `method: 'draft'`, the page's title and picture, to complete by hand.
+The AI reads the page only with `{url, ai: true}`. The import dialog in `public/groceries/app.js` follows design's
+markup: "ייבוא" (plain) and "✨ ייבוא ותרגום" (`.ai-up`, `offer` → the AI invitation when a limited account has no
+credit and no key of its own); a recipe the AI read is marked with `.ai-note` and its "ביטול" removes it.
+The translate path (`/api/recipes/world/open`) also hands the AI the plain reader's lists when the page has them.
+For the master: add `node server/test-recipe-parse.mjs` to `npm test` (and `"test:recipe-parse"`) in `package.json`.
+No route, table or shared file changed. Status: done (on `ai-features`).
+
+## 2026-11-12 – The food menu's window: א2, the set table; all six pictures kept (design, the owner's choice; vision item 11)
+
+The owner chose א2 · השולחן הערוך and asked to keep all six for later. `H.folder({ hero: { src, small, alt } })` in
+`public/assets/launcher.js` gives a folder a window on top (the picture in a rounded frame, the title and its line on it;
+`launcher.css`), and `public/food/index.html` uses it with `public/assets/food/portal.webp` (`portal-800.webp` on a phone).
+The six originals, with the idea, the version and the full prompt of each, are in `figures/art/library/food/` (README).
+For the master: `/assets/food/portal.webp` and `portal-800.webp` could join the sw pre-cache with `/food/`. Status: done (on `design`).
+
+## 2026-11-12 – The family tree on a trusted device: built (ai-features, to the master's spec below)
+
+- `server/vault/access.ts`: the one table of each vault route's level – 'tree' (open on a trusted device, no idle lock)
+  or 'fresh' (a fresh unlock every time, then the 15-minute window) – and the device's coarse name ("Chrome · Windows",
+  never the User-Agent). Every handler in `server/vault/index.ts` calls `need(ctx, ACCESS.<name>)`; the tests check the
+  table route by route and that no handler bypasses it (`server/vault/test-access.mjs`, 165 tests).
+- An unlock makes the session trusted for 30 days, renewed on every tree use (`sessions.vault_trust_until`, `…_since`,
+  `…_used`, `…_label`, COLUMNS); trusting and revoking are written to the vault's activity log.
+- Beyond the spec, both to the safe side – please confirm: **appointing household heads** (`roleSave`, a change of rights)
+  and **viewing the activity log** (`auditLog`) need a fresh unlock; the **"נעילה" button ends this device's trust**
+  (an explicit lock), while the page's own lock after five minutes away (`/api/vault/lock?keep=1`) closes only the
+  documents' unlock and keeps the device trusted.
+- The page: a trusted device opens straight into the tree ("מכשיר מוכר" in place of the countdown); a person's documents
+  wait behind "פתיחת המסמכים"; any special step asks there and then (a passkey, or Google again) and carries on; a picture
+  on a card that needs the unlock stays initials. Settings: "מכשירים מוכרים" – each device, since when, last used, "this
+  device", remove, or remove and sign out. Routes `GET /api/vault/devices`, `DELETE /api/vault/devices/:id`.
+- **For the master**: `test:access` (node server/vault/test-access.mjs) in `npm test`.
+Status: done on `ai-features`, for the master's security review.
+
+## 2026-11-12 – The family tree on a trusted device; special actions still ask (master, the owner approved)
+
+Vision's batch 2 item 4 ("the family tree opens freely after the first sign-in"), made safe and approved by the owner.
+The vault's encryption does not change (the key is a Worker secret; a passkey never decrypted anything – it is a gate).
+A session that unlocks the vault becomes a **trusted device for 30 days**, renewed on each use: the tree (people,
+relationships, roles, the forest), editing people and links, and non-private details open there without a touch.
+**Every time** a fresh unlock (passkey, or a Google sign-in from the last 10 minutes): documents and files, private items,
+changing privacy, linking trees, any delete, export. Settings get a "מכשירים מוכרים" list to revoke a device at once.
+Untrusted sessions are as before. Built by ai-features in `server/vault/index.ts`, reviewed by the master. Status: Decided (the owner), assigned.
+
+## 2026-11-12 – The tools menu's arrange mode, and the ring's three fixed items plus pins (design, vision batch 2, items 6 and 12)
+
+As the master assigned:
+- `public/assets/apps.js` (new): the catalogue of every menu (each with its cushion and glow colour for the ring),
+  `H.ringApps()` – עץ המשפחה, the person's pins, כלים, הגדרות – and `H.isPinned` / `H.togglePin`. Pins are
+  `H.prefs('home').pins`; until someone changes them they are the five parts the ring always had (אוכל, חדשות, בידור,
+  שירון, פרשת השבוע), so nothing disappears for anyone. Also `H.appIcon(name)`: `H.icon` with a gear for `settings`.
+- `public/assets/launcher.js`: `H.folder({ …, arrange: 'tools' })` – the person's order (`H.prefs('tools').order`); a long
+  press, a right click, or the "סידור" button opens the arrange mode: tiles wiggle, a finger or the mouse drags them (the
+  others glide aside on transform only), the arrows move a focused tile, Escape or "סיום" ends it; each tile that can go
+  on the ring has a 📌. `H.prefs('tools').locked` turns the long press, the right click and the button off. Styles in
+  `launcher.css`.
+- `public/tools/index.html`: arrangeable, loads `apps.js`, and holds every part of the tent too (אוכל, חדשות, בידור, שירון).
+- `public/index.html` (the ring's part only): the ring is built from `H.ringApps()` after the sign-in; badges via `H.appIcon`.
+**For ai-features:** the switch "נעילת סידור התפריט" in הגדרות sets `H.prefs('tools').locked` (and `H.savePrefs('tools')`).
+**For the master:** a `settings` (gear) icon in the shared icons would replace the fallback in `apps.js`; the new top bar can use
+it too. Checked at 375 and 1280 px, by day and at night, the audit clean (the tools page also in the arrange mode).
+Status: done (on `design`).
+
+## 2026-11-12 – The new campfire on the home page: fire ג, with flicking tips (design, the owner's choice)
+
+The owner chose fire ג (curling tongues) and asked for a playful flick at the tips. The tongues are now drawn on canvases in
+thin strips with a bend that grows toward the tip – a sway, a wave rising up the flame, and every 1.5–4 s a quick flick of
+the tip that springs back, with a stretch upward (`public/assets/campfire.js`). In `public/index.html` (the master's file,
+its fire part only, as approved): `campfire.css` and `campfire.js` are linked; the `.fire` rules now hold only its size,
+place and the warm light on the ground (the strip's `.flames`, `.glow` and `.core` rules are gone); `campfire()` mounts the
+fire with its five pictures in `public/assets/campfire/`. **For the master:** `public/sw.js` pre-caches
+`/assets/campfire-strip.webp` – please replace it in `ASSETS` with `/assets/campfire.css`, `/assets/campfire.js`,
+`/assets/campfire/base.webp` and `/assets/campfire/flame-1…4.webp`; design deletes the strip once that is live.
+Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the sw.js line proposed.
+
 ## 2026-11-13 – Prices: ₪10 for a paid figure, ₪400 for a personal figure, more for the special ones (business)
 
 **Decided (the owner):**
@@ -400,6 +1104,306 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-13 – Companion figures: the free list and the paid list (vision, the owner)
+
+This updates the entry below: there are also certain paid figures, not only the personal one. The owner's lists:
+
+**Free:**
+- Ibn Sina (Avicenna);
+- the Rambam;
+- Newton;
+- Juha (ג'וחא);
+- Hershele Ostropoler;
+- Scheherazade;
+- Ali Baba;
+- Peter Pan;
+- every animal in our own design;
+- every holiday figure.
+
+**Paid, inside the app:**
+- the user's own personal figure (or the "free for life" bonus);
+- Mary Shelley;
+- Leonardo da Vinci;
+- Cleopatra and Dracula. The owner asked for them "extra sexy"; how far that goes is still open with the owner. See below.
+- sports-team figures, and figures from popular video games, films and series. These are to be checked against
+  partnerships, keeping copyright and the law in every case.
+
+**Rules that apply:**
+- 2D, in the tent's style. Ibn Ezra stays the family's 3D exception.
+- Draw from the original source, never from a known adaptation (Disney's Peter Pan, Universal's Dracula).
+- The `historic-figures` skill: long-dead people only, and respectful depictions.
+- **Licences:** team names and logos are trademarks, and games, films and series are copyrighted, so each of these
+  needs a licence or a partnership before it is sold.
+- **Peter Pan:** the United Kingdom has a special perpetual right; to be checked.
+
+**Cleopatra and Dracula:** one version for the app, safe for work and charismatic (presence and glamour, not sexuality),
+paid, for everyone. The owner also asked for a very explicit version as a private easter egg for himself only. The
+vision session did not pass that on: Gemini's terms forbid sexually explicit images, which would put at risk the key the
+whole app's AI runs on, and the files would sit in a family app's code and storage, where children use it.
+
+**Affects:**
+- **Design:** the figures.
+- **ai-features:** which figures are free and which paid, and the purchase.
+- **Business:** the paid catalogue (this partly reverses the business change de719b4: not only the personal figure
+  is paid), licensing and partnerships, and the risks.
+
+Status: Decided (the owner).
+
+## 2026-11-13 – Companion figures: everything to choose from is free; only a personal figure is paid; Ibn Ezra belongs to the owner's family (vision, the owner)
+
+**Decided:**
+- **Free:** every figure a user can choose. That means:
+  - the simple, cute figures;
+  - the generic ones;
+  - the figures unlocked by badges;
+  - the holiday and event figures.
+- **Paid:** only a personal, custom figure, made like our Ibn Ezra but of the user's choosing, including someone they know.
+  It is either a paid feature or a bonus in a "free for life" track for people who invested in the app.
+- **Ibn Ezra is unique** and belongs only to the owner's family. Other families do not get him.
+- **How the free figures are made:** they must be far cheaper to make than Ibn Ezra, and still dynamic and smoothly
+  animated.
+  - **Style:** 2D, in the tent's style (the one-style decision). The owner's choice over a simplified 3D vinyl.
+  - **Making them:** drawn through the image tool and split into layers; animated in code (breathing, blinking,
+    nodding, a talking mouth, a response to touch). There is no 3D or Blender pipeline for them.
+- **This replaces "companion packs"** as a paid item. The earlier decisions listed them as a paid extra and per-user
+  purchase: the entry "Product direction", item "The core is free for everyone", and business decision 6.
+
+The owner's words: "זה מה שהתכוונתי. רק הדמות האישית בהתאמה בתשלום או כבונוס. הדמות של ראב"ע היא ייחודית ושייכת רק
+למשפחה שלי."
+
+**Affects:**
+- **Design:** the free figures, following `figure-style`; a default companion for families other than the owner's.
+- **ai-features:** which figures each user sees; Ibn Ezra only in the owner's family; unlocking by badges.
+- **Business:** the revenue model without companion packs, and modelling the new "free for life" track (who gets in,
+  when, and what it gives).
+- **Risk, for business:** a personal figure of a living person, especially someone outside the family, needs that
+  person's consent (`docs/business/risks-and-rights.md`).
+
+Status: Decided (the owner).
+
+## 2026-11-13 – The research assistant (עוזר מחקר), spec v1: approved for building (vision, the owner)
+
+The owner specced the research assistant with the vision session and approved it ("add formatting and academic writing,
+then send"). Full spec: `docs/vision/research.md`, section "האפיון, גרסה 1".
+
+**Purpose:** real research, academic or personal, helping where researchers get stuck: organising accumulated knowledge
+and linking it, open threads, writing, and persistence. It shares one engine with goal management, because a research is
+a kind of goal.
+
+**Units:**
+- **A research** has a purpose (article, book, lecture, post, coursework, personal knowledge, family history), a citation
+  style and an export target.
+- **A note** is one unit of knowledge with its sources. One note can belong to several researches (the same note, not a
+  copy), with links and backlinks.
+- **A question or thread** has a status: open, answered or parked. One screen shows all open threads.
+- **A source** holds its metadata, a PDF in the user's Drive, highlights and quotes, and a reliability mark.
+
+**Flow:**
+- Capture from anywhere ("share to הָאֹהֶל") into an inbox.
+- Sort into notes and questions.
+- A knowledge map in the forest's visual language.
+- An outline built from notes, with citations and bibliography automatic.
+- Export to Word, Google Docs, LaTeX/BibTeX, Markdown, PDF or slides.
+- CSL citation styles; BibTeX and RIS import and export, so it works alongside Zotero and Mendeley.
+
+**Persistence:** goal management's daily steps, plus "one thread a day" on Today; the weekly review; "נתקעתי"; the "why";
+a research journal; and badges (including "גשש").
+
+**Shared research:**
+- Roles per research: owner, editor, contributor and reader.
+- An edit history, with restore.
+- A private note linked into a shared research asks every time whether to share it. If not, the collaborators see only
+  a reference.
+- The existing rules apply: friends connect only with approval; no one outside the family for children under 12.
+
+**Toolkit:**
+- **Core:**
+  - add a source by DOI, ISBN or link;
+  - a PDF reader whose highlights become notes;
+  - finding an open-access copy;
+  - the citation chain;
+  - alerts on new publications;
+  - a literature-review matrix;
+  - a glossary;
+  - a timeline;
+  - a quote collection;
+  - source reliability and retraction checks;
+  - exporting the whole research as an archive.
+- **Domain packs:**
+  - language: root search, concordance, textual witnesses, dictionaries, IPA;
+  - social research: qualitative coding, data and descriptive statistics, ethics;
+  - biology: PubMed, taxonomy, databases, formulas;
+  - translation;
+  - **academic formatting and writing:** templates (journal article, seminar paper, thesis, research proposal), IMRaD,
+    numbering and cross-references, footnotes, length limits, mixed right-to-left and left-to-right text, and style
+    (checklists without AI; ✨ language editing and abstracts).
+
+**Without AI:** open, free sources:
+- OpenAlex, Crossref, PubMed, arXiv, Semantic Scholar, Unpaywall;
+- Sefaria, Wiktionary;
+- web search opening in an ordinary search engine.
+
+**With AI (✨), through the user's own AI or credits:** focused search, summaries and comparison, directions and tasks,
+drafts from notes, and translation.
+
+**Before building:**
+- check each open source's terms and licence;
+- settle with the master how the Torah researcher (`server/research.ts`) and this tool share an engine.
+
+**Suggested build order:**
+1. The core: shared notes, questions, sources by DOI, capture, basic export.
+2. Persistence and writing.
+3. Shared research.
+4. The toolkit and the domain packs.
+
+**Affects:**
+- **ai-features:** the module, tables and routes (appended and logged), the sources, and the page.
+- **Design:** the screens, the knowledge map, the PDF reader, and the writing view.
+- **The master:** scheduling, the shared engine with `research.ts`, the Drive scope for PDFs, and the share target in
+  `manifest.json`.
+
+Status: Decided (the owner).
+
+## 2026-11-13 – Goal management, spec v1: approved for building (vision, the owner)
+
+The owner specced the goal-management tool (ניהול מטרות, `public/tools/tasks/`) with the vision session, answer by answer, and
+said "summarize and send". The full spec is in `docs/vision/goals.md`, section "האפיון, גרסה 1".
+
+**Purpose:** consistency and motivation, not just planning. The test is whether people come back to it tomorrow.
+
+**Structure:**
+- A goal (the "why"), then processes (each with a checklist), then small daily steps.
+- Goals by length: short (under a day), regular, and long-term (over a year).
+
+**Screens:**
+- A dashboard of goals and their path is the entry point.
+- **New goal:**
+  1. Write or record the goal and its "why".
+  2. Choose the length and an optional deadline.
+  3. The tool analyses the goal into processes, from a template by goal type, or with AI (✨). It can be edited.
+  4. The first three steps of the first process.
+  5. The rhythm: days and time, including the rest day.
+- **Today:** two or three small steps.
+
+**Motivation:**
+- Visible progress: a checklist per process, and the whole goal filling up.
+- Forgiving consistency ("4 of 7 this week").
+- A rest day by each user's tradition, which never breaks a streak and is rewarded.
+- A one-minute weekly review on the day before the rest day.
+- A "נתקעתי" button that breaks a step down to a 5-minute version.
+- The "why" comes back after two days with no step, with no scolding.
+
+**Badges:** the owner's list, in the spec.
+- Embroidered patches in the tent's style.
+- How to earn each one shows on hover or tap; secret badges show only a silhouette.
+- Each tradition gets a parallel rest-day badge with its own name.
+
+**Family and friends:**
+- Goals are private by default, and sharing is always a choice.
+- Following a friend's journey; advice with likes.
+- Shared family goals with roles.
+- Family templates: a finished goal's path is shared as a template.
+- The existing rules apply: friends connect only with approval; no messages outside the family under 12.
+
+**Hub links:** a step can become a calendar event, a shopping item, a research or a gathering.
+
+**Without AI:** templates, guided questions, and speech-to-text in the browser.
+**With AI (✨):** analysis, better transcription, "stuck" suggestions and adjusting the plan.
+
+**Data and first use:**
+- Goals are stored per user on the server.
+- The first goal is הָאֹהֶל itself (dogfooding).
+
+**Affects:**
+- **ai-features:** the server module, the tables and routes, appended and logged here, and the page's JavaScript.
+- **Design:** the dashboard, Today, the new-goal flow, the badges' art (through the image tool), the patches, the silhouettes.
+- **The master:** schedules the work; notifications or push, if they need the shell.
+
+Not in v1: the research assistant, specced next in vision.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – A new tool, "עוזר מחקר", alongside goal management (vision, the owner)
+
+**Decided:** a new tool, the research assistant (עוזר מחקר). It offers:
+- focused web search;
+- saved notes;
+- research projects that are kept in progress;
+- suggestions for directions to continue and help with tasks.
+
+It goes alongside goal management, and the owner and the vision session spec both tools together (`docs/vision/goals.md`).
+Nothing is built before the owner confirms the spec.
+
+It is a general tool, unlike the Torah researcher (`server/research.ts`), but the two may share an engine.
+
+By the rule "Every AI tool also has a useful version without AI", its plain version is a research folder (notes, saved
+links, progress, and search that opens in an ordinary search engine). Focused search and suggestions are the ✨ upgrade,
+through the user's own AI or credits.
+
+**Affects:** vision (the spec) now; ai-features and design once the spec is confirmed.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – Every AI tool also has a useful version without AI (vision, the owner)
+
+**Decided:**
+- Every tool that uses AI also has a version that is not smart but still useful, for users with no AI connection and no
+  credits. It can be built from templates, search, rules or forms.
+- The invitation to connect an AI or buy credits comes in addition to that version, never instead of it.
+
+This extends the earlier decisions: "The app works without AI, in a simpler version" and "A button for an AI ability
+never looks broken" (the entry "Product direction").
+
+**Affects:**
+- ai-features: every AI tool, existing and new, including the recipe book, the diets and the weather.
+- Design: how the two versions look side by side.
+- Vision: the goal-management spec.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The PC guide and the mail organizer: the simple path, through the user's own AI (vision, the owner)
+
+**Decided:**
+- Both tools are developed on the simple path that ai-features assessed, about half a day each.
+  - **The PC guide:** a copy button for the rules, a checklist with progress, a Mac variant, and a "how did it go" step.
+  - **A public mail organizer:** like the PC guide, it runs on the user's own Claude with its Gmail connector, under our
+    safety rules: label instead of delete, preview first, and an undo list.
+- The family's current mail tool (`server/mail.ts`, on the owner's keys) stays as it is.
+- Our own public Gmail tool is put off: it needs the restricted `gmail.modify` scope, Google's paid security assessment,
+  and our AI.
+
+**Why:** the owner's condition: "if it is simple, develop it; if it is very complex, keep it for later". It fits
+`closed-questions.md` 12 (in the public version, only through the user's own agent).
+
+**Affects:** ai-features.
+
+Status: Decided (the owner).
+
+## 2026-11-12 – The family tree opens freely after the first sign-in; the ring and the top bar are rebuilt (vision, the owner)
+
+Three decisions, confirmed by the owner one sentence at a time. The rest of the owner's notes from the same list are
+instructions, sent in the vision session's batch 2 (`docs/vision/batch.md`).
+
+1. **The family tree opens without asking again.** After the first sign-in on a device, the family tree opens without a
+   passkey. Only special actions ask each time: opening sealed vault documents, changing privacy, linking trees, deleting
+   and exporting.
+   - Affects: the master (the vault's security: where the key lives, and the trade-off; explain it to the owner and
+     propose a safe way) and ai-features (`family.js`, `server/vault/index.ts`).
+2. **The home page's ring around the campfire has only three fixed items:** the family tree, tools and settings.
+   Everything else is pinned to the ring by each user with a long press in the tools box, which holds every menu. The
+   choice is saved per user (`H.prefs`).
+   - Affects: ai-features (pinning and saving), design, the master (`public/index.html`).
+3. **The top bar keeps five items:**
+   - בית;
+   - עץ המשפחה;
+   - ניווט: a dropdown to the site's parts;
+   - כלים: a dropdown to every tool;
+   - הגדרות: a gear icon.
+   - The phone's bottom tab bar has the same five items (the owner).
+   - Affects: the master (`NAV` in `common.js`) and design.
+
 Status: Decided (the owner).
 
 ## 2026-11-12 – One visual style for everything; images are made through the Gemini API (vision, the owner)

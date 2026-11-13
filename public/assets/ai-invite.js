@@ -8,9 +8,12 @@
     if (shown) return;
     shown = true;
     const { el } = window.H;
+    // (credit is offered only while the shop is open: the owner's switch, money.shop_open, from /api/me)
+    const box = el('p', {}, 'כדי להמשיך להשתמש ב־AI, חברו את השירות שלכם (Claude או Gemini).');
+    window.H.me?.().then((r) => { if (r?.shop) box.textContent = 'כדי להמשיך להשתמש ב־AI, חברו את השירות שלכם (Claude או Gemini), או הוסיפו קרדיט.'; }).catch(() => {});
     window.H.modal(el('div', { class: 'ai-invite' },
       el('h2', {}, 'העוזר החכם רוצה להמשיך'),
-      el('p', {}, 'כדי להמשיך להשתמש ב־AI, חברו את השירות שלכם (Claude או Gemini), או הוסיפו קרדיט.'),
+      box,
       el('div', { class: 'sky-acts' },
         el('a', { class: 'btn primary', href: '/settings/#services' }, 'לחיבור שירות'),
         el('button', { class: 'btn ghost', type: 'button', onclick: () => { window.H.closeModal(); shown = false; } }, 'לא עכשיו'))));

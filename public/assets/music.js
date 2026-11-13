@@ -584,12 +584,20 @@
       .catch(() => mine.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לטעון את הפלייליסטים')));
   }
 
+  /* ready lists by mood (docs/ai/without-ai.md #10): a tap searches them; with no YouTube key and no AI, the search
+     opens on YouTube itself */
+  const MOODS = [['🌙 שקט לערב', 'שירים שקטים בעברית'], ['🎯 ריכוז', 'מוזיקה לריכוז בלי מילים'], ['🕯 שבת', 'שירי שבת וזמירות'],
+    ['🧒 לילדים', 'שירי ילדים בעברית'], ['🇮🇱 להיטים', 'להיטים ישראליים'], ['🎻 קלאסי', 'מוזיקה קלאסית רגועה'], ['⚡ אנרגיה', 'מוזיקה קצבית לאימון']];
   function youtubeTab(body) {
     const sb = searchBox('שיר ביוטיוב, או הדביקו קישור', async (q, out) => {
       const r = await api('/api/music/youtube/search?q=' + encodeURIComponent(q), { noRedirect: true });
-      out.replaceChildren(...(r.videos.length ? r.videos.map((v) => row(v, v.channel, () => E.playYT(v, r.videos))) : [el('p', { class: 'muted' }, 'לא נמצאו סרטונים')]));
+      out.replaceChildren(...(r.videos.length ? r.videos.map((v) => row(v, v.channel, () => E.playYT(v, r.videos)))
+        : r.searchUrl ? [el('p', { class: 'muted' }, 'כאן אי אפשר לחפש כרגע (אין חיבור לחיפוש של יוטיוב או לעוזר החכם).'), el('a', { class: 'btn ghost small', href: r.searchUrl, target: '_blank', rel: 'noopener' }, '↗ החיפוש ביוטיוב')]
+        : [el('p', { class: 'muted' }, 'לא נמצאו סרטונים')]));
     });
-    body.append(sb.node);
+    const moods = el('div', { class: 'mu-moods', role: 'group', 'aria-label': 'לפי מצב רוח' },
+      MOODS.map(([label, q]) => el('button', { class: 'chip', type: 'button', onclick: () => { sb.input.value = q; sb.input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); } }, label)));
+    body.append(sb.node, moods);
     if (matchMedia('(pointer: coarse)').matches) body.append(el('p', { class: 'mu-foot muted' }, 'בטלפון יוטיוב עוצר כשיוצאים מהאפליקציה (זה הכלל של יוטיוב). למוזיקה ברקע – ספוטיפיי.'));
   }
 
@@ -710,6 +718,38 @@
       toast(r ? 'לא מצאתי את המילים המדויקות, הנה חיפוש בשירון' : 'השירון לא ענה כרגע, נסו שוב');
     }
   }
+  /* a gentle word from the side (vision batch 4, item 10): it slides in from the screen's edge, stays a few seconds and
+     slides back out; a tap on its button acts, ✕ or a swipe lets it go. Still for whoever asked for less motion. */
+  let peekEl = null;
+  function peek(text, label, act) {
+    peekEl?.remove();
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // it sits at the inline end (the left in Hebrew), and comes in from that edge
+    const side = getComputedStyle(document.documentElement).direction === 'rtl' ? -1 : 1;
+    let gone = false, timer = 0;
+    const out = () => {
+      if (gone) return; gone = true; clearTimeout(timer);
+      const node = box;
+      if (still) { node.remove(); return; }
+      node.animate([{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${side * 110}%)`, opacity: 0 }], { duration: 380, easing: 'cubic-bezier(.4,0,1,1)' }).onfinish = () => node.remove();
+    };
+    const box = el('div', { class: 'mu-peek', role: 'status', 'aria-live': 'polite',
+    },
+      el('span', { class: 'mu-peek-text' }, '🎵 ', text),
+      el('button', { class: 'btn small primary', type: 'button', onclick: () => { out(); act(); } }, label),
+      el('button', { class: 'btn small ghost', type: 'button', 'aria-label': 'סגירה', onclick: out }, '✕'));
+    // a swipe toward the edge sends it away
+    let x0 = null;
+    box.addEventListener('pointerdown', (e) => { x0 = e.clientX; });
+    box.addEventListener('pointerup', (e) => { if (x0 !== null && Math.abs(e.clientX - x0) > 40) out(); x0 = null; });
+    box.addEventListener('pointerenter', () => clearTimeout(timer));
+    box.addEventListener('pointerleave', () => { clearTimeout(timer); timer = setTimeout(out, 2500); });
+    document.body.append(box);
+    peekEl = box;
+    if (!still) box.animate([{ transform: `translateX(${side * 110}%)`, opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 420, easing: 'cubic-bezier(.2,.8,.2,1)' });
+    timer = setTimeout(out, 6000);
+  }
+
   // a new song: the open window turns to its words; otherwise a small offer (only for songs the songbook knows)
   let lastSong = null, songTimer = 0;
   painters.push((st) => {
@@ -725,7 +765,7 @@
       const hit = r && (r.lyrics || r.chords);
       if (!hit || lastSong !== key) return;
       if (songwin && !songwin.hidden && songFollow) songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title);
-      else toast(`המילים של "${hit.title}" בשירון`, 'להציג', () => { songFollow = true; songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title); });
+      else peek(`המילים של "${hit.title}" בשירון`, 'להציג', () => { songFollow = true; songbook(songSrc(hit), (r.lyrics ? 'מילים · ' : 'אקורדים · ') + hit.title); });
     }, 2500);
   });
 

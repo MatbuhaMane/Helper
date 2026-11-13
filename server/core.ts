@@ -8,6 +8,7 @@ export interface Env {
   TOKEN_KEY?: string;           // optional base64 of 32 random bytes; encrypts Gmail refresh tokens (else derived)
   ANTHROPIC_API_KEY?: string;
   GEMINI_API_KEY?: string;
+  GOOGLE_MAPS_API_KEY?: string; // Places API (New) for the restaurants nearby (server/places.ts); unset: the search says it is not set up
   GEMINI_MODEL?: string;
   GEMINI_IMAGE_MODEL?: string;
   MEDIA?: R2Bucket;            // daemon form pictures (optional; falls back to the edge cache)
@@ -112,10 +113,13 @@ export async function loadUser(env: Env, req: Request): Promise<Member | null> {
   return row || null;
 }
 
-async function createSession(env: Env, email: string): Promise<string> {
-  const id = uid() + uid();
-  await env.DB.prepare('INSERT INTO sessions (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-    .bind(id, email, Date.now() + SESSION_DAYS * 86400_000, Date.now()).run();
+/** a new session. A sign-in (Google or a passkey) is a fresh proof for the lock (server/lock.ts): the session starts open, and
+    a code closed after ten wrong tries opens again – "שכחתי את הקוד" is a new sign-in with the person's Google account. */
+export async function createSession(env: Env, email: string): Promise<string> {
+  const id = uid() + uid(), now = Date.now();
+  await env.DB.prepare('INSERT INTO sessions (id, email, expires_at, created_at, last_active, lock_proof_at) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, email, now + SESSION_DAYS * 86400_000, now, now, now).run();
+  await env.DB.prepare('UPDATE user_locks SET fails = 0, pause_until = 0, closed = 0 WHERE email = ?').bind(email).run().catch(() => {});
   return cookie('sid', id, SESSION_DAYS * 86400);
 }
 
@@ -129,11 +133,31 @@ export function useInviteHooks(h: InviteHooks) { inviteHooks = h; }
 
 /** Members must be invited by an owner; OWNER_EMAIL is admitted (and made owner) automatically; a guest who signs in from
     a gathering's invitation (a join ticket on this device, server/join.ts) gets a household of their own. */
+/** A member the owner added signs in for the first time: they have full access at once (the family: no allowance row),
+    and the owner is told, with a message only the owner sees, to approve them in the room (members.approved_at).
+    Someone who used the tent before this was kept (a session or preferences) is not "new": it is only marked. */
+async function firstSignIn(env: Env, m: Member, name: string | null) {
+  const row = await env.DB.prepare('SELECT first_seen FROM members WHERE email = ?').bind(m.email).first<{ first_seen: number | null }>();
+  if (!row || row.first_seen) return;
+  const now = Date.now();
+  const set = await env.DB.prepare('UPDATE members SET first_seen = ? WHERE email = ? AND first_seen IS NULL').bind(now, m.email).run();
+  if (!set.meta.changes || m.role === 'owner') return;                       // another tab won the race, or the owner
+  const before = await env.DB.prepare('SELECT 1 FROM sessions WHERE email = ? UNION SELECT 1 FROM user_prefs WHERE email = ? LIMIT 1').bind(m.email, m.email).first().catch(() => null);
+  if (before) return;
+  const who = (m.he_name || m.name || name || m.email).slice(0, 60);
+  const owners = (env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  for (const owner of owners) {
+    await env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
+      .bind(uid(), `${who} התחבר/ה לאוהל בפעם הראשונה, עם גישה מלאה. לאשר בחדר הבעלים?`, 'info', '/admin/#members', 'system', now, now + 30 * 86400_000, owner).run();
+  }
+}
+
 async function admitMember(env: Env, email: string, name: string | null, req?: Request): Promise<Member | null> {
-  const existing = await env.DB.prepare('SELECT email, name, household, role FROM members WHERE email = ?')
+  const existing = await env.DB.prepare('SELECT email, name, he_name, household, role FROM members WHERE email = ?')
     .bind(email).first<Member>();
   if (existing) {
     if (name && !existing.name) await env.DB.prepare('UPDATE members SET name = ? WHERE email = ?').bind(name, email).run();
+    await firstSignIn(env, existing, name).catch((e) => console.error('first sign-in', e instanceof Error ? e.message : e));
     return existing;
   }
   const owners = (env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);

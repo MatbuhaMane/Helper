@@ -1,0 +1,82 @@
+/* The locks (docs/decisions.md, "Locks and privacy"): the padlock in the menu and its locking move, the lock screen
+   (4 dots, a big keypad, a passkey key), and the window that suggests a lock on the first visit to the tree.
+   lock.js builds them; the server decides. Calm and sure, like a tent flap tied shut for the night. */
+
+/* ---------- the padlock: one drawing, open or closed; the shackle drops with a small bounce ---------- */
+.pl { display: inline-grid; place-items: center; inline-size: 1.4em; block-size: 1.4em; color: currentColor; }
+.pl svg { inline-size: 100%; block-size: 100%; overflow: visible; }
+.pl-shackle { transform-box: fill-box; transform-origin: 100% 100%; transition: transform .26s cubic-bezier(.3, 1.6, .5, 1); }
+.pl[data-state="open"] .pl-shackle { transform: translateY(-2.6px) rotate(-22deg); }
+.pl-body { transition: transform .18s ease; transform-box: fill-box; transform-origin: 50% 100%; }
+.pl.snap .pl-body { animation: pl-snap .3s ease .12s; }
+@keyframes pl-snap { 40% { transform: scale(1.12, .9); } 75% { transform: scale(.97, 1.03); } }
+/* the button in the menu: a round icon button that takes the bar's ink */
+.pl-btn { font: inherit; display: inline-grid; place-items: center; inline-size: 40px; block-size: 40px; padding: 0; border-radius: 50%;
+  border: 1px solid transparent; background: transparent; color: inherit; cursor: pointer; font-size: 1.15rem;
+  transition: background-color var(--dur-quick, .15s), border-color var(--dur-quick, .15s); }
+.pl-btn:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+.pl-btn:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+
+/* ---------- the lock screen: over everything, the page behind it blurred and dimmed ---------- */
+.lk-screen { position: fixed; inset: 0; z-index: 2147482000; display: grid; place-items: center; overflow-y: auto;
+  padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background: color-mix(in srgb, var(--bg) 84%, transparent); -webkit-backdrop-filter: blur(16px) saturate(.8); backdrop-filter: blur(16px) saturate(.8);
+  animation: lk-in .34s ease both; }
+@keyframes lk-in { from { opacity: 0; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); } }
+.lk-screen.opening { animation: lk-out .32s ease both; }
+@keyframes lk-out { to { opacity: 0; transform: scale(1.03); } }
+.lk-box { inline-size: min(100%, 340px); display: grid; justify-items: center; gap: 18px; text-align: center; outline: none; }
+.lk-mark { inline-size: 64px; block-size: 64px; border-radius: 22px; display: grid; place-items: center; font-size: 1.9rem;
+  color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--line)); }
+.lk-box h2 { margin: 0; font-size: 1.35rem; font-weight: 600; }
+.lk-who { margin: -10px 0 0; color: var(--muted); font-size: .92rem; }
+/* the four dots: hollow, filled as digits come; they shake when the code is wrong, turn the vine colour when it is right */
+.lk-dots { display: flex; gap: 18px; direction: ltr; padding-block: 6px; }
+.lk-dots i { inline-size: 15px; block-size: 15px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--text) 55%, transparent);
+  transition: background-color .12s, border-color .12s, transform .12s; }
+.lk-dots i.on { background: var(--text); border-color: var(--text); transform: scale(1.08); }
+.lk-dots.wrong { animation: lk-shake .42s cubic-bezier(.36, .07, .19, .97); }
+.lk-dots.wrong i { border-color: var(--danger); background: transparent; }
+.lk-dots.right i { background: var(--ok); border-color: var(--ok); }
+@keyframes lk-shake { 15%, 85% { transform: translateX(-3px); } 30%, 70% { transform: translateX(6px); } 45%, 55% { transform: translateX(-8px); } }
+/* a message under the dots (aria-live): a wrong code, a pause, the code closed */
+.lk-msg { min-block-size: 1.5em; margin: -6px 0 0; font-size: .9rem; line-height: 1.5; color: var(--muted); }
+.lk-msg.warn { color: var(--danger); font-weight: 500; }
+/* the keypad: digits in the phone's order (left to right even in Hebrew), big round keys */
+.lk-keys { direction: ltr; display: grid; grid-template-columns: repeat(3, 76px); gap: 14px 22px; justify-content: center; }
+.lk-key { font: inherit; inline-size: 76px; block-size: 76px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  font-size: 1.85rem; font-weight: 400; font-variant-numeric: tabular-nums; color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  transition: background-color .12s, transform .08s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.lk-key:hover { background: color-mix(in srgb, var(--text) 12%, var(--card)); }
+.lk-key:active, .lk-key.press { transform: scale(.94); background: color-mix(in srgb, var(--text) 18%, var(--card)); }
+.lk-key:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 50%, transparent); outline-offset: 2px; }
+.lk-key svg { inline-size: 30px; block-size: 30px; }
+/* the passkey and delete keys: quieter, no fill */
+.lk-key.ghost { background: transparent; border-color: transparent; font-size: 1.5rem; color: var(--muted); }
+.lk-key.ghost:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.lk-key.bio { color: var(--primary); }
+.lk-key[disabled] { opacity: .35; cursor: default; transform: none; }
+.lk-keys.paused .lk-key:not(.bio) { opacity: .35; pointer-events: none; }
+.lk-forgot { font: inherit; font-size: .9rem; color: var(--muted); background: none; border: 0; padding: 8px 12px; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+.lk-forgot:hover { color: var(--text); }
+/* a short phone: smaller keys; a wide screen: the same column, a little calmer */
+@media (max-height: 640px) { .lk-key { inline-size: 64px; block-size: 64px; font-size: 1.6rem; } .lk-keys { grid-template-columns: repeat(3, 64px); gap: 10px 20px; } .lk-mark { display: none; } }
+@media (min-width: 900px) { .lk-key { inline-size: 70px; block-size: 70px; font-size: 1.7rem; } .lk-keys { grid-template-columns: repeat(3, 70px); } }
+
+/* ---------- the window on the first visit to the tree: a padlock, a few words, three answers ---------- */
+.lk-warn { display: grid; gap: 14px; justify-items: center; text-align: center; max-inline-size: 420px; margin-inline: auto; padding-block-start: 4px; }
+.lk-warn .lk-mark { inline-size: 58px; block-size: 58px; font-size: 1.7rem; }
+.lk-warn h2 { margin: 0; font-size: 1.25rem; font-weight: 600; text-wrap: balance; }
+.lk-warn p { margin: 0; color: var(--muted); line-height: 1.6; text-wrap: pretty; }
+.lk-warn-acts { display: grid; gap: 8px; inline-size: 100%; margin-block-start: 4px; }
+.lk-warn-acts .btn { justify-content: center; min-block-size: 46px; }
+.lk-warn-acts .lk-never { font: inherit; font-size: .88rem; color: var(--muted); background: none; border: 0; padding: 6px; cursor: pointer; }
+.lk-warn-acts .lk-never:hover { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width: 520px) { .lk-warn-acts { grid-template-columns: 1fr 1fr; } .lk-warn-acts .lk-never { grid-column: 1 / -1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-shackle, .pl-body, .lk-dots i, .lk-key { transition: none; }
+  .pl.snap .pl-body, .lk-dots.wrong, .lk-screen, .lk-screen.opening { animation: none; }
+}

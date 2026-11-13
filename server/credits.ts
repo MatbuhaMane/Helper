@@ -25,11 +25,13 @@ async function ownKey(env: Env, email: string, provider: 'claude' | 'gemini'): P
 }
 /** the balance of a limited account: its grants, less the real cost of what it used since it started (not with its own key) */
 export async function balance(env: Env, email: string, since: number) {
-  const [{ results: grants }, { results: used }] = await Promise.all([
+  const [{ results: grants }, { results: used }, figures] = await Promise.all([
     env.DB.prepare('SELECT source, usd, created_at AS at FROM ai_credits WHERE email = ?').bind(email).all<R.Grant>(),
     env.DB.prepare('SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE email = ? AND at >= ? AND COALESCE(own_key, 0) = 0').bind(email, since).all<UsageRow & { at: number }>(),
+    // paid companion figures bought with credits (server/figures.ts)
+    env.DB.prepare('SELECT COALESCE(SUM(usd), 0) AS usd FROM figure_owned WHERE email = ?').bind(email).first<{ usd: number }>().catch(() => null),
   ]);
-  const spent = used.reduce((s, r) => s + (costOf(r) ?? 0), 0);
+  const spent = used.reduce((s, r) => s + (costOf(r) ?? 0), 0) + (figures?.usd || 0);
   return { ...R.remaining(grants, spent), spent };
 }
 

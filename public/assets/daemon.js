@@ -1602,6 +1602,8 @@
         if (ev.type === 'follow') setTimeout(() => (ev.on ? comeAlong() : sendHome()), 1200);
         if (ev.type === 'recipes_changed') window.dispatchEvent(new Event('helper:recipes-changed'));
       }
+      // something done (the list, the recipes, a plan, a page to open): a moment of joy (a 2D figure smiles and hops)
+      if (r.events.some((e) => ['groceries_changed', 'recipes_changed', 'mail_plan', 'open'].includes(e.type)) && !r.events.some((e) => e.type === 'emote')) setMood('happy');
       updateLabels();
       const reply = r.reply || (pointAt?.say) || 'בוצע.';
       balloonActs.replaceChildren(...actions);

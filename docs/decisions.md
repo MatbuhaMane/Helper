@@ -7,6 +7,10 @@ table or route. Newest first. The master reads this before each merge.
 Format:
 
 ```
+## YYYY-MM-DD – short title (area)
+What was decided, why, and what other areas must do. Status: proposed | accepted | done.
+```
+
 ## 2026-11-14 – Vision batch 5, ai-features' part: the companion's name, figure, voice and tab; themes of one's own (ai-features → master, design, vision)
 
 - **The name is ראב"ע only** (9b8893c): "אזי" was saved by the companion's `rename` tool in `daemons.name`. The tool is
@@ -30,10 +34,6 @@ Format:
   apply.js can keep the derived tokens in the prefs for the early copy to set.
 - "דרוזים" is "התווחיד" (التوحيد for the Arabic version; the value stays `druze`).
 Status: done on `ai-features`; the looks come with design's 31f8ed0 and its figures.
-
-## YYYY-MM-DD – short title (area)
-What was decided, why, and what other areas must do. Status: proposed | accepted | done.
-```
 
 ## 2026-11-14 – Shared research: within the household only, for now (master)
 The owner decided that a research is shared only within its household for now, and later with others too. The reason is

@@ -9,7 +9,8 @@
      f.special()        a special figure's own move (it also plays in happy()); f.sew('peg') sews a badge on the doll
      mount(…, { patches: ['peg', 'ember'] })   the doll wears the badges the person has
      mount(…, { skin: 'hanukkah' })            a skin, when the figure lists it in skins: [{ id, name, free?, season? }]
-     mount(…, { hair: '#8a5a3a' }), f.setHair(c)  a figure with a hair layer (the astronomer): list() gives hair: [{ color, name }]
+     mount(…, { hair: '#8a5a3a' }), f.setHair(c)  a figure with a hair layer (the seer): list() gives hair: [{ color, name }]
+     mount(…, { palette: 2 }), f.setPalette(i)   a figure with clothing palettes: list() gives palettes: [{ index, name, swatch }]
      f.destroy()
      Figure2D.list()  → the catalogue (id, name, kind, unlock?, season?)
 
@@ -44,11 +45,12 @@
     leonardo: { name: 'לאונרדו דה וינצ׳י', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.5, pivot: [0.52, 0.48], eyes: [[0.41, 0.335], [0.63, 0.335]], eyeR: 0.04, mouth: [0.52, 0.465], mouthW: 0.06, cheek: null, sway: 0.35 },
     cleopatra: { name: 'קליאופטרה', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.44, pivot: [0.52, 0.42], eyes: [[0.42, 0.3], [0.62, 0.3]], eyeR: 0.042, mouth: [0.52, 0.39], mouthW: 0.07, cheek: '#d98a7a', sway: 0.7 },
     // the special ones (paid, the owner's choice 2026-11-13): each has its own move – special() – which also plays when it is glad
-    // the magician, redrawn 2026-11-13 after the owner's picture: a kind old wizard of the desert, a white turban and beard
-    magician: { name: 'הקוסם מהשוק', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'dove', trickFrom: [0.43, 0.05],
-      glowAt: [0.935, 0.41], glowColor: '#7fb4ff',
-      neck: 0.47, pivot: [0.45, 0.45], eyes: [[0.33, 0.275], [0.53, 0.275]], eyeR: 0.04, mouth: [0.42, 0.44], mouthW: 0.06, cheek: '#c97a5e', sway: 0.35 },
-    astronomer: { name: 'האסטרונומית', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'stars',
+    // the magician (renamed הקוסם, 2026-11-13): after the owner's picture, a kind old wizard of the desert, a white turban and
+    // beard; drawn again taller and stronger, still old and warm
+    magician: { name: 'הקוסם', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'dove', trickFrom: [0.46, 0.02],
+      glowAt: [0.955, 0.285], glowColor: '#7fb4ff',
+      neck: 0.265, pivot: [0.46, 0.25], eyes: [[0.385, 0.158], [0.53, 0.158]], eyeR: 0.028, mouth: [0.458, 0.236], mouthW: 0.04, cheek: '#c97a5e', sway: 0.3 },
+    astronomer: { name: 'הרואה', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'stars',
       stars: [[0.2, 0.55], [0.27, 0.66], [0.17, 0.74], [0.25, 0.83], [0.79, 0.55], [0.74, 0.64], [0.83, 0.72], [0.77, 0.82], [0.32, 0.5], [0.68, 0.5],
         [0.14, 0.62], [0.86, 0.63], [0.21, 0.9], [0.8, 0.9], [0.3, 0.6], [0.7, 0.71], [0.12, 0.84], [0.88, 0.8], [0.35, 0.86], [0.66, 0.86]],
       // her hair: its own layer (hair.webp), white by default and tinted to the colour a person picks (the owner, 2026-11-13)
@@ -59,9 +61,15 @@
       neck: 0.47, pivot: [0.52, 0.45], eyes: [[0.43, 0.3], [0.61, 0.3]], eyeR: 0.05, mouth: [0.52, 0.385], mouthW: 0.09, cheek: '#ea9a86', sway: 0.8 },
     // four more wizards (paid, the owner's choice 2026-11-13, after the owner's pictures): a spark from the staff when glad, a soft glow
     nightwizard: { name: 'קוסם הלילה', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'spark', sparkFrom: [0.885, 0.125], sparkColor: '#f6e7b0',
+      // his cloak and robe in a colour of one's own (the owner, 2026-11-13)
+      palettes: { layers: ['cloak', 'robe'], options: [{ name: 'שחור', swatch: '#26282b' }, { name: 'כחול חצות', cloak: '#1e2c5a', robe: '#4a5a7a' },
+        { name: 'בורדו', cloak: '#4a1520', robe: '#6a4a50' }, { name: 'ירוק אמרלד', cloak: '#123a2c', robe: '#4a6a5a' }, { name: 'סגול מלכותי', cloak: '#33184a', robe: '#5a4a6a' }] },
       glowAt: [0.885, 0.125], glowColor: '#fff3c4',
-      neck: 0.37, pivot: [0.48, 0.35], eyes: [[0.405, 0.205], [0.56, 0.205]], eyeR: 0.034, mouth: [0.48, 0.305], mouthW: 0.055, cheek: null, sway: 0.5 },
+      neck: 0.37, pivot: [0.48, 0.35], eyes: [[0.397, 0.245], [0.557, 0.245]], eyeR: 0.034, mouth: [0.47, 0.338], mouthW: 0.05, cheek: null, sway: 0.5 },
     forestwitch: { name: 'קוסמת היער', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'spark', sparkFrom: [0.12, 0.47], sparkColor: '#c49bff',
+      // her hat and robe in a colour of one's own (the owner, 2026-11-13)
+      palettes: { layers: ['robe', 'inner'], options: [{ name: 'סגול', swatch: '#4a2050' }, { name: 'ירוק יער', robe: '#2f6b4a', inner: '#1f3a30' },
+        { name: 'בורדו', robe: '#7a2236', inner: '#2e1f3a' }, { name: 'כחול', robe: '#2a3f86', inner: '#1c2650' }, { name: 'דבש', robe: '#8a5a22', inner: '#3a2a20' }] },
       glowAt: [0.12, 0.47], glowColor: '#b98cff',
       neck: 0.6, pivot: [0.5, 0.58], eyes: [[0.41, 0.425], [0.59, 0.425]], eyeR: 0.044, mouth: [0.5, 0.51], mouthW: 0.07, cheek: '#ec9c8c', sway: 0.5 },
     // the little pair: the hat hides their eyes (no eyes drawn); a mouth shows only while they talk
@@ -109,27 +117,44 @@
       const i = img.cloneNode(); i.alt = ''; i.draggable = false; i.className = 'f2-pic'; i.style.clipPath = clip;
       layer.append(i);
     }
-    // a figure with its own hair layer: the hair drawn again on top, tinted (multiply keeps its shading; white leaves it as drawn)
-    let hairPic = null; const hairCans = [];
-    const tintHair = (c) => {
-      if (!hairPic) return;
-      for (const cv of hairCans) {
-        const x = cv.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, cv.width, cv.height); x.drawImage(hairPic, 0, 0);
-        if (c && !/^#?f{3}(f{3})?$/i.test(c)) { x.globalCompositeOperation = 'multiply'; x.fillStyle = c; x.fillRect(0, 0, cv.width, cv.height); x.globalCompositeOperation = 'destination-in'; x.drawImage(hairPic, 0, 0); }
+    // tint layers: the hair or a fabric drawn again on top and coloured, multiply keeping its light and shade. hair.webp is
+    // the hair as white (white = as drawn); tint-<key>.webp is a fabric as grey, its own mean stored at 1/1.6, so the chosen
+    // colour × 1.6 gives that colour on the mean and the folds around it. null = the drawing as it is.
+    const tints = {};
+    const loadPic = (src) => new Promise((ok) => { const i = new Image(); i.src = src; i.onload = i.onerror = () => ok(i); setTimeout(() => ok(i), 5000); });
+    const lift = (c, k) => '#' + [1, 3, 5].map((i) => Math.min(255, Math.round(parseInt(c.slice(i, i + 2), 16) * k)).toString(16).padStart(2, '0')).join('');
+    const tint = (key, c) => {
+      const t = tints[key]; if (!t) return;
+      for (const cv of t.cans) {
+        const x = cv.getContext('2d'); x.globalCompositeOperation = 'source-over'; x.clearRect(0, 0, cv.width, cv.height);
+        if (!c) continue;
+        x.drawImage(t.pic, 0, 0);
+        if (t.gain !== 1 || !/^#?f{3}(f{3})?$/i.test(c)) {
+          x.globalCompositeOperation = 'multiply'; x.fillStyle = t.gain === 1 ? c : lift(c, t.gain); x.fillRect(0, 0, cv.width, cv.height);
+          x.globalCompositeOperation = 'destination-in'; x.drawImage(t.pic, 0, 0);
+        }
       }
     };
-    if (cfg.hair) {
-      const h = new Image(); h.src = `${BASE}${cfg.id}/hair.webp`;
-      await new Promise((ok) => { h.onload = h.onerror = () => ok(); setTimeout(ok, 5000); });
-      if (h.naturalWidth) {
-        hairPic = h;
-        for (const layer of [body, head]) {
-          const cv = document.createElement('canvas'); cv.width = h.naturalWidth; cv.height = h.naturalHeight; cv.className = 'f2-pic f2-hair';
-          cv.style.clipPath = layer.firstChild.style.clipPath; layer.append(cv); hairCans.push(cv);
-        }
-        tintHair(opts.hair || cfg.hair.default);
-      }
-    }
+    const want = [];
+    if (cfg.hair) want.push(['hair', 'hair.webp', 1]);
+    for (const k of cfg.palettes?.layers || []) want.push([k, `tint-${k}.webp`, 1.6]);
+    (await Promise.all(want.map(([, f]) => loadPic(`${BASE}${cfg.id}/${f}`)))).forEach((pic, n) => {
+      if (!pic.naturalWidth) return;
+      const [key, , gain] = want[n];
+      const cans = [body, head].map((layer) => {
+        const cv = document.createElement('canvas'); cv.width = pic.naturalWidth; cv.height = pic.naturalHeight; cv.className = 'f2-pic f2-tint';
+        cv.style.clipPath = layer.firstChild.style.clipPath; layer.append(cv); return cv;
+      });
+      tints[key] = { pic, cans, gain };
+    });
+    const setHair = (c) => tint('hair', c || cfg.hair?.default);
+    // a palette: one colour per fabric layer; the first option is the drawing as it is
+    const setPalette = (i) => {
+      const o = cfg.palettes?.options[+i || 0]; if (!o) return;
+      for (const k of cfg.palettes.layers) tint(k, o[k] || null);
+    };
+    if (cfg.hair) setHair(opts.hair);
+    if (cfg.palettes) setPalette(opts.palette);
     head.style.transformOrigin = `${cfg.pivot[0] * 100}% ${cfg.pivot[1] * 100}%`;
     // the face: vector eyes, brows and mouth, inside the head so they move with it
     const face = svgEl('svg', { class: 'f2-face', viewBox: `0 0 ${W} ${Hh}`, 'aria-hidden': 'true' });
@@ -282,13 +307,16 @@
       /** the doll: sew a newly earned badge on (it stitches itself in); false when there is no room left */
       sew(badge) { return sew(badge, true); },
       /** a figure with its own hair layer (cfg.hair): tint it, e.g. f.setHair('#8a5a3a'); white or nothing = as drawn */
-      setHair(c) { tintHair(c || cfg.hair?.default); },
+      setHair,
+      /** a figure with palettes (cfg.palettes): f.setPalette(2); 0 = as drawn */
+      setPalette,
       think(on) { mood = on ? 'think' : 'idle'; box.classList.toggle('thinking', !!on); },
       sleep(on) { mood = on ? 'sleep' : 'idle'; box.classList.toggle('sleeping', !!on); },
       destroy() { stop(); io.disconnect(); document.removeEventListener('visibilitychange', vis); removeEventListener('pointermove', onMove); box.remove(); },
     };
   }
-  const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, tier: f.tier || 'free', paid: !!f.paid, hideFor: f.hideFor || [], tags: f.tags || [], unlock: f.unlock || null, season: f.season || null, skins: f.skins || [], hair: f.hair ? f.hair.colors.map(([color, name]) => ({ color, name })) : null, hairDefault: f.hair?.default || null }));
+  const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, tier: f.tier || 'free', paid: !!f.paid, hideFor: f.hideFor || [], tags: f.tags || [], unlock: f.unlock || null, season: f.season || null, skins: f.skins || [], hair: f.hair ? f.hair.colors.map(([color, name]) => ({ color, name })) : null, hairDefault: f.hair?.default || null,
+    palettes: f.palettes ? f.palettes.options.map((o, index) => ({ index, name: o.name, swatch: o.swatch || o[f.palettes.layers[0]] })) : null }));
   // the default companion for every family but the owner's (who has Ibn Ezra): the owner's choice, 2026-11-13
   const DEFAULT = 'fennec';
   window.Figure2D = { mount, list, FIGURES, DEFAULT };

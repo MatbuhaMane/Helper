@@ -134,7 +134,7 @@
 
   /* ---------- 4. the personal assistant (vision batch 5): his voice, his figure, how he shows in the chat ---------- */
   const assistantBox = section('assistant', 'העוזר האישי');
-  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['historic', 'דמויות מההיסטוריה'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
+  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['historic', 'דמויות מההיסטוריה ומהסיפורים'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
   /* vision batch 6: a figure is free, or paid (catalogue `paid: true`); one that conflicts with the person's religion
      setting is not shown (catalogue `hideFor: ['jewish', …]`). The full entry is read from Figure2D.FIGURES. */
   // (paid: design's tier 'paid', or paid: true; tags: ['horror'] is offered only on request – prefs daemon.showHorror)

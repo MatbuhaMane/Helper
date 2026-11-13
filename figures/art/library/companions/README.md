@@ -48,3 +48,8 @@ pictures: `nightwizard`, `forestwitch`, `littlewizard`, `littlewitch` – 5 × $
 `public/figures/2d/astronomer/figure.webp` now has white hair baked in, and `hair.webp` beside it is the hair alone for
 tinting (made from this master by `hair.py` in the scratchpad: the dark grey hair inside the shawl lifted to white, the
 outlines kept, small specks dropped). This master still has her original dark hair.
+
+**2026-11-13, later still.** The magician drawn again, taller and stronger (`magician.webp`; the short desert one kept as
+`magician-desert-short.webp`), 1 × $0.069. The seer (was the astronomer) and the little witch swapped skin tones in
+their `public/figures/2d/` pictures (the masters here are unchanged). The night wizard and the forest witch have tint
+layers for their palettes (`tint-*.webp`, from `palette.py`).

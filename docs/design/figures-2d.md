@@ -59,8 +59,8 @@ is to be checked by business before anything around him is sold; he is free in t
 
 | id | name | its move |
 |---|---|---|
-| magician | הקוסם מהשוק (a man) | redrawn 2026-11-13 after the owner's picture: a kind old desert wizard, white turban and beard, a blue light over his staff; a dove (with an olive sprig) flies out of his turban in a burst of sparks |
-| astronomer | האסטרונומית (a woman) | at night the stars of her shawl wake and twinkle, and she glows faintly; when glad, a shooting star. **Her hair is chosen by the person**, white by default (below) |
+| magician | הקוסם (a man; was הקוסם מהשוק) | redrawn 2026-11-13 after the owner's picture, then taller and stronger: a kind old desert wizard, white turban and beard, a blue light over his staff; a dove (with an olive sprig) flies out of his turban in a burst of sparks |
+| astronomer | הרואה (a woman; was האסטרונומית), light skin | at night the stars of her shawl wake and twinkle, and she glows faintly; when glad, a shooting star. **Her hair is chosen by the person**, white by default (below) |
 | doll | בובת הטלאים (neither) | wears the person's own badges, sewn on: `mount(el, 'doll', { patches: earnedBadgeIds })` (up to 8, newest last); `f.sew(id)` stitches a newly earned one in |
 | nightwizard | קוסם הלילה (a man) | a young wizard, a black cloak with golden flowers, a crescent staff with a pearl that glows; when glad, pale gold sparks from the pearl |
 | forestwitch | קוסמת היער (a woman) | a young wizard of the forest, curly hair, a purple hat, a crystal staff and an old book; when glad, violet sparks from the crystals |
@@ -76,6 +76,28 @@ light is (`glowAt`, `glowColor`) and spark from there (`special: 'spark'`, `spar
 shading stays. `Figure2D.list()` gives `hair: [{ color, name }]` (לבן, כסוף, שחור, חום, ערמוני, ג'ינג'י, בלונד) and
 `hairDefault: '#ffffff'`; mount with `{ hair: color }` and change it live with `f.setHair(color)`. For ai-features: a
 row of colour swatches under the figure when she is chosen, saved per person (e.g. `H.prefs('daemon').hair`).
+
+**Palettes (the night wizard, the forest witch):** their clothes in a colour of one's own. Each fabric is a grey tint
+layer (`tint-<layer>.webp`, made by `palette.py` in the scratchpad), coloured with multiply so the folds stay;
+`Figure2D.list()` gives `palettes: [{ index, name, swatch }]`, the first one is the drawing as it is. Mount with
+`{ palette: i }`, change live with `f.setPalette(i)`. For ai-features: a row of swatches under the figure when it is
+chosen, saved per person (e.g. `H.prefs('daemon').palette`).
+
+**Pranks (the little wizard, the little witch):** `/assets/pranks.js` (it loads `pranks.css`). While the app is used, now
+and then, one small harmless trick: a card wobbles like jelly, an icon floats up and settles, a trail of sparks from the
+staff bursts over a heading, a coin-flip spin, the figure vanishes in a puff, ducks and peeks, shrinks under its own
+spell, stars drift down. Only a look: nothing on the page changes and nothing takes a click. Never while typing,
+scrolling or in a dialog, never on what is focused or under the pointer, the first after a quiet minute, then one every
+2–5 minutes, at most 8 a visit, none with reduced motion. For ai-features (daemon.js and settings):
+
+```js
+if (Pranks.FOR.includes(figureId) && H.prefs('daemon').pranks !== false) pranks = Pranks.start(f, { id: figureId });
+pranks?.stop();                 // when the person switches it off or picks another figure
+pranks.play('sprinkle');        // a preview button in settings
+```
+
+and a switch in Settings › העוזר האישי, shown when one of the two is chosen: "תעלולים" (on by default), with a line like
+"הקוסם הקטן עושה לפעמים קסם קטן על המסך. רק מראה, שום דבר לא משתנה".
 
 For ai-features: show them as their own group ("מיוחדות"), paid; for the doll pass the person's earned badge ids
 (`D.badges.earned` in goals) as `patches`, and call `f.sew(id)` when a badge is earned while it is on screen.

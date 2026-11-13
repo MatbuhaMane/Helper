@@ -1,0 +1,26 @@
+/* Pranks (pranks.js): the sparks and stars of the little wizards' tricks. One fixed layer over the page that never takes
+   the pointer; every piece fades out and is removed. */
+.pk-layer { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000; overflow: hidden; contain: strict; }
+.pk-spark { position: absolute; inline-size: 8px; block-size: 8px; margin: -4px; border-radius: 50%;
+  background: radial-gradient(circle, #fff6c8 0 30%, #ffd25a 55%, transparent 72%); box-shadow: 0 0 8px rgba(255, 210, 90, .7);
+  animation: pk-pop .7s ease-out both; }
+.pk-spark.small { inline-size: 6px; block-size: 6px; margin: -3px; }
+@keyframes pk-pop { from { transform: scale(.2); opacity: 1; } 60% { opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+/* a star that twinkles a while over a heading */
+.pk-spark.twinkle { inline-size: 16px; block-size: 16px; margin: -8px; border-radius: 0; background: #ffd25a; box-shadow: none;
+  clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%); filter: drop-shadow(0 0 4px #ffd25a);
+  animation: pk-twinkle 1.4s ease-in-out both; }
+@keyframes pk-twinkle { 0% { transform: scale(0) rotate(0); opacity: 0; } 25% { transform: scale(1.1) rotate(30deg); opacity: 1; } 70% { opacity: 1; } 100% { transform: scale(.4) rotate(90deg); opacity: 0; } }
+/* the puff: sparks thrown out in a ring */
+.pk-spark.puff { inline-size: 14px; block-size: 14px; margin: -7px; background: radial-gradient(circle, rgba(255, 255, 255, .95), rgba(220, 225, 240, .6) 50%, transparent 72%);
+  box-shadow: none; animation: pk-puff .9s ease-out both; }
+@keyframes pk-puff { from { transform: translate(0, 0) scale(.5); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(1.8); opacity: 0; } }
+/* stars drifting down */
+.pk-spark.fall { inline-size: 14px; block-size: 14px; margin: -7px; border-radius: 0; background: #ffe08a; box-shadow: none;
+  clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%); animation: pk-fall 3.6s linear both; }
+@keyframes pk-fall { from { transform: translate(0, 0) rotate(0); opacity: 0; } 10% { opacity: 1; } 80% { opacity: .9; }
+  to { transform: translate(var(--sway, 0), var(--fall, 400px)) rotate(200deg); opacity: 0; } }
+/* by day the sparks need an edge to be seen on a light page */
+:root:not([data-theme="dark"]) .pk-spark:not(.puff) { filter: drop-shadow(0 0 1.5px rgba(150, 100, 0, .8)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pk-spark:not(.puff) { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .pk-layer { display: none; } }

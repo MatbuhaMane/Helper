@@ -209,6 +209,8 @@ main.wide { max-width: 1200px; }
 .appbar .spacer { flex: 1; }
 .userchip { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: .9rem; color: var(--text); background: none; border: 1px solid var(--line-strong); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
 .userchip:hover { border-color: var(--primary); color: var(--primary); }
+.userchip:has(.mi-dot) { position: relative; }   /* a new reply in the person's inbox (reports.css): a small red dot on the chip */
+.mi-dot { position: absolute; inset-block-start: -3px; inset-inline-end: -3px; inline-size: 11px; block-size: 11px; border-radius: 50%; background: #c2412d; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
 /* Light / dark switch: a little pill, the sun on one side and the moon on the other, a knob that slides between them. */
 .theme-switch { position: relative; inline-size: 58px; block-size: 30px; flex-shrink: 0; border-radius: 999px; border: 1px solid var(--line-strong); padding: 0; cursor: pointer;
   background: linear-gradient(90deg, #f6d37a, #f2b36b); display: flex; align-items: center; justify-content: space-between; padding-inline: 7px; transition: background .4s var(--ease-river); }

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>סיכום היום</title>
+  <!-- A sample of the "סיכום היום" card every day (vision batch 16): the day's leaf, the facts row (weather, sunset or candles),
+       "היום" (birthdays and the calendar) and, when there are any, "מאז הסיכום הקודם". Copy to public/ to view (not committed there).
+       ?mode=quiet (default: no messages, a short card of the day) · ?mode=bare (no messages, nothing on the calendar)
+       · ?mode=full (with messages) · ?fri=1 (Friday: candles instead of the sunset) · &theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/seasons.css">
+  <style>
+    body { opacity: 1 !important; visibility: visible !important; }
+    main { display: grid; padding: 14px max(16px, env(safe-area-inset-left)) 40px; }
+  </style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const IC = {
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    cake: '<path d="M4.5 20.5h15v-6.5a2 2 0 0 0-2-2h-11a2 2 0 0 0-2 2z"/><path d="M4.5 16c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 1.5-1.2 1.5-1.2"/><path d="M12 12V8.5"/><path d="M12 4c1 1.2 1 2.4 0 3-1-.6-1-1.8 0-3z"/>',
+    gather: '<circle cx="8" cy="9" r="2.6"/><circle cx="16" cy="9" r="2.6"/><path d="M3.5 19c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M11.5 19c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>',
+    cal: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    candles: '<path d="M8 21V11M16 21V11"/><path d="M8 4.5c1.2 1.3 1.2 2.8 0 3.5-1.2-.7-1.2-2.2 0-3.5zM16 4.5c1.2 1.3 1.2 2.8 0 3.5-1.2-.7-1.2-2.2 0-3.5z"/><path d="M5 21h14"/>',
+    // the weather (one per data-sky): sun, moon, part, cloud, fog, rain, storm, snow
+    sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4"/>',
+    part: '<circle cx="9" cy="9" r="3.5"/><path d="M9 2.5v1.5M2.5 9H4M4.4 4.4l1 1M13.6 4.4l-1 1"/><path d="M8 20h9a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.3 1.2A3 3 0 0 0 8 20z"/>',
+    cloud: '<path d="M7 19h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 19z"/>',
+    rain: '<path d="M7 15h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5"/>',
+    sunset: '<path d="M3 17.5h18M6.5 17.5a5.5 5.5 0 0 1 11 0"/><path d="M12 4.5v4M9.5 7 12 9.5 14.5 7M4.2 12.2l1.3.8M19.8 12.2l-1.3.8M7 20.5h10"/>',
+    leaf: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
+  };
+  const ic = (n) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>`;
+  const row = (c, icon, b, s, when = '') => `<li><a href="#"><span class="dsum-ic" style="--c:${c}">${ic(icon)}</span>
+    <span class="dsum-txt"><b>${b}</b>${s ? `<small>${s}</small>` : ''}</span>${when ? `<span class="dsum-when">${when}</span>` : ''}</a></li>`;
+  const chip = (icon, n, t) => `<li><a href="#">${H.icon(icon).outerHTML}<span><b>${n}</b> ${t}</span></a></li>`;
+  const mode = q.get('mode') || 'quiet', fri = q.get('fri') === '1';
+  const facts = `<ul class="dsum-facts" aria-label="היום בקצרה">
+      <li class="dsum-fact-wx" data-sky="part"><a href="/weather/">${ic('part')}<span><b>22°</b><small>מעונן חלקית · בלילה 14°</small></span></a></li>
+      ${fri ? `<li class="dsum-fact-candles">${ic('candles')}<span><b>16:21</b><small>הדלקת נרות</small></span></li>`
+            : `<li class="dsum-fact-sun">${ic('sunset')}<span><b>16:43</b><small>שקיעה</small></span></li>`}
+    </ul>`;
+  const today = `<section aria-labelledby="dsum-today"><h3 class="dsum-sub" id="dsum-today">היום</h3><ul class="dsum-list">
+      ${row('#b8457a', 'cake', 'יום הולדת לסבתא רבקה', 'בת 82 היום · לשלוח ברכה')}
+      ${row('#2a7fa8', 'cal', 'חוג ציור של נועה', 'מתנ"ס הגפן', '17:30')}
+      ${row('#3b6634', 'cal', 'לאסוף את החבילה מהדואר', '', '')}
+    </ul></section>`;
+  const since = `<section aria-labelledby="dsum-since"><h3 class="dsum-sub" id="dsum-since">מאז הסיכום הקודם</h3><ul class="dsum-quiet">
+      ${chip('book', 2, 'מתכונים חדשים')}${chip('photo', 12, 'תמונות באלבום')}${chip('chat', 4, 'הודעות בקבוצה')}</ul></section>`;
+  const calm = `<p class="dsum-calm">${ic('leaf')}${mode === 'bare' ? 'יום שקט: אין היום שום דבר בלוח, ולא חיכה לך כלום.' : 'אין הודעות חדשות מאז אתמול.'}</p>`;
+  const body = mode === 'full' ? facts + today + since : mode === 'bare' ? facts + calm : facts + today + calm;
+  document.body.insertAdjacentHTML('beforeend', `<main><section class="dsum" aria-labelledby="dsum-h">
+    <header class="dsum-head"><span class="dsum-leaf" aria-hidden="true"><b>כ״ג</b><small>חשון</small></span>
+      <div><h2 id="dsum-h">סיכום היום</h2><p>${fri ? 'יום שישי' : 'יום שלישי'}, כ״ג בחשון · 14 בנובמבר</p></div>
+      <button class="dsum-close" type="button" aria-label="סגירת הסיכום">${ic('x')}</button></header>
+    <div class="dsum-body">${body}</div></section></main>`);
+})();
+</script>
+</body>
+</html>

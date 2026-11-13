@@ -5,6 +5,8 @@
 // notification never breaks through silent mode.
 import type { Ctx, Env } from './core';
 import { HttpError, json, body, requireUser } from './core';
+import { prefsFor } from './prefs';
+import { decide, windowsFrom, type Kind, type NotifyPrefs, type Window } from './push-gate';
 
 type PushEnv = Env & { VAPID_PUBLIC?: string; VAPID_PRIVATE?: string };
 const enc = new TextEncoder();
@@ -49,6 +51,7 @@ async function vapid(env: PushEnv, endpoint: string) {
 export interface PushMsg {
   title: string; body: string; url?: string; tag?: string;
   urgent?: boolean;                                   // high urgency, stays on screen until touched, a strong vibration
+  kind?: Kind;                                        // what it is about (push-gate.ts); urgent means 'emergency'. Default 'other': waits for the summary
   actions?: { action: string; title: string }[];      // e.g. { action: 'handle', title: 'אני מטפל' }
   data?: Record<string, unknown>;
 }
@@ -66,13 +69,44 @@ async function sendOne(env: PushEnv, s: Sub, m: PushMsg): Promise<boolean> {
   return res.ok;
 }
 
-/** to every device of these people; returns how many devices accepted it */
+/* Shabbat and Yom Tov windows per city, from Hebcal, kept for 6 hours in this isolate */
+const shabbatCache = new Map<string, { at: number; w: Window[] }>();
+async function windowsFor(geo: string): Promise<Window[]> {
+  const c = shabbatCache.get(geo);
+  if (c && Date.now() - c.at < 6 * 3600_000) return c.w;
+  try {
+    const r = await fetch(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${geo}&M=on&lg=he`, { cf: { cacheTtl: 21600 } } as RequestInit);
+    const w = r.ok ? windowsFrom(((await r.json()) as { items?: { category: string; date: string }[] }).items || []) : [];
+    shabbatCache.set(geo, { at: Date.now(), w });
+    return w;
+  } catch { return c?.w || []; }
+}
+
+/** the gate for one person: send now, or hold for the daily summary (push-gate.ts) */
+async function gate(env: Env, email: string, m: PushMsg): Promise<'send' | 'hold'> {
+  const kind: Kind = m.urgent ? 'emergency' : m.kind || 'other';
+  if (kind === 'emergency' || kind === 'test') return 'send';
+  const p = await prefsFor(env, email);
+  const n = (p.notify?.data || {}) as NotifyPrefs;
+  const city = String(p.calendar?.data?.city || p.parasha?.data?.city || '281184');
+  const w = n.shabbat ? await windowsFor(/^d{3,9}$/.test(city) ? city : '281184') : [];
+  return decide(kind, Date.now(), n, w);
+}
+
+/** to every device of these people, through the gate; what is held goes to the summary. Returns how many devices accepted it. */
 export async function pushTo(env: Env, emails: string[], m: PushMsg): Promise<number> {
-  if (!emails.length) return 0;
-  const q = emails.map(() => '?').join(',');
-  const { results } = await env.DB.prepare(`SELECT endpoint, p256dh, auth FROM push_subs WHERE email IN (${q})`).bind(...emails.map((e) => e.toLowerCase())).all<Sub>();
-  const ok = await Promise.all(results.map((s) => sendOne(env as PushEnv, s, m).catch(() => false)));
-  return ok.filter(Boolean).length;
+  let n = 0;
+  for (const raw of new Set(emails.map((e) => e.toLowerCase()))) {
+    if ((await gate(env, raw, m)) === 'hold') {
+      await env.DB.prepare('INSERT INTO push_digest (email, kind, title, body, url, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(raw, m.kind || 'other', m.title.slice(0, 200), m.body.slice(0, 1000), m.url || null, Date.now()).run();
+      continue;
+    }
+    const { results } = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE email = ?').bind(raw).all<Sub>();
+    const ok = await Promise.all(results.map((s) => sendOne(env as PushEnv, s, m).catch(() => false)));
+    n += ok.filter(Boolean).length;
+  }
+  return n;
 }
 /** to every member of a household but the sender */
 export async function pushHousehold(env: Env, household: string, m: PushMsg, except?: string): Promise<number> {
@@ -105,6 +139,15 @@ export async function unsubscribe(ctx: Ctx): Promise<Response> {
 /** POST /api/push/test — a test notification to my own devices */
 export async function test(ctx: Ctx): Promise<Response> {
   const u = requireUser(ctx);
-  const n = await pushTo(ctx.env, [u.email], { title: 'האוהל', body: 'ההתראות עובדות במכשיר הזה.', url: '/', tag: 'test' });
+  const n = await pushTo(ctx.env, [u.email], { title: 'האוהל', body: 'ההתראות עובדות במכשיר הזה.', url: '/', tag: 'test', kind: 'test' });
   return json({ ok: true, devices: n });
+}
+
+/** GET /api/digest — the daily summary: what waited since the last one (the first open of the day shows it), then marked seen */
+export async function digest(ctx: Ctx): Promise<Response> {
+  const u = requireUser(ctx);
+  const { results } = await ctx.env.DB.prepare('SELECT id, kind, title, body, url, created_at FROM push_digest WHERE email = ? AND seen_at IS NULL ORDER BY created_at LIMIT 50').bind(u.email).all();
+  if (results.length) await ctx.env.DB.prepare('UPDATE push_digest SET seen_at = ? WHERE email = ? AND seen_at IS NULL').bind(Date.now(), u.email).run();
+  await ctx.env.DB.prepare('DELETE FROM push_digest WHERE seen_at < ?').bind(Date.now() - 30 * 86400_000).run();
+  return json({ items: results });
 }

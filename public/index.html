@@ -11,6 +11,8 @@
   <link rel="icon" href="/assets/icons/ohel-small.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/icons/ohel-apple-touch-icon.png">
   <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/care.css">
+  <link rel="stylesheet" href="/assets/seasons.css">
   <link rel="stylesheet" href="/assets/campfire.css">
   <style>
     /* The home page is a small camp: a greeting, Ibn Ezra's tent (he stands on its front rug), and the apps on a ring
@@ -391,6 +393,41 @@
     // read here, after the sign-in, when the person's preferences have arrived)
     // serious mode (docs/vision/serious-mode.md): a plain list of the tools, no tent, no fire, no companion; chosen from the
     // preference before anything is drawn, so the screen never flashes the other mode first
+    if (r.user) dailyDigest();
+    /* the daily summary (batch 13): at the first open of the day, whatever the notification gate held (server/push.ts → /api/digest).
+       A plain window for now; design's card replaces it. The day is per device; the server marks what was shown, so another device shows only what is new. */
+    async function dailyDigest() {
+      const today = new Date().toLocaleDateString('en-CA');
+      try { if (localStorage.getItem('digestDay') === today) return; localStorage.setItem('digestDay', today); } catch (_) { /* no storage: ask every time */ }
+      const { items = [] } = await H.api('/api/digest').catch(() => ({}));
+      if (!items.length) return;                                   // nothing at all: no card (design's seasons.md)
+      const svg = (d) => { const t = document.createElement('template'); t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`; return t.content.firstChild; };
+      const IC = {
+        familyday: ['#b8457a', '<path d="M4.5 20.5h15v-6.5a2 2 0 0 0-2-2h-11a2 2 0 0 0-2 2z"/><path d="M4.5 16c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 1.5-1.2 1.5-1.2"/><path d="M12 12V8.5"/><path d="M12 4c1 1.2 1 2.4 0 3-1-.6-1-1.8 0-3z"/>'],
+        gather: ['#2a7fa8', '<circle cx="8" cy="9" r="2.6"/><circle cx="16" cy="9" r="2.6"/><path d="M3.5 19c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M11.5 19c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>'],
+        reminder: ['#3b6634', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
+        family: ['#3b6634', '<path d="M5 18.5V7a2.5 2.5 0 0 1 2.5-2.5h9A2.5 2.5 0 0 1 19 7v6a2.5 2.5 0 0 1-2.5 2.5H9z"/>'],
+        other: ['#6b6a75', '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'],
+      };
+      const when = (ms) => new Date(ms).toLocaleString('he-IL', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+      const row = (i) => { const [c, d] = IC[i.kind] || IC.other;
+        return el('li', {}, el(i.url ? 'a' : 'div', i.url ? { href: i.url } : {}, el('span', { class: 'dsum-ic', style: `--c:${c}` }, svg(d)),
+          el('span', { class: 'dsum-txt' }, el('b', {}, i.title), el('small', {}, i.body)), el('span', { class: 'dsum-when' }, when(i.created_at)))); };
+      const list = el('ul', { class: 'dsum-list' }, items.slice(0, 3).map(row));
+      const more = items.length > 3 ? el('button', { class: 'dsum-more', type: 'button', onclick: () => { list.append(...items.slice(3).map(row)); more.remove(); } },
+        items.length === 4 ? 'ועוד דבר אחד' : `ועוד ${items.length - 3}`) : null;
+      const heb = new Intl.DateTimeFormat('he-u-ca-hebrew', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+      const close = el('button', { class: 'dsum-close', type: 'button', 'aria-label': 'סגירת הסיכום' }, svg('<path d="M6 6l12 12M18 6 6 18"/>'));
+      const card = el('section', { class: 'dsum', 'aria-labelledby': 'dsum-h' },
+        el('header', { class: 'dsum-head' }, el('div', {}, el('h2', { id: 'dsum-h' }, 'סיכום היום'), el('p', {}, heb)), close),
+        el('div', { class: 'dsum-body' }, el('section', { 'aria-labelledby': 'dsum-since' }, el('h3', { class: 'dsum-sub', id: 'dsum-since' }, 'מאז הסיכום הקודם'), list, more)));
+      close.onclick = () => {
+        const done = () => { card.remove(); document.querySelector('.greet h1, .sr-head h1')?.focus?.(); };
+        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
+        card.classList.add('leaving'); card.addEventListener('animationend', done, { once: true }); setTimeout(done, 900);
+      };
+      (document.querySelector('.home > .greet, .sr-home .sr-head') || root.firstElementChild)?.after(card);
+    }
     if (H.prefs('look').style === 'serious') { document.documentElement.dataset.style = 'serious'; if (H.prefs('look').pillows === 'keep') document.documentElement.dataset.pillows = 'keep'; seriousHome(); return; }
     function seriousHome() {
       const look = H.prefs('look'), pillows = document.documentElement.dataset.pillows === 'keep';

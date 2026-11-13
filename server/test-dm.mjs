@@ -82,9 +82,7 @@ eq('household first, by name, once each', list.map((c) => c.id), ['h1', 'h2', 'p
 eq('stats are numbers', D.stats(2, 9, 4, 1), { threads: 2, messages: 9, lastWeek: 4, blocks: 1 });
 
 /* ---- the gates in the handlers (a read of the source: every handler signs in, the thread goes through threadFor) ---- */
-const src = readFileSync(join(process.cwd(), 'server/dm.ts'), 'utf8').replace(/
-/g, '
-');   // a Windows checkout has CRLF
+const src = readFileSync(join(process.cwd(), 'server/dm.ts'), 'utf8').replace(/\r\n/g, '\n');   // a Windows checkout has CRLF
 const fns = [...src.matchAll(/export async function (\w+)\(ctx: Ctx\) \{\n([\s\S]*?)\n\}/g)].map((x) => [x[1], x[2]]);
 eq('the handlers', fns.map((f) => f[0]).sort(), ['adminStats', 'block', 'list', 'people', 'send', 'start', 'thread', 'unread']);
 for (const [n, b] of fns) ok(`${n} signs in first`, /^\s*(const u = requireUser\(ctx\)|await requireAdmin\(ctx, 'any'\))/.test(b));

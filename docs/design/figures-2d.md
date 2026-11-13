@@ -36,10 +36,26 @@ The default for families other than the owner's: **fennec (פנק)** – the own
 Badge-unlocked and holiday figures come next, the same way (`kind: 'badge'` with `unlock: '<badge id>'`, `kind: 'season'`
 with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entry.
 
+## People and characters (vision batch 6)
+
+Twelve, from the owner's lists, drawn from the original sources (likeness notes in the `historic-figures` skill),
+`kind: 'historic'` (`paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
+
+| tier | figures |
+|---|---|
+| free | ibnsina (אבן סינא), rambam (הרמב"ם), newton (ניוטון), juha (ג'וחא), hershele (הרשל׳ה), scheherazade (שחרזאדה), alibaba (עלי באבא), peterpan (פיטר פן) |
+| paid | maryshelley (מרי שלי), leonardo (לאונרדו דה וינצ׳י), cleopatra (קליאופטרה), dracula (דרקולה) |
+
+`Figure2D.list()` gives each one's `tier`, `paid`, `hideFor` and `tags`. **Traditions:** none of them is a prophet or a sacred figure, and
+every one is drawn modestly and respectfully. The one to filter is Dracula (`tags: ['horror']`, undead): leave him out for
+children under 12, and offer him only on request (or hide him for anyone who prefers no horror). Whether a tradition
+setting should hide anyone else is the owner's call (vision). Peter Pan: the UK's perpetual right (Great Ormond Street)
+is to be checked by business before anything around him is sold; he is free in the app.
+
 ## For ai-features
 
 - **Settings › העוזר האישי › הדמות:** a choice of figures (tiles with `Figure2D.mount(tile, id, { size: 96 })`, live, or
-  `still: true` for a long list), saved per person (`H.prefs('companion', { figure: 'fennec' })`); Ibn Ezra listed only
+  `still: true` for a long list), saved per person in `H.prefs('daemon').figure` (as it went into main with batch 5); with no choice, `Figure2D.DEFAULT`; Ibn Ezra listed only
   for the owner's family.
 - **The companion (daemon.js):** when the chosen figure is a 2D one, mount it instead of the three.js stage, and drive
   it from the companion's states (talk while speaking, think while waiting, happy on success, sleep when idle).

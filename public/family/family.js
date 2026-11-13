@@ -22,6 +22,8 @@
     bad_email: 'כתובת המייל לא נראית תקינה.', same_household: 'הכתובת הזו שייכת למשק הבית שלנו.', note_required: 'כתבו לצד השני מי זה או זו.',
     already_asked: 'כבר נשלחה בקשה כזו, והיא עוד מחכה.', already_linked: 'השניים כבר מקושרים.', two_in_one_tree: 'אותו אדם כבר מופיע בעץ הזה בכרטיס אחר.',
     different_people: 'לשני הכרטיסים כתובות מייל שונות – אלה שני אנשים.', gone: 'הכרטיס בצד השני כבר לא קיים.', not_member: 'אין משתמש בכתובת הזו.', title_required: 'צריך שם למשפחה.',
+    // changes that wait for a user's yes, a delete and its undo
+    changed_since: 'הכרטיס השתנה בינתיים, ולכן הבקשה בוטלה. אפשר להציע שוב.', decided: 'כבר ענית על הבקשה הזו.', restore_closed: 'עבר הזמן לביטול. בעל האוהל יכול לשחזר מהדלת האחורית.',
   };
   const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
   const call = async (path, opts = {}) => {
@@ -136,6 +138,7 @@
     // the tree is open to the household (Locks and privacy: no trusted device any more); documents, privacy, linking and a
     // delete still ask for a fresh unlock – the page's "trusted" path, which asks only for that step
     S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until || 0; S.roles = t.roles || {}; S.trusted = true;
+    S.pending = t.pending || []; S.asks = t.asks || 0;
     // what waits for me in the links between trees (a request to approve, my own consent)
     const inbox = await call('/api/vault/bridges').catch(() => null);
     const waiting = inbox ? inbox.incoming.length + inbox.consent.length : 0;
@@ -163,7 +166,9 @@
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
     const tools = el('div', { class: 'fv-tools' }, views, find);
     const board = el('div', { class: 'fv-tree' });
-    root.replaceChildren(el('section', { class: 'fv' }, bar, S.people.length ? tools : null, board));
+    const asks = el('div', { class: 'fm-asks-slot' });
+    root.replaceChildren(el('section', { class: 'fv' }, bar, asks, S.people.length ? tools : null, board));
+    if (S.asks) asksBox(asks).catch(say);
     tickTimer = setInterval(() => {
       const s = Math.max(0, Math.round((S.until - Date.now()) / 1000)), mm = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
       // on a trusted device the tree does not lock; only the documents' unlock runs out
@@ -182,6 +187,62 @@
 
   /* ---------- who is whose: the relationships ---------- */
   const byId = (id) => S.people.find((p) => p.id === id);
+  const pendingOf = (k, id) => (S.pending || []).find((c) => c[k] === id);
+  /** "ממתין לאישור" on what I asked to change, with taking it back */
+  const pendingBadge = (c, after) => c ? el('span', { class: 'fm-pending' }, 'ממתין לאישור', ' ',
+    el('button', { type: 'button', class: 'btn small ghost', onclick: async () => { try { await call(`/api/vault/changes/${c.id}/cancel`, { method: 'POST' }); toast('הבקשה בוטלה'); await after(); } catch (e) { say(e); } } }, 'ביטול הבקשה')) : null;
+  /** what the server said about a change to someone else's card: done, or waiting for them */
+  const proposedSay = (r, who) => toast(r.waiting > 1 ? 'נשלח לאישור. כשכולם יאשרו, העץ יתעדכן.' : `נשלח לאישור של ${who || 'בן המשפחה'}. עד שיאשר/תאשר, שום דבר לא משתנה.`);
+  /** ten seconds to take a delete back ("בטל"); the look is design's .fm-undo */
+  function undoBar(text, undo) {
+    document.querySelector('.fm-undo')?.remove();
+    const bar = el('div', { class: 'fm-undo', role: 'status', 'aria-live': 'polite' }, el('span', {}, text),
+      el('button', { type: 'button', class: 'btn small', onclick: async () => { clearTimeout(t); bar.remove(); try { await undo(); toast('בוטל'); } catch (e) { say(e); } } }, 'בטל'));
+    document.body.append(bar);
+    const t = setTimeout(() => bar.remove(), 10e3);
+  }
+  async function refreshAll() { const t = await call('/api/vault/tree'); S.people = t.people; S.links = t.links || []; S.pending = t.pending || []; S.asks = t.asks || 0; }
+
+  /* ---------- the requests that wait for my answer (a change to my card, or to a relationship of mine) ---------- */
+  const FIELD = { name: 'שם', sex: 'מין', born: 'תאריך לידה', bornAfterSunset: 'נולד/ה אחרי השקיעה', died: 'תאריך פטירה', diedAfterSunset: 'נפטר/ה אחרי השקיעה',
+    place: 'מקום לידה', notes: 'הערות', birthdayBy: 'יום ההולדת לפי', calendar: 'בלוח השנה המשפחתי' };
+  const VALUE = { m: 'זכר', f: 'נקבה', gregorian: 'התאריך הלועזי', hebrew: 'התאריך העברי' };
+  const shown = (v) => v === true ? 'כן' : v === false ? 'לא' : v === '' || v == null ? '—' : VALUE[v] || String(v);
+  async function asksBox(slot) {
+    const d = await call('/api/vault/changes');
+    if (!d.forMe.length) return slot.replaceChildren();
+    const linkWords = (l) => l.type === 'parent' ? `${l.a} הורה של ${l.b}` : `${l.a} ו${l.b}`;
+    const what = (c) => c.kind === 'edit' ? `${c.by} הציע/ה לשנות את הפרטים שלך:`
+      : c.kind === 'delete' ? `${c.by} ביקש/ה להסיר את הכרטיס שלך (${c.person.name}) מהעץ.`
+      : c.kind === 'unlink' ? `${c.by} ביקש/ה להסיר את הקשר: ${linkWords(c.link)}.`
+      : `${c.by} הציע/ה לשנות את הקשר: ${linkWords(c.link)} – ${[PARENT_KIND[c.link.to?.kind] || PARTNER_KIND[c.link.to?.kind], PARTNER_STATUS[c.link.to?.status]].filter(Boolean).join(', ')}.`;
+    const answer = async (c, yes) => {
+      try {
+        const r = await call(`/api/vault/changes/${c.id}/${yes ? 'approve' : 'decline'}`, { method: 'POST' });
+        toast(!yes ? 'נדחה. שום דבר לא השתנה.' : r.status === 'waiting' ? 'אושר. מחכה עוד לאישור של בן משפחה נוסף.' : 'אושר. העץ עודכן.');
+      } catch (e) { say(e); }
+      await open();
+    };
+    slot.replaceChildren(el('section', { class: 'card fm-asks', 'aria-labelledby': 'fm-asks-h' },
+      el('h2', { id: 'fm-asks-h' }, `מחכה לאישור שלך · ${d.forMe.length}`),
+      el('ul', { class: 'fm-ask-list' }, d.forMe.map((c) => el('li', { class: 'fm-ask', 'data-kind': c.kind },
+        el('p', { class: 'fm-ask-what' }, what(c)),
+        c.kind === 'edit' ? el('ul', { class: 'fm-ask-diff' }, c.changes.map((x) => el('li', {}, el('b', {}, FIELD[x.k] || x.k), ': ', el('s', {}, shown(x.from)), ' ← ', el('span', {}, shown(x.to))))) : null,
+        el('small', { class: 'muted' }, 'שום דבר לא משתנה עד שתאשרו.'),
+        el('span', { class: 'fm-ask-acts' },
+          el('button', { type: 'button', class: 'btn small primary', onclick: () => answer(c, true) }, 'אשר'), ' ',
+          el('button', { type: 'button', class: 'btn small ghost', onclick: () => answer(c, false) }, 'דחה')))))));
+  }
+  /** delete a card: someone who is not a user (or my own) goes at once, with "בטל" for ten seconds; another user's waits for them */
+  async function deletePerson(p) {
+    let r;
+    try { r = await call(`/api/vault/people/${p.id}`, { method: 'DELETE' }); } catch (e) { return say(e); }
+    H.sheet?.close?.();
+    if (r.proposed) { proposedSay(r, p.name); await open(); return; }
+    if (S.focus === p.id) S.focus = null;
+    await open();
+    undoBar(`${p.name} הוסר/ה מהעץ.`, async () => { await call(`/api/vault/people/${p.id}/restore`, { method: 'POST' }); S.focus = p.id; await open(); });
+  }
   const parentLinks = (id) => S.links.filter((l) => l.type === 'parent' && l.b === id);
   const parentsOf = (id) => parentLinks(id).map((l) => l.a);
   const childrenOf = (id) => S.links.filter((l) => l.type === 'parent' && l.a === id).map((l) => l.b);
@@ -389,6 +450,15 @@
       // the vault's documents and photos stay one step away (they ask for a fresh unlock, as before)
       el('button', { type: 'button', class: 'btn small ghost', onclick: () => { H.closeModal(); panel(c.id); } }, 'מסמכים ותמונות'),
     ] : [];
+    // someone else's card in our tree: edit and delete right here (another user's waits for their yes; the server decides)
+    const other = c.mine && !c.self ? byId(c.id) : null;
+    const manage = other ? el('div', { class: 'mc-actions fm-acts' },
+      pendingBadge(pendingOf('person', c.id), async () => { H.closeModal(); await open(); }),
+      el('button', { type: 'button', class: 'btn small ghost', onclick: async () => {
+        try { const p = await call(`/api/vault/people/${encodeURIComponent(c.id)}`); H.closeModal(); personForm(p); } catch (e) { say(e); }
+      } }, 'עריכה'),
+      el('button', { type: 'button', class: 'btn small ghost danger fm-del', onclick: () => { H.closeModal(); deletePerson(other); },
+        title: c.user ? 'הכרטיס של משתמש/ת באוהל: הבקשה תחכה לאישור שלו/ה' : 'אפשר לבטל במשך 10 שניות' }, 'מחיקה')) : null;
     H.modal(el('article', { class: 'mc' + (c.self ? ' mine' : ''), 'aria-label': 'הכרטיס של ' + c.name },
       el('div', { class: 'mc-banner' }, cover ? el('img', { src: cover, alt: '' }) : null),
       el('div', { class: 'mc-head' }, face,
@@ -396,7 +466,8 @@
         edit),
       list.length ? el('dl', { class: 'mc-facts' }, list.map(([k, v]) => el('div', { class: 'mc-fact' }, el('dt', {}, k), el('dd', {}, v)))) : null,
       about ? el('p', { class: 'mc-about' }, about) : null,
-      acts.length ? el('div', { class: 'mc-actions' }, acts) : null));
+      acts.length ? el('div', { class: 'mc-actions' }, acts) : null,
+      manage));
   }
 
   /* ---------- drawing: the family around one person, or the whole tree ---------- */
@@ -779,6 +850,7 @@
       try {
         const r = await call(p ? `/api/vault/people/${p.id}` : '/api/vault/people', { method: p ? 'PUT' : 'POST', body });
         H.closeModal(); touched();
+        if (r.proposed) proposedSay(r, p.name);
         if (!p && !rel) S.focus = r.id;
         await open();
         if (p || rel) panel(p ? r.id : rel.of);
@@ -808,10 +880,19 @@
     const line = (label, id, linkObj, extra) => el('li', { class: 'fv-relrow' },
       el('button', { class: 'fv-rel-who', onclick: () => { H.sheet.close(); setView('family'); setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
       el('small', { class: 'muted' }, label), extra || null,
-      linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: async () => { if (!confirm('להסיר את הקשר? האנשים עצמם נשארים בעץ.')) return; await call('/api/vault/links/' + linkObj.id, { method: 'DELETE' }); await reload(); } }, '✕') : null);
+      linkObj ? pendingBadge(pendingOf('link', linkObj.id), reload) : null,
+      linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: () => unlink(linkObj) }, '✕') : null);
+    // a relationship goes at once, with "בטל" (the same relationship added again); one of another user's waits for them
+    const unlink = async (l) => {
+      let r;
+      try { r = await call('/api/vault/links/' + l.id, { method: 'DELETE' }); } catch (e) { return say(e); }
+      if (r.proposed) proposedSay(r);
+      await reload();
+      if (r.link) undoBar('הקשר הוסר. האנשים עצמם נשארים בעץ.', async () => { await call('/api/vault/links', { body: r.link }); await reload(); });
+    };
     const sel = (map, value, onchange) => { const s = el('select', { class: 'fv-mini' }, Object.entries(map).map(([v, t]) => el('option', { value: v, selected: v === value }, t))); s.addEventListener('change', () => onchange(s.value)); return s; };
-    const save = async (l, patch) => { await call('/api/vault/links/' + l.id, { method: 'PUT', body: patch }); await reload(); };
-    const reload = async () => { const t = await call('/api/vault/tree'); S.people = t.people; S.links = t.links; touched(); refresh(); };
+    const save = async (l, patch) => { try { const r = await call('/api/vault/links/' + l.id, { method: 'PUT', body: patch }); if (r.proposed) proposedSay(r); } catch (e) { say(e); } await reload(); };
+    const reload = async () => { await refreshAll(); touched(); refresh(); };
     const items = [];
     for (const l of parentLinks(p.id)) items.push(line(g(l.a, 'אבא', 'אמא', 'הורה'), l.a, l, sel(PARENT_KIND, l.kind, (v) => save(l, { kind: v }))));
     for (const l of partnerLinks(p.id)) {
@@ -888,7 +969,12 @@
       body.replaceChildren(...[
         el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
             el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת באוהל – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת באוהל – ראש משק הבית מנהל את הפרטים')),
-          el('span', { class: 'spacer' }), el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה')),
+          el('span', { class: 'spacer' }),
+          pendingBadge(pendingOf('person', p.id), async () => { await refreshAll(); draw(tab); }),
+          el('span', { class: 'fm-acts' },
+            el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה'),
+            el('button', { class: 'btn small ghost danger fm-del', onclick: () => deletePerson(p),
+              title: p.user && S.mine !== p.id ? 'הכרטיס של משתמש/ת באוהל: הבקשה תחכה לאישור שלו/ה' : 'אפשר לבטל במשך 10 שניות' }, 'מחיקה'))),
         relationsBox(p, () => draw(tab)),
         treesBox(p),
         privacyBox(p),

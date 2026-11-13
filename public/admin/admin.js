@@ -107,7 +107,7 @@
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
     /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
     const APPS = st.own
-      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites]] : []), ['settings', 'הגדרות האפליקציה', settings],
+      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites], ['treetrash', 'שחזור מהעץ', treeTrash]] : []), ['settings', 'הגדרות האפליקציה', settings],
          ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
       : [['features', `התכונות של ${st.as.name}`, features]];
     const panels = {}, bodies = {}, loaded = new Set();
@@ -593,6 +593,23 @@
   const IV_F = [['all', 'הכל', () => true], ['open', 'ממתינות', (x) => x.status === 'sent' || x.status === 'opened'], ['joined', 'הצטרפו', (x) => x.status === 'redeemed'], ['closed', 'פגו ובוטלו', (x) => x.status === 'expired' || x.status === 'cancelled']];
   Object.assign(ERR, { name_required: 'למי ההזמנה? כתבו שם.', bad_email: 'כתובת המייל לא תקינה.', already_member: 'הכתובת הזו כבר באוהל.', not_open: 'ההזמנה כבר לא פתוחה.' });
   const ivState = { q: '', f: 'all', made: null };
+  /* ---------- the family tree's deleted cards (the owner only, server/vault/index.ts trashList) ----------
+     A delete in the tree is soft: whoever deleted has "בטל" for a short while, and the owner brings any card back here,
+     with the relationships whose other end is still in the tree. Names show only where the owner's own view of the tree
+     shows them (another family's card may read "קרוב/ת משפחה"). The look is design's .bd-trash. */
+  Object.assign(ERR, { tree_locked: 'פתחו את עץ המשפחה פעם אחת במכשיר הזה, ואז חזרו לכאן.', vault_locked: 'פתחו את עץ המשפחה פעם אחת במכשיר הזה, ואז חזרו לכאן.' });
+  async function treeTrash(box) {
+    const d = await call('/api/admin/tree-trash');
+    const again = () => treeTrash(box).catch(say);
+    box.replaceChildren(el('section', { class: 'card bd-trash', id: 'treetrash-s' },
+      el('h2', {}, 'שחזור מהעץ'),
+      el('p', { class: 'muted small' }, 'כרטיסים שנמחקו מעץ המשפחה. שחזור מחזיר את הכרטיס ואת הקשרים שלו לאנשים שעדיין בעץ.'),
+      d.people.length ? el('ul', { class: 'bd-trash-list' }, d.people.map((x) => el('li', { class: 'bd-trash-row' },
+        el('span', { class: 'bd-trash-who' }, el('b', {}, x.name), el('small', { class: 'muted' }, [x.ours ? 'המשפחה שלנו' : x.family, x.by ? `נמחק על ידי ${x.by}` : '', day(x.deleted_at)].filter(Boolean).join(' · '))),
+        btn('שחזור', async () => { await call(`/api/admin/tree-trash/${x.id}/restore`, { method: 'POST' }); toast(`${x.name} חזר/ה לעץ`); again(); }, 'btn small primary')))) : null,
+      el('p', { class: 'bd-trash-empty', hidden: d.people.length > 0 }, 'אין כרטיסים שנמחקו.')));
+  }
+
   async function invites(box) {
     const { q } = ivState;
     const [d, people, reqs] = await Promise.all([

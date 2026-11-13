@@ -200,6 +200,7 @@ export const BADGES: Badge[] = [
   { id: 'fire', name: 'מדורה', how: '7 ימים ברצף', group: 'start' },
   { id: 'eternal', name: 'אש תמיד', how: '30 ימים ברצף ("אֵשׁ תָּמִיד תּוּקַד עַל הַמִּזְבֵּחַ, לֹא תִכְבֶּה")', group: 'start' },
   { id: 'rest_return', name: 'שבת למנוחה', how: 'חזרת לצעדים אחרי יום המנוחה', group: 'start' },
+  { id: 'scout', name: 'סייר', how: 'גילית 10 כלים באוהל', group: 'start' },   // (awarded by server/discover.ts, at discover-logic's SCOUT_AT)
   { id: 'rest_seven', name: 'אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ', how: 'שמרת על יום המנוחה שבעה שבועות ברצף, ועבדת בשאר הימים', group: 'start' },
   { id: 'pole', name: 'עמוד האוהל', how: 'סיימת תהליך שלם', group: 'progress' },
   { id: 'standing', name: 'האוהל עומד', how: 'השגת מטרה', group: 'progress' },

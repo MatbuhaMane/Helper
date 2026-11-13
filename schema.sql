@@ -966,3 +966,14 @@ CREATE TABLE IF NOT EXISTS user_locks (
   tip_hidden  INTEGER NOT NULL DEFAULT 0,      -- "לא להציג שוב" on the tree's security tip
   updated_at  INTEGER NOT NULL
 );
+
+-- Discovery (ai-features, docs/ai/social-plan.md slice A): which tools a person has opened – for "גילית 6 מתוך 18 כלים",
+-- the "סייר" badge, and the owner's usage dashboard. Only the tool and when; never what is in it.
+CREATE TABLE IF NOT EXISTS tool_visits (
+  email     TEXT NOT NULL,
+  tool      TEXT NOT NULL,
+  first_at  INTEGER NOT NULL,
+  last_at   INTEGER NOT NULL,
+  n         INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (email, tool)
+);

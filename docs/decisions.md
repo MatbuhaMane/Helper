@@ -408,8 +408,10 @@ This updates the entry below: there are also certain paid figures, not only the 
   needs a licence or a partnership before it is sold.
 - **Peter Pan:** the United Kingdom has a special perpetual right; to be checked.
 
-**Open with the owner:** the app is for families with children, and children under 12 join through a parent. How
-"sexy" Cleopatra and Dracula may be, and who sees them, is not decided.
+**Cleopatra and Dracula:** one version for the app, safe for work and charismatic (presence and glamour, not sexuality),
+paid, for everyone. The owner also asked for a very explicit version as a private easter egg for himself only. The
+vision session did not pass that on: Gemini's terms forbid sexually explicit images, which would put at risk the key the
+whole app's AI runs on, and the files would sit in a family app's code and storage, where children use it.
 
 **Affects:**
 - **Design:** the figures.
@@ -417,7 +419,7 @@ This updates the entry below: there are also certain paid figures, not only the 
 - **Business:** the paid catalogue (this partly reverses the business change de719b4: not only the personal figure
   is paid), licensing and partnerships, and the risks.
 
-Status: Decided (the owner), except for the open point.
+Status: Decided (the owner).
 
 ## 2026-11-13 – Companion figures: everything to choose from is free; only a personal figure is paid; Ibn Ezra belongs to the owner's family (vision, the owner)
 

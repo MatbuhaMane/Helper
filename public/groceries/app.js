@@ -1268,8 +1268,8 @@
   /* ================= לשוניות ================= */
   let ketoMounted = false, tabNow = 'list';
   // The tabs: the list, the book, ketosis and each other way of eating (diets.js). A diet's tab shows once it is on, or
-  // while it is open: it is reached from its app in תנועה ותזונה (/groceries/#atkins…), where its switch is. Ketosis too
-  // is the person's choice (the owner, 2026-11-13).
+  // while it is open. The switches are all in הרגלי אכילה (/food/diet/habits/, the owner, 2026-11-14): an old address of
+  // a diet that is off (/groceries/#atkins…) leads there, to its switch.
   const bar = $('.tabs[role=tablist]');
   for (const d of Diets.all) {
     bar.insertBefore(el('button', { role: 'tab', id: 'tab-' + d.id, 'aria-selected': 'false', hidden: true, onclick: () => showTab(d.id) }, d.name), bar.querySelector('.spacer'));
@@ -1329,6 +1329,11 @@
   window.addEventListener('keto:changed', (e) => { ketoTab(); if (e.detail !== 'state' || Keto.enabled) render(); });
   window.addEventListener('diets:changed', () => { ketoTab(); render(); });
 
+  {
+    const t = tabFromHash();
+    if (t === 'keto') await Keto.ready;
+    if ((t === 'keto' && !Keto.enabled) || (Diets.get(t) && !Diets.isOn(t))) { location.replace('/food/diet/habits/#' + t); return; }
+  }
   render();
   loadAuto();
   showTab(tabFromHash(), 'replace');

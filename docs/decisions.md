@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – הרגלי אכילה: one tool for every way of eating (ai-features → master, design)
+
+`/food/diet/habits/` (the owner's words, through the CEO): ketosis, Atkins, paleo, low-carb, low sugar and fasting, each
+with the big switch ketosis has. On shows that diet's tab, pies and stamps; off, none of it. All off at first; the state
+is the person's on the server (ketosis in `keto_settings`, the others in `user_prefs` ns `diets`). The six diet tiles in
+תנועה ותזונה became one tile; `/groceries/#<diet>` of a diet that is off leads to its switch (`habits/#<id>`). The
+daemon's `open_app` gained `habits`.
+- **design**: `public/food/diet/habits/habits.css` is a first look written by ai-features, yours from now (it uses
+  groceries' `.switch` from `style.css`). Its tile in the folder borrows the `keto` icon until you draw one. Proposed:
+  a `/food/diet/habits/` entry in the catalogue in `apps.js`, so it can be pinned.
+- **master**: proposed: add `/food/diet/habits/` (and `/groceries/diets.js`, missing today) to `ASSETS` in `public/sw.js`.
+Status: proposed.
+
 ## 2026-11-13 – Recurring goals: a fresh round each period (ai-features → master, design)
 
 The owner: "בניהול מטרות, אפשר הגדרת מטרות מחזוריות".

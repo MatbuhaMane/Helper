@@ -193,13 +193,14 @@ const TOOLS: BetaToolUnion[] = [
   tool('propose_mail_plan', "Prepare a plan for tidying the person's Gmail from their request. Nothing changes: the plan opens in the mail screen, where they review the counts and examples and approve it themselves.", {
     request: str('What they want, in their own words'),
   }),
-  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['food', 'groceries', 'fridge', 'recipes', 'keto', 'news', 'songs', 'tools', 'mail', 'computer', 'home'] } }),
+  tool('open_app', 'Offer a button that opens one of the helper screens.', { app: { type: 'string', enum: ['food', 'groceries', 'fridge', 'recipes', 'keto', 'habits', 'news', 'songs', 'tools', 'mail', 'computer', 'home'] } }),
 ];
 
 const APP_LINKS: Record<string, { href: string; label: string }> = {
   food: { href: '/food/', label: '🍲 לאוכל' },
   groceries: { href: '/groceries/', label: '🛒 לרשימת הקניות' },
-  keto: { href: '/groceries/#keto', label: '🥑 לקטוזיס' },
+  keto: { href: '/groceries/#keto', label: '🥑 לקטוזיס' },   // while ketosis is off, the page leads to its switch
+  habits: { href: '/food/diet/habits/', label: '🥗 להרגלי האכילה' },   // ketosis, Atkins, paleo, fasting…: the switches
   tools: { href: '/tools/', label: '🧰 לכלים' },
   recipes: { href: '/groceries/#book', label: '📖 לספר המתכונים' },
   fridge: { href: '/food/fridge/', label: '🧊 למקרר' },

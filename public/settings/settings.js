@@ -348,6 +348,9 @@
       choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); apply(); drawOwn(); }),
       own,
       choices('הגופן', FONTS.map(([id, name]) => [id, name, { font: id || null }]), look.font || '', (v) => { look.font = v; keep('look'); apply(); }),
+      // the side pages beside the tent on the home page (main 0102aae reads look.devTools; on unless turned off)
+      toggle('הצג כלים בפיתוח', look.devTools !== false, (v) => { look.devTools = v; keep('look'); apply(); },
+        'המסכים של המוסך וגבעה ביער ליד האוהל, וקבוצת "בקרוב".'),
       el('p', { class: 'muted small' }, 'התאמת הצבעים והגופן חינמית לכולם. גופן קריא במיוחד נמצא בנגישות.'));
   }
 

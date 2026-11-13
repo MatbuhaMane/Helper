@@ -323,8 +323,9 @@
           })),
           ley.haftarah ? el('a', { class: 'pr-ref', href: sefaria(ley.haftarah.split(';')[0].trim()), onclick: studyIt(ley.haftarah.split(';')[0].trim(), name + ' – הפטרה') }, el('b', {}, 'הפטרה'), el('span', {}, heRef(ley.haftarah))) : null,
           el('p', { class: 'pr-fine' }, 'הקישו על עלייה כדי לפתוח אותה לעיון: מפרשים, מילון, נוסח, ושאלות לחוקר. הזמנים והקריאה מ־Hebcal, הטקסטים מספריא.'))));
-    const deep = new URLSearchParams(location.search).get('study');
-    if (deep && !document.querySelector('.rs')) H.study(deep, deep === ley.torah ? name : null);   // another passage gets its own name (from Sefaria)
+    const q = new URLSearchParams(location.search), deep = q.get('study');
+    // another passage gets its own name (from Sefaria); v: a verse to mark (a note's link back to where it was taken from)
+    if (deep && !document.querySelector('.rs')) H.study(deep, deep === ley.torah ? name : null, { select: q.get('v') || null });
   }
   draw();
 })();

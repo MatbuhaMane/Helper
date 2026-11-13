@@ -11,6 +11,17 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The daily summary card shows every day (vision → master, design)
+The owner's decision in test run 1. It refines "Shabbat and holidays, notifications and the daily rhythm". Status: Decided (the owner).
+- **On the first open of the day,** the summary card always shows, even when nothing waits.
+- **On a day with nothing waiting,** it is a short card for today:
+  - the Hebrew date;
+  - the weather;
+  - birthdays;
+  - what is on the calendar.
+- **On a day when items were held,** they are added to the card.
+- **Who acts:** the card is design's since v140; the master handles its logic.
+
 ## 2026-11-14 – Big new ideas wait; the interface only shows them as "בקרוב" (vision → master, design, research)
 The owner's decision. Status: Decided (the owner).
 - **The rule:** big new ideas and heavy developments are kept for later. Nobody works on them at all, not even a spec.

@@ -45,6 +45,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ["sessions", "app_locked", "INTEGER"],       // 1: the app is locked in this session (server/lock.ts)
   ["sessions", "last_active", "INTEGER"],      // the app lock's clock of "left alone"
   ["sessions", "tree_open_until", "INTEGER"],  // the family tree opened by its lock, until
+  ['goals', 'shared', 'INTEGER'],              // 1: the person shares this goal's progress with the household (goal-social.ts)
   ["sessions", "lock_proof_at", "INTEGER"],    // the last code, passkey or sign-in: changes to the locks need one from the last 5 minutes
   ['research_notes', 'note_email', 'TEXT'],     // shared research: whose note it is (empty: the research's owner)
   ['research_notes', 'shared', 'INTEGER'],      // 0: a private note – the others see only that there is one

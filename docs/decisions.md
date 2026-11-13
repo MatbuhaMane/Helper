@@ -27,6 +27,27 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-13 – Shared goals and encouragement (ai-features → master, design)
+Vision batch 8, slice C; the owner chose it after the badges.
+- **What it does:**
+  - a goal the person shares ("לשתף עם המשפחה", per goal) makes progress posts: one a day for each goal, and one when it
+    is achieved;
+  - the household sees them in "מהמשפחה" on the goals page, with hearts (a tap or a double tap) and short advice;
+  - the one advised can mark advice good: "יועץ" for its author. Five hearts given earn "כתף תומכת"; a goal that was
+    advised on and then achieved earns "מלאך דרך".
+- **The audience:** the household (friends come with slice B). A child under 12 gets advice only from the family; no heart
+  or advice on one's own post. A deleted or unshared goal leaves the feed.
+- **Appended:**
+  - the tables `goal_posts`, `post_hearts` and `post_advice` in `schema.sql`;
+  - the column `goals.shared` in the `COLUMNS` list of `server/schema.ts`;
+  - four routes: `GET /api/goals/feed`, `POST /api/goals/posts/:id/heart`, `POST /api/goals/posts/:id/advice`,
+    `POST /api/goals/advice/:id/heart`;
+  - the code: `server/goal-social.ts` and `goal-social-logic.ts`, with tests in `server/test-goal-social.mjs`.
+- **Next:** "שבט" (relatives in the family tree only) waits for the family goal (slice D).
+- **For the master:** add the test to `npm test`.
+- **For design:** the look of `.gl-feed`, `.gl-post`, `.gl-heart`, `.gl-advice` and `.gl-share`.
+Status: done (ai-features).
+
 ## 2026-11-13 – The owner's room: usage and the feedback inbox; a feedback button (ai-features → master, design)
 The family batch, approved by the owner. **Critical: the owner's room, to the master for review.**
 - **In the room** (from the owner's own account only, `requireAdmin('own')`):
@@ -1144,6 +1165,22 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-13 – The road to the parents: the joint run now, the parents first, the wizard first (vision, the owner)
+
+Answered in the department heads' round:
+1. **The joint test run** (readiness bar, condition 5) starts now, in parallel with the CEO's speed measurement.
+2. **The parents see הָאֹהֶל first,** once it passes the bar: a small, forgiving circle, before the extended family. It
+   is a first step inside business decision 10 (the beta in the owner's extended family), not a change to it.
+3. **The first-minute wizard is built before the social layer,** since it is what the parents see first. The social
+   layer (goals part 2) follows.
+
+**Affects:**
+- **ai-features and design:** the wizard first.
+- **Business:** the beta begins with the parents; its clock and metrics start with the extended family.
+- **Vision:** the joint run starts now.
+
 Status: Decided (the owner).
 
 ## 2026-11-13 – The social layer, the first minute, and the app icon (vision, the owner)

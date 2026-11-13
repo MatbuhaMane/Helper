@@ -35,6 +35,8 @@ eq('each tool says whether it was found', D.progress(['news']).tools.find((t) =>
 /* ---- a badge for every tool ---- */
 eq('a badge per tool, settings left out', D.TOOL_BADGES.length, D.TOOLS.length - 1);
 eq('the badge of a tool', D.TOOL_BADGES.find((b) => b.id === D.toolBadge('news'))?.group, 'tools');
+eq('every tool badge has its approved name, not the tool\'s', D.TOOL_BADGES.every((b) => b.name !== D.TOOLS.find((t) => D.toolBadge(t.id) === b.id).name), true);
+eq('the family tree: השורשים', D.TOOL_BADGES.find((b) => b.id === 'tool_family').name, 'השורשים');
 eq('no settings badge', D.TOOL_BADGES.some((b) => b.id === D.toolBadge('settings')), false);
 
 console.log(`${pass} passed, ${fail} failed`);

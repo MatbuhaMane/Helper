@@ -98,10 +98,52 @@
       el('h2', {}, 'המטרות שלי'),
       active.length ? el('div', { class: 'gl-goals' }, active.map(goalCard))
         : emptyState(),
+      familyFeed(),
       done.length ? el('details', { class: 'gl-done' }, el('summary', {}, `🏕 מטרות שהושגו (${done.length})`),
         el('div', { style: 'display:grid;gap:8px;margin-top:8px' }, done.map(goalCard))) : null,
       el('p', { class: 'small muted' }, 'יום המנוחה שלי: ', el('b', {}, REST_NAME(D.rest)), ' · ', el('button', { class: 'linklike', type: 'button', style: 'background:none;border:0;color:var(--primary);cursor:pointer;font:inherit;text-decoration:underline', onclick: restPicker }, 'שינוי'))));
   }
+  /* ---------- the family's shared progress: hearts (a tap, or a double tap on the post) and short advice ---------- */
+  function familyFeed() {
+    const box = el('section', { class: 'gl-feed', 'aria-labelledby': 'gl-feed-h' }, el('h2', { id: 'gl-feed-h' }, 'מהמשפחה'));
+    const when = (t) => (H.timeAgo ? H.timeAgo(t) : new Date(t).toLocaleDateString('he-IL'));
+    const fill = async () => {
+      let f; try { f = await api('/api/goals/feed'); } catch (_) { return box.remove(); }
+      if (!f.posts.length) return box.append(el('p', { class: 'muted small' }, 'כשמישהו במשפחה ישתף מטרה, ההתקדמות שלו תופיע כאן. גם את שלך אפשר לשתף, מתוך המטרה.'));
+      box.append(el('ul', { class: 'gl-posts', style: 'list-style:none;margin:0;padding:0;display:grid;gap:10px' }, f.posts.map(post)));
+    };
+    function post(p) {
+      const count = el('span', { class: 'gl-hearts' }, p.hearts ? String(p.hearts) : '');
+      const heartBtn = p.mine ? null : el('button', { class: 'btn small ghost gl-heart', type: 'button', 'aria-pressed': String(p.hearted), 'aria-label': p.hearted ? 'להסיר את הלב' : 'לב', onclick: () => heart() }, p.hearted ? '♥' : '♡');
+      const heart = async () => {
+        try { const r = await api(`/api/goals/posts/${p.id}/heart`, { method: 'POST' }); p.hearted = r.hearted; heartBtn.textContent = r.hearted ? '♥' : '♡'; heartBtn.setAttribute('aria-pressed', String(r.hearted)); count.textContent = r.hearts ? String(r.hearts) : '';
+          if (r.hearted) { H.loadOnce?.('/assets/celebrate.js').then(() => window.Celebrate?.at(heartBtn, { label: '♥', stars: 6 })).catch(() => {}); } } catch (_) { toast('לא הצלחתי'); }
+      };
+      const advice = el('ul', { class: 'gl-advice', style: 'list-style:none;margin:0;padding:0;display:grid;gap:4px' }, p.advice.map((a) => el('li', { class: 'small' },
+        el('b', {}, a.who + ': '), el('span', { dir: 'auto' }, a.text),
+        // the one advised marks good advice: a heart, and the adviser badge for its author
+        p.mine && !a.mine ? el('button', { class: 'linklike gl-advice-heart', type: 'button', 'aria-pressed': String(a.hearted), 'aria-label': 'עצה טובה',
+          style: 'background:none;border:0;cursor:pointer;color:var(--primary);margin-inline-start:6px', onclick: async (e) => {
+            try { const r = await api(`/api/goals/advice/${a.id}/heart`, { method: 'POST' }); a.hearted = r.hearted; e.target.textContent = r.hearted ? '♥ עצה טובה' : '♡ עצה טובה'; e.target.setAttribute('aria-pressed', String(r.hearted)); } catch (_) { toast('לא הצלחתי'); }
+          } }, a.hearted ? '♥ עצה טובה' : '♡ עצה טובה') : a.hearted ? el('small', { class: 'muted' }, ' · ♥') : null)));
+      const input = p.mine ? null : el('input', { type: 'text', maxlength: 300, dir: 'auto', placeholder: 'עצה קצרה…', 'aria-label': 'עצה ל' + p.who,
+        style: 'flex:1;min-inline-size:0;font:inherit;padding:6px 10px;border-radius:999px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)' });
+      const send = async () => {
+        const text = input.value.trim(); if (!text) return input.focus();
+        try { await api(`/api/goals/posts/${p.id}/advice`, { body: { text } }); input.value = ''; advice.append(el('li', { class: 'small' }, el('b', {}, 'אני: '), el('span', { dir: 'auto' }, text))); } catch (_) { toast('לא הצלחתי לשלוח'); }
+      };
+      input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+      return el('li', { class: 'card gl-post', style: 'display:grid;gap:6px', ondblclick: () => { if (!p.mine && !p.hearted) heart(); } },
+        el('div', { style: 'display:flex;gap:8px;align-items:baseline;justify-content:space-between' },
+          el('div', {}, el('b', {}, p.mine ? 'אני' : p.who), ' ', el('span', { dir: 'auto' }, p.text)),
+          el('small', { class: 'muted' }, when(p.at))),
+        el('div', { style: 'display:flex;gap:6px;align-items:center' }, heartBtn, count, input, input ? el('button', { class: 'btn small', type: 'button', onclick: send }, 'שליחה') : null),
+        p.advice.length ? advice : advice);
+    }
+    fill();
+    return box;
+  }
+
   function emptyState() {
     return el('div', { class: 'card gl-empty' },
       el('p', { style: 'margin:0' }, 'עוד אין כאן מטרות.'),
@@ -168,6 +210,10 @@
           await api(`/api/goals/${g.id}/processes`, { body: { title } }); await load();
         } }, '+ תהליך'),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => editGoal(g) }, '✎ עריכת המטרה'),
+        // sharing is the person's own choice, goal by goal: its progress goes to the household's feed (goal-social.ts)
+        el('button', { class: 'btn small ghost gl-share', type: 'button', 'aria-pressed': String(!!g.shared), onclick: async () => {
+          try { await api(`/api/goals/${g.id}`, { method: 'PUT', body: { shared: !g.shared } }); toast(g.shared ? 'המטרה כבר לא משותפת' : 'ההתקדמות תופיע למשפחה'); await load(); } catch (e) { toast('לא הצלחתי לשמור'); }
+        } }, g.shared ? 'משותפת עם המשפחה · להפסיק' : 'לשתף עם המשפחה'),
         g.status === 'active' ? el('button', { class: 'btn small ghost', type: 'button', onclick: () => askDone(g) }, '🏁 השגתי') : el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { await api(`/api/goals/${g.id}`, { method: 'PUT', body: { status: 'active' } }); await load(); } }, 'להחזיר לפעילות'),
         el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { if (!confirm(`למחוק את "${g.title}"?`)) return; await api(`/api/goals/${g.id}`, { method: 'DELETE' }); openGoal = null; await load(); toast('המטרה נמחקה'); } }, 'מחיקה'))));
   }

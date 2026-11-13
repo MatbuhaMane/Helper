@@ -9,6 +9,7 @@ import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 import * as L from './goals-logic';
 import * as D from './discover-logic';
+import * as Social from './goal-social';
 
 /** the request's body by a schema, or a 400 */
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
@@ -29,6 +30,7 @@ const GoalEdit = z.object({
   title: Text(200).optional(), why: z.string().trim().max(1000).optional(), kind: Kind.optional(), due: Day.nullable().optional(),
   days: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(), time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   status: z.enum(['active', 'done', 'archived']).optional(),
+  shared: z.boolean().optional(),   // share its progress with the household (goal-social.ts)
 });
 
 /** the person's rest day: their own choice in prefs 'goals', else by the tradition in prefs 'me' */
@@ -89,7 +91,7 @@ export async function list(ctx: Ctx) {
   const steps = data.steps.map((s) => ({ id: s.id, goal: s.goal_id, process: s.process_id, text: s.text, sort: s.sort, done: !!s.done_at, small: !!s.small, doneAt: s.done_at || null }));
   const goals = data.goals.map((g) => ({
     id: g.id, title: g.title, why: g.why || '', kind: g.kind, due: g.due || null, days: parseDays(g.days), time: g.time || null, status: g.status,
-    template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null,
+    template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null, shared: !!g.shared,
     processes: data.processes.filter((p) => p.goal_id === g.id).map((p) => ({ id: p.id, title: p.title, sort: p.sort, steps: steps.filter((s) => s.process === p.id) })),
   }));
   const today3 = L.todays(goals.map((g) => ({ ...g })), data.processes.map((p) => ({ id: p.id, goal: p.goal_id, sort: p.sort })), steps, today, rest);
@@ -165,10 +167,12 @@ export async function update(ctx: Ctx) {
   if (d.days !== undefined) put('days', d.days ? JSON.stringify(d.days) : null);
   if (d.time !== undefined) put('time', d.time);
   if (d.status !== undefined) { put('status', d.status); put('done_at', d.status === 'done' ? Date.now() : null); }
+  if (d.shared !== undefined) put('shared', d.shared ? 1 : 0);
   if (!sets.length) return json({ ok: true });
   put('updated_at', Date.now());
   const r = await ctx.env.DB.prepare(`UPDATE goals SET ${sets.join(', ')} WHERE email = ? AND id = ? AND status != 'deleted'`).bind(...vals, u.email, ctx.params.id).run();
   if (!r.meta.changes) throw new HttpError(404, 'Not found');
+  if (d.status === 'done') await Social.progress(ctx, u, ctx.params.id, 'goal');
   return json({ ok: true });
 }
 
@@ -234,6 +238,7 @@ export async function editStep(ctx: Ctx) {
   if (b.done === undefined) return json({ ok: true });
   await ctx.env.DB.prepare('UPDATE goal_steps SET done_at = ? WHERE email = ? AND id = ?').bind(b.done ? Date.now() : null, u.email, s.id).run();
   if (!b.done) return json({ ok: true });
+  await Social.progress(ctx, u, s.goal_id, 'step');   // (a shared goal: the household's feed)
   const [data, rest] = await Promise.all([all(ctx, u.email), restOf(ctx, u.email)]);
   const { fresh } = await newBadges(ctx, u.email, data, rest, L.dayOf(Date.now()));
   const left = data.steps.filter((x) => x.goal_id === s.goal_id && !x.done_at).length;

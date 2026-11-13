@@ -11,6 +11,11 @@ _Updated 2026-11-13 (live in main: the canopy tree and frames, v87; H.modalFrom,
   folder). Its CSS is already in main, so the stamps show once that patch is merged.
 - **Next, after the image quota resets (02:00 Israel):** the 19 badges, one run of `badges-tools-run.sh` from the design scratchpad,
   then cut each to `/assets/badges/<id>.webp`.
+- **Queued from the owner, via the master (after 16:00, or with the badges after 02:00, whichever comes first): a roulette on the fire.**
+  - A long press (~600ms) on the fire spins the cushions on their ellipse, slowing to a stop (ease-out).
+  - The winner is chosen first with crypto.getRandomValues; the cushion nearest the flame then glows.
+  - It keeps the fire's click, scrolling and the mobile context menu working. With reduced motion, only the winner is shown.
+  - The change is a patch for index.html (the master's), checked at 375 and on desktop.
 - **Not ours, left alone:** the untracked `public/tree-proto.html` in this checkout, left by the canopy session.
 
 ## Done

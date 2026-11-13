@@ -107,7 +107,7 @@
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
     /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
     const APPS = st.own
-      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts]] : []), ['settings', 'הגדרות האפליקציה', settings],
+      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites]] : []), ['settings', 'הגדרות האפליקציה', settings],
          ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
       : [['features', `התכונות של ${st.as.name}`, features]];
     const panels = {}, bodies = {}, loaded = new Set();
@@ -582,6 +582,59 @@
         el('tbody', {}, g.gifts.map((x) => el('tr', {}, el('td', { class: 'num' }, day(x.at)), el('td', {}, x.name), el('td', { class: 'num' }, ils(x.ils)), el('td', { class: 'num' }, ils(g.used[x.email] || 0)), el('td', { class: 'muted small' }, x.note || '')))))) : el('p', { class: 'muted small' }, 'עוד אין מתנות החודש.')));
   }
 
+  /* ---------- invitations from outside the family (the owner only, server/join.ts) ----------
+     A personal link, used once, into a household of its own with the trial credits. The list keeps each one's status
+     (sent / redeemed / expired / cancelled), the link while it is open (copy or WhatsApp), and cancel. One search box
+     looks in the invitations and in the members, by name or email, so the owner sees whether someone is in already. */
+  const IV = { sent: 'נשלחה', redeemed: 'מומשה', expired: 'פגה', cancelled: 'בוטלה' };
+  Object.assign(ERR, { name_required: 'למי ההזמנה? כתבו שם.', bad_email: 'כתובת המייל לא תקינה.', already_member: 'הכתובת הזו כבר באוהל.', not_open: 'ההזמנה כבר לא פתוחה.' });
+  async function invites(box, q = '') {
+    const [d, people] = await Promise.all([
+      call('/api/admin/invites' + (q ? '?q=' + encodeURIComponent(q) : '')),
+      q.length >= 2 ? call('/api/admin/people?q=' + encodeURIComponent(q)).catch(() => ({ members: [] })) : { members: [] },
+    ]);
+    const copy = async (url) => { try { await navigator.clipboard.writeText(url); toast('הקישור הועתק'); } catch (_) { prompt('העתיקו את הקישור:', url); } };
+    const wa = (x) => `https://wa.me/?text=${encodeURIComponent(`שלום ${x.name}, הזמנתי אותך לאוהל – המקום של הכלים שלנו ליום־יום. ההזמנה אישית ועובדת פעם אחת: ${x.url}`)}`;
+    const name = el('input', { type: 'text', maxlength: 80, required: true, 'aria-label': 'למי (שם)', placeholder: 'למשל: רות כהן' });
+    const email = el('input', { type: 'email', maxlength: 200, dir: 'ltr', 'aria-label': 'מייל (לא חובה)', placeholder: 'name@gmail.com' });
+    const days = el('select', { 'aria-label': 'כמה זמן ההזמנה פתוחה' }, [[3, '3 ימים'], [7, 'שבוע'], [14, 'שבועיים'], [30, 'חודש']].map(([v, t]) => el('option', { value: v, selected: v === 7 }, t)));
+    const made = el('div', { class: 'iv-made', 'aria-live': 'polite' });
+    const search = el('input', { type: 'search', value: q, 'aria-label': 'חיפוש לפי שם או מייל', placeholder: 'חיפוש לפי שם או מייל…' });
+    let wait;
+    search.addEventListener('input', () => { clearTimeout(wait); wait = setTimeout(() => redraw(search.value.trim()), 350); });
+    const redraw = async (nq) => { try { await invites(box, nq); const s = box.querySelector('input[type=search]'); s?.focus(); s?.setSelectionRange(s.value.length, s.value.length); } catch (e) { say(e); } };
+    const row = (x) => el('tr', { class: 'iv-row' },
+      el('td', {}, el('b', {}, x.name), x.email ? el('div', { class: 'muted small', dir: 'ltr' }, x.email) : null),
+      el('td', {}, el('span', { class: 'iv-status', 'data-s': x.status }, IV[x.status]),
+        el('div', { class: 'muted small' }, x.status === 'redeemed' ? `${x.used_name || x.used_by} · ${day(x.used_at)}` : x.status === 'sent' ? `עד ${day(x.exp)}` : x.status === 'cancelled' ? day(x.cancelled_at) : day(x.exp))),
+      el('td', { class: 'num muted small' }, day(x.created_at)),
+      el('td', {}, x.status === 'sent' ? [
+        btn('העתקה', () => copy(x.url)), ' ',
+        el('a', { class: 'btn small', href: wa(x), target: '_blank', rel: 'noopener' }, 'וואטסאפ'), ' ',
+        btn('ביטול', async () => { await call(`/api/admin/invites/${x.id}/cancel`, { method: 'POST' }); toast('ההזמנה בוטלה'); redraw(search.value.trim()); }, 'btn small danger', `לבטל את ההזמנה של ${x.name}? הקישור יפסיק לעבוד מיד.`),
+      ] : ''));
+    box.replaceChildren(section('invites-s', 'הזמנות',
+      el('p', { class: 'muted small' }, 'הזמנה אישית למישהו מחוץ למשפחה: הוא נכנס עם Google למקום משלו באוהל, עם קרדיט התחלתי לעוזר החכם, ולא רואה שום דבר של המשפחה. כל קישור עובד פעם אחת. אם תכתבו מייל, רק החשבון הזה יוכל להיכנס בו.'),
+      el('div', { class: 'ad-tiles' }, Object.entries(IV).map(([k, t]) => el('div', { class: 'ad-tile' }, el('small', {}, t), el('b', {}, d.count[k] || 0)))),
+      el('form', { class: 'ad-form', onsubmit: async (e) => {
+        e.preventDefault();
+        try {
+          const r = await call('/api/admin/invites', { body: { name: name.value, email: email.value.trim() || undefined, days: +days.value } });
+          const x = { name: name.value.trim(), url: r.url };
+          await invites(box, q);
+          box.querySelector('.iv-made')?.replaceChildren(el('p', {}, `ההזמנה של ${x.name} מוכנה:`), el('p', { class: 'iv-link', dir: 'ltr' }, r.url),
+            btn('העתקת הקישור', () => copy(r.url), 'btn small primary'), ' ', el('a', { class: 'btn small', href: wa(x), target: '_blank', rel: 'noopener' }, 'שליחה בוואטסאפ'));
+        } catch (err) { say(err); }
+      } }, el('label', {}, 'למי', name), el('label', {}, 'מייל (לא חובה)', email), el('label', {}, 'פתוחה', days), el('button', { class: 'btn primary' }, 'הזמנה חדשה')),
+      made,
+      el('label', { class: 'iv-search' }, 'חיפוש', search),
+      people.members.length ? el('div', { class: 'iv-people' }, el('p', { class: 'small' }, 'כבר באוהל:'),
+        el('ul', { class: 'small' }, people.members.slice(0, 8).map((m) => el('li', {}, `${m.he_name || m.name || ''} `, el('bdi', { dir: 'ltr', class: 'muted' }, m.email))))) : null,
+      d.invites.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ['למי', 'מצב', 'נוצרה', ''].map((h, i) => el('th', { class: i === 2 ? 'num' : '' }, h)))),
+        el('tbody', {}, d.invites.map(row))))
+        : el('p', { class: 'muted small' }, q ? 'אין הזמנות שמתאימות לחיפוש.' : 'עוד אין הזמנות.')));
+  }
+
   /* ---------- messages to everyone, or to one member ---------- */
   Object.assign(ERR, { not_member: 'הכתובת הזו לא ברשימת החברים.' });
   async function messages(box) {
@@ -692,7 +745,7 @@
   async function log(box) {
     const { log: list } = await call('/api/admin/audit');
     const ACT = { gift: 'נתן מתנה', 'stay:on': 'השאיר פתוח לעבודה', 'stay:off': 'ביטל השארה פתוחה', 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
-      'feature:on': 'פתח תכונה', 'feature:off': 'סגר תכונה', 'super:add': 'נתן הרשאת־על', 'super:remove': 'ביטל הרשאת־על' };
+      'feature:on': 'פתח תכונה', 'feature:off': 'סגר תכונה', 'super:add': 'נתן הרשאת־על', 'super:remove': 'ביטל הרשאת־על', invite: 'הזמין מבחוץ', 'invite:cancel': 'ביטל הזמנה' };
     box.replaceChildren(section('log-s', 'יומן הדלת',
       list.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('tbody', {}, list.map((r) => el('tr', {},
         el('td', { class: 'num' }, day(r.at)), el('td', {}, ACT[r.action] || r.action), el('td', {}, r.detail || ''),

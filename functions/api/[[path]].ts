@@ -40,6 +40,7 @@ import * as sefaria from '../../server/sefaria';
 import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
 import * as memberAdmin from '../../server/member-admin';
+import { mayRemove } from '../../server/member-admin-rules';
 import { ensureSchema } from '../../server/schema';
 import * as vault from '../../server/vault';
 import * as familyProfile from '../../server/family-profile';
@@ -142,18 +143,22 @@ route('POST', '/api/members', async (ctx) => {
   const email = (b.email || '').trim().toLowerCase();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, 'Invalid email');
   const household = (b.household || 'family').trim().slice(0, 40) || 'family';
-  const role = b.role === 'owner' ? 'owner' : 'member';
-  await ctx.env.DB.prepare(
-    `INSERT INTO members (email, name, he_name, household, role, created_at) VALUES (?, ?, ?, ?, ?, ?)
-     ON CONFLICT(email) DO UPDATE SET name = COALESCE(excluded.name, name), he_name = COALESCE(excluded.he_name, he_name), household = excluded.household, role = excluded.role`,
+  // the manager role only for an OWNER_EMAIL address; an existing member is never changed here (edits: /api/admin/people)
+  const role = b.role === 'owner' && admin.owners(ctx.env).has(email) ? 'owner' : 'member';
+  const res = await ctx.env.DB.prepare(
+    `INSERT INTO members (email, name, he_name, household, role, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO NOTHING`,
   ).bind(email, b.name?.trim() || null, he, household, role, Date.now()).run();
+  if (!res.meta.changes) throw new HttpError(409, 'already_member');
   return json({ ok: true });
 });
 route('DELETE', '/api/members/:email', async (ctx) => {
   const me = requireOwner(ctx);
   await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
   const email = decodeURIComponent(ctx.params.email).toLowerCase();
-  if (email === me.email) throw new HttpError(400, 'You cannot remove yourself');
+  const target = await ctx.env.DB.prepare('SELECT role FROM members WHERE email = ?').bind(email).first<{ role: string }>();
+  const ownerCount = (await ctx.env.DB.prepare("SELECT COUNT(*) AS n FROM members WHERE role = 'owner'").first<{ n: number }>())?.n || 0;
+  const no = mayRemove(email, me.email, admin.owners(ctx.env), ownerCount, target?.role === 'owner');
+  if (no) throw new HttpError(400, no);
   await ctx.env.DB.batch([
     ctx.env.DB.prepare('DELETE FROM members WHERE email = ?').bind(email),
     ctx.env.DB.prepare('DELETE FROM sessions WHERE email = ?').bind(email),

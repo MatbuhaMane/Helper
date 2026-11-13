@@ -5,6 +5,7 @@ import { aiJson } from './ai';
 import { Ctx, Env, HttpError, body, json, requireUser, uid } from './core';
 import { fetchPage, readable } from './web';
 import { draftFromPage, recipeFromJsonLd, recipeFromPage } from './recipe-parse';
+import { householdLists } from './grocery-lists';
 
 /* ---------------- groceries ---------------- */
 
@@ -19,11 +20,11 @@ const INITIAL: [string, string][] = [
 ];
 
 interface ItemRow {
-  id: string; name: string; cat: string; checked: number; qty: number; src: string | null; updated_at: number; deleted: number;
+  id: string; name: string; cat: string; checked: number; qty: number; src: string | null; updated_at: number; deleted: number; list?: string | null;
 }
 
 function toItem(r: ItemRow) {
-  return { id: r.id, name: r.name, cat: r.cat, checked: !!r.checked, qty: r.qty, from: r.src || undefined, updatedAt: r.updated_at, deleted: !!r.deleted };
+  return { id: r.id, name: r.name, cat: r.cat, checked: !!r.checked, qty: r.qty, from: r.src || undefined, updatedAt: r.updated_at, deleted: !!r.deleted, list: r.list || null };
 }
 
 async function seedIfNew(env: Env, household: string) {
@@ -42,9 +43,10 @@ export async function listGroceries(ctx: Ctx) {
   await seedIfNew(ctx.env, u.household);
   const since = Number(ctx.url.searchParams.get('since') || 0);
   const { results } = await ctx.env.DB.prepare(
-    'SELECT id, name, cat, checked, qty, src, updated_at, deleted FROM grocery_items WHERE household = ? AND updated_at > ? ORDER BY updated_at',
+    'SELECT id, name, cat, checked, qty, src, updated_at, deleted, list FROM grocery_items WHERE household = ? AND updated_at > ? ORDER BY updated_at',
   ).bind(u.household, since).all<ItemRow>();
-  return json({ items: results.map(toItem), now: Date.now() });
+  // the named lists come whole each time (a few rows); an item of a deleted list stays, hidden, until the list is back
+  return json({ items: results.map(toItem), lists: await householdLists(ctx.env, u), now: Date.now() });
 }
 
 const OpSchema = z.object({
@@ -54,6 +56,7 @@ const OpSchema = z.object({
       item: z.object({
         id: z.string().min(1).max(40), name: z.string().min(1).max(200), cat: z.string().max(20),
         checked: z.boolean(), qty: z.number().int().min(1).max(999), from: z.string().max(200).optional(),
+        list: z.string().max(40).nullable().optional(),   // a named list (grocery-lists.ts); none: the main list
       }),
     }),
     z.object({ op: z.literal('delete'), id: z.string().min(1).max(40) }),
@@ -74,11 +77,11 @@ export async function applyGroceryOps(ctx: Ctx) {
     }
     const i = o.item;
     return db.prepare(
-      `INSERT INTO grocery_items (household, id, name, cat, checked, qty, src, updated_at, updated_by, deleted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+      `INSERT INTO grocery_items (household, id, name, cat, checked, qty, src, updated_at, updated_by, deleted, list)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
        ON CONFLICT(household, id) DO UPDATE SET name = excluded.name, cat = excluded.cat, checked = excluded.checked,
-         qty = excluded.qty, src = excluded.src, updated_at = excluded.updated_at, updated_by = excluded.updated_by, deleted = 0`,
-    ).bind(u.household, i.id, i.name, i.cat, i.checked ? 1 : 0, i.qty, i.from || null, at, u.email);
+         qty = excluded.qty, src = excluded.src, updated_at = excluded.updated_at, updated_by = excluded.updated_by, deleted = 0, list = excluded.list`,
+    ).bind(u.household, i.id, i.name, i.cat, i.checked ? 1 : 0, i.qty, i.from || null, at, u.email, i.list || null);
   });
   if (stmts.length) await db.batch(stmts);
   return json({ ok: true, now: t });
@@ -196,8 +199,8 @@ export function normalizeName(str: string): string {
 export async function currentGroceries(env: Env, household: string) {
   await seedIfNew(env, household);
   const { results } = await env.DB.prepare(
-    'SELECT id, name, cat, checked, qty, src, updated_at, deleted FROM grocery_items WHERE household = ? AND deleted = 0',
-  ).bind(household).all<ItemRow>();
+    'SELECT id, name, cat, checked, qty, src, updated_at, deleted FROM grocery_items WHERE household = ? AND deleted = 0 AND list IS NULL',
+  ).bind(household).all<ItemRow>();   // the main list: what the daemon, the fridge and the recipes read and add to
   return results.map(toItem);
 }
 

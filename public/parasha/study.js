@@ -86,7 +86,7 @@
       el('div', { class: 'rs-tools-head' }, tabsBar,
         el('button', { class: 'rs-min', 'aria-label': 'מזעור הכלים', title: 'מזעור', onclick: minimize }, el('span', { 'aria-hidden': 'true' }, '–'))),
       pane);
-    const shut = () => { root.remove(); document.body.classList.remove('modal-open'); };
+    const shut = () => { root.remove(); document.body.classList.remove('modal-open'); document.removeEventListener('selectionchange', onMark); };
     Object.assign(now, { shut, minimize });
     const close = async () => {
       shut();
@@ -204,6 +204,53 @@
     });
     textBox.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('w')) { e.preventDefault(); e.target.click(); } });
 
+    /* Marked text in the reading (the owner, 2026-11-14): the only place left with "שמירה כפתק". A bar at the bottom of
+       the screen, clear of the phone's own copy menu above the selection, offers saving it as a note (with a link back
+       to the book, chapter and verse) and copying it. */
+    const markBar = el('div', { class: 'rs-markbar', role: 'toolbar', 'aria-label': 'הטקסט המסומן', hidden: true });
+    root.append(markBar);
+    let marked = null;   // { text, from, to } – the verses' indexes
+    const verseAt = (node) => (node?.nodeType === 1 ? node : node?.parentElement)?.closest('.rs-v');
+    const rangeName = (a, b) => {
+      const book = root.querySelector('.rs-ref').textContent.split(' ')[0];
+      const va = S.verses[a], vb = S.verses[b];
+      if (!va) return book;
+      return `${book} ${heNum(va.ch)}, ${heNum(va.v)}` + (b > a ? (vb.ch === va.ch ? `–${heNum(vb.v)}` : ` – ${heNum(vb.ch)}, ${heNum(vb.v)}`) : '');
+    };
+    function onMark() {
+      const sel = getSelection();
+      const inside = sel.rangeCount && !sel.isCollapsed && textBox.contains(sel.anchorNode) && textBox.contains(sel.focusNode);
+      const text = inside ? sel.toString().replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : '';
+      if (!text) { if (marked) { marked = null; markBar.hidden = true; } return; }
+      const ia = +(verseAt(sel.anchorNode)?.dataset.i ?? -1), ib = +(verseAt(sel.focusNode)?.dataset.i ?? -1);
+      const from = Math.max(0, Math.min(ia, ib)), to = Math.max(ia, ib, from);
+      marked = { text, from, to };
+      markBar.replaceChildren(
+        el('span', { class: 'rs-mark-ref' }, rangeName(from, to)),
+        el('button', { type: 'button', class: 'btn small', onclick: copyMarked }, '📋 העתקה'),
+        el('button', { type: 'button', class: 'btn small primary', onclick: (e) => saveMarked(e.currentTarget) }, '📝 שמירה כפתק'));
+      markBar.hidden = false;
+    }
+    document.addEventListener('selectionchange', onMark);
+    async function copyMarked() {
+      if (!marked) return;
+      const text = `${marked.text}\n(${rangeName(marked.from, marked.to)})`;
+      try { await navigator.clipboard.writeText(text); toast('הועתק'); } catch (_) { toast('ההעתקה לא הצליחה – נסו מתפריט המערכת'); }
+    }
+    async function saveMarked(btn) {
+      if (!marked) return;
+      const m = marked, name = rangeName(m.from, m.to), first = S.verses[m.from];
+      const back = new URL('/parasha/', location.origin);
+      back.searchParams.set('study', S.ref);
+      if (first) back.searchParams.set('v', first.ref);
+      btn.disabled = true;
+      try {
+        await H.api('/api/notes', { body: { title: name, body: `${m.text}\n\n— ${name}`, source: { url: back.pathname + back.search, title: 'פרשה: ' + name } } });
+        toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
+        getSelection().removeAllRanges();
+      } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
+    }
+
     function mark(force) {
       textBox.querySelectorAll('.rs-v.on, .w.on').forEach((n) => n.classList.remove('on'));
       textBox.querySelector(`.rs-v[data-i="${S.sel}"]`)?.classList.add('on');
@@ -252,6 +299,18 @@
           el('div', { class: 'rs-he-facts' }, x.root ? el('span', {}, el('small', {}, 'שורש '), el('b', {}, x.root)) : '', x.grammar ? el('span', {}, el('small', {}, 'צורה '), x.grammar) : '',
             x.lang && x.lang !== 'עברית' ? el('span', {}, el('small', {}, 'לשון '), x.lang) : ''),
           x.note ? el('p', { class: 'rs-fine' }, x.note) : '',
+          el('button', { class: 'rs-tr-b rs-word-save', onclick: async (e) => {
+            const btn = e.currentTarget;
+            btn.disabled = true;
+            const lines = [`${word} (${root.querySelector('.rs-ref').textContent.split(' ')[0]} ${heNum(verse.ch)}:${heNum(verse.v)})`, '', x.meaning,
+              x.root ? 'שורש: ' + x.root : '', x.grammar ? 'צורה: ' + x.grammar : '', x.lang && x.lang !== 'עברית' ? 'לשון: ' + x.lang : '', x.note || '',
+              concBox.textContent ? concBox.textContent.replace(' · לכל המופעים', '') : '', '', 'הפסוק: ' + verse.he.replace(TEAMIM, '')].filter((l, i, a) => l || a[i - 1]);
+            try {
+              await H.api('/api/notes', { body: { title: `${word} – פירוש מילה`, body: lines.join('\n'), source: { url: location.href, title: 'עיון: ' + verse.ref } } });
+              btn.textContent = '✓ נשמר בפתקים';
+              toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
+            } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
+          } }, '📝 שמירה כפתק'),
           aiNote(() => ai().then(offer)));
       }).catch((e) => (e?.code === 'ai_credit_needed' ? ai().then((st) => offer({ ...st, out: true })) : heBox.replaceChildren(el('p', { class: 'muted' }, 'לא הצלחתי לפרש בעברית כרגע.')))); };
       ai().then((st) => (st.free ? explain() : offer(st)));
@@ -621,9 +680,19 @@
         a.terms.length ? el('div', { class: 'rs-terms' }, a.terms.map((t) => el('span', { class: 'rs-term' }, el('b', { dir: 'auto' }, t.word), t.translit ? el('i', { dir: 'ltr' }, ' ' + t.translit) : '', t.gloss ? ' – ' + t.gloss : '', t.lang ? el('small', {}, ' (' + t.lang + ')') : ''))) : '',
         a.sources.length ? el('details', { class: 'rs-src-list', open: true }, el('summary', {}, `מקורות (${a.sources.length})`), srcList) : el('p', { class: 'muted' }, 'לא צוינו מקורות.'),
         el('div', { class: 'rs-a-acts' },
+          el('button', { class: 'btn', onclick: (e) => saveNote(e.currentTarget, q, a, focus) }, '📝 שמירה כפתק'),
           el('button', { class: 'btn ghost', onclick: () => { askBox.value = q; card.remove(); S.talk = S.talk.filter((t) => t.q !== q); send(true); } }, '↻ תשובה חדשה'),
           el('small', { class: 'muted' }, a.cached ? 'מהזיכרון' : a.by === 'gemini' ? 'Gemini' : '')),
         a.followups.length ? el('div', { class: 'rs-sugg' }, a.followups.map((f) => el('button', { class: 'rs-chip', onclick: () => { askBox.value = f; send(); } }, f))) : '');
+    }
+    async function saveNote(btn, q, a, focus) {
+      btn.disabled = true;
+      const lines = [q, '', a.title, '', a.answer, '', ...a.terms.map((t) => `${t.word} (${t.lang}${t.translit ? ', ' + t.translit : ''}) – ${t.gloss}`), '', 'מקורות:', ...a.sources.map((s, i) => `[${s.n || i + 1}] ${s.sbl}${s.url ? ' ' + s.url : ''}`)];
+      try {
+        await H.api('/api/notes', { body: { title: a.title || q.slice(0, 80), body: lines.join('\n').replace(/\n{3,}/g, '\n\n'), source: { url: location.href, title: 'עיון: ' + (label || ref) + (focus ? ' · ' + focus : '') } } });
+        toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; });
+        btn.textContent = '✓ נשמר';
+      } catch (_) { btn.disabled = false; toast('השמירה לא הצליחה'); }
     }
 
     S.tab = 'links';

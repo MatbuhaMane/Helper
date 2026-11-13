@@ -116,6 +116,8 @@
     }
 
     // a long press (a finger, or a held mouse button) opens the mode; a right click on a computer too
+    let finger = false;                 // the last press was a finger or a pen (its long press also fires a contextmenu)
+    grid.addEventListener('pointerdown', (e) => { finger = e.pointerType === 'touch' || e.pointerType === 'pen'; }, true);
     grid.addEventListener('pointerdown', (e) => {
       if (on || P.locked || e.button > 0) return;
       const t = e.target.closest('.app'); if (!t) return;
@@ -124,7 +126,17 @@
     const cancelPress = (e) => { if (press && (!e || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8)) { clearTimeout(press.timer); press = null; } };
     grid.addEventListener('pointermove', cancelPress);
     grid.addEventListener('pointerup', () => cancelPress()); grid.addEventListener('pointercancel', () => cancelPress());
-    folderEl.addEventListener('contextmenu', (e) => { if (P.locked) return; e.preventDefault(); if (on) leave(); else enter(); });
+    // a right click toggles the mode; a finger's long press only opens it, so a press held a little longer (or a long press
+    // on a tile while arranging, to drag it) never closes it (the owner, 2026-11-14)
+    folderEl.addEventListener('contextmenu', (e) => {
+      if (on && grid.contains(e.target)) e.preventDefault();
+      if (P.locked) return;
+      e.preventDefault();
+      const touch = finger || e.pointerType === 'touch' || e.pointerType === 'pen';
+      if (on) { if (!touch) leave(); return; }
+      if (press) { clearTimeout(press.timer); press = null; grid.dataset.justEntered = '1'; }
+      enter();
+    });
     // while arranging, a tile is not a link; the tap that ends a long press does not open it either
     grid.addEventListener('click', (e) => {
       if (!on && !grid.dataset.justEntered) return;

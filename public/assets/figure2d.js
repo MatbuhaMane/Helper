@@ -25,6 +25,20 @@
     owl: { name: 'ינשוף', kind: 'generic', neck: 0.57, pivot: [0.5, 0.55], eyes: [[0.33, 0.33], [0.67, 0.33]], eyeR: 0.085, mouth: [0.5, 0.435], mouthW: 0.07, mouthFill: '#c8862a', cheek: null },
     hedgehog: { name: 'קיפוד', kind: 'generic', neck: 0.53, pivot: [0.5, 0.5], eyes: [[0.4, 0.38], [0.6, 0.38]], eyeR: 0.05, mouth: [0.5, 0.465], mouthW: 0.09, cheek: '#eaa092' },
     lamb: { name: 'טלה', kind: 'generic', neck: 0.53, pivot: [0.515, 0.5], eyes: [[0.42, 0.385], [0.61, 0.385]], eyeR: 0.05, mouth: [0.515, 0.465], mouthW: 0.09, cheek: '#eaa092' },
+    // people and characters (vision batch 6; likeness notes in the historic-figures skill). tier: free | paid; tags: what
+    // settings may leave out (horror). sway < 1: a gentler nod where a beard, a prop or a friend crosses the neck.
+    ibnsina: { name: 'אבן סינא', kind: 'person', tier: 'free', neck: 0.56, pivot: [0.5, 0.54], eyes: [[0.38, 0.305], [0.62, 0.305]], eyeR: 0.042, mouth: [0.51, 0.43], mouthW: 0.06, cheek: null, sway: 0.7 },
+    rambam: { name: 'הרמב"ם', kind: 'person', tier: 'free', neck: 0.57, pivot: [0.52, 0.55], eyes: [[0.41, 0.33], [0.63, 0.33]], eyeR: 0.042, mouth: [0.52, 0.47], mouthW: 0.06, cheek: null, sway: 0.7 },
+    newton: { name: 'ניוטון', kind: 'person', tier: 'free', neck: 0.53, pivot: [0.53, 0.5], eyes: [[0.42, 0.32], [0.64, 0.32]], eyeR: 0.042, mouth: [0.53, 0.46], mouthW: 0.08, cheek: '#e8a08a', sway: 0.8 },
+    juha: { name: "ג'וחא", kind: 'person', tier: 'free', neck: 0.55, pivot: [0.57, 0.53], eyes: [[0.46, 0.33], [0.68, 0.33]], eyeR: 0.042, mouth: [0.58, 0.44], mouthW: 0.06, cheek: '#e8a08a', sway: 0.5 },
+    hershele: { name: 'הרשל׳ה', kind: 'person', tier: 'free', neck: 0.56, pivot: [0.49, 0.54], eyes: [[0.38, 0.335], [0.6, 0.335]], eyeR: 0.042, mouth: [0.495, 0.445], mouthW: 0.06, cheek: '#e8a08a', sway: 0.6 },
+    scheherazade: { name: 'שחרזאדה', kind: 'person', tier: 'free', neck: 0.43, pivot: [0.48, 0.41], eyes: [[0.385, 0.285], [0.575, 0.285]], eyeR: 0.04, mouth: [0.48, 0.37], mouthW: 0.07, cheek: '#e89a86', sway: 0.6 },
+    alibaba: { name: 'עלי באבא', kind: 'person', tier: 'free', neck: 0.57, pivot: [0.52, 0.55], eyes: [[0.4, 0.38], [0.63, 0.38]], eyeR: 0.042, mouth: [0.52, 0.52], mouthW: 0.06, cheek: null, sway: 0.6 },
+    peterpan: { name: 'פיטר פן', kind: 'person', tier: 'free', neck: 0.55, pivot: [0.46, 0.53], eyes: [[0.36, 0.37], [0.56, 0.37]], eyeR: 0.048, mouth: [0.46, 0.47], mouthW: 0.08, cheek: '#ea9a86' },
+    maryshelley: { name: 'מרי שלי', kind: 'person', tier: 'paid', neck: 0.46, pivot: [0.5, 0.44], eyes: [[0.39, 0.3], [0.61, 0.3]], eyeR: 0.042, mouth: [0.5, 0.4], mouthW: 0.07, cheek: '#e89a86', sway: 0.7 },
+    leonardo: { name: 'לאונרדו דה וינצ׳י', kind: 'person', tier: 'paid', neck: 0.5, pivot: [0.52, 0.48], eyes: [[0.41, 0.335], [0.63, 0.335]], eyeR: 0.04, mouth: [0.52, 0.465], mouthW: 0.06, cheek: null, sway: 0.35 },
+    cleopatra: { name: 'קליאופטרה', kind: 'person', tier: 'paid', neck: 0.44, pivot: [0.52, 0.42], eyes: [[0.42, 0.3], [0.62, 0.3]], eyeR: 0.042, mouth: [0.52, 0.39], mouthW: 0.07, cheek: '#d98a7a', sway: 0.7 },
+    dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', tags: ['horror'], neck: 0.52, pivot: [0.51, 0.5], eyes: [[0.405, 0.29], [0.62, 0.29]], eyeR: 0.04, mouth: [0.51, 0.455], mouthW: 0.06, cheek: null, eyeColor: '#3a1c1c', sway: 0.35 },
   };
   const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   const NS = 'http://www.w3.org/2000/svg';
@@ -109,6 +123,7 @@
       if (hop > 0) hop = Math.max(0, hop - dt * 2.2);
       body.style.transform = `translateY(${-lift}%) scale(${1 + breath * 0.012}, ${1 - breath * 0.012 + (hop > 0.85 ? -0.06 : 0)})`;
       let target = still() ? 0 : breath * 1.6 + (now < nodUntil ? Math.sin((nodUntil - now) / 1000 * 2 * Math.PI * 2.2) * 9 : 0) + (mood === 'think' ? 7 : 0) + (mood === 'sleep' ? 12 : 0);
+      target *= (cfg.sway ?? 1);   // a long beard, a prop or a friend across the neck: a gentler nod, so the cut never shows
       headV += ((target - headA) * 90 - headV * 11) * dt; headA += headV * dt;
       head.style.transform = `translateY(${(-lift - breath * 0.6).toFixed(2)}%) rotate(${headA.toFixed(2)}deg)`;
       // the eyes: blink now and then; look toward the pointer (or wander a little)
@@ -161,7 +176,7 @@
       destroy() { stop(); io.disconnect(); document.removeEventListener('visibilitychange', vis); removeEventListener('pointermove', onMove); box.remove(); },
     };
   }
-  const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, unlock: f.unlock || null, season: f.season || null }));
+  const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, tier: f.tier || 'free', tags: f.tags || [], unlock: f.unlock || null, season: f.season || null }));
   // the default companion for every family but the owner's (who has Ibn Ezra): the owner's choice, 2026-11-13
   const DEFAULT = 'fennec';
   window.Figure2D = { mount, list, FIGURES, DEFAULT };

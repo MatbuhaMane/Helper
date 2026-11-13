@@ -120,9 +120,9 @@
 .wz-friend { transition: opacity .3s ease; }
 #wz[data-step="helper"] .wz-friend { opacity: 0; }
 .wz-alert { --s: 2.4; display: grid; place-items: center; inline-size: calc(44px * var(--s)); block-size: calc(44px * var(--s)); color: var(--alert, #cc5a46); }
-.wz-alert::after { content: ""; inline-size: calc(24px * var(--s)); block-size: calc(24px * var(--s)); background: currentColor; animation: wz-breathe 2.4s ease-in-out infinite;
+.wz-alert::after { content: ""; inline-size: calc(24px * var(--s)); block-size: calc(24px * var(--s)); background: currentColor; animation: wz-tri 2.4s ease-in-out infinite;
   -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
-@keyframes wz-breathe { 50% { scale: 1.07; } }
+@keyframes wz-tri { 50% { scale: 1.07; } }
 .wz-tent { display: block; inline-size: min(100%, 220px); block-size: auto; }   /* האוהל slide: the 700px picture never sets the slide's width (it was half off a phone) */
 @media (min-width: 700px) {
   .wz-step:has(.wz-intro) { inline-size: min(100%, 640px); }

@@ -40,6 +40,10 @@
 @media (max-width: 420px) { .hol-band { border-radius: var(--radius-lg); padding: 10px 14px; } }
 
 /* ───────────── The calm Shabbat screen ───────────── */
+/* While it is up (html[data-shabbat], .shb a direct child of body): the page behind neither scrolls nor shows,
+   and toasts and messages stay hidden. Only the emergency sent screen (.sos-screen) may come over it. */
+html[data-shabbat] { overflow: hidden; }
+html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; }
 .shb { --bg: var(--shb-bg); --card: var(--shb-bg); --text: var(--shb-ink); --muted: var(--shb-muted); --line: var(--shb-line);
   position: fixed; inset: 0; z-index: calc(var(--z-sheet, 60) + 2); overflow-y: auto; overscroll-behavior: contain;
   background: radial-gradient(60% 45% at 50% 22%, var(--shb-glow), transparent 70%), var(--shb-bg); color: var(--shb-ink);

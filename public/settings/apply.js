@@ -66,4 +66,22 @@
   applySettings();
   // the same settings changed on another device (the prefs arrive from the server) or on this page
   addEventListener('helper:prefs', (e) => { if (['access', 'look', 'me'].includes(e.detail)) applySettings(); });
+
+  /* discovery (docs/ai/social-plan.md, slice A): this page's tool is noted on the server (which tool, never what is in
+     it) – once a day for each page on this device. A tool found for the first time is told on the page, and raised as
+     'helper:discovered' for whoever wants to celebrate it (design, the companion). */
+  try {
+    const page = location.pathname, day = new Date().toISOString().slice(0, 10), key = 'helper.visit.' + page;
+    if (page !== '/' && localStorage.getItem(key) !== day) {
+      fetch('/api/visits', { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: page }) })
+        .then((r) => (r.ok ? r.json() : null)).then((j) => {
+          if (!j) return;
+          try { localStorage.setItem(key, day); } catch (_) { /* once a load, then */ }
+          if (!j.fresh) return;
+          dispatchEvent(new CustomEvent('helper:discovered', { detail: j }));
+          if (j.badge === 'scout') H.toast?.(`קיבלת badge חדש: סייר. גילית ${j.found} מתוך ${j.total} כלים`);
+          else if (j.found) H.toast?.(`כלי חדש! גילית ${j.found} מתוך ${j.total} כלים`);
+        }).catch(() => { /* offline: next time */ });
+    }
+  } catch (_) { /* no storage: nothing to note */ }
 })();

@@ -83,6 +83,11 @@ LCP has not moved yet. The causes:
       keep him.
     - Tested as a test user: the lamb was given, no AI call before the tap, and the lamb introduced itself in one sentence.
 
+- **Vision batch 8 (the social layer, the first minute)**: the plan is in `docs/ai/social-plan.md`, with seven slices.
+  - **Slice A, discovery, is done**: `tool_visits`, `/api/visits` and `/api/discover`; "גילית N מתוך 19 כלים", and the
+    "סייר" badge at 10 tools; 15 tests.
+  - Checked as a test user: the badge came exactly at the 10th tool, and a page load notes the visit by itself.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.

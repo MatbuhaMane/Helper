@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>נעילות – אב טיפוס</title>
+  <!-- The locks (docs/decisions.md, "Locks and privacy"): the padlock in the menu and its move, the lock screen, the window
+       on the first visit to the tree, and the "פרטיות ואבטחה" section. Serve from the dev server (copy to public/ for a
+       moment). The code in this prototype is 1234; the passkey key always succeeds. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/settings/settings.css">
+  <style>body { padding: 0 16px; } .demo-bar { display: flex; align-items: center; gap: 8px; padding-block: 12px; border-block-end: 1px solid var(--line); }
+    .demo-bar b { margin-inline-end: auto; } .demo-acts { display: flex; flex-wrap: wrap; gap: 8px; padding-block: 14px; }</style>
+</head>
+<body>
+<header class="demo-bar"><b>האוהל</b><button class="pl-btn" id="padBtn" type="button" aria-label="נעילת האפליקציה"></button></header>
+<div class="demo-acts"><button class="btn" id="showWarn" type="button">החלונית בכניסה הראשונה לעץ</button><button class="btn" id="showSet" type="button">הגדרת קוד חדש</button></div>
+<main class="st">
+  <section class="st-sec" id="privacy" aria-labelledby="privacy-h">
+    <h2 id="privacy-h">פרטיות ואבטחה</h2>
+    <div class="st-field">
+      <span class="st-label">נעילת האפליקציה</span>
+      <div class="st-choices" role="radiogroup" aria-label="נעילת האפליקציה">
+        <button class="chip" role="radio" aria-checked="false" type="button">כבויה</button>
+        <button class="chip" role="radio" aria-checked="true" type="button">בקוד</button>
+        <button class="chip" role="radio" aria-checked="false" type="button">בטביעת אצבע</button>
+      </div>
+      <p class="muted small" style="margin:0">כמו בטלגרם: מנעול בתפריט, והאפליקציה ננעלת גם מעצמה.</p>
+    </div>
+    <div class="st-field">
+      <span class="st-label">ננעלת מעצמה אחרי</span>
+      <div class="st-choices" role="radiogroup" aria-label="ננעלת מעצמה אחרי">
+        <button class="chip" role="radio" aria-checked="false" type="button">דקה</button>
+        <button class="chip" role="radio" aria-checked="true" type="button">5 דקות</button>
+        <button class="chip" role="radio" aria-checked="false" type="button">15 דקות</button>
+        <button class="chip" role="radio" aria-checked="false" type="button">שעה</button>
+      </div>
+    </div>
+    <div class="st-field"><label class="st-switch"><input type="checkbox" checked> לנעול גם את עץ המשפחה</label><p class="muted small" style="margin:0">בכניסה לעץ יתבקש הקוד או טביעת האצבע.</p></div>
+    <div class="st-code"><span class="pl" id="codePl"></span><b>הקוד מוגדר</b><span>4 ספרות</span><button class="btn" type="button">לשנות קוד</button><button class="lk-forgot" type="button">שכחתי את הקוד</button></div>
+    <div class="st-field">
+      <span class="st-label">רמת פרטיות</span>
+      <div class="st-choices" role="radiogroup" aria-label="רמת פרטיות" id="levels">
+        <button class="chip" role="radio" aria-checked="true" type="button" data-level="normal">רגילה</button>
+        <button class="chip" role="radio" aria-checked="false" type="button" data-level="low">נמוכה – הכל פתוח</button>
+      </div>
+      <div class="st-warn" role="note" id="lowWarn" hidden><p><b>לא מומלץ.</b> ברמה נמוכה אין נעילה לאפליקציה ולא לעץ: מי שמחזיק את המכשיר פתוח רואה את עץ המשפחה ואת הרשימות שלך.</p></div>
+    </div>
+    <p class="st-safe"><span class="pl" id="safePl"></span><span>בכל רמה, מסמכים מוגבלים, פרטים אישיים, מחיקות, גיבויים וחיבור עצים נשארים מאחורי טביעת אצבע.</span></p>
+  </section>
+</main>
+<div id="modal" class="modal" hidden><div class="modal-backdrop" data-close></div><div class="modal-glass" role="dialog" aria-modal="true"><button class="modal-close" data-close aria-label="סגור">✕</button><div id="modalBody"></div></div></div>
+<script src="/assets/lock.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+  const pl = Lock.padlock('open'); $('padBtn').append(pl);
+  $('codePl').replaceWith(Object.assign(Lock.padlock('closed'), { id: 'codePl' }));
+  $('safePl').replaceWith(Lock.padlock('closed'));
+  const unlock = () => {
+    let tries = 0;
+    const s = Lock.screen({ who: 'שם ומשפחה', passkey: true,
+      onCode: async (c) => { await new Promise((r) => setTimeout(r, 250)); if (c === '1234') return { ok: true }; tries++; return tries >= 5 ? { ok: false, msg: 'יותר מדי ניסיונות. אפשר לנסות שוב בעוד 15 דקות.', wait: true } : { ok: false, msg: `הקוד לא נכון. נשארו ${5 - tries} ניסיונות לפני הפסקה.` }; },
+      onPasskey: async () => ({ ok: true }), onForgot: () => alert('יציאה, וכניסה מחדש עם Google') });
+    s.done.then(() => { pl.dataset.state = 'open'; });
+  };
+  $('padBtn').onclick = async () => { await Lock.close(pl); unlock(); };
+  const modal = $('modal');
+  modal.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) modal.hidden = true; });
+  $('showWarn').onclick = () => { $('modalBody').replaceChildren(Lock.warnCard({ onSetup: () => (modal.hidden = true), onLater: () => (modal.hidden = true), onNever: () => (modal.hidden = true) })); modal.hidden = false; };
+  $('showSet').onclick = () => Lock.screen({ title: 'קוד חדש', hint: 'בחרו 4 ספרות', onCode: async () => ({ ok: true }), onCancel: () => {} });
+  $('levels').addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (!c) return; for (const x of $('levels').children) x.setAttribute('aria-checked', String(x === c)); $('lowWarn').hidden = c.dataset.level !== 'low'; });
+</script>
+</body>
+</html>

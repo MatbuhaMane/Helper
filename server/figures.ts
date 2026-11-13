@@ -17,9 +17,11 @@ export async function owned(env: Env, email: string): Promise<string[]> {
 
 export async function list(ctx: Ctx) {
   const u = requireUser(ctx);
-  const [mine, base, special] = await Promise.all([owned(ctx.env, u.email), setting<number>(ctx.env, 'figures.price_ils'), setting<number>(ctx.env, 'figures.special_price_ils')]);
+  const [mine, base, special, shop, a] = await Promise.all([owned(ctx.env, u.email), setting<number>(ctx.env, 'figures.price_ils'), setting<number>(ctx.env, 'figures.special_price_ils'),
+    setting<boolean>(ctx.env, 'money.shop_open'), ctx.env.DB.prepare('SELECT limited FROM ai_allowance WHERE email = ?').bind(u.email).first<{ limited: number }>()]);
   // priceIls: the usual price; prices: each paid figure's own (the special ones cost more)
-  return json({ owned: mine, paid: R.PAID, priceIls: base, prices: Object.fromEntries(R.PAID.map((id) => [id, R.priceIlsOf(id, base, special)])) });
+  // shop: the owner's switch (money.shop_open) – closed, no prices or buying are shown; family: the owner's family, every paid figure is theirs for the taking
+  return json({ owned: mine, paid: R.PAID, shop, family: !a?.limited, priceIls: base, prices: Object.fromEntries(R.PAID.map((id) => [id, R.priceIlsOf(id, base, special)])) });
 }
 
 export async function buy(ctx: Ctx) {
@@ -36,6 +38,8 @@ export async function buy(ctx: Ctx) {
   ]);
   const priceIls = R.priceIlsOf(id, base, special);
   const limited = !!a?.limited;
+  // the shop closed (the owner's switch): nothing is sold; the family still takes a figure for nothing
+  if (limited && !(await setting<boolean>(env, 'money.shop_open'))) throw new HttpError(403, 'shop_closed');
   const left = limited ? (await balance(env, u.email, a!.since)).total : 0;
   const d = R.decide({ id, owned: mine, limited, left, priceUsd: ilsToUsd(priceIls, usdIls), confirm });
   if (!d.ok) throw new HttpError(d.error === 'not_enough_credit' ? 402 : 400, d.error);

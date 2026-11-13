@@ -11,6 +11,33 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The payments switch, and the family's first sign-in (master)
+The owner asked for two things.
+
+**The payments switch**
+- A switch in the owner's room hides every payment option for now: `money.shop_open`, off by default.
+- While it is off:
+  - `/api/me` and `/api/daemon/figures` return `shop: false`;
+  - a limited account cannot buy (403 shop_closed);
+  - the family still takes any paid figure for nothing (`/api/daemon/figures` returns `family: true` for them).
+
+**The family's first sign-in**
+- A member the owner added has full access from their first sign-in.
+- At that first sign-in the owner gets a message only the owner sees, with a link to /admin/#members (core.ts firstSignIn, `members.first_seen`).
+- People who used the tent before this change are only marked, and the owner gets no message about them.
+- The owner then approves them with `POST /api/members/:email/approve` (owner only, room open). Approving:
+  - sets `approved_at`;
+  - lifts any AI limit;
+  - turns on every special feature (admin.FEATURES).
+- `/api/members` returns `first_seen` and `approved_at`.
+
+**ai-features, please**
+- When `shop` is false, hide prices, buy buttons, credit packs and the links to the purchase page.
+- When `family` is true, show every paid figure as theirs to take, with no price.
+- In the room, next to each member: "התחבר/ה לראשונה" and an "אישור" button.
+
+Status: done (server).
+
 ## 2026-11-14 – Four more paid wizards, the magician redrawn, the astronomer's hair chosen (design → master, ai-features, business)
 
 The owner's word (2026-11-13), after the owner's pictures: the doll and the astronomer approved; **the magician redrawn**

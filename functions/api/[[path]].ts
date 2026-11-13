@@ -10,6 +10,7 @@ import * as join from '../../server/join';
 import * as admin from '../../server/admin';
 import * as credits from '../../server/credits';
 import * as figures from '../../server/figures';
+import { setting } from '../../server/settings';
 import { childOf } from '../../server/members';
 import { birthYear } from '../../server/figures-rules';
 import * as designImages from '../../server/design-images';
@@ -61,7 +62,8 @@ route('GET', '/api/me', async (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
   // The person's preferences come with "who am I", so every page has them before it draws anything.
   // child: under 12 by the birth year the owner set (the year itself stays private)
-  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email) });
+  return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
+    shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false) });   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);
 route('PUT', '/api/prefs/:ns', prefs.putPrefs);
@@ -70,7 +72,7 @@ route('PUT', '/api/prefs/:ns', prefs.putPrefs);
 route('GET', '/api/members', async (ctx) => {
   requireOwner(ctx);
   await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
-  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role, birth_year FROM members ORDER BY household, email').all();
+  const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household, role, birth_year, first_seen, approved_at FROM members ORDER BY household, email').all();
   return json({ members: results });
 });
 route('PUT', '/api/members/:email/name', async (ctx) => {
@@ -88,6 +90,22 @@ route('PUT', '/api/members/:email/birth-year', async (ctx) => {
   try { year = birthYear((await body<{ birth_year?: unknown }>(ctx.req)).birth_year, Date.now()); } catch { throw new HttpError(400, 'bad_year'); }
   await ctx.env.DB.prepare('UPDATE members SET birth_year = ? WHERE email = ?').bind(year, decodeURIComponent(ctx.params.email).toLowerCase()).run();
   return json({ ok: true, birth_year: year });
+});
+/** The owner approves a member (after their first sign-in, core.ts firstSignIn): full access – the AI with no limit and every
+    special feature (admin.FEATURES). Undo: mark them limited, or take a feature away, in the room. */
+route('POST', '/api/members/:email/approve', async (ctx) => {
+  const me = requireOwner(ctx);
+  await admin.requireAdmin(ctx, 'own');   // and the owner's room is open, from their own account
+  const email = decodeURIComponent(ctx.params.email).toLowerCase();
+  const m = await ctx.env.DB.prepare('SELECT email FROM members WHERE email = ?').bind(email).first();
+  if (!m) throw new HttpError(404, 'Not found');
+  const now = Date.now();
+  await ctx.env.DB.batch([
+    ctx.env.DB.prepare('UPDATE members SET approved_at = ? WHERE email = ?').bind(now, email),
+    ctx.env.DB.prepare('UPDATE ai_allowance SET limited = 0, updated_by = ?, updated_at = ? WHERE email = ?').bind(me.email, now, email),
+    ...admin.FEATURES.map((f) => ctx.env.DB.prepare('INSERT OR IGNORE INTO user_features (email, feature, by_email, created_at) VALUES (?, ?, ?, ?)').bind(email, f.key, me.email, now)),
+  ]);
+  return json({ ok: true, approved_at: now });
 });
 /** The Hebrew name the helper calls someone by: set by the family's owner (on the admin page). */
 const heName = (v: unknown) => {

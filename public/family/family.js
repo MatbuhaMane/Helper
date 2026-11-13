@@ -1083,13 +1083,19 @@
       return fig;
     }
     async function show(it, known) {
+      // a document opens in a window of its own. A phone blocks a window opened after the file's fetch (it is no longer
+      // the tap's), and silently: so the window is opened now, in the tap, and gets the file when it is here; where no
+      // window can open (blocked, or the home-screen app), the file is saved instead, which a phone shows or opens
+      const doc = it.mime === 'application/pdf' || it.mime === 'text/plain';
+      let w = null;
+      if (doc) { try { w = window.open('', '_blank'); if (w) w.opener = null; } catch (_) { w = null; } }
       try {
         const u = known || await blobUrl(it.id);
         panelBlobs.add(u);
         if (it.mime?.startsWith('image/')) H.modal(el('img', { class: 'fv-full', src: u, alt: it.title || '' }));
-        else if (it.mime === 'application/pdf' || it.mime === 'text/plain') window.open(u, '_blank', 'noopener');
+        else if (doc && w && !w.closed) w.location.href = u;
         else save(it, u);
-      } catch (e) { if (e.message !== 'locked') toast('לא הצלחתי לפתוח'); }
+      } catch (e) { try { w?.close(); } catch (_) { /* gone */ } if (e.message !== 'locked') toast('לא הצלחתי לפתוח'); }
     }
     async function save(it, known) {
       try { const u = known || await blobUrl(it.id); panelBlobs.add(u); const a = el('a', { href: u, download: it.title || 'מסמך' }); document.body.append(a); a.click(); a.remove(); }

@@ -1119,7 +1119,7 @@
       balloonText, balloonActs,
       el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
     // Folded away: a small tab with his face at the edge of the screen; a tap brings him back.
-    tab = el('button', { class: 'dm-tab', hidden: true, title: 'ראב"ע – לפתוח', 'aria-label': 'לפתוח את ראב"ע' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
+    tab = el('button', { class: 'dm-tab', hidden: true, title: 'רַאבַּ"ע – לפתוח', 'aria-label': 'לפתוח את רַאבַּ"ע' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
     tab.addEventListener('click', (e) => { if (tabDragged) { tabDragged = false; e.preventDefault(); return; } minimize(false); openBalloon(); });
     dragTab();
     document.body.append(canvasBox, balloon, tab);
@@ -1280,7 +1280,7 @@
   function toTab() {
     if (docked) {
       prefs.follow = true; docked = false; target = null;
-      toast('ראב"ע מחכה בלשונית בצד המסך, ויבוא איתכם לכל מסך');
+      toast('רַאבַּ"ע מחכה בלשונית בצד המסך, ויבוא איתכם לכל מסך');
     }
     minimize(true);
   }
@@ -1291,7 +1291,7 @@
     docked = false; target = null;
     syncMode();
     if (wasDocked) walkTo(Math.min(W() - box.w * 0.6, pos.x + (pos.x < W() / 2 ? 140 : -140)), Math.min(bottomLimit(), pos.y + 30));
-    toast('ראב"ע יבוא איתכם לכל מסך. כדי להחזיר אותו לאוהל: הכפתור עם האוהל בבועה שלו.');
+    toast('רַאבַּ"ע יבוא איתכם לכל מסך. כדי להחזיר אותו לאוהל: הכפתור עם האוהל בבועה שלו.');
   }
   /** Back home to the tent: on the home page he walks there; anywhere else he leaves the screen. */
   function sendHome() {
@@ -1299,7 +1299,7 @@
     if (dock) { docked = true; syncMode(); goHome(); return; }
     closeBalloon(); if (panel) panel.hidden = true; stopSpeech();
     canvasBox.classList.add('leaving');
-    toast('ראב"ע חזר לאוהל שלו בדף הבית');
+    toast('רַאבַּ"ע חזר לאוהל שלו בדף הבית');
     setTimeout(() => { gone = true; canvasBox.remove(); balloon.remove(); tab.remove(); panel?.remove(); document.body.classList.remove('dm-folded'); window.dispatchEvent(new Event('helper:daemon-home')); }, 450);
   }
 
@@ -1385,7 +1385,9 @@
   }
   function browserSpeak(text) {
     if (!('speechSynthesis' in window)) return;
-    const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/https?:\/\/\S+/g, '');
+    // (the name as one word, as the server's voice reads it – server/speech-text.ts – not spelled out letter by letter)
+    const clean = text.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/https?:\/\/\S+/g, '')
+      .replace(/ר[֑-ׇ]*א[֑-ׇ]*ב[֑-ׇ]*["״׳']{1,2}[֑-ׇ]*ע[֑-ׇ]*/g, 'רַאבַּע');
     const u = new SpeechSynthesisUtterance(clean);
     const hebrew = /[֐-׿]/.test(clean);
     u.lang = hebrew ? 'he-IL' : 'en-US';
@@ -1412,7 +1414,7 @@
   /* Choosing his voice: the trained Hebrew voices, each with a sample; the choice is saved to the person's account. */
     async function openVoicePicker() {
     const list = el('div', { class: 'dm-voices' }, el('p', { class: 'muted' }, 'טוען קולות…'));
-    H.modal(el('h2', {}, 'הקול של ראב"ע'), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
+    H.modal(el('h2', {}, 'הקול של רַאבַּ"ע'), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
     let data, mine;
     try {
       [data, mine] = await Promise.all([fetch('/api/voice/voices').then((r) => r.json()), H.api('/api/voice/pref').catch(() => ({}))]);
@@ -1441,7 +1443,7 @@
           await H.api('/api/voice/pref', { method: 'PUT', body: { voice: v.name } });
           list.querySelectorAll('.dm-voice .btn.small:not(.play)').forEach((b) => { b.classList.remove('primary'); b.textContent = 'בחירה'; });
           pick.classList.add('primary'); pick.textContent = 'נבחר';
-          H.toast(`ראב"ע ידבר עכשיו בקול ${v.label}`);
+          H.toast(`רַאבַּ"ע ידבר עכשיו בקול ${v.label}`);
         } }, v.name === current ? 'נבחר' : 'בחירה');
         list.append(el('div', { class: 'dm-voice' },
           el('button', { class: 'btn small play', 'aria-label': `השמעת דוגמה: ${v.label}`, onclick: () => playSample(v.name) }, svg('play')),
@@ -1471,14 +1473,14 @@
   /* The full conversation: a drawer (or inline on the home page). */
   function buildPanel() {
     log = el('div', { class: 'dm-log' });
-    panelInput = el('textarea', { rows: 1, placeholder: 'כתבו לראב"ע…', 'aria-label': 'הודעה לעוזר', dir: 'auto' });
+    panelInput = el('textarea', { rows: 1, placeholder: 'כתבו לרַאבַּ"ע…', 'aria-label': 'הודעה לעוזר', dir: 'auto' });
     const grow = () => { panelInput.style.blockSize = 'auto'; panelInput.style.blockSize = Math.min(140, panelInput.scrollHeight) + 'px'; };
     panelInput.addEventListener('input', grow);
     panelInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(panelInput.value); panelInput.value = ''; grow(); }
       if (e.key === 'Escape') togglePanel(false);
     });
-    panel = el('section', { class: 'dm-panel', hidden: true, role: 'dialog', 'aria-label': 'השיחה עם ראב"ע' },
+    panel = el('section', { class: 'dm-panel', hidden: true, role: 'dialog', 'aria-label': 'השיחה עם רַאבַּ"ע' },
       el('div', { class: 'dm-head' }, el('img', { class: 'face', src: '/assets/ibn-ezra-face.webp', alt: '', width: 34, height: 34 }), el('b', {}, 'השיחה'), el('span', { class: 'spacer' }),
         el('button', { class: 'mini', title: 'שיחה חדשה', 'aria-label': 'שיחה חדשה', onclick: async () => {
           if (!confirm('להתחיל שיחה חדשה? העוזר יזכור את הדברים החשובים.')) return;
@@ -1648,6 +1650,11 @@
   /* ===================== mounting ===================== */
   let overlay = false;
   /** opts.dock: the spot in his tent on the home page (he lives there unless asked to come along). opts.overlay: the desktop program. */
+  /** the page loaded (its pictures too), then a quiet moment – or 2 seconds at most after the load */
+  const pageIn = () => new Promise((res) => {
+    const idle = () => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 2000 }) : setTimeout(res, 300));
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
+  });
   async function mount(container, opts = {}) {
     overlay = !!opts.overlay;
     dock = opts.dock || null;
@@ -1662,7 +1669,9 @@
     if (wantsFlat()) { try { shop = await api('/api/daemon/figures', { noRedirect: true }); } catch (_) { /* nothing paid is theirs */ } }
     const catalogue = wantsFlat() || state.ibnEzra === false ? await flatCatalogue() : [];
     const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? defaultFigure(catalogue) : null;
-    if (!flatId) { try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
+    // the 3D figure (three.js and a model of ~3 MB) waits until the page itself is in: on a slow connection it took the
+    // bandwidth from the page's own pictures (the home page's LCP was 5.5 s on 4G; the readiness bar is 2.5 s)
+    if (!flatId) { await pageIn(); try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
     if (innerWidth < 600) { box.w = 170; box.h = 170; }
     if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
     buildUI();

@@ -3,6 +3,7 @@
 // daily per-person allowance. Uses the Gemini key the helper already has.
 
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
+import { forSpeech } from './speech-text';
 
 export const DEFAULT_VOICE = 'Algenib';   // the owner's choice: deep and a little gravelly
 const DAILY_CHARS = 30000;
@@ -83,6 +84,9 @@ const AUDIO_HEADERS = { 'content-type': 'audio/wav', 'cache-control': 'private, 
 async function synth(ctx: Ctx, voice: string, text: string): Promise<{ bytes: Uint8Array | ReadableStream; fresh: boolean }> {
   const env = ctx.env;
   if (!env.GEMINI_API_KEY) throw new HttpError(503, 'no voice service');
+  // what is read, not what is shown: רַאבַּ"ע as one word (server/speech-text.ts)
+  text = forSpeech(text);
+  if (env.DEV_MODE === '1') console.log('TTS text:', text);
   const k = `tts/${await sha(`gemini|${model(env)}|${voice}|${STYLE}|${text}`)}.wav`;
   const stored = env.MEDIA ? await env.MEDIA.get(k) : null;
   if (stored) return { bytes: stored.body, fresh: false };

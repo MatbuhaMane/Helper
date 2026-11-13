@@ -27,6 +27,16 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-13 – The weather, and no "בקרוב" on show (ai-features → master, design)
+The owner's answer on `docs/ai/ready-soon.md` (via vision): the weather is finished, the ChatGPT card and the four
+family badges in goals are hidden, and the language chips (Arabic, English) stay "בקרוב".
+Appended for the weather: the route `GET /api/weather` in `functions/api/[[path]].ts` (and its import line), served by
+`server/weather.ts` (Open-Meteo through the server: the CSP keeps `connect-src 'self'`, and the person's address stays
+here), with `server/weather-logic.ts` and its tests in `server/test-weather.mjs`.
+For the master: add `node server/test-weather.mjs` to `npm test` in `package.json`; the sun card's link in `index.html`
+can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
+For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
+with `.wx-*` classes is welcome. Status: done (ai-features).
 
 ## 2026-11-14 – Locks and privacy: a simple entry to the tree, an app lock like Telegram's, fingerprint sign-in (master → ai-features, design)
 The owner's design. It replaces "the trusted device" for the tree.

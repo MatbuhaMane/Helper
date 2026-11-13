@@ -36,7 +36,7 @@
     const draw = (v) => group.replaceChildren(...options.map(([val, text, opts = {}]) => el('button', {
       type: 'button', role: 'radio', class: 'chip', name, 'aria-checked': String(val === v), disabled: !!opts.soon, 'data-swatch': opts.swatch ?? null, 'data-font-sample': opts.font ?? null,
       title: opts.title || null, onclick: () => { onPick(val); draw(val); },
-    }, text, opts.soon ? el('small', { class: 'st-soon' }, ' · בקרוב') : null)));
+    }, text, opts.soon ? el('small', { class: 'st-soon' }, ' · ' + (typeof opts.soon === 'string' ? opts.soon : 'בקרוב')) : null)));   // (soon: true, or the reason it is off)
     draw(value);
     return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, label), group);
   }
@@ -122,7 +122,7 @@
         : ai.out ? el('p', { class: 'small' }, `כדי להמשיך עם העוזר החכם, חברו שירות משלכם${orCredit}.`) : null,
       el('div', { class: 'st-services-grid' },
         ...PROVIDERS.map(row),
-        el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
+        // (no ChatGPT card until the app talks to it – the readiness bar: nothing "soon" on show)
         // (the credit card only while the shop is open – the owner's switch)
         !shopOpen ? null : el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט'))),
@@ -249,7 +249,7 @@
       choices('בראש השיחה', [['icon', 'הדמות כאייקון'], ['animated', 'הדמות חיה']], dp.header || 'icon', (v) => set('header', v)),
       el('h3', {}, 'הדמות'),
       el('p', { class: 'muted small' }, takes ? 'כל הדמויות לבחירה, גם דמויות 💎 – במשפחה.' : shopOpen ? 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.' : 'רוב הדמויות חינם.'),
-      family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'ראב"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
+      family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'רַאבַּ"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
         // the family takes it (no price); an open shop sells it; a closed one: locked, no price, no button
@@ -300,7 +300,7 @@
     choices('השפה', [['he', 'עברית'], ['ar', 'العربية', { soon: true }], ['en', 'English', { soon: true }]], me.lang || 'he', (v) => { me.lang = v; keep('me'); }),
     el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'));
 
-  /* ---------- my place: the city (restaurants nearby now; Shabbat times and the weather later) ---------- */
+  /* ---------- my place: the city (the weather, restaurants nearby) ---------- */
   const CITIES = ['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'בני ברק', 'פתח תקווה', 'ראשון לציון', 'אשדוד', 'נתניה', 'חולון', 'רמת גן', 'רחובות',
     'בית שמש', 'מודיעין', 'כפר סבא', 'הרצליה', 'רעננה', 'אשקלון', 'בת ים', 'טבריה', 'צפת', 'עכו', 'נצרת', 'אילת', 'אריאל', 'מעלה אדומים', 'ביתר עילית', 'אלעד'];
   function myPlace() {
@@ -312,7 +312,7 @@
     return section('place', 'המקום שלי',
       el('datalist', { id: 'st-cities' }, CITIES.map((c) => el('option', { value: c }))),
       el('div', { class: 'st-field' }, el('label', {}, el('span', { class: 'st-label' }, 'העיר שלי'), city)),
-      el('p', { class: 'muted small' }, 'משמשת לחיפוש מסעדות בסביבה, ובהמשך לזמני שבת ולמזג האוויר. המיקום המדויק של המכשיר לא נשמר: הוא נשאל רק כשמבקשים "לידי עכשיו".'));
+      el('p', { class: 'muted small' }, 'משמשת למזג האוויר ולחיפוש מסעדות בסביבה. המיקום המדויק של המכשיר לא נשמר: הוא נשאל רק כשמבקשים "לידי עכשיו".'));
   }
 
   /* ---------- the tools menu: lock its arrangement (design's launcher.js obeys it live) ---------- */
@@ -413,7 +413,7 @@
     try { lock = await api('/api/lock'); } catch (e) { privacyBox.replaceChildren(el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'), el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
     try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
     const bio = !!H.passkeysWork?.();
-    const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: !bio, title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
+    const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: bio ? false : 'לא במכשיר הזה', title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
     /** a lock's mode: a code needs one set first; a passkey needs one made on this device (the vault's passkeys) */
     const setMode = async (which, v) => {
       try {

@@ -129,10 +129,10 @@
           if (r.done) break;
           total += r.changed;
           cursor = r.cursor;
-          bar.firstChild.style.width = Math.min(98, (total / planned) * 100) + '%';
+          bar.firstChild.style.setProperty('--p', String(Math.min(0.98, total / planned)));   // (a transform, not a width: smooth)
           msg.textContent = `מסדר… ${total} מיילים עד עכשיו (שלב ${Math.min(cursor.op + 1, enabled.length)} מתוך ${enabled.length})`;
         }
-        bar.firstChild.style.width = '100%';
+        bar.firstChild.style.setProperty('--p', '1');
         msg.textContent = `✓ סיימתי! סידרתי ${total} מיילים.`;
         go.replaceWith(el('button', { class: 'btn ghost', onclick: () => undo(plan.id, msg) }, '↩️ בטל את השינויים האלה'));
         no.remove();

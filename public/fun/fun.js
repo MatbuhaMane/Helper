@@ -146,7 +146,7 @@
     } finally {
       if (mine === token) {
         S.busy = false;
-        foot.replaceChildren(S.done ? el('p', { class: 'muted fun-end' }, board.childElementCount ? 'זה הכל לעכשיו – עוד יגיע בקרוב.' : '') : '');
+        foot.replaceChildren(S.done ? el('p', { class: 'muted fun-end' }, board.childElementCount ? 'זה הכל לעכשיו. בעוד כמה שעות יהיו כאן דברים חדשים.' : '') : '');
         // still room on the screen: the next page at once
         if (!S.done && foot.getBoundingClientRect().top < innerHeight + 400) more();
       }

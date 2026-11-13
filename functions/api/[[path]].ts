@@ -41,6 +41,7 @@ import { ensureSchema } from '../../server/schema';
 import * as vault from '../../server/vault';
 import * as usage from '../../server/usage';
 import { featureOf, metered } from '../../server/meter';
+import * as weather from '../../server/weather';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -470,6 +471,9 @@ route('POST', '/api/admin/gifts', admin.giftAdd);
 /* the family tree on a trusted device (ai-features, server/vault/access.ts): the person's recognized devices */
 route('GET', '/api/vault/devices', vault.devices);
 route('DELETE', '/api/vault/devices/:id', vault.deviceRevoke);
+
+/* the weather (ai-features, server/weather.ts): Open-Meteo for the person's city */
+route('GET', '/api/weather', weather.get);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

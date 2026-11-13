@@ -297,8 +297,8 @@
   }
 
   /* ---------- what the AI costs (server/usage.ts) ---------- */
-  const FEATURES = { 'research/ask': 'החוקר', 'research/word': 'פירוש מילה', 'research/translate': 'תרגום', 'research/search': 'חיפוש במקורות', 'daemon/chat': 'ראב"ע – שיחה',
-    'voice/speak': 'ראב"ע – קול', 'voice/sample/:id': 'ראב"ע – דוגמת קול', 'fun/picks': 'בידור – המלצות', 'calc/solve': 'מחשבון',
+  const FEATURES = { 'research/ask': 'החוקר', 'research/word': 'פירוש מילה', 'research/translate': 'תרגום', 'research/search': 'חיפוש במקורות', 'daemon/chat': 'רַאבַּ"ע – שיחה',
+    'voice/speak': 'רַאבַּ"ע – קול', 'voice/sample/:id': 'רַאבַּ"ע – דוגמת קול', 'fun/picks': 'בידור – המלצות', 'calc/solve': 'מחשבון',
     'news/verify': 'חדשות – אימות', 'news/corroborate': 'חדשות – הצלבה', 'news/summary': 'חדשות – סיכום', 'news/translate': 'חדשות – תרגום', 'news/titles': 'חדשות – כותרות',
     'recipes/import': 'מתכונים – ייבוא', 'recipes/world/open': 'מתכונים מהעולם', 'recipes/check': 'מתכונים – בדיקה' };
   async function aiCost(box, days = 30) {

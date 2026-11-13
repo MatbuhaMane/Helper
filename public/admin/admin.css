@@ -1,3 +1,4 @@
+@import url("/assets/launcher.css");   /* the back door's parts are apps, in the toolbox tiles (.apps-grid .app .ic) */
 /* החדר של האוהל – the owner's room (moved here from the page; design's from now on) */
 .ad { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; padding-block: 14px 60px; }
 .ad > * { min-inline-size: 0; }
@@ -46,3 +47,77 @@
 .ad tbody td > label > input[type="checkbox"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
 .ad tbody td > label > input[type="checkbox"]:disabled { opacity: .55; cursor: default; }
 @media (prefers-reduced-motion: reduce) { .ad tbody td > label > input[type="checkbox"], .ad tbody td > label > input[type="checkbox"]::before { transition: none; } }
+
+/* ── הדלת האחורית – the back door (the owner's name for the room, 2026-11-14). The look is design's; admin.js (ai-features) wires it:
+   <section class="ad bd">
+     <header class="bd-head"><h1>הדלת האחורית</h1><p>…</p></header>   (the .ad-bar may follow it)
+     <div class="bd-dash">                                        the dashboard, always on top:
+       <section class="card bd-state">מצב האוהל…</section>      the tent's state, across the whole width
+       <div class="bd-cards"><div class="bd-card [good|bad]"><span class="bd-label">…</span><b class="bd-num">…</b>
+         [<span class="bd-trend up|down">+12%</span>] [<span class="bd-spark"><i style="--h:.4"></i>…</span>]</div>…</div>
+       <section class="card">שימוש</section> <section class="card">פניות</section>
+     </div>
+     <nav class="apps-grid bd-apps" aria-label="חלקי הדלת">
+       <a class="app" data-bd="messages|credits|gifts|settings|members|features|permissions|ai|log" href="#…" [aria-current="true"]>
+         <span class="ic"></span><span class="name">…</span>[<span class="bd-count">3</span>]</a> …</nav>
+     <div class="bd-panel" id="…" [hidden]><a class="bd-back" href="#">‹ כל החלקים</a> the opened part (its section.card)</div>
+   </section>
+   The icon and the colours come from data-bd (the icons in /assets/bd-icons/), so the tile needs no markup inside .ic. */
+.bd { gap: 22px; }
+.bd-head { display: grid; gap: 4px; text-align: center; padding-block: 6px 0; }
+.bd-head h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); line-height: 1.15; text-wrap: balance; }
+.bd-head p { margin: 0; color: var(--muted); }
+/* the dashboard: the tent's state across, then שימוש and פניות side by side on a wide screen */
+.bd-dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+@media (min-width: 760px) { .bd-dash { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bd-dash > * { min-inline-size: 0; margin: 0; }
+.bd-dash > .bd-state, .bd-dash > .bd-cards { grid-column: 1 / -1; }
+.bd-state { border-block-start: 4px solid var(--primary); }
+.bd-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+@media (max-width: 420px) { .bd-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bd-card { position: relative; display: grid; gap: 2px; align-content: start; padding: 12px 14px; border-radius: 16px; min-inline-size: 0;
+  background: var(--card); border: 1px solid var(--line); box-shadow: 0 8px 18px -16px rgba(46, 42, 30, .5); }
+.bd-label { color: var(--muted); font-size: .84rem; line-height: 1.3; }
+.bd-num { font-size: clamp(1.4rem, 1.1rem + 1vw, 1.8rem); font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bd-card.good .bd-num { color: var(--primary); }
+.bd-card.bad { border-color: color-mix(in srgb, var(--danger) 45%, var(--line)); }
+.bd-card.bad .bd-num { color: var(--danger); }
+.bd-trend { justify-self: start; font-size: .78rem; font-weight: 600; padding: 0 7px; border-radius: 999px; font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--muted) 14%, transparent); color: var(--muted); }
+.bd-trend.up { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.bd-trend.down { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); }
+.bd-trend.up::before { content: "▲ "; font-size: .7em; } .bd-trend.down::before { content: "▼ "; font-size: .7em; }
+/* a tiny bar chart of the last days, oldest at the start: each <i> with --h from 0 to 1 */
+.bd-spark { display: flex; align-items: flex-end; gap: 2px; block-size: 26px; margin-block-start: 4px; }
+.bd-spark i { flex: 1; min-block-size: 2px; block-size: calc(var(--h, 0) * 100%); border-radius: 2px 2px 0 0;
+  background: color-mix(in srgb, var(--primary) 55%, transparent); }
+.bd-spark i:last-child { background: var(--primary); }
+
+/* the parts as apps (the toolbox's tiles): each one's colours and line icon from data-bd */
+.bd-apps { padding-block: 6px; inline-size: 100%; max-inline-size: 640px; margin-inline: auto; }   /* as wide as the toolbox: 5 + 4 on a computer, 3 × 3 on a phone */
+.bd-apps .app .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
+  -webkit-mask: var(--bd-ic) center / contain no-repeat; mask: var(--bd-ic) center / contain no-repeat; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
+.bd-apps .app[data-bd="messages"]    { --c1: #ffb56e; --c2: #c4621e; --bd-ic: url(/assets/bd-icons/messages.svg); }
+.bd-apps .app[data-bd="credits"]     { --c1: #f2cf5b; --c2: #a3721a; --bd-ic: url(/assets/bd-icons/credits.svg); }
+.bd-apps .app[data-bd="gifts"]       { --c1: #ff9fb8; --c2: #c4476a; --bd-ic: url(/assets/bd-icons/gifts.svg); }
+.bd-apps .app[data-bd="settings"]    { --c1: #9dbbe0; --c2: #3e6596; --bd-ic: url(/assets/bd-icons/settings.svg); }
+.bd-apps .app[data-bd="members"]     { --c1: #86d9a0; --c2: #2f8f55; --bd-ic: url(/assets/bd-icons/members.svg); }
+.bd-apps .app[data-bd="features"]    { --c1: #c6a9f2; --c2: #6c4ab4; --bd-ic: url(/assets/bd-icons/features.svg); }
+.bd-apps .app[data-bd="permissions"] { --c1: #e8a185; --c2: #9a3b2a; --bd-ic: url(/assets/bd-icons/permissions.svg); }
+.bd-apps .app[data-bd="ai"]          { --c1: #7fd6cf; --c2: #1f7f77; --bd-ic: url(/assets/bd-icons/ai.svg); }
+.bd-apps .app[data-bd="log"]         { --c1: #cdb98e; --c2: #77603a; --bd-ic: url(/assets/bd-icons/log.svg); }
+/* a count of new things on a part (new requests, members waiting): a small red dot with the number */
+.bd-count { position: absolute; inset-block-start: -6px; inset-inline-end: 6px; min-inline-size: 22px; block-size: 22px; padding: 0 6px; border-radius: 999px;
+  display: grid; place-items: center; font-size: .76rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #fff; background: #c2412d;
+  box-shadow: 0 0 0 2px var(--bg); }
+/* the part that is open: its tile stays marked */
+.bd-apps .app[aria-current="true"] .ic { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--c2); }
+.bd-apps .app[aria-current="true"] .name { font-weight: 700; }
+/* the opened part, under the tiles */
+.bd-panel { display: grid; gap: 10px; min-inline-size: 0; scroll-margin-block-start: calc(var(--appbar-h, 56px) + 12px); animation: bd-open .35s var(--ease-river) both; }
+.bd-panel[hidden] { display: none; }
+.bd-panel > .card { margin: 0; }
+.bd-back { justify-self: start; color: var(--muted); text-decoration: none; font-size: .95rem; padding: 4px 2px; }
+.bd-back:hover { color: var(--primary); }
+@keyframes bd-open { from { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .bd-panel { animation: none; } }

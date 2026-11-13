@@ -1,0 +1,48 @@
+/* מי הקים את האוהל – the founders' roll of honour (business: docs/business/founders.md §4–5). In the tent's own terms:
+   the first ten are its poles (tall embroidered plaques), up to fifty its pegs, up to a hundred its ropes; then the founding
+   supporters. Each tier says how it was earned. The names come from the moment each gathering reached 5 RSVPs. */
+.fd { max-inline-size: 1100px; margin: 0 auto; padding-block: 18px 56px; display: grid; gap: 30px; }
+.fd-head { display: grid; gap: 8px; justify-items: center; text-align: center; padding-block: 10px 4px; }
+.fd-head img { inline-size: min(180px, 46%); }
+.fd-head h1 { margin: 0; font-size: clamp(2rem, 1.3rem + 2.8vw, 3rem); line-height: 1.1; text-wrap: balance; }
+.fd-head p { margin: 0; color: var(--muted); max-inline-size: 58ch; line-height: 1.6; }
+.fd-tier { display: grid; gap: 14px; }
+.fd-tier > header { display: flex; align-items: center; gap: 12px; }
+.fd-tier > header img { inline-size: 52px; block-size: 52px; flex: none; filter: drop-shadow(0 3px 3px rgba(30, 20, 10, .25)); }
+.fd-tier > header div { display: grid; gap: 2px; }
+.fd-tier h2 { margin: 0; font-size: 1.35rem; }
+.fd-tier header small { color: var(--muted); }
+
+/* the poles: tall plaques, the number at the top like a stitched tag */
+.fd-poles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+@media (max-width: 820px) { .fd-poles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fd-pole { position: relative; display: grid; align-content: end; gap: 4px; min-block-size: 170px; padding: 34px 12px 14px; border-radius: 16px 16px 6px 6px; text-align: center;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--soil, #9c7a55) 22%, var(--card)), var(--card));
+  border: 1.5px dashed color-mix(in srgb, var(--soil, #9c7a55) 60%, var(--line)); box-shadow: 0 14px 28px -22px rgba(46, 42, 30, .55); }
+.fd-pole::before { content: ""; position: absolute; inset-block-start: 10px; inset-inline-start: 50%; translate: 50% 0; inline-size: 4px; block-size: 34%;
+  border-radius: 4px; background: color-mix(in srgb, var(--soil, #9c7a55) 70%, transparent); }   /* the pole itself */
+:root[dir="ltr"] .fd-pole::before { translate: -50% 0; }
+.fd-num { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; font-size: .74rem; font-weight: 700; padding: 1px 7px; border-radius: 999px;
+  background: color-mix(in srgb, var(--olive) 32%, var(--card)); font-variant-numeric: tabular-nums; }
+.fd-pole b { font-size: 1.08rem; line-height: 1.3; }
+.fd-pole small { color: var(--muted); font-size: .8rem; }
+/* the pegs: plaques with the number beside the name */
+.fd-pegs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 8px; list-style: none; margin: 0; padding: 0; }
+.fd-peg { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); }
+.fd-peg .fd-num { position: static; flex: none; }
+.fd-peg b { font-weight: 600; min-inline-size: 0; overflow-wrap: anywhere; }
+/* the ropes: a dense row of names, tied with a knot between them */
+.fd-ropes { display: flex; flex-wrap: wrap; gap: 6px 4px; list-style: none; margin: 0; padding: 14px 16px; border-radius: 16px;
+  background: color-mix(in srgb, var(--olive) 8%, var(--card)); border: 1px solid var(--line); }
+.fd-ropes li { display: inline-flex; align-items: center; gap: 4px; font-size: .95rem; }
+.fd-ropes li + li::before { content: "·"; color: var(--soil, #9c7a55); font-weight: 700; margin-inline-end: 4px; }
+.fd-ropes .fd-num { position: static; font-size: .68rem; padding: 0 5px; }
+/* the founding supporters, and the one-off surprise */
+.fd-supporters { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.fd-supporters li { padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
+.fd-million { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 20px; border: 1.5px solid #b9862a;
+  background: linear-gradient(135deg, color-mix(in srgb, #f6d77a 40%, var(--card)), var(--card)); }
+.fd-million b { font-size: 1.1rem; }
+.fd-million .who-title { flex: none; }
+.fd-note { color: var(--muted); font-size: .88rem; text-align: center; margin: 0; }
+.fd-empty { color: var(--muted); font-style: italic; }

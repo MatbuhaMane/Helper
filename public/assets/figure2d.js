@@ -80,7 +80,7 @@
       glowAt: [0.12, 0.34], glowColor: '#ffd25a',
       neck: 0.57, pivot: [0.49, 0.55], eyes: [], eyeR: 0.04, mouth: [0.485, 0.505], mouthW: 0.055, cheek: null, sway: 0.35 },
     // Dracula drawn again (the owner, 2026-11-13): young and handsome, the romantic gothic count – Cleopatra's counterpart
-    dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', paid: true, hideFor: [], tags: ['horror'], neck: 0.485, pivot: [0.5, 0.47], eyes: [[0.4, 0.315], [0.6, 0.315]], eyeR: 0.04, mouth: [0.5, 0.41], mouthW: 0.1, cheek: null, eyeColor: '#2a1418', sway: 0.45 },
+    dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.485, pivot: [0.5, 0.47], eyes: [[0.4, 0.315], [0.6, 0.315]], eyeR: 0.04, mouth: [0.5, 0.41], mouthW: 0.1, cheek: null, eyeColor: '#2a1418', sway: 0.45 },
   };
   // a palette for every figure, included (the owner, 2026-11-14: palettes are never sold, everyone gets them): its scarf,
   // shawl, vest, robe or coat in 5 colourways, the first as drawn; the tint layers are tint-<layer>.webp beside each

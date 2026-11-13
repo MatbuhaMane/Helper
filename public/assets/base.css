@@ -488,10 +488,11 @@ textarea { width: 100%; resize: vertical; }
 
 /* ---------- messages ---------- */
 /* A pop-up message (H.toast; vision batch 17, docs/design/toast.md): a light glass pill at the top of the screen, short-lived.
-   It goes on a swipe (up or sideways) on a phone and on a click on the PC. While a finger drags it, common.js sets
-   --dx / --dy (px), --o (the opacity, from 1 down to .2 with the distance) and .dragging. */
+   It goes on a swipe (up or sideways) on a phone and on a click on the PC. While a finger drags it, common.js sets the
+   inline `translate` (which adds to the transform here) and `opacity`, and the class .dragging; a small nudge springs back. */
 .toast {
-  position: fixed; z-index: var(--z-toast); inset-block-start: calc(var(--appbar-h, 0px) + env(safe-area-inset-top, 0px) + 8px); left: 50%;
+  position: fixed; z-index: var(--z-toast); inset-block-start: calc(var(--appbar-h, 0px) + env(safe-area-inset-top, 0px) + 8px);
+  inset-inline: 0; margin-inline: auto;      /* centred without a sideways transform, so `translate` is the swipe alone */
   display: flex; gap: 10px; align-items: center; box-sizing: border-box;
   inline-size: max-content; max-inline-size: min(480px, calc(100% - 32px)); min-block-size: 40px; padding: 8px 18px;
   border-radius: 22px; font-size: .9rem; line-height: 1.35; color: var(--text);
@@ -499,12 +500,11 @@ textarea { width: 100%; resize: vertical; }
   -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
   border: 1px solid var(--glass-border); box-shadow: 0 6px 22px rgba(0, 0, 0, .12);
   cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; pointer-events: none;
-  opacity: 0; transform: translate(-50%, calc(-100% - 16px));
-  transition: transform var(--dur-draw) var(--ease-river), opacity 220ms ease;
+  opacity: 0; transform: translateY(calc(-100% - 16px));
+  transition: transform var(--dur-draw) var(--ease-river), translate var(--dur-draw) var(--ease-river), opacity 220ms ease;
 }
 .toast > span { min-inline-size: 0; }
-.toast.show { pointer-events: auto; opacity: var(--o, 1);
-  transform: translate(calc(-50% + var(--dx, 0px)), min(var(--dy, 0px), 12px)); }
+.toast.show { pointer-events: auto; opacity: 1; transform: none; }
 .toast.dragging { transition: none; }
 .toast .btn { flex: none; min-block-size: 32px; padding: 4px 12px; border-radius: 999px; font-weight: 600;
   color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); border: 0; }
@@ -514,8 +514,8 @@ textarea { width: 100%; resize: vertical; }
 :root[data-theme="dark"] .toast { box-shadow: 0 8px 26px rgba(0, 0, 0, .4); }
 /* no backdrop blur (old browsers): a solid card, so the words stay readable */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .toast { background: var(--card); } }
-@media (prefers-reduced-motion: reduce) { .toast { transform: translate(-50%, 0); transition: opacity 160ms linear; } }
-:root[data-motion="reduce"] .toast { transform: translate(-50%, 0); transition: opacity 160ms linear; }
+@media (prefers-reduced-motion: reduce) { .toast { transform: none; transition: opacity 160ms linear; } }
+:root[data-motion="reduce"] .toast { transform: none; transition: opacity 160ms linear; }
 
 @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes fade { from { opacity: 0; } }

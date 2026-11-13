@@ -11,18 +11,15 @@ goes on a swipe (phone) or a click (PC), and never nags.
   is the reference for `H.toast`.
 - **Checked:** at 375 and at desktop width, light and dark. The text is 13:1. Nothing overflows.
 
-## What `H.toast` (common.js) needs
-- **The times:** 2.6 s without an action, 5 s with one (now 3.8 s and 6 s).
-- **A click or a tap** anywhere on the toast, except on its button, closes it at once.
-- **A swipe:**
-  - on `pointerdown` stop the timer;
-  - on `pointermove` set `--dx` (sideways) and `--dy` (only upward, ≤ 0) in px, `--o` = `max(.2, 1 - (|dx| + |dy|) / 140)`,
-    and the class `dragging`;
-  - on `pointerup`:
-    - past 60 px sideways or 24 px up, remove `show`;
-    - otherwise remove the three properties and `dragging`, and restart a 2 s timer.
-  - Clear `--dx`, `--dy` and `--o` when a new message shows.
-- **The action button** stops the click from reaching the toast (`stopPropagation`), runs the action, then closes.
+## `H.toast` (common.js, v148)
+Done by the master: 2.6 s, or 5 s with an action; a click closes it; a swipe up or sideways closes it; the timer waits while the
+pointer rests on it.
+- **The hooks:** while dragging, common.js sets the inline `translate` and `opacity` and the class `dragging`. The CSS centres the
+  toast with `margin-inline: auto` (no sideways transform), so `translate` is the swipe alone, and a small nudge springs back by
+  the `translate` transition.
+- **A wish for the master (small):** on a swipe that closes it, `hide()` clears `translate` in the same moment, so the toast jumps back to
+  the middle as it fades. Clearing `translate` and `opacity` only after the fade (`transitionend`, or 250 ms) lets it leave from
+  where the finger let go.
 - **Never nag:**
   - one toast at a time, the new one replacing the old;
   - no toast for something the person can already see happen (an item that appears in the list needs no "נוסף");

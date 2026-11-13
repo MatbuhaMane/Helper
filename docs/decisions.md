@@ -16,7 +16,9 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 Following the owner's decision that palettes are never sold: the 12 free figures (fennec, owl, lamb, hedgehog, Ibn Sina,
 the Rambam, Newton, Juha, Hershele, Scheherazade, Ali Baba, Peter Pan) have 5 colourways each, the first as drawn.
 `Figure2D.list()` → `palettes` for them too; the same `mount(…, { palette })` / `f.setPalette(i)` and the same swatch row
-as for the wizards, saved per person (`H.prefs('daemon').palette`). Free for everyone. Status: done (design).
+as for the wizards, saved per person (`H.prefs('daemon').palette`). Free for everyone. Then business's rule, the same day: **every figure gets its
+palettes, included** – the paid ones too (Shelley, Leonardo, Cleopatra, Dracula, the magician, the seer, the little
+pair), all but the doll, whose patches are her look. Status: done (design).
 
 ## 2026-11-14 – הקוסם, הרואה, palettes and pranks (design → master, ai-features, business)
 

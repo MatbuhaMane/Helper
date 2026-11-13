@@ -80,8 +80,11 @@ row of colour swatches under the figure when she is chosen, saved per person (e.
 **Palettes for every free figure (the owner, 2026-11-14: palettes are never sold):** the fennec's scarf, the owl's shawl,
 the lamb's vest, the hedgehog's spines (natural tones), Ibn Sina's robe, the Rambam's robe and cloak, Newton's coat,
 Juha's robe, Hershele's coat, Scheherazade's shawl and dress, Ali Baba's robe, Peter Pan's leaves – 5 colourways each,
-the first as drawn (`FREE_PALETTES` in figure2d.js; layers made by `palette2.py` in the scratchpad). The same API as
-below. The paid people (Mary Shelley, Leonardo, Cleopatra, Dracula) have none yet.
+the first as drawn (`PALETTES` in figure2d.js; layers made by `palette2.py` in the scratchpad). The same API as
+below. **The rule (business, 2026-11-14): every figure gets its palettes, included** – so the paid ones too: Mary
+Shelley's dress, Leonardo's robe and cap, Cleopatra's dress, Dracula's cape lining, the magician's robe, the seer's
+shawl, the little pair's hat and coat. The doll alone has none: her many patches are her look. A new figure gets its
+palette when it is drawn.
 
 **Palettes (the night wizard, the forest witch):** their clothes in a colour of one's own. Each fabric is a grey tint
 layer (`tint-<layer>.webp`, made by `palette.py` in the scratchpad), coloured with multiply so the folds stay;

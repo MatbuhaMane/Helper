@@ -2529,3 +2529,44 @@ with "בטל" for 10 seconds, and the owner can restore from the back door.
   outside design's example: when the clipboard is blocked or holds something else, `form.gk-paste` (label + input +
   "חיבור") appears between `ol.gk-steps` and `.gk-err`. Step 2 says "לוחצים על הכפתור הכחול ליצירת מפתח" (no
   "API key", per the CEO's rule), so `.gk-en` is not used. Settings: `span.gk-ok.small` "Gemini מחובר ✓".
+
+## 2026-11-13 – Serious mode on the home screen, secret grants and the ancient script (master; vision batch 11)
+- **Serious mode** (design's contract, base.css): `H.prefs('look').style = 'serious'` sets `html[data-style=serious]` before paint (common.js),
+  and the home builds design's `.sr-home` from H.APPS (places and tools, a search, grid or list kept in `look.srView`) instead of
+  the tent, the fire and the companion. `look.pillows = 'keep'` keeps the cushion icons. The switches are ai-features'.
+- **Grants** (`server/grants.ts`, table `user_grants`): `frames`, `bio_ancient`, `name_ancient`. The owner grants or
+  revokes from the owner's room (`GET /api/admin/grants`, `PUT /api/admin/grants/:email {key, on}`, behind the room's
+  biometric, logged). `/api/me` carries `grants`, only the person's own. Saves must check `hasGrant(env, email, key)`.
+  `ancient_ui` is the owner's alone and cannot be granted.
+- **The ancient script** (common.js): `H.ancient(text)`, `H.hasGrant(key)`. With `H.prefs('me').ancientUi` and the
+  owner's `ancient_ui`, the interface (bar, nav, buttons, headings, labels, tool names) turns Noto Sans Phoenician.
+  Content stays Hebrew (`input`, `[data-content]`, `.content`). `.keep-he` always stays plain Hebrew (the switch and the
+  way out). Call `H.ancientUi()` after saving the switch.
+- **Writing in the ancient script** (the owner, 2026-11-13): while the owner's switch is on, what the owner writes in
+  messages, comments and global messages goes out in the ancient letters, so every member sees it that way. Every composer
+  sends `H.outgoing(text)`, which converts only when the switch is on. `H.unancient(text)` restores the Hebrew, and a tap
+  on any ancient text shows it. The font must be in every page's stack: design adds Noto Sans Phoenician, self-hosted.
+
+## 2026-11-13 – פרנסה: a new tool for the household's money (the owner; master → ai-features, design)
+The owner: a dashboard of income and expenses, stocks and investments if any, a smart split of the expenses, smart
+analysis and suggestions, and fast entry and tracking of payments and receipts. Friendly, intuitive and quick.
+- **Privacy (the owner's choice):** personal by default; each person sees only their own. A person may open a shared
+  "קופה" for the house by invitation (a spouse), and both see only what is in that shared one.
+- **Entry, phase 1 (the owner's choice):** quick manual entry (amount, what, category guessed as you type, recurring), and
+  importing an Excel/CSV export from an Israeli bank or credit card company, automatically categorised. No direct bank
+  connection (it needs a licence); no receipt photos yet.
+- **Investments:** holdings entered by hand (symbol, quantity, cost), valued with a price feed. Tracking only, never buying or
+  selling.
+- **The analysis:** where the money goes, changes from month to month, recurring charges, and saving tips. General guidance
+  only, never personal investment advice; the page says so.
+- **AI:** the financial data goes to Claude only, never to Gemini, and only what the question needs (sums by category,
+  not raw lines with names). No fallback to Gemini for this tool.
+- **Security:** the master reviews the server side before merge (a data-exposure area): every query by the owner of the row
+  or a member of the shared קופה, nothing in logs.
+- Place: on the tools page (`/tools/parnasa/`), pin-able to the ring; in serious mode it is a line icon like the rest.
+
+## 2026-11-13 · Web Push, the app's own notifications (master)
+- `server/push.ts`: RFC 8291/8292 with WebCrypto, no library. Table `push_subs` (one row per device). Routes `/api/push/key`, `/api/push/subscribe` (POST/DELETE), `/api/push/test`.
+- For areas: `pushTo(env, emails, msg)` and `pushHousehold(env, household, msg, except?)`. `msg.urgent` = high urgency, stays on screen, strong vibration (the emergency alert). `msg.actions` such as `{action:'handle', title:'אני מטפל'}` open `url?act=handle`.
+- Client: `H.push.state()`, `H.push.enable()`, `H.push.disable()`, `H.push.test()`.
+- Inert until the secret `VAPID_PRIVATE` is set (`/api/push/key` returns `ready:false`). On iPhone it works only from the home-screen app; a web notification never breaks silent mode.

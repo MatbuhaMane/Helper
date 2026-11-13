@@ -141,16 +141,17 @@
    H.palette.derive() (palette.js), which already keeps the contrast; by night the derived night values come in the same way. */
 
 /* The fonts to choose from (data-font): Rubik is the hub's own; each of the others loads only for whoever picks it. */
-:root[data-font="heebo"] body, :root[data-font="heebo"] :is(button, input, select, textarea) { font-family: 'Heebo', system-ui, sans-serif; }
-:root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, sans-serif; }
-:root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', serif; }
+:root[data-font="heebo"] body, :root[data-font="heebo"] :is(button, input, select, textarea) { font-family: 'Heebo', system-ui, 'Ohel Ivri', sans-serif; }
+:root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, 'Ohel Ivri', sans-serif; }
+:root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', 'Ohel Ivri', serif; }
 :root[data-font="serif"] :is(h1, h2, h3) { font-weight: 700; }
+:root[data-font="alef"] body, :root[data-font="alef"] :is(button, input, select, textarea) { font-family: 'Alef', 'Rubik', system-ui, 'Ohel Ivri', sans-serif; }
 
 /* Reading comfort (הגדרות › נגישות; settings/apply.js marks <html>): the text size is the root's font size (every rem grows
    with it); these are the rest. */
 :root[data-spacing="wide"] body { line-height: 1.8; word-spacing: .14em; letter-spacing: .015em; }
 :root[data-spacing="wide"] :is(p, li, dd, label, small, .muted) { line-height: 1.8; }
-:root[data-font="readable"] body, :root[data-font="readable"] :is(button, input, select, textarea) { font-family: Arial, 'Segoe UI', system-ui, sans-serif; }
+:root[data-font="readable"] body, :root[data-font="readable"] :is(button, input, select, textarea) { font-family: Arial, 'Segoe UI', system-ui, 'Ohel Ivri', sans-serif; }
 :root[data-contrast="high"] { --text: #14120c; --muted: #3b3528; --line: #a9a28c; --line-strong: #77705b; }
 :root[data-contrast="high"][data-theme="dark"] { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; }
 @media (prefers-color-scheme: dark) { :root[data-contrast="high"]:not([data-theme="light"]) { --text: #f6f1e6; --muted: #d6dae2; --line: #3d4b68; --line-strong: #63749a; } }
@@ -165,7 +166,7 @@ html { -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
 body { overflow-x: clip; }   /* nothing may widen a page sideways on a phone; clip keeps sticky headers working */
 body {
   margin: 0;
-  font-family: 'Rubik', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+  font-family: 'Rubik', system-ui, -apple-system, 'Segoe UI', Arial, 'Ohel Ivri', sans-serif;
   font-size: 1.0625rem;
   line-height: 1.6;
   background: var(--bg);
@@ -596,3 +597,218 @@ body:has(.fab-wrap) .owner-msgs { inset-block-end: calc(var(--tabbar-h, 0px) + e
   .ad-edge:not(:hover, :focus-visible) .ad-edge-text { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .ad-edge { transition: none; } }
+
+/* ── The surprise egg (the owner, 2026-11-13; managed in the back door's עץ מבנה, placed by ai-features' script).
+   Small and quiet: it sits where the script puts it, rocks a little now and then, and cracks open when found.
+   <button class="egg" type="button" aria-label="ביצת הפתעה"></button>              in the flow (beside a heading, in a corner of a card)
+   <button class="egg float" style="--x:24px; --y:140px" …></button>               or pinned to the screen: --x from the inline start, --y from the top
+   found:  .egg.found, and <div class="egg-note" role="status">מצאתם את ביצת החנוכה!</div> appended to <body> (a bubble over the tab bar,
+           never off the screen); the script removes both after ~2.6s.
+   The two halves are the same drawing (/assets/egg/egg.svg) cut along a zigzag, so the shell splits where the band is. */
+.egg { --egg-w: 24px; position: relative; display: inline-grid; place-items: center; inline-size: 44px; block-size: 44px; padding: 0; margin: -6px 0;
+  vertical-align: middle; border: 0; border-radius: 50%; background: none; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  animation: egg-rock 7s ease-in-out infinite; transform-origin: 50% 82%; }
+.egg.float { position: fixed; z-index: var(--z-float, 30); margin: 0; inset-block-start: var(--y, 50%); inset-inline-start: var(--x, 16px); }
+.egg::before, .egg::after { content: ""; position: absolute; inset: 0; margin: auto; inline-size: var(--egg-w); block-size: calc(var(--egg-w) * 1.25);
+  background: url(/assets/egg/egg.svg) center / contain no-repeat; filter: drop-shadow(0 2px 2px rgba(30, 24, 12, .3));
+  transition: translate .5s cubic-bezier(.3, 1.6, .5, 1), rotate .5s cubic-bezier(.3, 1.6, .5, 1), opacity .4s ease; }
+.egg::before { clip-path: polygon(0 0, 100% 0, 100% 53%, 87.5% 47%, 75% 53%, 62.5% 47%, 50% 53%, 37.5% 47%, 25% 53%, 12.5% 47%, 0 53%); }
+.egg::after { clip-path: polygon(0 53%, 12.5% 47%, 25% 53%, 37.5% 47%, 50% 53%, 62.5% 47%, 75% 53%, 87.5% 47%, 100% 53%, 100% 100%, 0 100%); }
+@keyframes egg-rock { 0%, 86%, 100% { rotate: 0deg; } 89% { rotate: -9deg; } 92% { rotate: 7deg; } 95% { rotate: -4deg; } 97.5% { rotate: 2deg; } }
+@media (hover: hover) { .egg:hover { animation: none; } .egg:hover::before, .egg:hover::after { translate: 0 -2px; } }
+.egg:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: -2px; }
+:root[data-theme="dark"] .egg::before, :root[data-theme="dark"] .egg::after { filter: drop-shadow(0 0 1px rgba(255, 236, 210, .5)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .egg::before, :root:not([data-theme="light"]) .egg::after { filter: drop-shadow(0 0 1px rgba(255, 236, 210, .5)) drop-shadow(0 2px 3px rgba(0, 0, 0, .5)); } }
+/* found: a warm glow, the top flies up and tips, then the note rises */
+.egg.found { animation: egg-glow 1.2s ease-out both; cursor: default; pointer-events: none; }
+.egg.found::before { translate: 3px -11px; rotate: 24deg; }
+.egg.found::after { animation: egg-out .5s ease 1.9s both; }
+.egg.found::before { animation: egg-out .5s ease 1.9s both; }
+@keyframes egg-glow { 0% { background: radial-gradient(closest-side, rgba(255, 200, 90, .85), rgba(255, 170, 60, .35) 60%, transparent); scale: .8; }
+  60% { background: radial-gradient(closest-side, rgba(255, 200, 90, .45), rgba(255, 170, 60, .15) 60%, transparent); scale: 1.4; }
+  100% { background: radial-gradient(closest-side, transparent, transparent); scale: 1; } }
+@keyframes egg-out { to { opacity: 0; } }
+.egg-note { position: fixed; z-index: var(--z-toast, 70); inset-inline: 16px; inset-block-end: calc(var(--tabbar-h, 0px) + max(20px, env(safe-area-inset-bottom, 0px)));
+  inline-size: max-content; max-inline-size: min(340px, calc(100vw - 32px)); margin-inline: auto; display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px 8px 12px; padding-inline: 10px 16px; border-radius: 999px; border: 1px solid color-mix(in srgb, #e3ad3c 55%, var(--line)); background: var(--card); color: var(--text);
+  font-family: inherit; font-size: .95rem; font-weight: 600; line-height: 1.35; box-shadow: 0 10px 26px -8px rgba(30, 24, 12, .45); pointer-events: none;
+  animation: egg-note 2.6s var(--ease-river) both; }
+.egg-note::before { content: ""; flex: none; inline-size: 22px; block-size: 28px; background: url(/assets/egg/egg.svg) center / contain no-repeat; }
+@keyframes egg-note { 0% { opacity: 0; transform: translateY(8px) scale(.9); } 14%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .egg, .egg.found { animation: none; } .egg::before, .egg::after { transition: opacity .3s ease; }
+  .egg.found::before { translate: none; rotate: none; } .egg-note { animation: egg-note-still 2.4s linear both; }
+}
+@keyframes egg-note-still { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- "חבר עוזר חינמי": connecting a free Gemini key in three steps (ai-invite.js; the logic is ai-features') ----------
+   Made for older eyes: big type, few words, one big button at a time. It opens in H.modal (or inside settings' #services).
+     <div class="gk" data-state="steps">                       (data-state="done" once the key is checked)
+       <header class="gk-head"><span class="gk-free">חינם</span><h2>חבר עוזר חינמי</h2><p>שלושה צעדים, בערך דקה</p></header>
+       <ol class="gk-steps">
+         <li class="gk-step" data-pic="signin" aria-current="step">      (the step you are on; a finished one gets data-done)
+           <span class="gk-pic" aria-hidden="true"></span>
+           <div class="gk-txt"><b>נכנסים ל־Google</b><small>עם החשבון הרגיל שלכם</small></div>
+           <a class="btn primary gk-go" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">פתיחת Google</a>
+         </li>
+         <li class="gk-step" data-pic="key">…<b>לוחצים <span class="gk-en">Create API key</span> ומעתיקים</b>…</li>
+         <li class="gk-step" data-pic="paste">…<b>חוזרים לאוהל ולוחצים „הדבק”</b>… <button class="btn primary gk-go">הדבק</button></li>
+       </ol>
+       <p class="gk-err" role="alert" hidden>המפתח לא עבד. נסו להעתיק שוב.</p>
+       <div class="gk-done" role="status"><span class="gk-ok">מחובר ✓</span><p>העוזר החכם עובד עכשיו על החשבון שלכם, בחינם.</p>
+         <button class="btn primary gk-go" type="button">סיום</button></div>
+       <button class="btn ghost gk-later" type="button">לא עכשיו</button>
+     </div>
+   Only the current step shows its button (big, primary); the others show their drawing and words. A step with no
+   aria-current anywhere shows every button. The connected tag alone, for a settings row: <span class="gk-ok small">מחובר ✓</span>. */
+.gk { display: grid; gap: 16px; max-inline-size: 460px; margin-inline: auto; font-size: 1.12rem; line-height: 1.5; padding-block: 4px; }
+.gk-head { display: grid; justify-items: center; text-align: center; gap: 6px; }
+.gk-head h2 { margin: 0; font-size: 1.6rem; line-height: 1.25; text-wrap: balance; }
+.gk-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.gk-free { padding-block: 3px; padding-inline: 14px; border-radius: 999px; font-size: .95rem; font-weight: 600; letter-spacing: .02em;
+  color: var(--gk-free-ink); background: color-mix(in srgb, var(--olive) 30%, var(--card)); }
+:root { --gk-free-ink: color-mix(in srgb, var(--olive) 28%, var(--ink)); }
+:root[data-theme="dark"] { --gk-free-ink: color-mix(in srgb, var(--olive) 70%, #fff); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --gk-free-ink: color-mix(in srgb, var(--olive) 70%, #fff); } }
+
+.gk-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: gk; }
+.gk-step { counter-increment: gk; position: relative; display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 12px 14px;
+  padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); }
+.gk-step[aria-current="step"] { border: 2px solid var(--primary); padding: 13px 15px; background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  box-shadow: 0 10px 24px -18px color-mix(in srgb, var(--primary) 70%, #000); }
+.gk-pic { position: relative; inline-size: 64px; block-size: 64px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--olive) 20%, var(--card)); color: var(--primary); }
+.gk-pic::before { content: ""; inline-size: 42px; block-size: 42px; background: currentColor;
+  -webkit-mask: var(--gk-pic) center / contain no-repeat; mask: var(--gk-pic) center / contain no-repeat; }
+.gk-pic::after { content: counter(gk); position: absolute; inset-block-start: -4px; inset-inline-start: -4px; inline-size: 26px; block-size: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .9rem; font-weight: 700; line-height: 1; color: var(--card); background: var(--primary); border: 2px solid var(--card); }
+.gk-step[data-pic="signin"] { --gk-pic: url(/assets/ai-invite/signin.svg); }
+.gk-step[data-pic="key"] { --gk-pic: url(/assets/ai-invite/key.svg); }
+.gk-step[data-pic="paste"] { --gk-pic: url(/assets/ai-invite/paste.svg); }
+.gk-txt { display: grid; gap: 2px; min-inline-size: 0; }
+.gk-txt b { font-size: 1.18rem; font-weight: 600; line-height: 1.35; text-wrap: balance; }
+.gk-txt small { font-size: 1rem; color: var(--muted); }
+.gk-en { direction: ltr; unicode-bidi: isolate; display: inline-block; padding-inline: 6px; border-radius: 6px; font-weight: 600;
+  background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.gk-go { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; min-block-size: 56px; font-size: 1.15rem; font-weight: 600; }
+.gk-steps:has([aria-current]) .gk-step:not([aria-current]) .gk-go { display: none; }
+/* a finished step: its number becomes a check and the step quiets down */
+.gk-step[data-done] { opacity: .72; }
+.gk-step[data-done] .gk-pic::after { content: "✓"; background: var(--ok); }
+.gk-err { margin: 0; padding: 12px 14px; border-radius: 14px; font-size: 1.05rem; font-weight: 500;
+  color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); }
+.gk-later { justify-self: center; min-block-size: 44px; font-size: 1rem; }
+
+/* connected */
+.gk-done { display: none; justify-items: center; text-align: center; gap: 12px; padding: 18px 16px; border-radius: 18px;
+  background: color-mix(in srgb, var(--ok) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent); }
+.gk-done::before { content: ""; inline-size: 84px; block-size: 84px; background: var(--ok);
+  -webkit-mask: url(/assets/ai-invite/done.svg) center / contain no-repeat; mask: url(/assets/ai-invite/done.svg) center / contain no-repeat;
+  animation: gk-ok .6s var(--ease-river, ease-out); }
+.gk-done p { margin: 0; font-size: 1.08rem; max-inline-size: 30ch; }
+.gk-done .gk-go { inline-size: 100%; }
+.gk-ok { display: inline-flex; align-items: center; gap: 6px; font-size: 1.4rem; font-weight: 700; color: var(--ok); }
+.gk-ok.small { font-size: .95rem; padding-block: 2px; padding-inline: 10px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 14%, var(--card)); }
+.gk[data-state="done"] :is(.gk-steps, .gk-err, .gk-later) { display: none; }
+.gk[data-state="done"] .gk-done { display: grid; }
+.gk[data-state="done"] .gk-head p { display: none; }
+@keyframes gk-ok { from { opacity: 0; scale: .6; } 70% { scale: 1.06; } to { opacity: 1; scale: 1; } }
+@media (prefers-reduced-motion: reduce) { .gk-done::before { animation: none; } }
+:root[data-motion="reduce"] .gk-done::before { animation: none; }
+@media (max-width: 379px) {
+  .gk-step { grid-template-columns: 52px 1fr; gap: 10px 12px; padding: 12px 13px; }
+  .gk-step[aria-current="step"] { padding: 11px 12px; }
+  .gk-pic { inline-size: 52px; block-size: 52px; }
+  .gk-pic::before { inline-size: 34px; block-size: 34px; }
+  .gk-head h2 { font-size: 1.45rem; }
+}
+
+/* ---------- מצב רציניים (vision batch 11, the owner 2026-11-13): a plain, professional face over the same tokens ----------
+   <html data-style="serious"> is set from the person's prefs (look.style = 'serious'; apply.js and common.js's early
+   settings, like data-font); data-pillows="keep" is the second switch, which keeps the cushion icons on the serious home.
+   What goes: anything a page marks .deco (drawings, illustrations, scenery), the companion figure, the illustrated faces.
+   What stays: every tool and its data, the animations, the sounds and the haptics (the owner's choice).
+   Shapes get tighter corners, a hairline instead of a soft shadow, and firmer headings.
+   The serious home (index.html builds it from H.APPS in apps.js, in place of the tent and the campfire):
+     <main class="sr-home">
+       <header class="sr-head"><h1>שלום, נעמה</h1><p>כל הכלים במקום אחד</p></header>
+       <label class="sr-search"><svg class="icon">(H.icon('lens'))</svg><input type="search" placeholder="חיפוש כלי" aria-label="חיפוש כלי"></label>
+       <section class="sr-group"><h2>המקומות</h2>
+         <ul class="sr-tools" data-view="grid">                  (data-view="list": one tool to a row, with its line under the name)
+           <li><a class="sr-tool" href="/food/">
+             <span class="sr-ic">(H.icon(ic)) or, with data-pillows="keep", <img src="/assets/pillows/p13.webp" alt=""></span>
+             <span class="sr-txt"><b>אוכל</b><small>רשימת קניות, ספר מתכונים, דיאטה והמקרר</small></span></a></li>
+         </ul></section>
+       <p class="sr-none" hidden>לא נמצא כלי בשם הזה</p>
+       <div class="sr-view" role="group" aria-label="תצוגה"><button aria-pressed="true" data-view="grid">רשת</button><button aria-pressed="false" data-view="list">רשימה</button></div>
+     </main> */
+:root[data-style="serious"] { --radius: 8px; --radius-sm: 6px; --radius-lg: 12px; --lift: 0 0 0 1px var(--line); }
+:root[data-style="serious"] :is(.deco, .dm-stage) { display: none !important; }
+:root[data-style="serious"] .ai-invite::before { display: none; }
+:root[data-style="serious"] :is(h1, h2, h3) { font-weight: 600; letter-spacing: 0; }
+
+.sr-home { display: grid; gap: 18px; max-inline-size: 980px; margin-inline: auto; padding-block: 20px 28px; padding-inline: 16px; }
+.sr-head h1 { margin: 0; font-size: 1.7rem; line-height: 1.25; }
+.sr-head p { margin: 2px 0 0; color: var(--muted); }
+.sr-search { position: relative; display: flex; align-items: center; }
+.sr-search .icon { position: absolute; inset-inline-start: 14px; inline-size: 20px; block-size: 20px; color: var(--muted); pointer-events: none; }
+.sr-search input { inline-size: 100%; min-block-size: 50px; padding-block: 10px; padding-inline: 44px 14px; font: inherit; font-size: 1.05rem;
+  color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.sr-search input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+.sr-group { display: grid; gap: 8px; }
+.sr-group h2 { margin: 0; font-size: .95rem; color: var(--muted); letter-spacing: .02em; }
+.sr-tools { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.sr-tool { display: grid; justify-items: start; align-content: start; gap: 10px; min-block-size: 108px; padding: 14px; border-radius: var(--radius);
+  background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none;
+  transition: border-color .15s, background-color .15s; }
+.sr-tool:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); background: color-mix(in srgb, var(--primary) 4%, var(--card)); }
+.sr-tool:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-ic { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--radius-sm);
+  color: var(--primary); background: color-mix(in srgb, var(--primary) 9%, var(--card)); }
+.sr-ic .icon { inline-size: 22px; block-size: 22px; }
+.sr-ic img { inline-size: 40px; block-size: 40px; object-fit: contain; }
+:root[data-pillows="keep"] .sr-ic:has(img) { background: none; }
+.sr-txt { display: grid; gap: 2px; min-inline-size: 0; }
+.sr-txt b { font-weight: 600; font-size: 1.05rem; line-height: 1.3; }
+.sr-txt small { display: none; color: var(--muted); font-size: .9rem; line-height: 1.4; }
+/* the list: one tool to a row, its line under the name */
+.sr-tools[data-view="list"] { grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+.sr-tools[data-view="list"] li + li { border-block-start: 1px solid var(--line); }
+.sr-tools[data-view="list"] .sr-tool { grid-template-columns: 40px 1fr; align-items: center; justify-items: stretch; gap: 14px;
+  min-block-size: 64px; padding-block: 10px; padding-inline: 14px; border: 0; border-radius: 0; }
+.sr-tools[data-view="list"] .sr-tool:focus-visible { outline-offset: -2px; }
+.sr-tools[data-view="list"] .sr-txt small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-none { margin: 0; padding: 18px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
+.sr-view { justify-self: center; display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--card); }
+.sr-view button { min-block-size: 40px; padding-inline: 16px; font: inherit; font-size: .95rem; color: var(--muted); background: none; border: 0; cursor: pointer; }
+.sr-view button + button { border-inline-start: 1px solid var(--line); }
+.sr-view button[aria-pressed="true"] { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 9%, var(--card)); }
+@media (max-width: 599px) {
+  .sr-tools:not([data-view="list"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sr-head h1 { font-size: 1.45rem; }
+}
+
+/* ---------- the fonts kept here (public/assets/fonts/, OFL, the licences beside them), so they need no outside site ----------
+   Alef: a clear Hebrew sans, one more choice of font (<html data-font="alef">, like heebo / round / serif).
+   Noto Sans Phoenician as 'Ohel Ivri': the ancient Hebrew script, the owner's own (vision batch 11). Only for those the owner
+   granted it to; the server decides who gets the markup. The letters are Unicode's Phoenician block (U+10900–10915, in the
+   order of the alef-bet: א → U+10900 … ת → U+10915; a final letter is its plain form; niqqud is dropped), and the Hebrew
+   always stays beside them, for screen readers and for a tap:
+     <span class="ivri" tabindex="0" role="button" aria-label="שלום"><span class="ivri-old" aria-hidden="true">𐤔𐤋𐤅𐤌</span><span class="ivri-he">שלום</span></span>
+   A tap (or Enter) toggles .open on .ivri, which shows the Hebrew instead. The page JS writes the letters (a toIvri() is in
+   docs/design/prototype/ivri.html). */
+@font-face { font-family: 'Alef'; font-weight: 400; font-display: swap; src: url(/assets/fonts/alef-400-hebrew.woff2) format('woff2');
+  unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+@font-face { font-family: 'Alef'; font-weight: 400; font-display: swap; src: url(/assets/fonts/alef-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Alef'; font-weight: 700; font-display: swap; src: url(/assets/fonts/alef-700-hebrew.woff2) format('woff2');
+  unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+@font-face { font-family: 'Alef'; font-weight: 700; font-display: swap; src: url(/assets/fonts/alef-700-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Ohel Ivri'; font-display: swap; src: url(/assets/fonts/phoenician.woff2) format('woff2'); unicode-range: U+10900-1091F; }
+.ivri { display: inline-block; cursor: pointer; border-radius: 4px; -webkit-tap-highlight-color: transparent; }
+.ivri-old { font-family: 'Ohel Ivri', 'Noto Sans Phoenician', sans-serif; letter-spacing: .06em; font-weight: 400; unicode-bidi: isolate; }
+.ivri-he { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ivri.open .ivri-old { display: none; }
+.ivri.open .ivri-he { position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; white-space: normal; }
+.ivri:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

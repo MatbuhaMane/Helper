@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>עריכה ומחיקה בעץ</title>
+  <!-- A sample for family.css and tree.css: the person's edit and delete actions, undo for 10s, "ממתין לאישור" and the request
+       card with אשר / דחה. Copy to public/ to view (not committed there). ?undo=0 hides the undo bar. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/sheet.css">
+  <link rel="stylesheet" href="/assets/tree.css">
+  <link rel="stylesheet" href="/family/family.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; } .demo { max-inline-size: 720px; margin: 20px auto 140px; padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 22px; }
+    .demo h3 { margin: 0; font-size: .9rem; color: var(--muted); font-weight: 500; }
+    .leaves { position: relative; block-size: 210px; container-type: inline-size; border-radius: 16px; background: color-mix(in srgb, var(--olive) 12%, var(--card)); }
+    .leaves .tr-p { --leaf: 76px; }</style>
+</head>
+<body>
+<main class="demo fv">
+  <h3>כרטיס אדם (פאנל)</h3>
+  <div class="card fv-panel">
+    <header class="fv-ph"><span class="fv-pic big" aria-hidden="true">מ</span>
+      <div><h2>משה כהן <span class="fv-pend" title="מחכה לאישור של דנה">ממתין לאישור</span></h2><p class="fv-relname">סבא</p><p class="fv-life muted">נולד ב־4 במרץ 1950 · בן 76</p></div>
+      <span class="spacer"></span>
+      <div class="fv-pacts"><button class="btn fv-pact" data-act="edit" type="button">עריכה</button><button class="btn fv-pact danger" data-act="delete" type="button">מחיקה</button></div>
+    </header>
+    <div class="fv-pendbox"><span class="fv-pend">ממתין לאישור</span>
+      <p>השינוי יופיע בעץ אחרי שדנה תאשר.</p>
+      <dl class="fv-diff"><div><dt>תאריך לידה</dt><dd><s>3.4.1950</s> <b>4.3.1950</b></dd></div><div><dt>מקום לידה</dt><dd><s></s> <b>טבריה</b></dd></div></dl>
+      <div class="fv-ask-acts"><button class="btn ghost" type="button">ביטול הבקשה</button></div></div>
+  </div>
+
+  <h3>בקשות אישור (אצל דנה)</h3>
+  <div class="fv-asks">
+    <section class="card fv-ask">
+      <header class="fv-ask-h"><span class="fv-pic" aria-hidden="true">י</span><div><b>יוסי כהן</b><small>מבקש לשנות את הפרטים של <b>סבא משה</b></small></div><time class="muted">לפני שעה</time></header>
+      <dl class="fv-diff"><div><dt>תאריך לידה</dt><dd><s>3.4.1950</s> <b>4.3.1950</b></dd></div><div><dt>מקום לידה</dt><dd><s></s> <b>טבריה</b></dd></div></dl>
+      <div class="fv-ask-acts"><button class="btn primary fv-ok" type="button">אשר</button><button class="btn fv-no" type="button">דחה</button></div>
+    </section>
+    <section class="card fv-ask">
+      <header class="fv-ask-h"><span class="fv-pic" aria-hidden="true">ר</span><div><b>רותי לוי-אברהמי</b><small>מבקשת למחוק מהעץ את <b>אברהם לוי</b></small></div><time class="muted">אתמול</time></header>
+      <p class="fv-ask-del">אברהם לוי יימחק מהעץ, עם הקשרים שלו</p>
+      <div class="fv-ask-acts"><button class="btn primary fv-ok" type="button">אשר</button><button class="btn fv-no" type="button">דחה</button></div>
+    </section>
+    <section class="card fv-ask done">
+      <header class="fv-ask-h"><span class="fv-pic" aria-hidden="true">א</span><div><b>אבי כהן</b><small>ביקש לשנות את השם של <b>שרה</b></small></div></header>
+      <p class="fv-ask-said">אושר</p>
+    </section>
+  </div>
+
+  <h3>על העץ ובשורות</h3>
+  <div class="leaves">
+    <button class="tr-p pending" style="--x:22; --y:6" aria-label="משה כהן, ממתין לאישור"><span class="tr-leaf"><span class="tr-face">מ</span></span><span class="tr-tag"><b>משה</b></span></button>
+    <button class="tr-p" style="--x:50; --y:6"><span class="tr-leaf"><span class="tr-face">ש</span></span><span class="tr-tag"><b>שרה</b></span></button>
+    <button class="tr-p going" style="--x:78; --y:6"><span class="tr-leaf"><span class="tr-face">ד</span></span><span class="tr-tag"><b>דנה</b></span></button>
+  </div>
+  <div class="fv-row"><button class="fv-card pending"><span class="fv-pic">מ</span><b>משה כהן</b><small class="muted">סבא</small></button><button class="fv-card"><span class="fv-pic">ש</span><b>שרה כהן</b></button><button class="fv-card going"><span class="fv-pic">ד</span><b>דנה</b></button></div>
+</main>
+<div class="fv-undo" role="status" style="--t:10s" id="undo"><span>דנה נמחקה מהעץ</span><button class="btn fv-undo-btn" type="button">בטל</button><i class="fv-undo-bar" aria-hidden="true"></i></div>
+<script src="/assets/common.js"></script>
+<script>
+  const q = new URLSearchParams(location.search);
+  if (q.get('undo') === '0') document.getElementById('undo').remove();
+  if (q.get('theme')) setTimeout(() => { document.documentElement.dataset.theme = q.get('theme'); }, 300);
+</script>
+</body>
+</html>

@@ -1215,3 +1215,21 @@ CREATE TABLE IF NOT EXISTS family_changes (
 CREATE INDEX IF NOT EXISTS family_changes_for ON family_changes(for_email, status);
 CREATE INDEX IF NOT EXISTS family_changes_by ON family_changes(by_email, status);
 CREATE INDEX IF NOT EXISTS family_changes_grp ON family_changes(grp);
+-- secret grants the owner gives one member from the owner's room (server/grants.ts): frames, bio_ancient, name_ancient
+CREATE TABLE IF NOT EXISTS user_grants (
+  email      TEXT NOT NULL,
+  grant_key  TEXT NOT NULL,
+  by_email   TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, grant_key)
+);
+
+-- web push subscriptions, one row per device (server/push.ts)
+CREATE TABLE IF NOT EXISTS push_subs (
+  endpoint   TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS push_subs_email ON push_subs (email);

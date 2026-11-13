@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>הזמנות – הדלת האחורית</title>
+  <!-- A sample of the back door's invitations card (admin.css .bd-inv). Copy to public/ to view (not committed there). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; }</style>
+</head>
+<body>
+<main class="wide bd"><div class="bd-dash">
+  <div class="bd-part" id="invites"><section class="card bd-inv"><h2>הזמנות</h2>
+    <div class="bd-inv-tools">
+      <div class="ad-combo"><label class="ad-search"><input type="search" placeholder="חיפוש לפי שם או כתובת" role="combobox" aria-controls="ad-sugg" aria-label="חיפוש"></label><ul id="ad-sugg" role="listbox" hidden></ul></div>
+      <div class="bd-inv-f" role="group" aria-label="סינון"><button aria-pressed="true">הכל</button><button aria-pressed="false">ממתינות <span>3</span></button><button aria-pressed="false">הצטרפו</button><button aria-pressed="false">פג תוקף</button></div>
+    </div>
+    <ul class="bd-inv-list">
+      <li class="bd-inv-row" data-st="sent"><span class="bd-inv-who"><b>נועה לוי</b><small class="muted">הזמין: דנה · 14.11</small></span><span class="bd-inv-st">נשלחה</span><button class="btn small ghost">שליחה שוב</button></li>
+      <li class="bd-inv-row" data-st="opened"><span class="bd-inv-who"><b>avraham.cohen.family@example.com</b><small class="muted">הזמין: יוסי · 13.11</small></span><span class="bd-inv-st">נפתחה</span><button class="btn small ghost">שליחה שוב</button></li>
+      <li class="bd-inv-row" data-st="joined"><span class="bd-inv-who"><b>מיכל ברק</b><small class="muted">הזמינה: רותי · 10.11</small></span><span class="bd-inv-st">הצטרפה</span></li>
+      <li class="bd-inv-row" data-st="expired"><span class="bd-inv-who"><b>אורי שמש</b><small class="muted">הזמין: דנה · 1.11</small></span><span class="bd-inv-st">פג תוקף</span><button class="btn small ghost">שליחה שוב</button></li>
+    </ul>
+  </section></div>
+</div></main>
+</body>
+</html>

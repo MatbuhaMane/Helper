@@ -4,6 +4,8 @@ import { aiStatus } from '../../server/ai';
 import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
 import * as daemon from '../../server/daemon';
 import * as access from '../../server/access';
+import * as grants from '../../server/grants';
+import * as push from '../../server/push';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
@@ -70,6 +72,12 @@ route('GET', '/api/auth/dev', devLogin);
 route('POST', '/api/access/request', access.request);              // asking the owner for access, no session (server/access.ts)
 route('GET', '/api/admin/access-requests', access.list);
 route('POST', '/api/admin/access-requests/decide', access.decide);   // the owner: invited / declined (ai-features, for the master)
+route('GET', '/api/admin/grants', grants.list);
+route('GET', '/api/push/key', push.key);
+route('POST', '/api/push/subscribe', push.subscribe);
+route('DELETE', '/api/push/subscribe', push.unsubscribe);
+route('POST', '/api/push/test', push.test);
+route('PUT', '/api/admin/grants/:email', grants.put);
 route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
 route('POST', '/api/auth/passkey', lock.login);
 /* the app lock and the tree lock (the master's, server/lock.ts) */
@@ -91,6 +99,7 @@ route('GET', '/api/me', async (ctx) => {
   // child: under 12 by the birth year the owner set (the year itself stays private)
   return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
     shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
+    grants: await grants.grantsFor(ctx.env, ctx.user.email),   // the person's own secret grants only (server/grants.ts)
     ...(await lock.meLock(ctx.env, ctx.req)) });   // appLock: off | pin | bio (the padlock in the bar); locked: the lock screen   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);

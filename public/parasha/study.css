@@ -31,7 +31,7 @@
 .rs-v.flash { animation: rs-flash 1.8s ease; }
 @keyframes rs-flash { 0%, 35% { background: color-mix(in srgb, #e0b04a 45%, transparent); } }
 .rs-n { font: inherit; font-size: .72rem; font-weight: 700; color: var(--primary); background: none; border: 0; padding: 0 2px; margin-inline-end: 6px; vertical-align: super; cursor: pointer; }
-.rs-he { font-family: "SBL Hebrew", "Ezra SIL", "Taamey Frank CLM", "Noto Serif Hebrew", "David", serif; }
+.rs-he { font-family: "SBL Hebrew", "Ezra SIL", "Taamey Frank CLM", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; }
 .rs-v .w { border-radius: 8px; padding: 0 2px; transition: background .15s; }
 .rs-v .w:hover { background: color-mix(in srgb, var(--primary) 16%, transparent); }
 .rs-v .w.on { background: color-mix(in srgb, var(--primary) 30%, transparent); }
@@ -67,11 +67,11 @@
 .rs-fab-i:active .ic { transform: scale(.92); }
 .rs-fab-i:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; border-radius: 16px; }
 
-.rs-word { margin: 0; font-size: 1.8em; font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; font-weight: 500; }
+.rs-word { margin: 0; font-size: 1.8em; font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; font-weight: 500; }
 .rs-lex { display: grid; gap: 10px; }
 .rs-entry { padding: 12px 14px; border-radius: 20px; background: color-mix(in srgb, var(--text) 4%, transparent); }
 .rs-entry-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
-.rs-entry-h b { font-size: 1.25em; font-family: "SBL Hebrew", "Noto Serif Hebrew", serif; }
+.rs-entry-h b { font-size: 1.25em; font-family: "SBL Hebrew", "Noto Serif Hebrew", 'Ohel Ivri', serif; }
 .rs-entry-h small { color: var(--muted); font-size: .78em; margin-inline-start: auto; }
 .rs-morph { font-size: .8em; color: var(--muted); }
 .rs-translit { color: var(--muted); font-size: .85em; text-align: end; }
@@ -100,9 +100,9 @@
 .rs-wit-h b { font-size: .92em; }
 .rs-wit-h small { color: var(--muted); font-size: .76em; margin-inline-start: auto; }
 .rs-wit-t { margin: 0; line-height: 1.75; font-size: 1.08em; }
-.rs-wit-t[lang="he"], .rs-wit-t[lang="arc"] { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; }
-.rs-wit-t[lang="syc"] { font-family: "Noto Sans Syriac", "Estrangelo Edessa", serif; font-size: 1.15em; }
-.rs-wit-t[lang="grc"], .rs-wit-t[lang="la"] { font-family: "Noto Serif", "Gentium Plus", "SBL Greek", "Palatino Linotype", serif; }
+.rs-wit-t[lang="he"], .rs-wit-t[lang="arc"] { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; }
+.rs-wit-t[lang="syc"] { font-family: "Noto Sans Syriac", "Estrangelo Edessa", 'Ohel Ivri', serif; font-size: 1.15em; }
+.rs-wit-t[lang="grc"], .rs-wit-t[lang="la"] { font-family: "Noto Serif", "Gentium Plus", "SBL Greek", "Palatino Linotype", 'Ohel Ivri', serif; }
 .rs-wit-t mark { background: color-mix(in srgb, #e0b04a 40%, transparent); color: inherit; border-radius: 4px; padding-inline: 1px; }
 .rs-wit-tr { margin: 0; color: var(--muted); font-size: .86em; line-height: 1.5; }
 
@@ -192,7 +192,7 @@
 .rs-he-facts small { color: var(--muted); }
 .rs-conc { font-size: .88em; color: var(--muted); }
 .rs-conc:empty { display: none; }
-.rs-conc b { color: var(--text); font-family: "SBL Hebrew", "Noto Serif Hebrew", serif; font-size: 1.19em; }
+.rs-conc b { color: var(--text); font-family: "SBL Hebrew", "Noto Serif Hebrew", 'Ohel Ivri', serif; font-size: 1.19em; }
 .rs-lex-h { margin: 4px 0 0; font-size: .9em; color: var(--muted); font-weight: 500; }
 
 /* the chapters of the book */
@@ -227,7 +227,25 @@
 
 /* the verse number: a target a finger can hit */
 .rs-n { min-inline-size: 26px; min-block-size: 26px; padding: 0 4px; border-radius: 8px; }
-.rs-n:hover { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.rs-n { background: color-mix(in srgb, var(--primary) 8%, transparent); transition: background-color var(--dur-quick, .15s) ease; }   /* a faint pebble: the number can be tapped */
+.rs-n:hover { background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.rs-n:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* ── Marking verses (the users, 2026-11-14): a tap on a number marks the verse, then to the chapter's end, then the whole chapter.
+   study.js puts .mk on each marked .rs-v. One gentle look at every level: a warm honey wash, see-through, no frame; marked verses
+   in a row join into one soft band, rounded only at its two ends. The words stay in the text's ink, so the reading is untouched.
+   The browser's own selection is a quiet honey too, and inside a marked verse it disappears (the band already shows it). */
+.rs-text { --rs-hl: color-mix(in srgb, #e3ad3c 24%, transparent); --rs-hl-n: color-mix(in srgb, #e3ad3c 46%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rs-text { --rs-hl: color-mix(in srgb, #e9b85a 17%, transparent); --rs-hl-n: color-mix(in srgb, #e9b85a 34%, transparent); } }
+:root[data-theme="dark"] .rs-text { --rs-hl: color-mix(in srgb, #e9b85a 17%, transparent); --rs-hl-n: color-mix(in srgb, #e9b85a 34%, transparent); }
+.rs-text ::selection { background: var(--rs-hl-n); color: inherit; }
+.rs-v.mk, .rs-v.mk.on, .rs-v.mk:hover { background: var(--rs-hl); }
+.rs-v.mk ::selection { background: transparent; }
+.rs-v.mk:has(+ .rs-v.mk) { margin-block-end: 0; border-end-start-radius: 0; border-end-end-radius: 0; }
+.rs-v.mk + .rs-v.mk { margin-block-start: 0; border-start-start-radius: 0; border-start-end-radius: 0; }
+.rs-v.mk .rs-n { background: var(--rs-hl-n); color: var(--text); }
+@media (max-width: 820px) { .rs.open .rs-v.mk.on { background: color-mix(in srgb, #e3ad3c 18%, var(--card)); } }
+@media (prefers-reduced-motion: reduce) { .rs-n { transition: none; } }
 
 /* ---------- the study room without AI and with it (ai-upgrade.md): the plain action first, ✨ beside it ---------- */
 /* under the question: "🔎 חיפוש בספריא" and "✨ שאלה לחוקר", round like the room's other buttons; on a phone they share the row */
@@ -244,7 +262,7 @@
 .rs-plain-hit:hover { background: color-mix(in srgb, var(--primary) 7%, transparent); }
 .rs-plain-hit:focus-visible { outline: 3px solid var(--primary); outline-offset: 1px; }
 .rs-plain-hit > b { color: var(--primary); font-weight: 600; font-size: .92em; }
-.rs-plain-hit > span { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", serif; font-size: 1.05em; }
+.rs-plain-hit > span { font-family: "SBL Hebrew", "Noto Serif Hebrew", "David", 'Ohel Ivri', serif; font-size: 1.05em; }
 .rs-plain-hit > span b { font-weight: 600; background: color-mix(in srgb, var(--olive) 34%, transparent); border-radius: 4px; padding-inline: 2px; }
 /* a translation: Sefaria's (plain), a dictionary for the words (plain) and ✨ the assistant's – small, side by side */
 .rs-tr-wrap > .ai-pair { gap: 6px; }

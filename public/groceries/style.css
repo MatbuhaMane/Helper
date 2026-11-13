@@ -324,7 +324,7 @@ textarea.r-title-input:focus, textarea.r-sub-input:focus { box-shadow: none; bor
 /* stamps: ink on paper, a little crooked, as if pressed by hand */
 .stamp-btn { border: 0; background: none; padding: 0; cursor: pointer; line-height: 0; border-radius: 50%; }
 .stamp-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
-.stamp { inline-size: 58px; block-size: 58px; font-family: Rubik, sans-serif; opacity: .9; transition: transform var(--dur-draw) var(--ease-river); }
+.stamp { inline-size: 58px; block-size: 58px; font-family: Rubik, 'Ohel Ivri', sans-serif; opacity: .9; transition: transform var(--dur-draw) var(--ease-river); }
 .stamp-kosher { color: #2e5a87; transform: rotate(-9deg); }
 .stamp-keto { color: #7d6d1c; transform: rotate(7deg); }
 .stamp-btn:hover .stamp { transform: rotate(0) scale(1.04); }
@@ -384,7 +384,7 @@ select.sub-select { font: inherit; font-size: .9rem; padding: 4px 8px; max-inlin
 .r-warns:empty, .r-stamps:empty { display: none; }
 .r-stamps { gap: 6px 18px; padding-block: 2px; }
 .stamp.with-caption { inline-size: 92px; block-size: 97px; }
-.stamp-caption { font-family: Rubik, sans-serif; letter-spacing: .2px; }
+.stamp-caption { font-family: Rubik, 'Ohel Ivri', sans-serif; letter-spacing: .2px; }
 .stamp-kosher { transform: rotate(-6deg); }
 .stamp-keto { transform: rotate(5deg); }
 @media (max-width: 520px) { .stamp.with-caption { inline-size: 86px; block-size: 90px; } }

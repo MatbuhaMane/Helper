@@ -77,6 +77,8 @@
     return mePromise.then((r) => {
       try { if (r.user) localStorage.setItem('helper.me', JSON.stringify(r.user)); } catch (_) { /* ignore */ }
       if (r.user && !r.offline) applyServerPrefs(r.user.email, r.prefs || {});
+      grants = r.grants || [];
+      ancientUi();
       return r;
     });
   }
@@ -640,7 +642,107 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  /* ---------- The ancient script (docs/vision/profile.md): Hebrew letters as Noto Sans Phoenician ----------
+   * H.ancient(text) → the same text in the ancient letters (finals become the plain letter, the vowel points drop).
+   * H.hasGrant(key) → a secret option the owner granted this person ('frames', 'bio_ancient', 'name_ancient'); the server
+   *   sends a person only their own grants, and checks them again on every save.
+   * The owner's switch, H.prefs('me').ancientUi (only with the 'ancient_ui' grant, the owner's alone): the interface itself –
+   *   the bar, menus, buttons, headings and labels – turns ancient; content (inputs, [data-content], .content) stays Hebrew,
+   *   and anything in .keep-he (the switch and the way out) stays plain Hebrew always. A tap on ancient text shows the Hebrew. */
+  let grants = [];
+  const hasGrant = (k) => grants.includes(k);
+  const PHN = 'אבגדהוזחטיכלמנסעפצקרשת', FIN = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+  function ancient(text) {
+    return String(text).replace(/[֑-ׇ]/g, '').replace(/[א-ת]/g, (c) => {
+      const i = PHN.indexOf(FIN[c] || c);
+      return i < 0 ? c : String.fromCodePoint(0x10900 + i);
+    });
+  }
+  const UI_SEL = 'header, nav, button, label, h1, h2, h3, h4, legend, summary, th, .btn, .tab, [role=tab], [role=menuitem], .ui, .sr-tool, .wheel-item';
+  const SKIP_SEL = 'input, textarea, select, [contenteditable], [data-content], .content, .keep-he, script, style';
+  const orig = new WeakMap();
+  let ancientOn = false, ancientObs = null;
+  function ancientNode(t) {
+    const p = t.parentElement;
+    if (!p || !/[א-ת]/.test(t.data) || p.closest(SKIP_SEL) || !p.closest(UI_SEL)) return;
+    orig.set(t, t.data);
+    t.data = ancient(t.data);
+    p.classList.add('phn');
+  }
+  function ancientWalk(root) {
+    if (root.nodeType === 3) return ancientNode(root);
+    const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const all = []; while (w.nextNode()) all.push(w.currentNode);
+    all.forEach(ancientNode);
+  }
+  function ancientUi() {
+    const want = hasGrant('ancient_ui') && !!prefs('me').ancientUi;
+    if (want === ancientOn) return;
+    ancientOn = want;
+    if (want) {
+      document.documentElement.classList.add('ancient-ui'); if (!document.getElementById('phn-css')) document.head.append(el('style', { id: 'phn-css' }, ".ancient-ui .phn { font-family: 'Ohel Ivri', var(--font, Rubik), sans-serif; }"));
+      ancientWalk(document.body);
+      ancientObs = new MutationObserver((ms) => { for (const m of ms) { if (m.type === 'characterData') { if (!orig.has(m.target)) ancientNode(m.target); } else m.addedNodes.forEach(ancientWalk); } });
+      ancientObs.observe(document.body, { childList: true, subtree: true, characterData: true });
+    } else {
+      ancientObs?.disconnect(); ancientObs = null;
+      document.documentElement.classList.remove('ancient-ui');
+      const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      while (w.nextNode()) { const t = w.currentNode; if (orig.has(t)) { t.data = orig.get(t); orig.delete(t); } }
+    }
+  }
+  /** the way back: ancient letters to Hebrew (the finals return at a word's end) */
+  const PHN_RE = /[𐤀-𐤕]/u;
+  function unancient(text) {
+    const he = String(text).replace(/[𐤀-𐤕]/gu, (c) => PHN[c.codePointAt(0) - 0x10900]);
+    return he.replace(/[כמנפצ](?=$|[^א-ת])/g, (c) => ({ 'כ': 'ך', 'מ': 'ם', 'נ': 'ן', 'פ': 'ף', 'צ': 'ץ' })[c]);
+  }
+  /** what the owner writes while the ancient switch is on goes out in the ancient letters, for everyone to see that way:
+   *  every composer (messages, comments, global messages) sends H.outgoing(text) instead of text */
+  const outgoing = (text) => (hasGrant('ancient_ui') && prefs('me').ancientUi ? ancient(text) : text);
+  // a tap on ancient text, the interface's or a message's, shows the Hebrew it stands for, for a moment
+  document.addEventListener('click', (e) => {
+    const p = e.target.closest?.('.phn') || (e.target.nodeType === 1 && PHN_RE.test(e.target.textContent || '') && e.target.childElementCount === 0 ? e.target : null);
+    if (!p || p.closest('a, button, [role=button], [role=tab], input, textarea')) return;
+    const t = [...p.childNodes].find((n) => orig.has(n));
+    toast(t ? orig.get(t) : unancient(p.textContent));
+  }, true);
+  addEventListener('helper:prefs', (e) => { if (!e.detail || e.detail === 'me') ancientUi(); });
+
+  /* ---------- Notifications on this device (Web Push, server/push.ts) ----------
+   * await H.push.state()  → 'unsupported' | 'denied' | 'off' | 'on' | 'not-installed' (an iPhone outside the home screen)
+   * await H.push.enable() → asks the browser, subscribes this device; true when on.  H.push.disable(), H.push.test() */
+  const push = {
+    supported: () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window,
+    async state() {
+      const ios = /iP(hone|ad|od)/.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+      if (ios && !standalone) return 'not-installed';
+      if (!push.supported()) return 'unsupported';
+      if (Notification.permission === 'denied') return 'denied';
+      const reg = await navigator.serviceWorker.getRegistration();
+      return (await reg?.pushManager.getSubscription()) ? 'on' : 'off';
+    },
+    async enable() {
+      if (!push.supported()) return false;
+      const { key } = await api('/api/push/key');
+      if (!key) return false;
+      if ((await Notification.requestPermission()) !== 'granted') return false;
+      const reg = await navigator.serviceWorker.ready;
+      const raw = Uint8Array.from(atob(key.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((key.length + 3) % 4)), (c) => c.charCodeAt(0));
+      const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: raw }));
+      await api('/api/push/subscribe', { method: 'POST', body: sub.toJSON() });
+      return true;
+    },
+    async disable() {
+      const sub = await (await navigator.serviceWorker.getRegistration())?.pushManager.getSubscription();
+      if (!sub) return;
+      await api('/api/push/subscribe', { method: 'DELETE', body: { endpoint: sub.endpoint } }).catch(() => {});
+      await sub.unsubscribe();
+    },
+    test: () => api('/api/push/test', { method: 'POST' }),
+  };
+
+  window.H = { api, el, toast, me, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then
@@ -652,11 +754,13 @@
     if (text !== 1) root.style.fontSize = `${Math.round(text * 100)}%`;
     if (a.spacing === 'wide') root.dataset.spacing = 'wide';
     if (a.font === 'readable') root.dataset.font = 'readable';
-    else if (['heebo', 'round', 'serif'].includes(l.font)) root.dataset.font = l.font;   // the font chosen, before paint
+    else if (['heebo', 'round', 'serif', 'alef'].includes(l.font)) root.dataset.font = l.font;   // the font chosen, before paint
     if (a.contrast === 'high') root.dataset.contrast = 'high';
     if (a.motion === 'reduce') root.dataset.motion = 'reduce';
     if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;
     if (/^[a-z]{1,16}$/.test(m.religion || '')) root.dataset.religion = m.religion;
+    if (l.style === 'serious') root.dataset.style = 'serious';   // מצב רציניים (vision batch 11), before paint
+    if (l.pillows === 'keep') root.dataset.pillows = 'keep';
   })();
   if (!embedded) loadOnce('/settings/apply.js').catch(() => { /* the early marks stay */ });
 })();

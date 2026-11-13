@@ -431,7 +431,42 @@
     return new Promise((ok, no) => { const s = el('script', { src, 'data-dyn': '1' }); s.addEventListener('load', () => { s.dataset.loaded = '1'; ok(); }); s.addEventListener('error', no); document.head.append(s); });
   }
 
+  /* Back closes what is open, one step at a time (the phone's back gesture, the back key, Alt+←), instead of leaving the page.
+   *   const step = H.back.push(() => closeIt(), url?)   when a tab, modal, sheet or panel opens (url: optional, e.g. '#recipes')
+   *   await H.back.done(step)                            when it is closed by its own button (removes the history entry; closeIt is not
+   *                                                      called). Resolves once the history is back, so a URL change after it lands right.
+   * On back, the newest step's callback runs; anything opened on top of it closes first. A step left over from before a reload is skipped. */
+  const back = (() => {
+    const page = Math.random().toString(36).slice(2), stack = [];
+    const waiting = [];   // done() calls whose history.go() has not landed yet
+    let seq = 0;
+    const here = () => (history.state && history.state.hpage === page ? history.state.hback || 0 : 0);
+    const run = (s) => { try { s.close(); } catch (err) { console.error(err); } };
+    function push(close, url) {
+      const id = ++seq;
+      history.pushState({ ...(history.state || {}), hpage: page, hback: id }, '', url);
+      stack.push({ id, close });
+      return id;
+    }
+    function done(id) {
+      const k = stack.findIndex((s) => s.id === id);
+      if (k < 0) return Promise.resolve();
+      const gone = stack.splice(k), steps = gone.filter((s) => s.id <= here()).length;
+      gone.slice(1).reverse().forEach(run);   // what was opened on top of it
+      return steps ? new Promise((ok) => { waiting.push(ok); history.go(-steps); }) : Promise.resolve();
+    }
+    addEventListener('popstate', (e) => {
+      if (waiting.length) { e.stopImmediatePropagation(); waiting.shift()(); return; }
+      const st = history.state || {};
+      if (st.hback && st.hpage !== page) { e.stopImmediatePropagation(); history.back(); return; }   // from before a reload: nothing to close there
+      const to = here();
+      while (stack.length && stack[stack.length - 1].id > to) run(stack.pop());
+    });
+    return { push, done, get depth() { return stack.length; } };
+  })();
+
   /* Glass modal shared by apps */
+  let modalStep = 0;
   function modal(...content) {
     let m = document.getElementById('modal');
     if (!m) {
@@ -447,6 +482,7 @@
     const b = document.getElementById('modalBody');
     b.textContent = '';
     b.append(...content);
+    if (m.hidden && !modalStep) modalStep = back.push(() => { modalStep = 0; closeModal(); });
     m.hidden = false;
     document.body.classList.add('modal-open');
     b.scrollTop = 0;
@@ -455,6 +491,7 @@
     const m = document.getElementById('modal');
     if (m) m.hidden = true;
     document.body.classList.remove('modal-open');
+    if (modalStep) { const s = modalStep; modalStep = 0; back.done(s); }
   }
 
   function timeAgo(ts) {
@@ -499,7 +536,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', autoDaemon);
   else setTimeout(autoDaemon);
 
-  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  window.H = { api, el, toast, me, requireLogin, header, icon, modal, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

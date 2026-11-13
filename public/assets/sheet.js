@@ -63,6 +63,7 @@
     addEventListener('resize', () => { if (!root.hidden) aim(size, false); });
     const copy = (card) => el('div', { class: 'rs-copy' }, card.cloneNode(true));
     const leave = () => { const f = onLeave; onLeave = null; if (f) f(); };
+    let step = 0;
     function open(from, content, opts = {}) {
       leave();
       onLeave = opts.onLeave || null;
@@ -73,6 +74,7 @@
       body.scrollTop = 0;
       if (!root.hidden && !closing) { aim(opts.size || size, true); return; } // already open: new content (and maybe a new size), animated
       closing = false;
+      if (!step && H.back) step = H.back.push(() => { step = 0; close(); });   // the back gesture closes the sheet
       aim(opts.size || 'full', false);
       origin = from && document.body.contains(from) ? from : null;
       root.hidden = false;
@@ -87,6 +89,7 @@
     }
     function close() {
       if (root.hidden || closing) return;
+      if (step) { const s = step; step = 0; H.back.done(s); }
       leave();
       closing = true;
       const done = () => { if (!closing) return; closing = false; root.hidden = true; root.classList.remove('open', 'instant'); document.body.classList.remove('sheet-open'); body.replaceChildren(); };

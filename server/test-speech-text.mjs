@@ -43,6 +43,18 @@ const line = `בוקר טוב! הוספתי חלב ולחם לרשימת הקנ�
 const pl = S.protect(line);
 eq('a real answer comes back whole', S.restore('בֹּקֶר טוֹב! הוֹסַפְתִּי חָלָב וְלֶחֶם לִרְשִׁימַת הַקְּנִיּוֹת. @@1@@ כָּאן אִם תִּצְטָרְכוּ עוֹד מַשֶּׁהוּ.', line, pl.kept),
   `בֹּקֶר טוֹב! הוֹסַפְתִּי חָלָב וְלֶחֶם לִרְשִׁימַת הַקְּנִיּוֹת. ${R} כָּאן אִם תִּצְטָרְכוּ עוֹד מַשֶּׁהוּ.`);
+/* ---- the person's name (the owner: מִישָׁאֵל) ---- */
+const M = 'מִישָׁאֵל';
+eq('the name, plain, becomes the pointed one', S.speakName('בוקר טוב מישאל!', M), `בוקר טוב ${M}!`);
+eq('after a prefix letter', S.speakName('אמרתי למישאל ולמישאל', M), `אמרתי ל${M} ול${M}`);
+eq('already pointed differently: the chosen pointing', S.speakName('שלום מִישְׁאַל', M), `שלום ${M}`);
+eq('inside another word: untouched', S.speakName('מישאלים ומישאלה', M), 'מישאלים ומישאלה');
+eq('no name set: untouched', S.speakName('שלום מישאל', ''), 'שלום מישאל');
+eq('a clean name is kept', S.spokenName(' מִישָׁאֵל '), M);
+eq('not a name: refused', [S.spokenName('<script>'), S.spokenName('Mishael'), S.spokenName('א')].join('|'), '||');
+const pm = S.protect(`בוקר טוב ${M}, כאן ${R}`, [M]);
+eq('the name is kept aside from the niqqud, with רַאבַּ"ע', pm.text, 'בוקר טוב @@2@@, כאן @@1@@');
+eq('and back', S.restore('בֹּקֶר טוֹב @@2@@, כָּאן @@1@@', `בוקר טוב ${M}, כאן ${R}`, pm.kept), `בֹּקֶר טוֹב ${M}, כָּאן ${R}`);
 eq('a changed word is still caught', S.restore('בֹּקֶר רַע', 'בוקר טוב', []), 'בוקר טוב');
 
 console.log(`${pass} passed, ${fail} failed`);

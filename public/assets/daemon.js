@@ -1203,29 +1203,26 @@
   /* The tab at the screen's edge is dragged (vision batch 5): let go near a side and it docks there, elsewhere it floats.
      Where it is belongs to this device (CLAUDE.md, principle 2): localStorage, as fractions of the screen. */
   const TAB_KEY = 'helper.daemon.tab';
-  let tabDragged = false;
+  let tabDragged = false, dockHint = null;
   const tabSpot = () => { try { return JSON.parse(localStorage.getItem(TAB_KEY) || 'null'); } catch (_) { return null; } };
+  const rtl = () => getComputedStyle(document.documentElement).direction === 'rtl';
+  /** the side a screen x is near, in the page's own terms (design's daemon.css: docked at the end, .dock-start, .free) */
+  const sideAt = (x, near = 56) => (x < near ? (rtl() ? 'end' : 'start') : x > innerWidth - near ? (rtl() ? 'start' : 'end') : null);
   function placeTab(spot = tabSpot()) {
-    tab.classList.remove('at-left', 'at-right', 'free');
+    tab.classList.remove('dock-start', 'free');
     const st = tab.style;
-    if (!spot) { st.left = st.right = st.top = st.bottom = st.borderRadius = st.border = st.animationName = ''; return; }   // the stylesheet's place
+    st.left = st.top = st.bottom = '';
+    if (!spot) return;                                                    // the stylesheet's place: docked at the end
     const y = Math.max(8, Math.min(innerHeight - 70, spot.y * innerHeight));
-    st.top = y + 'px'; st.bottom = 'auto';
-    if (spot.side === 'free') {
-      tab.classList.add('free');
-      st.left = Math.max(4, Math.min(innerWidth - 64, spot.x * innerWidth)) + 'px'; st.right = 'auto';
-      st.borderRadius = '50%'; st.border = '1px solid var(--line-strong)'; st.animationName = 'none';
-    } else {
-      // (docked: rounded on the inside, flat against its side – until daemon.css draws .at-left / .at-right)
-      tab.classList.add('at-' + spot.side);
-      if (spot.side === 'left') { st.left = '0'; st.right = 'auto'; st.borderRadius = '0 30px 30px 0'; } else { st.right = '0'; st.left = 'auto'; st.borderRadius = '30px 0 0 30px'; }
-      st.border = '1px solid var(--line-strong)'; st[spot.side === 'left' ? 'borderLeft' : 'borderRight'] = '0';
-      st.animationName = spot.side === 'left' ? 'dm-peek-rtl' : 'dm-peek';   // it slides in from its own side
-    }
+    st.top = y + 'px'; st.bottom = 'auto';                                // (its height, wherever it is)
+    if (spot.side === 'start') tab.classList.add('dock-start');
+    if (spot.side === 'free') { tab.classList.add('free'); st.left = Math.max(4, Math.min(innerWidth - 64, spot.x * innerWidth)) + 'px'; }
   }
   function dragTab() {
     placeTab();
     addEventListener('resize', () => placeTab());
+    dockHint = el('div', { class: 'dm-dock-hint', 'aria-hidden': 'true' });
+    document.body.append(dockHint);
     tab.addEventListener('pointerdown', (e) => {
       const start = { x: e.clientX, y: e.clientY }, r = tab.getBoundingClientRect(), off = { x: e.clientX - r.left, y: e.clientY - r.top };
       let moved = false, last = start;
@@ -1235,16 +1232,20 @@
         moved = true; last = { x: ev.clientX, y: ev.clientY };
         tab.classList.add('dragging');
         placeTab({ side: 'free', x: (ev.clientX - off.x) / innerWidth, y: (ev.clientY - off.y) / innerHeight });
+        // where it would dock if let go now: a glow on that edge
+        const side = sideAt(ev.clientX);
+        dockHint.className = 'dm-dock-hint' + (side ? ` ${side} on` : '');
       };
-      // (where it was last moved to: a cancelled pointer comes with no place of its own)
+      // (where it was last moved to, unless the release has a place: a cancelled pointer comes with none)
       const up = (ev) => {
         if (moved && ev.type === 'pointerup' && (ev.clientX || ev.clientY)) last = { x: ev.clientX, y: ev.clientY };
         tab.removeEventListener('pointermove', move); tab.removeEventListener('pointerup', up); tab.removeEventListener('pointercancel', up);
         tab.classList.remove('dragging');
+        dockHint.className = 'dm-dock-hint';
         if (!moved) return;
         tabDragged = true;                      // the click that follows a drag does not open him
-        const x = last.x - off.x, y = (last.y - off.y) / innerHeight, near = 56;
-        const spot = last.x < near ? { side: 'left', y } : last.x > innerWidth - near ? { side: 'right', y } : { side: 'free', x: x / innerWidth, y };
+        const y = (last.y - off.y) / innerHeight, side = sideAt(last.x);
+        const spot = side ? { side, y } : { side: 'free', x: (last.x - off.x) / innerWidth, y };
         try { localStorage.setItem(TAB_KEY, JSON.stringify(spot)); } catch (_) { /* private mode: it stays for now */ }
         placeTab(spot);
       };

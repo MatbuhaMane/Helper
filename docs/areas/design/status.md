@@ -2,9 +2,24 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (vision batch 16: a smoother recipe flip and animation audit, "סיכום היום" every day, the recipe book's tab menu; batch 15: the "בקרוב" pictures and note)._
+_Updated 2026-11-14 (vision batch 17: the toast at the top, the lists panel, choosing many, a category icon; batch 16: a smoother recipe flip and animation audit, "סיכום היום" every day, the recipe book's tab menu; batch 15: the "בקרוב" pictures and note)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: vision batch 17, design part (2026-11-14).**
+  - **The toast (base.css):**
+    - a light glass pill under the app bar, middle, never over its buttons;
+    - the swipe and click hooks (`--dx`, `--dy`, `--o`, `.dragging`);
+    - the contract is `docs/design/toast.md` (master: `H.toast` times 2.6 s and 5 s, click and swipe to close).
+  - **The shopping list (groceries/style.css):**
+    - the lists panel (`.lists-track` and `.lists-btn`, the menu reusing `.tab-menu`);
+    - choosing many (`#list.selecting`, `.sel-box`, `.sel-cat`, the sticky `.sel-bar`);
+    - the icon picker (`.icon-pick`);
+    - the contract is `docs/design/shopping-lists.md` (ai-features); the sample is `docs/design/prototype/shopping-lists.html`.
+  - **Checked:**
+    - 375 and desktop, light and dark;
+    - no overflow, and no overlapping buttons on the shopping page's three views at the bottom of the scroll;
+    - the current flat lists markup still wraps until app.js changes.
+  - **v147 daily card:** checked with candles and calendar rows; `.dsum-more` fixed as a button (eb66171).
 - **Ready: vision batch 16, design part (2026-11-14).**
   - **e456754, the recipe card flip (sheet.css):**
     - a lighter shadow;

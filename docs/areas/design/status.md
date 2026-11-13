@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (family batch, deploy 1)._
+_Updated 2026-11-14 (the back door; images still blocked)._
 
 ## Done
 - **Companions (Figure2D):** 24 figures in one illustrated series, every one with its palette (5 colourways, free, by the
@@ -44,6 +44,11 @@ _Updated 2026-11-14 (family batch, deploy 1)._
   backgrounds, three badges, the title's plaque), badges as stitched patches (locked, new), titles (a glow behind the
   name, wings, a crown, the founder's gold), and a small celebration (`Celebrate.at(el)`).
 
+- **הדלת האחורית, the look (489f08b):** `admin/admin.css` + `assets/bd-icons/` (9 line icons) + `prototype/backdoor.html`:
+  the dashboard on top (the tent's state across; שימוש and פניות side by side on a computer; number cards with a trend and
+  a spark), then the nine parts as toolbox apps coloured by `data-bd`, a count badge, the open part under the tiles.
+  Checked at 375 (3×3) and 1280 (5+4), light and dark, no overflow. The markup went to ai-features for `admin.js`.
+
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
@@ -56,7 +61,7 @@ _Updated 2026-11-14 (family batch, deploy 1)._
 
 ## Blockers
 - The companion's size and the single record need ai-features' `daemon.js` / `music.js` changes in the same merge.
-- The image quota for 2026-11-13 is used (40/40).
+- The image quota for 2026-11-13 is used (40/40, checked again 06:00 UTC): the tent icon and the 19 badges were skipped in this block and wait for 00:00 UTC.
 
 ## Decided by the owner (2026-11-14, the focus round)
 - The app icon: a simple small tent at **every** size (one drawing, after the image reset).

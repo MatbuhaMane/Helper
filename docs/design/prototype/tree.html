@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>עץ המשפחה – זית / עץ ב׳</title>
+  <title>עץ המשפחה – עץ א׳ / עץ ב׳</title>
   <!-- The family tree, spec 1 (docs/vision/tree.md): /assets/tree.css, /assets/tree-sound.js and the layers in /assets/tree/.
-       The markup is in tree.css's header. This page shows the olive (the owner's choice, 2026-11-14) with a sample family (no real people):
+       The markup is in tree.css's header. This page shows עץ ב׳, "canopy" (the owner's choice, v97; the olive is now עץ א׳) with a sample family (no real people):
        the eldest by the roots, a memorial candle there today, a birthday glowing in the crown, a "+" bud beside "me".
        The switches above show the leaves or the hanging oval frames (data-look="frame"), and the second tree, "canopy" (the owner's Gemini drawing, 2026-11-13), from its own slots.json.
        People are spread along each tier's line from slots.json; that placing is ai-features' to write in the real page.
@@ -21,8 +21,8 @@
 </head>
 <body>
 <div class="kinds" role="radiogroup" aria-label="איזה עץ">
-  <button class="chip" type="button" role="radio" aria-checked="true" data-kind="olive">זית</button>
-  <button class="chip" type="button" role="radio" aria-checked="false" data-kind="canopy">עץ ב׳</button>
+  <button class="chip" type="button" role="radio" aria-checked="true" data-kind="canopy">עץ ב׳</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-kind="olive">עץ א׳</button>
 </div>
 <div class="kinds" role="radiogroup" aria-label="איך תלויים האנשים">
   <button class="chip" type="button" role="radio" aria-checked="true" data-look="">עלים</button>
@@ -48,7 +48,7 @@
   }
   const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); e.append(...kids.filter(Boolean)); return e; };
   const tree = document.getElementById('tree');
-  const NOTES = { olive: 'זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.', canopy: 'עץ ב׳: צמרת רחבה כמטרייה, ענפים פרושים וזרדים עם עלים.' };
+  const NOTES = { olive: 'עץ א׳, זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.', canopy: 'עץ ב׳: צמרת רחבה כמטרייה, ענפים פרושים וזרדים עם עלים.' };
   document.querySelectorAll('.kinds .chip[data-kind]').forEach((c) => c.addEventListener('click', () => {
     document.querySelectorAll('.kinds .chip[data-kind]').forEach((o) => o.setAttribute('aria-checked', String(o === c))); draw(c.dataset.kind);
   }));
@@ -82,7 +82,7 @@
   function tap(b, p) { b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap'); setTimeout(() => b.classList.remove('tap'), 900); p.passed ? TreeSound.quiet() : TreeSound.leaf(); }
   // the tree sways a little more while it is moved, then settles with a faint rustle
   let still; addEventListener('scroll', () => { tree.classList.add('moving'); clearTimeout(still); still = setTimeout(() => { tree.classList.remove('moving'); TreeSound.settle(); }, 260); }, { passive: true });
-  draw('olive');
+  draw('canopy');
 </script>
 </body>
 </html>

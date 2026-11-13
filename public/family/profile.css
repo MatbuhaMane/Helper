@@ -55,7 +55,7 @@
 .fp-person { display: grid; justify-items: center; gap: 4px; inline-size: 68px; text-align: center; color: var(--text); text-decoration: none; }
 .fp-face { display: grid; place-items: center; inline-size: 56px; block-size: 56px; border-radius: 50%; overflow: hidden;
   background: color-mix(in srgb, var(--soil) 22%, var(--card)); border: 3px solid var(--card); box-shadow: 0 0 0 1.5px var(--line-strong);
-  font-weight: 700; color: var(--soil); }
+  font-weight: 700; color: color-mix(in srgb, var(--soil) 55%, var(--text)); }  /* ≥ 4.5:1 in both modes */
 .fp-face img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .fp-person span { font-size: .8rem; line-height: 1.2; overflow-wrap: anywhere; }
 

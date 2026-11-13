@@ -39,6 +39,8 @@
       if (res.status === 401 && !opts.noRedirect) location.href = '/?next=' + encodeURIComponent(location.pathname);
       // the AI credit ran out (server/credits.ts): an invitation to connect one's own AI, not a broken button
       if (res.status === 402 && code === 'ai_credit_needed') loadOnce('/assets/ai-invite.js').then(() => window.H.aiInvite?.()).catch(() => {});
+      // the app or the tree is locked (server/lock.ts): the lock screen, then the page again (once, however many calls failed)
+      if (res.status === 423 && (code === 'app_locked' || code === 'tree_locked')) showLock(code === 'tree_locked' ? 'tree' : 'app');
       throw err;
     }
     return data;
@@ -262,6 +264,7 @@
 
   /* Line icons (one stroke weight, like the ShemRivers drawings). */
   const ICONS = {
+    unlocked: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.6-1.7"/><circle cx="12" cy="16" r="1.2"/>',
     home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/>',
     cart: '<path d="M3 4h2l2.2 11h10.6L20 7H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/>',
     news: '<rect x="3.5" y="4" width="17" height="16" rx="1.5"/><path d="M7 8.5h10M7 12h10M7 15.5h6"/>',
@@ -377,6 +380,14 @@
       const chip = document.getElementById('userchip');
       chip.hidden = false;
       chip.querySelector('.userchip-name').textContent = r.user.he_name || (r.user.name || r.user.email).split(' ')[0];
+      // the app lock (server/lock.ts): locked already – the lock screen; a lock set – the open padlock in the bar, to lock now
+      if (r.locked) showLock('app');
+      if (r.appLock && r.appLock !== 'off' && !embedded) {
+        chip.before(el('button', { type: 'button', class: 'navlock', title: 'לנעול את האוהל', 'aria-label': 'לנעול את האוהל', onclick: async () => {
+          try { await api('/api/lock/lock', { method: 'POST' }); } catch (_) { /* the screen locks anyway */ }
+          showLock('app', true);
+        } }, icon('unlocked')));
+      }
       // the family vault (data-vault): no player, no capture – nothing from outside runs next to the documents
       const vault = document.body.dataset.vault === '1';
       if (!r.offline && !embedded && !vault) loadMusic();
@@ -384,6 +395,14 @@
       if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
     });
     return bar;
+  }
+
+  /** the lock screen (ai-features' /assets/lock-screen.js), once however many calls were refused; opened, the page again */
+  let lockShown = false;
+  function showLock(scope, animate = false) {
+    if (lockShown) return;
+    lockShown = true;
+    loadOnce('/assets/lock-screen.js').then(() => window.H.lockScreen?.({ scope, animate })).then(() => location.reload()).catch(() => { lockShown = false; });
   }
 
   /** the name in the bar opens the person's settings (the account, signing out, חיבור לשירותים) */

@@ -84,6 +84,9 @@
   async function drawServices() {
     let ai, spotify = null, mail = null, feed = null, drive = null;
     try { ai = await api('/api/me/ai'); } catch (e) { return say(e); }
+    // (credit is offered only while the shop is open – the owner's switch; closed, only one's own AI)
+    let shopOpen = false; try { shopOpen = !!(await H.me()).shop; } catch (_) { /* not known: closed */ }
+    const orCredit = shopOpen ? ', או הוסיפו קרדיט' : '';
     await Promise.all([
       api('/api/music/status').then((r) => { spotify = r.spotify; }).catch(() => {}),
       api('/api/mail/status').then((r) => { mail = r; }).catch(() => {}),
@@ -112,15 +115,16 @@
       el('h2', { id: 'services-h' }, 'חיבור לשירותים'),
       el('h3', {}, 'העוזר החכם (AI)'),
       el('p', { class: 'muted' }, ai.limited
-        ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים. או להוסיף קרדיט.'
+        ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים.' + (shopOpen ? ' או להוסיף קרדיט.' : '')
         : 'ה־AI של האוהל פתוח לך בלי הגבלה. אם תרצה, אפשר לחבר גם שירות משלך, והבקשות שלך ילכו דרכו.'),
       // amounts only for whoever bought credit or got a gift (the owner's decision); on the trial, only when it ran out
-      ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : 'הקרדיט נגמר. חברו שירות משלכם, או הוסיפו קרדיט.')
-        : ai.out ? el('p', { class: 'small' }, 'כדי להמשיך עם העוזר החכם, חברו שירות משלכם, או הוסיפו קרדיט.') : null,
+      ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : `הקרדיט נגמר. חברו שירות משלכם${orCredit}.`)
+        : ai.out ? el('p', { class: 'small' }, `כדי להמשיך עם העוזר החכם, חברו שירות משלכם${orCredit}.`) : null,
       el('div', { class: 'st-services-grid' },
         ...PROVIDERS.map(row),
         el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
-        el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
+        // (the credit card only while the shop is open – the owner's switch)
+        !shopOpen ? null : el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט'))),
       el('h3', {}, 'שירותים אחרים'),
       el('div', { class: 'st-services-grid' },
@@ -134,7 +138,7 @@
 
   /* ---------- 4. the personal assistant (vision batch 5): his voice, his figure, how he shows in the chat ---------- */
   const assistantBox = section('assistant', 'העוזר האישי');
-  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['historic', 'דמויות מההיסטוריה'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
+  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['historic', 'דמויות מההיסטוריה ומהסיפורים'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['special', 'מיוחדות'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
   /* vision batch 6: a figure is free, or paid (catalogue `paid: true`); one that conflicts with the person's religion
      setting is not shown (catalogue `hideFor: ['jewish', …]`). The full entry is read from Figure2D.FIGURES. */
   // (paid: design's tier 'paid', or paid: true; tags: ['horror'] is offered only on request – prefs daemon.showHorror)
@@ -143,27 +147,96 @@
   async function drawAssistant() {
     const dp = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
     const set = (k, v) => { dp[k] = v; keep('daemon'); };
-    let d = null, earned = new Set(), figures = [], allFigures = [];
+    let d = null, earned = new Set(), figures = [], allFigures = [], shop = { owned: [], paid: [], priceIls: 10 }, child = false;
     try { d = await api('/api/daemon'); } catch (_) { /* no companion yet */ }
+    // what this person owns, which figures are paid, and their price (server/figures.ts); whether they are a child (/api/me)
+    try { shop = await api('/api/daemon/figures'); } catch (_) { /* no shop: nothing paid is theirs */ }
+    try { child = !!(await H.me()).child; } catch (_) { /* not known: not a child */ }
     try {
       await H.loadOnce('/assets/figure2d.js');
       allFigures = (window.Figure2D ? Figure2D.list() : []).map(figureMeta).filter((f) => !f.hideFor.includes(me.religion || 'jewish'));
-      figures = allFigures.filter((f) => !f.tags.includes('horror') || dp.showHorror);
+      // a paid figure by the server's list too; horror figures never for a child, for an adult on request
+      allFigures.forEach((f) => { if ((shop.paid || []).includes(f.id)) f.paid = true; });
+      figures = allFigures.filter((f) => !f.tags.includes('horror') || (!child && dp.showHorror));
     } catch (_) { /* the 2D figures are not here yet */ }
-    if (figures.some((f) => f.unlock)) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
+    if (figures.some((f) => f.unlock || f.id === 'doll')) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
     const family = !!d?.ibnEzra;
     // the figure now: the person's choice, if it is theirs to have; else Ibn Ezra for the family, the first figure for others
-    // (paid: only once it is the person's – the purchase comes with the credits path, the master's; until then none is owned)
-    const owned = new Set(d?.owned || []);
+    // (paid: chosen once it is the person's; until then its card buys it)
+    const owned = new Set(shop.owned || []);
     const allowed = (f) => (!f.unlock || earned.has(f.unlock)) && (!f.paid || owned.has(f.id));
     const mine = dp.figure && (dp.figure === 'ibn_ezra' ? family : figures.some((f) => f.id === dp.figure && allowed(f))) ? dp.figure : family ? 'ibn_ezra' : (figures.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : figures[0]?.id) || 'ibn_ezra';   // (the owner chose the fennec as the default)
     const voice = dp.voice || (dp.speak === false ? 'silent' : 'always');
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
-    const card = (id, name, sub, preview, ok = true) => el('button', {
-      type: 'button', class: 'card st-skin' + (id === mine ? ' on' : ''), 'aria-pressed': String(id === mine), disabled: !ok,
-      title: ok ? name : sub, onclick: () => pick(id),
+    /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
+    // each paid figure has its own price (the special ones cost more); the server charges the same
+    const priceOf = (f) => Number(shop.prices?.[f.id] ?? shop.priceIls) || 10;
+    // the family (no limit) gets it for nothing: they see that, not a price (the server decides either way)
+    // the owner's switch (shop) and the family (no limit: every paid figure theirs to take, in any state of the switch)
+    const shopOpen = !!shop.shop, takes = !!shop.family;
+    const buy = async (f) => { const price = priceOf(f), free = takes;
+      H.modal(el('h2', {}, `${f.name}`), preview2d(f),
+      el('p', {}, free ? 'בחינם, במשפחה.' : `דמות בתשלום: ₪${price}, מהקרדיט שלך.`),
+      el('p', { class: 'muted small' }, free ? 'היא שלך בכל מכשיר.' : 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
+      el('div', { class: 'row' },
+        el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
+          e.target.disabled = true;
+          try {
+            const r = await api(`/api/daemon/figures/${encodeURIComponent(f.id)}/buy`, { body: { confirm: true } });
+            H.closeModal(); toast(r.how === 'credits' ? `${f.name} שלך` : `${f.name} שלך, על חשבון המשפחה`); pick(f.id);
+          } catch (err) {
+            e.target.disabled = false;
+            if (err.status === 403 && err.code === 'shop_closed') { H.closeModal(); toast('הקנייה סגורה כרגע'); drawAssistant(); }
+            else if (err.status === 402) { H.closeModal(); H.modal(el('h2', {}, 'אין מספיק קרדיט'), el('p', {}, shopOpen ? `צריך ₪${price} בקרדיט. אפשר להוסיף קרדיט או לחבר שירות משלך.` : 'כרגע אין מספיק קרדיט.'),
+              el('div', { class: 'row' }, el('a', { class: 'btn primary', href: '#services', onclick: () => H.closeModal() }, 'לחיבור לשירותים'))); }
+            else toast('הקנייה לא הצליחה – נסו שוב');
+          }
+        } }, free ? 'לקחת אותה' : `לקנות ב־₪${price}`),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו'))); };
+    const card = (id, name, sub, preview, ok = true, onBuy = null) => el('button', {
+      type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
+      title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
-    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true }).catch(() => {}); return span; };
+    // each figure keeps its own colours (palettes are never sold – the owner, 2026-11-14): prefs daemon.palettes[id]
+    const paletteOf = (id) => +(dp.palettes?.[id] ?? (id === dp.figure ? dp.palette : 0)) || 0;
+    const previews = {};   // the preview figures by id (a prankster's preview plays a trick from its own card)
+    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); previews[f.id] = Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}), ...(f.palettes?.length ? { palette: paletteOf(f.id) } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
+    /** her hair colour (a figure with a hair layer, e.g. the astronomer): saved per person, prefs daemon.hair */
+    /** a figure with clothing palettes (the night wizard, the forest witch): saved per person, prefs daemon.palette; the
+        first is as drawn */
+    const paletteRow = () => {
+      const f = figures.find((x) => x.id === mine && x.palettes?.length);
+      if (!f) return null;
+      const now = paletteOf(f.id);
+      return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, `הצבעים של ${f.name}`),
+        el('div', { class: 'st-choices st-palette', role: 'radiogroup', 'aria-label': 'הצבעים', style: 'display:flex;flex-wrap:wrap;gap:6px' }, f.palettes.map((p) => el('button', {
+          type: 'button', role: 'radio', class: 'chip', 'aria-checked': String(p.index === now), title: p.name,
+          onclick: () => { dp.palettes = { ...(dp.palettes || {}), [f.id]: p.index }; keep('daemon'); drawAssistant(); },
+        }, el('span', { 'aria-hidden': 'true', style: `display:inline-block;inline-size:14px;block-size:14px;border-radius:50%;background:${p.swatch};border:1px solid var(--line-strong);margin-inline-end:6px;vertical-align:-2px` }), p.name))));
+    };
+    /** the little wizard and witch play small tricks on the page (design's pranks.js): on by default, the person's switch,
+        with a preview of one */
+    const pranksRow = () => {
+      if (!['littlewizard', 'littlewitch'].includes(mine)) return null;
+      return el('div', {}, toggle('תעלולים', dp.pranks !== false, (v) => set('pranks', v), 'מדי פעם תעלול קטן בדף – רק מראה, לא משנה כלום. לא בזמן הקלדה או גלילה.'),
+        el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+          try {
+            await H.loadOnce('/assets/pranks.js');
+            const p = Pranks.start(await previews[mine], { id: mine });
+            p.play('sprinkle'); setTimeout(() => p.stop(), 4000);
+          } catch (_) { toast('התעלול לא הצליח כרגע'); }
+        } }, '✨ להראות תעלול'));
+    };
+    const hairRow = () => {
+      const f = figures.find((x) => x.id === mine && x.hair);
+      if (!f) return null;
+      const now = dp.hair || f.hairDefault;
+      return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, `צבע השיער של ${f.name}`),
+        el('div', { class: 'st-choices st-hair', role: 'radiogroup', 'aria-label': 'צבע השיער', style: 'display:flex;flex-wrap:wrap;gap:6px' }, f.hair.map((h) => el('button', {
+          type: 'button', role: 'radio', class: 'chip', 'aria-checked': String(h.color === now), title: h.name,
+          onclick: () => { set('hair', h.color); drawAssistant(); },
+        }, el('span', { 'aria-hidden': 'true', style: `display:inline-block;inline-size:14px;block-size:14px;border-radius:50%;background:${h.color};border:1px solid var(--line-strong);margin-inline-end:6px;vertical-align:-2px` }), h.name))));
+    };
     const groups = KINDS.map(([kind, title]) => [title, figures.filter((f) => (f.kind || 'generic') === kind)]).filter(([, list]) => list.length);
     // (native replaceChildren would print a null as text)
     assistantBox.replaceChildren(...[
@@ -175,15 +248,19 @@
       toggle('העוזר מלווה אותי בכל עמוד', !!dp.follow, (v) => set('follow', v), 'כשכבוי, הוא מחכה בדף הבית.'),
       choices('בראש השיחה', [['icon', 'הדמות כאייקון'], ['animated', 'הדמות חיה']], dp.header || 'icon', (v) => set('header', v)),
       el('h3', {}, 'הדמות'),
-      el('p', { class: 'muted small' }, 'כל הדמויות לבחירה, חינם.'),
+      el('p', { class: 'muted small' }, takes ? 'כל הדמויות לבחירה, גם דמויות 💎 – במשפחה.' : shopOpen ? 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.' : 'רוב הדמויות חינם.'),
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'ראב"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
-        const sub = f.paid && !owned.has(f.id) ? '💎 בתשלום · הרכישה בקרוב' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
-        return card(f.id, f.name, sub, preview2d(f), ok);
+        // the family takes it (no price); an open shop sells it; a closed one: locked, no price, no button
+        const offered = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
+        const forSale = offered && (takes || shopOpen);
+        const sub = forSale ? (takes ? '💎 שלך לקחת' : `💎 ₪${priceOf(f)} · לקנייה`) : offered ? '💎 בתשלום' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
+        return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
-      // horror figures (Dracula) only when asked for: not for children (the members' age is not kept yet, so it is the person's switch)
-      allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
+      hairRow(), paletteRow(), pranksRow(),
+      // horror figures (tags: ['horror'] – none today) only when asked for, and never for a child (under 12, by the birth year the owner set)
+      !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'דמויות מפחידות. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));
   }
 
@@ -268,17 +345,123 @@
         : el('p', { class: 'muted small' }, 'עוד אין. מכשיר נעשה מוכר כשפותחים בו את עץ המשפחה בפעם הראשונה.'));
   }
 
+  /* ---------- privacy and security (docs/decisions.md, "Locks and privacy"): the app lock and its timer, the tree lock,
+     the 4-digit code, and the low level. The server keeps and enforces all of it (/api/lock, server/lock.ts); a change
+     to a lock asks for a proof – an unlock with the code or a passkey – unless there was one in the last 5 minutes; a code that
+     exists changes with the current one. Modes: off | pin | bio. Nothing locked at all is the "low" level. */
+  const privacyBox = section('privacy', 'פרטיות ואבטחה');
+  const digits4 = (label) => el('input', { type: 'password', inputmode: 'numeric', autocomplete: 'off', maxlength: '4', pattern: '[0-9]{4}', 'aria-label': label,
+    style: 'inline-size:7em;letter-spacing:.6em;text-align:center;font:inherit;font-size:1.3rem;padding:8px 10px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)',
+    oninput: (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); } });
+  /** the current code, or a passkey, for a change that needs a proof; resolves to { current } or { passkey: true }, or null */
+  const askProof = (lock) => new Promise((resolve) => {
+    const cur = digits4('הקוד הנוכחי');
+    const ok = async () => {
+      if (cur.value.length !== 4) return cur.focus();
+      try { await api('/api/lock/unlock', { body: { pin: cur.value } }); H.closeModal(); resolve({ current: cur.value }); }
+      catch (e) { say(e); cur.value = ''; cur.focus(); }
+    };
+    cur.addEventListener('keydown', (e) => { if (e.key === 'Enter') ok(); });
+    if (!lock.hasPin && lock.hasPasskey) { H.loadOnce('/assets/lock-screen.js').then(passkeyProof).then(resolve, () => resolve(null)); return; }
+    H.modal(el('h2', {}, 'אישור שזה את/ה'), el('p', {}, 'כדי לשנות את הנעילה צריך את הקוד הנוכחי' + (lock.hasPasskey ? ', או טביעת אצבע.' : '.')),
+      el('div', { class: 'row' }, cur, el('button', { class: 'btn primary', type: 'button', onclick: ok }, 'אישור')),
+      lock.hasPasskey && H.passkeysWork?.() ? el('button', { class: 'btn ghost', type: 'button', onclick: async () => {
+        try { await H.loadOnce('/assets/lock-screen.js'); H.closeModal(); resolve(await passkeyProof()); } catch (_) { resolve(null); }
+      } }, '👆 בטביעת אצבע') : null,
+      el('button', { class: 'linklike', type: 'button', onclick: () => { H.closeModal(); resolve(null); } }, 'ביטול'));
+    setTimeout(() => cur.focus(), 30);
+  });
+  /** a passkey as the proof (the lock's own passkey route marks the session) */
+  async function passkeyProof() {
+    const toBuf = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0)).buffer;
+    const toB64 = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const o = await api('/api/lock/passkey/options', { method: 'POST' });
+    const pk = o.publicKey;
+    const a = await navigator.credentials.get({ publicKey: { ...pk, challenge: toBuf(pk.challenge), allowCredentials: (pk.allowCredentials || []).map((c) => ({ ...c, id: toBuf(c.id) })) } });
+    await api('/api/lock/passkey', { body: { challengeId: o.challengeId, id: toB64(a.rawId), response: { clientDataJSON: toB64(a.response.clientDataJSON), authenticatorData: toB64(a.response.authenticatorData), signature: toB64(a.response.signature) } } });
+    return { passkey: true };
+  }
+  /** a lock change: tried as is, and again after a proof when the server asks for one */
+  async function lockChange(path, method, body, lock) {
+    try { return await api(path, { method, body }); }
+    catch (e) {
+      if (e.code !== 'proof_needed') throw e;
+      const proof = await askProof(lock);
+      if (!proof) return null;
+      return api(path, { method, body: { ...body, ...(proof.current && path === '/api/lock/pin' ? { current: proof.current } : {}) } });
+    }
+  }
+  /** set or change the code: twice the new one (and a proof when needed) */
+  const setPin = (lock) => new Promise((resolve) => {
+    const a = digits4('קוד חדש'), b = digits4('שוב, לאישור'), cur = lock.hasPin && !lock.proof ? digits4('הקוד הנוכחי') : null;
+    const save = async () => {
+      if (a.value.length !== 4) return a.focus();
+      if (a.value !== b.value) { toast('שני הקודים לא זהים'); b.value = ''; return b.focus(); }
+      if (cur && cur.value.length !== 4) return cur.focus();
+      try { await api('/api/lock/pin', { method: 'PUT', body: { pin: a.value, ...(cur ? { current: cur.value } : {}) } }); H.closeModal(); toast('הקוד נשמר'); resolve(true); }
+      catch (e) { say(e); }
+    };
+    H.modal(el('h2', {}, lock.hasPin ? 'קוד חדש' : 'קוד לנעילה'),
+      el('p', { class: 'muted' }, '4 ספרות. כדאי לא להשתמש בתאריך לידה.'),
+      el('div', { style: 'display:grid;gap:10px;justify-items:start' }, cur ? el('label', {}, 'הנוכחי ', cur) : null, el('label', {}, 'החדש ', a), el('label', {}, 'שוב ', b)),
+      el('div', { class: 'row' }, el('button', { class: 'btn primary', type: 'button', onclick: save }, 'שמירה'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => { H.closeModal(); resolve(false); } }, 'ביטול')));
+    setTimeout(() => (cur || a).focus(), 30);
+  });
+  async function drawPrivacy() {
+    let lock;
+    try { lock = await api('/api/lock'); } catch (e) { privacyBox.replaceChildren(el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'), el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
+    try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
+    const bio = !!H.passkeysWork?.();
+    const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: !bio, title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
+    /** a lock's mode: a code needs one set first; a passkey needs one made on this device (the vault's passkeys) */
+    const setMode = async (which, v) => {
+      try {
+        if (v === 'pin' && !lock.hasPin && !(await setPin(lock))) return drawPrivacy();
+        if (v === 'bio' && !lock.hasPasskey) { toast('קודם צריך מפתח במכשיר הזה: בעץ המשפחה ← אבטחה ← הוספת מכשיר'); return drawPrivacy(); }
+        const r = await lockChange('/api/lock', 'PUT', { [which]: v }, lock);
+        if (r) toast(v === 'off' ? 'הנעילה כבויה' : 'הנעילה פעילה');
+      } catch (e) { say(e); }
+      drawPrivacy();
+    };
+    const low = lock.app === 'off' && lock.tree === 'off';   // nothing locked: the "low" level
+    privacyBox.replaceChildren(...[
+      el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'),
+      low ? el('p', { class: 'st-warn', role: 'note' }, '⚠ הכל פתוח: אין נעילה לאוהל ולא לעץ המשפחה. לא מומלץ – מי שמחזיק את המכשיר רואה הכל, חוץ ממסמכים ופרטים אישיים.') : null,
+      el('h3', {}, 'נעילת האוהל'),
+      el('p', { class: 'muted small' }, 'כמו בטלגרם: האוהל ננעל לבד אחרי זמן שלא משתמשים בו, ונפתח בקוד או בטביעת אצבע.'),
+      choices('נעילת האוהל', modes, lock.app, (v) => setMode('app', v)),
+      lock.app !== 'off' ? choices('ננעל אחרי', [[1, 'דקה'], [5, '5 דקות'], [15, 'רבע שעה'], [60, 'שעה']], lock.autolock, async (v) => { try { await lockChange('/api/lock', 'PUT', { autolock: v }, lock); } catch (e) { say(e); } drawPrivacy(); }) : null,
+      el('h3', {}, 'נעילת עץ המשפחה'),
+      el('p', { class: 'muted small' }, 'העץ פתוח לבני הבית שמחוברים. אפשר לנעול אותו בקוד או בטביעת אצבע.'),
+      choices('נעילת העץ', modes, lock.tree, (v) => setMode('tree', v)),
+      el('h3', {}, 'הקוד'),
+      // the code row (design's .st-code: the padlock, the state, the buttons)
+      el('div', { class: 'st-code' },
+        window.Lock?.padlock ? Lock.padlock(lock.hasPin ? 'closed' : 'open') : null,
+        el('b', {}, 'קוד בן 4 ספרות'), el('span', {}, lock.closed ? 'נסגר' : lock.hasPin ? 'נקבע' : 'עוד לא נקבע'),
+        el('button', { class: 'btn small', type: 'button', onclick: async () => { await setPin(lock); drawPrivacy(); } }, lock.hasPin ? 'לשנות את הקוד' : 'לקבוע קוד'),
+        lock.hasPin ? el('button', { class: 'lk-forgot', type: 'button', style: 'background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;text-decoration:underline', onclick: async () => {
+          if (!confirm('כדי לקבוע קוד חדש צריך להיכנס שוב עם חשבון Google שלך. לצאת עכשיו?')) return;
+          try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) { /* out anyway */ }
+          location.href = '/api/auth/login?next=' + encodeURIComponent('/settings/#privacy');
+        } }, 'שכחתי את הקוד') : null),
+      lock.closed ? el('p', { class: 'small', role: 'note' }, 'הקוד נסגר אחרי הרבה ניסיונות. היכנסו שוב עם Google, וקבעו קוד חדש.') : null,
+      el('p', { class: 'st-safe muted small' }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל מקרה.'),
+    ].filter(Boolean));
+  }
+
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
-  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
+  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st' },
     el('h1', {}, 'הגדרות'),
     el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id }, name))),
-    dayNight(), accessibility(), servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
+    dayNight(), accessibility(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')))));
-  drawServices(); drawAssistant(); drawDevices();
+  drawServices(); drawAssistant(); drawDevices(); drawPrivacy();
   const want = location.hash.slice(1);
   if (want && want !== 'services') setTimeout(() => document.getElementById(want)?.scrollIntoView({ block: 'start' }), 50);
 })();

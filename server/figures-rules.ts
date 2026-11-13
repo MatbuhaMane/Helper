@@ -2,8 +2,11 @@
 // Pure functions, tested in test-figures.mjs.
 
 /** The paid figures (design's catalogue, Figure2D.FIGURES with paid: true). Design tells the master when this changes. */
-export const PAID = ['maryshelley', 'leonardo', 'cleopatra', 'dracula'] as const;
+export const PAID = ['maryshelley', 'leonardo', 'cleopatra', 'dracula', 'magician', 'astronomer', 'doll', 'nightwizard', 'forestwitch', 'littlewizard', 'littlewitch'] as const;
 export const isPaid = (id: string) => (PAID as readonly string[]).includes(id);
+/** the special figures, each with its own move, cost more (the owner: ₪20; the setting figures.special_price_ils) */
+export const SPECIAL = ['magician', 'astronomer', 'doll', 'nightwizard', 'forestwitch', 'littlewizard', 'littlewitch'] as const;
+export const priceIlsOf = (id: string, base: number, special: number) => ((SPECIAL as readonly string[]).includes(id) ? special : base);
 
 export type Decision =
   | { ok: true; how: 'owned' | 'family' | 'credits'; usd: number }

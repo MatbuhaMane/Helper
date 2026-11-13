@@ -35,3 +35,7 @@ agree on it in `docs/decisions.md`). `public/index.html` and `common.js` are the
 
 - How should the forest look and move: a map, a network, a canopy? How far can it zoom before names are hidden?
 - Do the tool icons belong to the PC guide, the tools page, or the home wheel?
+
+## Status file
+At the end of every meaningful round of work, update `docs/areas/design/status.md` on your branch and commit it: what was done,
+what is in progress, blockers, and what you need from the owner. Keep it short; the master reads it for the board meeting.

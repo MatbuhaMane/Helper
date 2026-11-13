@@ -39,7 +39,7 @@ with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entr
 ## People and characters (vision batch 6)
 
 Twelve, from the owner's lists, drawn from the original sources (likeness notes in the `historic-figures` skill),
-`kind: 'historic'` (`paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
+`kind: 'person'` (`tier: 'paid'` and `paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
 
 | tier | figures |
 |---|---|
@@ -51,6 +51,65 @@ every one is drawn modestly and respectfully. The one to filter is Dracula (`tag
 children under 12, and offer him only on request (or hide him for anyone who prefers no horror). Whether a tradition
 setting should hide anyone else is the owner's call (vision). Peter Pan: the UK's perpetual right (Great Ormond Street)
 is to be checked by business before anything around him is sold; he is free in the app.
+
+## The special ones (paid; the owner's choice, 2026-11-13)
+
+`kind: 'special'`, `tier: 'paid'`, `paid: true`. Each has its own move, `f.special()`, which also plays inside
+`f.happy()`, so the companion's existing "glad when something worked" already shows it:
+
+| id | name | its move |
+|---|---|---|
+| magician | הקוסם (a man; was הקוסם מהשוק) | redrawn 2026-11-13 after the owner's picture, then taller and stronger: a kind old desert wizard, white turban and beard, a blue light over his staff; a dove (with an olive sprig) flies out of his turban in a burst of sparks |
+| astronomer | הרואה (a woman; was האסטרונומית), light skin | at night the stars of her shawl wake and twinkle, and she glows faintly; when glad, a shooting star. **Her hair is chosen by the person**, white by default (below) |
+| doll | בובת הטלאים (neither) | wears the person's own badges, sewn on: `mount(el, 'doll', { patches: earnedBadgeIds })` (up to 8, newest last); `f.sew(id)` stitches a newly earned one in |
+| nightwizard | קוסם הלילה (a man) | a young wizard, a black cloak with golden flowers, a crescent staff with a pearl that glows; when glad, pale gold sparks from the pearl |
+| forestwitch | קוסמת היער (a woman) | a young wizard of the forest, curly hair, a purple hat, a crystal staff and an old book; when glad, violet sparks from the crystals |
+| littlewizard | הקוסם הקטן (a man) | short and round, a big blue starry hat hiding his eyes, a white beard; a golden orb that glows; a mouth shows only while he talks |
+| littlewitch | הקוסמת הקטנה (a woman) | his counterpart: the same hat over her eyes, silver braids, rosy cheeks; a golden orb that glows; a mouth only while she talks |
+
+The four wizards were added at the owner's word (2026-11-13), after the owner's pictures, toned for everyone: moons and
+stars instead of a pentagram and runes, a crescent instead of snakes, a closed robe. Any figure may glow where its
+light is (`glowAt`, `glowColor`) and spark from there (`special: 'spark'`, `sparkFrom`, `sparkColor`); a figure with
+`eyes: []` has none drawn (the hat hides them), and `mouthQuiet` shows the mouth only while it talks.
+
+**The astronomer's hair:** her hair is its own layer (`/figures/2d/astronomer/hair.webp`), tinted with multiply so its
+shading stays. `Figure2D.list()` gives `hair: [{ color, name }]` (לבן, כסוף, שחור, חום, ערמוני, ג'ינג'י, בלונד) and
+`hairDefault: '#ffffff'`; mount with `{ hair: color }` and change it live with `f.setHair(color)`. For ai-features: a
+row of colour swatches under the figure when she is chosen, saved per person (e.g. `H.prefs('daemon').hair`).
+
+**Palettes for every free figure (the owner, 2026-11-14: palettes are never sold):** the fennec's scarf, the owl's shawl,
+the lamb's vest, the hedgehog's spines (natural tones), Ibn Sina's robe, the Rambam's robe and cloak, Newton's coat,
+Juha's robe, Hershele's coat, Scheherazade's shawl and dress, Ali Baba's robe, Peter Pan's leaves – 5 colourways each,
+the first as drawn (`PALETTES` in figure2d.js; layers made by `palette2.py` in the scratchpad). The same API as
+below. **The rule (business, 2026-11-14): every figure gets its palettes, included** – so the paid ones too: Mary
+Shelley's dress, Leonardo's robe and cap, Cleopatra's dress, Dracula's cape lining, the magician's robe, the seer's
+shawl, the little pair's hat and coat. The doll alone has none: her many patches are her look. A new figure gets its
+palette when it is drawn.
+
+**Palettes (the night wizard, the forest witch):** their clothes in a colour of one's own. Each fabric is a grey tint
+layer (`tint-<layer>.webp`, made by `palette.py` in the scratchpad), coloured with multiply so the folds stay;
+`Figure2D.list()` gives `palettes: [{ index, name, swatch }]`, the first one is the drawing as it is. Mount with
+`{ palette: i }`, change live with `f.setPalette(i)`. For ai-features: a row of swatches under the figure when it is
+chosen, saved per person (e.g. `H.prefs('daemon').palette`).
+
+**Pranks (the little wizard, the little witch):** `/assets/pranks.js` (it loads `pranks.css`). While the app is used, now
+and then, one small harmless trick: a card wobbles like jelly, an icon floats up and settles, a trail of sparks from the
+staff bursts over a heading, a coin-flip spin, the figure vanishes in a puff, ducks and peeks, shrinks under its own
+spell, stars drift down. Only a look: nothing on the page changes and nothing takes a click. Never while typing,
+scrolling or in a dialog, never on what is focused or under the pointer, the first after a quiet minute, then one every
+2–5 minutes, at most 8 a visit, none with reduced motion. For ai-features (daemon.js and settings):
+
+```js
+if (Pranks.FOR.includes(figureId) && H.prefs('daemon').pranks !== false) pranks = Pranks.start(f, { id: figureId });
+pranks?.stop();                 // when the person switches it off or picks another figure
+pranks.play('sprinkle');        // a preview button in settings
+```
+
+and a switch in Settings › העוזר האישי, shown when one of the two is chosen: "תעלולים" (on by default), with a line like
+"הקוסם הקטן עושה לפעמים קסם קטן על המסך. רק מראה, שום דבר לא משתנה".
+
+For ai-features: show them as their own group ("מיוחדות"), paid; for the doll pass the person's earned badge ids
+(`D.badges.earned` in goals) as `patches`, and call `f.sew(id)` when a badge is earned while it is on screen.
 
 ## For ai-features
 

@@ -37,3 +37,23 @@ A cute small collectible figure for a family app: Isaac Newton, the English scie
 - **leonardo**: Leonardo da Vinci in old age: long flowing white hair and a long white beard, a soft red cap, a long dark-red robe, holding a notebook of sketches and a small wooden model of a flying machine
 - **cleopatra**: Cleopatra, the queen of ancient Egypt, regal and dignified: dark hair drawn back into a bun under a golden royal diadem with a small cobra on the brow, a broad gold collar, a long white pleated linen gown with modest sleeves, holding a small papyrus scroll
 - **dracula**: Count Dracula as described in Bram Stoker\'s original novel (NOT the Universal film, not Bela Lugosi): a tall courtly old aristocrat, a long white moustache, a high domed forehead with swept-back white hair, pointed ears, dressed all in black with a long black cloak, holding an old silver candelabrum; charismatic, not scary, no blood, no fangs
+
+## The special ones (paid; the owner's choice, 2026-11-13)
+
+The magician (and his dove), the astronomer, the patchwork doll – 4 × $0.069. Each has its own move in Figure2D (`special()`, which also plays when it is glad): the magician lifts a dove out of his hat in a burst of sparks; the astronomer's shawl wakes with twinkling stars at night and a shooting star crosses when she is glad; the doll wears the person's own badges, sewn on, and stitches a new one in when it is earned. Prompts in `C:/Users/User/AppData/Local/Temp/claude/c428b42837d3f372/19117706-22e2-40a4-bdb5-1a2b2687b32f/scratchpad/special.mjs`.
+
+**2026-11-13, later.** The magician redrawn after the owner's picture (a desert wizard: white turban and beard, a blue robe;
+the market magician with the tarboosh is kept as `magician-market.webp`), and four more paid wizards after the owner's
+pictures: `nightwizard`, `forestwitch`, `littlewizard`, `littlewitch` – 5 × $0.069, each the first try. The astronomer's
+`public/figures/2d/astronomer/figure.webp` now has white hair baked in, and `hair.webp` beside it is the hair alone for
+tinting (made from this master by `hair.py` in the scratchpad: the dark grey hair inside the shawl lifted to white, the
+outlines kept, small specks dropped). This master still has her original dark hair.
+
+**2026-11-13, later still.** The magician drawn again, taller and stronger (`magician.webp`; the short desert one kept as
+`magician-desert-short.webp`), 1 × $0.069. The seer (was the astronomer) and the little witch swapped skin tones in
+their `public/figures/2d/` pictures (the masters here are unchanged). The night wizard and the forest witch have tint
+layers for their palettes (`tint-*.webp`, from `palette.py`).
+
+**Dracula drawn again (the owner's word):** young and handsome, the romantic gothic count – Cleopatra's counterpart
+(Cleopatra as a reference), not scary: no blood, no fangs. 1 × $0.069. The old white-haired count is kept as
+`dracula-old.webp`. His palette tints the cape's lining and the waistcoat together.

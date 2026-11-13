@@ -106,3 +106,25 @@
 .st .st-skin[aria-current="true"] { border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
 .st-devices ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 @media (prefers-reduced-motion: reduce) { .st-switch input[type="checkbox"], .st-switch input[type="checkbox"]::before, .st-choices .chip { transition: none; } }
+
+/* ---------- פרטיות ואבטחה (docs/decisions.md, "Locks and privacy") ---------- */
+/* the code: the padlock, its state, and what can be done with it */
+.st-code { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 12px 14px; border-radius: 16px;
+  background: color-mix(in srgb, var(--text) 4%, var(--card)); border: 1px solid var(--line); }
+.st-code .pl { font-size: 1.35rem; color: var(--primary); }
+.st-code > b { font-weight: 600; }
+.st-code > span { color: var(--muted); font-size: .9rem; margin-inline-end: auto; }
+.st-code .lk-forgot { padding-inline: 4px; }
+/* the warning for the low level ("הכל פתוח"): amber, plain words, never alarming */
+.st-warn { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 12px 14px; border-radius: 14px; line-height: 1.55;
+  background: color-mix(in srgb, #e0a83a 12%, var(--card)); border: 1px solid color-mix(in srgb, #e0a83a 50%, var(--line)); font-size: .93rem; }
+.st-warn::before { content: "!"; display: grid; place-items: center; inline-size: 22px; block-size: 22px; border-radius: 50%; font-weight: 700; font-size: .85rem;
+  background: #9a6410; color: #fff; margin-block-start: 1px; }
+.st-warn > * { grid-column: 2; margin: 0; }
+.st-warn b { font-weight: 600; }
+/* what no setting opens: a quiet reassurance */
+.st-safe { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 10px 14px; border-radius: 14px; font-size: .9rem; line-height: 1.55;
+  background: color-mix(in srgb, var(--olive) 12%, var(--card)); color: var(--text); }
+.st-safe .pl { flex: none; color: var(--ok); font-size: 1.1rem; margin-block-start: 1px; }
+/* the choice "רמה נמוכה" reads as the one not recommended */
+.st-choices .chip[data-level="low"][aria-checked="true"] { background: #9a6410; border-color: #9a6410; color: #fff; }

@@ -11,6 +11,192 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Locks and privacy: a simple entry to the tree, an app lock like Telegram's, fingerprint sign-in (master → ai-features, design)
+The owner's design. It replaces "the trusted device" for the tree.
+
+**Signing in**
+- Sign-in stays Google only. The account is a Google account.
+- Once a person has a passkey (fingerprint, face, Windows Hello), they can also sign in with it, without Google: "כניסה בטביעת אצבע".
+
+**The family tree**
+- Open by default to a signed-in member of the household. There is no unlock and no trusted device.
+- The person can lock it, with a 4-digit code or a passkey. This is an option in the privacy settings.
+- On the first entry to the tree, a small warning window recommends turning on protection, with three buttons:
+  - "להגדיר עכשיו";
+  - "אחר כך" (closes for now);
+  - "לא להציג שוב".
+- When someone creates a private document, the app recommends setting a code.
+
+**Always behind a passkey**
+- Restricted documents and files, privacy changes, deletes, linking trees, backups and the owner's room. This is level 'fresh', unchanged.
+- No privacy setting opens these.
+
+**The app lock (like Telegram)**
+- Each person may lock the whole app, with a 4-digit code or a passkey, and choose when it locks itself: after 1, 5, 15 or 60 minutes away.
+- With a lock on, an open padlock appears in the menu. Pressing it plays a locking animation and locks the app.
+- The lock is enforced on the server, not just drawn over the page: a locked session gets 423 app_locked from every route except the lock's own, /api/me and signing in and out.
+
+**The code**
+- 4 digits. Stored as PBKDF2-SHA256 (100,000 rounds, the most Workers allow) with a salt per person and a pepper derived from VAULT_KEY, so the database alone cannot be guessed through.
+- Wrong codes:
+  - 5 wrong codes: a 15-minute pause;
+  - 10 wrong codes: the code is closed until the person signs in with Google again.
+- Changing the code, or turning a lock off, needs the current code, or a code/passkey/Google proof from the last 5 minutes.
+- **Forgotten code:** "שכחתי את הקוד" signs the person out. A new sign-in with the Google account they use is the proof, and then they set a new code. Recovery goes through the email they signed in with, and no mail is sent.
+
+**Privacy level**
+- Low ("הכל פתוח"): no app lock and no tree lock. Not recommended, and the settings say so.
+- Even at low, documents, credentials and personal details stay behind a passkey.
+
+**The server (master)**
+- server/lock.ts and lock-rules.ts, table `user_locks`, and session columns.
+- The routes:
+  - `GET/PUT /api/lock`
+  - `PUT /api/lock/pin`
+  - `POST /api/lock/lock`
+  - `POST /api/lock/unlock`
+  - `POST /api/lock/passkey/options`
+  - `POST /api/lock/passkey`
+  - `POST /api/auth/passkey/options`
+  - `POST /api/auth/passkey`
+- The details are in server/lock.ts.
+
+**ai-features: the pages**
+- A "פרטיות ואבטחה" section in /settings/: the app lock (off / code / passkey) with its timer, the tree lock, the code (set or change, "שכחתי את הקוד"), and the low level with its warning.
+- The lock screen: 4 dots and a keypad, plus a passkey button.
+- The padlock in the menu. When 423 app_locked comes back, show the lock screen.
+- The warning window on the tree.
+- "כניסה בטביעת אצבע" on the sign-in screen.
+
+**design**
+- The lock screen, the keypad, the padlock and its locking animation (open → closed), and the warning window.
+
+Status: accepted; the server is being built.
+
+## 2026-11-14 – The payments switch, and the family's first sign-in (master)
+The owner asked for two things.
+
+**The payments switch**
+- A switch in the owner's room hides every payment option for now: `money.shop_open`, off by default.
+- While it is off:
+  - `/api/me` and `/api/daemon/figures` return `shop: false`;
+  - a limited account cannot buy (403 shop_closed);
+  - the family still takes any paid figure for nothing (`/api/daemon/figures` returns `family: true` for them).
+
+**The family's first sign-in**
+- A member the owner added has full access from their first sign-in.
+- At that first sign-in the owner gets a message only the owner sees, with a link to /admin/#members (core.ts firstSignIn, `members.first_seen`).
+- People who used the tent before this change are only marked, and the owner gets no message about them.
+- The owner then approves them with `POST /api/members/:email/approve` (owner only, room open). Approving:
+  - sets `approved_at`;
+  - lifts any AI limit;
+  - turns on every special feature (admin.FEATURES).
+- `/api/members` returns `first_seen` and `approved_at`.
+
+**ai-features, please**
+- When `shop` is false, hide prices, buy buttons, credit packs and the links to the purchase page.
+- When `family` is true, show every paid figure as theirs to take, with no price.
+- In the room, next to each member: "התחבר/ה לראשונה" and an "אישור" button.
+
+Status: done (server).
+
+## 2026-11-14 – The locks' look (design → ai-features, master)
+
+For "Locks and privacy": `/assets/lock.js` + `lock.css` (design) give the padlock and its locking move, the lock screen
+(dots, keypad, passkey key, wrong code / pause / unlocked states, keyboard digits, the page made inert) and the window
+for the first visit to the tree; `settings.css` gains `.st-code`, `.st-warn`, `.st-safe` and the low level's chip for the
+"פרטיות ואבטחה" section. ai-features wires them to the routes (the API in `docs/design/locks.md`, the markup in
+`docs/design/prototype/lock.html`). Status: done (design); waiting for ai-features to build the pages.
+
+## 2026-11-14 – Dracula drawn again, younger (design → master, business)
+
+The owner: Dracula younger and more attractive, Cleopatra's counterpart. Redrawn as a handsome young count (black swept
+hair, a red-lined cape, a red waistcoat), elegant rather than frightening. Same id `dracula`, same name, still paid,
+no longer tagged `horror` (the owner: remove the tag – he is not scary now, so he is never hidden by that filter). His
+palette tints the lining and the waistcoat. Status: done (design).
+
+## 2026-11-14 – A basic palette for every free figure (design → ai-features, master, business)
+
+Following the owner's decision that palettes are never sold: the 12 free figures (fennec, owl, lamb, hedgehog, Ibn Sina,
+the Rambam, Newton, Juha, Hershele, Scheherazade, Ali Baba, Peter Pan) have 5 colourways each, the first as drawn.
+`Figure2D.list()` → `palettes` for them too; the same `mount(…, { palette })` / `f.setPalette(i)` and the same swatch row
+as for the wizards, saved per person (`H.prefs('daemon').palette`). Free for everyone. Then business's rule, the same day: **every figure gets its
+palettes, included** – the paid ones too (Shelley, Leonardo, Cleopatra, Dracula, the magician, the seer, the little
+pair), all but the doll, whose patches are her look. Status: done (design).
+
+## 2026-11-14 – הקוסם, הרואה, palettes and pranks (design → master, ai-features, business)
+
+The owner's word (2026-11-13):
+- **Names:** `magician` is now **הקוסם** (was הקוסם מהשוק), `astronomer` is now **הרואה** (was האסטרונומית). The ids stay.
+  The master: please update the names wherever the server keeps them (e.g. `server/figures-rules.ts`).
+- **The magician** drawn again, taller and stronger, still old and warm. **The seer and the little witch** swapped skin
+  tones. **The night wizard's eyes** lowered to the right height.
+- **Palettes:** the night wizard and the forest witch can be dressed in other colours (5 each, the first as drawn):
+  `list()` → `palettes`, `mount(…, { palette })`, `f.setPalette(i)`. Part of the figure, no extra price (business may
+  decide otherwise).
+- **Pranks:** the gimmick of the little wizard and the little witch – small harmless tricks on the page while the app is
+  used, a feature the person can switch off. `/assets/pranks.js` (design); wiring and the switch are ai-features'
+  (`Pranks.start(f, { id })`, `H.prefs('daemon').pranks`, on by default). Details in `docs/design/figures-2d.md`.
+Status: done (design); waiting for ai-features (palette swatches, the pranks switch) and the master (the names).
+
+## 2026-11-14 – Four more paid wizards, the magician redrawn, the astronomer's hair chosen (design → master, ai-features, business)
+
+The owner's word (2026-11-13), after the owner's pictures: the doll and the astronomer approved; **the magician redrawn**
+as a kind old desert wizard (white turban and beard; same id `magician`, same name and dove); **four new paid figures**
+in Figure2D, `kind: 'special'`, `tier: 'paid'`: `nightwizard` קוסם הלילה, `forestwitch` קוסמת היער, `littlewizard`
+הקוסם הקטן, `littlewitch` הקוסמת הקטנה (their staffs glow; when glad, sparks). **The astronomer's hair** is chosen by
+the person, white by default: `Figure2D.list()` gives `hair` and `hairDefault`, `mount(el, 'astronomer', { hair })`,
+`f.setHair(color)`. Details in `docs/design/figures-2d.md`.
+- ai-features: the four in the "מיוחדות" group; under the astronomer, a row of hair swatches, saved per person
+  (e.g. `H.prefs('daemon').hair`).
+- business and the master: the paid list now has 7 special figures (magician, astronomer, doll and the four wizards)
+  besides the four paid people; prices are business's.
+Status: done (design).
+
+## 2026-11-14 – The founders page and the purchase page: their look (design → business, ai-features, master)
+
+At business's request (`docs/business/founders.md` §4–5, `docs/business/monetization.md` §4.3). CSS only, plus two
+prototypes with the markup in `docs/design/prototype/founders.html` and `buy.html` (serve them from the dev server by
+copying them into `public/` for a moment).
+
+- **`/founders/`**: link `/founders/founders.css` after base.css. `main.fd` > `header.fd-head` (the tent, h1, a line on
+  how a name gets in), then one `section.fd-tier` per tier with `header` (a badge img + h2 + small):
+  1–10 עמודי האוהל `ol.fd-poles` > `li.fd-pole` (`.fd-num`, `b` name, `small` place · month), 5 columns, 2 on phones;
+  11–50 יתדות `ol.fd-pegs` > `li.fd-peg` (`.fd-num`, `b`); 51–100 חבלים `ol.fd-ropes` > `li` (`.fd-num` + name);
+  then `ul.fd-supporters` > `li`, `.fd-million` (with `.who-title.gold`), `p.fd-note`, and `.fd-empty` for a tier not
+  filled yet. The badges used are pole, peg, tribe and shoulder from `/assets/badges/`.
+- **`/buy/`**: link `/buy/buy.css`. `main.by` > `.by-head`, `.by-main` (two columns, stacked under 760 px):
+  `figure.by-item` (a Figure2D stage, or a picture for credits or support) and `section.by-offer` with, in this order,
+  `.by-plans` (`role="radiogroup"`, `button.by-plan[role=radio][aria-checked]`, `.by-cancel` on the monthly one),
+  `.by-price`, `ul.by-gets`, `.by-terms` (the cancellation terms, always before the button), `label.by-agree` with a
+  checkbox, `button.btn.primary.by-buy` (disabled until the box is ticked) and `.by-pay-note`. Below it
+  `.by-seller` with the dealer's details; `.ph` marks a placeholder until the owner opens a tax file.
+- **Corrected after business's review (same day):** a figure is paid **in credits** – `.by-price` "₪10 בקרדיטים",
+  `.by-balance` (the balance and what is left; `.low` when short), one confirmation; short of credits, `.by-short` and
+  then `section.by-topup` with `.by-packs` > `button.by-pack[role=radio]` (₪5/10/20/50). The card, the receipt, the
+  terms for credits and `.by-seller` belong to the pack purchase only. `.by-plans` (monthly support) is kept for the
+  packs/support page, not a figure's page. The tithe line reads "מעשר: 10% מההכנסה מכל רכישה הולכים לצדקה". Founders:
+  opt-in ("להופיע בדף מי הקים את האוהל?", the city optional), "בתקופת הבטא" in the intro, `.fd-million[hidden]`
+  until it happens; proposed for signed-in users only.
+- Wiring the pages, the routes and the payment provider is ai-features' and the master's. Checked at 375 px and desktop,
+  in light and dark (no overflow, contrast clear).
+Status: done (design); waiting for the pages to be wired.
+
+## 2026-11-14 – Founding members: the moment a gathering has five confirmed invitees is recorded (ai-features → business, master)
+
+Business's urgent item (the owner's decision of 2026-11-13, docs/business/founders.md on `business`): before the first real
+gathering goes out, record when each gathering first has five invitees who confirmed, and its organiser.
+- Table `gathering_milestones` (appended to schema.sql): `seq` (AUTOINCREMENT, runs forever – "the millionth"),
+  `gathering` (unique), `host_email`, `household`, `reached_at`, `confirmed`, `dev`. Written once (INSERT OR IGNORE),
+  never rewritten: a later "no" does not move it.
+- The rule (`server/gather-rules.ts` `confirmedGuests` / `reachedFounding`, tests in test-gather.mjs): answers "yes",
+  each answer once, not heads, and not the organiser's own answer.
+- Recorded in `rsvp()` (server/gather.ts) on every "yes"; a failure is logged and never fails the answer.
+- Test gatherings: `dev = 1` on a dev server. On the live site a test gathering is a real row; the owner's approval of the
+  list in the room (founders.md) filters it, or a "test" mark when a gathering is created – business/the owner to decide.
+- For the founders' order: a person's first moment is `MIN(reached_at)` by `host_email` (the room's list, the master's).
+Status: done on `ai-features`.
+
 ## 2026-11-14 – Paid figures bought with credits; a private birth year; figures everyone agrees on (master)
 The owner's decisions, built by the master.
 
@@ -330,6 +516,14 @@ Built on `ai-features` (each commit names its item):
 - **(7)** The gathering's card motion is design's sheet work; nothing of ai-features changed for it.
 Status: done (on `ai-features`), except the items marked for others.
 
+## 2026-11-13 – Three special companions, paid (the owner)
+
+The owner wants all the figures, and three special paid ones – a man, a woman and neither – worth paying for. From the
+options design proposed (each special in a different way) he chose: הקוסם מהשוק (a trick: a dove from his hat when
+something is achieved), האסטרונומית (her shawl lights up with stars at night) and בובת הטלאים (the person's own badges
+sewn on her – a figure that looks different for everyone). Drawn and built on design (00bdf33); how to wire them is in
+docs/design/figures-2d.md. Status: done (design), for ai-features to wire.
+
 ## 2026-11-13 – The default companion is פנק (the owner)
 
 From the preview of the four simple companions (https://claude.ai/artifact/1VZvspHAQp7Pd5Ww9m96fF), the owner chose the
@@ -520,6 +714,95 @@ fire with its five pictures in `public/assets/campfire/`. **For the master:** `p
 `/assets/campfire-strip.webp` – please replace it in `ASSETS` with `/assets/campfire.css`, `/assets/campfire.js`,
 `/assets/campfire/base.webp` and `/assets/campfire/flame-1…4.webp`; design deletes the strip once that is live.
 Checked at 375 and 1185 px, by day and at night. Status: done (on `design`), the sw.js line proposed.
+
+## 2026-11-13 – Prices: ₪10 for a paid figure, ₪400 for a personal figure, more for the special ones (business)
+
+**Decided (the owner):**
+- **A paid figure** (Mary Shelley, Leonardo, Cleopatra, Dracula) costs ₪10 in credits. Design measured 15–20 minutes of
+  work, so a figure covers itself after about 14 sales.
+- **A personal figure** costs ₪400. Design measured 45–75 minutes, which comes to ₪300–500 at the 30/30/30/10 split.
+  Revisit after the first five founders' figures.
+- **The very special figures** (seven: הקוסם, הרואה (renamed 2026-11-14), בובת הטלאים, קוסם הלילה, קוסמת היער, הקוסם הקטן,
+  הקוסמת הקטנה; design's entry on `design`)
+  cost more than a paid figure.
+  - **₪20**, the same as one ₪20 pack. Approved by the owner (via the master, 2026-11-14), and live in cache v57 as
+    the setting `figures.special_price_ils`, for all seven.
+- Founding members get the special figures too (paid items with no per-use cost).
+
+**Affects:** ai-features and master (`server/figures-rules.ts`, the paid list): the price per figure in credits, with
+the special ones in their own price group.
+
+**Status:** Decided (the owner).
+
+## 2026-11-13 – How money is collected: one credits wallet, an Israeli provider, standing orders (business)
+
+**Decision:**
+- **One wallet.** Credits become the one currency for everything sold in the app: AI, paid figures and skins. People buy
+  credit packs; a figure or a skin is bought with credits.
+  - Why: the fixed fee per transaction (about ₪1) takes ~14% of a ₪10 figure paid on its own, and ~4.4% of a ₪50 pack.
+  - This widens business decision 2 (credits go down by `costOf`): AI still goes down by its metered cost, and figures
+    and skins by their price in credits.
+- **Israel: one Israeli payment provider.** Card, Bit, Apple Pay and Google Pay, standing orders for monthly supporters,
+  an automatic receipt for every payment, and a webhook that adds the credits.
+  - Before choosing, get quotes from Grow, Sumit and Cardcom (decision 5 stands; this is how it gets chosen).
+- **Monthly supporters** pay by a standing order on a card, cancellable any time on the site the same way they signed up.
+  Each month adds credits by level.
+- **Abroad, only when there is demand:** a Merchant of Record such as Polar (it pays out to Israel) or Paddle.
+- **The stores (stage 6):** in-app purchase, in the small-business programme (15%).
+- **No GoFundMe** (it does not pay out to Israel) and **no Patreon** for now.
+- **Before the first payment:** a tax file (עוסק פטור while turnover is under ₪122,833 in 2026), receipts, the
+  remote-sale disclosures, terms of use and a privacy policy. It is called "support", not "donation" or "investment".
+- **Skins** are cosmetic variants of figures, about ₪3–5 in credits; holiday skins are free.
+
+**Why:** cheapest for customers in Israel, and the provider handles receipts. The legal points are in
+`docs/business/monetization.md`, marked for an accountant and a lawyer.
+
+**Affects:**
+- **Master:** the provider integration (payment page, standing order, webhook, self-service cancellation), the terms.
+- **ai-features:** buying a figure or a skin with credits, and keeping who owns what on the server.
+- **design:** the purchase page (business details, price, cancellation terms), the skins.
+
+**Status:** Decided (the owner). The provider is chosen after the quotes; the skin price is a draft.
+
+## 2026-11-13 – Recognition and support tracks, titles beside badges (business)
+
+**Decision:** the tracks in `docs/business/founders.md`:
+- **Founding members** (חברים מייסדים): organised a real gathering in the beta with at least 5 confirmed RSVPs.
+  - Four levels by the order in which they qualified: the first 10, up to 50, up to 100, and the rest within the
+    window.
+  - For life: a title, one personal figure, monthly AI credits up to a 3-month ceiling (more for the first levels), a
+    10GB album, and every paid item with no per-use cost (public-domain paid figures and skins, not licensed ones).
+  - The owner approves the list at the end of the window.
+- **The millionth** person to meet that condition gets a unique title, as a surprise.
+  - The count goes on for ever, after the founders' window closes.
+- **Founding supporters** pay once in one window and get free access for life. The value is set later, at the public
+  launch.
+- **Regular supporters** pay monthly in levels (draft: ₪10 / 25 / 50). Each level gets the credits of a pack of the same
+  sum, plus recognition.
+- **Angels** (partners, translators) are chosen by the owner, with benefits only while in the role.
+- **האור לפני המחנה** (the improvement programme): signed up, with explicit consent to send error data, and consistently
+  reporting or helping. Benefits only while active.
+- **A title beside the badges:** one title next to the name, with the badges the user chooses to show. Anyone can hide
+  them. They are shown in the profile, the tree and RSVPs, not in links shared outside.
+- **Accounting:** the free tracks are a marketing cost, like gifted credits (outside 30/30/30/10). Paid tracks are
+  income.
+
+**Why:** thanks to the people who light the fire in the beta, a reason to invest, and bounded costs (no unlimited AI).
+
+**Affects:**
+- **ai-features, now:** from the first real gathering, record the moment each gathering reaches 5 confirmed RSVPs (and
+  its organiser). The order of the founders and the millionth both come from it, and it cannot be rebuilt afterwards.
+- **ai-features, by the end of the beta:**
+  - a track and level per account, titles and badges (owned, shown, hidden);
+  - a monthly top-up of credits up to a ceiling, on the gift mechanism (`ai_credits`, a source per track);
+  - an early-access flag;
+  - lists for approval in the owner's room, and "end of role" for angels.
+- **design:** how a title and badges look beside the name; a "who founded האוהל" page; the 2D personal-figure process,
+  timed.
+- **Master:** what "for life" means, in the terms of use.
+
+**Status:** Decided (the owner). Drafts still open: the level names (עמוד / יתד / חבל), the exact amounts, the
+supporters' levels, and the founding supporters' value.
 
 ## 2026-11-12 – The beta's three months start at the first real gathering (business)
 
@@ -1198,7 +1481,8 @@ The owner approved all fifteen recommendations from the business session's self-
 6. **Purchases per user (credits, companion packs) or per family (the family's own companion, the album).**
    - Why: every user is an endpoint, and shared things belong to the family.
    - Affects: ai-features, design.
-   - Status: Decided.
+   - Status: Decided. **Superseded in part on 2026-11-13** (vision, the owner, "Companion figures"): companion packs
+     are free, and the family's own companion became a personal figure bought by a user. The album is unchanged.
 7. **Storage: files in the user's Drive or iCloud, small encrypted family text on our server.**
    - Why: no storage cost for the owner, and family sharing stays simple.
    - Affects: master, ai-features.

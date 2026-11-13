@@ -23,3 +23,42 @@
   animation: f2-z 2.6s ease-in-out infinite; }
 @keyframes f2-z { 0% { opacity: 0; transform: translate(0, 6px) scale(.8); } 30% { opacity: 1; } 100% { opacity: 0; transform: translate(-8px, -18px) scale(1.2); } }
 @media (prefers-reduced-motion: reduce) { .f2.sleeping::before { animation: none; opacity: .8; } }
+/* ---------- the special ones ---------- */
+.f2-fx { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+/* the magician: sparks and a dove from the hat */
+.f2-spark { position: absolute; inline-size: 6px; block-size: 6px; margin: -3px; border-radius: 50%; background: var(--c, #f2c14e); box-shadow: 0 0 6px var(--c, #ffd76a);
+  animation: f2-spark 1s var(--delay, 0ms) cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes f2-spark { from { transform: translate(0, 0) scale(.4); opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 0; } }
+.f2-dove { position: absolute; inline-size: 46%; filter: drop-shadow(0 4px 4px rgba(30, 20, 10, .2)); }
+/* the wizards: a soft glow at the staff's light, breathing slowly; brighter when they spark */
+.f2-glow { position: absolute; inline-size: 22%; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 55%, transparent), transparent 66%); opacity: .45;
+  animation: f2-glow 3.2s ease-in-out infinite; transition: opacity .3s; }
+@keyframes f2-glow { 50% { scale: 1.18; opacity: .85; } }
+/* at night the light really shines */
+:root[data-theme="dark"] .f2-glow { mix-blend-mode: screen; opacity: .7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .f2-glow { mix-blend-mode: screen; opacity: .7; } }
+.f2.sparking .f2-glow { opacity: 1; scale: 1.5; animation: none; }
+.f2.still .f2-glow { animation: none; }
+@media (prefers-reduced-motion: reduce) { .f2-glow { animation: none; } }
+/* the astronomer: the stars of her shawl wake at night and twinkle; a shooting star when she is glad */
+.f2-stars { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 1.2s; }
+.f2-stars i { position: absolute; inline-size: 3.2%; aspect-ratio: 1; margin: -1.6%; border-radius: 50%;
+  background: radial-gradient(circle, #fff6d0 0 30%, rgba(255, 214, 110, .55) 45%, transparent 70%); animation: f2-tw var(--tw, 3s) var(--d, 0s) ease-in-out infinite; }
+@keyframes f2-tw { 50% { transform: scale(.45); opacity: .45; } }
+:root[data-theme="dark"] .f2-stars, .f2.starlit .f2-stars { opacity: 1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .f2-stars { opacity: 1; } }
+:root[data-theme="dark"] .f2:has(.f2-stars) { filter: drop-shadow(0 0 14px rgba(120, 150, 255, .35)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .f2:has(.f2-stars) { filter: drop-shadow(0 0 14px rgba(120, 150, 255, .35)); } }
+.f2-shoot { position: absolute; inset-block-start: -4%; inset-inline-end: -10%; inline-size: 30%; block-size: 2px; border-radius: 2px; transform: rotate(-28deg);
+  background: linear-gradient(90deg, transparent, #fff6d0); animation: f2-shoot 1.1s ease-in both; }
+@keyframes f2-shoot { from { translate: 0 0; opacity: 0; } 20% { opacity: 1; } to { translate: -140% 70%; opacity: 0; } }
+/* the doll: the person's badges sewn on, with a stitched ring; a new one stitches itself in */
+.f2-patch { position: absolute; aspect-ratio: 1; translate: -50% -50%; border-radius: 50%; padding: 1.5%; pointer-events: none;
+  background: #f4ecd8; border: 1.5px dashed #7a4a26; box-shadow: 0 1px 2px rgba(30, 20, 10, .35); }   /* a cream backing, hand-stitched on */
+.f2-patch img { inline-size: 100%; block-size: 100%; display: block; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(30, 20, 10, .35)); }
+.f2-patch.fresh { animation: f2-sew 1.1s cubic-bezier(.3, .7, .3, 1.3) both; }
+@keyframes f2-sew { 0% { transform: scale(.2) rotate(-90deg); opacity: 0; } 60% { transform: scale(1.18) rotate(8deg); opacity: 1; } 100% { transform: none; } }
+.f2.proud .f2-patch { animation: f2-proud .7s ease-in-out 2; }
+@keyframes f2-proud { 50% { transform: scale(1.12) rotate(-6deg); } }
+@media (prefers-reduced-motion: reduce) { .f2-stars i, .f2-patch.fresh, .f2.proud .f2-patch { animation: none; } }

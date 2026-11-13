@@ -188,6 +188,7 @@
     P.cat = cat; H.savePrefs('fun');
     const [, name, , tint] = CATS.find((c) => c[0] === cat);
     tabs.querySelectorAll('[role=tab]').forEach((t) => { const on = t.dataset.cat === cat; t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); });
+    tabs.querySelector('.fun-tab.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });   // a remembered tab off the edge (375) comes into the row
     token++;
     S = { cat, kind: P.funny === 'real' ? 'real' : 'viral', page: 0, seen: new Set(), skipped: 0, busy: false, done: false, cursor: null, fresh };
     sub.hidden = cat !== 'funny';

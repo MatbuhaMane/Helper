@@ -248,11 +248,15 @@
       return [a, b];
     }
     function paintVerseMark() {
-      textBox.querySelectorAll('.rs-v.rs-mark').forEach((n) => n.classList.remove('rs-mark', 'rs-mark-first', 'rs-mark-last'));
-      const m = S.vm; if (!m) return;
+      textBox.querySelectorAll('.rs-v.rs-mark').forEach((n) => n.classList.remove('mk', 'rs-mark', 'rs-mark-first', 'rs-mark-last'));
+      const m = S.vm;
+      // design's .rs-v.mk is the look (study.css); data-mk on the text box says which step: a verse, to the chapter's end, the chapter
+      const step = m && ['', 'verse', 'rest', 'chapter'][m.step];
+      if (step) textBox.dataset.mk = step; else delete textBox.dataset.mk;
+      if (!m) return;
       for (let k = m.from; k <= m.to; k++) {
         const p = textBox.querySelector(`.rs-v[data-i="${k}"]`); if (!p) continue;
-        p.classList.add('rs-mark'); if (k === m.from) p.classList.add('rs-mark-first'); if (k === m.to) p.classList.add('rs-mark-last');
+        p.classList.add('mk', 'rs-mark'); if (k === m.from) p.classList.add('rs-mark-first'); if (k === m.to) p.classList.add('rs-mark-last');
       }
     }
     function tapNumber(i) {

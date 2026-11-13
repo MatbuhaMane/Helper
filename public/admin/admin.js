@@ -583,56 +583,86 @@
   }
 
   /* ---------- invitations from outside the family (the owner only, server/join.ts) ----------
-     A personal link, used once, into a household of its own with the trial credits. The list keeps each one's status
-     (sent / redeemed / expired / cancelled), the link while it is open (copy or WhatsApp), and cancel. One search box
-     looks in the invitations and in the members, by name or email, so the owner sees whether someone is in already. */
-  const IV = { sent: 'נשלחה', redeemed: 'מומשה', expired: 'פגה', cancelled: 'בוטלה' };
+     A personal link, used once, into a household of its own with the trial credits. On top, the requests for access
+     (server/access.ts): "הזמן" makes an invitation for that email and marks the request invited, "דחה" marks it declined.
+     Below, a new invitation, then the list with each one's state (sent / opened / joined / expired / cancelled), the link
+     while it is open (copy, WhatsApp, email) and cancel. One search looks in the invitations and in the members.
+     The look is design's .bd-inv (admin.css); the actions of a row sit in .bd-inv-acts. */
+  const IV = { sent: 'נשלחה', opened: 'נפתחה', redeemed: 'הצטרף/ה', expired: 'פג תוקף', cancelled: 'בוטלה' };
+  const IV_ST = { redeemed: 'joined' };      // design's data-st names
+  const IV_F = [['all', 'הכל', () => true], ['open', 'ממתינות', (x) => x.status === 'sent' || x.status === 'opened'], ['joined', 'הצטרפו', (x) => x.status === 'redeemed'], ['closed', 'פגו ובוטלו', (x) => x.status === 'expired' || x.status === 'cancelled']];
   Object.assign(ERR, { name_required: 'למי ההזמנה? כתבו שם.', bad_email: 'כתובת המייל לא תקינה.', already_member: 'הכתובת הזו כבר באוהל.', not_open: 'ההזמנה כבר לא פתוחה.' });
-  async function invites(box, q = '') {
-    const [d, people] = await Promise.all([
+  const ivState = { q: '', f: 'all', made: null };
+  async function invites(box) {
+    const { q } = ivState;
+    const [d, people, reqs] = await Promise.all([
       call('/api/admin/invites' + (q ? '?q=' + encodeURIComponent(q) : '')),
       q.length >= 2 ? call('/api/admin/people?q=' + encodeURIComponent(q)).catch(() => ({ members: [] })) : { members: [] },
+      call('/api/admin/access-requests').catch(() => ({ requests: [] })),
     ]);
+    const asked = reqs.requests.filter((r) => r.status === 'asked');
+    const again = () => invites(box).catch(say);
     const copy = async (url) => { try { await navigator.clipboard.writeText(url); toast('הקישור הועתק'); } catch (_) { prompt('העתיקו את הקישור:', url); } };
-    const wa = (x) => `https://wa.me/?text=${encodeURIComponent(`שלום ${x.name}, הזמנתי אותך לאוהל – המקום של הכלים שלנו ליום־יום. ההזמנה אישית ועובדת פעם אחת: ${x.url}`)}`;
+    const words = (x) => `שלום ${x.name}, הזמנתי אותך לאוהל – המקום של הכלים שלנו ליום־יום. ההזמנה אישית ועובדת פעם אחת: ${x.url}`;
+    const sendLinks = (x) => [
+      el('a', { class: 'btn small ghost', href: `https://wa.me/?text=${encodeURIComponent(words(x))}`, target: '_blank', rel: 'noopener' }, 'וואטסאפ'),
+      x.email ? ' ' : null, x.email ? el('a', { class: 'btn small ghost', href: `mailto:${x.email}?subject=${encodeURIComponent('הזמנה לאוהל')}&body=${encodeURIComponent(words(x))}` }, 'מייל') : null];
+    async function make(name, email) {
+      const r = await call('/api/admin/invites', { body: { name, email: email || undefined, days: +days.value } });
+      ivState.made = { name, email, url: r.url };
+      return r;
+    }
+
+    /* the requests for access, waiting for an answer */
+    const reqRow = (r) => {
+      const name = r.name || r.google_name || r.email;
+      return el('li', { class: 'bd-inv-row', 'data-st': 'asked' },
+        el('span', { class: 'bd-inv-who' }, el('b', {}, name),
+          el('small', { class: 'muted' }, el('bdi', { dir: 'ltr' }, r.email), r.asked_at ? ' · ' + day(r.asked_at) : '', r.note ? ' · ' + r.note : '')),
+        el('span', { class: 'bd-inv-st' }, 'ביקש/ה'),
+        el('span', { class: 'bd-inv-acts' },
+          btn('הזמן', async () => { await make(name, r.email); await call('/api/admin/access-requests/decide', { body: { email: r.email, status: 'invited' } }); toast(`ההזמנה של ${name} מוכנה`); again(); }, 'btn small primary'), ' ',
+          btn('דחה', async () => { await call('/api/admin/access-requests/decide', { body: { email: r.email, status: 'declined' } }); toast('הבקשה נדחתה'); again(); }, 'btn small ghost', `לדחות את הבקשה של ${name}? לא נשלחת לו/ה הודעה.`)));
+    };
+
+    /* a new invitation */
     const name = el('input', { type: 'text', maxlength: 80, required: true, 'aria-label': 'למי (שם)', placeholder: 'למשל: רות כהן' });
     const email = el('input', { type: 'email', maxlength: 200, dir: 'ltr', 'aria-label': 'מייל (לא חובה)', placeholder: 'name@gmail.com' });
     const days = el('select', { 'aria-label': 'כמה זמן ההזמנה פתוחה' }, [[3, '3 ימים'], [7, 'שבוע'], [14, 'שבועיים'], [30, 'חודש']].map(([v, t]) => el('option', { value: v, selected: v === 7 }, t)));
-    const made = el('div', { class: 'iv-made', 'aria-live': 'polite' });
+    const m = ivState.made;
+    const made = m ? el('div', { class: 'iv-made', 'aria-live': 'polite' }, el('p', {}, `ההזמנה של ${m.name} מוכנה:`), el('p', { class: 'iv-link', dir: 'ltr' }, m.url),
+      btn('העתקת הקישור', () => copy(m.url), 'btn small primary'), ' ', ...sendLinks(m)) : null;
+    ivState.made = null;
+
+    /* the list: the search, the filters, the rows */
     const search = el('input', { type: 'search', value: q, 'aria-label': 'חיפוש לפי שם או מייל', placeholder: 'חיפוש לפי שם או מייל…' });
     let wait;
-    search.addEventListener('input', () => { clearTimeout(wait); wait = setTimeout(() => redraw(search.value.trim()), 350); });
-    const redraw = async (nq) => { try { await invites(box, nq); const s = box.querySelector('input[type=search]'); s?.focus(); s?.setSelectionRange(s.value.length, s.value.length); } catch (e) { say(e); } };
-    const row = (x) => el('tr', { class: 'iv-row' },
-      el('td', {}, el('b', {}, x.name), x.email ? el('div', { class: 'muted small', dir: 'ltr' }, x.email) : null),
-      el('td', {}, el('span', { class: 'iv-status', 'data-s': x.status }, IV[x.status]),
-        el('div', { class: 'muted small' }, x.status === 'redeemed' ? `${x.used_name || x.used_by} · ${day(x.used_at)}` : x.status === 'sent' ? `עד ${day(x.exp)}` : x.status === 'cancelled' ? day(x.cancelled_at) : day(x.exp))),
-      el('td', { class: 'num muted small' }, day(x.created_at)),
-      el('td', {}, x.status === 'sent' ? [
-        btn('העתקה', () => copy(x.url)), ' ',
-        el('a', { class: 'btn small', href: wa(x), target: '_blank', rel: 'noopener' }, 'וואטסאפ'), ' ',
-        btn('ביטול', async () => { await call(`/api/admin/invites/${x.id}/cancel`, { method: 'POST' }); toast('ההזמנה בוטלה'); redraw(search.value.trim()); }, 'btn small danger', `לבטל את ההזמנה של ${x.name}? הקישור יפסיק לעבוד מיד.`),
-      ] : ''));
-    box.replaceChildren(section('invites-s', 'הזמנות',
+    search.addEventListener('input', () => { clearTimeout(wait); wait = setTimeout(async () => { ivState.q = search.value.trim(); await again(); const s = box.querySelector('.bd-inv-tools input[type=search]'); s?.focus(); s?.setSelectionRange(s.value.length, s.value.length); }, 350); });
+    const filters = el('div', { class: 'bd-inv-f', role: 'group', 'aria-label': 'סינון' }, IV_F.map(([k, t, ok]) =>
+      el('button', { type: 'button', 'aria-pressed': String(ivState.f === k), onclick: () => { ivState.f = k; again(); } }, t, ' ', el('span', {}, d.invites.filter(ok).length))));
+    const shown = d.invites.filter(IV_F.find(([k]) => k === ivState.f)[2]);
+    const sub = (x) => x.status === 'redeemed' ? `${x.used_name || x.used_by} · ${day(x.used_at)}`
+      : x.status === 'cancelled' ? `בוטלה ${day(x.cancelled_at)}`
+      : x.status === 'expired' ? `פגה ${day(x.exp)}`
+      : `${x.status === 'opened' ? `נפתחה ${day(x.opened_at)} · ` : ''}פתוחה עד ${day(x.exp)}`;
+    const row = (x) => el('li', { class: 'bd-inv-row', 'data-st': IV_ST[x.status] || x.status },
+      el('span', { class: 'bd-inv-who' }, el('b', {}, x.name), el('small', { class: 'muted' }, x.email ? [el('bdi', { dir: 'ltr' }, x.email), ' · '] : '', sub(x))),
+      el('span', { class: 'bd-inv-st' }, IV[x.status]),
+      x.url ? el('span', { class: 'bd-inv-acts' },
+        btn('העתקה', () => copy(x.url), 'btn small ghost'), ' ', ...sendLinks(x), ' ',
+        btn('ביטול', async () => { await call(`/api/admin/invites/${x.id}/cancel`, { method: 'POST' }); toast('ההזמנה בוטלה'); again(); }, 'btn small ghost', `לבטל את ההזמנה של ${x.name}? הקישור יפסיק לעבוד מיד.`)) : el('span'));
+
+    box.replaceChildren(el('section', { class: 'card bd-inv', id: 'invites-s' },
+      el('h2', {}, 'הזמנות'),
+      asked.length ? [el('h3', {}, `בקשות הצטרפות · ${asked.length}`), el('ul', { class: 'bd-inv-list bd-req-list' }, asked.map(reqRow))] : null,
       el('p', { class: 'muted small' }, 'הזמנה אישית למישהו מחוץ למשפחה: הוא נכנס עם Google למקום משלו באוהל, עם קרדיט התחלתי לעוזר החכם, ולא רואה שום דבר של המשפחה. כל קישור עובד פעם אחת. אם תכתבו מייל, רק החשבון הזה יוכל להיכנס בו.'),
-      el('div', { class: 'ad-tiles' }, Object.entries(IV).map(([k, t]) => el('div', { class: 'ad-tile' }, el('small', {}, t), el('b', {}, d.count[k] || 0)))),
-      el('form', { class: 'ad-form', onsubmit: async (e) => {
-        e.preventDefault();
-        try {
-          const r = await call('/api/admin/invites', { body: { name: name.value, email: email.value.trim() || undefined, days: +days.value } });
-          const x = { name: name.value.trim(), url: r.url };
-          await invites(box, q);
-          box.querySelector('.iv-made')?.replaceChildren(el('p', {}, `ההזמנה של ${x.name} מוכנה:`), el('p', { class: 'iv-link', dir: 'ltr' }, r.url),
-            btn('העתקת הקישור', () => copy(r.url), 'btn small primary'), ' ', el('a', { class: 'btn small', href: wa(x), target: '_blank', rel: 'noopener' }, 'שליחה בוואטסאפ'));
-        } catch (err) { say(err); }
-      } }, el('label', {}, 'למי', name), el('label', {}, 'מייל (לא חובה)', email), el('label', {}, 'פתוחה', days), el('button', { class: 'btn primary' }, 'הזמנה חדשה')),
+      el('form', { class: 'ad-form', onsubmit: async (e) => { e.preventDefault(); try { await make(name.value.trim(), email.value.trim()); await again(); } catch (err) { say(err); } } },
+        el('label', {}, 'למי', name), el('label', {}, 'מייל (לא חובה)', email), el('label', {}, 'פתוחה', days), el('button', { class: 'btn primary' }, 'הזמנה חדשה')),
       made,
-      el('label', { class: 'iv-search' }, 'חיפוש', search),
-      people.members.length ? el('div', { class: 'iv-people' }, el('p', { class: 'small' }, 'כבר באוהל:'),
-        el('ul', { class: 'small' }, people.members.slice(0, 8).map((m) => el('li', {}, `${m.he_name || m.name || ''} `, el('bdi', { dir: 'ltr', class: 'muted' }, m.email))))) : null,
-      d.invites.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ['למי', 'מצב', 'נוצרה', ''].map((h, i) => el('th', { class: i === 2 ? 'num' : '' }, h)))),
-        el('tbody', {}, d.invites.map(row))))
-        : el('p', { class: 'muted small' }, q ? 'אין הזמנות שמתאימות לחיפוש.' : 'עוד אין הזמנות.')));
+      el('div', { class: 'bd-inv-tools' }, el('div', { class: 'ad-combo' }, search), filters),
+      people.members.length ? el('p', { class: 'small iv-people' }, 'כבר באוהל: ', people.members.slice(0, 8).flatMap((p, i) => [i ? ', ' : '', `${p.he_name || p.name || ''} `, el('bdi', { dir: 'ltr', class: 'muted' }, p.email)])) : null,
+      shown.length ? el('ul', { class: 'bd-inv-list' }, shown.map(row)) : null,
+      el('p', { class: 'bd-inv-empty', hidden: shown.length > 0 }, q ? 'אין הזמנות שמתאימות לחיפוש.' : ivState.f === 'all' ? 'עוד אין הזמנות.' : 'אין כאן הזמנות.')));
   }
 
   /* ---------- messages to everyone, or to one member ---------- */

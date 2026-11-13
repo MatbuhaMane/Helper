@@ -362,7 +362,6 @@
       r.formulas?.length ? el('div', { class: 'cx-used' }, el('small', {}, 'נוסחאות ומשפטים:'), ...r.formulas.map((f) => rich(/\$/.test(f) ? f : `$${f}$`))) : null,
       el('div', { class: 'cx-ans-acts' },
         intuitive ? null : el('button', { class: 'btn small primary cx-intu', type: 'button', title: 'הרעיון, התמונה, למה זה עובד, איך מזהים ומלכודות נפוצות', onclick: (e) => { e.currentTarget.disabled = true; ask('הסבר לי את הפתרון הזה באופן אינטואיטיבי', 'intuition'); } }, '💡 הסבר אינטואיטיבי'),
-        el('button', { class: 'btn small', type: 'button', onclick: async () => { try { await api('/api/notes', { body: { body: asText(), source: { url: location.href, title: 'מחשבון חכם' } } }); toast('נשמר בפתקים', 'לפתקים', () => { location.href = '/tools/notes/'; }); } catch (_) { toast('לא נשמר'); } } }, '📝 שמירה כפתק'),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => { navigator.clipboard?.writeText(asText()); toast('הועתק (עם ה־LaTeX)'); } }, 'העתקה')),
       more);
   }

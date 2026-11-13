@@ -521,17 +521,13 @@
           s.mayEdit ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'הסרת המקור', onclick: async () => { if (confirm('להסיר את המקור מהמחקר?')) { await api(`/api/research/sources/${s.id}`, { method: 'DELETE' }); route(); } } }, '✕') : null))))
         : el('p', { class: 'muted', style: 'margin:0' }, 'עוד אין מקורות. הדביקו DOI או חפשו מאמר; הביבליוגרפיה נבנית לבד, בסגנון שבחרתם.'));
   }
-  /** ✨ a source in a few points, from its abstract (read live from OpenAlex, kept nowhere unless saved as a note) */
+  /** ✨ a source in a few points, from its abstract (read live from OpenAlex and kept nowhere; to keep it, copy it into a note) */
   async function summarize(s) {
     let x;
     try { x = await api(`/api/research/sources/${s.id}/ai/summary`, { body: {} }); }
     catch (e) { if (e.code === 'no_abstract') return toast('אין למקור הזה תקציר פתוח לסכם'); throw e; }
-    const text = x.points.map((p) => '- ' + p).join('\n') + '\n\n' + x.relevance;
     H.modal(el('h2', {}, '✨ סיכום · ' + x.cite), el('ul', {}, x.points.map((p) => el('li', { dir: 'auto' }, p))), el('p', { dir: 'auto' }, x.relevance), aiNote(),
-      el('div', { style: ROW }, el('button', { class: 'btn primary', type: 'button', onclick: async () => {
-        await api(`/api/research/r/${R.research.id}/notes`, { body: { title: 'סיכום: ' + (s.csl.title || x.cite).slice(0, 80), body: text + `\n\n[@${s.id}]` } });
-        H.closeModal(); toast('נשמר כפתק במחקר'); route();
-      } }, 'שמירה כפתק'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
+      el('div', { style: ROW }, el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
   }
   /** ✨ two to five sources side by side: agree, differ, what each adds */
   function compareSources() {
@@ -547,9 +543,7 @@
           const x = await api(`/api/research/r/${R.research.id}/ai/compare`, { body: { sources: ids } });
           const view = el('textarea', { rows: 16, dir: 'auto', readonly: true, style: INPUT + ';inline-size:100%' }); view.value = x.body;
           H.modal(el('h2', {}, '✨ השוואה'), x.missing.length ? el('p', { class: 'small muted' }, 'בלי תקציר, ולכן בחוץ: ' + x.missing.join(', ')) : null, view, aiNote(),
-            el('div', { style: ROW }, el('button', { class: 'btn primary', type: 'button', onclick: async () => {
-              await api(`/api/research/r/${R.research.id}/notes`, { body: { title: 'השוואה בין מקורות', body: x.body } }); H.closeModal(); toast('נשמר כפתק'); route();
-            } }, 'שמירה כפתק'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
+            el('div', { style: ROW }, el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'סגירה')));
         } catch (err) { if (err.code === 'no_abstract') toast('לפחות לשניים מהם צריך תקציר פתוח'); else if (err.code !== 'ai_credit_needed') toast('ההשוואה לא הצליחה כרגע'); e.currentTarget.disabled = false; e.currentTarget.textContent = 'השוואה'; }
       } }, 'השוואה')));
   }

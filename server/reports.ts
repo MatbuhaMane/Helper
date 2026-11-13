@@ -11,11 +11,11 @@ import { requireAdmin } from './admin';
 import * as R from './reports-rules';
 
 interface Row {
-  id: string; email: string; name: string | null; text: string; path: string; title: string | null; device: string | null;
+  id: string; email: string; name: string | null; kind: string | null; text: string; path: string; title: string | null; device: string | null;
   theme: string | null; width: number | null; has_shot: number; via: string; state: R.State; created_at: number;
   updated_at: number; read_at: number | null; seen_at: number | null; last_team_at: number | null;
 }
-const LIST_COLS = 'id, email, name, text, path, title, device, theme, width, has_shot, via, state, created_at, updated_at, read_at, seen_at, last_team_at';
+const LIST_COLS = 'id, email, name, kind, text, path, title, device, theme, width, has_shot, via, state, created_at, updated_at, read_at, seen_at, last_team_at';
 
 /** keep one report (any member); also what the older feedback paths call */
 export async function addReport(ctx: Ctx, u: Member, input: R.ReportIn, via: 'shake' | 'menu' | 'button' | 'companion') {
@@ -30,15 +30,15 @@ export async function addReport(ctx: Ctx, u: Member, input: R.ReportIn, via: 'sh
       await ctx.env.MEDIA.put('reports/' + id, bytes, { httpMetadata: { contentType: head.slice(5, head.indexOf(';')) } });
     } else inRow = input.shot;
   }
-  await ctx.env.DB.prepare(`INSERT INTO reports (id, email, name, text, path, title, device, theme, width, has_shot, shot_data, via, state, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)`)
-    .bind(id, u.email, u.he_name || u.name || null, input.text, input.path, input.title || null, device, input.theme, input.width, input.shot ? 1 : 0, inRow, via, now, now).run();
+  await ctx.env.DB.prepare(`INSERT INTO reports (id, email, name, kind, text, path, title, device, theme, width, has_shot, shot_data, via, state, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', ?, ?)`)
+    .bind(id, u.email, u.he_name || u.name || null, input.kind || 'bug', input.text, input.path, input.title || null, device, input.theme, input.width, input.shot ? 1 : 0, inRow, via, now, now).run();
   return id;
 }
 
 /* ---------------- the member ---------------- */
 
-/** POST /api/reports {text, path, title, theme, width, shot?, via?} */
+/** POST /api/reports {kind: bug | idea, text, path, title, theme, width, shot?, via?} */
 export async function send(ctx: Ctx) {
   const u = requireUser(ctx);
   const b = await body<Record<string, unknown>>(ctx.req);
@@ -106,8 +106,8 @@ export async function adminList(ctx: Ctx) {
   await takeOldFeedback(ctx);
   const { results } = await ctx.env.DB.prepare(`SELECT ${LIST_COLS}, (SELECT COUNT(*) FROM report_messages m WHERE m.report = r.id) AS replies FROM reports r ORDER BY created_at DESC LIMIT 300`).all<Row & { replies: number }>();
   const reports = results.map((r) => ({ ...R.publicReport(r), name: r.name || r.email.split('@')[0], face: R.initials(r.name, r.email), via: r.via, replies: r.replies, unread: R.unreadForTeam(r) }));
-  const count = { all: reports.length, new: 0, working: 0, done: 0, unread: 0 };
-  for (const r of reports) { count[r.state as R.State]++; if (r.unread) count.unread++; }
+  const count = { all: reports.length, new: 0, working: 0, done: 0, unread: 0, idea: 0 };
+  for (const r of reports) { count[r.state as R.State]++; if (r.unread) count.unread++; if (r.kind === 'idea') count.idea++; }
   return json({ reports, count });
 }
 /** GET /api/admin/reports/:id → the thread (and the team has now read it) */

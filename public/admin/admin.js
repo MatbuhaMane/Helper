@@ -163,7 +163,8 @@
   async function reportsPart(box) {
     try { await H.loadOnce('/assets/reports.js'); } catch (_) { return box.replaceChildren(el('p', { class: 'card' }, 'לא הצלחתי לטעון את תיבת הפניות.')); }
     const STATES = [['new', 'חדשה'], ['working', 'בטיפול'], ['done', 'טופלה']];
-    const FILTERS = [['all', 'הכל'], ['new', 'חדשות'], ['working', 'בטיפול'], ['done', 'טופלו']];
+    const FILTERS = [['all', 'הכל'], ['new', 'חדשות'], ['working', 'בטיפול'], ['done', 'טופלו'], ['idea', 'הצעות']];   // הצעות: the kind, the rest: the state
+    const shows = (r) => filter === 'all' || (filter === 'idea' ? r.kind === 'idea' : r.state === filter);
     const DEV = { phone: 'טלפון', tablet: 'טאבלט', pc: 'מחשב' };
     const VIA = { shake: 'בניעור', companion: 'דרך העוזר', button: 'מההגדרות' };
     const when = (t) => (new Date(t).toDateString() === new Date().toDateString() ? new Date(t).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
@@ -184,12 +185,12 @@
     const drawFilters = () => filters.replaceChildren(...FILTERS.map(([k, name]) => el('button', { type: 'button', 'aria-pressed': String(filter === k), onclick: () => { filter = k; drawFilters(); drawList(); } },
       name, k === 'new' && d.count.new ? el('span', {}, String(d.count.new)) : null)));
     function drawList() {
-      const rows = d.reports.filter((r) => filter === 'all' || r.state === filter);
+      const rows = d.reports.filter(shows);
       list.replaceChildren(...rows.map((r) => el('li', {}, el('button', {
         class: 'rx-row' + (r.unread ? ' unread' : '') + (r.state === 'done' ? ' done' : ''), type: 'button', 'aria-current': current === r.id ? 'true' : null, onclick: () => openOne(r.id) },
         el('span', { class: 'rx-face', 'aria-hidden': 'true' }, r.face), el('span', { class: 'rx-name' }, r.name), el('time', { class: 'rx-when', datetime: new Date(r.created_at).toISOString() }, when(r.created_at)),
         el('span', { class: 'rx-snip', dir: 'auto' }, r.text),
-        el('span', { class: 'rx-tags' }, el('span', { class: 'rx-tag' }, r.title || r.path), r.has_shot ? el('span', { class: 'rx-tag shot' }, 'צילום') : null,
+        el('span', { class: 'rx-tags' }, r.kind === 'idea' ? el('span', { class: 'rx-tag idea' }, 'הצעה') : null, el('span', { class: 'rx-tag' }, r.title || r.path), r.has_shot ? el('span', { class: 'rx-tag shot' }, 'צילום') : null,
           VIA[r.via] ? el('span', { class: 'rx-tag' }, VIA[r.via]) : null, r.replies ? el('span', { class: 'rx-tag' }, r.replies === 1 ? 'נענתה' : `${r.replies} תשובות`) : null)))));
       empty.hidden = rows.length > 0;
     }
@@ -227,7 +228,7 @@
       thread.replaceChildren(
         el('header', { class: 'rx-thead' },
           el('button', { class: 'rx-back', type: 'button', onclick: () => { delete rx.dataset.view; current = null; thread.replaceChildren(pick()); drawList(); } }, '‹ כל הפניות'),
-          el('div', { class: 'rx-who' }, el('b', {}, r.name), el('small', {}, [DEV[r.device], r.title || r.path, when(r.created_at)].filter(Boolean).join(' · '))),
+          el('div', { class: 'rx-who' }, el('b', {}, r.name), el('small', {}, [r.kind === 'idea' ? 'הצעה לשיפור' : 'תקלה', DEV[r.device], r.title || r.path, when(r.created_at)].filter(Boolean).join(' · '))),
           stateBtns),
         msgs, form);
       drawList();

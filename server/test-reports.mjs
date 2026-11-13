@@ -46,7 +46,7 @@ ok('no member route reaches a team handler', !/route\('\w+', '\/api\/reports[^']
 
 /* ---- what a report keeps ---- */
 const c = R.cleanReport({ text: '  לא עובד\u0007  ', path: '/tree/?x=1', title: 'עץ', theme: 'dark', width: 375.4, shot: 'data:image/jpeg;base64,AAAA' });
-eq('cleaned', c, { text: 'לא עובד', path: '/tree/?x=1', title: 'עץ', theme: 'dark', width: 375, shot: 'data:image/jpeg;base64,AAAA' });
+eq('cleaned', c, { kind: 'bug', text: 'לא עובד', path: '/tree/?x=1', title: 'עץ', theme: 'dark', width: 375, shot: 'data:image/jpeg;base64,AAAA' });
 throws('no text', () => R.cleanReport({ text: '   ' }), 'text_required');
 eq('another site is not a page', R.cleanReport({ text: 'x', path: '//evil.com/a' }).path, '/');
 eq('a full address is not a page', R.cleanReport({ text: 'x', path: 'https://evil.com/' }).path, '/');
@@ -56,6 +56,12 @@ eq('the text is cut at 1000', R.cleanReport({ text: 'א'.repeat(1500) }).text.le
 eq('a picture of a kind we do not keep', R.cleanReport({ text: 'x', shot: 'data:image/svg+xml;base64,AAAA' }).shot, null);
 eq('not base64', R.cleanReport({ text: 'x', shot: 'data:image/png;base64,<script>' }).shot, null);
 eq('too big', R.cleanReport({ text: 'x', shot: 'data:image/png;base64,' + 'A'.repeat(R.SHOT_MAX) }).shot, null);
+/* ---- the kind: a problem or an idea for doing better ---- */
+eq('no kind given: a problem', R.cleanReport({ text: 'x' }).kind, 'bug');
+eq('an idea', R.cleanReport({ text: 'x', kind: 'idea' }).kind, 'idea');
+eq('an unknown kind: a problem', R.cleanReport({ text: 'x', kind: '<b>' }).kind, 'bug');
+eq('an older report (no kind) goes back as a problem', R.publicReport({ id: 'o', text: 'x' }).kind, 'bug');
+eq('the kind goes back to the reporter', R.publicReport({ id: 'o', text: 'x', kind: 'idea' }).kind, 'idea');
 eq('no screenshot unless chosen', R.cleanReport({ text: 'x' }).shot, null);
 throws('an empty reply', () => R.cleanReply('  '), 'text_required');
 eq('a reply is cut at 2000', R.cleanReply('x'.repeat(3000)).length, 2000);

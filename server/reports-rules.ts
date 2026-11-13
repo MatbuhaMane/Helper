@@ -7,6 +7,11 @@ export const STATES = ['new', 'working', 'done'] as const;          // חדשה 
 export type State = (typeof STATES)[number];
 export const isState = (s: unknown): s is State => STATES.includes(s as State);
 
+/** what a report is: a problem (תקלה) or an idea for doing better (הצעה לשיפור); an older report, or none given, is a problem */
+export const KINDS = ['bug', 'idea'] as const;
+export type Kind = (typeof KINDS)[number];
+export const kindOf = (k: unknown): Kind => (k === 'idea' ? 'idea' : 'bug');
+
 export const TEXT_MAX = 1000, REPLY_MAX = 2000;
 export const SHOT_MAX = 900_000;                                    // the data URL's length (a JPEG of ~650 KB)
 export const RATE = { max: 12, windowMs: 864e5 };                   // reports a person may send in a day
@@ -20,7 +25,7 @@ export function deviceOf(ua: string, width: number): 'phone' | 'tablet' | 'pc' {
   return width > 0 && width < 600 ? 'phone' : 'pc';
 }
 
-export interface ReportIn { text: string; path: string; title: string; theme: 'light' | 'dark' | null; width: number | null; shot: string | null }
+export interface ReportIn { kind: Kind; text: string; path: string; title: string; theme: 'light' | 'dark' | null; width: number | null; shot: string | null }
 
 /** what a member sends, cleaned: the text, the page (a path of this app only, never another site's address), the theme,
  *  the width, and a screenshot only when it is a picture data URL of a sane size */
@@ -32,7 +37,7 @@ export function cleanReport(b: Record<string, unknown>): ReportIn {
   const w = Math.round(Number(b.width));
   const shot = typeof b.shot === 'string' && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(b.shot) && b.shot.length <= SHOT_MAX ? b.shot : null;
   return {
-    text, path,
+    kind: kindOf(b.kind), text, path,
     title: clean(b.title, 80),
     theme: b.theme === 'dark' || b.theme === 'light' ? b.theme : null,
     width: Number.isFinite(w) && w > 0 && w < 20000 ? w : null,
@@ -65,8 +70,8 @@ export function memberThread(r: Report | null | undefined, msgs: Msg[], email: s
 }
 /** what of a report goes back to the person who sent it (no internal fields: who in the team read it, notes, the key of the picture) */
 export function publicReport(r: Report) {
-  const { id, text, path, title, state, created_at, device, theme, width, has_shot } = r as unknown as Record<string, unknown>;
-  return { id, text, path, title, state, created_at, device, theme, width, has_shot: !!has_shot };
+  const { id, kind, text, path, title, state, created_at, device, theme, width, has_shot } = r as unknown as Record<string, unknown>;
+  return { id, kind: kindOf(kind), text, path, title, state, created_at, device, theme, width, has_shot: !!has_shot };
 }
 
 /** the member's own list: unread when the team wrote after the member last opened it */

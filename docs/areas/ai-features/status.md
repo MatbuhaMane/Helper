@@ -5,6 +5,12 @@ Last update: 2026-11-13 (לשונית הדלת האחורית, שימוש מקו
 
 ## Done
 
+- **דיווח על תקלה, הצעה לשיפור, המשולש, שתי שקופיות** (the CEO for the owner, 2026-11-13), on `ai-features`:
+  - shake works where `requestPermission` exists (iOS, newer Chrome): asked on load, else on the first tap; a seismic-style
+    detector (13 m/s², 3/4 of half a second) instead of the jerk of 28;
+  - `button.rp-alert` next to the chip (design 2d27099 in the same merge); the sheet's kind `bug | idea` (`reports.kind`);
+  - the welcome wizard: the companion slide and the triangle slide after the name (the look is design's).
+  - Not tested on a real phone: the iOS prompt, the threshold's feel, Android's answer, the vibration.
 - **לשונית הדלת האחורית, שימוש מקופל, הודעה לחבר אחד** (the CEO, 2026-11-13), on `ai-features`, waiting for the master:
   - `GET /api/admin/room` (read only, never keeps the room open) and `public/assets/admin-tab.js`; the mark `helper.adminRoom`
     written by admin.js from the owner's own account only; נעילה ends the entry and the tab; the common.js lines are a patch

@@ -32,3 +32,4 @@ for the 03:30 conductor tonight.
 
 ## Log
 - 2026-11-13 01:20: master dispatched ai-features (link goals/research/capture css, then the without-AI list); 5h 0% at start, weekly 62%, caps 95% / 85%.
+- 2026-11-13 03:43: nothing queued (Tonight already dispatched at 01:20); 5h 69% (resets 06:10), weekly 71% (cap 85%); no orders, no late run scheduled.

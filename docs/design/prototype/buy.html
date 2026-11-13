@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>רכישה – אב טיפוס</title>
+  <!-- The purchase page (docs/business/monetization.md §4.3). Placeholders for the dealer's details and the final prices.
+       Serve from the dev server (copy to public/ for a moment). The real purchase goes through the payment provider. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/buy/buy.css">
+  <style>body { padding: 0 16px; }</style>
+</head>
+<body>
+<main class="by">
+  <a class="folder-back" href="#">‹ הגדרות › העוזר האישי</a>
+  <header class="by-head"><h1>הקוסם מהשוק</h1><p>דמות מיוחדת לעוזר האישי שלך</p></header>
+  <div class="by-main">
+    <figure class="by-item" style="margin:0"><div id="fig"></div><figcaption><b>הקוסם מהשוק</b><small>כשמצליחים במשהו, הוא מוציא יונה מהכובע</small></figcaption></figure>
+    <section class="by-offer" aria-label="ההצעה">
+      <div class="by-plans" role="radiogroup" aria-label="איך לשלם">
+        <button class="by-plan" type="button" role="radio" aria-checked="true"><b>₪10 · פעם אחת</b><small>הדמות שלך לתמיד, בכל המכשירים</small></button>
+        <button class="by-plan" type="button" role="radio" aria-checked="false"><b>₪10 בחודש · תמיכה</b><small>הדמות, קרדיטים כל חודש, ותג תומך</small><small class="by-cancel">ביטול בכל רגע, כאן באתר</small></button>
+      </div>
+      <div class="by-price"><b>₪10</b><small>המחיר הסופי, כולל הכול</small></div>
+      <ul class="by-gets">
+        <li>הקוסם מהשוק כעוזר האישי שלך: מדבר, מהנהן, חושב ושמח</li>
+        <li>המהלך המיוחד שלו: יונה מהכובע בכל הצלחה</li>
+        <li>לתמיד, בטלפון ובמחשב, ועובר איתך לכל מכשיר</li>
+        <li>10% מהתשלום הולכים לצדקה</li>
+      </ul>
+      <div class="by-terms" role="note">
+        <p><b>ביטול:</b> דמות שכבר הופעלה לא מוחזרת. קרדיטים שלא נוצלו מוחזרים בתוך 14 יום מהקנייה.</p>
+        <p><b>תמיכה חודשית:</b> מבטלים בכל רגע, כאן באתר, באותה דרך שנרשמים, והחיוב נעצר מהחודש הבא.</p>
+      </div>
+      <label class="by-agree" for="agree"><input type="checkbox" id="agree"><span>קראתי את תנאי הביטול ואת <a href="#">תנאי השימוש</a>, ואני מסכים להם</span></label>
+      <button class="btn primary by-buy" id="buy" type="button" disabled>לתשלום ₪10</button>
+      <p class="by-pay-note">התשלום מאובטח אצל ספק התשלומים. קבלה תישלח למייל.</p>
+    </section>
+  </div>
+  <section class="by-seller" aria-label="פרטי העוסק">
+    <b>ממי קונים</b>
+    <span>שם העוסק: <span class="ph">[שם העסק]</span> · מספר עוסק: <span class="ph">[מספר]</span></span>
+    <span>כתובת: <span class="ph">[כתובת]</span> · דוא"ל ליצירת קשר: <span class="ph">[מייל]</span> · טלפון: <span class="ph">[טלפון]</span></span>
+  </section>
+</main>
+<script src="/assets/figure2d.js"></script>
+<script>
+  (async () => { const f = await Figure2D.mount(document.getElementById('fig'), 'magician', { size: 200 }); setInterval(() => f.happy(), 6000); })();
+  const agree = document.getElementById('agree'), buy = document.getElementById('buy');
+  agree.addEventListener('change', () => { buy.disabled = !agree.checked; });
+  document.querySelectorAll('.by-plan').forEach((p) => p.addEventListener('click', () => {
+    document.querySelectorAll('.by-plan').forEach((x) => x.setAttribute('aria-checked', String(x === p)));
+    buy.textContent = p === document.querySelectorAll('.by-plan')[0] ? 'לתשלום ₪10' : 'להתחיל תמיכה ₪10 בחודש';
+  }));
+</script>
+</body>
+</html>

@@ -2570,3 +2570,20 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - For areas: `pushTo(env, emails, msg)` and `pushHousehold(env, household, msg, except?)`. `msg.urgent` = high urgency, stays on screen, strong vibration (the emergency alert). `msg.actions` such as `{action:'handle', title:'אני מטפל'}` open `url?act=handle`.
 - Client: `H.push.state()`, `H.push.enable()`, `H.push.disable()`, `H.push.test()`.
 - Inert until the secret `VAPID_PRIVATE` is set (`/api/push/key` returns `ready:false`). On iPhone it works only from the home-screen app; a web notification never breaks silent mode.
+
+## 2026-11-13 · עץ מבנה, the owner's layer over the menus, and surprise eggs (ai-features)
+- **Tables** (appended to `schema.sql`): `site_layout` (one row per published version: json, by_email, at, note),
+  `eggs` (page, text, kind text/surprise/link, link, starts/ends, active, x/y 8..92) and `egg_finds` (egg_id, email, at; one per person).
+- **Routes** (appended): `GET /api/layout` (public, menu names only, cached 60 s), `GET|PUT /api/admin/layout`,
+  `POST /api/admin/layout/restore/:id`, `GET /api/eggs?page=`, `POST /api/eggs/:id/found`, `GET|POST /api/admin/eggs`,
+  `PUT|DELETE /api/admin/eggs/:id`. Writing is the owner's only, in the opened back door (`requireOwner` + `requireAdmin('own')`).
+- **The layout** is `{parts:[{href,kids}], hidden:[], edits:{href:{name,sub,ic,pillow,c2}}, ring:[]}`, sanitized on the
+  server (`server/layout-rules.ts`). The code stays the default: a tool the layout does not know goes where the code puts it,
+  a gone one is skipped, a fixed item stays on top and visible.
+- **Contract for other areas (apps.js, the master's):** `H.APPS` is the merged list (same array, changed in place, event
+  `h:layout`), `H.PARTS` the parts in use (common.js's menu reads it), `H.mergeLayout(code, dflt, layout)` pure,
+  `H.layout()` → `{code, tree, hidden, pins, defaultPins}`. The ring default (`ring`) applies only to someone who never pinned.
+- **Preview:** sessionStorage `helper.layoutPreview` on that tab only; `eggs.js` shows the bar `div.layout-pv[role=status]`.
+- **For design (styles needed):** `.layout-pv` (the preview bar; now unstyled, static), `details.st-ver`, the egg form's
+  x/y ranges and kind select (`form.egg-form`), `button.egg.float` / `.egg.found` / `.egg-note` on pages, and the tree's
+  bottom sheet height at 375 (it reaches slightly past the screen's foot).

@@ -1,9 +1,14 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (the tree and the free helper in design's markup).
+Last update: 2026-11-13 (the structure tree, ready to merge).
 
 ## Done
+- **עץ מבנה (2026-11-13), on `ai-features`, ready to merge:** e5547a8 server (site_layout versions, eggs, egg_finds, routes,
+  pure layout-rules + test-layout 74), 6acb646 the back door's tab (tree drag by pointer/touch and keyboard, edit panel,
+  the fire, versions, preview) + eggs.js (eggs on pages, the preview bar), and 6144659 the master's commit (apps.js merge layer,
+  common.js H.PARTS + eggs.js load, test-layout in npm test; patch in the shared notes). Checked: API end to end, the tab
+  at 375 and desktop, light and dark, the preview on /food/, an egg found and gone. Needs design's styles (decisions.md).
 - **The free helper (2026-11-13), on `ai-features`, ready to merge:** 80daff4 the three-step Gemini guide (402 invitation +
   settings, paste on coming back, one field if the clipboard is blocked); 2f31551 the welcome's gift line + a test that
   invite joiners start limited (test-credits 54). Checked at 375 and desktop with a stubbed "connected" (a real key

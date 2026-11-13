@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The home cushions: arrange, remove, add; fixed cushions (vision → master, design, ai-features)
+The owner's decision during joint test run 1. It extends batch 2 #6 (arranging by a long press). Status: Decided (the owner).
+- **Arrange mode:** a long press on a cushion opens it. In it the user can:
+  - move cushions around the wheel by the fire;
+  - remove cushions they do not want;
+  - add cushions from the toolbox.
+- **Fixed cushions:** they can be moved but not removed. They are:
+  - the family tree;
+  - the settings;
+  - the toolbox ("כלים").
+- **Grandparents and kids modes:** their special accessibility buttons are fixed. Examples are the emergency button and the grandparents' big buttons.
+- **Saving:** the arrangement is saved per user on the server (`H.prefs`).
+
 ## 2026-11-13 – Shabbat and holidays, notifications and the daily rhythm (vision → design, ai-features, master)
 The owner's decisions in the vision meeting. The spec: `docs/vision/shabbat-notifications.md`. Status: Decided (the owner).
 

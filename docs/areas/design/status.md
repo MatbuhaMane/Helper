@@ -196,8 +196,10 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
   the app), a dashed vine arrow from a short note up to it, a breathing ring. Checked at 375 and 1280, light and dark.
   Waits for ai-features (reports.js) to add the markup and --x/--y; sample in `docs/design/prototype/triangle-coach.html`.
 - **The guitar sways alone** (2026-11-13): stump-guitar.webp split into `stump.webp` + `guitar.webp` (same canvas, 400 in public/assets, the script in docs/design/split-stump-guitar.py); the sway CSS (`.guitar-img`, pivot at its foot, rocks off the stump with a short buzz) sent to the CEO for index.html; sample docs/design/prototype/guitar-sway.html.
+- **Serious mode, round 1** (vision batch 11, 2026-11-13): `<html data-style="serious">` in base.css (tighter corners, a hairline for the shadow, firmer headings; `.deco` and the companion hidden) and the serious home `.sr-home` (search, tools as a grid or a list from H.APPS, `data-pillows="keep"` keeps the cushions); sample docs/design/prototype/serious-home.html. Wiring: ai-features (apply.js) and the master (common.js early settings, index.html).
 
 ## In progress
+- **Vision batch 11, still to come:** the clean tree diagram (serious mode's family tree and museum), the profile frames (open and secret), the default covers in the tent's style, an animated picture for each companion figure, the business card's structure, and Noto Sans Phoenician (waits for the owner's OK to download it).
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a
   fourth version if the owner wants one (about 6 images); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small

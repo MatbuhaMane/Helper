@@ -721,3 +721,68 @@ body:has(.fab-wrap) .owner-msgs { inset-block-end: calc(var(--tabbar-h, 0px) + e
   .gk-pic::before { inline-size: 34px; block-size: 34px; }
   .gk-head h2 { font-size: 1.45rem; }
 }
+
+/* ---------- מצב רציניים (vision batch 11, the owner 2026-11-13): a plain, professional face over the same tokens ----------
+   <html data-style="serious"> is set from the person's prefs (look.style = 'serious'; apply.js and common.js's early
+   settings, like data-font); data-pillows="keep" is the second switch, which keeps the cushion icons on the serious home.
+   What goes: anything a page marks .deco (drawings, illustrations, scenery), the companion figure, the illustrated faces.
+   What stays: every tool and its data, the animations, the sounds and the haptics (the owner's choice).
+   Shapes get tighter corners, a hairline instead of a soft shadow, and firmer headings.
+   The serious home (index.html builds it from H.APPS in apps.js, in place of the tent and the campfire):
+     <main class="sr-home">
+       <header class="sr-head"><h1>שלום, נעמה</h1><p>כל הכלים במקום אחד</p></header>
+       <label class="sr-search"><svg class="icon">(H.icon('lens'))</svg><input type="search" placeholder="חיפוש כלי" aria-label="חיפוש כלי"></label>
+       <section class="sr-group"><h2>המקומות</h2>
+         <ul class="sr-tools" data-view="grid">                  (data-view="list": one tool to a row, with its line under the name)
+           <li><a class="sr-tool" href="/food/">
+             <span class="sr-ic">(H.icon(ic)) or, with data-pillows="keep", <img src="/assets/pillows/p13.webp" alt=""></span>
+             <span class="sr-txt"><b>אוכל</b><small>רשימת קניות, ספר מתכונים, דיאטה והמקרר</small></span></a></li>
+         </ul></section>
+       <p class="sr-none" hidden>לא נמצא כלי בשם הזה</p>
+       <div class="sr-view" role="group" aria-label="תצוגה"><button aria-pressed="true" data-view="grid">רשת</button><button aria-pressed="false" data-view="list">רשימה</button></div>
+     </main> */
+:root[data-style="serious"] { --radius: 8px; --radius-sm: 6px; --radius-lg: 12px; --lift: 0 0 0 1px var(--line); }
+:root[data-style="serious"] :is(.deco, .dm-stage) { display: none !important; }
+:root[data-style="serious"] .ai-invite::before { display: none; }
+:root[data-style="serious"] :is(h1, h2, h3) { font-weight: 600; letter-spacing: 0; }
+
+.sr-home { display: grid; gap: 18px; max-inline-size: 980px; margin-inline: auto; padding-block: 20px 28px; padding-inline: 16px; }
+.sr-head h1 { margin: 0; font-size: 1.7rem; line-height: 1.25; }
+.sr-head p { margin: 2px 0 0; color: var(--muted); }
+.sr-search { position: relative; display: flex; align-items: center; }
+.sr-search .icon { position: absolute; inset-inline-start: 14px; inline-size: 20px; block-size: 20px; color: var(--muted); pointer-events: none; }
+.sr-search input { inline-size: 100%; min-block-size: 50px; padding-block: 10px; padding-inline: 44px 14px; font: inherit; font-size: 1.05rem;
+  color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.sr-search input:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+.sr-group { display: grid; gap: 8px; }
+.sr-group h2 { margin: 0; font-size: .95rem; color: var(--muted); letter-spacing: .02em; }
+.sr-tools { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.sr-tool { display: grid; justify-items: start; align-content: start; gap: 10px; min-block-size: 108px; padding: 14px; border-radius: var(--radius);
+  background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none;
+  transition: border-color .15s, background-color .15s; }
+.sr-tool:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); background: color-mix(in srgb, var(--primary) 4%, var(--card)); }
+.sr-tool:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.sr-ic { display: grid; place-items: center; inline-size: 40px; block-size: 40px; border-radius: var(--radius-sm);
+  color: var(--primary); background: color-mix(in srgb, var(--primary) 9%, var(--card)); }
+.sr-ic .icon { inline-size: 22px; block-size: 22px; }
+.sr-ic img { inline-size: 40px; block-size: 40px; object-fit: contain; }
+:root[data-pillows="keep"] .sr-ic:has(img) { background: none; }
+.sr-txt { display: grid; gap: 2px; min-inline-size: 0; }
+.sr-txt b { font-weight: 600; font-size: 1.05rem; line-height: 1.3; }
+.sr-txt small { display: none; color: var(--muted); font-size: .9rem; line-height: 1.4; }
+/* the list: one tool to a row, its line under the name */
+.sr-tools[data-view="list"] { grid-template-columns: 1fr; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); overflow: hidden; }
+.sr-tools[data-view="list"] li + li { border-block-start: 1px solid var(--line); }
+.sr-tools[data-view="list"] .sr-tool { grid-template-columns: 40px 1fr; align-items: center; justify-items: stretch; gap: 14px;
+  min-block-size: 64px; padding-block: 10px; padding-inline: 14px; border: 0; border-radius: 0; }
+.sr-tools[data-view="list"] .sr-tool:focus-visible { outline-offset: -2px; }
+.sr-tools[data-view="list"] .sr-txt small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-none { margin: 0; padding: 18px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius); }
+.sr-view { justify-self: center; display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--card); }
+.sr-view button { min-block-size: 40px; padding-inline: 16px; font: inherit; font-size: .95rem; color: var(--muted); background: none; border: 0; cursor: pointer; }
+.sr-view button + button { border-inline-start: 1px solid var(--line); }
+.sr-view button[aria-pressed="true"] { color: var(--primary); font-weight: 600; background: color-mix(in srgb, var(--primary) 9%, var(--card)); }
+@media (max-width: 599px) {
+  .sr-tools:not([data-view="list"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sr-head h1 { font-size: 1.45rem; }
+}

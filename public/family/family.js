@@ -411,7 +411,7 @@
      Nothing here knows any one set: a new set is a new folder and a line in sets.json. */
   const TREE = { sets: null, slots: {}, centred: false, run: 0, motion: false, css: null };
   // only until design's sets.json is there: the sets that exist today (the owner compares them)
-  const KNOWN_SETS = [{ id: 'olive', name: 'זית' }, { id: 'canopy', name: 'עץ ב׳' }];
+  const KNOWN_SETS = [{ id: 'olive', name: 'עץ א׳' }, { id: 'canopy', name: 'עץ ב׳' }];
   const LOOKS = [['leaf', 'עלים'], ['frame', 'מסגרות']];
   /** the tree's stylesheet and sounds, added once; resolves when the styles are in (the leaves are measured after) */
   function treeAssets() {

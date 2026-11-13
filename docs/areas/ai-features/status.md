@@ -4,6 +4,8 @@ Updated by the department at the end of every meaningful round of work. Short: t
 Last update: 2026-11-13 (the structure tree, ready to merge).
 
 ## Done
+
+- 2026-11-14: family tree documents open on a phone (saved, so the phone opens them in its own viewer; on a computer the window opens in the tap); the welcome wizard change reverted (the owner: not a bug, רַאבַּ"ע stays in the settings).
 - **עץ מבנה (2026-11-13), on `ai-features`, ready to merge:** e5547a8 server (site_layout versions, eggs, egg_finds, routes,
   pure layout-rules + test-layout 74), 6acb646 the back door's tab (tree drag by pointer/touch and keyboard, edit panel,
   the fire, versions, preview) + eggs.js (eggs on pages, the preview bar), and 6144659 the master's commit (apps.js merge layer,

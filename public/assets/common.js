@@ -411,6 +411,7 @@
       if (!r.offline && !embedded && !vault) loadMusic();
       if (!r.offline && !vault) loadCapture();
       if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
+      if (!r.offline && !vault && !embedded) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
     });
     return bar;
   }

@@ -11,6 +11,55 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The family tree after test run 1 (vision → ai-features, design, master)
+The owner's decisions on his phone. It builds on "The family tree, spec 1" (`docs/vision/tree.md`). Status: Decided (the owner).
+
+**A. Fixes, first:**
+- **Documents** in the tree do not open.
+- **Undo your own changes:** whoever added a record can delete it and undo their own edits. The owner's test records (a son named מהללאל, a duplicate מירי) must be removable by him. Records added by others stay read-only.
+- **One screen:**
+  - the tree fits the phone screen;
+  - scrolling only when a big family needs it;
+  - pinch zoom.
+- **"All generations"** reaches at least the parents of the great-grandparents. A person with no record gets an empty leaf. Pinch zoom works there and in the family tab.
+- **The profile loads fast.**
+
+**B. The new tree interface:**
+- **Gentle motion:** the tree moves very gently.
+- **Seasons:** autumn, winter and spring versions, by the season or by the user's choice.
+- **Tap a person:** a floating, translucent menu opens with "profile", "photos" and "message".
+- **Drag a person:** their leaf detaches from the tree.
+- **Expand and collapse:** a leaf expands into a banner with the avatar, and again into the full profile. It collapses back to any state.
+- **Dock:** a profile can be docked as a draggable tab at the side of the screen, like the music player and the helper.
+- **Editing, for users with permission:** a long press on a profile or tab adds "edit" to the menu. They can:
+  - change position and lineage by dragging;
+  - edit the person's details;
+  - if allowed, edit the person's permissions.
+- **The family and all-generations tabs** also get easier, richer editing.
+
+**C. Kept for later, under "Big new ideas wait":** these get only a "בקרוב" graphic. The ideas: `docs/vision/later.md`.
+- tree, frame and background designs unlocked by use;
+- the profile as a personal page with a status line, music, stories and a life feed;
+- sharing achievements graphically;
+- decorating photos and videos.
+
+**Who acts:**
+- **ai-features:**
+  - the tree code and `server/vault/index.ts`;
+  - deleting your own additions;
+  - one screen and zoom;
+  - the generations;
+  - the profile speed.
+- **design:**
+  - the gentle motion;
+  - the seasons;
+  - the floating menu;
+  - the leaf, banner and profile states;
+  - the docked tab.
+- **The master:**
+  - reviews the permission changes (undo, editing others, editing permissions) before merging, as with anything in the vault;
+  - checks why documents do not open, if the cause is in `store.ts`.
+
 ## 2026-11-14 – Pop-up messages at the top, light and dismissible; the shopping list (vision → master, design, ai-features)
 The owner's decisions in test run 1. Status: Decided (the owner).
 - **A rule for the whole app, pop-up messages (toasts):**

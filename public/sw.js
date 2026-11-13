@@ -1,13 +1,13 @@
 /* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls go to the network,
    except the sources of the study room: Sefaria's texts (through /api/sefaria/), the concordance and the textual witnesses
    are kept on the device in a cache of their own that a new version of the app does not clear – once read, always there. */
-const CACHE = 'helper-v99';
+const CACHE = 'helper-v100';
 const SOURCES = 'helper-sources-v1';
 // the companion's 3D engine and figures (about 6.5 MB): served from the device at once, refreshed quietly in the background
 const MODELS = 'helper-models-v2';
 const isModel = (p) => p.startsWith('/figures/') || p.startsWith('/vendor/');
 const isSource = (p) => p.startsWith('/api/sefaria/') || p.startsWith('/concordance/') || p.startsWith('/witnesses/');
-const ASSETS = ['/', '/assets/base.css', '/assets/common.js', '/assets/sheet.css', '/assets/sheet.js', '/groceries/', '/groceries/style.css', '/groceries/data.js', '/groceries/foods.js', '/groceries/keto.js', '/groceries/fix.js', '/groceries/app.js', '/manifest.json', '/icon.svg', '/assets/logo.svg', '/assets/icons/tent-small.svg', '/assets/tent.webp', '/assets/ibn-ezra-face.webp', '/assets/stump-guitar.webp', '/assets/campfire.css', '/assets/campfire.js', '/assets/campfire/base.webp', '/assets/campfire/flame-1.webp', '/assets/campfire/flame-2.webp', '/assets/campfire/flame-3.webp', '/assets/campfire/flame-4.webp', '/assets/sun-core.webp', '/assets/moon.webp', '/assets/launcher.js', '/assets/apps.js', '/assets/launcher.css', '/food/', '/food/diet/', '/food/fridge/', '/tools/notes/', '/parasha/', '/tools/calc/', '/assets/capture.js', '/food/diet/hakpada/', '/food/diet/habits/', '/family/profile.html', '/family/profile.js', '/family/profile.css', '/groceries/diets.js', '/tools/', '/assets/music.js', '/assets/music.css'];
+const ASSETS = ['/', '/assets/base.css', '/assets/common.js', '/assets/sheet.css', '/assets/sheet.js', '/groceries/', '/groceries/style.css', '/groceries/data.js', '/groceries/foods.js', '/groceries/keto.js', '/groceries/fix.js', '/groceries/app.js', '/manifest.json', '/icon.svg', '/assets/logo.svg', '/assets/icons/ohel-small.svg', '/assets/tent.webp', '/assets/ibn-ezra-face.webp', '/assets/stump-guitar.webp', '/assets/campfire.css', '/assets/campfire.js', '/assets/campfire/base.webp', '/assets/campfire/flame-1.webp', '/assets/campfire/flame-2.webp', '/assets/campfire/flame-3.webp', '/assets/campfire/flame-4.webp', '/assets/sun-core.webp', '/assets/moon.webp', '/assets/launcher.js', '/assets/apps.js', '/assets/launcher.css', '/food/', '/food/diet/', '/food/fridge/', '/tools/notes/', '/parasha/', '/tools/calc/', '/assets/capture.js', '/food/diet/hakpada/', '/food/diet/habits/', '/family/profile.html', '/family/profile.js', '/family/profile.css', '/groceries/diets.js', '/tools/', '/assets/music.js', '/assets/music.css'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));

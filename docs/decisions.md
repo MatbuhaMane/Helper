@@ -24,6 +24,11 @@ daemon's `open_app` gained `habits`.
 - **master**: proposed: add `/food/diet/habits/` (and `/groceries/diets.js`, missing today) to `ASSETS` in `public/sw.js`.
 Status: proposed.
 
+## 2026-11-13 – The family tree: עץ ב׳ (canopy) is the default (the owner → master, design, ai-features)
+
+The owner chose עץ ב׳. `public/assets/tree/sets.json` lists canopy first, so it is the default for everyone who has not
+picked a tree; the olive stays as the second choice in the tree's settings (pref `family.treeSet`). Status: done (v96).
+
 ## 2026-11-13 – Recurring goals: a fresh round each period (ai-features → master, design)
 
 The owner: "בניהול מטרות, אפשר הגדרת מטרות מחזוריות".

@@ -131,7 +131,7 @@
     const q = box.querySelector('#city'), list = box.querySelector('#city-sugg'), home = box.querySelector('#city-home');
     const newToken = () => crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2)).slice(0, 36);
     let token = newToken(), hits = [], active = -1, timer = 0, seq = 0, plain = false;
-    const showHome = () => home.replaceChildren(...(A.place && A.place.name === A.city.trim() ? ['🏠 ', H.el('b', {}, A.place.name), ' סומן כבית'] : []));
+    const showHome = () => home.replaceChildren(...(A.place && A.place.name === A.city.trim() ? [H.el('b', {}, A.place.name), ' סומן כבית'] : []));
     placeSearch.home = showHome;
     const close = () => { list.hidden = true; active = -1; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); };
     const mark = (i) => {

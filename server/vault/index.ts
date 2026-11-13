@@ -986,7 +986,7 @@ export const auditProfile = (ctx: Ctx, house: string, u: Member, how: string) =>
 /** the viewer's forest exactly as /api/vault/forest shows it (kin.view per card, opaque ids outside the household),
     with the kin graph over it; the search and the card filter only from this, so they never show more than the forest */
 export async function forestFor(ctx: Ctx) {
-  const u = await need(ctx, ACCESS.forest);
+  const u = await need(ctx, ACCESS.forestFor);
   const v = await viewerOf(ctx, u), f = await forestOf(ctx, v), t = await titles(ctx);
   const label = houseLabel(u, f.houses);
   const score = (x: ForestPerson) => (x.household === u.household ? 2 : x.hidden.includes('identity') ? 0 : 1);

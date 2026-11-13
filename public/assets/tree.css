@@ -19,21 +19,27 @@
 
 .tree { position: relative; direction: ltr;   /* the drawing's own coordinates: --x from its left, like a map */
   inline-size: min(100%, 760px); aspect-ratio: 1000 / 1800; margin-inline: auto; container-type: inline-size;
-  --crown-x: 50%; --crown-y: 42%; --sway: .3deg; --breath: cubic-bezier(.45, .05, .55, .95); --settle: cubic-bezier(.22, .61, .36, 1);
+  --crown-x: 50%; --crown-y: 42%; --breath: cubic-bezier(.45, .05, .55, .95); --settle: cubic-bezier(.22, .61, .36, 1);
   user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .tree-l { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; }
 /* the crown breathes from the top of the trunk, the boughs a little less. When the tree is moved (.moving) they lean a
    little with it and then settle back slowly: a transition on `rotate`, added on top of the breathing, so the breath keeps
-   its rhythm (changing the animation itself made it jump) */
-.tree-crown, .tree-boughs { rotate: 0deg; transition: rotate 1.6s var(--settle); }
+   its rhythm (changing the animation itself made it jump).
+   Smooth while scrolling: the two big layers are held on their own GPU layer (will-change), and their keyframes are plain
+   numbers, with no CSS variable in them, so the browser can run the sway off the main thread while the page scrolls. */
+.tree-crown, .tree-boughs { rotate: 0deg; transition: rotate 1.6s var(--settle); will-change: transform; }
 .tree-crown { transform-origin: var(--crown-x) var(--crown-y); animation: tr-sway 9s var(--breath) infinite alternate; }
-.tree-boughs { transform-origin: 50% 70%; animation: tr-sway 11s var(--breath) -3s infinite alternate; --sway: .15deg; }
+.tree-boughs { transform-origin: 50% 70%; animation: tr-sway-low 11s var(--breath) -3s infinite alternate; }
 .tree.moving .tree-crown { rotate: .45deg; transition-duration: .9s; }
 .tree.moving .tree-boughs { rotate: .2deg; transition-duration: .9s; }
 /* the second tree, the wide canopy: a shorter box, and its boughs spring from the middle of the trunk */
 .tree[data-kind="canopy"] { aspect-ratio: 1000 / 1500; }
 .tree[data-kind="canopy"] .tree-boughs { transform-origin: 50% 45%; }
-@keyframes tr-sway { from { transform: rotate(calc(var(--sway) * -1)); } to { transform: rotate(var(--sway)); } }
+@keyframes tr-sway { from { transform: rotate(-.3deg); } to { transform: rotate(.3deg); } }
+@keyframes tr-sway-low { from { transform: rotate(-.15deg); } to { transform: rotate(.15deg); } }
+/* off screen (the JS adds .off from an IntersectionObserver) the tree holds still, so it costs nothing while you read elsewhere */
+.tree.off :is(.tree-crown, .tree-boughs, .tr-p, .tr-p .tr-leaf, .tr-p .tr-leaf::before, .tr-bud, .tr-flame, .tr-candle::before) { animation-play-state: paused; }
+.tree.off :is(.tree-crown, .tree-boughs) { will-change: auto; }
 /* at night the same drawing, dimmed a little */
 :root[data-theme="dark"] .tree-l { filter: brightness(.8) saturate(.9); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tree-l { filter: brightness(.8) saturate(.9); } }
@@ -123,10 +129,12 @@
 @media (prefers-reduced-motion: reduce) {
   .tree-crown, .tree-boughs, .tr-p, .tr-p.tap .tr-leaf, .tr-p.passed.tap .tr-leaf, .tr-p.bday .tr-leaf::before, .tr-bud, .tr-flame, .tr-candle::before { animation: none; }
   .tree-crown, .tree-boughs, .tr-p, .tr-leaf, .tr-tag, .tr-bud { transition: none; rotate: none !important; }
+  .tree-crown, .tree-boughs { will-change: auto; }
   .tr-p .tr-leaf, .tr-bud { transform: none !important; }
   .tr-tag { translate: none !important; }
   .tr-p.bday .tr-leaf::before { opacity: .8; }
 }
 :root[data-motion="reduce"] :is(.tree-crown, .tree-boughs, .tr-p, .tr-p .tr-leaf, .tr-bud, .tr-flame) { animation: none !important; rotate: none !important; }
+:root[data-motion="reduce"] :is(.tree-crown, .tree-boughs) { will-change: auto; }
 :root[data-motion="reduce"] :is(.tr-p .tr-leaf, .tr-bud) { transform: none !important; }
 :root[data-motion="reduce"] .tr-tag { translate: none !important; }

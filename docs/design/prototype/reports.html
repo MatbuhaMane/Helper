@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>דיווחים – הגיליון, תיבת הפניות והתיבה שלי</title>
+  <!-- The reports batch (the owner, 2026-11-13): the look of the report sheet, the menu items, the person's inbox (/assets/reports.css)
+       and the back door's תיבת פניות (/admin/admin.css). A sample, no real people. Copy to public/ to view (not committed there). -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/reports.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <style>
+    body { margin: 0; opacity: 1 !important; visibility: visible !important; }
+    .demo { max-inline-size: 1100px; margin-inline: auto; padding: 16px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); display: grid; gap: 22px; }
+    .demo-h { margin: 0; font-size: 1rem; color: var(--muted); font-weight: 500; }
+    .pair { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); align-items: start; }
+    .sheet { position: relative; padding: 20px; border-radius: 22px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--lift); }
+    .sheet .modal-close { position: absolute; }
+  </style>
+</head>
+<body>
+<div class="demo">
+  <h2 class="demo-h">1. הגיליון (נפתח בניעור או מהתפריט)</h2>
+  <div class="pair">
+    <div class="sheet"><button class="modal-close" type="button" aria-label="סגירה">✕</button>
+      <form class="rp" onsubmit="event.preventDefault()">
+        <header class="rp-head"><span class="rp-ic" aria-hidden="true"></span>
+          <div><h2 id="rp-h">דיווח על בעיה</h2><p class="rp-to">הולך ל<b>צוות האוהל</b></p></div></header>
+        <label class="rp-field"><span>מה קרה?</span>
+          <textarea class="rp-text" rows="3" maxlength="1000" dir="auto" placeholder="למשל: לחצתי על הוספה לרשימה ושום דבר לא קרה">הכפתור של הוספה לרשימה לא נלחץ בטלפון</textarea>
+          <small class="rp-count">38 / 1000</small></label>
+        <div class="rp-shot has">
+          <label class="rp-shot-toggle"><input type="checkbox" checked><span>לצרף צילום מסך של הדף</span></label>
+          <figure class="rp-thumb"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 160'%3E%3Crect width='90' height='160' fill='%23efeee6'/%3E%3Crect width='90' height='14' fill='%23f7f6f0'/%3E%3Crect x='8' y='24' width='74' height='16' rx='4' fill='%23fff'/%3E%3Crect x='8' y='46' width='74' height='16' rx='4' fill='%23fff'/%3E%3Crect x='8' y='68' width='50' height='16' rx='4' fill='%2355622f'/%3E%3C/svg%3E" alt="צילום המסך שיצורף"></figure></div>
+        <p class="rp-meta">מהדף: <b>רשימת קניות</b></p>
+        <div class="rp-actions"><button class="btn primary">שליחה</button><button class="btn ghost" type="button">ביטול</button></div>
+        <p class="rp-hint">אפשר גם לנער את הטלפון, מכל דף.</p>
+      </form>
+    </div>
+    <div class="sheet"><button class="modal-close" type="button" aria-label="סגירה">✕</button>
+      <div class="rp-sent" role="status"><span class="rp-sent-ic" aria-hidden="true"></span><h2>נשלח לצוות האוהל</h2>
+        <p>התשובה תגיע לתיבה שלך באוהל.</p><button class="btn ghost" type="button">סגירה</button></div>
+    </div>
+  </div>
+
+  <h2 class="demo-h">2. בתפריט, ונקודה על הסרגל כשיש תשובה</h2>
+  <div class="pair">
+    <div style="display:grid;gap:8px">
+      <button class="rp-entry" type="button"><span class="rp-entry-ic" aria-hidden="true"></span><span><b>דווח על בעיה</b><small>משהו לא עובד? זה מגיע לצוות האוהל</small></span></button>
+      <button class="rp-entry inbox" type="button"><span class="rp-entry-ic" aria-hidden="true"></span><span><b>התיבה שלי</b><small>תשובות מצוות האוהל</small></span><span class="mi-count">1</span></button>
+    </div>
+    <div><button class="userchip" type="button" aria-label="הגדרות, תשובה חדשה בתיבה"><span>דנה</span><span class="mi-dot" aria-hidden="true"></span></button></div>
+  </div>
+
+  <h2 class="demo-h">3. התיבה שלי, ושיחה בתוכה</h2>
+  <div class="pair">
+    <div class="sheet"><button class="modal-close" type="button" aria-label="סגירה">✕</button>
+      <section class="mi">
+        <header class="mi-head"><span class="mi-ic" aria-hidden="true"></span><h2>התיבה שלי</h2></header>
+        <ul class="mi-list">
+          <li><button class="mi-row unread" type="button"><span class="mi-what"><b>הדיווח על רשימת קניות</b><small>"הכפתור של הוספה לרשימה לא נלחץ בטלפון"</small></span><time class="mi-when">היום</time></button></li>
+          <li><button class="mi-row" type="button"><span class="mi-what"><b>הדיווח על לוח שנה</b><small>"יום ההולדת של סבתא מופיע פעמיים"</small></span><time class="mi-when">ג׳ בכסלו</time></button></li>
+        </ul>
+        <p class="mi-empty">עוד אין כאן כלום. תשובות של צוות האוהל יגיעו לכאן.</p>
+      </section>
+    </div>
+    <div class="sheet">
+      <div class="rm-thread">
+        <p class="rm-day">היום</p>
+        <article class="rm mine"><header class="rm-who"><b>אני</b><time>10:42</time></header><p class="rm-text" dir="auto">הכפתור של הוספה לרשימה לא נלחץ בטלפון</p>
+          <p class="rm-meta"><span class="rm-chip">רשימת קניות</span><span class="rm-chip">צילום מסך</span></p></article>
+        <article class="rm"><header class="rm-who"><b>צוות האוהל</b><time>11:05</time></header><p class="rm-text" dir="auto">תודה דנה! מצאנו את זה – הכפתור היה מוסתר מאחורי הסרגל התחתון. תוקן, נסי שוב.</p></article>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="demo-h">4. הדלת האחורית – תיבת פניות</h2>
+  <nav class="apps-grid bd-apps" aria-label="חלקי הדלת" style="max-inline-size:300px">
+    <a class="app" data-bd="messages" href="#"><span class="ic"></span><span class="name">הודעה לכולם</span></a>
+    <a class="app" data-bd="reports" href="#" aria-current="true"><span class="ic"></span><span class="name">תיבת פניות</span><span class="bd-count">2</span></a>
+  </nav>
+  <div class="rx">
+    <div class="rx-side">
+      <div class="rx-filters" role="group" aria-label="סינון"><button type="button" aria-pressed="true">הכל</button><button type="button" aria-pressed="false">חדשות <span>2</span></button><button type="button" aria-pressed="false">בטיפול</button><button type="button" aria-pressed="false">טופלו</button></div>
+      <ul class="rx-list">
+        <li><button class="rx-row unread" type="button" aria-current="true"><span class="rx-face">דל</span><span class="rx-name">דנה לוי</span><time class="rx-when">10:42</time>
+          <span class="rx-snip">הכפתור של הוספה לרשימה לא נלחץ בטלפון</span><span class="rx-tags"><span class="rx-tag">רשימת קניות</span><span class="rx-tag shot">צילום</span></span></button></li>
+        <li><button class="rx-row unread" type="button"><span class="rx-face">אכ</span><span class="rx-name">אברהם כהן</span><time class="rx-when">09:10</time>
+          <span class="rx-snip">אני לא מוצא איפה מוסיפים את הנכדה החדשה לעץ, ניסיתי מהכפתור הירוק ומהעיפרון ולא הצלחתי בכלל</span><span class="rx-tags"><span class="rx-tag">עץ המשפחה</span><span class="rx-tag">דרך העוזר</span></span></button></li>
+        <li><button class="rx-row done" type="button"><span class="rx-face">רכ</span><span class="rx-name">רחל כהן</span><time class="rx-when">אתמול</time>
+          <span class="rx-snip">יום ההולדת של סבתא מופיע פעמיים</span><span class="rx-tags"><span class="rx-tag">לוח שנה</span></span></button></li>
+      </ul>
+      <p class="rx-empty">אין פניות כאן.</p>
+    </div>
+    <section class="rx-thread card">
+      <header class="rx-thead"><button class="rx-back" type="button">‹ כל הפניות</button>
+        <div class="rx-who"><b>דנה לוי</b><small>טלפון · רשימת קניות · היום 10:42</small></div>
+        <div class="rx-state" role="group" aria-label="מצב"><button type="button" aria-pressed="false">חדשה</button><button type="button" aria-pressed="true">בטיפול</button><button type="button" aria-pressed="false">טופלה</button></div></header>
+      <div class="rm-thread">
+        <article class="rm"><header class="rm-who"><b>דנה לוי</b><time>10:42</time></header><p class="rm-text" dir="auto">הכפתור של הוספה לרשימה לא נלחץ בטלפון</p>
+          <a class="rm-shot" href="#"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 160'%3E%3Crect width='90' height='160' fill='%23efeee6'/%3E%3Crect width='90' height='14' fill='%23f7f6f0'/%3E%3Crect x='8' y='24' width='74' height='16' rx='4' fill='%23fff'/%3E%3Crect x='8' y='46' width='74' height='16' rx='4' fill='%23fff'/%3E%3Crect x='8' y='68' width='50' height='16' rx='4' fill='%2355622f'/%3E%3C/svg%3E" alt="צילום המסך מהדיווח" style="inline-size:120px"></a></article>
+        <article class="rm mine"><header class="rm-who"><b>צוות האוהל</b><time>11:05</time></header><p class="rm-text" dir="auto">תודה דנה! מצאנו את זה – הכפתור היה מוסתר מאחורי הסרגל התחתון. תוקן, נסי שוב.</p></article>
+      </div>
+      <form class="rm-reply" onsubmit="event.preventDefault()"><textarea rows="2" dir="auto" aria-label="התשובה" placeholder="תשובה לדנה"></textarea>
+        <button class="rm-send" aria-label="שליחת התשובה"></button>
+        <p class="rm-private">רק דנה תראה את התשובה, בתיבה שלה באוהל.</p></form>
+    </section>
+  </div>
+</div>
+</body>
+</html>

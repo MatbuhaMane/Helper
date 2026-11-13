@@ -1,0 +1,166 @@
+/* Reports (the owner, 2026-11-13): a person reports a problem from any page (a phone shake or "דווח על בעיה"), it reaches
+   צוות האוהל, and the private reply comes back to the person's own small inbox. Design's look; the JS (ai-features) loads
+   this file when the sheet or the inbox opens, as common.js does for daemon.css:
+     document.head.append(H.el('link', { rel: 'stylesheet', href: '/assets/reports.css' }))
+   The back door's list and thread are in /admin/admin.css; the conversation bubbles (.rm-*) are here and shared by both.
+
+   1. The report sheet, inside H.modal (a bottom sheet on a phone):
+     <form class="rp">
+       <header class="rp-head"><span class="rp-ic" aria-hidden="true"></span>
+         <div><h2 id="rp-h">דיווח על בעיה</h2><p class="rp-to">הולך ל<b>צוות האוהל</b></p></div></header>
+       <label class="rp-field"><span>מה קרה?</span>
+         <textarea class="rp-text" rows="3" maxlength="1000" dir="auto" placeholder="…"></textarea>
+         <small class="rp-count" aria-live="polite">0 / 1000</small></label>
+       <div class="rp-shot [has]">                                        (.has once a screenshot was taken)
+         <label class="rp-shot-toggle"><input type="checkbox" checked><span>לצרף צילום מסך של הדף</span></label>
+         <figure class="rp-thumb"><img src="blob:…" alt="צילום המסך שיצורף"></figure></div>
+       <p class="rp-meta">מהדף: <b>רשימת קניות</b></p>
+       <div class="rp-actions"><button class="btn primary">שליחה</button><button class="btn ghost" type="button">ביטול</button></div>
+       <p class="rp-hint">אפשר גם לנער את הטלפון, מכל דף.</p>
+     </form>
+   After sending, the form's content becomes:
+     <div class="rp-sent" role="status"><span class="rp-sent-ic" aria-hidden="true"></span><h2>נשלח לצוות האוהל</h2>
+       <p>התשובה תגיע לתיבה שלך באוהל.</p><button class="btn ghost">סגירה</button></div>
+
+   2. The menu item (in the settings list or any menu): <button class="rp-entry" type="button"><span class="rp-entry-ic" aria-hidden="true"></span>
+        <span><b>דווח על בעיה</b><small>משהו לא עובד? זה מגיע לצוות האוהל</small></span></button>
+      The inbox item the same way, .rp-entry.inbox, with [<span class="mi-count">2</span>] at its end.
+      A new reply marks the settings chip in the bar: <span class="mi-dot" aria-hidden="true"></span> inside .userchip (and the chip's
+      aria-label gets ", תשובה חדשה בתיבה"). The dot's rule is in base.css, since the bar is on every page.
+
+   3. The person's small inbox (a sheet in H.modal, or a section on the settings page):
+     <section class="mi">
+       <header class="mi-head"><span class="mi-ic" aria-hidden="true"></span><h2>התיבה שלי</h2></header>
+       <ul class="mi-list"><li><button class="mi-row [unread]" type="button">
+           <span class="mi-what"><b>הדיווח על רשימת קניות</b><small>"הכפתור לא נלחץ…"</small></span>
+           <time class="mi-when">אתמול</time></button></li> …</ul>
+       <p class="mi-empty">עוד אין כאן כלום. תשובות של צוות האוהל יגיעו לכאן.</p>
+     </section>
+     Opening a row shows the conversation (the same .rm-thread as the back door), then [the .rm-reply box when answering is open].
+
+   4. A conversation, shared:
+     <div class="rm-thread">
+       <p class="rm-day">היום</p>
+       <article class="rm [mine]">                                       (.mine: written by whoever looks at it, at the end side)
+         <header class="rm-who"><b>דנה לוי</b><time>10:42</time></header>
+         <p class="rm-text" dir="auto">…</p>
+         [<a class="rm-shot" href="…" target="_blank"><img src="…" alt="צילום המסך מהדיווח"></a>]
+         [<p class="rm-meta"><span class="rm-chip">רשימת קניות</span><span class="rm-chip">טלפון</span></p>]
+       </article> …
+     </div>
+     <form class="rm-reply"><textarea rows="2" dir="auto" aria-label="התשובה"></textarea>
+       <button class="rm-send" aria-label="שליחת התשובה"></button>
+       <p class="rm-private">רק דנה תראה את התשובה, בתיבה שלה באוהל.</p></form> */
+
+/* ── 1. the report sheet ── */
+.rp { display: grid; gap: 14px; inline-size: min(100%, 460px); margin-inline: auto; }
+.rp-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: center; padding-inline-end: 44px; }   /* room for the sheet's ✕ */
+.rp-ic, .mi-ic, .rp-entry-ic { display: grid; place-items: center; inline-size: 46px; block-size: 46px; border-radius: 15px; flex: none;
+  background: color-mix(in srgb, var(--olive) 30%, var(--card)); color: var(--text); }
+.rp-ic::before, .mi-ic::before, .rp-entry-ic::before { content: ""; inline-size: 24px; block-size: 24px; background: currentColor;
+  -webkit-mask: url(/assets/reports/report.svg) center / contain no-repeat; mask: url(/assets/reports/report.svg) center / contain no-repeat; }
+.rp-head h2, .mi-head h2 { margin: 0; font-size: 1.2rem; line-height: 1.25; }
+.rp-to { margin: 2px 0 0; color: var(--muted); font-size: .88rem; }
+.rp-to b { color: var(--text); font-weight: 600; }
+.rp-field { display: grid; gap: 6px; font-weight: 500; }
+.rp-text { font: inherit; font-weight: 400; inline-size: 100%; min-block-size: 96px; max-block-size: 40dvh; resize: vertical; box-sizing: border-box;
+  padding: 10px 12px; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); line-height: 1.5; }
+.rp-text:focus-visible, .rm-reply textarea:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent); outline-offset: 1px; border-color: var(--primary); }
+.rp-count { justify-self: end; color: var(--muted); font-size: .78rem; font-weight: 400; font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; }   /* "38 / 1000" reads left to right */
+/* the screenshot: a switch line and a small picture of the page; the picture shows only while it is taken and wanted */
+.rp-shot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border-radius: 14px;
+  border: 1px dashed var(--line-strong); background: color-mix(in srgb, var(--card) 60%, transparent); }
+.rp-shot-toggle { display: inline-flex; align-items: center; gap: 10px; min-block-size: 44px; cursor: pointer; font-size: .94rem; }
+.rp-shot-toggle input { inline-size: 20px; block-size: 20px; margin: 0; flex: none; accent-color: var(--primary); cursor: pointer; }
+.rp-shot-toggle::before { content: ""; inline-size: 20px; block-size: 20px; flex: none; order: -1; background: var(--muted);
+  -webkit-mask: url(/assets/reports/camera.svg) center / contain no-repeat; mask: url(/assets/reports/camera.svg) center / contain no-repeat; }
+.rp-thumb { margin: 0; flex: none; inline-size: 62px; max-block-size: 104px; border-radius: 9px; overflow: hidden; border: 1px solid var(--line-strong);
+  background: var(--card); box-shadow: 0 6px 14px -10px rgba(46, 42, 30, .55); }
+.rp-thumb img { display: block; inline-size: 100%; block-size: auto; max-block-size: 104px; object-fit: cover; object-position: top; }
+@media (min-width: 700px) { .rp-thumb { inline-size: 104px; } }   /* a computer's screenshot is wide */
+.rp-shot:not(.has) .rp-thumb, .rp-shot:has(input:not(:checked)) .rp-thumb { display: none; }
+.rp-shot:has(input:not(:checked)) { border-style: solid; border-color: var(--line); }
+.rp-meta { margin: 0; color: var(--muted); font-size: .86rem; }
+.rp-meta b { color: var(--text); font-weight: 500; }
+.rp-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.rp-actions .btn { min-block-size: 46px; }
+.rp-actions .btn.primary { flex: 1 1 160px; }
+.rp-hint { margin: 0; text-align: center; color: var(--muted); font-size: .82rem; }
+@media (hover: hover) and (pointer: fine) { .rp-hint { display: none; } }   /* the shake is a phone's thing */
+/* sent: a vine circle with a check drawn in, the words, and a way out */
+.rp-sent { display: grid; justify-items: center; gap: 6px; padding-block: 12px 4px; text-align: center; }
+.rp-sent h2 { margin: 6px 0 0; font-size: 1.2rem; }
+.rp-sent p { margin: 0 0 8px; color: var(--muted); }
+.rp-sent-ic { display: grid; place-items: center; inline-size: 64px; block-size: 64px; border-radius: 50%; background: var(--primary); color: #fff;
+  animation: rp-pop .5s var(--ease-river, ease) both; }
+.rp-sent-ic::before { content: ""; inline-size: 32px; block-size: 32px; background: currentColor;
+  -webkit-mask: url(/assets/reports/check.svg) center / contain no-repeat; mask: url(/assets/reports/check.svg) center / contain no-repeat; }
+@keyframes rp-pop { from { opacity: 0; transform: scale(.7); } }
+
+/* ── 2. the menu item ── */
+.rp-entry { display: flex; align-items: center; gap: 12px; inline-size: 100%; min-block-size: 56px; padding: 8px 12px; text-align: start;
+  font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 16px; cursor: pointer;
+  transition: border-color var(--dur-quick, .15s) ease, background-color var(--dur-quick, .15s) ease; }
+.rp-entry > span:not([class]) { display: grid; gap: 1px; min-inline-size: 0; flex: 1; }
+.rp-entry small { color: var(--muted); font-size: .84rem; }
+.rp-entry-ic { inline-size: 40px; block-size: 40px; border-radius: 13px; }
+.rp-entry-ic::before { inline-size: 21px; block-size: 21px; }
+.rp-entry.inbox .rp-entry-ic { background: color-mix(in srgb, var(--primary) 18%, var(--card)); }
+.rp-entry.inbox .rp-entry-ic::before, .mi-ic::before { -webkit-mask-image: url(/assets/reports/inbox.svg); mask-image: url(/assets/reports/inbox.svg); }
+.rp-entry:focus-visible, .mi-row:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+@media (hover: hover) { .rp-entry:hover { border-color: var(--primary); } }
+.mi-count { flex: none; min-inline-size: 24px; block-size: 24px; padding: 0 7px; border-radius: 999px; display: grid; place-items: center;
+  font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #fff; background: #c2412d; }
+
+/* ── 3. the person's inbox ── */
+.mi { display: grid; gap: 12px; inline-size: min(100%, 520px); margin-inline: auto; }
+.mi-head { display: flex; align-items: center; gap: 12px; padding-inline-end: 44px; }
+.mi-ic { background: color-mix(in srgb, var(--primary) 18%, var(--card)); }
+.mi-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.mi-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; inline-size: 100%; min-block-size: 60px;
+  padding: 10px 14px; text-align: start; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 16px; cursor: pointer; }
+.mi-what { display: grid; gap: 2px; min-inline-size: 0; }
+.mi-what b { font-weight: 500; }
+.mi-what small { color: var(--muted); font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mi-when { color: var(--muted); font-size: .8rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.mi-row.unread { border-inline-start: 4px solid var(--primary); }
+.mi-row.unread .mi-what b { font-weight: 700; }
+.mi-row.unread .mi-when { color: var(--primary); font-weight: 600; }
+@media (hover: hover) { .mi-row:hover { border-color: var(--primary); } }
+.mi-empty { margin: 0; padding: 26px 12px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 16px; }
+.mi-list:not(:empty) ~ .mi-empty { display: none; }
+
+/* ── 4. a conversation (the back door and the person's inbox) ── */
+.rm-thread { display: grid; gap: 10px; align-content: start; }
+.rm-day { justify-self: center; margin: 4px 0; padding: 1px 10px; border-radius: 999px; font-size: .76rem; color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 12%, transparent); }
+.rm { justify-self: start; display: grid; gap: 6px; max-inline-size: min(88%, 520px); min-inline-size: 0; padding: 10px 14px; border-radius: 18px;
+  border-end-start-radius: 6px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 6px 14px -14px rgba(46, 42, 30, .6); }
+.rm.mine { justify-self: end; border-end-start-radius: 18px; border-end-end-radius: 6px;
+  background: color-mix(in srgb, var(--primary) 13%, var(--card)); border-color: color-mix(in srgb, var(--primary) 30%, var(--line)); }
+.rm-who { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; font-size: .82rem; color: var(--muted); }
+.rm-who b { color: var(--text); font-weight: 600; }
+.rm-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.rm-shot { display: block; justify-self: start; max-inline-size: min(100%, 240px); border-radius: 10px; overflow: hidden; border: 1px solid var(--line-strong); }
+.rm-shot img { display: block; inline-size: 100%; block-size: auto; max-block-size: 260px; object-fit: cover; object-position: top; }
+.rm-shot:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.rm-meta { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; }
+.rm-chip { padding: 0 8px; border-radius: 999px; font-size: .76rem; line-height: 1.7; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); }
+/* the reply box: the text and a round send button; under them, whom the reply reaches (privately) */
+.rm-reply { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; align-items: end; padding-block-start: 10px; border-block-start: 1px solid var(--line); }
+.rm-reply textarea { font: inherit; inline-size: 100%; box-sizing: border-box; min-block-size: 48px; max-block-size: 30dvh; resize: vertical;
+  padding: 11px 14px; border-radius: 22px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); line-height: 1.45; }
+.rm-send { inline-size: 48px; block-size: 48px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; display: grid; place-items: center;
+  background: var(--primary); color: #fff; transition: transform var(--dur-quick, .15s) ease, opacity var(--dur-quick, .15s) ease; }
+.rm-send::before { content: ""; inline-size: 22px; block-size: 22px; background: currentColor;
+  -webkit-mask: url(/assets/reports/send.svg) center / contain no-repeat; mask: url(/assets/reports/send.svg) center / contain no-repeat; }
+.rm-send:dir(rtl)::before { transform: scaleX(-1); }   /* the plane flies toward the reading direction */
+.rm-send:active { transform: scale(.94); }
+.rm-send:disabled { opacity: .45; cursor: default; }
+.rm-send:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.rm-private { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; margin: 0; color: var(--muted); font-size: .82rem; }
+.rm-private::before { content: ""; inline-size: 15px; block-size: 15px; flex: none; background: currentColor;
+  -webkit-mask: url(/assets/reports/lock.svg) center / contain no-repeat; mask: url(/assets/reports/lock.svg) center / contain no-repeat; }
+
+@media (prefers-reduced-motion: reduce) { .rp-sent-ic { animation: none; } .rm-send, .rp-entry { transition: none; } }
+:root[data-motion="reduce"] .rp-sent-ic { animation: none; }

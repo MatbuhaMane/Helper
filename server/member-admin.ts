@@ -42,9 +42,11 @@ export async function people(ctx: Ctx) {
   const q = url.searchParams.get('q');
   let rows: Row[];
   if (q !== null) {
-    const like = R.likeOf(q);
-    rows = like ? (await ctx.env.DB.prepare(`SELECT ${COLS} FROM members WHERE lower(email) LIKE ?1 ESCAPE '\\' OR lower(COALESCE(name, '')) LIKE ?1 ESCAPE '\\' OR COALESCE(he_name, '') LIKE ?1 ESCAPE '\\' ORDER BY household, email LIMIT 30`)
-      .bind(like).all<Row>()).results : [];
+    // the search: words in the names, the email or the household, and the advanced filters (member-admin-rules searchSql)
+    const s = R.searchSql(q, R.filtersOf((k) => url.searchParams.get(k)));
+    const cols = COLS.split(', ').map((c) => 'm.' + c).join(', ');
+    rows = s ? (await ctx.env.DB.prepare(`SELECT ${cols} FROM members m LEFT JOIN family_households h ON h.id = m.household WHERE ${s.where} ORDER BY m.household, m.email LIMIT 30`)
+      .bind(...s.binds).all<Row>()).results : [];
   } else {
     let house = url.searchParams.get('household');
     if (!house) house = (await ctx.env.DB.prepare('SELECT household FROM members WHERE email = ?').bind(a.as).first<{ household: string }>())?.household || 'family';

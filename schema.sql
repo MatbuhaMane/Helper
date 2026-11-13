@@ -1175,3 +1175,12 @@ CREATE TABLE IF NOT EXISTS access_requests (
   last_denied_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS access_requests_ticket ON access_requests (ticket_hash);
+
+-- secret grants the owner gives one member from the owner's room (server/grants.ts): frames, bio_ancient, name_ancient
+CREATE TABLE IF NOT EXISTS user_grants (
+  email      TEXT NOT NULL,
+  grant_key  TEXT NOT NULL,
+  by_email   TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (email, grant_key)
+);

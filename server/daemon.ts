@@ -345,9 +345,12 @@ export async function chat(ctx: Ctx) {
   let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d, figure));
   const fresh = messages.length === 0;
   // how to address them: the settings' choice when made (me.address), else what they told the companion, else neutral
-  const set = String((await prefsFor(ctx.env, u.email)).me?.data?.address || '');
+  const mine = (await prefsFor(ctx.env, u.email)).me?.data || {};
+  const set = String(mine.address || '');
   const address = set === 'female' || set === 'male' ? set : d.address || 'plural';
-  const note = stateNote(u, { ...d, address }, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
+  // the name they gave in the setup (me.name) is how they are called
+  const called = String(mine.name || '').trim().slice(0, 40);
+  const note = stateNote(called ? { ...u, he_name: called } : u, { ...d, address }, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
   messages.push({ role: 'user', content: [{ type: 'text', text: `${note}\n\n${said || `[${event}]`}` }] });
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });

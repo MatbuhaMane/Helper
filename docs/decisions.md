@@ -11,6 +11,34 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The family tree, spec 1: a drawn tree, play in the interface (vision → ai-features, design, master)
+The owner's decision. The full spec: `docs/vision/tree.md`. Status: Decided (the owner).
+
+**The look**
+- One fixed, detailed tree in the tent's style. Each person is a leaf or a tag on their branch: grandparents near the roots, children in the crown.
+- The drawing is in layers (roots, boughs, crown, leaves) and is assembled in code, so it can move.
+- Later: animated trees whose roots and branches join, for linked families. That is the forest, stage 3.
+
+**The play**
+- There are no quests and no badges in the tree. The play is the interface itself, in the spirit of Not Boring's apps:
+  - drag up the trunk to the generations before;
+  - pinch to zoom;
+  - tap a leaf to open the person's card;
+  - momentum, a soft stop on a branch, a short haptic, a soft sound.
+- The tree opens with the viewer in the centre. Today's event shows on the tree: a glowing leaf for a birthday, a candle by the roots for a yahrzeit.
+- Adding a person: a "+" bud next to each person ("אמא של דנה?", the relation already filled in). Only a name is required.
+- With reduced motion, there is no movement. Everything stays within the readiness bar.
+
+**Those who passed away**
+- By default, quiet and respectful: no confetti or cheerful sounds, a candle on the yahrzeit.
+- Each user chooses in their own settings how they will be shown after their death.
+
+**When**
+- Before the family launch, as a priority. The master schedules it against the readiness bar.
+
+**Next**
+- The family story (recordings, readings, documents, photos, tagging people), "a living museum". It gets its own spec.
+
 ## 2026-11-14 – Locks and privacy: a simple entry to the tree, an app lock like Telegram's, fingerprint sign-in (master → ai-features, design)
 The owner's design. It replaces "the trusted device" for the tree.
 

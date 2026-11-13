@@ -1,19 +1,19 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (third round: the family tree's delete and approvals).
+Last update: 2026-11-13 (the tree and the free helper in design's markup).
 
 ## Done
 - **The free helper (2026-11-13), on `ai-features`, ready to merge:** 80daff4 the three-step Gemini guide (402 invitation +
   settings, paste on coming back, one field if the clipboard is blocked); 2f31551 the welcome's gift line + a test that
   invite joiners start limited (test-credits 54). Checked at 375 and desktop with a stubbed "connected" (a real key
-  was not tried); the look waits for design.
+  was not tried). c3518e1 moves it to design's `.gk` (db03b95); needs a style for `form.gk-paste`.
 - **Third round (2026-11-13): the family tree (Ivri could not delete), on `ai-features`, ready to merge:**
   faa5744 rules + tests, 5f9f12d `vault/access.ts` (the master's, patch in the shared notes), b59e54b server/table/routes,
   c0151e5 the pages. A non-user goes at once with "בטל" (10 s); another user's card or relationship waits for their
   "אשר"/"דחה" (a message is sent; the proposer sees "ממתין לאישור"); the owner restores from the back door
   ("שחזור מהעץ"). Delete and edit are now also on the tree's own card. Tests: kin 95, access 204, e2e 30. Checked at
-  375 and desktop; the look waits for design (`.fm-undo` is not floating yet).
+  375 and desktop. de3f97e moves it to design's `fv-*` markup (f35a140), with whom a request waits for.
 - **Second round (2026-11-13), on `ai-features`, ready to merge:**
   - **The record** (6f7760b, `music.js`): on the home page it is on the stump from the start, with no player connected,
     also for someone whose saved place is the menu or whose prefs arrive late; a tap with nothing loaded opens the player.

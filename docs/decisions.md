@@ -2516,3 +2516,16 @@ with "בטל" for 10 seconds, and the owner can restore from the back door.
 - **For design (no CSS yet):** `.ai-invite`; `section.gm-guide` > `.gm-body` > `ol.gm-steps` > `li.gm-step` (`span.gm-art`
   with an inline SVG, 96×64, currentColor; `.gm-text` b + span); `.gm-back` (`p.gm-q`), `form.gm-paste`, `.gm-done`
   (`p.gm-ok`); settings: `details.st-key-manual`; welcome: `p.wz-hint.wz-gift`.
+
+## 2026-11-13 – ai-features: the tree and the free helper in design's markup
+
+- **The family tree** (de3f97e, design's f35a140): the `.fm-*` names above are replaced by design's `fv-*`:
+  `.fv-pacts` > `button.fv-pact[data-act=edit|delete]`, `.fv-undo` (`--t:10s`, `.fv-undo-btn`, `.fv-undo-bar`), `.going`
+  and `.pending` on `.tr-p` / `.fv-card`, `span.fv-pend[title]`, `.fv-pendbox` (with `dl.fv-diff` and `.fv-ask-acts`),
+  `.fv-asks` > `section.card.fv-ask[data-kind]` (`.fv-ask-h`, `.fv-pic`, `time`, `p.fv-ask-del`, `.fv-ok` / `.fv-no`,
+  then `.done` + `p.fv-ask-said`). The server now says whom a request waits for (`waitsFor`) and, to the one who asked,
+  which details and to what (`changes`, without the old value: the proposer's `<s>` stays empty).
+- **The free helper** (c3518e1, design's db03b95): the `.gm-*` names above are replaced by design's `.gk`. One addition
+  outside design's example: when the clipboard is blocked or holds something else, `form.gk-paste` (label + input +
+  "חיבור") appears between `ol.gk-steps` and `.gk-err`. Step 2 says "לוחצים על הכפתור הכחול ליצירת מפתח" (no
+  "API key", per the CEO's rule), so `.gk-en` is not used. Settings: `span.gk-ok.small` "Gemini מחובר ✓".

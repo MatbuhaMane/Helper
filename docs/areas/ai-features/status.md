@@ -56,6 +56,11 @@ LCP has not moved yet. The causes:
 - **groceries' TBT (675 ms)**, **the calculator (300 ms)**: long JS at load. Mine, to look into.
 - **fps**: fine everywhere. Headless Chrome is not a mid-range phone, though: the joint run on a real phone is the real test.
 
+- **On design's look** (design 0cc65ad): the weather page on `weather.css` (.wx-*); the owner's messages on base.css's
+  `.owner-msgs` / `.owner-msg.<level>` with drawn marks instead of emoji. Checked with design's CSS brought in for the test
+  (375 light, 1280 dark, no overflow). **Merge design's 0cc65ad with it or before it**: without that CSS the messages lose
+  their floating place.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.

@@ -68,5 +68,4 @@ The pictures are `/assets/badges/<id>.webp` (320 px, transparent); the 640 px ma
 | adviser | יועץ | 〃 |
 | shoulder | כתף תומכת | 〃 |
 
-Still to be embroidered (the image tool's daily cap): tracker, gifts, highway, way_of_life,
-kings_way, tribe, angel, adviser. Until they arrive, show `secret.webp` in their place.
+All 23 are embroidered.

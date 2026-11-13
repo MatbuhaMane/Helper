@@ -20,14 +20,24 @@
   if (window.Figure2D) return;
   const BASE = '/figures/2d/';
   const FIGURES = {
-    // filled in as the figures are drawn: see docs/design/figures-2d.md
+    // the generic ones: free for everyone (docs/design/figures-2d.md; drawn with the image tool, 2026-11-13)
+    fennec: { name: 'פנק', kind: 'generic', neck: 0.6, pivot: [0.5, 0.58], eyes: [[0.39, 0.47], [0.61, 0.47]], eyeR: 0.055, mouth: [0.5, 0.535], mouthW: 0.1, cheek: '#e89a7a' },
+    owl: { name: 'ינשוף', kind: 'generic', neck: 0.57, pivot: [0.5, 0.55], eyes: [[0.33, 0.33], [0.67, 0.33]], eyeR: 0.085, mouth: [0.5, 0.435], mouthW: 0.07, mouthFill: '#c8862a', cheek: null },
+    hedgehog: { name: 'קיפוד', kind: 'generic', neck: 0.53, pivot: [0.5, 0.5], eyes: [[0.4, 0.38], [0.6, 0.38]], eyeR: 0.05, mouth: [0.5, 0.465], mouthW: 0.09, cheek: '#eaa092' },
+    lamb: { name: 'טלה', kind: 'generic', neck: 0.53, pivot: [0.515, 0.5], eyes: [[0.42, 0.385], [0.61, 0.385]], eyeR: 0.05, mouth: [0.515, 0.465], mouthW: 0.09, cheek: '#eaa092' },
   };
   const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   const NS = 'http://www.w3.org/2000/svg';
   const svgEl = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
   const rnd = (a, b) => a + Math.random() * (b - a);
 
+  // the engine brings its own look: figure2d.css, once per page (a page may still link it itself)
+  function ensureCss() {
+    if (document.querySelector('link[href*="figure2d.css"]')) return;
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/assets/figure2d.css'; document.head.append(l);
+  }
   async function mount(host, which, opts = {}) {
+    ensureCss();
     const cfg = typeof which === 'string' ? { id: which, ...FIGURES[which] } : which;
     if (!cfg || !cfg.neck) throw new Error('Figure2D: no such figure ' + which);
     const src = cfg.src || `${BASE}${cfg.id}/figure.webp`;
@@ -152,5 +162,7 @@
     };
   }
   const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, unlock: f.unlock || null, season: f.season || null }));
-  window.Figure2D = { mount, list, FIGURES };
+  // the default companion for every family but the owner's (who has Ibn Ezra): the owner's choice, 2026-11-13
+  const DEFAULT = 'fennec';
+  window.Figure2D = { mount, list, FIGURES, DEFAULT };
 })();

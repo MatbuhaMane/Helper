@@ -1,15 +1,15 @@
-/* החדר של האוהל – the owner's room (server/admin.ts). Entered with the owner's own biometric (a passkey), from any device.
+/* הדלת האחורית – the owner's back door (until 2026-11-13 "החדר של האוהל") (server/admin.ts). Entered with the owner's own biometric (a passkey), from any device.
    From the owner's own account: the dashboard, money, settings, members, messages, features, הרשאת־על, the AI's cost and
    the room's log. From someone else's account: a visit – that person's special features, a message to everyone, and how
    the app is doing. Everything is checked on the server; this page shows what it agreed to give. */
 (async () => {
   const { el, api, toast } = H;
-  H.header('החדר של האוהל');
+  H.header('הדלת האחורית');
   await H.requireLogin();
   const root = document.querySelector('main');
   const ERR = {
     no_passkey: 'עוד אין מפתח גישה (טביעת אצבע / פנים / Windows Hello) לבעל האוהל. הוסיפו אחד מהחשבון שלכם בעץ המשפחה ← מפתחות גישה.',
-    passkey_unknown: 'המפתח הזה לא של בעל האוהל.', admin_locked: 'החדר ננעל. היכנסו שוב.', own_account_only: 'זה נפתח רק מהחשבון שלך.',
+    passkey_unknown: 'המפתח הזה לא של בעל האוהל.', admin_locked: 'הדלת ננעלה. היכנסו שוב.', own_account_only: 'זה נפתח רק מהחשבון שלך.',
     too_many_tries: 'יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.', challenge_expired: 'עבר יותר מדי זמן. נסו שוב.', passkey_bad_signature: 'הזיהוי לא אושר.',
     title_required: 'צריך שם.', bad_amount: 'הסכום לא תקין.', bad_date: 'צריך תאריך.', bad_value: 'הערך לא מתאים.', not_member: 'אין חבר בכתובת הזו.',
     already_owner: 'הוא כבר בעל האוהל.', owner_only: 'רק בעל האוהל ממנה הרשאת־על.', text_required: 'כתבו הודעה.',
@@ -35,11 +35,12 @@
   }
   function gate() {
     if (st) st.open = false;
+    root.classList.remove('bd');
     document.querySelector('.ad-warn')?.setAttribute('hidden', '');
     const can = !!window.PublicKeyCredential && !!navigator.credentials;
     root.replaceChildren(el('section', { class: 'ad' }, el('div', { class: 'card ad-gate' },
       el('div', { class: 'big', 'aria-hidden': 'true' }, '🌒'),
-      el('h1', {}, 'החדר של האוהל'),
+      el('h1', {}, 'הדלת האחורית'),
       el('p', {}, 'כאן נכנס רק בעל האוהל, בזיהוי ביומטרי: טביעת אצבע, פנים או Windows Hello.'),
       el('p', { class: 'muted small' }, 'במכשיר של מישהו אחר הדפדפן יציע לאשר מהטלפון שלך (קוד QR).'),
       can ? el('button', { class: 'btn primary', onclick: async (e) => { e.target.disabled = true; try { await enter(); } catch (err) { if (err?.name !== 'NotAllowedError') say(err); e.target.disabled = false; } } }, 'זיהוי ביומטרי')
@@ -76,7 +77,7 @@
       const idleFor = Date.now() - last, left = st.idle - idleFor;
       if (left <= 0) { lockNow(); return; }
       if (idleFor >= st.warn) {
-        warnBox.replaceChildren(el('b', {}, '🔒 החדר ייסגר בעוד ' + mmss(left)), el('span', {}, ' · כל פעולה משאירה אותו פתוח'),
+        warnBox.replaceChildren(el('b', {}, '🔒 הדלת תיסגר בעוד ' + mmss(left)), el('span', {}, ' · כל פעולה משאירה אותו פתוח'),
           el('button', { class: 'btn small', type: 'button', onclick: active }, 'אני כאן'));
         warnBox.hidden = false;
       } else warnBox.hidden = true;
@@ -86,7 +87,7 @@
     try { st = await call('/api/admin/status'); } catch (e) { return say(e); }
     if (!st.open) return gate();
     watch();
-    const lock = el('button', { class: 'btn small ad-lock', type: 'button', 'aria-label': 'החדר פתוח – לחיצה נועלת אותו', title: 'נעילה מיד', onclick: lockNow }, '🔓 פתוח · נעילה');
+    const lock = el('button', { class: 'btn small ad-lock', type: 'button', 'aria-label': 'הדלת פתוחה – לחיצה נועלת אותה', title: 'נעילה מיד', onclick: lockNow }, '🔓 פתוח · נעילה');
     const stay = st.own ? el('label', { class: 'ad-stay small' },
       el('input', { type: 'checkbox', checked: !!st.stay, 'aria-label': 'להשאיר פתוח לעבודה', onchange: async (e) => {
         try { const r = await call('/api/admin/stay', { method: 'POST', body: { on: e.target.checked } }); st.stay = r.stay; active(); toast(r.stay ? 'נשאר פתוח לעבודה (עד שעתיים)' : 'נסגר שוב אחרי 3 דקות בלי פעולה'); } catch (err) { say(err); e.target.checked = !!st.stay; }
@@ -94,15 +95,49 @@
     const bar = el('div', { class: 'card ad-bar' },
       el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל.')),
       el('span', { class: 'spacer' }), stay, lock);
-    const parts = st.own
-      ? [['dash', 'לוח'], ['inbox', 'פניות'], ['usage', 'שימוש'], ['money', 'כסף'], ['settings', 'הגדרות'], ['members', 'חברים'], ...(st.level === 'owner' ? [['gifts', 'מתנות']] : []), ['messages', 'הודעות'], ['features', 'תכונות'], ['supers', 'הרשאת־על'], ['ai', 'עלויות AI'], ['log', 'יומן']]
-      : [['dash', 'מצב האוהל'], ['features', `התכונות של ${st.as.name}`]];
-    const nav = el('nav', { class: 'ad-nav', 'aria-label': 'חלקי החדר' }, parts.map(([id, n]) => el('a', { href: '#' + id }, n)));
-    const boxes = Object.fromEntries(parts.map(([id]) => [id, el('div', { id })]));
-    root.replaceChildren(el('section', { class: 'ad' }, bar, nav, ...parts.map(([id]) => boxes[id])));
-    dash(boxes.dash);
-    features(boxes.features);
-    if (st.own) { inbox(boxes.inbox); usage(boxes.usage); messages(boxes.messages); settings(boxes.settings); members(boxes.members); supers(boxes.supers); aiCost(boxes.ai); log(boxes.log); if (boxes.gifts) gifts(boxes.gifts); }
+    /* on top, the board: how the tent is doing, who uses what, and the family's feedback (own account only) */
+    const top = { dash: el('div', { class: 'bd-part', id: 'dash' }) };
+    let dashP;
+    if (st.own) { top.usage = el('div', { class: 'bd-part', 'data-part': 'usage' }); top.inbox = el('div', { class: 'bd-part', 'data-part': 'inbox' }); }
+    const board = el('section', { class: 'bd-dash', 'aria-label': 'לוח' }, ...Object.values(top));
+    /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
+    const APPS = st.own
+      ? [['messages', 'הודעות', messages], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts]] : []), ['settings', 'הגדרות האפליקציה', settings],
+         ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
+      : [['features', `התכונות של ${st.as.name}`, features]];
+    const FALLBACK = { messages: 'mail', credits: 'calc', gifts: 'smile', members: 'family', features: 'tools', permissions: 'unlocked', ai: 'lens', log: 'note' };
+    const tint = ['var(--vine);--c2:var(--olive)', 'var(--olive);--c2:var(--soil)', 'var(--soil);--c2:var(--vine)'];
+    const ic = (id) => { const s = H.icon(id); return s.innerHTML ? s : H.icon(FALLBACK[id] || 'tools'); };   // design's own icon once it is in
+    const panels = {}, loaded = new Set();
+    const tiles = APPS.map(([id, name, load], i) => {
+      panels[id] = el('section', { class: 'bd-panel', id, hidden: true, 'aria-label': name });
+      return el('a', { class: 'app', href: '#' + id, 'data-bd': id, style: `--c1:${tint[i % 3]};--n:${i}`, 'aria-controls': id },
+        el('span', { class: 'ic' }, ic(id)), el('span', { class: 'name' }, name));
+    });
+    const loaders = Object.fromEntries(APPS.map(([id, , load]) => [id, load]));
+    /** one part open at a time, loaded the first time it opens; the address keeps it (#members) for a reload or the back button */
+    const show = (id, scroll) => {
+      for (const [k, p] of Object.entries(panels)) p.hidden = k !== id;
+      for (const t of tiles) t.toggleAttribute('aria-current', t.dataset.bd === id);
+      if (!panels[id]) return;
+      if (!loaded.has(id)) { loaded.add(id); loaders[id](panels[id]); }
+      if (scroll) panels[id].scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    for (const t of tiles) t.addEventListener('click', (e) => {
+      e.preventDefault();
+      const id = t.dataset.bd, again = location.hash === '#' + id && !panels[id].hidden;   // a second tap closes it
+      history.replaceState(null, '', again ? location.pathname : '#' + id);
+      show(again ? '' : id, !again);
+    });
+    root.classList.add('bd');   // the page's own <main> is design's main.bd
+    root.replaceChildren(
+      el('header', { class: 'bd-head' }, el('h1', {}, 'הדלת האחורית'), bar),
+      board,
+      el('nav', { class: 'apps-grid bd-apps', 'aria-label': 'כלי הבעלים' }, tiles),
+      ...Object.values(panels));
+    dashP = dash(top.dash);
+    if (st.own) { usage(top.usage); inbox(top.inbox); }
+    show(location.hash.slice(1), !!location.hash);
   }
 
   /* ---------- the family's feedback (a button anywhere, or through the companion) ---------- */
@@ -161,7 +196,7 @@
         tile('AI החודש', usd(d.ai.month)), tile('AI היום', usd(d.ai.today)), tile('AI מאז ההתחלה', usd(d.ai.total)),
         tile('חברים', s.members), tile('משקי בית', s.households), tile('נכנסו השבוע', s.active),
         tile('אנשים בעצים', s.people), tile('קבצים בכספת', `${s.files} · ${mb(s.bytes)}`), tile('מפגשים', `${s.gatherings} · ${s.answers} תשובות`), tile('קישורים ליומן', s.feeds))));
-    if (st.own && m) money(document.getElementById('money'), m);
+    return d;
   }
   function money(box, m) {
     const kind = el('select', { 'aria-label': 'סוג' }, [['expense', 'הוצאה'], ['income', 'הכנסה']].map(([v, t]) => el('option', { value: v }, t)));
@@ -326,7 +361,7 @@
     const { supers: list, mayName } = await call('/api/admin/supers');
     const email = el('input', { type: 'email', dir: 'ltr', required: true, 'aria-label': 'כתובת', placeholder: 'כתובת Gmail של חבר' });
     box.replaceChildren(section('supers-s', 'הרשאת־על',
-      el('p', { class: 'muted small' }, 'מי שמקבל הרשאת־על נכנס לחדר בזיהוי הביומטרי שלו, ויכול כל מה שאתה יכול – חוץ ממינוי הרשאות־על. אפשר לבטל בכל רגע, והכניסה שלו נסגרת מיד.'),
+      el('p', { class: 'muted small' }, 'מי שמקבל הרשאת־על נכנס בדלת האחורית בזיהוי הביומטרי שלו, ויכול כל מה שאתה יכול – חוץ ממינוי הרשאות־על. אפשר לבטל בכל רגע, והכניסה שלו נסגרת מיד.'),
       list.length ? el('ul', {}, list.map((s) => el('li', {}, el('b', {}, s.he_name || s.name || s.email), ' ', el('small', { class: 'muted', dir: 'ltr' }, s.email), s.keys ? '' : el('small', { class: 'muted' }, ' · עוד אין לו מפתח גישה'),
         mayName ? btn('ביטול', async () => { await call('/api/admin/supers', { method: 'PUT', body: { email: s.email, on: false } }); supers(box); }, 'btn small ghost', `לבטל את ההרשאה של ${s.email}?`) : null))) : el('p', { class: 'muted small' }, 'עוד אין.'),
       mayName ? el('form', { class: 'ad-form', onsubmit: async (e) => { e.preventDefault(); try { await call('/api/admin/supers', { method: 'PUT', body: { email: email.value, on: true } }); toast('ניתנה הרשאת־על'); supers(box); } catch (err) { say(err); } } },
@@ -360,7 +395,7 @@
     const { log: list } = await call('/api/admin/audit');
     const ACT = { gift: 'נתן מתנה', 'stay:on': 'השאיר פתוח לעבודה', 'stay:off': 'ביטל השארה פתוחה', 'ai:limited': 'הגביל AI', 'ai:family': 'פתח AI בלי הגבלה', enter: 'נכנס', setting: 'שינה הגדרה', 'ledger:add': 'רשם', 'ledger:edit': 'ערך רישום', 'ledger:delete': 'מחק רישום', message: 'שלח הודעה', 'message:stop': 'עצר הודעה',
       'feature:on': 'פתח תכונה', 'feature:off': 'סגר תכונה', 'super:add': 'נתן הרשאת־על', 'super:remove': 'ביטל הרשאת־על' };
-    box.replaceChildren(section('log-s', 'יומן החדר',
+    box.replaceChildren(section('log-s', 'יומן הדלת',
       list.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('tbody', {}, list.map((r) => el('tr', {},
         el('td', { class: 'num' }, day(r.at)), el('td', {}, ACT[r.action] || r.action), el('td', {}, r.detail || ''),
         el('td', { dir: 'ltr', class: 'muted small' }, r.by_email === r.as_email ? r.by_email : `${r.by_email} @ ${r.as_email}`)))))) : el('p', { class: 'muted small' }, 'עוד ריק.')));

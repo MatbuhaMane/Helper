@@ -112,11 +112,27 @@ LCP has not moved yet. The causes:
     מלאך דרך. Checked end to end with three test users;
   - the home page is within the bar on 4G (LCP 2.1 s).
 
+- **Block 3 (2026-11-13): "הדלת האחורית"** (the owner's room renamed, in the UI too):
+  - on top, the board: how the tent is doing, "שימוש" and "פניות";
+  - below it, every other part is an app tile in design's contract (`main.bd`, `.bd-head`, `.bd-dash`,
+    `nav.apps-grid.bd-apps > a.app[data-bd]`, `section.bd-panel[hidden]`). A tap opens the part, loads it the first
+    time, and keeps it in the address (`#members`); a second tap closes it.
+  - Access did not change, and neither did the server. A visit from someone else's account shows the board's state
+    and that person's features.
+  - Checked with fake data in the page alone (the server stayed locked): the tiles, open and close, the address, and
+    375 px with no overflow. The real screens wait for the owner's biometric.
+  - Waiting for design's CSS and the icons for gifts, settings and ai (for now the tiles use existing icons).
+
 ## In progress
 
 - Next by the owner's order:
   - the family goal with roles, and "שבט" for family-tree relatives only (slice D);
   - on-screen niqqud as a choice. Its cost: every screen's text through the vocalizer, so it needs a cache per text.
+- Later, from design:
+  - the founders page, built from `docs/design/prototype/founders.html` and `founders.css`, with the levels by number;
+  - the profile banner: the person chooses which earned title effect to show (glow, wings, crown, founder). The owner's
+    decision: a choice, not automatic;
+  - the goals gallery on the badge pictures (`.bdg` with an img), once they arrive after the image quota resets.
 - LCP on news, the tree and songs; the blocking time in the calculator.
 - **The single record** (design leads): the JS side waits for design's markup and spec. The stump is a dock, and the music
   stops from the record or from the main player.

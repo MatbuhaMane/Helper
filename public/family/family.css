@@ -25,7 +25,7 @@
   .fv-bar .btn { order: 4; }
   .fv-bar .btn.primary, .fv-bar .btn.primary + .btn.ghost { flex: 1 1 40%; justify-content: center; min-block-size: 42px; }
   .fv-bar .btn.primary + .btn.ghost ~ .btn { flex: 0 1 auto; font-size: .8rem; padding: 4px 11px; min-block-size: 32px; }
-  .fv .fv-tools { flex-wrap: nowrap; gap: 8px; }
+  .fv .fv-tools { flex-wrap: wrap; gap: 8px; }   /* the forest search (.fs) takes a row of its own below the views */
   .fv .fv-views { flex: none; }
   .fv .fv-find { flex: 1 1 0; min-inline-size: 0; max-inline-size: none; }
 }
@@ -68,8 +68,8 @@
 /* forms */
 .fv-form { display: grid; gap: 12px; min-inline-size: min(440px, 80vw); }
 .fv-form h2 { margin: 0; }
-.fv-form label { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
-.fv-form input, .fv-form select, .fv-form textarea, .fv-add input[type="text"], .fv-add textarea {
+.fv-form label:where(:not(.fs *)) { display: grid; gap: 4px; font-size: .9rem; color: var(--muted); }
+.fv-form input:where(:not(.fs *)), .fv-form select, .fv-form textarea, .fv-add input[type="text"], .fv-add textarea {   /* not the forest search inside a form: it has its own box */
   font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; padding: 9px 12px; min-inline-size: 0; }
 .fv-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
 .fv-acts { display: flex; gap: 8px; }
@@ -256,7 +256,8 @@
   transition: border-color var(--dur-quick) ease, box-shadow var(--dur-quick) ease; }
 .fs-box svg { inline-size: 18px; block-size: 18px; flex: none; }
 .fs-box:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); color: var(--primary); }
-.fs-input { flex: 1; min-inline-size: 0; border: 0; outline: 0; background: none; color: var(--text); font: inherit; padding-block: 8px; }
+.fs .fs-input, .fs .fs-input:focus { flex: 1; min-inline-size: 0; inline-size: auto; min-block-size: 0; border: 0; border-radius: 0; outline: 0; box-shadow: none;
+  background: none; color: var(--text); font: inherit; padding-block: 8px; padding-inline: 0; }   /* .fs beats base.css input[type="search"]: the box is .fs-box */
 .fs-input::placeholder { color: var(--muted); opacity: 1; }
 /* the switch: a chip with a small track; on, it fills with vine */
 .fs-kin { display: inline-flex; align-items: center; gap: 8px; min-block-size: 42px; padding-inline: 10px 14px; border-radius: 999px; cursor: pointer;
@@ -290,9 +291,43 @@
 .fs-hit.kin::after { content: ""; inline-size: 18px; block-size: 18px; background: var(--primary);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 19C5 10 11 5 20 4c-1 9-6 15-15 15zm0 0 7-7' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 19C5 10 11 5 20 4c-1 9-6 15-15 15zm0 0 7-7' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.fs-results[hidden], .fs-empty[hidden] { display: none; }   /* the list is a grid, which would beat [hidden] */
 .fs-empty { margin: 0; flex-basis: 100%; color: var(--muted); font-size: .88rem; padding-inline: 14px; }
 @media (max-width: 599px) {
   .fv .fs, .fv-bar .fs { flex: 1 1 100%; max-inline-size: none; order: 5; }
   .fs-kin { padding-inline: 8px 12px; font-size: .82rem; }
 }
 @media (prefers-reduced-motion: reduce) { .fs-box, .fs-kin, .fs-kin input, .fs-kin input::after, .fs-hit, .mc-edit { transition: none; } }
+
+/* the glide (family.js focusOn): .fv-gliding sits on .fv-tree while the cards move to their new places (FLIP, Web Animations).
+   No hover lift or border change then, so a card passing under the pointer doesn't jump; the lines, measured mid-glide and
+   redrawn when it ends, fade back in instead of snapping. */
+.fv-gliding .fv-card { transition: none; }
+.fv-gliding .fv-card:hover { transform: none; border-color: var(--fv-edge, var(--line)); }
+.fv-gliding .fv-card.r-focus:hover { transform: scale(1.06); border-color: var(--primary); }
+.fv-lines { transition: opacity .28s ease; }
+.fv-gliding .fv-lines { opacity: .25; transition: none; }
+@media (prefers-reduced-motion: reduce) { .fv-lines { transition: none; } }
+
+/* "איך אנחנו קשורים?": two pickers (מ־ / אל), each a forest search or the chosen name with החלפה, then the answer.
+   <div class="fv-form fv-related"><h2>…</h2><div class="fv-two">
+     <div class="fv-pick"><span class="fv-pick-label">מ־</span> <div class="fs">…</div> | <span class="fv-chosen"><b>שם</b><button class="btn small ghost">החלפה</button></span></div> …</div>
+   <p class="muted small">…</p><div class="fv-rel-out"><div><p class="fv-rel-name">…</p><ol class="fv-rel-path"><li>…</li></ol></div></div></div> */
+.fv-related { min-inline-size: min(560px, 86vw); }
+.fv-related .fv-two { align-items: start; gap: 12px; }
+.fv-pick { display: grid; gap: 6px; min-inline-size: 0; align-content: start; }
+.fv-pick-label { font-size: .86rem; font-weight: 500; color: var(--muted); }
+.fv-pick .fs { flex: none; inline-size: 100%; max-inline-size: none; }
+.fv-chosen { display: flex; align-items: center; gap: 8px; min-block-size: 42px; padding-block: 3px; padding-inline: 14px 4px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--line)); background: color-mix(in srgb, var(--primary) 9%, var(--card)); }
+.fv-chosen b { flex: 1; min-inline-size: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fv-chosen .btn { flex: none; min-block-size: 34px; border-radius: 999px; }
+.fv-related > p.small { margin: 0; }
+.fv-rel-out:empty { display: none; }
+.fv-rel-out > p { margin: 0; }
+.fv-rel-out > div { display: grid; gap: 6px; padding: 12px 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--olive) 35%, var(--line));
+  background: color-mix(in srgb, var(--olive) 9%, var(--card)); }
+.fv-rel-out .fv-rel-name { margin: 0; }
+.fv-rel-out .fv-rel-path { padding-inline-start: 0; list-style: none; gap: 4px 6px; align-items: center; }
+.fv-rel-out .fv-rel-path li { display: inline-flex; align-items: center; gap: 6px; }
+.fv-rel-out .fv-rel-path li + li::before { content: "‹" / ""; color: var(--line-strong); font-size: 1.1em; }   /* the path reads from one to the other */

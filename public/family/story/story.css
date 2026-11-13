@@ -1,0 +1,171 @@
+/* הסיפור המשפחתי, "המוזיאון החי" (docs/vision/story.md), design, 2026-11-13.
+   A hall in the Ohel style: a plaque at the door, the collection along one corridor (a rail on the inline-start side with
+   the eras, people or places as stops on it), each item a card with its kind's colour and icon, and a calm, respectful
+   card for an item about someone who has died (.st-quiet, like the tree's passed leaf). The recorder is the warm centre:
+   a big round microphone, the live wave under it, the time.
+   The markup is story.js (ai-features): main.st > .st-head, .st-add, p.st-storage, .tabs.st-views, input.st-search,
+   section.st-list > h2.st-group + article.card.st-item[data-kind]; the forms are .st-form inside H.modal.
+   The add buttons carry no kind, so their icons go by order: ראיון מודרך, סיפור, הקלטה, הקראה, תמונה, מסמך
+   (a [data-kind] on a button wins, if story.js adds one later). Icons: /assets/story/*.svg, 24px line, used as masks. */
+
+main.st { --rail: 2px; padding-block-start: 8px; }
+
+/* each kind: its colour (--k) and icon (--ki); the colours come from the page's own tokens, so palettes and dark follow */
+.st-item, .st-add .btn { --k: var(--primary); }
+.st-item[data-kind="story"]     { --k: var(--soil);  --ki: url(/assets/story/story.svg); }
+.st-item[data-kind="recording"] { --k: var(--primary); --ki: url(/assets/story/recording.svg); }
+.st-item[data-kind="reading"]   { --k: color-mix(in srgb, var(--olive) 70%, var(--soil)); --ki: url(/assets/story/reading.svg); }
+.st-item[data-kind="photo"]     { --k: color-mix(in srgb, var(--soil) 55%, #b4532c); --ki: url(/assets/story/photo.svg); }
+.st-item[data-kind="doc"]       { --k: var(--muted); --ki: url(/assets/story/doc.svg); }
+
+/* ── the door: the plaque ── */
+.st-head { display: grid; gap: 4px; justify-items: start; padding-block: 18px 16px; margin-block-end: 6px;
+  border-block-end: 3px double var(--line-strong); }
+.st-head h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2.2vw, 2.3rem); line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
+.st-head p { margin: 0; max-inline-size: 52ch; line-height: 1.5; }
+.st-head .btn { margin-block-start: 8px; }
+
+/* ── adding: the interview first and wide, then the five kinds as small tiles ── */
+.st-add { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-block: 16px 10px; }
+.st-add .btn { flex-direction: column; justify-content: center; gap: 6px; min-block-size: 76px; padding: 10px 6px; white-space: normal; text-align: center;
+  font-size: .92rem; line-height: 1.2; background: var(--card); border-color: var(--line); color: var(--text); }
+.st-add .btn::before { content: ""; inline-size: 24px; block-size: 24px; flex: none; background: color-mix(in srgb, var(--k) 78%, var(--text));
+  -webkit-mask: var(--ki) center / contain no-repeat; mask: var(--ki) center / contain no-repeat; }
+.st-add .btn.primary { grid-column: 1 / -1; flex-direction: row; min-block-size: 56px; font-size: 1.05rem; background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+.st-add .btn.primary::before { background: currentColor; }
+.st-add > :nth-child(1) { --ki: url(/assets/story/interview.svg); }
+.st-add > :nth-child(2) { --k: var(--soil); --ki: url(/assets/story/story.svg); }
+.st-add > :nth-child(3) { --k: var(--primary); --ki: url(/assets/story/recording.svg); }
+.st-add > :nth-child(4) { --k: color-mix(in srgb, var(--olive) 70%, var(--soil)); --ki: url(/assets/story/reading.svg); }
+.st-add > :nth-child(5) { --k: color-mix(in srgb, var(--soil) 55%, #b4532c); --ki: url(/assets/story/photo.svg); }
+.st-add > :nth-child(6) { --k: var(--muted); --ki: url(/assets/story/doc.svg); }
+.st-add .btn[data-kind="story"] { --k: var(--soil); --ki: url(/assets/story/story.svg); }
+.st-add .btn[data-kind="recording"] { --k: var(--primary); --ki: url(/assets/story/recording.svg); }
+.st-add .btn[data-kind="reading"] { --k: color-mix(in srgb, var(--olive) 70%, var(--soil)); --ki: url(/assets/story/reading.svg); }
+.st-add .btn[data-kind="photo"] { --k: color-mix(in srgb, var(--soil) 55%, #b4532c); --ki: url(/assets/story/photo.svg); }
+.st-add .btn[data-kind="doc"] { --k: var(--muted); --ki: url(/assets/story/doc.svg); }
+@media (hover: hover) { .st-add .btn:not(.primary):not(:disabled):hover { border-color: var(--k); color: var(--text); background: color-mix(in srgb, var(--k) 7%, var(--card)); } }
+.st-add .btn:focus-visible, .st-view:focus-visible, .st-item :is(.btn, .chip, .mini):focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+@media (max-width: 520px) { .st-add .btn:not(.primary) { min-block-size: 66px; padding: 8px 2px; font-size: .84rem; } }
+@media (max-width: 340px) { .st-add { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* ── the house's room: a quiet line and a thin meter; when full, a calm notice ── */
+.st-storage { display: grid; gap: 6px; margin-block: 4px 6px; color: var(--muted); font-size: .84rem; }
+.st-storage meter { inline-size: 100%; block-size: 6px; border: 0; border-radius: 99px; background: color-mix(in srgb, var(--muted) 18%, transparent); }
+.st-storage meter::-webkit-meter-bar { border: 0; border-radius: 99px; background: color-mix(in srgb, var(--muted) 18%, transparent); block-size: 6px; }
+.st-storage meter::-webkit-meter-optimum-value { border-radius: 99px; background: var(--primary); }
+.st-storage meter::-moz-meter-bar { border-radius: 99px; background: var(--primary); }
+.st-storage.full { padding: 12px 14px; border-radius: var(--radius); color: var(--text); font-size: .9rem; line-height: 1.5;
+  background: color-mix(in srgb, var(--olive) 12%, var(--card)); border: 1px solid var(--line); border-inline-start: 3px solid var(--olive); }
+.st-storage.full meter::-webkit-meter-optimum-value, .st-storage.full meter::-webkit-meter-suboptimum-value, .st-storage.full meter::-webkit-meter-even-less-good-value { background: var(--olive); }
+.st-storage.full meter::-moz-meter-bar { background: var(--olive); }
+
+/* ── the ways through the hall, and the search ── */
+.st-views { gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.st-views::-webkit-scrollbar { display: none; }
+.st-views .st-view { padding: 10px 14px; min-block-size: 44px; white-space: nowrap; border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color var(--dur-quick) var(--ease-river), background-color var(--dur-quick) var(--ease-river); }
+@media (hover: hover) { .st-views .st-view:hover { color: var(--text); background: color-mix(in srgb, var(--primary) 6%, transparent); } }
+.st-views .st-view[aria-selected="true"]::after { inset-inline: 10px; border-radius: 2px 2px 0 0; block-size: 3px; }
+.st-search { display: block; inline-size: 100%; margin-block: 14px 4px; }
+
+/* ── the corridor: a rail with the stops (era, person, place) and the items hanging along it ── */
+.st-list { position: relative; display: grid; gap: 12px; padding-block: 6px 12px; padding-inline-start: 22px; margin-block-start: 8px; }
+.st-list::before { content: ""; position: absolute; inset-block: 18px 0; inset-inline-start: 6px; inline-size: var(--rail);
+  background: linear-gradient(to bottom, var(--line-strong), color-mix(in srgb, var(--line-strong) 20%, transparent)); border-radius: 2px; }
+.st-list > .notice, .st-list > p.muted { margin: 4px 0; }
+.st-list:has(> .notice)::before, .st-list:has(> p.muted:only-child)::before { display: none; }
+.st-list:has(> .notice), .st-list:has(> p.muted:only-child) { padding-inline-start: 0; }
+.st-group { position: relative; margin: 14px 0 0; font-size: 1.12rem; font-weight: 600; color: var(--text); letter-spacing: .01em; text-wrap: balance; }
+.st-group:first-child { margin-block-start: 2px; }
+.st-group::before { content: ""; position: absolute; inset-inline-start: -22px; inset-block-start: .3em; inline-size: 14px; block-size: 14px; border-radius: 50%;
+  background: var(--bg); border: 3px solid var(--primary); box-sizing: border-box; }
+
+/* ── an item ── */
+.st-item { position: relative; margin: 0; padding: 14px 16px 14px; display: grid; gap: 6px; min-inline-size: 0;
+  border-inline-start: 3px solid var(--k); transition: border-color var(--dur-quick) var(--ease-river), box-shadow var(--dur-quick) var(--ease-river); }
+.st-item::before { content: ""; position: absolute; inset-inline-start: -19px; inset-block-start: 22px; inline-size: 14px; block-size: var(--rail); background: var(--line-strong); }
+@media (hover: hover) { .st-item:not(.st-quiet):hover { box-shadow: var(--lift); } }
+.st-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-inline-size: 0; font-size: .84rem; }
+.st-item-head .muted { white-space: nowrap; }
+.st-kind { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  color: color-mix(in srgb, var(--k) 50%, var(--text)); background: color-mix(in srgb, var(--k) 13%, var(--card)); }
+.st-kind::before { content: ""; inline-size: 15px; block-size: 15px; flex: none; background: currentColor;
+  -webkit-mask: var(--ki) center / contain no-repeat; mask: var(--ki) center / contain no-repeat; }
+.st-level { padding: 1px 8px; border-radius: 999px; font-size: .76rem; color: var(--muted); border: 1px dashed var(--line-strong); }
+.st-item-head .mini { margin-inline-start: auto; inline-size: 40px; block-size: 40px; margin-block: -6px; margin-inline-end: -8px; font-size: 1.05rem; }
+.st-item h3 { margin: 2px 0 0; font-size: 1.12rem; line-height: 1.3; overflow-wrap: anywhere; text-wrap: balance; }
+.st-text { margin: 0; line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; color: color-mix(in srgb, var(--text) 88%, var(--muted));
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+.st-media { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-inline-size: 0; }
+.st-media:empty { display: none; }
+.st-media .btn { border-color: var(--line-strong); background: var(--card); padding: 8px 14px; min-block-size: 44px; }
+.st-media .btn::before { content: ""; inline-size: 18px; block-size: 18px; background: currentColor;
+  -webkit-mask: var(--ki) center / contain no-repeat; mask: var(--ki) center / contain no-repeat; }
+@media (hover: hover) { .st-media .btn:hover { border-color: var(--k); } }
+.st-media audio { inline-size: 100%; max-inline-size: 520px; block-size: 44px; }
+/* a photo or a scanned page hangs like a museum print: a mat around it, a thin frame */
+.st-img { display: block; max-inline-size: 100%; max-block-size: 70dvh; inline-size: auto; block-size: auto; object-fit: contain; box-sizing: border-box;
+  padding: 8px; border-radius: 6px; background: color-mix(in srgb, var(--bg) 70%, var(--card)); border: 1px solid var(--line-strong); box-shadow: 0 2px 10px rgba(46, 42, 30, .1); }
+.st-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-block-start: 2px; }
+.st-tags .chip { padding: 4px 11px; font-size: .84rem; text-decoration: none; min-block-size: 32px; display: inline-flex; align-items: center; }
+/* someone this viewer may not see: an empty, dashed place, not a name */
+.st-tags .st-gap { inline-size: 3.2em; cursor: default; border-style: dashed; background: transparent; }
+.st-tags .st-gap:hover { border-color: var(--line-strong); }
+
+/* ── about someone who has died: calm and respectful, as the tree's passed leaf: the soil tone, a still card, the photo softened ── */
+.st-item.st-quiet { --k: #8a6a4c; background: color-mix(in srgb, #8a6a4c 5%, var(--card)); transition: none; }
+.st-quiet .st-kind { color: color-mix(in srgb, #8a6a4c 60%, var(--text)); background: color-mix(in srgb, #8a6a4c 12%, var(--card)); }
+.st-quiet .st-img { filter: grayscale(.35) sepia(.2); }
+.st-quiet h3 { font-weight: 500; }
+
+/* ── the forms (inside H.modal) ── */
+/* on a phone the window is opaque everywhere it can be a sheet (below 900 px), so the hall under it never shows through the form */
+@media (max-width: 899px) { .modal-glass:has(.st-form) { background: var(--card); backdrop-filter: none; -webkit-backdrop-filter: none; } }
+.st-form { display: grid; gap: 2px; min-inline-size: 0; }
+.st-form > h2 { margin: 0 0 6px; padding-inline-end: 44px; font-size: 1.3rem; }
+.st-form .field { margin-block: 8px; min-inline-size: 0; }
+.st-form .field :is(input:not([type="file"]), select, textarea) { inline-size: 100%; box-sizing: border-box; }
+.st-form input[type="file"] { max-inline-size: 100%; font: inherit; font-size: .9rem; color: var(--muted); }
+.st-form input[type="file"]::file-selector-button { font: inherit; font-size: .9rem; margin-inline-end: 10px; padding: 8px 14px; border-radius: var(--radius);
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--text); cursor: pointer; }
+.st-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+@media (max-width: 520px) { .st-two { grid-template-columns: minmax(0, 1fr); } }
+.st-people { display: flex; flex-wrap: wrap; gap: 6px; max-block-size: 180px; overflow-y: auto; padding: 2px; }
+.st-people .chip { min-block-size: 36px; }
+.st-form .hint:empty { display: none; }
+.st-form .hint { color: var(--primary); font-weight: 500; }
+.st-form > .row { margin-block-start: 12px; }
+.st-form > .row .btn.primary { min-block-size: 46px; }
+@media (max-width: 520px) { .st-form > .row .btn.primary { flex: 1 1 auto; justify-content: center; } }
+.st-form > p.muted { margin: 4px 0 0; font-size: .86rem; }
+
+/* the interview's question: big and warm, like a card handed across the table */
+.st-question { margin: 6px 0 4px; padding: 16px 18px; border-radius: var(--radius); font-size: clamp(1.25rem, 1.05rem + 1vw, 1.55rem); font-weight: 500;
+  line-height: 1.35; text-wrap: balance; background: color-mix(in srgb, var(--olive) 14%, var(--card)); border-inline-start: 4px solid var(--olive); }
+.st-question:empty { display: none; }
+
+/* ── the recorder: a big microphone, the live wave, the time ── */
+.st-rec { display: grid; justify-items: center; gap: 10px; padding: 20px 14px 14px; margin-block: 8px; border-radius: var(--radius-lg);
+  background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--primary) 10%, var(--card)), var(--card) 70%); border: 1px solid var(--line); }
+.st-mic { position: relative; inline-size: 92px; block-size: 92px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+  background: var(--primary); color: var(--primary-ink); box-shadow: 0 6px 18px color-mix(in srgb, var(--primary) 35%, transparent);
+  transition: transform var(--dur-press, 120ms) var(--ease-river), background-color var(--dur-quick) var(--ease-river); }
+.st-mic svg, .st-mic .ic { inline-size: 38px; block-size: 38px; }
+.st-mic:active { transform: scale(.96); }
+.st-mic:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 4px; }
+/* recording: the warm red, and a slow ring breathing out of it */
+.st-mic.on { background: #c2412d; color: #fff; box-shadow: 0 6px 18px rgba(194, 65, 45, .35); }
+.st-mic.on::after { content: ""; position: absolute; inset: -6px; border-radius: 50%; border: 3px solid rgba(194, 65, 45, .55); animation: st-ring 1.6s ease-out infinite; pointer-events: none; }
+@keyframes st-ring { from { transform: scale(.94); opacity: .9; } to { transform: scale(1.28); opacity: 0; } }
+.st-wave { display: block; inline-size: 100%; max-inline-size: 100%; block-size: 64px; }
+.st-time { font-size: 1.3rem; font-weight: 500; font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; color: var(--muted); }
+.st-rec:has(.st-mic.on) .st-time { color: #c2412d; }
+:root[data-theme="dark"] .st-rec:has(.st-mic.on) .st-time { color: #f08a72; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st-rec:has(.st-mic.on) .st-time { color: #f08a72; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .st-mic.on::after { animation: none; transform: scale(1.12); opacity: .6; }
+  .st-item, .st-mic, .st-views .st-view { transition: none; }
+}
+:root[data-motion="reduce"] .st-mic.on::after { animation: none; transform: scale(1.12); opacity: .6; }

@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set from the logo, the tree smoother while scrolling)._
+_Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
 - **Live in main (v91):**
@@ -21,6 +21,11 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
 - **Ready to merge: the app icon from the owner's logo** (`public/assets/icons/ohel-*`, `docs/design/make-ohel-icons.mjs`): limestone tile, basalt ink,
   any + maskable, 16/32/48/180/192/512, `ohel-favicon.ico`, `ohel-apple-touch-icon.png`; looked at on a light and a dark ground. The master wires manifest.json and index.html.
   base.css `.brand-mark` now carries the logo's size (26 px, 405.4/159.4), so BRAND's inline style in common.js can go. The bar is checked at 375 and 1280, light and dark.
+- **Ready to merge: the reports look** (bff1c28): `/assets/reports.css` (the report sheet, the menu items, the person's inbox and conversation),
+  admin.css's תיבת פניות (`rx-*`, the `data-bd="reports"` tile), `.mi-dot` on the user chip, icons in `/assets/reports/`. The contract went to ai-features;
+  prototype `docs/design/prototype/reports.html`. Checked at 375 and 1280, light and dark.
+- **Ready to merge: the family story's look** (5dc67a7): `public/family/story/story.css` and `/assets/story/*.svg`, for ai-features' `claude/story-4cc985`;
+  the sheet is opaque below 900 px. Prototype `docs/design/prototype/story.html`. Checked at 375 and 1280, light and dark; not seen with the real page and server.
 - **Ready to merge: the tree smoother while scrolling** (the owner: jumpy). The sway keyframes are plain numbers (no CSS variable), the two big layers hold
   `will-change: transform`, `.tree.off` pauses everything (the JS adds it off screen), and the search switch's knob slides by translate. Not measured on a phone.
 - **Live in main (v99): the owner's tree batch (design's part).** ai-features does the JS to the classes agreed with them.

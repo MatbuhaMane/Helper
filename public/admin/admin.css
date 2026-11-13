@@ -64,7 +64,7 @@
      <div class="bd-panel" id="…" [hidden]><a class="bd-back" href="#">‹ כל החלקים</a> the opened part (its section.card)</div>
    </section>
    The icon and the colours come from data-bd (the icons in /assets/bd-icons/), so the tile needs no markup inside .ic (a line icon
-   put there is hidden for these nine). The page's <main class="wide bd"> takes the room's old .ad rules too (tables, forms). */
+   put there is hidden for these ten, reports included). The page's <main class="wide bd"> takes the room's old .ad rules too (tables, forms). */
 .bd { gap: 22px; }
 .bd-head { display: grid; gap: 4px; text-align: center; padding-block: 6px 0; }
 .bd-head h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); line-height: 1.15; text-wrap: balance; }
@@ -100,11 +100,11 @@
 /* the parts as apps (the toolbox's tiles): each one's colours and line icon from data-bd */
 .bd-apps { padding-block: 6px; inline-size: 100%; max-inline-size: 640px; margin-inline: auto; }   /* as wide as the toolbox: 5 + 4 on a computer, 3 × 3 on a phone */
 .bd-apps .app:is([data-bd="messages"], [data-bd="credits"], [data-bd="gifts"], [data-bd="settings"], [data-bd="members"], [data-bd="features"],
-  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"]) .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
+  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"], [data-bd="reports"]) .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
   -webkit-mask: var(--bd-ic) center / contain no-repeat; mask: var(--bd-ic) center / contain no-repeat; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
 /* only design's icon: a line icon the page put inside the tile is hidden for these nine */
 .bd-apps .app:is([data-bd="messages"], [data-bd="credits"], [data-bd="gifts"], [data-bd="settings"], [data-bd="members"], [data-bd="features"],
-  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"]) .ic > svg { display: none; }
+  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"], [data-bd="reports"]) .ic > svg { display: none; }
 .bd-apps .app[data-bd="messages"]    { --c1: #ffb56e; --c2: #c4621e; --bd-ic: url(/assets/bd-icons/messages.svg); }
 .bd-apps .app[data-bd="credits"]     { --c1: #f2cf5b; --c2: #a3721a; --bd-ic: url(/assets/bd-icons/credits.svg); }
 .bd-apps .app[data-bd="gifts"]       { --c1: #ff9fb8; --c2: #c4476a; --bd-ic: url(/assets/bd-icons/gifts.svg); }
@@ -114,6 +114,7 @@
 .bd-apps .app[data-bd="permissions"] { --c1: #e8a185; --c2: #9a3b2a; --bd-ic: url(/assets/bd-icons/permissions.svg); }
 .bd-apps .app[data-bd="ai"]          { --c1: #7fd6cf; --c2: #1f7f77; --bd-ic: url(/assets/bd-icons/ai.svg); }
 .bd-apps .app[data-bd="log"]         { --c1: #cdb98e; --c2: #77603a; --bd-ic: url(/assets/bd-icons/log.svg); }
+.bd-apps .app[data-bd="reports"]     { --c1: #a9b6f2; --c2: #4a55a8; --bd-ic: url(/assets/bd-icons/reports.svg); }   /* תיבת פניות, beside the announcement */
 /* a count of new things on a part (new requests, members waiting): a small red dot with the number */
 .bd-count { position: absolute; inset-block-start: -6px; inset-inline-end: 6px; min-inline-size: 22px; block-size: 22px; padding: 0 6px; border-radius: 999px;
   display: grid; place-items: center; font-size: .76rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #fff; background: #c2412d;
@@ -129,3 +130,71 @@
 .bd-back:hover { color: var(--primary); }
 @keyframes bd-open { from { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .bd-panel { animation: none; } }
+
+/* ── תיבת פניות – the reports inbox (the owner, 2026-11-13), a part of the back door (data-bd="reports"). The bubbles and the reply
+   box (.rm-*) are /assets/reports.css, which admin.js loads too. On a computer the list and the open thread stand side by side;
+   on a phone one at a time: data-view="thread" on .rx shows the thread, and its .rx-back returns to the list.
+   <div class="rx" [data-view="thread"]>
+     <div class="rx-side">
+       <div class="rx-filters" role="group" aria-label="סינון"><button aria-pressed="true">הכל</button><button aria-pressed="false">חדשות <span>3</span></button>
+         <button aria-pressed="false">בטיפול</button><button aria-pressed="false">טופלו</button></div>
+       <ul class="rx-list"><li><button class="rx-row [unread] [done]" type="button" [aria-current="true"]>
+           <span class="rx-face">דל</span>                                   (initials, or an <img>)
+           <span class="rx-name">דנה לוי</span><time class="rx-when">10:42</time>
+           <span class="rx-snip">הכפתור של הוספה לרשימה לא נלחץ בטלפון…</span>
+           <span class="rx-tags"><span class="rx-tag">רשימת קניות</span><span class="rx-tag shot">צילום</span>[<span class="rx-tag">דרך העוזר</span>]</span>
+         </button></li> …</ul>
+       <p class="rx-empty">אין פניות כאן.</p></div>
+     <section class="rx-thread card">
+       <header class="rx-thead"><button class="rx-back" type="button">‹ כל הפניות</button>
+         <div class="rx-who"><b>דנה לוי</b><small>טלפון · רשימת קניות · אתמול 10:42</small></div>
+         <div class="rx-state" role="group" aria-label="מצב"><button aria-pressed="false">חדשה</button><button aria-pressed="true">בטיפול</button><button aria-pressed="false">טופלה</button></div></header>
+       <div class="rm-thread">…</div> <form class="rm-reply">…</form>
+       <p class="rx-pick">בחרו פנייה מהרשימה.</p>                          (when nothing is open)
+     </section></div> */
+.rx { display: grid; gap: 14px; align-items: start; min-inline-size: 0; }
+.rx > * { min-inline-size: 0; }
+@media (min-width: 900px) { .rx { grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); } }
+@media (max-width: 899px) { .rx[data-view="thread"] > .rx-side, .rx:not([data-view="thread"]) > .rx-thread { display: none; } }
+.rx-side { display: grid; gap: 10px; }
+.rx-filters, .rx-state { display: flex; flex-wrap: wrap; gap: 6px; }
+.rx-filters button, .rx-state button { font: inherit; font-size: .86rem; min-block-size: 36px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+.rx-filters button span { min-inline-size: 20px; block-size: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
+  color: #fff; background: #c2412d; font-variant-numeric: tabular-nums; }
+.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.rx-filters button:focus-visible, .rx-state button:focus-visible, .rx-row:focus-visible, .rx-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.rx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+@media (min-width: 900px) { .rx-list { max-block-size: min(70dvh, 720px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; } }
+.rx-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; inline-size: 100%; padding: 10px 12px;
+  text-align: start; font: inherit; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 14px; cursor: pointer; }
+.rx-face { grid-row: span 3; align-self: start; inline-size: 40px; block-size: 40px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+  font-size: .86rem; font-weight: 700; background: color-mix(in srgb, var(--soil) 22%, var(--card)); color: color-mix(in srgb, var(--soil) 55%, var(--text)); }
+.rx-face img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.rx-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rx-when { color: var(--muted); font-size: .78rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.rx-snip { grid-column: 2 / -1; color: var(--muted); font-size: .88rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.rx-tags { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px; margin-block-start: 4px; }
+.rx-tag { padding: 0 8px; border-radius: 999px; font-size: .74rem; line-height: 1.7; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); }
+.rx-tag.shot { display: inline-flex; align-items: center; gap: 4px; }
+.rx-tag.shot::before { content: ""; inline-size: 12px; block-size: 12px; background: currentColor;
+  -webkit-mask: url(/assets/reports/camera.svg) center / contain no-repeat; mask: url(/assets/reports/camera.svg) center / contain no-repeat; }
+.rx-row.unread { border-inline-start: 4px solid var(--primary); }
+.rx-row.unread .rx-name { font-weight: 700; }
+.rx-row.unread .rx-when { color: var(--primary); font-weight: 600; }
+.rx-row.done { opacity: .62; }
+.rx-row[aria-current="true"] { background: color-mix(in srgb, var(--primary) 11%, var(--card)); border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); opacity: 1; }
+@media (hover: hover) { .rx-row:hover { border-color: var(--primary); } }
+.rx-empty { margin: 0; padding: 22px 12px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 14px; }
+.rx-list:not(:empty) ~ .rx-empty { display: none; }
+.rx-thread { display: grid; gap: 12px; margin: 0; min-inline-size: 0; }
+.rx-thead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding-block-end: 10px; border-block-end: 1px solid var(--line); }
+.rx-back { grid-column: 1 / -1; justify-self: start; font: inherit; font-size: .92rem; color: var(--muted); background: none; border: 0; padding: 6px 2px; min-block-size: 36px; cursor: pointer; }
+@media (min-width: 900px) { .rx-back { display: none; } }
+.rx-who { display: grid; gap: 1px; min-inline-size: 0; }
+.rx-who b { font-size: 1.08rem; }
+.rx-who small { color: var(--muted); font-size: .84rem; }
+@media (max-width: 520px) { .rx-thead { grid-template-columns: minmax(0, 1fr); } }
+.rx-state button[aria-pressed="true"]:first-child { background: #c2412d; border-color: #c2412d; }   /* חדשה */
+.rx-thread:has(.rm-thread) .rx-pick { display: none; }
+.rx-pick { margin: 0; padding: 40px 12px; text-align: center; color: var(--muted); }

@@ -31,6 +31,11 @@ eq('a zero price is refused for credits (a setting error, never free by mistake)
 eq('a negative price is refused', F.decide({ ...base, priceUsd: -1 }), { ok: false, error: 'not_enough_credit' });
 ok('the seven paid figures', ['maryshelley', 'leonardo', 'cleopatra', 'dracula', 'magician', 'astronomer', 'doll'].every(F.isPaid) && F.PAID.length === 7);
 
+eq("a special figure costs the special price", F.priceIlsOf("magician", 10, 20), 20);
+eq("the doll is special", F.priceIlsOf("doll", 10, 20), 20);
+eq("a usual paid figure costs the usual price", F.priceIlsOf("cleopatra", 10, 20), 10);
+ok("every special figure is paid", F.SPECIAL.every(F.isPaid));
+
 /* ---- the birth year, and who is a child ---- */
 const now = Date.UTC(2026, 10, 13);
 eq('no year', F.birthYear(null, now), null);

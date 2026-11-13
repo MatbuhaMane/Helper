@@ -86,6 +86,12 @@ Vision decided that the names, the dates and the look are set with a source or p
 - It shows instead of the app, over everything.
 - During it there are no notifications and nothing is sent, except an emergency.
 
+### The switch
+- Put `.shb` as a direct child of `<body>` and set `data-shabbat` on `<html>`.
+- The CSS then hides everything else on the page (visibility, so screen readers skip it too), toasts included, and stops the page behind from scrolling.
+- The emergency sent screen (`.sos-screen`, also a direct child of `<body>`) still comes over it.
+- At havdalah, remove the attribute and the screen.
+
 ### The markup
 ```html
 <div class="shb" role="dialog" aria-modal="true" aria-labelledby="shb-h"><div class="shb-in">
@@ -147,6 +153,26 @@ Vision decided that the names, the dates and the look are set with a source or p
   </div>
 </section>
 ```
+
+### From `GET /api/digest` (`{items:[{kind,title,body,url,created_at}]}`)
+This card replaces the `H.modal` with `ul.digest`; it sits in the page and does not cover it. Sort each item by its `kind`:
+- **A row in "היום"**, for something happening today. The row is `<li><a href="{url}"><span class="dsum-ic" style="--c:…">(icon)</span><span class="dsum-txt"><b>{title}</b><small>{body}</small></span><span class="dsum-when">{HH:MM}</span></a></li>`.
+  - `.dsum-when` only when the item has a time of day, as `16:21`. Leave out `<small>` when there is no body.
+  - Kinds, with colour and icon:
+
+    | kind | colour | icon |
+    |---|---|---|
+    | birthday | `#b8457a` | cake |
+    | gathering | `#2a7fa8` | gather |
+    | candles | `#b07a1e` | candles |
+    | memorial | `#6b6a75` | candles |
+    | reminder, and any unknown kind | `#3b6634` | bell |
+- **A chip in "מאז הסיכום הקודם"**, for new content (recipe, photo, message, song, note).
+  - Count the items of each kind into one chip: `<li><a href="(the tool)">(icon)<span><b>{n}</b> {words}</span></a></li>`.
+  - The kinds and words: recipe "מתכונים חדשים" (book), photo "תמונות באלבום" (photo), message "הודעות בקבוצה" (chat), song "שירים בשירון" (music), note "פתקים" (H.icon('note')).
+  - With one item, use the singular: "מתכון חדש", "תמונה", "הודעה", "שיר", "פתק".
+- Leave out a section that has nothing. With neither, use the quiet day below, or no card at all.
+- The date line under the title is the Hebrew date, as the greeting writes it.
 
 **"היום"**
 - At most three rows; the rest go behind `.dsum-more`.

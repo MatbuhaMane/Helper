@@ -479,6 +479,7 @@ route('GET', '/api/weather', weather.get);
 /* discovery (ai-features, server/discover.ts): which tools a person has found – the home page's count, the "סייר" badge */
 route('POST', '/api/visits', discovery.visit);
 route('GET', '/api/discover', discovery.discover);
+route('POST', '/api/welcome/done', discovery.welcomed);
 
 /* the owner's room, the family batch (ai-features, server/admin.ts): usage from tool_visits, and the feedback inbox */
 route('GET', '/api/admin/usage', admin.usage);

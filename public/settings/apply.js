@@ -80,7 +80,9 @@
           if (!j.fresh) return;
           dispatchEvent(new CustomEvent('helper:discovered', { detail: j }));
           if (j.badge === 'scout') H.toast?.(`קיבלת badge חדש: סייר. גילית ${j.found} מתוך ${j.total} כלים`);
-          else if (j.found) H.toast?.(`כלי חדש! גילית ${j.found} מתוך ${j.total} כלים`);
+          else if (j.found) H.toast?.(`כלי חדש ו-badge חדש! גילית ${j.found} מתוך ${j.total} כלים`);
+          // a badge earned: design's small celebration (stars and a ring, nothing with reduced motion)
+          if (j.badges?.length) H.loadOnce?.('/assets/celebrate.js').then(() => window.Celebrate?.at({ x: innerWidth / 2, y: innerHeight / 3 }, { label: 'badge חדש!' })).catch(() => {});
         }).catch(() => { /* offline: next time */ });
     }
   } catch (_) { /* no storage: nothing to note */ }

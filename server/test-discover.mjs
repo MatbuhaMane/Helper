@@ -32,5 +32,10 @@ eq('the scout', D.progress([...some, D.TOOLS[D.SCOUT_AT - 1].id]).scout, true);
 eq('an unknown id does not count', D.progress(['nope', 'news']).found, 1);
 eq('each tool says whether it was found', D.progress(['news']).tools.find((t) => t.id === 'news').found, true);
 
+/* ---- a badge for every tool ---- */
+eq('a badge per tool, settings left out', D.TOOL_BADGES.length, D.TOOLS.length - 1);
+eq('the badge of a tool', D.TOOL_BADGES.find((b) => b.id === D.toolBadge('news'))?.group, 'tools');
+eq('no settings badge', D.TOOL_BADGES.some((b) => b.id === D.toolBadge('settings')), false);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

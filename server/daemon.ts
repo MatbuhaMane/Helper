@@ -438,8 +438,18 @@ export async function getDaemon(ctx: Ctx) {
 async function ownersFamily(ctx: Ctx, u: Member) {
   const owners = (ctx.env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
   if (owners.includes(u.email)) return true;
+  // the owner's family by name: a brother or a sister in a home of their own (the secret OWNERS_FAMILY, comma separated, never in the repo)
+  const kin = ((ctx.env as unknown as Record<string, string | undefined>).OWNERS_FAMILY || '').toLowerCase().split(',').map((s) => s.trim());
+  if (kin.includes(u.email)) return true;
   if (!owners.length) return false;
-  return !!(await ctx.env.DB.prepare(`SELECT 1 FROM members WHERE household = ? AND email IN (${owners.map(() => '?').join(',')}) LIMIT 1`).bind(u.household, ...owners).first());
+  // the owner's household, a role named in it (a brother who heads his own home), or a confirmed bridge between the two trees
+  const q = owners.map(() => '?').join(',');
+  try { return !!(await ctx.env.DB.prepare(`WITH oh AS (SELECT household FROM members WHERE email IN (${q}))
+    SELECT 1 WHERE ? IN (SELECT household FROM oh)
+      OR EXISTS (SELECT 1 FROM family_roles WHERE email = ? AND household IN (SELECT household FROM oh))
+      OR EXISTS (SELECT 1 FROM family_bridges WHERE status = 'confirmed' AND ((house_a = ? AND house_b IN (SELECT household FROM oh)) OR (house_b = ? AND house_a IN (SELECT household FROM oh))))`)
+    .bind(...owners, u.household, u.email, u.household, u.household).first()); }
+  catch { return !!(await ctx.env.DB.prepare(`SELECT 1 FROM members WHERE household = ? AND email IN (${q}) LIMIT 1`).bind(u.household, ...owners).first()); }   // a table not created yet
 }
 
 /** "Forget our conversation" (keeps the name, shape and memory notes). */

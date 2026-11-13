@@ -230,6 +230,26 @@ main.wide { max-width: 1200px; }
 .rp-alert:focus-visible { outline: 3px solid color-mix(in srgb, var(--alert, #cc5a46) 55%, transparent); outline-offset: -3px; }
 .rp-alert[hidden] { display: none; }
 @media (prefers-reduced-motion: reduce) { .rp-alert::after { transition: none; } }
+/* ── The messages inbox in the top bar (the owner, 2026-11-13): beside the triangle and the settings chip, it opens /messages/.
+   <button class="dm-inbox" type="button" aria-label="הודעות"></button>  (dm.js, ai-features; empty: the envelope is drawn here)
+   and, while a conversation waits, <span class="dm-dot" aria-hidden="true"></span> inside it.
+   The triangle's twin: the same 44×44 target, a 24px line icon at the same weight (bd-icons/envelope.svg, stroke 1.9), no circle,
+   in the text's ink (the triangle alone keeps the red); the vine on hover like the chip. The two icons sit a little closer to
+   each other than to the chip, so they read as one pair. The unread dot rides the envelope's corner. */
+.dm-inbox { position: relative; display: inline-grid; place-items: center; flex: none; inline-size: 44px; block-size: 44px; margin-block: -4px; margin-inline: -2px;
+  padding: 0; border: 0; border-radius: 50%; background: none; color: var(--text); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.dm-inbox::after { content: ""; inline-size: 24px; block-size: 24px; background: currentColor; transition: scale var(--dur-quick, .15s) ease;
+  -webkit-mask: url(/assets/bd-icons/envelope.svg) center / contain no-repeat; mask: url(/assets/bd-icons/envelope.svg) center / contain no-repeat; }
+.dm-inbox > :is(svg, .icon) { display: none; }
+@media (hover: hover) { .dm-inbox:hover { color: var(--primary); } .dm-inbox:hover::after { scale: 1.1; } }
+.dm-inbox:active::after { scale: .92; }
+.dm-inbox[aria-current="page"] { color: var(--primary); }
+.dm-inbox:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: -3px; }
+.dm-inbox[hidden] { display: none; }
+.dm-inbox > .dm-dot { inset-block-start: 9px; inset-block-end: auto; inset-inline-end: 6px; inline-size: 10px; block-size: 10px; }
+.appbar :is(.rp-alert, .dm-inbox) + :is(.rp-alert, .dm-inbox) { margin-inline-start: -12px; }
+@media (max-width: 899px) { .appbar :is(.rp-alert, .dm-inbox) + :is(.rp-alert, .dm-inbox) { margin-inline-start: -8px; } }
+@media (prefers-reduced-motion: reduce) { .dm-inbox::after { transition: none; } }
 /* Light / dark switch: a little pill, the sun on one side and the moon on the other, a knob that slides between them. */
 .theme-switch { position: relative; inline-size: 58px; block-size: 30px; flex-shrink: 0; border-radius: 999px; border: 1px solid var(--line-strong); padding: 0; cursor: pointer;
   background: linear-gradient(90deg, #f6d37a, #f2b36b); display: flex; align-items: center; justify-content: space-between; padding-inline: 7px; transition: background .4s var(--ease-river); }

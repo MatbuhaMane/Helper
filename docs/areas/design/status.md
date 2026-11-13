@@ -5,6 +5,10 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready to merge: the messages inbox in the top bar (v125, main merged in):** `.dm-inbox` in base.css with `bd-icons/envelope.svg`:
+  - the triangle's twin: 44×44, a 24px line envelope at stroke 1.9, no circle, in the text's ink, the vine on hover;
+  - the unread `.dm-dot` sits on the envelope's corner, and the two icons sit a little closer to each other than to the chip;
+  - checked with an injected button on the real bar at 375 and 1280, light and dark: no overflow, contrast 12.3:1 light, 14:1 dark.
 - **Ready to merge: "איפה הבית?" in the welcome (v123, main merged in):**
   - `.wz-place`, `.wz-sugg` and `.wz-home` in welcome.css, plus the icons `bd-icons/pin.svg` and `home.svg`;
   - the list sits under the input, with 44px rows and a pin on each; the chosen row (`aria-selected`) is in the vine;

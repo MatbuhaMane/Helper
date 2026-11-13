@@ -28,7 +28,7 @@ Last update: 2026-11-13.
 
 ## In progress
 
-- **The family tree, spec 1** (`docs/vision/tree.md`): decided, and in the batch queue waiting for "שלח".
+- **The family tree, spec 1** (`docs/vision/tree.md`): decided and sent (batch 9) to design, ai-features and the CEO.
   - A fixed drawn tree, with people as leaves.
   - The play is in the interface only.
   - Quiet and respectful for those who passed away.

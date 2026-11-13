@@ -5,6 +5,12 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: editing and deleting in the family tree (a user's bug, 2026-11-13; the logic is ai-features').**
+  - **The person's panel:** big edit and delete buttons with icons in the header (`.fv-pacts` / `.fv-pact`). At 375 they take their own row, 48px tall.
+  - **Undo for 10 seconds:** `.fv-undo` above the tab bar, with a draining line. The deleted person stays on the tree, faded (`.tr-p.going` / `.fv-card.going`).
+  - **Waiting for approval:** a `.fv-pend` tag, a `.fv-pendbox` with the change (`.fv-diff`, struck old value and new value), and a clock on the leaf (`.tr-p.pending`).
+  - **The approval request:** the `.fv-ask` card with אשר / דחה.
+  - **Sample and checks:** `docs/design/prototype/family-edit.html`. Checked at 375 and 1280, light and dark. All text contrast ≥5.7.
 - **Ready: the look of עץ מבנה (the owner's new back door tab, 2026-11-13).** The logic is ai-features' after the feedback round.
   - **The tree** (admin.css `.st`): rows for parts and tools, with the pillow and the icon. Dragging starts only from the ⠿ grip, so the page still scrolls under a finger. The states are `.away`, `.st-ghost`, `.st-ph`, `.into`, `.no`, `.st-zone.over`, `.held` (keyboard) and `.landed`.
   - **The edit panel** (`.st-panel`): name, description, an icon picker, the 15 pillows (a dot marks a taken one) and colour swatches with "other", over a live preview. It sits beside the tree on a computer and is a bottom sheet on a phone.

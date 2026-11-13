@@ -34,11 +34,17 @@ export function toolOf(path: string): string | null {
 }
 
 /** a badge for every tool, the first time it is opened (the owner: "the first use of a tool" is a first achievement).
-    The names are the tools' own for now: design and vision propose the real ones, in the tent's language, for the owner
-    (round 5). Settings are not a tool badge: finishing the setup earns "נטית את האוהל" (server/discover.ts). */
+    The names in the tent's language, approved by the owner (docs/design/badges-tools.md); the pictures are
+    /assets/badges/tool_<id>.webp. Settings are not a tool badge: finishing the setup earns "נטית את האוהל". */
 export const toolBadge = (id: string) => 'tool_' + id;
+const BADGE_NAMES: Record<string, string> = {
+  family: 'השורשים', gather: 'הכינוס', groceries: 'יום שוק', fridge: 'המזווה', diet: 'המאזניים',
+  restaurants: 'החאן', goals: 'כוכב הצפון', research: 'המגילה', notes: 'לוח החרס', calendar: 'המולד',
+  calc: 'אבני החשבון', weather: 'רוח המדבר', news: 'השמועה', fun: 'ליל סיפורים', songs: 'הכינור',
+  parasha: 'בצל האוהל', mail: 'יונת הדואר', pc: 'הנפחייה',
+};
 export const TOOL_BADGES = TOOLS.filter((t) => t.id !== 'settings')
-  .map((t) => ({ id: toolBadge(t.id), name: t.name, how: `פתחת את ${t.name} בפעם הראשונה`, group: 'tools' as const }));
+  .map((t) => ({ id: toolBadge(t.id), name: BADGE_NAMES[t.id] || t.name, how: `פתחת את ${t.name} בפעם הראשונה`, group: 'tools' as const }));
 
 /** "סייר": found this many of the tools */
 export const SCOUT_AT = 10;

@@ -23,6 +23,14 @@ Last update: 2026-11-13.
   - the calendar comes in whole: 0.6 → 0.005.
 - **The 3D companion** (three.js and a ~3 MB model) loads after the page has loaded, not alongside it.
 - **Design's smooth-motion pass**: the music bar and the mail progress bar grow by transform, not by width.
+- **The name רַאבַּ"ע, with its niqqud everywhere** (the owner's request):
+  - where it changed: the companion, settings, the owner's room, and the prompt (PROMPT_VERSION 11, "always with its
+    niqqud"); names already stored in the database are corrected when loaded;
+  - **the voice**: only the text sent to speech changes to one word, "רַאבַּע", without gershayim
+    (`server/speech-text.ts`, 10 tests). The screen keeps showing רַאבַּ"ע. The browser's fallback voice gets the same.
+  - Checked in the log: the text sent was "שלום, אני רַאבַּע. במה אפשר לעזור?".
+  - One real voice test was made, and the audio came back. **Not checked by ear yet**: there is no transcription in the app.
+    The recording was sent to the owner to listen to.
 
 ## The first measurement (2026-11-13, before the fixes)
 

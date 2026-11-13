@@ -59,6 +59,11 @@ ok(R.checkEdit(brother, { household: 'family', role: 'member' }, OWNERS, 1, HOUS
 const c = R.checkEdit(brother, { newHousehold: ' משפחת   כהן ', role: 'head', confirm: true }, OWNERS, 1, HOUSES);
 ok(c.household === '' && c.newTitle === 'משפחת כהן' && c.role === 'head', 'a new household with its head');
 ok(code(() => R.checkEdit(brother, { newHousehold: '   ', household: 'family', role: 'head', confirm: true }, OWNERS, 1, HOUSES)) === 'title_required', 'a new household needs a name');
+const c2 = R.checkEdit(brother, { newHousehold: 'משפחת האח', confirm: true }, OWNERS, 1, HOUSES);
+ok(c2.household === '' && c2.role === 'head', 'a new household makes its member the head, unasked');
+ok(code(() => R.checkEdit(brother, { newHousehold: 'משפחת האח', role: 'member', confirm: true }, OWNERS, 1, HOUSES)) === 'new_household_head', 'a new household is never without its head');
+ok(R.checkEdit({ ...brother, role: 'head' }, { newHousehold: 'משפחת האח', confirm: true }, OWNERS, 1, HOUSES).role === undefined, 'already a head: no role change');
+ok(code(() => R.checkEdit(owner, { newHousehold: 'בית אחר', confirm: true }, OWNERS, 1, HOUSES)) === 'owner_home_fixed', 'the manager opens no new household');
 ok(R.describe('bro@x.test', c, brother) === 'bro@x.test: role member→head, household family→new:משפחת כהן', 'audit line');
 
 // removing

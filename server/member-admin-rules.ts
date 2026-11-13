@@ -77,6 +77,11 @@ export function checkEdit(t: Target, w: Want, owners: Set<string>, ownerCount: n
     if ((role ?? t.role) === 'owner') throw new RuleError('owner_home_fixed');   // the manager's household is the family's
     c.household = household;
   }
+  // a new household starts empty, with the member who opens it as its head (the CEO, 2026-11-13)
+  if (c.newTitle !== undefined && c.household !== undefined) {
+    if (role !== undefined && role !== 'head') throw new RuleError('new_household_head');
+    if (t.role !== 'head') c.role = 'head';
+  }
 
   if ((c.role !== undefined || c.household !== undefined) && w.confirm !== true) throw new RuleError('confirm_needed');
   return c;

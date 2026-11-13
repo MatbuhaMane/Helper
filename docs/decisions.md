@@ -11,6 +11,76 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – How money is collected: one credits wallet, an Israeli provider, standing orders (business)
+
+**Decision:**
+- **One wallet.** Credits become the one currency for everything sold in the app: AI, paid figures and skins. People buy
+  credit packs; a figure or a skin is bought with credits.
+  - Why: the fixed fee per transaction (about ₪1) takes ~14% of a ₪10 figure paid on its own, and ~4.4% of a ₪50 pack.
+  - This widens business decision 2 (credits go down by `costOf`): AI still goes down by its metered cost, and figures
+    and skins by their price in credits.
+- **Israel: one Israeli payment provider.** Card, Bit, Apple Pay and Google Pay, standing orders for monthly supporters,
+  an automatic receipt for every payment, and a webhook that adds the credits.
+  - Before choosing, get quotes from Grow, Sumit and Cardcom (decision 5 stands; this is how it gets chosen).
+- **Monthly supporters** pay by a standing order on a card, cancellable any time on the site the same way they signed up.
+  Each month adds credits by level.
+- **Abroad, only when there is demand:** a Merchant of Record such as Polar (it pays out to Israel) or Paddle.
+- **The stores (stage 6):** in-app purchase, in the small-business programme (15%).
+- **No GoFundMe** (it does not pay out to Israel) and **no Patreon** for now.
+- **Before the first payment:** a tax file (עוסק פטור while turnover is under ₪122,833 in 2026), receipts, the
+  remote-sale disclosures, terms of use and a privacy policy. It is called "support", not "donation" or "investment".
+- **Skins** are cosmetic variants of figures, about ₪3–5 in credits; holiday skins are free.
+
+**Why:** cheapest for customers in Israel, and the provider handles receipts. The legal points are in
+`docs/business/monetization.md`, marked for an accountant and a lawyer.
+
+**Affects:**
+- **Master:** the provider integration (payment page, standing order, webhook, self-service cancellation), the terms.
+- **ai-features:** buying a figure or a skin with credits, and keeping who owns what on the server.
+- **design:** the purchase page (business details, price, cancellation terms), the skins.
+
+**Status:** Decided (the owner). The provider is chosen after the quotes; the skin price is a draft.
+
+## 2026-11-13 – Recognition and support tracks, titles beside badges (business)
+
+**Decision:** the tracks in `docs/business/founders.md`:
+- **Founding members** (חברים מייסדים): organised a real gathering in the beta with at least 5 confirmed RSVPs.
+  - Four levels by the order in which they qualified: the first 10, up to 50, up to 100, and the rest within the
+    window.
+  - For life: a title, one personal figure, monthly AI credits up to a 3-month ceiling (more for the first levels), a
+    10GB album, and every paid item with no per-use cost (public-domain paid figures and skins, not licensed ones).
+  - The owner approves the list at the end of the window.
+- **The millionth** person to meet that condition gets a unique title, as a surprise.
+  - The count goes on for ever, after the founders' window closes.
+- **Founding supporters** pay once in one window and get free access for life. The value is set later, at the public
+  launch.
+- **Regular supporters** pay monthly in levels (draft: ₪10 / 25 / 50). Each level gets the credits of a pack of the same
+  sum, plus recognition.
+- **Angels** (partners, translators) are chosen by the owner, with benefits only while in the role.
+- **האור לפני המחנה** (the improvement programme): signed up, with explicit consent to send error data, and consistently
+  reporting or helping. Benefits only while active.
+- **A title beside the badges:** one title next to the name, with the badges the user chooses to show. Anyone can hide
+  them. They are shown in the profile, the tree and RSVPs, not in links shared outside.
+- **Accounting:** the free tracks are a marketing cost, like gifted credits (outside 30/30/30/10). Paid tracks are
+  income.
+
+**Why:** thanks to the people who light the fire in the beta, a reason to invest, and bounded costs (no unlimited AI).
+
+**Affects:**
+- **ai-features, now:** from the first real gathering, record the moment each gathering reaches 5 confirmed RSVPs (and
+  its organiser). The order of the founders and the millionth both come from it, and it cannot be rebuilt afterwards.
+- **ai-features, by the end of the beta:**
+  - a track and level per account, titles and badges (owned, shown, hidden);
+  - a monthly top-up of credits up to a ceiling, on the gift mechanism (`ai_credits`, a source per track);
+  - an early-access flag;
+  - lists for approval in the owner's room, and "end of role" for angels.
+- **design:** how a title and badges look beside the name; a "who founded האוהל" page; the 2D personal-figure process,
+  timed.
+- **Master:** what "for life" means, in the terms of use.
+
+**Status:** Decided (the owner). Drafts still open: the level names (עמוד / יתד / חבל), the exact amounts, the
+supporters' levels, and the founding supporters' value.
+
 ## 2026-11-12 – The beta's three months start at the first real gathering (business)
 
 **Decision:** the clock for the three-month beta check (business decision 10) starts on the day the owner sends the first

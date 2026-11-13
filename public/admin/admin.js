@@ -249,9 +249,9 @@
     const line = `${week} מתוך ${d.people.length} נכנסו השבוע` + (d.tools[0] ? ` · הכי בשימוש: ${d.tools[0].name}` : '');
     const fold = el('details', { class: 'ad-fold', open: !!P.usageOpen,
       ontoggle: () => { if (!!P.usageOpen !== fold.open) H.savePrefs('admin', { usageOpen: fold.open }); } },
-      // design: the look is inline for now; please move it to admin.css (.ad-fold > summary, h2 inline, the line after it)
-      el('summary', { style: 'cursor:pointer;min-block-size:44px;align-content:center' }, el('h2', { style: 'display:inline;margin:0' }, 'שימוש'), ' ',
-        el('span', { class: 'muted small', style: 'margin-inline-start:6px' }, line)),
+      // the look: admin.css .ad-fold (the summary a row with a chevron)
+      el('summary', {}, el('h2', {}, 'שימוש'), ' ',
+        el('span', { class: 'muted small' }, line)),
       el('p', { class: 'muted small' }, 'מי נכנס ולאילו כלים. רק איזה כלי ומתי, אף פעם לא מה שבתוכו.'),
       el('h3', {}, 'אנשים'),
       el('div', { style: 'overflow-x:auto' }, el('table', { class: 'ad-table' },
@@ -347,7 +347,7 @@
      listbox, RTL). Used by the members search and by "למשתמש אחד" in the messages. `look(q)` returns the rows (null: a
      newer search won); `row(m)` draws one suggestion; `chosen(m)` gets the pick; `enter()` runs on Enter with nothing
      marked; `short()` when under two letters; `none()` when nothing was found. The look is design's (.ad-combo, and the
-     list: #ad-sugg; the messages' list needs the same rules under the class .ad-sugg, asked of design). */
+     list: .ad-sugg). */
   function combo({ id, label, listLabel, placeholder, look, row, chosen, enter, short, none }) {
     const q = el('input', { type: 'search', placeholder, 'aria-label': label, enterkeyhint: 'search',
       autocomplete: 'off', role: 'combobox', 'aria-expanded': 'false', 'aria-controls': id, 'aria-autocomplete': 'list' });
@@ -609,8 +609,6 @@
       chosen: (m) => { to = m; one.q.value = m.he_name || m.name || m.email; showTo(); },
       short: () => { to = null; showTo(); },
       none: () => { to = null; chosenLine.replaceChildren('לא נמצא חבר.'); } });
-    // until admin.css draws .ad-sugg as it draws #ad-sugg, the second list floats with a few plain rules
-    queueMicrotask(() => { if (getComputedStyle(one.sugg).position !== 'absolute') Object.assign(one.sugg.style, { position: 'absolute', insetInline: '0', insetBlockStart: 'calc(100% + 4px)', zIndex: 'var(--z-menu)', margin: '0', padding: '4px', listStyle: 'none', background: 'var(--card)', border: '1px solid var(--line-strong)', borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow)', maxBlockSize: '18rem', overflowY: 'auto' }); });
     const pickOne = el('div', { hidden: true }, one.wrap, chosenLine);
     const forWhom = el('select', { 'aria-label': 'למי', onchange: () => { pickOne.hidden = forWhom.value !== 'one'; explain(); if (!pickOne.hidden) one.q.focus(); } },
       el('option', { value: 'all' }, 'כל המשתמשים'), el('option', { value: 'one' }, 'למשתמש אחד'));

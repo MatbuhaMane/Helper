@@ -448,6 +448,22 @@ textarea { width: 100%; resize: vertical; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
+/* ---------- moving between the tent's pages: a quiet turn of the page ----------
+   Cross-document View Transitions: the page fades and moves a few pixels the way a Hebrew page turns (the next one
+   arrives from the left), about a fifth of a second. The top bar and the phone's tab bar stay put, as if only the
+   page under them changed. Browsers without it navigate as before; with less motion (the device's or the app's) none. */
+@view-transition { navigation: auto; }
+.appbar { view-transition-name: appbar; }
+.tabbar { view-transition-name: tabbar; }
+::view-transition-group(appbar), ::view-transition-group(tabbar) { animation: none; }
+::view-transition-old(appbar), ::view-transition-old(tabbar), ::view-transition-new(appbar), ::view-transition-new(tabbar) { animation-duration: 120ms; }
+::view-transition-old(root) { animation: page-out 160ms ease-in both; }
+::view-transition-new(root) { animation: page-in var(--dur-quick) var(--ease-river) 40ms both; }
+@keyframes page-out { to { opacity: 0; transform: translateX(6px); } }
+@keyframes page-in { from { opacity: 0; transform: translateX(-6px); } }
+@media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
+:root[data-motion="reduce"]::view-transition-group(*), :root[data-motion="reduce"]::view-transition-old(*), :root[data-motion="reduce"]::view-transition-new(*) { animation: none !important; }
+
 /* ---------- shared bits ---------- */
 .tabs { display: flex; gap: 22px; margin: 18px 0 0; border-block-end: 1px solid var(--line); }
 .tabs button { font: inherit; cursor: pointer; border: 0; background: none; color: var(--muted); padding: 10px 0; position: relative; }

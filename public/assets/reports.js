@@ -13,7 +13,7 @@
   document.head.append(css);
 
   const TEXT_MAX = 1000, SHOT_MAX = 900000;
-  const prefs = H.prefs('reports', { shake: 'auto' });
+  const prefs = H.prefs('reports', { shake: 'auto', coached: 0 });
   const needsAsk = typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function';   // iOS
   const touch = matchMedia('(pointer: coarse)').matches;
   const canShake = typeof DeviceMotionEvent !== 'undefined' && touch;
@@ -292,7 +292,42 @@
     if (!chip || document.querySelector('.rp-alert')) return;
     chip.before(el('button', { class: 'rp-alert', type: 'button', title: 'תקלה או הצעה לשיפור', 'aria-label': 'דיווח על תקלה או הצעה לשיפור', onclick: () => report() }));
   }
-  if (css.sheet) alertButton(); else { css.addEventListener('load', alertButton, { once: true }); css.addEventListener('error', alertButton, { once: true }); }
+  /* The triangle's first showing (the owner approved design's "a gentle arrow along the screen, with a short note"):
+     once per person (prefs reports.coached, on the server, so not again on another device), after the welcome wizard,
+     only while the triangle is on screen and nothing else is open. The look is design's (.rp-coach in reports.css; --x/--y
+     are the triangle's centre). "הבנתי", Escape, a tap on the veil, a resize or a scroll close it; a tap on the
+     triangle itself (26 px around its centre) closes it and opens the sheet. */
+  function coach() {
+    const b = document.querySelector('.rp-alert');
+    if (!b || prefs.coached || !H.prefs('me').welcomed || location.pathname.startsWith('/welcome')) return;
+    const r = b.getBoundingClientRect();
+    const busy = document.body.classList.contains('modal-open') || document.getElementById('modal')?.hidden === false;
+    if (!r.width || r.bottom < 0 || r.top > innerHeight || busy || document.visibilityState !== 'visible' || document.querySelector('.rp-coach')) return;
+    prefs.coached = Date.now(); H.savePrefs('reports');
+    const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+    const ok = el('button', { class: 'btn primary small', type: 'button' }, 'הבנתי');
+    const c = el('div', { class: 'rp-coach' }, el('span', { class: 'rp-coach-line', 'aria-hidden': 'true' }),
+      el('div', { class: 'rp-coach-card', role: 'dialog', 'aria-label': 'המשולש האדום' },
+        el('p', {}, el('b', {}, 'המשולש האדום'), ' מחכה כאן, ליד ההגדרות. משהו לא עובד, או שיש לך רעיון? מקישים עליו.'), ok));
+    c.style.setProperty('--x', x + 'px'); c.style.setProperty('--y', y + 'px');
+    const close = () => {
+      c.remove();
+      removeEventListener('resize', close); removeEventListener('scroll', close, true); removeEventListener('keydown', esc, true);
+    };
+    const esc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); b.focus({ preventScroll: true }); } };
+    ok.onclick = (e) => { e.stopPropagation(); close(); b.focus({ preventScroll: true }); };
+    c.onclick = (e) => {
+      if (e.target.closest('.rp-coach-card')) return;                       // the note itself: only "הבנתי" closes it
+      close();
+      if (Math.hypot(e.clientX - x, e.clientY - y) <= 26) report();         // the tap was on the triangle
+    };
+    document.body.append(c);
+    ok.focus({ preventScroll: true });
+    addEventListener('keydown', esc, true);
+    setTimeout(() => { if (c.isConnected) { addEventListener('resize', close); addEventListener('scroll', close, true); } }, 300);
+  }
+  const ready = () => { alertButton(); setTimeout(coach, 1200); };
+  if (css.sheet) ready(); else { css.addEventListener('load', ready, { once: true }); css.addEventListener('error', alertButton, { once: true }); }
 
   Object.assign(H, { report, myInbox, reportEntries, reportThread, shakeOn, setShake, canShake: () => canShake });
   refreshUnread();

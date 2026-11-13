@@ -33,7 +33,7 @@ const sidHash = async (ctx: Ctx) => {
   return b64u(await crypto.subtle.digest('SHA-256', new TextEncoder().encode('admin-sid:' + sid)));
 };
 /** the owners (OWNER_EMAIL), and the supers they named */
-const owners = (env: Env) => new Set((env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean));
+export const owners = (env: Env) => new Set((env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean));
 async function supers(env: Env): Promise<Set<string>> {
   const { results } = await env.DB.prepare('SELECT email FROM admin_supers').all<{ email: string }>();
   return new Set(results.map((r) => r.email));
@@ -42,7 +42,7 @@ async function mayEnter(env: Env) { return new Set([...owners(env), ...(await su
 
 interface Entry { sid_hash: string; by_email: string; as_email: string; created_at: number; last_at: number; stay: number | null }
 export interface Admin { by: string; as: string; own: boolean; level: 'owner' | 'super'; stay: boolean; created: number; sid: string }
-async function log(ctx: Ctx, a: Admin, action: string, detail = '') {
+export async function log(ctx: Ctx, a: Admin, action: string, detail = '') {
   ctx.waitUntil(ctx.env.DB.prepare('INSERT INTO admin_audit (at, by_email, as_email, action, detail) VALUES (?, ?, ?, ?, ?)').bind(Date.now(), a.by, a.as, action, detail.slice(0, 300)).run().then(() => {}));
 }
 

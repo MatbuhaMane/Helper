@@ -39,6 +39,7 @@ import * as research from '../../server/research';
 import * as sefaria from '../../server/sefaria';
 import * as songs from '../../server/songs';
 import * as voice from '../../server/voice';
+import * as memberAdmin from '../../server/member-admin';
 import { ensureSchema } from '../../server/schema';
 import * as vault from '../../server/vault';
 import * as familyProfile from '../../server/family-profile';
@@ -523,6 +524,9 @@ route('GET', '/api/admin/reports/:id', reports.adminThread);
 route('PUT', '/api/admin/reports/:id', reports.adminState);
 route('POST', '/api/admin/reports/:id/reply', reports.adminReply);
 route('GET', '/api/admin/reports/:id/shot', reports.adminShot);
+/* the owner edits members' names, households and roles, and searches every household (server/member-admin.ts) */
+route('GET', '/api/admin/people', memberAdmin.people);
+route('PUT', '/api/admin/people/:email', memberAdmin.edit);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

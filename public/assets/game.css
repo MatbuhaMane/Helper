@@ -1,0 +1,88 @@
+/* The game layer's look (the owner, 2026-11-14): a person's banner like a player card in a mobile game, in the desert and
+   tent's language – an embroidered frame, an avatar (the companion's head or a picture), a background they choose, three
+   badges they choose, and a place for a title; badges as stitched patches; titles that change how a name shows (a glow
+   behind the letters, wings, a crown, the founder's gold). celebrate.js draws the small celebration. */
+
+/* ---------- the banner ---------- */
+.pb { --pb-frame: #8a5a2a; --pb-thread: #e9c46a; position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "av who" "badges badges";
+  gap: 12px 14px; align-items: center; padding: 16px 16px 14px; border-radius: 24px; isolation: isolate; overflow: hidden; color: #fffaf0;
+  border: 3px solid var(--pb-frame); box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--pb-thread) 70%, transparent), 0 14px 30px -18px rgba(30, 20, 8, .7); }
+/* the frame's embroidery: a stitched line just inside the edge */
+.pb::after { content: ""; position: absolute; inset: 6px; border-radius: 18px; pointer-events: none; z-index: 2;
+  border: 2px dashed color-mix(in srgb, var(--pb-thread) 75%, transparent); }
+/* the background the person chooses (data-bg): drawn in CSS, dunes and sky */
+.pb-bg { position: absolute; inset: 0; z-index: -1; background: var(--pb-sky); }
+.pb-bg::before, .pb-bg::after { content: ""; position: absolute; inset-inline: -10%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
+.pb-bg::before { inset-block-end: -28%; block-size: 70%; background: var(--pb-dune1); }
+.pb-bg::after { inset-block-end: -42%; block-size: 70%; inset-inline: 20% -30%; background: var(--pb-dune2); }
+.pb, .pb[data-bg="dunes"] { --pb-sky: linear-gradient(180deg, #7aa7c9, #e9c99a); --pb-dune1: #c9955a; --pb-dune2: #a8703e; }
+.pb[data-bg="night"] { --pb-sky: radial-gradient(circle at 78% 22%, #f6efd2 0 3%, transparent 3.5%), radial-gradient(1px 1px at 20% 30%, #fff, transparent), linear-gradient(180deg, #121a3a, #3b3f6e); --pb-dune1: #2b2a44; --pb-dune2: #1c1b2e; }
+.pb[data-bg="sunset"] { --pb-sky: linear-gradient(180deg, #e0703a, #f2b86a 55%, #f6dfa8); --pb-dune1: #b0532e; --pb-dune2: #7a3a22; }
+.pb[data-bg="oasis"] { --pb-sky: linear-gradient(180deg, #8fc7d4, #e8e2c0); --pb-dune1: #6f8a3a; --pb-dune2: #c9a46a; }
+.pb[data-bg="tent"] { --pb-sky: repeating-linear-gradient(90deg, #7a2f2a 0 14px, #a8433a 14px 24px, #3c2a1e 24px 30px, #c98a3a 30px 36px); --pb-dune1: #5a3a22; --pb-dune2: #3c2616; }
+/* the avatar: a round window in a ring of thread */
+.pb-av { grid-area: av; position: relative; inline-size: 76px; block-size: 76px; border-radius: 50%; display: grid; place-items: center; overflow: visible;
+  --pb-av: 76px;
+  background: color-mix(in srgb, #fffaf0 88%, transparent); box-shadow: 0 0 0 3px var(--pb-thread), 0 0 0 6px var(--pb-frame), 0 8px 16px -8px rgba(0, 0, 0, .6); }
+.pb-av > img { inline-size: 100%; block-size: 100%; border-radius: 50%; object-fit: cover; }
+.pb-av .f2 { pointer-events: none; }
+.pb-av > .pb-face { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+.pb-who { grid-area: who; display: grid; gap: 4px; min-inline-size: 0; text-shadow: 0 1px 2px rgba(0, 0, 0, .75), 0 0 12px rgba(0, 0, 0, .45); }
+.pb-name { margin: 0; font-size: 1.35rem; font-weight: 700; line-height: 1.15; overflow-wrap: anywhere; position: relative; }
+/* the title's place: a small plaque under the name */
+.pb-title { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+  color: #3a2a0c; background: linear-gradient(135deg, #f6d77a, #d9a63a); border: 1px solid #b9862a; text-shadow: none; }
+.pb-title:empty { display: none; }
+/* three badges the person chooses (empty places dashed) */
+.pb-badges { grid-area: badges; display: flex; gap: 10px; justify-content: center; padding-block-start: 4px; }
+.pb-badges .bdg { --bdg: 52px; }
+
+/* ---------- a badge: a stitched patch ---------- */
+.bdg { --bdg: 64px; position: relative; display: inline-grid; place-items: center; inline-size: var(--bdg); block-size: var(--bdg); border-radius: 50%; flex: none;
+  background: #f4ead2; box-shadow: 0 0 0 2px #fff7e2, 0 0 0 3.5px #9a7a4a, 0 6px 12px -6px rgba(30, 20, 8, .6); }
+.bdg::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; border: 1.5px dashed rgba(122, 90, 52, .55); pointer-events: none; }
+.bdg > img { inline-size: 92%; block-size: 92%; object-fit: contain; border-radius: 50%; }
+.bdg.empty { background: color-mix(in srgb, #fffaf0 22%, transparent); box-shadow: none; }
+.bdg.empty::after { inset: 0; border: 2px dashed color-mix(in srgb, #fffaf0 70%, transparent); }
+.bdg.locked > img { filter: grayscale(1) contrast(.8) brightness(1.1); opacity: .45; }
+/* a new one: it pops in and a light passes over it */
+.bdg.new { animation: bdg-in .6s cubic-bezier(.3, 1.6, .5, 1) both; overflow: hidden; }
+.bdg.new::before { content: ""; position: absolute; inset: 0; border-radius: 50%; z-index: 1; pointer-events: none;
+  background: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, .7) 48%, transparent 66%); transform: translateX(-120%); animation: bdg-shine 1.1s .5s ease-out forwards; }
+@keyframes bdg-in { from { transform: scale(.2) rotate(-25deg); opacity: 0; } }
+@keyframes bdg-shine { to { transform: translateX(120%); } }
+
+/* ---------- titles: how a name shows (on .pb, or on a .who beside a name elsewhere) ---------- */
+/* glowing letters behind the name */
+.t-glow .pb-name, .who.t-glow > b { text-shadow: 0 0 10px rgba(255, 214, 110, .95), 0 0 22px rgba(255, 170, 60, .7), 0 1px 3px rgba(0, 0, 0, .5); }
+/* wings round the avatar */
+.t-wings .pb-av::before, .t-wings .pb-av::after { content: ""; position: absolute; inset-block-start: 8%; inline-size: 54%; block-size: 70%; z-index: -1; background: #fff4d6;
+  -webkit-mask: var(--wing) center / contain no-repeat; mask: var(--wing) center / contain no-repeat; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .35));
+  --wing: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><path d='M40 30C30 32 18 30 8 22 4 19 1 14 0 8c5 4 10 6 15 6-4-2-7-5-8-9 6 5 12 8 19 8-3-2-5-5-5-9 6 7 12 11 19 12z'/></svg>"); }
+.t-wings .pb-av::before { inset-inline-start: -46%; }
+.t-wings .pb-av::after { inset-inline-end: -46%; transform: scaleX(-1); }
+/* a crown above the avatar */
+.t-crown .pb-av > .pb-crown, .t-crown .pb-crown { position: absolute; inset-block-start: -22px; inset-inline-start: 50%; translate: -50% 0; inline-size: 40px; block-size: 26px; z-index: 3;
+  background: linear-gradient(180deg, #ffe28a, #d9a63a); filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .4));
+  -webkit-mask: var(--crown) center / contain no-repeat; mask: var(--crown) center / contain no-repeat;
+  --crown: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 26'><path d='M2 24 0 6l10 8L20 0l10 14 10-8-2 18z'/></svg>"); }
+:root[dir="rtl"] .t-crown .pb-crown { translate: 50% 0; }
+/* the founder: a gold frame with a slow sheen – one of a kind */
+.pb.t-founder { --pb-frame: #b9862a; --pb-thread: #ffe9a8; }
+.pb.t-founder::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; border-radius: inherit;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 240, 190, .35) 50%, transparent 65%); transform: translateX(-100%); animation: pb-sheen 5s ease-in-out 1s infinite; }
+@keyframes pb-sheen { 40%, 100% { transform: translateX(100%); } }
+
+/* ---------- the celebration (celebrate.js): stars and a ring from where something was finished ---------- */
+.cel-layer { position: fixed; inset: 0; z-index: var(--z-toast, 70); pointer-events: none; overflow: hidden; contain: strict; }
+.cel-star { position: absolute; inline-size: 14px; block-size: 14px; margin: -7px; background: var(--c, #f2c14e);
+  clip-path: polygon(50% 0, 61% 38%, 100% 50%, 61% 62%, 50% 100%, 39% 62%, 0 50%, 39% 38%); animation: cel-star .9s cubic-bezier(.2, .8, .3, 1) forwards; }
+@keyframes cel-star { from { transform: translate(0, 0) scale(.3); opacity: 1; } 70% { opacity: 1; } to { transform: translate(var(--dx), var(--dy)) scale(1) rotate(140deg); opacity: 0; } }
+.cel-ring { position: absolute; inline-size: 30px; block-size: 30px; margin: -15px; border-radius: 50%; border: 3px solid var(--primary); animation: cel-ring .7s ease-out forwards; }
+@keyframes cel-ring { from { transform: scale(.4); opacity: .9; } to { transform: scale(3.4); opacity: 0; } }
+.cel-plus { position: absolute; translate: -50% -50%; font-weight: 700; font-size: 1.1rem; color: var(--primary); text-shadow: 0 1px 0 var(--card), 0 0 6px var(--card);
+  animation: cel-plus 1.1s ease-out forwards; white-space: nowrap; }
+@keyframes cel-plus { from { transform: translateY(0) scale(.7); opacity: 0; } 20% { opacity: 1; transform: translateY(-10px) scale(1.05); } to { transform: translateY(-46px); opacity: 0; } }
+
+@media (max-width: 420px) { .pb { padding: 14px 12px 12px; gap: 10px 12px; } .pb-av { inline-size: 64px; block-size: 64px; } .pb-name { font-size: 1.2rem; } .pb-badges .bdg { --bdg: 46px; } }
+@media (prefers-reduced-motion: reduce) { .bdg.new, .bdg.new::before, .pb.t-founder::before { animation: none; } .cel-layer { display: none; } }

@@ -351,5 +351,22 @@
     palettes: f.palettes ? f.palettes.options.map((o, index) => ({ index, name: o.name, swatch: o.swatch || o[f.palettes.layers[0]] })) : null }));
   // the default companion for every family but the owner's (who has Ibn Ezra): the owner's choice, 2026-11-13
   const DEFAULT = 'fennec';
-  window.Figure2D = { mount, list, FIGURES, DEFAULT };
+  /** Only the head, in a round window (a profile's avatar, the assistant's tab): the figure drawn larger and moved so its
+      eyes sit a little above the window's middle; the host is the window (its size: opts.size, px). */
+  async function mountHead(host, which, opts = {}) {
+    const S = opts.size || 64, cfg = typeof which === 'string' ? FIGURES[which] : which;
+    if (!cfg) throw new Error('Figure2D: no such figure ' + which);
+    const k = opts.zoom || 1.85, inner = Math.round(S * k);
+    host.style.cssText += `;position:relative;overflow:hidden;border-radius:50%;inline-size:${S}px;block-size:${S}px`;
+    const f = await mount(host, which, { ...opts, size: inner });
+    const r = parseFloat(f.el.style.getPropertyValue('--f2-ratio')) || 1;
+    const ex = cfg.eyes?.length ? cfg.eyes.reduce((a, e) => a + e[0], 0) / cfg.eyes.length : cfg.mouth[0];
+    const ey = cfg.eyes?.length ? cfg.eyes[0][1] : cfg.mouth[1] - 0.05;
+    f.el.style.position = 'absolute';
+    f.el.style.left = `${Math.round(S / 2 - ex * inner)}px`;
+    f.el.style.top = `${Math.round(S * 0.46 - ey * inner * r)}px`;
+    f.el.classList.add('f2-headonly');
+    return f;
+  }
+  window.Figure2D = { mount, mountHead, list, FIGURES, DEFAULT };
 })();

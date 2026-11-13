@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (one fridge per person).
+Last update: 2026-11-14 (keto stamps).
 
 ## Done
 
@@ -22,6 +22,11 @@ Last update: 2026-11-14 (one fridge per person).
     shared fridges stay hidden (server 43a7523, waiting on the master's review). The automatic list, the food portal and
     the daemon (a read-only `fridge_list`) read only that fridge (d66cc1a). The page lost its picker and gained a
     "מקרר משותף – בקרוב" card (80d640c). For design: `.fr-fridges`, `.fr-views` and `.fr-chip` are unused now.
+  - choosing the tree on the family page (8f6c395): the prefs `family.treeSet` (זית / עץ ב׳) and `family.treeLook`
+    (עלים / מסגרות), plus slots.json `ext` and `candleY`. For design: `sets.json` is still missing (a fallback list stands
+    in), and `.fv-views` styles only `[aria-selected]`, so the radios carry an inline stopgap until `[aria-checked="true"]` joins that rule.
+  - design's keto patch applied (cab7c5a): diet stamps and one pie by a grocery item, windows grow out of them
+    (`H.modalFrom`); also fixed a stray "null" in the totals window.
 
 - **Locks and privacy, aligned to design** (4d7c7c3, in main, v61): the lock screen on `Lock.screen`, the tree tip on
   `Lock.warnCard`, settings in design's classes. Tested end to end locally (code, wrong code, the tree, the tip).

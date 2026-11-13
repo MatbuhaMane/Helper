@@ -402,11 +402,13 @@
   }
   /* ---------- the drawn tree: people as leaves on a drawing (vision: docs/vision/tree.md; markup: /assets/tree.css) ----------
      The drawing is a set: /assets/tree/<set>/ with its layers and slots.json (the tiers, in percent of its box). Which sets
-     there are comes from /assets/tree/sets.json ([{id, name}]); the person's choice is the pref family.treeSet.
+     there are comes from /assets/tree/sets.json ([{id, name}]); the person's choice is the pref family.treeSet,
+     and the look of the people on it (leaves, or gilt frames on cords: data-look) the pref family.treeLook.
      Nothing here knows any one set: a new set is a new folder and a line in sets.json. */
   const TREE = { sets: null, slots: {}, centred: false, run: 0, motion: false, css: null };
-  // only until design's sets.json is there: the one set that exists today
-  const FIRST_SET = 'olive';
+  // only until design's sets.json is there: the sets that exist today (the owner compares them)
+  const KNOWN_SETS = [{ id: 'olive', name: 'זית' }, { id: 'canopy', name: 'עץ ב׳' }];
+  const LOOKS = [['leaf', 'עלים'], ['frame', 'מסגרות']];
   /** the tree's stylesheet and sounds, added once; resolves when the styles are in (the leaves are measured after) */
   function treeAssets() {
     if (!TREE.css) {
@@ -421,7 +423,7 @@
     if (TREE.sets) return TREE.sets;
     const got = await fetch('/assets/tree/sets.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
     const ok = Array.isArray(got) ? got.filter((x) => x && typeof x.id === 'string' && /^[\w-]+$/.test(x.id)) : [];
-    TREE.sets = ok.length ? ok : [{ id: FIRST_SET, name: '' }];
+    TREE.sets = ok.length ? ok : KNOWN_SETS;
     return TREE.sets;
   }
   async function treeSlots(set) {
@@ -475,7 +477,7 @@
   async function drawTree(board) {
     const run = ++TREE.run;
     const styled = treeAssets();
-    const pref = H.prefs('family', { treeSet: null });
+    const pref = H.prefs('family', { treeSet: null, treeLook: 'leaf' });
     let sets, set, slots;
     try {
       sets = await treeSets();
@@ -488,8 +490,9 @@
     }
     if (run !== TREE.run || !board.isConnected || !S.people?.length) return;
     const center = S.mine || S.focus || S.people[0].id;
-    const tree = el('div', { class: 'tree', 'data-kind': set, style: `--crown-x:${slots.crownPivot?.[0] ?? 50}%; --crown-y:${slots.crownPivot?.[1] ?? 42}%` },
-      (slots.layers || ['ground', 'boughs', 'trunk', 'crown']).map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${set}/${l}.svg`, alt: '', decoding: 'async' })));
+    const look = LOOKS.some(([v]) => v === pref.treeLook) ? pref.treeLook : LOOKS[0][0];
+    const tree = el('div', { class: 'tree', 'data-kind': set, 'data-look': look === 'leaf' ? null : look, style: `--crown-x:${slots.crownPivot?.[0] ?? 50}%; --crown-y:${slots.crownPivot?.[1] ?? 42}%` },
+      (slots.layers || ['ground', 'boughs', 'trunk', 'crown']).map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${set}/${l}.${/^\w+$/.test(slots.ext || '') ? slots.ext : 'svg'}`, alt: '', decoding: 'async' })));
     let me = null;
     const candles = [];
     for (const { p, x, y } of treePlaces(slots, center)) {
@@ -515,14 +518,21 @@
       if (p.id === center) me = { p, x, y };
     }
     // a yahrzeit today: a candle by the roots (on the set's own spot if it has one)
-    const base = slots.candle || [slots.trunkPivot?.[0] ?? 50, (slots.trunkPivot?.[1] ?? 89) + 2.4];
+    const base = slots.candle || [slots.trunkPivot?.[0] ?? 50, slots.candleY ?? (slots.trunkPivot?.[1] ?? 89) + 2.4];
     candles.slice(0, 4).forEach((p, i) => tree.append(el('div', { class: 'tr-candle', style: `--x:${(base[0] + (i % 2 ? 9 : -9) * Math.ceil((i + 1) / 2)).toFixed(1)}; --y:${(+base[1]).toFixed(1)}`, role: 'img', 'aria-label': `נר זיכרון ל${p.name}, היום יום האזכרה` }, el('span', { class: 'tr-flame' }))));
     if (me) tree.append(el('button', { type: 'button', class: 'tr-bud', style: `--x:${Math.min(96, me.x + 6.5).toFixed(1)}; --y:${(me.y + 0.6).toFixed(1)}`, 'aria-label': `הוספת קרוב משפחה ל${me.p.name}`,
       onclick: () => { try { window.TreeSound?.bud(); } catch (_) { /* no sound */ } addNear(me.p); } }));
     // more than one drawing: the person picks (a pref: it follows them to every device)
-    const picker = sets.length > 1 ? el('div', { class: 'fv-views tr-sets', role: 'radiogroup', 'aria-label': 'איזה עץ' },
-      sets.map((x) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(x.id === set), onclick: () => { H.savePrefs('family', { treeSet: x.id }); draw(); } }, x.name || x.id))) : null;
-    board.replaceChildren(...[picker, tree].filter(Boolean));
+    // which tree and which look: the person picks (prefs: they follow them to every device)
+    const choice = (label, opts, on, key) => el('div', { class: 'fv-views tr-sets', role: 'radiogroup', 'aria-label': label },
+      opts.map(([v, name]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(v === on),
+        // (until design styles [aria-checked] in .fv-views like the tabs' [aria-selected])
+        style: v === on ? 'background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12);font-weight:500' : null,
+        onclick: () => { if (v !== on) { H.savePrefs('family', { [key]: v }); draw(); } } }, name)));
+    const pickers = el('div', { class: 'fv-tools tr-pick' },
+      sets.length > 1 ? choice('איזה עץ', sets.map((x) => [x.id, x.name || x.id]), set, 'treeSet') : null,
+      choice('איך נראים האנשים', LOOKS, look, 'treeLook'));
+    board.replaceChildren(pickers, tree);
     setTimeout(() => {                                                              // (a timer, not a frame: it runs in a hidden tab too)
       if (!tree.isConnected) return;
       fitTree(tree);

@@ -235,7 +235,7 @@
   function mealRow(m) {
     const s = M.summarize(m);
     return el('li', { class: 'meal' + (m.status === 'planned' ? ' planned' : '') },
-      el('button', { class: 'pie-btn', 'aria-label': `פירוט ${m.name}`, onclick: () => showTotals(m.name, m, m.items), html: M.pieSvg(m, 30) }),
+      el('button', { class: 'pie-btn', 'aria-label': `פירוט ${m.name}`, onclick: (e) => showTotals(m.name, m, m.items, null, e.currentTarget), html: M.pieSvg(m, 30) }),
       el('div', { class: 'meal-main' },
         el('div', {}, el('b', {}, m.name), el('small', { class: 'muted' }, ` · ${timeLabel(m.at)}`)),
         el('small', { class: 'macros-line' }, `נטו ${fmt(s.net)} · שומן ${fmt(s.fat)} · חלבון ${fmt(s.protein)} · פחמ׳ ${fmt(s.carbs)} · סיבים ${fmt(s.fiber)} · ${fmt(s.kcal, 0)} קק״ל · ${M.fmtRatio(s.netRatio)}`)),
@@ -291,9 +291,11 @@
   }
 
   /** The big pie and the numbers for one meal or one food. */
-  function showTotals(title, t, items, extra) {
+  function showTotals(title, t, items, extra, from) {
     const s = M.summarize(t);
-    modal(
+    // (grown out of what was tapped, when there is one; an empty part is left out, not shown as "null")
+    const open = from && H.modalFrom ? (...c) => H.modalFrom(from, ...c) : modal;
+    open(...[
       el('h3', {}, title),
       bigPie(t, 190),
       el('div', { class: 'stats' },
@@ -302,11 +304,11 @@
       items && items.length ? el('table', { class: 'calc-table' },
         el('thead', {}, el('tr', {}, ['רכיב', 'גרם', 'פחמ׳', 'סיבים', 'חלבון', 'שומן'].map((h) => el('th', {}, h)))),
         el('tbody', {}, items.map((i) => el('tr', {}, el('td', {}, i.name), el('td', {}, fmt(i.grams, 0)), el('td', {}, fmt(i.carbs)), el('td', {}, fmt(i.fiber)), el('td', {}, fmt(i.protein)), el('td', {}, fmt(i.fat)))))) : null,
-      extra || null);
+      extra].filter(Boolean));
   }
 
   /** A food from the shopping list or the calculator: values per 100 g, and a way to correct them from the label. */
-  function showFood(name, food, verdict) {
+  function showFood(name, food, verdict, from) {
     // (Open Food Facts is ODbL: its values say where they came from)
     const src = { builtin: 'מטבלת הערכים המובנית', ai: 'הערכה של העוזר החכם', user: 'ערכים שתיקנו אצלנו', off: 'מתוויות המוצרים ב־Open Food Facts' }[food.source] || '';
     showTotals(`${name} · ל-100 גרם`, food, null, el('div', {},
@@ -314,7 +316,7 @@
       el('p', { class: 'muted' }, [src, food.unit_g ? `יחידה אחת ≈ ${fmt(food.unit_g, 0)} גרם` : ''].filter(Boolean).join(' · ')),
       el('div', { class: 'row' },
         el('button', { class: 'btn ghost small', onclick: () => editFoodValues(name, food) }, '✎ תיקון לפי התווית'),
-        el('button', { class: 'btn primary small', onclick: () => { closeModal(); addToCalc(name, food.unit_g ? food.unit_g : 100); H.showTab?.('keto'); setTimeout(() => document.getElementById('ketoCalc')?.scrollIntoView({ behavior: 'smooth' }), 60); } }, '➕ למחשבון'))));
+        el('button', { class: 'btn primary small', onclick: () => { closeModal(); addToCalc(name, food.unit_g ? food.unit_g : 100); H.showTab?.('keto'); setTimeout(() => document.getElementById('ketoCalc')?.scrollIntoView({ behavior: 'smooth' }), 60); } }, '➕ למחשבון'))), from);
   }
 
   function editFoodValues(name, food, after) {
@@ -537,20 +539,20 @@
     const food = lookup(item.name);
     if (!food) { want(item.name); return el('span', { class: 'macro wait', title: 'מחפש ערכים…' }, el('span', { class: 'spinner tiny' })); }
     if (!food.is_food) return null;
-    // One small pie per diet, titled, enlarged on tap (the owner's tour, 2026-11-13: no small numbers in the list).
-    // Design's contract: span.macro.diet-pies > button.diet-pie[data-diet][data-fit] > svg.pie + span.diet-pie-name.
-    // Each diet's own judgment is in data-fit (ok | warn | bad) and in the label; keto has none (its pie is the ratio).
+    // A stamp per diet and one pie on the side (the owner, 2026-11-13: no grey chips, one pie, the diets as stamps only).
+    // Design's contract: span.macro.diet-pies > span.diet-marks > button.diet-stamp[data-diet][data-fit] …, then button.pie-btn.food-pie > svg.pie.
+    // Each stamp is its diet's judgment (ok | warn | bad, the mark and the name); a tap on it or on the pie grows the values out of it.
     const s = M.summarize(food);
-    const pie = (id, name, fit) => {
-      const b = el('button', { type: 'button', class: 'diet-pie', 'data-diet': id, 'data-fit': fit?.[0] || null,
-        'aria-label': `${name}: ${fit ? fit[1] + '. ' : ''}ערכי התזונה של ${item.name}`, title: fit?.[1] || null,
-        onclick: (e) => { e.preventDefault(); e.stopPropagation(); showFood(item.name, food, fit && `${name}: ${fit[1]}`); } }, el('span', { class: 'diet-pie-name' }, name));
-      b.insertAdjacentHTML('afterbegin', M.pieSvg(food, 24, { ring: true }));
-      return b;
-    };
+    const mark = { ok: '✓', warn: '⚠', bad: '✗' };
+    const fits = [...(state.settings.enabled ? [['keto', 'קטו', verdict(s).map((x, i) => (i ? x.replace(/^[✓⚠✗]\s*/, '') : x))]] : []),
+      ...diets.map((d) => [d.id, d.name, d.food(s, item.name)])];
+    const open = (e, fit) => { e.preventDefault(); e.stopPropagation(); showFood(item.name, food, fit, e.currentTarget); };
+    const pie = el('button', { type: 'button', class: 'pie-btn food-pie', 'aria-label': `ערכי התזונה של ${item.name}`, onclick: (e) => open(e, null) });
+    pie.insertAdjacentHTML('afterbegin', M.pieSvg(food, 26, { ring: true }));
     return el('span', { class: 'macro diet-pies' },
-      state.settings.enabled ? pie('keto', 'קטו') : null,
-      diets.map((d) => pie(d.id, d.name, d.food(s, item.name))));
+      fits.length ? el('span', { class: 'diet-marks' }, fits.map(([id, name, fit]) => el('button', { type: 'button', class: 'diet-stamp', 'data-diet': id, 'data-fit': fit[0], title: fit[1],
+        'aria-label': `${name}: ${fit[1]}. ערכי התזונה של ${item.name}`, onclick: (e) => open(e, `${name}: ${fit[1]}`) }, `${mark[fit[0]]} ${name}`))) : null,
+      pie);
   }
 
   /* ================= מתכון: ערכים למנה לפי הדיאטה ================= */
@@ -595,7 +597,7 @@
       box.replaceChildren(
         el('div', { class: 'kr-head' }, el('h4', {}, v.servingsKnown === false ? 'ערכי קטו למתכון כולו' : `ערכי קטו למנה (מתוך ${v.servings})`), el('span', { class: 'kr-verdict ' + level }, text)),
         el('div', { class: 'kr-body' },
-          el('button', { class: 'pie-btn', 'aria-label': 'פירוט הערכים לפי מצרכים', onclick: () => showTotals('ערכים למנה', v.per_serving, v.items.map((i) => ({ ...i, grams: i.grams / v.servings, fat: i.fat / v.servings, protein: i.protein / v.servings, carbs: i.carbs / v.servings, fiber: i.fiber / v.servings }))), html: M.pieSvg(v.per_serving, 96, { ring: true }) }),
+          el('button', { class: 'pie-btn', 'aria-label': 'פירוט הערכים לפי מצרכים', onclick: (e) => showTotals('ערכים למנה', v.per_serving, v.items.map((i) => ({ ...i, grams: i.grams / v.servings, fat: i.fat / v.servings, protein: i.protein / v.servings, carbs: i.carbs / v.servings, fiber: i.fiber / v.servings })), null, e.currentTarget), html: M.pieSvg(v.per_serving, 96, { ring: true }) }),
           el('div', { class: 'kr-stats' },
             el('div', {}, el('b', {}, `${fmt(s.net)} ג׳`), el('small', {}, `פחמימות נטו · ${fmt(st.netCarbLimit ? (s.net / st.netCarbLimit) * 100 : 0, 0)}% מהיעד היומי (${st.netCarbLimit})`)),
             el('div', {}, el('b', {}, fmt(s.kcal, 0)), el('small', {}, 'קלוריות')),

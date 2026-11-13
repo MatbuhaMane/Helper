@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 import * as L from './goals-logic';
+import * as D from './discover-logic';
 
 /** the request's body by a schema, or a 400 */
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
@@ -63,7 +64,11 @@ async function newBadges(ctx: Ctx, email: string, data: Awaited<ReturnType<typeo
     longActiveSince: longs.length ? Math.min(...longs) : null,
   });
   const researched = await ctx.env.DB.prepare('SELECT COUNT(*) AS n FROM researches WHERE email = ? AND done_at IS NOT NULL').bind(email).first<{ n: number }>().catch(() => null);
-  const ids2 = (researched?.n || 0) > 0 && !ids.includes('tracker') ? [...ids, 'tracker'] : ids;
+  const ids1 = (researched?.n || 0) > 0 && !ids.includes('tracker') ? [...ids, 'tracker'] : ids;
+  // the tools already opened (also before their badges existed): each its badge, and "סייר" at 10 (server/discover.ts)
+  const visited = (await ctx.env.DB.prepare('SELECT tool FROM tool_visits WHERE email = ?').bind(email).all<{ tool: string }>().catch(() => ({ results: [] as { tool: string }[] }))).results.map((r) => r.tool);
+  const toolIds = D.TOOL_BADGES.map((b) => b.id).filter((id) => visited.includes(id.slice(5)));
+  const ids2 = [...ids1, ...toolIds, ...(D.progress(visited).scout ? ['scout'] : [])];
   const { results } = await ctx.env.DB.prepare('SELECT badge, earned_at FROM goal_badges WHERE email = ?').bind(email).all<{ badge: string; earned_at: number }>();
   const had = new Set(results.map((r) => r.badge));
   const fresh = ids2.filter((id) => !had.has(id));

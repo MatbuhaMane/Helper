@@ -105,6 +105,8 @@
     ended = true;
     clearTimeout(typing);
     me.welcomed = Date.now(); keep('me');   // (shown once; settings can run it again)
+    // finished (not skipped): the first achievement, "נטית את האוהל"
+    if (!skipped) fetch('/api/welcome/done', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
     if (!dp.figure) { dp.figure = A.figure; keep('daemon'); }
     stage.querySelector('.wz-step')?.remove(); [...$('trail').children].forEach((d) => (d.className = 'done'));
     if (!skipped && !still) for (let i = 0; i < 26; i++) {

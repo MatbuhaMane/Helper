@@ -16,17 +16,30 @@ export async function visit(ctx: Ctx) {
   const had = await ctx.env.DB.prepare('SELECT 1 FROM tool_visits WHERE email = ? AND tool = ?').bind(u.email, tool).first();
   await ctx.env.DB.prepare('INSERT INTO tool_visits (email, tool, first_at, last_at, n) VALUES (?, ?, ?, ?, 1) ON CONFLICT(email, tool) DO UPDATE SET last_at = excluded.last_at, n = n + 1')
     .bind(u.email, tool, now, now).run();
-  // a new tool may make a scout: the badge is kept with the goals' badges, and returned once for the page to celebrate
-  let badge: string | null = null;
+  // a new tool earns its own badge, and may make a scout: kept with the goals' badges, returned once for the page to celebrate
   if (!had) {
     const p = D.progress(await foundBy(ctx, u.email));
-    if (p.scout) {
-      const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO goal_badges (email, badge, earned_at) VALUES (?, ?, ?)').bind(u.email, 'scout', now).run();
-      if (r.meta.changes) badge = 'scout';
-    }
-    return json({ tool, fresh: true, found: p.found, total: p.total, badge });
+    const want = [D.TOOL_BADGES.some((b) => b.id === D.toolBadge(tool)) ? D.toolBadge(tool) : null, p.scout ? 'scout' : null].filter(Boolean) as string[];
+    const badges = await award(ctx, u.email, want);
+    return json({ tool, fresh: true, found: p.found, total: p.total, badges, badge: badges.includes('scout') ? 'scout' : null });
   }
   return json({ tool, fresh: false });
+}
+
+/** badges given now (with the goals' badges); returns the ones that are new */
+async function award(ctx: Ctx, email: string, ids: string[]): Promise<string[]> {
+  const now = Date.now(), fresh: string[] = [];
+  for (const id of ids) {
+    const r = await ctx.env.DB.prepare('INSERT OR IGNORE INTO goal_badges (email, badge, earned_at) VALUES (?, ?, ?)').bind(email, id, now).run();
+    if (r.meta.changes) fresh.push(id);
+  }
+  return fresh;
+}
+
+/** POST /api/welcome/done – the setup finished (not skipped): "נטית את האוהל" */
+export async function welcomed(ctx: Ctx) {
+  const u = requireUser(ctx);
+  return json({ badges: await award(ctx, u.email, ['pitched']) });
 }
 
 /** the tools this person has found */

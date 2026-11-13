@@ -33,6 +33,13 @@ export function toolOf(path: string): string | null {
   return BY_LENGTH.find((t) => p.startsWith(t.href))?.id || null;
 }
 
+/** a badge for every tool, the first time it is opened (the owner: "the first use of a tool" is a first achievement).
+    The names are the tools' own for now: design and vision propose the real ones, in the tent's language, for the owner
+    (round 5). Settings are not a tool badge: finishing the setup earns "נטית את האוהל" (server/discover.ts). */
+export const toolBadge = (id: string) => 'tool_' + id;
+export const TOOL_BADGES = TOOLS.filter((t) => t.id !== 'settings')
+  .map((t) => ({ id: toolBadge(t.id), name: t.name, how: `פתחת את ${t.name} בפעם הראשונה`, group: 'tools' as const }));
+
 /** "סייר": found this many of the tools */
 export const SCOUT_AT = 10;
 

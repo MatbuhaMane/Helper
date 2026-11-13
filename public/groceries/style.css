@@ -405,3 +405,75 @@ select.sub-select { font: inherit; font-size: .9rem; padding: 4px 8px; max-inlin
 .r-stamps .stamp { inline-size: 92px; block-size: 74px; }
 .r-stamps .stamp.with-caption { inline-size: 92px; block-size: 97px; }
 @media (max-width: 520px) { .r-stamps .stamp { inline-size: 86px; block-size: 69px; } .r-stamps .stamp.with-caption { inline-size: 86px; block-size: 90px; } }
+
+/* ===== vision batch 17 (docs/design/shopping-lists.md) ===== */
+/* The lists panel: its own card at the top of the list view, above the add form. The lists are chips on one line that
+   scrolls sideways; the two round buttons at the end (a new list, and the menu for managing) never move, so nothing overlaps. */
+.lists-bar { position: relative; display: flex; align-items: center; gap: 6px; padding: 6px; margin-block: 0 12px; }
+/* until app.js builds the track: the chips sit straight in the bar and wrap, as before */
+.lists-bar:not(:has(.lists-track)) { flex-wrap: wrap; padding: 0; }
+.lists-track { flex: 1; min-inline-size: 0; display: flex; align-items: center; gap: 6px; overflow-x: auto; overscroll-behavior-x: contain;
+  scrollbar-width: none; scroll-snap-type: x proximity; padding: 2px; padding-inline-end: 22px; scroll-padding-inline: 2px;
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 22px); mask-image: linear-gradient(to left, transparent, #000 22px); }
+[dir="ltr"] .lists-track { -webkit-mask-image: linear-gradient(to right, transparent, #000 22px); mask-image: linear-gradient(to right, transparent, #000 22px); }
+.lists-track::-webkit-scrollbar { display: none; }
+.lists-track .chip { flex: none; white-space: nowrap; scroll-snap-align: start; min-block-size: 40px; display: inline-flex; align-items: center; gap: 6px; }
+.list-auto-n { min-inline-size: 20px; padding: 0 6px; border-radius: 999px; font-size: .78rem; font-weight: 600; text-align: center; line-height: 20px;
+  background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+.chip[aria-pressed="true"] .list-auto-n { background: color-mix(in srgb, var(--primary-ink) 22%, transparent); color: var(--primary-ink); }
+.lists-btn { flex: none; inline-size: 40px; block-size: 40px; display: grid; place-items: center; padding: 0; border-radius: 50%; cursor: pointer;
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--text); }
+.lists-btn .icon { inline-size: 20px; block-size: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.lists-btn:hover { border-color: var(--primary); color: var(--primary); }
+.lists-btn[aria-expanded="true"] { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
+.lists-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* the managing menu: the tab menu's look (base.css), from the panel's end edge */
+.lists-bar .lists-menu { inset-inline-start: auto; inset-inline-end: 6px; }
+.tab-menu button.danger b, .tab-menu button.danger > .icon { color: var(--danger); }
+
+/* Choosing many: "בחירה" in the toolbar turns the list into a choosing list (#list.selecting). Each row starts with a round box,
+   the row's other controls step aside, a tap anywhere on the row chooses it, and each category heading gets "בחירת הקטגוריה".
+   The bar (.sel-bar) comes after #list and is sticky above the tab bar, so it never covers the last row. */
+.sel-box { display: none; }
+#list.selecting .sel-box { flex: none; display: grid; place-items: center; inline-size: 44px; block-size: 44px; margin-inline: -8px -4px; padding: 0;
+  border: 0; background: none; cursor: pointer; border-radius: 50%; }
+.sel-box::before { content: ""; box-sizing: border-box; inline-size: 24px; block-size: 24px; border-radius: 50%; border: 2px solid var(--muted);
+  background: var(--card); transition: background-color 120ms, border-color 120ms; }
+.sel-box[aria-checked="true"]::before { border-color: var(--primary); background: var(--primary); }
+.sel-box::before, .sel-box::after { grid-area: 1 / 1; }
+.sel-box[aria-checked="true"]::after { content: ""; inline-size: 16px; block-size: 16px; background: var(--primary-ink);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E") center / contain no-repeat; }
+.sel-box:focus-visible { outline: 2px solid var(--primary); outline-offset: -4px; }
+#list.selecting .item { cursor: pointer; }
+#list.selecting .item > :not(.sel-box, .main), #list.selecting .item .main input[type="checkbox"] { display: none; }
+#list.selecting .item .main { pointer-events: none; }
+#list.selecting .item:has(.sel-box[aria-checked="true"]) { background: color-mix(in srgb, var(--primary) 9%, transparent); }
+.sel-cat { display: none; }
+#list.selecting .sel-cat { display: inline-flex; align-items: center; min-block-size: 32px; padding: 2px 12px; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: .82rem; font-weight: 500; color: var(--primary); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); background: none; }
+#list.selecting .sel-cat[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
+#list.selecting .category h2 { align-items: center; }
+.sel-bar { position: sticky; z-index: 5; inset-block-end: calc(var(--tabbar-h) + max(10px, env(safe-area-inset-bottom, 0px)));
+  display: flex; align-items: center; gap: 8px; margin-block: 12px 0; padding: 8px 8px 8px 8px; padding-inline-start: 16px; border-radius: 999px;
+  background: var(--glass); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); box-shadow: var(--lift); }
+.sel-bar[hidden] { display: none; }
+.sel-n { flex: 1; min-inline-size: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sel-bar .btn { flex: none; min-block-size: 40px; }
+.sel-bar .btn.danger { background: var(--danger); border-color: var(--danger); color: var(--card); }
+.sel-bar .btn.danger:disabled { opacity: .45; cursor: default; }
+.sel-x { flex: none; inline-size: 40px; block-size: 40px; display: grid; place-items: center; padding: 0; border-radius: 50%; border: 0; cursor: pointer;
+  background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
+.sel-x .icon { inline-size: 18px; block-size: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+@media (max-width: 520px) { .sel-bar { gap: 6px; padding-inline-start: 12px; } .sel-bar .btn { padding-inline: 10px; } }
+
+/* A category of one's own: its icon from a few emoji, in the look of the built-in categories */
+.icon-pick { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: 6px; margin-block: 8px 4px; }
+.icon-pick button { block-size: 44px; display: grid; place-items: center; padding: 0; font-size: 1.35rem; line-height: 1; cursor: pointer;
+  border-radius: 12px; border: 1px solid var(--line); background: var(--card); }
+.icon-pick button:hover { border-color: var(--line-strong); background: color-mix(in srgb, var(--text) 4%, var(--card)); }
+.icon-pick [aria-checked="true"] { border: 2px solid var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--card)); }
+.icon-pick button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) { .sel-box::before { transition: none; } }
+:root[data-motion="reduce"] .sel-box::before { transition: none; }

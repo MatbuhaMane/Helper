@@ -5,6 +5,12 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: grandparents mode, the emergency button and kids mode (vision batch 12, 2026-11-13).**
+  - The CSS is `public/assets/care.css`, the contract `docs/design/care.md`, the sample `prototype/care.html`.
+  - It covers the grandparents' home (four tiles, read-aloud buttons, עוד), the emergency button (hold 3 s, the ring fills), the sent screen (10 s cancel, who is on it, 101/100/102), the family's alert, and the kids' home.
+  - Checked at 375 and 1280, light and dark.
+  - The master links care.css from index.html.
+  - Also from batch 12: the family tree keeps the app's current tree. My three versions (olive, Tabor oak, acacia) were not chosen.
 - **Ready: פרנסה's look (the owner's money tool, 2026-11-13).**
   - The CSS is in `public/tools/parnasa/parnasa.css`, the contract in `docs/design/parnasa.md`, the sample in `prototype/parnasa.html`.
   - It covers the dashboard (balance, quick entry with one-tap repeats, the split as a readable list, recurring, tips, recent, investments), the entry sheet, the bank import with a review step, and the shared קופה badge.

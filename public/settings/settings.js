@@ -197,19 +197,21 @@
       type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
       title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
+    // each figure keeps its own colours (palettes are never sold – the owner, 2026-11-14): prefs daemon.palettes[id]
+    const paletteOf = (id) => +(dp.palettes?.[id] ?? (id === dp.figure ? dp.palette : 0)) || 0;
     const previews = {};   // the preview figures by id (a prankster's preview plays a trick from its own card)
-    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); previews[f.id] = Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}), ...(f.palettes?.length ? { palette: +dp.palette || 0 } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
+    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); previews[f.id] = Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}), ...(f.palettes?.length ? { palette: paletteOf(f.id) } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
     /** her hair colour (a figure with a hair layer, e.g. the astronomer): saved per person, prefs daemon.hair */
     /** a figure with clothing palettes (the night wizard, the forest witch): saved per person, prefs daemon.palette; the
         first is as drawn */
     const paletteRow = () => {
       const f = figures.find((x) => x.id === mine && x.palettes?.length);
       if (!f) return null;
-      const now = +dp.palette || 0;
+      const now = paletteOf(f.id);
       return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, `הצבעים של ${f.name}`),
         el('div', { class: 'st-choices st-palette', role: 'radiogroup', 'aria-label': 'הצבעים', style: 'display:flex;flex-wrap:wrap;gap:6px' }, f.palettes.map((p) => el('button', {
           type: 'button', role: 'radio', class: 'chip', 'aria-checked': String(p.index === now), title: p.name,
-          onclick: () => { set('palette', p.index); drawAssistant(); },
+          onclick: () => { dp.palettes = { ...(dp.palettes || {}), [f.id]: p.index }; keep('daemon'); drawAssistant(); },
         }, el('span', { 'aria-hidden': 'true', style: `display:inline-block;inline-size:14px;block-size:14px;border-radius:50%;background:${p.swatch};border:1px solid var(--line-strong);margin-inline-end:6px;vertical-align:-2px` }), p.name))));
     };
     /** the little wizard and witch play small tricks on the page (design's pranks.js): on by default, the person's switch,

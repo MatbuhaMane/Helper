@@ -1363,6 +1363,10 @@
   /** 'always' · 'mirror' (aloud when spoken to, in writing when written to) · 'silent'; older prefs had speak on/off */
   const voiceMode = () => prefs.voice || (prefs.speak === false ? 'silent' : 'always');
   let heardByVoice = false, answerByVoice = false;
+  /* Each figure has its own voice (server/voice-figures.ts): רַאבַּ"ע the deep old sage, each animal a light one. The person's
+     choice is kept per figure (prefs.voices); for רַאבַּ"ע the server also keeps the old single choice (voice_prefs). */
+  const figureNow = () => (flat ? flatFigure : 'ibn_ezra');
+  const myVoice = () => prefs.voices?.[figureNow()] || undefined;
   async function speak(text, voiceName) {
     // (voiceName: a sample from the voice picker, always heard)
     if (!text || (!voiceName && (voiceMode() === 'silent' || (voiceMode() === 'mirror' && !answerByVoice)))) return;
@@ -1370,7 +1374,7 @@
     const mine = speechSeq;
     if (cloudVoice) {
       try {
-        const r = await fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, voice: voiceName || undefined }) });
+        const r = await fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, voice: voiceName || myVoice(), figure: figureNow() }) });
         if (r.status === 503) cloudVoice = false;          // no voice service set up: the browser's voice from now on
         if (!r.ok) throw new Error('voice ' + r.status);
         const blob = await r.blob();
@@ -1433,7 +1437,7 @@
     stopSpeech();
     const mine = speechSeq;
     try {
-      const r = await fetch(`/api/voice/sample/${encodeURIComponent(name)}`);
+      const r = await fetch(`/api/voice/sample/${encodeURIComponent(name)}?figure=${encodeURIComponent(figureNow())}`);
       if (!r.ok) throw new Error('sample ' + r.status);
       const blob = await r.blob();
       if (mine === speechSeq) await playAudio(URL.createObjectURL(blob), mine);
@@ -1446,7 +1450,9 @@
     H.modal(el('h2', {}, `הקול של ${whoName()}`), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
     let data, mine;
     try {
-      [data, mine] = await Promise.all([fetch('/api/voice/voices').then((r) => r.json()), H.api('/api/voice/pref').catch(() => ({}))]);
+      const fig = figureNow();
+      [data, mine] = await Promise.all([fetch('/api/voice/voices?figure=' + encodeURIComponent(fig)).then((r) => r.json()),
+        myVoice() ? { voice: myVoice() } : fig === 'ibn_ezra' ? H.api('/api/voice/pref').catch(() => ({})) : {}]);
     } catch (_) { data = { voices: [] }; }
     list.replaceChildren();
     if (!data.voices?.length) {
@@ -1469,7 +1475,8 @@
       list.append(el('h3', {}, title));
       for (const v of vs) {
         const pick = el('button', { class: 'btn small' + (v.name === current ? ' primary' : ''), onclick: async () => {
-          await H.api('/api/voice/pref', { method: 'PUT', body: { voice: v.name } });
+          prefs.voices = { ...(prefs.voices || {}), [figureNow()]: v.name }; savePrefs();
+          if (figureNow() === 'ibn_ezra') await H.api('/api/voice/pref', { method: 'PUT', body: { voice: v.name } });
           list.querySelectorAll('.dm-voice .btn.small:not(.play)').forEach((b) => { b.classList.remove('primary'); b.textContent = 'בחירה'; });
           pick.classList.add('primary'); pick.textContent = 'נבחר';
           H.toast(`${whoName()} ידבר עכשיו בקול ${v.label}`);

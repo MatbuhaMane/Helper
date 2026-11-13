@@ -162,7 +162,7 @@
   border: 1px solid var(--line-strong); background: var(--card); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
 .rx-filters button span { min-inline-size: 20px; block-size: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
   color: #fff; background: #c2412d; font-variant-numeric: tabular-nums; }
-.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: #fff; }
+.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink, #fff); }   /* dark ink on the light vine at night */
 .rx-filters button:focus-visible, .rx-state button:focus-visible, .rx-row:focus-visible, .rx-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .rx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 @media (min-width: 900px) { .rx-list { max-block-size: min(70dvh, 720px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; } }
@@ -195,6 +195,6 @@
 .rx-who b { font-size: 1.08rem; }
 .rx-who small { color: var(--muted); font-size: .84rem; }
 @media (max-width: 520px) { .rx-thead { grid-template-columns: minmax(0, 1fr); } }
-.rx-state button[aria-pressed="true"]:first-child { background: #c2412d; border-color: #c2412d; }   /* חדשה */
+.rx-state button[aria-pressed="true"]:first-child { background: #c2412d; border-color: #c2412d; color: #fff; }   /* חדשה */
 .rx-thread:has(.rm-thread) .rx-pick { display: none; }
 .rx-pick { margin: 0; padding: 40px 12px; text-align: center; color: var(--muted); }

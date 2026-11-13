@@ -11,6 +11,30 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Pop-up messages at the top, light and dismissible; the shopping list (vision → master, design, ai-features)
+The owner's decisions in test run 1. Status: Decided (the owner).
+- **A rule for the whole app, pop-up messages (toasts):**
+  - they appear at the top of the screen, not the bottom;
+  - they are more transparent;
+  - they disappear sooner;
+  - they are dismissed by a swipe on the phone or a click on the PC;
+  - they must never nag.
+- **The songbook:** the song and lyrics recognition messages follow the same style. A switch in the settings turns them off, per user (`H.prefs`).
+- **The shopping list:**
+  - **multi-select and delete:** "select all", or select a whole category;
+  - **the fridge:**
+    - a button moves the bought items into the fridge;
+    - the automatic list is built from what is missing in the fridge and from the household's habits;
+  - **the list bubbles** move to their own panel at the top, above the search. All the lists are managed from there, and no buttons overlap;
+  - **sorting:**
+    - drag, also between categories, which switches the list to "my order";
+    - A–Z;
+    - automatic by category;
+  - **user categories:**
+    - the user creates a category and picks its icon from a few options, like the emoji of the built-in categories;
+    - an item assigned to it lands there automatically the next time it is searched.
+- **Overlapping buttons anywhere** count as a defect under the premium bar.
+
 ## 2026-11-14 – Motion must feel premium everywhere; the recipe book's default view and menus (vision → design, ai-features, master)
 The owner's decisions in test run 1. Status: Decided (the owner).
 - **A rule for every interface:** every animation and every transition is smooth and pleasant. The bar is a product with a million dollars put into it. It is part of "done", like the 375 px check.

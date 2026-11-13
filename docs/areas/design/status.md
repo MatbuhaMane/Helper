@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's look and its covers; ready to merge: the covers at night)._
+_Updated 2026-11-13 (live in main v95: the covers at night and הרגלי אכילה's icon; waiting for the owner: the brand mark)._
 
 **Where we stand (a brief for the next round):**
 - **Live in main (v91):**
@@ -11,13 +11,13 @@ _Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's 
     - with a real touch long press at 375, in dark mode;
     - with reduced motion.
   - **The family profile's look.** It is `public/family/profile.css` with five covers, `/assets/covers/*.svg`.
-- **Ready to merge (e83f5ed): the covers at night.** In dark mode the four day drawings turn to dusk under a deep-blue veil.
-  The desert is already night and stays as it is. A family's own photo is only dimmed a little.
-- **Ready to merge (d7b8192) with a patch: הרגלי אכילה's own icon.** It is a plate with a leaf, inside a ring that comes round again.
-  - Its catalogue line is in `apps.js`, on the p13 cushion with a teal glow.
-  - The icon goes into `ICONS` in common.js through `design-habits-icon-2026-11-13.patch` in the notes folder. The same patch sets the diet page's tile to `ic: 'habits'` and adds the tile to `/tools/`, which was missing it.
-  - Checked in dark mode on the diet page; the icon shows on `/food/diet/` and `/tools/` at 375 and 1280.
-  - `habits.css` is design's from now on (the CEO, 2026-11-13).
+- **Live in main (v93, v95): the covers at night** (e83f5ed) and **הרגלי אכילה's own icon** (d7b8192 and its common.js patch).
+- **Waiting for the owner: the new brand mark** (1a32930, `docs/design/brand/`, the sheet `options.jpg`). Three options join the tent and the old script:
+  - A: the script with the tent at its start; the app icon stays the tent.
+  - B: the shin glowing in the tent's doorway, one mark for the bar and the icon (recommended). The letter reads only from ~32 px.
+  - C: the shin turned over as a two-peaked roof; at small sizes it looks a little like mountains.
+  - Once the owner chooses, the `--bm-*` tokens go into base.css and the SVG goes to the CEO for BRAND in common.js.
+- **Ready to merge:** the profile faces' initial is darker (≥ 4.5:1 in light, it was 2.9:1, from ai-features' audit), and the tree prototype names עץ ב׳ (canopy) first and the olive עץ א׳ (v97).
 - **Launch prep, the page audit (v92, 28 pages incl. /food/diet/habits/, at 375 and 1280, light and dark): clean.**
   - The check found no overflow, broken images, nameless controls or contrast under 3:1.
   - It skips oklab colours, so the home page's 53 oklab texts were measured separately on a canvas: all ≥ 4.5:1.

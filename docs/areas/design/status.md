@@ -16,6 +16,10 @@ _Updated 2026-11-13 (live in main: the canopy tree and frames, v87; H.modalFrom,
   - The winner is chosen first with crypto.getRandomValues; the cushion nearest the flame then glows.
   - It keeps the fire's click, scrolling and the mobile context menu working. With reduced motion, only the winner is shown.
   - The change is a patch for index.html (the master's), checked at 375 and on desktop.
+- **Queued from vision, batch 10 (the owner's decisions, 2026-11-13; after the launch, when the master schedules them).** The specs are on the vision branch: `docs/vision/story.md` and `docs/vision/family-profile.md`.
+  - **The family story, "a living museum":** the hall in the tent's style, the story card, the exhibition screen, the recorder (a big mic, a live waveform, a haptic at the start and the end) and the map of places. No quests or badges; quiet and respectful for those who passed away. Show the owner a few versions.
+  - **The family profile:** the page, a few cover drawings in the tent's style (or the family's own photo) and a small window onto the tree.
+  - **The tree:** the owner will choose the kind of tree. Vision suggests redrawing the chosen one in full detail with the image tool, after the image quota resets.
 - **Not ours, left alone:** the untracked `public/tree-proto.html` in this checkout, left by the canopy session.
 
 ## Done

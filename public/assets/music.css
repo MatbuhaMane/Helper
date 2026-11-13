@@ -23,6 +23,11 @@
 .mu-artist { color: var(--muted); font-size: .76rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mu-bar { position: absolute; inset-inline: 44px 8px; inset-block-end: -3px; block-size: 2px; border-radius: 1px; background: color-mix(in srgb, var(--text) 10%, transparent); overflow: hidden; }
 .mu-bar i { display: block; block-size: 100%; background: var(--primary); inline-size: 0; transition: inline-size 1s linear; }
+/* the bar keeps its growing to itself (it moves every second while music plays) */
+.mu-bar { contain: strict; }
+/* smoother still: music.js adds .scaled and sets --p (0…1) on the <i> – the bar then grows by transform, no layout at all */
+.mu-bar.scaled i { inline-size: 100% !important; transform: scaleX(var(--p, 0)); transform-origin: right; transition: transform 1s linear; }
+:root[dir="ltr"] .mu-bar.scaled i { transform-origin: left; }
 .mu-unit.empty .mu-bar, .mu-unit.empty .mu-ctls .mu-btn:not(.main) { display: none; }
 @keyframes mu-spin { to { transform: rotate(1turn); } }
 
@@ -142,10 +147,12 @@ body.mu-dragging .appbar, body.mu-dragging .tabbar { transition: box-shadow .2s,
 @media (max-width: 899px) { body.mu-dragging .tabbar { box-shadow: inset 0 2px 0 color-mix(in srgb, var(--primary) 45%, transparent); } }
 body.mu-drop-menu .appbar, body.mu-drop-menu .tabbar { background-color: color-mix(in srgb, var(--primary) 16%, var(--bg)); box-shadow: inset 0 0 0 2px var(--primary); }
 body.mu-dragging::before, body.mu-dragging::after { content: ''; position: fixed; z-index: 29; inset-block: 20%; inline-size: 10px; pointer-events: none;
-  background: color-mix(in srgb, var(--primary) 25%, transparent); transition: inline-size .2s, background .2s; }
-body.mu-dragging::before { left: 0; border-radius: 0 10px 10px 0; }
-body.mu-dragging::after { right: 0; border-radius: 10px 0 0 10px; }
-body.mu-drop-left::before, body.mu-drop-right::after { inline-size: 26px; background: color-mix(in srgb, var(--primary) 60%, transparent); }
+  background: color-mix(in srgb, var(--primary) 25%, transparent); transition: scale .2s, background .2s; }
+/* the drop edges grow by transform (26px wide, shown at 10/26 until the player is over them) */
+body.mu-dragging::before, body.mu-dragging::after { inline-size: 26px; scale: .385 1; }
+body.mu-dragging::before { left: 0; border-radius: 0 10px 10px 0; transform-origin: left; }
+body.mu-dragging::after { right: 0; border-radius: 10px 0 0 10px; transform-origin: right; }
+body.mu-drop-left::before, body.mu-drop-right::after { scale: 1 1; background: color-mix(in srgb, var(--primary) 60%, transparent); }
 
 /* docked at the screen's edge: a tab with a treble clef */
 .mu-edge { position: fixed; z-index: 30; inline-size: 48px; block-size: 70px; padding: 0; border: 1px solid color-mix(in srgb, var(--primary) 60%, var(--line-strong));
@@ -185,8 +192,11 @@ body.mu-drop-left::before, body.mu-drop-right::after { inline-size: 26px; backgr
 /* voice search: the mic glows and pulses while it listens */
 .mu-mic { color: var(--muted); }
 .mu-mic:hover { color: var(--primary); }
-.mu-mic.on { color: var(--primary-ink); background: var(--danger); animation: mu-listen 1.2s ease-in-out infinite; }
-@keyframes mu-listen { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent); } 50% { box-shadow: 0 0 0 7px transparent; } }
+.mu-mic.on { color: var(--primary-ink); background: var(--danger); position: relative; isolation: isolate; }
+.mu-mic.on::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 50%; background: color-mix(in srgb, var(--danger) 45%, transparent);
+  animation: mu-listen 1.2s ease-out infinite; pointer-events: none; }
+@keyframes mu-listen { from { transform: scale(1); opacity: 1; } to { transform: scale(1.45); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .mu-mic.on::after { animation: none; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .mu-mic.on { animation: none; } }
 
     /* The songbook, floating: the songbook's own page in a window you can move (a sheet from below on a phone). */

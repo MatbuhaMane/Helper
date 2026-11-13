@@ -22,7 +22,7 @@
   padding: max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   background: color-mix(in srgb, var(--bg) 84%, transparent); -webkit-backdrop-filter: blur(16px) saturate(.8); backdrop-filter: blur(16px) saturate(.8);
   animation: lk-in .34s ease both; }
-@keyframes lk-in { from { opacity: 0; -webkit-backdrop-filter: blur(0); backdrop-filter: blur(0); } }
+@keyframes lk-in { from { opacity: 0; } }
 .lk-screen.opening { animation: lk-out .32s ease both; }
 @keyframes lk-out { to { opacity: 0; transform: scale(1.03); } }
 .lk-box { inline-size: min(100%, 340px); display: grid; justify-items: center; gap: 18px; text-align: center; outline: none; }

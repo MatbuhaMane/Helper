@@ -21,6 +21,11 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
 - **Ready to merge: the app icon from the owner's logo** (`public/assets/icons/ohel-*`, `docs/design/make-ohel-icons.mjs`): limestone tile, basalt ink,
   any + maskable, 16/32/48/180/192/512, `ohel-favicon.ico`, `ohel-apple-touch-icon.png`; looked at on a light and a dark ground. The master wires manifest.json and index.html.
   base.css `.brand-mark` now carries the logo's size (26 px, 405.4/159.4), so BRAND's inline style in common.js can go. The bar is checked at 375 and 1280, light and dark.
+- **Ready to merge: the tree batch look** (afdbcc8): `.fv-tools` wraps under 600px (the forest search gets its own row at 375), `.fv-gliding`,
+  the related picker (`.fv-pick`, `.fv-chosen`, `.fv-rel-out`), and the vault modals' form classes in settings.css. Fixes the live search box
+  (base `input[type=search]` gave it a second box) and `.fs-results[hidden]`.
+- **Ready to merge: the reports in the menu, and dark ink** (on top of v104, main merged in): `.navmenu-reports` (the two entries as menu rows,
+  two side by side) and dark text on the light vine at night (`--primary-ink`) for the pressed `.rx-filters` / `.rx-state`, `.rp-sent-ic`, `.rm-send`.
 - **Ready to merge: the reports look** (bff1c28): `/assets/reports.css` (the report sheet, the menu items, the person's inbox and conversation),
   admin.css's תיבת פניות (`rx-*`, the `data-bd="reports"` tile), `.mi-dot` on the user chip, icons in `/assets/reports/`. The contract went to ai-features;
   prototype `docs/design/prototype/reports.html`. Checked at 375 and 1280, light and dark.

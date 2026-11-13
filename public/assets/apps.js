@@ -57,5 +57,11 @@
   }
   // (the shared icons have the gear for הגדרות now; appIcon stays as the one name the ring and the tools page use)
   const appIcon = (name, cls) => H.icon(name, cls);
-  Object.assign(H, { APPS, ringApps, isPinned, togglePin, appIcon });
+  /* Big ideas shown on purpose as "בקרוב" (batch 15, 2026-11-14): no work on them, not even a spec. Not in APPS, so nothing links
+     to a page that doesn't exist. Design draws each one and its note; a tap opens only the one sentence in `line`. */
+  const SOON = [
+    { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
+    { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' },
+  ];
+  Object.assign(H, { APPS, SOON, ringApps, isPinned, togglePin, appIcon });
 })();

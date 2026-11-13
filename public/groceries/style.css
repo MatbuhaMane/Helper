@@ -61,6 +61,24 @@
 .macro-nums .t-fiber::before { background: var(--m-fiber); }
 .spinner.tiny { inline-size: 12px; block-size: 12px; border-width: 2px; display: inline-block; }
 @media (max-width: 520px) { .macro { flex-basis: 100%; margin-inline-start: 32px; } }
+/* the diets beside an item (the owner, 2026-11-13): an ink stamp per diet, no fill, and one pie on the side.
+   keto.js: span.macro.diet-pies > span.diet-marks > button.diet-stamp[data-diet][data-fit] …, then button.pie-btn.food-pie > svg.pie.
+   The stamps wrap among themselves; the pie keeps its place at the side. */
+.diet-pies { gap: 8px; min-inline-size: 0; }
+.diet-marks { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px 6px; min-inline-size: 0; }
+.diet-stamp { --ink-c: var(--muted); font: inherit; font-size: .72rem; font-weight: 700; line-height: 1; white-space: nowrap; cursor: pointer;
+  padding: 4px 7px 3px; border: 1.5px solid var(--ink-c); border-radius: 6px; background: none; color: var(--ink-c);
+  rotate: -2deg; transition: rotate var(--dur-press) ease, scale var(--dur-press) ease; -webkit-tap-highlight-color: transparent; }
+.diet-stamp:nth-child(even) { rotate: 1.5deg; }
+.diet-stamp[data-fit="ok"] { --ink-c: var(--ok); }
+.diet-stamp[data-fit="warn"] { --ink-c: var(--olive-ink); border-style: dashed; }
+.diet-stamp[data-fit="bad"] { --ink-c: var(--bad); }
+.diet-stamp:hover { rotate: 0deg; }
+.diet-stamp:active { scale: .94; }
+.diet-stamp:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.food-pie { padding: 1px; }
+.food-pie .pie { inline-size: 26px; block-size: 26px; }
+.diet-verdict { font-weight: 600; }
 
 /* ================= לב ================= */
 .heart { font: inherit; cursor: pointer; border: 0; background: rgba(247, 246, 240, .9); inline-size: 40px; block-size: 40px; border-radius: 50%; display: inline-grid; place-items: center; padding: 0; box-shadow: 0 1px 4px rgba(46, 42, 30, .18); }

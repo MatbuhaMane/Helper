@@ -395,6 +395,11 @@ textarea { width: 100%; resize: vertical; }
   border: 1px solid var(--glass-border); border-radius: var(--radius-lg); box-shadow: var(--lift);
   animation: arrive var(--dur-draw) var(--ease-river) both;
 }
+/* a window opened from a thing on the page (H.modalFrom: a pie, a card) grows out of it and shrinks back into it;
+   common.js animates the glass with the Web Animations API, so the CSS only steps aside and fades the backdrop */
+.modal.grow .modal-glass { animation: none; }
+.modal.shrinking { pointer-events: none; }
+.modal.shrinking .modal-backdrop { opacity: 0; transition: opacity 200ms var(--ease-leave); }
 #modalBody { overflow-y: auto; padding: 22px 22px 26px; -webkit-overflow-scrolling: touch; }
 /* On a phone the window is an app-style sheet that rises from the bottom: opaque (long forms stay readable) and full width. */
 @media (max-width: 520px) {

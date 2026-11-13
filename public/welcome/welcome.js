@@ -1,9 +1,10 @@
 /* The first minute (docs/vision/first-minute.md; the owner: the only guide at the start is this setup). Six steps, one
    question each – name, calendar, city, colours, the companion, who else is in the tent – with the chosen figure along.
-   First, three slides that only tell (the owner's order, 2026-11-13): the red triangle in the top bar (a young app: this is
+   First, four slides that only tell (the owner's order, 2026-11-13): the red triangle in the top bar (a young app: this is
    how to report a problem or suggest an improvement, .wz-alert), who העוזר החכם is and how to call him (.wz-helper, the same
-   figure the app uses), and the family tree in a few words (.wz-tree). Each is .wz-intro with its lines in .wz-lines; the
-   look is design's. Then the questions.
+   figure the app uses), the family tree in a few words (.wz-tree), and האוהל itself: the portal that holds all the
+   family's everyday tools in one place (img.wz-tent). Each is .wz-intro with its lines in .wz-lines; the look is
+   design's. Then the questions.
    The look and the behaviour are design's (docs/design/prototype/welcome.html, /welcome/welcome.css).
    Every answer is saved as it is given, in the person's own settings (H.prefs, on the server), so leaving is safe:
      me.name, me.religion + me.calendar, me.city, look.palette, daemon.figure, me.familyPlan; at the end me.welcomed.
@@ -54,6 +55,10 @@
         + '<p>מוסיפים הורים, ילדים, סבים ונכדים, ורואים מי קשור למי.</p>'
         + '<p>עולים בענפים עד הסבים והסבתות, ומזמינים את המשפחה לאוהל.</p>'
         + '<p>הפרטים שמורים בכספת של המשפחה.</p></div></div>' },
+    { id: 'tent', q: () => 'זה האוהל', hint: 'כל הכלים של המשפחה, במקום אחד', ok: () => true,
+      body: () => '<div class="wz-intro"><img class="wz-tent" src="/assets/tent-700.webp" alt=""><div class="wz-lines">'
+        + '<p>רשימת הקניות, המתכונים, החדשות, השירון, המייל ועוד: כל מה שהמשפחה צריכה ביום־יום נכנס דרכו.</p>'
+        + '<p>בטלפון הוא אפליקציה, במחשב תוכנה, והכול שלך מכל מכשיר.</p></div></div>' },
     { id: 'name', q: () => 'ועכשיו אליך: איך קוראים לך?', hint: 'ככה אפנה אליך', body: () => `<input class="wz-name" id="name" autocomplete="given-name" maxlength="40" placeholder="השם שלך" aria-label="השם שלך" value="${esc(A.name)}">`, ok: () => A.name.trim() },
     { q: () => 'מה הלוח שלך?', hint: 'בשביל החגים, השבת והתאריכים', body: () => tiles('cal', [['he', 'עברי ולועזי', 'שבתות וחגים'], ['hijri', 'היג׳רי ולועזי', 'רמדאן והחגים'], ['greg', 'לועזי', 'בלי חגים מיוחדים'], ['all', 'הכול יחד', 'כל החגים']]), ok: () => A.cal },
     { id: 'city', q: () => 'איפה הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<input class="wz-name" id="city" maxlength="60" placeholder="עיר" aria-label="העיר" value="${esc(A.city)}" style="font-size:1.5rem"><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },

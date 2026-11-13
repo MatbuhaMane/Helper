@@ -1,0 +1,14 @@
+{
+ "box": [1000, 1500],
+ "ext": "webp",
+ "crownPivot": [48, 29.3],
+ "trunkPivot": [50.1, 55.4],
+ "candleY": 94.5,
+ "tiers": [
+  { "name": "roots", "note": "the eldest, the forebears: on the earth below the roots", "line": [[16, 83.4], [38, 82.8], [62, 82.8], [84, 83.4]] },
+  { "name": "low", "note": "grandparents: beside the root flare, under the low boughs", "line": [[10, 64.5], [29, 63.7], [71, 63.7], [90, 64.5]] },
+  { "name": "mid", "note": "parents: from the leafy twigs and the lower boughs", "line": [[14.4, 46.1], [33, 44.8], [67, 44.8], [85.3, 46.1]] },
+  { "name": "crown", "note": "you, your siblings and cousins: under the crown", "line": [[10, 28.8], [34, 27.8], [66, 27.8], [90, 28.8]] },
+  { "name": "top", "note": "children and grandchildren: across the crown top", "line": [[22, 12], [40, 10.7], [60, 10.7], [78, 12]] }
+ ]
+}

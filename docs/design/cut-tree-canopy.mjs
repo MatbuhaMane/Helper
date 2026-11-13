@@ -1,7 +1,7 @@
 // The second family tree, "canopy" (עץ ב'): cut from the owner's Gemini drawing into our layer set.
 //   node docs/design/cut-tree-canopy.mjs        (from the repo root; needs sharp, already a dev dependency)
 // Source: docs/design/source/tree-canopy-gemini.jpg (the owner's image 4: crown, trunk, bare upper and lower boughs, on white).
-// Output, in /assets/tree/canopy/: ground.webp, boughs.webp, trunk.webp, crown.webp (one 1000 x 1200 box, drawn at 1.4x).
+// Output, in /assets/tree/canopy/: ground.webp, boughs.webp, trunk.webp, crown.webp (one 1000 x 1500 box, drawn at 1.4x).
 //   - Alpha: the white is taken out; the edge pixels are un-multiplied from white, so no white fringe on a dark page.
 //   - A thin warm rim (cream, crisp, no blur) round the whole silhouette: lost on the light page, a warm outline at night.
 //   - The layers overlap where they meet (the trunk runs up under the crown, the boughs a little under it), so the sway
@@ -12,8 +12,8 @@ import sharp from 'sharp';
 import { mkdirSync } from 'node:fs';
 
 const SRC = 'docs/design/source/tree-canopy-gemini.jpg', OUT = 'public/assets/tree/canopy';
-const BOX = [1000, 1200], K = 1.4;                  // box units → output px
-const S = 0.7, OX = 22.6, OY = 170, SX0 = 466, SY0 = 27;   // source px → box units: b = O + (s - S0) * S
+const BOX = [1000, 1500], K = 1.4;                  // box units → output px
+const S = 0.7, OX = 22.6, OY = 150, SX0 = 466, SY0 = 27;   // source px → box units: b = O + (s - S0) * S
 const toBox = (sx, sy) => [OX + (sx - SX0) * S, OY + (sy - SY0) * S];
 const W = Math.round(BOX[0] * K), H = Math.round(BOX[1] * K);
 
@@ -89,17 +89,17 @@ function twig(x0, y0, x1, y1, bend, leaves) {
   }
   return s;
 }
-// from the bough tips (measured in the source, a few px inside them) → box out to the sides; the low tier hangs from them
+// from the bough tips (measured in the source, a few px inside them) → box out to the sides; the mid tier hangs from the lower two
 const T = (sx, sy) => toBox(sx, sy).map((v) => +v.toFixed(1));
 const TWIGS = [
-  [...T(817, 766), ...T(660, 738), [0, -14], 8],      // left lower bough, out to the left
+  [...T(817, 766), ...T(640, 800), [-30, 22], 8],      // left lower bough, out to the left
   [...T(828, 620), ...T(700, 594), [-4, 6], 6],       // its upper prong
-  [...T(1451, 874), ...T(1640, 858), [0, 16], 8],     // right lower bough's low arm, out to the right
+  [...T(1451, 874), ...T(1652, 800), [8, 26], 8],     // right lower bough's low arm, out to the right
   [...T(1476, 628), ...T(1610, 600), [6, -6], 6],     // its upper prong
 ];
 const twigSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${BOX[0]} ${BOX[1]}"><defs><filter id="rim" x="-5%" y="-5%" width="110%" height="110%"><feMorphology in="SourceAlpha" operator="dilate" radius="${(RIM_W * S).toFixed(2)}" result="d"/><feFlood flood-color="rgb(${RIM})" flood-opacity=".92"/><feComposite in2="d" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#rim)">${TWIGS.map((t) => twig(...t)).join('')}</g></svg>`;
 // the ground: a soft patch of earth under the roots (no outline, so no halo at night)
-const groundSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${BOX[0]} ${BOX[1]}"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2e2014" stop-opacity=".34"/><stop offset=".7" stop-color="#3a2a1a" stop-opacity=".14"/><stop offset="1" stop-color="#3a2a1a" stop-opacity="0"/></radialGradient></defs><ellipse cx="${T(1150, 1100)[0]}" cy="${T(1150, 1100)[1]}" rx="440" ry="64" fill="url(#g)"/></svg>`;
+const groundSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${BOX[0]} ${BOX[1]}"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2e2014" stop-opacity=".34"/><stop offset=".7" stop-color="#3a2a1a" stop-opacity=".14"/><stop offset="1" stop-color="#3a2a1a" stop-opacity="0"/></radialGradient></defs><ellipse cx="500" cy="1120" rx="490" ry="165" fill="url(#g)"/></svg>`;
 
 // 6. each layer: the regions' pixels, placed in the box
 mkdirSync(OUT, { recursive: true });

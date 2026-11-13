@@ -1,7 +1,7 @@
 /* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls go to the network,
    except the sources of the study room: Sefaria's texts (through /api/sefaria/), the concordance and the textual witnesses
    are kept on the device in a cache of their own that a new version of the app does not clear – once read, always there. */
-const CACHE = 'helper-v144';
+const CACHE = 'helper-v145';
 const SOURCES = 'helper-sources-v1';
 // the companion's 3D engine and figures (about 6.5 MB): served from the device at once, refreshed quietly in the background
 const MODELS = 'helper-models-v2';

@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="/assets/base.css">
   <link rel="stylesheet" href="/assets/care.css">
   <link rel="stylesheet" href="/assets/seasons.css">
+  <link rel="stylesheet" href="/assets/arrange.css">
   <link rel="stylesheet" href="/assets/campfire.css">
   <style>
     /* The home page is a small camp: a greeting, Ibn Ezra's tent (he stands on its front rug), and the apps on a ring
@@ -436,7 +437,7 @@
       let view = look.srView === 'list' ? 'list' : 'grid';
       const tool = (a) => el('li', { 'data-q': a.name + ' ' + a.sub }, el('a', { class: 'sr-tool', href: a.href },
         el('span', { class: 'sr-ic' }, pillows ? el('img', { src: '/assets/pillows/' + a.pillow + '.webp', alt: '', loading: 'lazy' }) : H.appIcon(a.ic)),
-        el('span', { class: 'sr-txt' }, el('b', {}, a.name, a.tag ? el('span', { class: 'app-tag' }, a.tag) : null), el('small', {}, a.sub))));
+        el('span', { class: 'sr-txt' }, el('b', {}, a.name, H.expTag(a)), el('small', {}, a.sub))));
       const isTool = (a) => a.href.startsWith('/tools/') || /^\/(mail|pc|gather|messages|groceries|food\/)/.test(a.href);
       const lists = [['המקומות', H.APPS.filter((a) => !isTool(a))], ['הכלים', H.APPS.filter(isTool)]].map(([t, apps]) => {
         const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
@@ -462,7 +463,7 @@
         el('label', { class: 'sr-search' }, H.icon('lens'), input), ...lists.map(([sec]) => sec), none, views,
         el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     }
-    const wheel = appWheel(H.ringApps());
+    let wheel = appWheel(H.ringApps());
     root.append(el('div', { class: 'home' },
       greeting(),
       el('div', { class: 'camp' }, el('img', { sizes: '(max-width: 599px) 92vw, 640px', srcset: '/assets/tent-700.webp 700w, /assets/tent-1000.webp 1000w, /assets/tent.webp 1400w', src: '/assets/tent-1000.webp', alt: 'האוהל של רַאבַּ"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
@@ -532,10 +533,14 @@
         const w = host.querySelector('.swell');
         const at = { x: e.clientX, y: e.clientY };
         clearTimeout(lp?.t);
-        lp = { at, t: setTimeout(() => { wave(w); lp.fired = true; navigator.vibrate?.(12); }, 380) };
+        lp = { at, t: setTimeout(() => {
+          lp.fired = true; navigator.vibrate?.(12);
+          if (host.classList.contains('wheel-item') && !host.closest('.wheel.dragging')) arrange(host.getAttribute('href')); else wave(w);
+        }, 380) };
       });
       document.addEventListener('pointermove', (e) => { if (lp && Math.hypot(e.clientX - lp.at.x, e.clientY - lp.at.y) > 8) clearTimeout(lp.t); }, { passive: true });
-      document.addEventListener('pointerup', () => { if (lp) clearTimeout(lp.t); });
+      // (the click that follows the lift is swallowed below; if none comes, e.g. the cushion was swapped for the tray, the next tap is not)
+      document.addEventListener('pointerup', () => { if (lp) { clearTimeout(lp.t); if (lp.fired) { const was = lp; setTimeout(() => { if (lp === was) lp = null; }, 0); } } });
       // after a long press the finger lifts: that is not a tap on the app
       document.addEventListener('click', (e) => { if (lp?.fired) { lp = null; e.preventDefault(); e.stopPropagation(); } }, true);
       document.addEventListener('contextmenu', (e) => { if (e.target.closest?.('.wheel-item')) e.preventDefault(); });
@@ -974,6 +979,123 @@
       return box;
     }
 
+    /* ---------- arranging the cushions (batch 14, docs/design/arrange.md): a long press on a cushion swaps the ring for a tray ---------- */
+    function arrange(pressed) {
+      if (document.querySelector('.arr')) return;
+      const svg = (d) => el('span', { html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">${d}</svg>` }).firstChild;
+      const X = '<path d="M6 6l12 12M18 6 6 18"/>', LOCK = '<rect x="5" y="10.5" width="14" height="10" rx="2.2"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/>', PLUS = '<path d="M12 5v14M5 12h14"/>';
+      const app = (h) => H.APPS.find((a) => a.href === h);
+      let list = H.ringApps().map((a) => a.href);
+      const tray = el('ul', { class: 'arr-tray' });
+      const live = el('p', { 'aria-live': 'polite', style: 'position:absolute;inline-size:1px;block-size:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap' });
+      const sec = el('section', { class: 'arr', 'aria-labelledby': 'arr-h' },
+        el('header', { class: 'arr-bar' },
+          el('div', {}, el('h2', { id: 'arr-h' }, 'סידור הכריות'), el('p', {}, 'גוררים כרית כדי להזיז אותה, ✕ כדי להוריד. כריות עם מנעול נשארות תמיד.')),
+          el('button', { class: 'btn primary arr-done', type: 'button', onclick: done }, 'סיום')),
+        tray, live);
+      const say = (h) => { live.textContent = `${app(h).name}, מקום ${list.indexOf(h) + 1} מתוך ${list.length}`; };
+      function item(h, n) {
+        const a = app(h);
+        return el('li', { class: 'arr-item', 'data-href': h, 'data-fixed': !!a.fixed, style: `--n:${n}`, tabindex: '0', 'aria-roledescription': 'כרית שאפשר להזיז', 'aria-label': a.name },
+          el('span', { class: 'arr-pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false' }), el('span', { class: 'badge' }, H.appIcon(a.ic))),
+          el('b', { class: 'arr-name' }, a.name), H.expTag(a),
+          a.fixed ? el('span', { class: 'arr-fixed', role: 'img', 'aria-label': 'כרית קבועה', title: 'כרית קבועה: אפשר להזיז, לא להוריד' }, svg(LOCK))
+            : el('button', { class: 'arr-x', type: 'button', 'aria-label': `הורדת ${a.name} מהבית`, onclick: () => remove(h) }, svg(X)));
+      }
+      function draw(focus) {
+        tray.replaceChildren(...list.map(item), el('li', {}, el('button', { class: 'arr-add', type: 'button', onclick: add }, el('span', { class: 'arr-slot' }, svg(PLUS)), el('b', {}, 'הוסף כרית'))));
+        if (focus) tray.querySelector(`[data-href="${focus}"]`)?.focus({ preventScroll: true });
+      }
+      const fromDom = () => { list = [...tray.querySelectorAll('.arr-item:not(.ghost)')].map((li) => li.dataset.href); };
+      function remove(h) {
+        const i = list.indexOf(h);
+        if (i < 0 || app(h).fixed) return;
+        list.splice(i, 1); draw();
+        H.toast(`${app(h).name} ירד מהבית`, 'ביטול', () => { if (!list.includes(h)) { list.splice(Math.min(i, list.length), 0, h); draw(h); } });
+      }
+      function add() {
+        const left = H.APPS.filter((a) => !list.includes(a.href));
+        H.modal(el('h2', {}, 'הוספת כרית'), left.length
+          ? el('ul', { class: 'arr-pick' }, ...left.map((a) => el('li', {}, el('button', { type: 'button', onclick: () => { list.push(a.href); H.closeModal(); draw(a.href); say(a.href); } },
+              el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '' }), el('span', {}, el('b', {}, a.name), el('small', {}, a.sub), H.expTag(a)), el('span', { class: 'arr-plus' }, svg(PLUS))))))
+          : el('p', { class: 'arr-pick-empty' }, 'כל הכלים כבר בבית.'));
+      }
+      // dragging with a finger or the mouse: the cushion follows the pointer, a dashed ghost keeps its place in the tray
+      let dr = null;
+      tray.addEventListener('pointerdown', (e) => {
+        const it = e.target.closest('.arr-item');
+        if (!it || e.button > 0 || e.target.closest('.arr-x')) return;
+        dr = { it, x: e.clientX, y: e.clientY, id: e.pointerId, on: false };
+      });
+      tray.addEventListener('pointermove', (e) => {
+        if (!dr || e.pointerId !== dr.id) return;
+        const dx = e.clientX - dr.x, dy = e.clientY - dr.y;
+        if (!dr.on) {
+          if (Math.hypot(dx, dy) < 6) return;
+          const r = dr.it.getBoundingClientRect();
+          dr.on = true; dr.r = r;
+          dr.ghost = el('li', { class: 'arr-item ghost', 'aria-hidden': 'true' }, el('span', { class: 'arr-pillow' }));
+          dr.it.after(dr.ghost);
+          try { dr.it.setPointerCapture(dr.id); } catch {}
+          dr.it.classList.add('dragging');
+          Object.assign(dr.it.style, { position: 'fixed', top: '0', left: '0', inlineSize: r.width + 'px', pointerEvents: 'none', margin: '0' });
+        }
+        dr.it.style.translate = `${dr.r.left + dx}px ${dr.r.top + dy}px`;
+        const under = document.elementFromPoint(e.clientX, e.clientY)?.closest('.arr-item');
+        if (under && under !== dr.ghost && under !== dr.it && tray.contains(under)) {
+          const kids = [...tray.children];
+          if (kids.indexOf(under) < kids.indexOf(dr.ghost)) under.before(dr.ghost); else under.after(dr.ghost);
+        }
+      });
+      const drop = () => {
+        if (!dr) return;
+        const d = dr; dr = null;
+        if (!d.on) return;
+        d.ghost.replaceWith(d.it);
+        d.it.classList.remove('dragging');
+        ['position', 'top', 'left', 'inline-size', 'pointer-events', 'margin', 'translate'].forEach((p) => d.it.style.removeProperty(p));
+        fromDom(); say(d.it.dataset.href);
+        tray.dataset.justDragged = '1'; setTimeout(() => delete tray.dataset.justDragged, 50);
+      };
+      tray.addEventListener('pointerup', drop);
+      tray.addEventListener('pointercancel', drop);
+      tray.addEventListener('click', (e) => { if (tray.dataset.justDragged) { e.preventDefault(); e.stopPropagation(); } }, true);
+      // the keyboard: Space picks up, the arrows move, Space or Enter puts down
+      tray.addEventListener('keydown', (e) => {
+        const it = e.target.closest?.('.arr-item');
+        if (!it || e.target !== it) return;
+        const h = it.dataset.href, held = it.getAttribute('aria-grabbed') === 'true';
+        if (e.key === ' ' || (held && (e.key === 'Enter' || e.key === 'Escape'))) {
+          e.preventDefault();
+          if (held) { it.removeAttribute('aria-grabbed'); say(h); } else { it.setAttribute('aria-grabbed', 'true'); live.textContent = `${app(h).name} הורם. החצים מזיזים, רווח מניח.`; }
+          return;
+        }
+        if (!held) return;
+        const cols = getComputedStyle(tray).gridTemplateColumns.split(' ').length || 1;
+        const by = { ArrowLeft: 1, ArrowRight: -1, ArrowDown: cols, ArrowUp: -cols }[e.key];   // right to left: the next one is on the left
+        if (!by) return;
+        e.preventDefault();
+        const i = list.indexOf(h), j = Math.max(0, Math.min(list.length - 1, i + by));
+        if (i === j) return;
+        list.splice(i, 1); list.splice(j, 0, h);
+        draw(h);
+        tray.querySelector(`[data-href="${h}"]`)?.setAttribute('aria-grabbed', 'true');
+        say(h);
+      });
+      function done() {
+        H.setRing(list);
+        const ring = H.ringApps(), nw = appWheel(ring);
+        wheel.root.replaceWith(nw.root); wheel.caption.replaceWith(nw.caption);
+        sec.remove(); wheel = nw;
+        nw.start(Math.max(0, ring.findIndex((a) => a.href === pressed)));
+      }
+      draw();
+      wheel.root.hidden = true; wheel.root.style.display = 'none'; wheel.caption.hidden = true;
+      wheel.root.after(sec);
+      if (sec.getBoundingClientRect().top > innerHeight * 0.55) sec.scrollIntoView({ block: 'start' });
+      tray.querySelector(`[data-href="${pressed}"]`)?.focus({ preventScroll: true });
+    }
+
     /* ---------- the apps ring: spin it with a finger, the mouse, the arrows; it never ends ---------- */
     function appWheel(list) {
       const N = list.length, step = (Math.PI * 2) / N;
@@ -984,7 +1106,7 @@
       const prev = el('button', { class: 'spin prev', type: 'button', 'aria-label': 'האפליקציה הקודמת' }, arrow('M9 5l7 7-7 7'));
       const next = el('button', { class: 'spin next', type: 'button', 'aria-label': 'האפליקציה הבאה' }, arrow('M15 5l-7 7 7 7'));
       const items = list.map((a, i) => el('a', { class: 'wheel-item', href: a.href, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name, style: `--c2:${a.c2}`, draggable: 'false' },
-        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async', loading: 'lazy' }), el('span', { class: 'badge' }, H.appIcon(a.ic))),
+        el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async', loading: 'lazy' }), el('span', { class: 'badge' }, H.appIcon(a.ic)), H.expTag(a)),
         el('b', { class: 'label' }, swell(a.name))));
       const root = el('nav', { class: 'wheel', 'aria-label': 'האפליקציות', 'aria-roledescription': 'גלגל' }, orbit, campfire(), ...items, prev, next);
       // off: how far the cushion's centre sits above the item box's centre (the ring passes through the cushions' centres)
@@ -1146,7 +1268,7 @@
       prev.addEventListener('click', () => spinTo(front - 1));
       window.addEventListener('resize', () => { measure(); layout(); });
 
-      return { root, caption, start() { measure(); layout(); goal = 0; setTimeout(run, reduced ? 0 : 250); } };
+      return { root, caption, start(at = 0) { measure(); layout(); goal = at; setTimeout(run, reduced ? 0 : 250); } };
     }
   })();
   </script>

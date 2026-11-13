@@ -6,7 +6,9 @@
      H.APPS                    the catalogue
      H.ringApps()              what the ring shows now, in order
      H.isPinned(href)          H.togglePin(href) → pinned or not (saved)
-     H.appIcon(name)           the icon of a menu (H.icon) */
+     H.appIcon(name)           the icon of a menu (H.icon)
+     H.setRing(hrefs)          the home's arrange tray: the ring's cushions in this order (saved: pins + order)
+     H.expTag(app)             the "ניסיוני" tag (design's .tag-exp) for an app with tag, else null */
 (() => {
   if (!window.H || H.APPS) return;
   const APPS = [
@@ -52,9 +54,24 @@
   }
   /** the ring: the family tree first, the person's pins, then the tools and the settings */
   function ringApps() {
-    const pinned = prefs().pins.map(byHref).filter((a) => a && !a.fixed);
-    return [byHref('/family/'), ...pinned, byHref('/tools/'), byHref('/settings/')];
+    const p = prefs();
+    const pinned = p.pins.map(byHref).filter((a) => a && !a.fixed);
+    const all = [byHref('/family/'), ...pinned, byHref('/tools/'), byHref('/settings/')];
+    if (!Array.isArray(p.order)) return all;
+    // the order set in the home's arrange tray (batch 14); anything pinned since then goes at the end
+    const set = p.order.map(byHref).filter((a, i, arr) => a && all.includes(a) && arr.indexOf(a) === i);
+    return [...set, ...all.filter((a) => !set.includes(a))];
   }
+  function setRing(hrefs) {
+    const p = prefs();
+    const order = [...new Set(hrefs)].filter(byHref);
+    for (const a of APPS) if (a.fixed && !order.includes(a.href)) order.push(a.href);   // a fixed cushion is never removed
+    p.order = order;
+    p.pins = order.filter((h) => !byHref(h).fixed);
+    H.savePrefs('home');
+  }
+  const FLASK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3.5h5M10.5 3.5v5.2L5.4 17.6A2 2 0 0 0 7.1 20.5h9.8a2 2 0 0 0 1.7-2.9l-5.1-8.9V3.5"/><path d="M7.6 14.5h8.8"/></svg>';
+  const expTag = (a) => (a?.tag ? H.el('span', { class: 'tag-exp', html: FLASK + a.tag }) : null);
   // (the shared icons have the gear for הגדרות now; appIcon stays as the one name the ring and the tools page use)
   const appIcon = (name, cls) => H.icon(name, cls);
   /* Big ideas shown on purpose as "בקרוב" (batch 15, 2026-11-14): no work on them, not even a spec. Not in APPS, so nothing links
@@ -63,5 +80,5 @@
     { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
     { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' },
   ];
-  Object.assign(H, { APPS, SOON, ringApps, isPinned, togglePin, appIcon });
+  Object.assign(H, { APPS, SOON, ringApps, isPinned, togglePin, setRing, expTag, appIcon });
 })();

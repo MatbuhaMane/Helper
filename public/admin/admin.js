@@ -35,7 +35,6 @@
   }
   function gate() {
     if (st) st.open = false;
-    root.classList.remove('bd');
     document.querySelector('.ad-warn')?.setAttribute('hidden', '');
     const can = !!window.PublicKeyCredential && !!navigator.credentials;
     root.replaceChildren(el('section', { class: 'ad' }, el('div', { class: 'card ad-gate' },
@@ -96,31 +95,31 @@
       el('div', {}, el('b', {}, st.own ? `שלום, ${st.as.name}` : `ביקור אצל ${st.as.name}`), el('div', { class: 'muted small' }, st.own ? (st.level === 'owner' ? 'בעל האוהל · כל ההרשאות' : 'הרשאת־על') : 'נכנסת בזיהוי שלך מחשבון של מישהו אחר: רק התכונות שלו ומצב האוהל.')),
       el('span', { class: 'spacer' }), stay, lock);
     /* on top, the board: how the tent is doing, who uses what, and the family's feedback (own account only) */
-    const top = { dash: el('div', { class: 'bd-part', id: 'dash' }) };
+    const top = { dash: el('div', { class: 'bd-part', id: 'dash', style: 'grid-column:1/-1' }) };   // the state spans the width
     let dashP;
     if (st.own) { top.usage = el('div', { class: 'bd-part', 'data-part': 'usage' }); top.inbox = el('div', { class: 'bd-part', 'data-part': 'inbox' }); }
-    const board = el('section', { class: 'bd-dash', 'aria-label': 'לוח' }, ...Object.values(top));
+    const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
     /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
     const APPS = st.own
       ? [['messages', 'הודעות', messages], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts]] : []), ['settings', 'הגדרות האפליקציה', settings],
          ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
       : [['features', `התכונות של ${st.as.name}`, features]];
-    const FALLBACK = { messages: 'mail', credits: 'calc', gifts: 'smile', members: 'family', features: 'tools', permissions: 'unlocked', ai: 'lens', log: 'note' };
-    const tint = ['var(--vine);--c2:var(--olive)', 'var(--olive);--c2:var(--soil)', 'var(--soil);--c2:var(--vine)'];
-    const ic = (id) => { const s = H.icon(id); return s.innerHTML ? s : H.icon(FALLBACK[id] || 'tools'); };   // design's own icon once it is in
-    const panels = {}, loaded = new Set();
-    const tiles = APPS.map(([id, name, load], i) => {
-      panels[id] = el('section', { class: 'bd-panel', id, hidden: true, 'aria-label': name });
-      return el('a', { class: 'app', href: '#' + id, 'data-bd': id, style: `--c1:${tint[i % 3]};--n:${i}`, 'aria-controls': id },
-        el('span', { class: 'ic' }, ic(id)), el('span', { class: 'name' }, name));
+    const panels = {}, bodies = {}, loaded = new Set();
+    const tiles = APPS.map(([id, name], i) => {
+      bodies[id] = el('div');
+      panels[id] = el('div', { class: 'bd-panel', id, hidden: true, role: 'region', 'aria-label': name },
+        el('a', { class: 'bd-back', href: '#', onclick: (e) => { e.preventDefault(); history.replaceState(null, '', location.pathname); show(''); board.nextElementSibling.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }, '‹ כל החלקים'),
+        bodies[id]);
+      // the colours and the icon come from data-bd (design's admin.css and /assets/bd-icons/), so .ic stays empty
+      return el('a', { class: 'app', href: '#' + id, 'data-bd': id, style: `--n:${i}`, 'aria-controls': id }, el('span', { class: 'ic' }), el('span', { class: 'name' }, name));
     });
     const loaders = Object.fromEntries(APPS.map(([id, , load]) => [id, load]));
     /** one part open at a time, loaded the first time it opens; the address keeps it (#members) for a reload or the back button */
     const show = (id, scroll) => {
       for (const [k, p] of Object.entries(panels)) p.hidden = k !== id;
-      for (const t of tiles) t.toggleAttribute('aria-current', t.dataset.bd === id);
+      for (const t of tiles) t.dataset.bd === id ? t.setAttribute('aria-current', 'true') : t.removeAttribute('aria-current');
       if (!panels[id]) return;
-      if (!loaded.has(id)) { loaded.add(id); loaders[id](panels[id]); }
+      if (!loaded.has(id)) { loaded.add(id); loaders[id](bodies[id]); }
       if (scroll) panels[id].scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
     for (const t of tiles) t.addEventListener('click', (e) => {
@@ -129,12 +128,11 @@
       history.replaceState(null, '', again ? location.pathname : '#' + id);
       show(again ? '' : id, !again);
     });
-    root.classList.add('bd');   // the page's own <main> is design's main.bd
-    root.replaceChildren(
-      el('header', { class: 'bd-head' }, el('h1', {}, 'הדלת האחורית'), bar),
+    root.replaceChildren(el('section', { class: 'ad bd' },
+      el('header', { class: 'bd-head' }, el('h1', {}, 'הדלת האחורית')), bar,
       board,
-      el('nav', { class: 'apps-grid bd-apps', 'aria-label': 'כלי הבעלים' }, tiles),
-      ...Object.values(panels));
+      el('nav', { class: 'apps-grid bd-apps', 'aria-label': 'חלקי הדלת' }, tiles),
+      ...Object.values(panels)));
     dashP = dash(top.dash);
     if (st.own) { usage(top.usage); inbox(top.inbox); }
     show(location.hash.slice(1), !!location.hash);
@@ -184,8 +182,8 @@
     const s = d.stats, m = d.money;
     const tile = (label, value, cls = '') => el('div', { class: 'ad-tile ' + cls }, el('small', {}, label), el('b', {}, value));
     const mb = (n) => (n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : (n / 1e6).toFixed(1) + ' MB');
-    box.replaceChildren(el('section', { class: 'card' },
-      el('h2', {}, st.own ? 'לוח' : 'מצב האוהל'),
+    box.replaceChildren(el('section', { class: 'card bd-state' },
+      el('h2', {}, 'מצב האוהל'),
       ...d.alerts.map((a) => el('p', { class: 'notice ad-alert' }, a)),
       m ? el('div', { class: 'ad-tiles' },
         tile('הכנסות עד היום', ils(m.total.income), 'good'),

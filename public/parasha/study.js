@@ -12,7 +12,9 @@
 (() => {
   const { el, toast } = H;
   const API = '/api/sefaria';   // Sefaria through our own lasting copy (server/sefaria.ts)
-  const P = H.prefs('study', { teamim: true, en: false });
+  const P = H.prefs('study', { teamim: true, en: false, size: 1 });
+  // the text size of the reading and the commentary (A−/A+, the owner's tour): a zoom step, per person in prefs.study.size
+  const SIZES = [0.85, 1, 1.15, 1.3, 1.5, 1.75];
   const enc = (ref) => encodeURIComponent(ref);
   const sefariaUrl = (ref) => `https://www.sefaria.org.il/${ref.replace(/ /g, '_').replace(/:/g, '.').replace(/_(\d)/, '.$1')}?lang=he`;
   const TEAMIM = /[֑-ֽ֯׀׃-׆]/g;   // cantillation, meteg, paseq, sof pasuq and the like
@@ -58,20 +60,39 @@
   const FIRST = ['Rashi', 'Ramban', 'Ibn Ezra', 'Rashbam', 'Sforno', 'Radak', 'Or HaChaim', 'Abarbanel on Torah', 'Shadal', 'Malbim', 'Minchat Shai',
     'Onkelos', 'Targum Jonathan', 'Targum Jerusalem', 'Bereshit Rabbah', 'Shemot Rabbah', 'Vayikra Rabbah', 'Bamidbar Rabbah', 'Devarim Rabbah'];
 
+  /* The back gesture (H.back in common.js): the open tools panel closes first, then the room; another chapter in the open
+     room stays the same step. */
+  const steps = { room: 0, panel: 0 }, now = {};   // now: the open room's own shut and minimize
   async function study(ref, label, opts = {}) {
+    if (steps.panel) { const s = steps.panel; steps.panel = 0; await H.back.done(s); }
     document.querySelector('.rs')?.remove();
     const S = { ref, verses: [], sel: -1, word: null, tab: 'links', talk: [] };
-    const url = new URL(location.href); url.searchParams.set('study', ref); history.replaceState(null, '', url);
+    const url = new URL(location.href); url.searchParams.set('study', ref);
+    if (!steps.room && H.back) {
+      const base = new URL(location.href); base.searchParams.delete('study');
+      history.replaceState(history.state, '', base);   // the page under the room, so back leaves no ?study behind
+      steps.room = H.back.push(() => { steps.room = 0; now.shut(); }, url);
+    } else history.replaceState(history.state, '', url);
 
     const textBox = el('div', { class: 'rs-text', 'aria-live': 'polite' }, el('p', { class: 'muted' }, 'טוען את הפסוקים…'));
     const tabsBar = el('div', { class: 'rs-tabs', role: 'tablist' });
     const pane = el('div', { class: 'rs-pane' });
-    const minimize = () => { root.classList.remove('open'); drawFab(); };
+    let applySize = () => {};   // set by sizer() below
+    const minimize = () => {
+      root.classList.remove('open'); drawFab();
+      if (steps.panel) { const s = steps.panel; steps.panel = 0; H.back.done(s); }
+    };
     const tools = el('aside', { class: 'rs-tools', 'aria-label': 'כלי העיון' },
       el('div', { class: 'rs-tools-head' }, tabsBar,
         el('button', { class: 'rs-min', 'aria-label': 'מזעור הכלים', title: 'מזעור', onclick: minimize }, el('span', { 'aria-hidden': 'true' }, '–'))),
       pane);
-    const close = () => { root.remove(); document.body.classList.remove('modal-open'); const u = new URL(location.href); u.searchParams.delete('study'); history.replaceState(null, '', u); };
+    const shut = () => { root.remove(); document.body.classList.remove('modal-open'); };
+    Object.assign(now, { shut, minimize });
+    const close = async () => {
+      shut();
+      if (steps.room) { const s = steps.room; steps.room = 0; steps.panel = 0; await H.back.done(s); }
+      const u = new URL(location.href); u.searchParams.delete('study'); history.replaceState(history.state, '', u);
+    };
     const root = el('div', { class: 'rs', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'עיון ב' + (label || ref) },
       el('header', { class: 'rs-head' },
         el('button', { class: 'rs-back', onclick: close }, '‹ לפרשה'),
@@ -79,6 +100,7 @@
         el('div', { class: 'rs-opts' },
           el('label', { class: 'rs-opt' }, el('input', { type: 'checkbox', checked: P.teamim, onchange: (e) => { P.teamim = e.target.checked; H.savePrefs('study'); drawText(); } }), 'טעמים'),
           el('label', { class: 'rs-opt' }, el('input', { type: 'checkbox', checked: P.en, onchange: (e) => { P.en = e.target.checked; H.savePrefs('study'); drawText(); } }), 'English'),
+          sizer(),
           el('a', { class: 'rs-ext', href: sefariaUrl(ref), target: '_blank', rel: 'noopener' }, 'בספריא ↗'))),
       el('div', { class: 'rs-body' }, el('div', { class: 'rs-page' }, textBox), tools),
       el('div', { class: 'rs-fab' }));
@@ -89,7 +111,25 @@
         S.sel >= 0 ? fab('tools', 'כלי עיון', '#d4f2dc', () => openTab(S.tab)) : '',
         fab('lens', 'שאלו את החוקר', '#ffe7a8', () => openTab('ask')));
     }
+    function sizer() {
+      const at = () => Math.max(0, SIZES.indexOf(+P.size || 1));
+      const out = el('output', { class: 'rs-size-v', 'aria-live': 'polite' });
+      const b = (d, text, name) => el('button', { type: 'button', class: 'rs-size-b', 'data-step': d > 0 ? 'up' : 'down', 'aria-label': name, title: name, onclick: () => {
+        P.size = SIZES[Math.min(SIZES.length - 1, Math.max(0, at() + d))]; H.savePrefs('study'); applySize();
+      } }, text);
+      const box = el('div', { class: 'rs-size', role: 'group', 'aria-label': 'גודל הטקסט' }, b(-1, 'א−', 'הקטנת הטקסט'), out, b(1, 'א+', 'הגדלת הטקסט'));
+      applySize = () => {
+        const z = SIZES[at()];
+        root.style.setProperty('--rs-zoom', z);
+        textBox.style.zoom = pane.style.zoom = z === 1 ? '' : z;   // the reading and the commentary; the bars stay as they are
+        out.value = Math.round(z * 100) + '%';
+        box.querySelector('[data-step=down]').disabled = at() === 0;
+        box.querySelector('[data-step=up]').disabled = at() === SIZES.length - 1;
+      };
+      return box;
+    }
     root.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (root.classList.contains('open')) minimize(); else close(); } });
+    applySize();
     document.body.append(root);
     document.body.classList.add('modal-open');
     root.querySelector('.rs-back').focus();
@@ -187,6 +227,7 @@
     function openTab(tab) {
       S.tab = tab;
       tabsBar.replaceChildren(...TABS.map(([k, n]) => el('button', { role: 'tab', class: 'rs-tab' + (k === tab ? ' on' : ''), 'aria-selected': String(k === tab), onclick: () => openTab(k) }, n)));
+      if (!root.classList.contains('open') && !steps.panel && H.back) steps.panel = H.back.push(() => { steps.panel = 0; now.minimize(); });
       root.classList.add('open');
       drawFab();
       const verse = S.verses[S.sel];

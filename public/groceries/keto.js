@@ -306,10 +306,11 @@
   }
 
   /** A food from the shopping list or the calculator: values per 100 g, and a way to correct them from the label. */
-  function showFood(name, food) {
+  function showFood(name, food, verdict) {
     // (Open Food Facts is ODbL: its values say where they came from)
     const src = { builtin: 'מטבלת הערכים המובנית', ai: 'הערכה של העוזר החכם', user: 'ערכים שתיקנו אצלנו', off: 'מתוויות המוצרים ב־Open Food Facts' }[food.source] || '';
     showTotals(`${name} · ל-100 גרם`, food, null, el('div', {},
+      verdict ? el('p', { class: 'diet-verdict' }, verdict) : null,
       el('p', { class: 'muted' }, [src, food.unit_g ? `יחידה אחת ≈ ${fmt(food.unit_g, 0)} גרם` : ''].filter(Boolean).join(' · ')),
       el('div', { class: 'row' },
         el('button', { class: 'btn ghost small', onclick: () => editFoodValues(name, food) }, '✎ תיקון לפי התווית'),
@@ -531,16 +532,25 @@
   /* ================= רשימת הקניות ================= */
   /** The values beside a shopping-list item when the switch is on (null when off or not food). */
   function annotate(item) {
-    if (!state.settings.enabled || NON_FOOD.has(item.cat)) return null;
+    const diets = Diets.foodDiets();
+    if ((!state.settings.enabled && !diets.length) || NON_FOOD.has(item.cat)) return null;
     const food = lookup(item.name);
     if (!food) { want(item.name); return el('span', { class: 'macro wait', title: 'מחפש ערכים…' }, el('span', { class: 'spinner tiny' })); }
     if (!food.is_food) return null;
+    // One small pie per diet, titled, enlarged on tap (the owner's tour, 2026-11-13: no small numbers in the list).
+    // Design's contract: span.macro.diet-pies > button.diet-pie[data-diet][data-fit] > svg.pie + span.diet-pie-name.
+    // Each diet's own judgment is in data-fit (ok | warn | bad) and in the label; keto has none (its pie is the ratio).
     const s = M.summarize(food);
-    return el('span', { class: 'macro' },
-      el('button', { type: 'button', class: 'pie-btn', 'aria-label': `ערכי התזונה של ${item.name} בהגדלה`, onclick: (e) => { e.preventDefault(); e.stopPropagation(); showFood(item.name, food); }, html: M.pieSvg(food, 26) }),
-      el('small', { class: 'macro-nums', title: 'ל-100 גרם: שומן · חלבון · פחמימות · סיבים' },
-        el('span', { class: 't-fat' }, `ש ${fmt(s.fat)}`), el('span', { class: 't-protein' }, `ח ${fmt(s.protein)}`),
-        el('span', { class: 't-carbs' }, `פ ${fmt(s.carbs)}`), el('span', { class: 't-fiber' }, `ס ${fmt(s.fiber)}`)));
+    const pie = (id, name, fit) => {
+      const b = el('button', { type: 'button', class: 'diet-pie', 'data-diet': id, 'data-fit': fit?.[0] || null,
+        'aria-label': `${name}: ${fit ? fit[1] + '. ' : ''}ערכי התזונה של ${item.name}`, title: fit?.[1] || null,
+        onclick: (e) => { e.preventDefault(); e.stopPropagation(); showFood(item.name, food, fit && `${name}: ${fit[1]}`); } }, el('span', { class: 'diet-pie-name' }, name));
+      b.insertAdjacentHTML('afterbegin', M.pieSvg(food, 24, { ring: true }));
+      return b;
+    };
+    return el('span', { class: 'macro diet-pies' },
+      state.settings.enabled ? pie('keto', 'קטו') : null,
+      diets.map((d) => pie(d.id, d.name, d.food(s, item.name))));
   }
 
   /* ================= מתכון: ערכים למנה לפי הדיאטה ================= */
@@ -603,7 +613,27 @@
     return box;
   }
 
+  /** A stamp per diet that is on (vision batch 2, item 1): paleo from the ingredients' names, the others from the values
+   *  per serving (the same estimate as keto's, made once per set of ingredients). Markup for design:
+   *  div.diet-stamps > span.diet-stamp[data-diet][data-fit] (+ small.diet-note "אינו ייעוץ רפואי" for low sugar). */
+  function dietStamps(recipe) {
+    const diets = Diets.foodDiets();
+    if (!diets.length || !recipe?.ingredients?.length) return null;
+    const names = recipe.ingredients.map((i) => i.name).filter(Boolean);
+    const mark = { ok: '✓', warn: '⚠', bad: '✗' };
+    const stamp = (d, fit) => el('span', { class: 'diet-stamp', 'data-diet': d.id, 'data-fit': fit?.[0] || 'wait' }, fit ? `${mark[fit[0]]} ${fit[1]}` : `${d.name}…`);
+    const box = el('div', { class: 'diet-stamps', role: 'status' }, diets.map((d) => stamp(d, d.byName ? d.recipe(null, names) : null)),
+      diets.some((d) => d.note) ? el('small', { class: 'diet-note muted' }, 'אינו ייעוץ רפואי') : null);
+    if (diets.some((d) => !d.byName)) {
+      valuesFor(recipe).then(({ s }) => {
+        box.querySelectorAll('.diet-stamp').forEach((x, n) => { if (!diets[n].byName) x.replaceWith(stamp(diets[n], diets[n].recipe(s, names))); });
+      }).catch(() => box.querySelectorAll('.diet-stamp[data-fit="wait"]').forEach((x) => x.remove()));
+    }
+    return box;
+  }
+
   window.Keto = {
+    dietStamps,
     ready,
     get enabled() { return !!state.settings.enabled; },
     annotate,

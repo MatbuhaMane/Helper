@@ -206,6 +206,11 @@
     ended = true;
     clearTimeout(typing);
     me.welcomed = Date.now(); keep('me');   // (shown once; settings can run it again)
+    // "האוהל התעדכן" (/assets/whatsnew.js): whatever is new now is not news to someone who just came in
+    const seenNow = fetch('/whats-new.json', { cache: 'no-store', credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).then((j) => {
+      const v = typeof j?.v === 'string' ? j.v.trim().slice(0, 100) : '';
+      if (v) { H.prefs('whatsnew', { seen: '' }).seen = v; H.savePrefs('whatsnew'); }
+    }).catch(() => {});
     // finished (not skipped): the first achievement, "נטית את האוהל"
     if (!skipped) fetch('/api/welcome/done', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
     if (!dp.figure) { dp.figure = A.figure; keep('daemon'); }
@@ -227,7 +232,7 @@
     stage.append(box);
     $('back').style.visibility = 'hidden';
     go.textContent = 'לאוהל'; go.disabled = false; go.onclick = () => { location.href = '/'; };
-    if (skipped) location.href = '/';
+    if (skipped) Promise.race([seenNow, new Promise((ok) => setTimeout(ok, 1500))]).finally(() => { location.href = '/'; });
     friend?.happy?.();
   }
   await meet(A.figure);

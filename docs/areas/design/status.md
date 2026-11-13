@@ -5,6 +5,11 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: the "חבר עוזר חינמי" guide (ai-invite.js, the logic is ai-features').** In base.css as `.gk`:
+  - three steps, each with a line drawing (`/assets/ai-invite/signin|key|paste.svg`) and a number;
+  - only the current step (`aria-current="step"`) shows its big 56px button; finished steps get `data-done` and a ✓;
+  - `.gk-err` for a key that failed; `data-state="done"` shows `.gk-done` (a big check, "מחובר ✓"); `.gk-ok.small` is the tag for a settings row;
+  - big type for older eyes. Sample: `docs/design/prototype/ai-key-guide.html` (`?s=1|2|3|err|done`). Checked at 375 and 1280, light and dark; contrast ≥5.9.
 - **Ready: editing and deleting in the family tree (a user's bug, 2026-11-13; the logic is ai-features').**
   - **The person's panel:** big edit and delete buttons with icons in the header (`.fv-pacts` / `.fv-pact`). At 375 they take their own row, 48px tall.
   - **Undo for 10 seconds:** `.fv-undo` above the tab bar, with a draining line. The deleted person stays on the tree, faded (`.tr-p.going` / `.fv-card.going`).

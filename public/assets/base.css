@@ -639,3 +639,85 @@ body:has(.fab-wrap) .owner-msgs { inset-block-end: calc(var(--tabbar-h, 0px) + e
   .egg.found::before { translate: none; rotate: none; } .egg-note { animation: egg-note-still 2.4s linear both; }
 }
 @keyframes egg-note-still { 0%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+/* ---------- "חבר עוזר חינמי": connecting a free Gemini key in three steps (ai-invite.js; the logic is ai-features') ----------
+   Made for older eyes: big type, few words, one big button at a time. It opens in H.modal (or inside settings' #services).
+     <div class="gk" data-state="steps">                       (data-state="done" once the key is checked)
+       <header class="gk-head"><span class="gk-free">חינם</span><h2>חבר עוזר חינמי</h2><p>שלושה צעדים, בערך דקה</p></header>
+       <ol class="gk-steps">
+         <li class="gk-step" data-pic="signin" aria-current="step">      (the step you are on; a finished one gets data-done)
+           <span class="gk-pic" aria-hidden="true"></span>
+           <div class="gk-txt"><b>נכנסים ל־Google</b><small>עם החשבון הרגיל שלכם</small></div>
+           <a class="btn primary gk-go" href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">פתיחת Google</a>
+         </li>
+         <li class="gk-step" data-pic="key">…<b>לוחצים <span class="gk-en">Create API key</span> ומעתיקים</b>…</li>
+         <li class="gk-step" data-pic="paste">…<b>חוזרים לאוהל ולוחצים „הדבק”</b>… <button class="btn primary gk-go">הדבק</button></li>
+       </ol>
+       <p class="gk-err" role="alert" hidden>המפתח לא עבד. נסו להעתיק שוב.</p>
+       <div class="gk-done" role="status"><span class="gk-ok">מחובר ✓</span><p>העוזר החכם עובד עכשיו על החשבון שלכם, בחינם.</p>
+         <button class="btn primary gk-go" type="button">סיום</button></div>
+       <button class="btn ghost gk-later" type="button">לא עכשיו</button>
+     </div>
+   Only the current step shows its button (big, primary); the others show their drawing and words. A step with no
+   aria-current anywhere shows every button. The connected tag alone, for a settings row: <span class="gk-ok small">מחובר ✓</span>. */
+.gk { display: grid; gap: 16px; max-inline-size: 460px; margin-inline: auto; font-size: 1.12rem; line-height: 1.5; padding-block: 4px; }
+.gk-head { display: grid; justify-items: center; text-align: center; gap: 6px; }
+.gk-head h2 { margin: 0; font-size: 1.6rem; line-height: 1.25; text-wrap: balance; }
+.gk-head p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+.gk-free { padding-block: 3px; padding-inline: 14px; border-radius: 999px; font-size: .95rem; font-weight: 600; letter-spacing: .02em;
+  color: var(--gk-free-ink); background: color-mix(in srgb, var(--olive) 30%, var(--card)); }
+:root { --gk-free-ink: color-mix(in srgb, var(--olive) 28%, var(--ink)); }
+:root[data-theme="dark"] { --gk-free-ink: color-mix(in srgb, var(--olive) 70%, #fff); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --gk-free-ink: color-mix(in srgb, var(--olive) 70%, #fff); } }
+
+.gk-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: gk; }
+.gk-step { counter-increment: gk; position: relative; display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 12px 14px;
+  padding: 14px 16px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); }
+.gk-step[aria-current="step"] { border: 2px solid var(--primary); padding: 13px 15px; background: color-mix(in srgb, var(--primary) 5%, var(--card));
+  box-shadow: 0 10px 24px -18px color-mix(in srgb, var(--primary) 70%, #000); }
+.gk-pic { position: relative; inline-size: 64px; block-size: 64px; border-radius: 50%; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--olive) 20%, var(--card)); color: var(--primary); }
+.gk-pic::before { content: ""; inline-size: 42px; block-size: 42px; background: currentColor;
+  -webkit-mask: var(--gk-pic) center / contain no-repeat; mask: var(--gk-pic) center / contain no-repeat; }
+.gk-pic::after { content: counter(gk); position: absolute; inset-block-start: -4px; inset-inline-start: -4px; inline-size: 26px; block-size: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: .9rem; font-weight: 700; line-height: 1; color: var(--card); background: var(--primary); border: 2px solid var(--card); }
+.gk-step[data-pic="signin"] { --gk-pic: url(/assets/ai-invite/signin.svg); }
+.gk-step[data-pic="key"] { --gk-pic: url(/assets/ai-invite/key.svg); }
+.gk-step[data-pic="paste"] { --gk-pic: url(/assets/ai-invite/paste.svg); }
+.gk-txt { display: grid; gap: 2px; min-inline-size: 0; }
+.gk-txt b { font-size: 1.18rem; font-weight: 600; line-height: 1.35; text-wrap: balance; }
+.gk-txt small { font-size: 1rem; color: var(--muted); }
+.gk-en { direction: ltr; unicode-bidi: isolate; display: inline-block; padding-inline: 6px; border-radius: 6px; font-weight: 600;
+  background: color-mix(in srgb, var(--primary) 12%, transparent); }
+.gk-go { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; min-block-size: 56px; font-size: 1.15rem; font-weight: 600; }
+.gk-steps:has([aria-current]) .gk-step:not([aria-current]) .gk-go { display: none; }
+/* a finished step: its number becomes a check and the step quiets down */
+.gk-step[data-done] { opacity: .72; }
+.gk-step[data-done] .gk-pic::after { content: "✓"; background: var(--ok); }
+.gk-err { margin: 0; padding: 12px 14px; border-radius: 14px; font-size: 1.05rem; font-weight: 500;
+  color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); }
+.gk-later { justify-self: center; min-block-size: 44px; font-size: 1rem; }
+
+/* connected */
+.gk-done { display: none; justify-items: center; text-align: center; gap: 12px; padding: 18px 16px; border-radius: 18px;
+  background: color-mix(in srgb, var(--ok) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--ok) 40%, transparent); }
+.gk-done::before { content: ""; inline-size: 84px; block-size: 84px; background: var(--ok);
+  -webkit-mask: url(/assets/ai-invite/done.svg) center / contain no-repeat; mask: url(/assets/ai-invite/done.svg) center / contain no-repeat;
+  animation: gk-ok .6s var(--ease-river, ease-out); }
+.gk-done p { margin: 0; font-size: 1.08rem; max-inline-size: 30ch; }
+.gk-done .gk-go { inline-size: 100%; }
+.gk-ok { display: inline-flex; align-items: center; gap: 6px; font-size: 1.4rem; font-weight: 700; color: var(--ok); }
+.gk-ok.small { font-size: .95rem; padding-block: 2px; padding-inline: 10px; border-radius: 999px; background: color-mix(in srgb, var(--ok) 14%, var(--card)); }
+.gk[data-state="done"] :is(.gk-steps, .gk-err, .gk-later) { display: none; }
+.gk[data-state="done"] .gk-done { display: grid; }
+.gk[data-state="done"] .gk-head p { display: none; }
+@keyframes gk-ok { from { opacity: 0; scale: .6; } 70% { scale: 1.06; } to { opacity: 1; scale: 1; } }
+@media (prefers-reduced-motion: reduce) { .gk-done::before { animation: none; } }
+:root[data-motion="reduce"] .gk-done::before { animation: none; }
+@media (max-width: 379px) {
+  .gk-step { grid-template-columns: 52px 1fr; gap: 10px 12px; padding: 12px 13px; }
+  .gk-step[aria-current="step"] { padding: 11px 12px; }
+  .gk-pic { inline-size: 52px; block-size: 52px; }
+  .gk-pic::before { inline-size: 34px; block-size: 34px; }
+  .gk-head h2 { font-size: 1.45rem; }
+}

@@ -1089,6 +1089,42 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-13 – The readiness bar: הָאֹהֶל is shown to the family only when it passes (vision, the owner)
+
+The owner: "I want to feel high graphic quality, high-quality finishes with animations and smooth, working interfaces.
+Full functionality with a fast response time: an app I would want to use every day." Confirmed as a measurable bar.
+
+**The bar (all five must pass before the family beta):**
+1. **Graphics and finish:**
+   - every item in design's style check is ✅, and nothing is outside the one style (the companion figures follow their
+     own decided rules);
+   - `tools/audit.js` is clean on every page, at 375 and 1280 px, by day and at night.
+2. **Smooth motion:**
+   - every transition, card and sheet runs without jank on a mid-range phone (the target is 60 fps);
+   - no layout shift while loading.
+3. **Speed, by Google's "good" thresholds:**
+   - the first screen in ≤ 2.5 s on 4G (LCP);
+   - response to a tap in ≤ 200 ms (INP);
+   - layout shift ≤ 0.1 (CLS).
+4. **Full functionality:**
+   - no visible "בקרוב" pages: each is finished or hidden;
+   - no errors;
+   - the core flows work end to end: sign-in, a gathering with an invitation and RSVPs, the shopping list, recipes,
+     the family tree, goals and research.
+5. **A joint test run (the owner changed this from "two weeks of daily use"):** the owner and the vision session go
+   through every core flow together, on a phone and on a PC: sign-in, a gathering, shopping, recipes, the tree, goals,
+   research and settings. Every friction point goes into a batch. After the fixes there is another run, until the owner
+   feels it is ready.
+
+**Affects:**
+- **The master:** extend `tools/audit.js` (or add a tool) to measure speed and motion (LCP, INP, CLS, long frames) on a
+  phone profile, and report each page against the bar.
+- **Design:** finish the style check and the motion.
+- **ai-features:** speed of the pages and the API, the "בקרוב" pages, and the core flows.
+- **Business:** none, beyond the beta's start date moving with the bar.
+
+Status: Decided (the owner).
+
 ## 2026-11-13 – Companion figures: the free list and the paid list (vision, the owner)
 
 This updates the entry below: there are also certain paid figures, not only the personal one. The owner's lists:

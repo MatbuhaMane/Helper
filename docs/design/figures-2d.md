@@ -59,9 +59,23 @@ is to be checked by business before anything around him is sold; he is free in t
 
 | id | name | its move |
 |---|---|---|
-| magician | הקוסם מהשוק (a man) | a dove (with an olive sprig) flies out of his tarboosh in a burst of sparks |
-| astronomer | האסטרונומית (a woman) | at night the stars of her shawl wake and twinkle, and she glows faintly; when glad, a shooting star |
+| magician | הקוסם מהשוק (a man) | redrawn 2026-11-13 after the owner's picture: a kind old desert wizard, white turban and beard, a blue light over his staff; a dove (with an olive sprig) flies out of his turban in a burst of sparks |
+| astronomer | האסטרונומית (a woman) | at night the stars of her shawl wake and twinkle, and she glows faintly; when glad, a shooting star. **Her hair is chosen by the person**, white by default (below) |
 | doll | בובת הטלאים (neither) | wears the person's own badges, sewn on: `mount(el, 'doll', { patches: earnedBadgeIds })` (up to 8, newest last); `f.sew(id)` stitches a newly earned one in |
+| nightwizard | קוסם הלילה (a man) | a young wizard, a black cloak with golden flowers, a crescent staff with a pearl that glows; when glad, pale gold sparks from the pearl |
+| forestwitch | קוסמת היער (a woman) | a young wizard of the forest, curly hair, a purple hat, a crystal staff and an old book; when glad, violet sparks from the crystals |
+| littlewizard | הקוסם הקטן (a man) | short and round, a big blue starry hat hiding his eyes, a white beard; a golden orb that glows; a mouth shows only while he talks |
+| littlewitch | הקוסמת הקטנה (a woman) | his counterpart: the same hat over her eyes, silver braids, rosy cheeks; a golden orb that glows; a mouth only while she talks |
+
+The four wizards were added at the owner's word (2026-11-13), after the owner's pictures, toned for everyone: moons and
+stars instead of a pentagram and runes, a crescent instead of snakes, a closed robe. Any figure may glow where its
+light is (`glowAt`, `glowColor`) and spark from there (`special: 'spark'`, `sparkFrom`, `sparkColor`); a figure with
+`eyes: []` has none drawn (the hat hides them), and `mouthQuiet` shows the mouth only while it talks.
+
+**The astronomer's hair:** her hair is its own layer (`/figures/2d/astronomer/hair.webp`), tinted with multiply so its
+shading stays. `Figure2D.list()` gives `hair: [{ color, name }]` (לבן, כסוף, שחור, חום, ערמוני, ג'ינג'י, בלונד) and
+`hairDefault: '#ffffff'`; mount with `{ hair: color }` and change it live with `f.setHair(color)`. For ai-features: a
+row of colour swatches under the figure when she is chosen, saved per person (e.g. `H.prefs('daemon').hair`).
 
 For ai-features: show them as their own group ("מיוחדות"), paid; for the doll pass the person's earned badge ids
 (`D.badges.earned` in goals) as `patches`, and call `f.sew(id)` when a badge is earned while it is on screen.

@@ -11,6 +11,20 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Four more paid wizards, the magician redrawn, the astronomer's hair chosen (design → master, ai-features, business)
+
+The owner's word (2026-11-13), after the owner's pictures: the doll and the astronomer approved; **the magician redrawn**
+as a kind old desert wizard (white turban and beard; same id `magician`, same name and dove); **four new paid figures**
+in Figure2D, `kind: 'special'`, `tier: 'paid'`: `nightwizard` קוסם הלילה, `forestwitch` קוסמת היער, `littlewizard`
+הקוסם הקטן, `littlewitch` הקוסמת הקטנה (their staffs glow; when glad, sparks). **The astronomer's hair** is chosen by
+the person, white by default: `Figure2D.list()` gives `hair` and `hairDefault`, `mount(el, 'astronomer', { hair })`,
+`f.setHair(color)`. Details in `docs/design/figures-2d.md`.
+- ai-features: the four in the "מיוחדות" group; under the astronomer, a row of hair swatches, saved per person
+  (e.g. `H.prefs('daemon').hair`).
+- business and the master: the paid list now has 7 special figures (magician, astronomer, doll and the four wizards)
+  besides the four paid people; prices are business's.
+Status: done (design).
+
 ## 2026-11-14 – The founders page and the purchase page: their look (design → business, ai-features, master)
 
 At business's request (`docs/business/founders.md` §4–5, `docs/business/monetization.md` §4.3). CSS only, plus two

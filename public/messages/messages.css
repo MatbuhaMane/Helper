@@ -1,0 +1,71 @@
+/* הודעות – messages between members (messages.js, server/dm.ts). The look (design, 2026-11-13).
+   <div class="dm" [data-open]>
+     <section class="card dm-list"><div class="dm-list-head"><h2>השיחות</h2><button class="btn primary small">שיחה חדשה</button></div>
+       <ul class="dm-rows"><li><button class="dm-row [unread]" aria-current="true|false"><b>שם</b><time>10:42</time><small>…the last line</small></button></li></ul>
+       <p class="dm-empty" [hidden]>…</p></section>
+     <section class="card dm-thread">
+       <div class="dm-thread-head"><button class="btn ghost small dm-back">‹ לשיחות</button><h2>שם</h2><button class="btn ghost small">חסום</button></div>
+       <div class="dm-msgs" role="log"><div class="dm-day">היום</div><div class="dm-msg mine|theirs">text<time>10:42</time></div> … <div class="dm-day">נקרא</div></div>
+       <div class="dm-compose"><textarea></textarea><button class="btn primary">שלח</button></div>  (or <p class="dm-note">)
+       <p class="dm-note">רק שניכם רואים את השיחה הזו.</p></section></div>
+   The new-conversation picker (in H.modal, outside .dm): <ul class="dm-pick"><li><h3>הבית</h3></li><li><button class="dm-row">…</button></li></ul>
+   Phone: the list or the conversation (data-open on .dm); 900px and up: both side by side.
+   Mine sits at the start (the right), in the vine; theirs at the end, on a warm neutral.
+   NOTE: daemon.css (loaded on every page) also has .dm-msg and .dm-compose for the companion's panel, so those two are
+   written here under .dm-thread, which outranks it, and undo what would leak (the round send button, the bar's top line). */
+
+.dm { display: grid; gap: 14px; align-items: start; min-inline-size: 0; }
+.dm > * { min-inline-size: 0; }
+@media (min-width: 900px) { .dm { grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); } .dm-back { display: none; } }
+@media (max-width: 899px) { .dm[data-open] > .dm-list, .dm:not([data-open]) > .dm-thread { display: none; } }
+.dm-list, .dm-thread { margin: 0; padding: 14px; }
+
+/* the heads */
+.dm-list-head, .dm-thread-head { display: flex; align-items: center; gap: 8px; margin-block-end: 10px; }
+.dm-list-head { justify-content: space-between; }
+.dm-thread-head { padding-block-end: 10px; border-block-end: 1px solid var(--line); }
+.dm-list-head h2, .dm-thread-head h2 { margin: 0; font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-thread-head h2 { flex: 1; min-inline-size: 0; }
+.dm-back { flex: none; }
+
+/* the conversations */
+.dm-rows, .dm-pick { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+@media (min-width: 900px) { .dm-rows { max-block-size: min(68vh, 700px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; } }
+.dm-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: baseline; inline-size: 100%; min-block-size: 56px;
+  padding: 10px 12px; text-align: start; font: inherit; color: var(--text); cursor: pointer;
+  background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm); }
+.dm-row b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-row small { grid-column: 1 / -1; color: var(--muted); font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-row time { color: var(--muted); font-size: .78rem; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (hover: hover) { .dm-row:hover { background: color-mix(in srgb, var(--muted) 9%, transparent); border-color: var(--line); } }
+.dm-row[aria-current="true"] { background: color-mix(in srgb, var(--primary) 11%, var(--card)); border-color: color-mix(in srgb, var(--primary) 40%, var(--line)); }
+.dm-row:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; }
+.dm-row.unread b { font-weight: 700; }
+.dm-row.unread b::after { content: ""; display: inline-block; inline-size: 8px; block-size: 8px; margin-inline-start: 6px; border-radius: 50%; background: #c2412d; vertical-align: middle; }
+.dm-row.unread time { color: var(--primary); font-weight: 600; }
+.dm-pick { margin-block-start: 8px; max-block-size: 50vh; overflow-y: auto; overscroll-behavior: contain; }
+.dm-pick h3 { margin: 10px 0 2px; font-size: .82rem; font-weight: 600; color: var(--muted); letter-spacing: .02em; }
+.dm-pick li:first-child h3 { margin-block-start: 0; }
+
+/* the conversation */
+.dm-msgs { display: flex; flex-direction: column; gap: 6px; min-block-size: 240px; max-block-size: min(62vh, 640px);
+  overflow-y: auto; overscroll-behavior: contain; padding: 8px 2px; }
+@media (max-width: 899px) { .dm-msgs { max-block-size: max(240px, calc(100dvh - var(--appbar-h) - var(--tabbar-h, 0px) - 270px)); } }
+.dm-thread .dm-msg { max-inline-size: min(82%, 34rem); margin: 0; padding: 8px 12px 6px; border-radius: 16px; font-size: 1rem; line-height: 1.45;
+  white-space: pre-wrap; overflow-wrap: anywhere; }
+.dm-thread .dm-msg.mine { align-self: flex-start; background: var(--primary); color: var(--primary-ink); border: 0; border-end-start-radius: 5px; }
+.dm-thread .dm-msg.theirs { align-self: flex-end; background: color-mix(in srgb, var(--muted) 11%, var(--card)); color: var(--text);
+  border: 1px solid var(--line); border-end-end-radius: 5px; }
+.dm-thread .dm-msg.mine + .dm-msg.mine, .dm-thread .dm-msg.theirs + .dm-msg.theirs { margin-block-start: -3px; }
+.dm-thread .dm-msg time { display: block; margin-block-start: 2px; font-size: .72rem; text-align: end; font-variant-numeric: tabular-nums; opacity: .8; }
+.dm-day { align-self: center; margin: 8px 0 4px; padding: 2px 10px; border-radius: 999px; font-size: .78rem; color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 10%, transparent); }
+.dm-msg.mine + .dm-day:last-child { align-self: flex-start; margin-block-start: 0; padding: 0 4px; background: none; font-size: .74rem; }   /* נקרא, under my last */
+
+/* writing */
+.dm-thread .dm-compose { display: flex; gap: 8px; align-items: flex-end; margin-block-start: 8px; padding: 10px 0 0; border: 0; border-block-start: 1px solid var(--line); background: none; }
+.dm-thread .dm-compose textarea { flex: 1; min-inline-size: 0; min-block-size: 44px; max-block-size: 160px; resize: none; border-radius: 22px; padding: 10px 16px; line-height: 1.45; }
+.dm-thread .dm-compose .btn { flex: none; inline-size: auto; block-size: auto; min-block-size: 44px; padding: 0 18px; border-radius: 999px; display: inline-flex; place-items: center; }
+.dm-note, .dm-empty { margin: 8px 0 0; color: var(--muted); font-size: .88rem; }
+.dm-list .dm-empty { padding: 20px 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+.dm-thread > .dm-empty { padding: 40px 12px; text-align: center; }

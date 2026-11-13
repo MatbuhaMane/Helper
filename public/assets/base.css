@@ -32,6 +32,7 @@
   --accent: var(--olive);    /* a field, always with ink text */
   --accent-ink: var(--ink);
   --danger: #9a3b2a;
+  --alert: #cc5a46;   /* the bar's warning triangle: a soft coral red, still 3:1 on the bar */
   --ok: var(--vine);
   --glass: rgba(247, 246, 240, 0.82);
   --glass-border: rgba(46, 42, 30, 0.12);
@@ -64,6 +65,7 @@
     --primary: #a8c28c;
     --primary-ink: #070b14;
     --danger: #e79a85;
+    --alert: #e79a85;
     --ok: #a8c28c;
     --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
@@ -82,6 +84,7 @@
     --primary: #a8c28c;
     --primary-ink: #070b14;
     --danger: #e79a85;
+    --alert: #e79a85;
     --ok: #a8c28c;
     --glass: rgba(14, 20, 34, 0.88);
     --glass-border: rgba(231, 225, 211, 0.10);
@@ -209,8 +212,24 @@ main.wide { max-width: 1200px; }
 .appbar .spacer { flex: 1; }
 .userchip { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: .9rem; color: var(--text); background: none; border: 1px solid var(--line-strong); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
 .userchip:hover { border-color: var(--primary); color: var(--primary); }
-.userchip:has(.mi-dot) { position: relative; }   /* a new reply in the person's inbox (reports.css): a small red dot on the chip */
+.userchip:has(.mi-dot, .dm-dot) { position: relative; }   /* a new reply in the person's inbox (reports.css): a small red dot on the chip */
 .mi-dot { position: absolute; inset-block-start: -3px; inset-inline-end: -3px; inline-size: 11px; block-size: 11px; border-radius: 50%; background: #c2412d; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }
+.dm-dot { position: absolute; inset-block-end: -3px; inset-inline-end: -3px; inline-size: 11px; block-size: 11px; border-radius: 50%; background: #c2412d; box-shadow: 0 0 0 2px var(--bg); pointer-events: none; }   /* an unread message (dm.js), at the chip's lower corner */
+
+/* ── The warning triangle in the top bar (the owner, 2026-11-13; moved from reports.css so /welcome/ shows the same one): beside the settings chip, it opens the report sheet.
+   <button class="rp-alert" type="button" aria-label="דיווח על תקלה או הצעה לשיפור"></button>  (no children needed: the triangle is
+   drawn here; an H.icon put inside is hidden). Only the triangle, in a soft pastel red (--alert), with no circle around it
+   (the owner, 2026-11-13); the button stays a 44×44 target. A ring shows only on keyboard focus. */
+.rp-alert { display: inline-grid; place-items: center; flex: none; inline-size: 44px; block-size: 44px; margin-block: -4px; margin-inline: -2px;
+  padding: 0; border: 0; border-radius: 50%; background: none; color: var(--alert, #cc5a46); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rp-alert::after { content: ""; inline-size: 24px; block-size: 24px; background: currentColor; transition: scale var(--dur-quick, .15s) ease;
+  -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
+.rp-alert > :is(svg, .icon) { display: none; }
+@media (hover: hover) { .rp-alert:hover::after { scale: 1.1; } }
+.rp-alert:active::after { scale: .92; }
+.rp-alert:focus-visible { outline: 3px solid color-mix(in srgb, var(--alert, #cc5a46) 55%, transparent); outline-offset: -3px; }
+.rp-alert[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .rp-alert::after { transition: none; } }
 /* Light / dark switch: a little pill, the sun on one side and the moon on the other, a knob that slides between them. */
 .theme-switch { position: relative; inline-size: 58px; block-size: 30px; flex-shrink: 0; border-radius: 999px; border: 1px solid var(--line-strong); padding: 0; cursor: pointer;
   background: linear-gradient(90deg, #f6d37a, #f2b36b); display: flex; align-items: center; justify-content: space-between; padding-inline: 7px; transition: background .4s var(--ease-river); }

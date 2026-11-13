@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>הודעות – אב טיפוס</title>
+  <!-- messages.css on sample markup shaped like messages.js, with daemon.css loaded too (it shares .dm-msg/.dm-compose).
+       Sample people only. Copy to public/ to view (not committed there). ?open shows the conversation on a phone. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/daemon.css">
+  <link rel="stylesheet" href="/messages/messages.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; } main { padding: 16px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); }</style>
+</head>
+<body>
+<main class="wide">
+  <div class="dm">
+    <section class="card dm-list" aria-label="השיחות">
+      <div class="dm-list-head"><h2>השיחות</h2><button class="btn primary small" type="button">שיחה חדשה</button></div>
+      <ul class="dm-rows">
+        <li><button class="dm-row unread" type="button" aria-current="true"><b>סבתא רחל</b><time>10:42</time><small>הבאתי את המתכון של העוגה, תגידי לי מתי את באה</small></button></li>
+        <li><button class="dm-row" type="button" aria-current="false"><b>דוד כהן־לוי מבית לוי הגדול</b><time>אתמול</time><small>תודה!</small></button></li>
+        <li><button class="dm-row" type="button" aria-current="false"><b>נועה</b><time>לפני 3 ימים</time><small>אני: נתראה בשבת</small></button></li>
+      </ul>
+      <p class="dm-empty" hidden>עוד אין שיחות.</p>
+    </section>
+    <section class="card dm-thread" aria-label="שיחה">
+      <div class="dm-thread-head"><button class="btn ghost small dm-back" type="button">‹ לשיחות</button><h2 dir="auto">סבתא רחל</h2><button class="btn ghost small" type="button">חסום</button></div>
+      <div class="dm-msgs" role="log">
+        <div class="dm-day">אתמול</div>
+        <div class="dm-msg theirs" dir="auto">שלום מתוקה, מה שלומך?<time>18:02</time></div>
+        <div class="dm-msg mine" dir="auto">הכל טוב סבתא! אני בבית<time>18:05</time></div>
+        <div class="dm-day">היום</div>
+        <div class="dm-msg theirs" dir="auto">הבאתי את המתכון של העוגה, תגידי לי מתי את באה<time>10:40</time></div>
+        <div class="dm-msg theirs" dir="auto">ותביאי את הילדים 😊<time>10:42</time></div>
+        <div class="dm-msg mine" dir="auto">ביום שישי בצהריים, עם כולם. ואני מביאה את הסלט שאת אוהבת, עם הרבה לימון וקצת שום, בדיוק כמו בפעם הקודמת<time>10:51</time></div>
+        <div class="dm-msg mine" dir="auto">https://example.com/a-very-long-link-without-any-spaces-to-check-wrapping-inside-the-bubble<time>10:52</time></div>
+        <div class="dm-day">נקרא</div>
+      </div>
+      <div class="dm-compose"><textarea rows="1" dir="auto" placeholder="כתבו הודעה…" aria-label="הודעה לסבתא רחל"></textarea><button class="btn primary" type="button">שלח</button></div>
+      <p class="dm-note">רק שניכם רואים את השיחה הזו.</p>
+    </section>
+  </div>
+</main>
+<script>if (location.search.includes('open')) document.querySelector('.dm').setAttribute('data-open', '');</script>
+</body>
+</html>

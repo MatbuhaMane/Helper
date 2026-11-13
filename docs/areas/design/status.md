@@ -46,6 +46,12 @@ _Updated 2026-11-14 (the cushions' flat ellipse; the page turn between windows).
   (light, dark, list and cards) and 1280. The JS side (full list rebuilds that replay the entry) is with ai-features.
 - **The phone's tab bar (the owner):** a floating glass capsule, our own round icons in `/assets/tab-icons/` (outline and
   filled), the current tab in a pale-vine pebble; checked at 375 in light and dark, the menu above it, no overflow.
+- **Diet stamps on the shopping list (the owner, 2026-11-13, f01ee33):** no grey chips. Each diet is an ink stamp
+  (✓/⚠/✗ plus the name, coloured by the verdict), with one pie at the side, and the stamps wrap beside it. The pie's window
+  grows out of the pie and shrinks back into it; with reduced motion it opens without movement.
+  - The CSS is in groceries/style.css and base.css (`.modal.grow`/`.shrinking`).
+  - The markup is a patch for keto.js (ai-features), and `H.modalFrom` is a patch for common.js (the master); both are in the notes folder.
+  - Checked at 375 and 1280, light and dark; the grow and shrink were checked in headless Chrome.
 - **The cushions away from the fire (the owner):** the ring lower and wider, clear space round the fire; checked at 375 and
   1280, no overlap, no page overflow. A patch for the master's `index.html`: `design-index-cushions-2026-11-14.patch` in the notes.
 - **The cushions on a flat ellipse again (the owner):** closer to the fire on a flatter orbit for depth (ry/rx 0.64 on the phone,

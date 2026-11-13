@@ -10,6 +10,7 @@
   const root = document.querySelector('main');
   const KEEP = 'helper.weather';
   let other = '';   // another city looked up here (not saved)
+  const SP = H.prefs('weather', { beach: '' });   // the beach for the sea card (per person; '' = the place itself)
 
   const read = () => { try { return JSON.parse(localStorage.getItem(KEEP) || 'null'); } catch (_) { return null; } };
   const keep = (w) => { try { localStorage.setItem(KEEP, JSON.stringify(w)); } catch (_) { /* private mode */ } };
@@ -70,12 +71,37 @@
       today ? el('p', { class: 'wx-sun' }, `זריחה ${today.sunrise} · שקיעה ${today.sunset}` + (today.uv != null ? ` · קרינת UV ${today.uv}` : '')) : null);
   }
 
+  /** the sea: per day, diving, surfing and a beach day – good, fair or not – with the reason (server/sea-logic.ts) */
+  const ACTS = [['dive', 'צלילה'], ['surf', 'גלישה'], ['beach', 'יום חוף']];
+  const LEVEL = { good: 'טוב', fair: 'בינוני', poor: 'לא מתאים' };
+  function sea(w) {
+    const s = w.sea;
+    const pick = el('select', { id: 'wx-beach', 'aria-label': 'החוף לתחזית הים', onchange: (e) => {
+      SP.beach = e.target.value; H.savePrefs('weather', { beach: SP.beach }); load();
+    } }, el('option', { value: '', selected: !SP.beach }, 'המקום שלי'),
+      (w.beaches || []).map((b) => el('option', { value: b.id, selected: b.id === SP.beach }, b.name)));
+    return el('section', { class: 'wx-card wx-sea', 'aria-labelledby': 'wx-s' },
+      el('div', { class: 'wx-sea-head' }, el('h2', { id: 'wx-s' }, s ? 'ים · ' + s.spot.name : 'ים'), pick),
+      !s ? el('p', { class: 'muted' }, SP.beach ? 'אין כרגע תחזית ים לחוף הזה.' : 'המקום הזה לא על החוף. אפשר לבחור חוף ולראות אם כדאי לצלול, לגלוש או לרדת לים.')
+        : el('ul', { class: 'wx-sea-days' }, s.days.map((d, i) => el('li', { class: 'wx-sea-day' },
+          el('details', { open: i === 0 },
+            el('summary', { 'aria-label': `${dayName(d.date, i)}: ` + ACTS.map(([k, n]) => `${n} ${LEVEL[d[k].level]}`).join(', ') },
+              el('b', {}, dayName(d.date, i)),
+              el('span', { class: 'wx-acts', 'aria-hidden': 'true' }, ACTS.map(([k, n]) => el('span', { class: 'wx-act', 'data-act': k, 'data-level': d[k].level }, n)))),
+            el('dl', { class: 'wx-why' }, ACTS.flatMap(([k, n]) => [
+              el('dt', { 'data-act': k, 'data-level': d[k].level }, `${n}: ${LEVEL[d[k].level]}`),
+              el('dd', {}, d[k].why)])),
+            d.water != null || d.waves != null ? el('p', { class: 'wx-sea-meta' },
+              [d.waves != null ? `גלים עד ${d.waves} מ׳` : '', d.period != null ? `מחזור ${Math.round(d.period)} שנ׳` : '', d.water != null ? `מים ${Math.round(d.water)}°` : ''].filter(Boolean).join(' · ')) : null)))),
+      s ? el('p', { class: 'wx-fine' }, 'הערכה לפי תחזית הים, לא תחליף לדגל ולמציל.') : null);
+  }
+
   function draw(w, note) {
     root.replaceChildren(el('div', { class: 'wx' },
       where(w),
       note ? el('p', { class: 'notice', role: 'status' }, note) : null,
       !w && !note ? el('section', { class: 'wx-card' }, el('p', { class: 'wx-wait', role: 'status' }, 'מביא את התחזית…')) : null,
-      ...(w ? [now(w.forecast), hours(w.forecast), days(w.forecast),
+      ...(w ? [now(w.forecast), hours(w.forecast), days(w.forecast), w.beaches ? sea(w) : null,
         el('p', { class: 'wx-credit' }, 'התחזית מ־', el('a', { href: 'https://open-meteo.com/', target: '_blank', rel: 'noopener' }, 'Open-Meteo'))] : [])));
   }
 
@@ -83,7 +109,10 @@
     const cached = !other && read();
     if (cached) draw(cached); else draw(null);
     try {
-      const w = await api('/api/weather' + (other ? '?city=' + encodeURIComponent(other) : ''));
+      const q = new URLSearchParams();
+      if (other) q.set('city', other);
+      q.set('beach', SP.beach || 'home');   // the choice just made counts before the prefs reach the server
+      const w = await api('/api/weather?' + q);
       if (!other) keep(w);
       draw(w);
     } catch (e) {

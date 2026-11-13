@@ -146,6 +146,8 @@ LCP has not moved yet. The causes:
     The verdicts are rules of thumb from net carbs per 100 g or per serving and from the ingredients' names.
   - parasha (stop 3): א−/א+ text size in the study room (prefs.study.size), and back closes the open layer one step at a time
     through H.back, whose common.js/sheet.js patch waits for the master (ai-features-hback.patch in the notes folder; 627843e).
+  - the weather's sea card: diving, surfing and a beach day per day (good / fair / not, with the reason), from Open-Meteo
+    Marine; thresholds in `server/sea-logic.ts` (LIMITS), 32 tests; near the coast or a chosen beach (prefs.weather.beach).
   - The look of all of these is design's: the class contract is in the notes folder (ai-features-diet-pie-contract.md).
     Unstyled until then: the pie buttons are 45 px tall.
 

@@ -34,10 +34,11 @@ export interface Raw {
   timezone?: string;
   current: { time: string; temperature_2m: number; apparent_temperature: number; weather_code: number; is_day: number; wind_speed_10m: number; relative_humidity_2m: number; precipitation: number };
   hourly: { time: string[]; temperature_2m: number[]; weather_code: number[]; precipitation_probability: (number | null)[]; is_day: number[] };
-  daily: { time: string[]; weather_code: number[]; temperature_2m_max: number[]; temperature_2m_min: number[]; precipitation_probability_max: (number | null)[]; sunrise: string[]; sunset: string[]; uv_index_max: (number | null)[] };
+  daily: { time: string[]; weather_code: number[]; temperature_2m_max: number[]; temperature_2m_min: number[]; precipitation_probability_max: (number | null)[]; sunrise: string[]; sunset: string[]; uv_index_max: (number | null)[];
+    wind_speed_10m_max?: (number | null)[]; wind_direction_10m_dominant?: (number | null)[] };
 }
 
-export interface Day { date: string; max: number; min: number; rain: number; sky: Sky; sunrise: string; sunset: string; uv: number | null }
+export interface Day { date: string; max: number; min: number; rain: number; sky: Sky; sunrise: string; sunset: string; uv: number | null; wind: number; windDir: number | null }
 export interface Hour { time: string; temp: number; rain: number; sky: Sky }
 export interface Forecast {
   now: { time: string; temp: number; feels: number; sky: Sky; wind: number; humidity: number; rain: number };
@@ -60,6 +61,7 @@ export function shape(raw: Raw): Forecast {
     date: d, max: r(raw.daily.temperature_2m_max[i]), min: r(raw.daily.temperature_2m_min[i]), rain: r(raw.daily.precipitation_probability_max[i]),
     sky: sky(raw.daily.weather_code[i]), sunrise: (raw.daily.sunrise[i] || '').slice(11, 16), sunset: (raw.daily.sunset[i] || '').slice(11, 16),
     uv: raw.daily.uv_index_max[i] == null ? null : Math.round(Number(raw.daily.uv_index_max[i])),
+    wind: r(raw.daily.wind_speed_10m_max?.[i]), windDir: raw.daily.wind_direction_10m_dominant?.[i] == null ? null : r(raw.daily.wind_direction_10m_dominant[i]),
   }));
   const now = { time: c.time.slice(11, 16), temp: r(c.temperature_2m), feels: r(c.apparent_temperature), sky: sky(c.weather_code, c.is_day !== 0), wind: r(c.wind_speed_10m), humidity: r(c.relative_humidity_2m), rain: +(Number(c.precipitation) || 0).toFixed(1) };
   return { now, hours, days, advice: advice(days[0], hours) };

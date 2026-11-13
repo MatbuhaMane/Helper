@@ -15,7 +15,8 @@ Last update: 2026-11-13.
   - goal management, spec v1;
   - the research assistant, spec v1;
   - the companion figures: the free and paid lists, Ibn Ezra only for the owner's family, פנק as the default;
-  - the readiness bar.
+  - the readiness bar;
+  - Russian, Amharic and Tigrinya: after the family launch, before the closed beta.
 - **Specs written with the owner:**
   - `docs/vision/goals.md`: goal management, part 1 live;
   - `docs/vision/research.md`: the research assistant, steps 1–2 live.
@@ -26,6 +27,13 @@ Last update: 2026-11-13.
   because of Gemini's terms and because the app is a family app. Recorded in the figures decision.
 
 ## In progress
+
+- **The family tree, spec 1** (`docs/vision/tree.md`): decided and sent (batch 9) to design, ai-features and the CEO.
+  - A fixed drawn tree, with people as leaves.
+  - The play is in the interface only.
+  - Quiet and respectful for those who passed away.
+  - Before the family launch.
+  - Next: the family story ("a living museum").
 
 - **The heads' round** (decided):
   - the joint test run starts now;

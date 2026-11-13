@@ -306,10 +306,32 @@
     return INGREDIENT_EN_HE[k] || INGREDIENT_EN_HE[k.replace(/(es|s)$/, '')] || INGREDIENT_EN_HE[k + 's'] || name.trim();
   }
 
+  /** Servings and units over a recipe's ingredients (the owner's tour, 2026-11-13): "מנות − 4 +" (or "כמות ×1" when the
+   *  recipe does not say) and the units, as written / grams / cups and spoons. The units are the person's choice and
+   *  follow them (prefs.groceries.units); the servings are for this recipe on screen. Markup: .amounts > .amount-step, select. */
+  function amountTools(ingredients, base) {
+    let n = base || 1;
+    const factor = () => (base ? n / base : n);
+    const draw = () => {
+      for (const i of ingredients) if (i.mEl) i.mEl.textContent = Measure.show(i.measure, i.he, factor(), listPrefs.units || 'orig');
+      count.textContent = base ? String(n) : `×${Measure.fmtQty(n)}`;
+    };
+    const step = base ? 1 : 0.5;
+    const count = el('output', { 'aria-live': 'polite' });
+    const btn = (d, label, sym) => el('button', { type: 'button', class: 'btn ghost small', 'aria-label': label,
+      onclick: () => { n = Math.max(step, Math.min(base ? 60 : 10, n + d * step)); draw(); } }, sym);
+    const units = el('select', { 'aria-label': 'יחידות מידה', onchange: (e) => { H.savePrefs('groceries', { units: e.target.value }); draw(); } },
+      [['orig', 'מידות כמו במתכון'], ['grams', 'בגרמים'], ['cups', 'בכוסות וכפות']].map(([v, t]) => el('option', { value: v, selected: (listPrefs.units || 'orig') === v }, t)));
+    draw();
+    return el('div', { class: 'amounts' },
+      el('span', { class: 'amount-step' }, el('span', {}, base ? 'מנות' : 'כמות'), btn(-1, base ? 'פחות מנות' : 'פחות', '−'), count, btn(1, base ? 'יותר מנות' : 'יותר', '+')),
+      units);
+  }
+
   /** Ingredient picker used by both web recipes and saved recipes. Returns the <ul> and a getter for chosen ingredients.
    *  An ingredient may carry `issue` (from the kashrut/keto check), `orig` (its name before a substitute) and `kind`;
    *  then its name is struck through in pencil and a line under it offers substitutes (onSub(index, name|null)). */
-  function ingredientPicker(ingredients, { onSub } = {}) {
+  function ingredientPicker(ingredients, { onSub, servings } = {}) {
     const rows = ingredients.map((ing, idx) => {
       const existing = findDuplicate(ing.he);
       const basic = /^(water|salt|מים|מלח)$/i.test(ing.en || '') || /^(מים|מלח)$/.test(ing.he);
@@ -321,14 +343,15 @@
           replaced ? el('s', { class: 'pencil' }, ing.orig) : ing.he,
           !replaced && ing.issue && !onSub ? el('small', { class: 'issue-tag ' + ing.kind }, ing.issue.reason_he) : null,
           ing.en && ing.he !== ing.en ? el('small', { class: 'muted' }, ` (${ing.en})`) : null),
-        ing.measure ? el('small', { class: 'measure' }, ing.measure) : null,
+        ing.measure ? (ing.mEl = el('small', { class: 'measure' }, ing.measure)) : null,
         existing ? el('small', { class: 'tag ok' }, existing.checked ? 'נקנה' : 'כבר ברשימה') : null),
       ing.issue && onSub ? RecipeFix.subLine(ing.issue, ing.orig || ing.he, replaced ? ing.he : null, (v) => onSub(idx, v), ing.kind) : null);
     });
     return {
       tools: el('div', { class: 'ing-tools' },
         el('button', { class: 'btn ghost small', onclick: () => ingredients.forEach((i) => { i.cb.checked = true; }) }, 'סמן הכל'),
-        el('button', { class: 'btn ghost small', onclick: () => ingredients.forEach((i) => { i.cb.checked = false; }) }, 'נקה')),
+        el('button', { class: 'btn ghost small', onclick: () => ingredients.forEach((i) => { i.cb.checked = false; }) }, 'נקה'),
+        ingredients.some((i) => i.measure) ? amountTools(ingredients, servings) : null),
       list: el('ul', { class: 'ingredients' }, rows),
       addButton: (title) => el('button', { class: 'btn primary', onclick: () => {
         const chosen = ingredients.filter((i) => i.cb.checked);
@@ -645,14 +668,14 @@
         subbed: { kosher: orig !== 'ok' && now === 'ok', keto: ketoSubbed },
         onFix: (focus) => result && openFix(focus),
       }));
-      ketoSlot.replaceChildren(...[Keto.recipePanel(eff)].filter(Boolean));
+      ketoSlot.replaceChildren(...[Keto.dietStamps(eff), Keto.recipePanel(eff)].filter(Boolean));
       const kosherAt = new Map((result?.kosher || []).map((x) => [x.index, x]));
       const ketoAt = new Map(Keto.enabled ? (result?.keto || []).map((x) => [x.index, x]) : []);
       const ingredients = recipe.ingredients.map((i, n) => {
         const issue = kosherAt.get(n) || ketoAt.get(n);
         return { he: subs.get(n) || i.name, measure: i.measure, orig: i.name, issue, kind: kosherAt.has(n) ? 'kosher' : 'keto' };
       });
-      const picker = ingredientPicker(ingredients, { onSub: (n, v) => { subs.set(n, v); draw(); } });
+      const picker = ingredientPicker(ingredients, { onSub: (n, v) => { subs.set(n, v); draw(); }, servings: Measure.servings(recipe.meta) });
       ingSlot.replaceChildren(el('h4', {}, `מצרכים (${ingredients.length})`), picker.tools, picker.list, el('div', { class: 'row' }, picker.addButton(recipe.title)));
     };
     draw();
@@ -770,7 +793,22 @@
     $('#bookGrid').textContent = '';
     $('#bookGrid').append(loading('טוען את ספר המתכונים…'));
     try { book = (await api('/api/recipes')).recipes; } catch (e) { book = []; toast(e.message); }
+    if (!book.length && !listPrefs.starters && await (seeding ||= seedBook())) {
+      try { book = (await api('/api/recipes')).recipes; } catch { /* the empty book stays */ }
+    }
     renderBook();
+  }
+
+  // An empty book opens with a few good home recipes (the owner's tour, 2026-11-13), once per person: a book
+  // emptied on purpose stays empty. They are ordinary recipes in the household's book, to edit or delete.
+  let seeding = null;
+  async function seedBook() {
+    try {
+      const starters = await (await fetch('/groceries/starter.json')).json();
+      for (const r of starters.reverse()) await api('/api/recipes', { body: r });   // newest first: the first one on top
+      H.savePrefs('groceries', { starters: true });
+      return true;
+    } catch { seeding = null; return false; }   // offline: the empty message, and another try next time
   }
 
   function renderBook() {
@@ -914,7 +952,7 @@
       if (Keto.enabled) res.keto.forEach((x) => mark(x, 'keto'));
       const st = RecipeFix.kosherStatus(res, new Map());
       bstatus.replaceChildren(RecipeFix.statusRows({ kosherOrig: st, kosherNow: st, keto: rec, onFix: openBookFix }));
-      ketoSlot.replaceChildren(...[Keto.recipePanel(rec)].filter(Boolean));
+      ketoSlot.replaceChildren(...[Keto.dietStamps(rec), Keto.recipePanel(rec)].filter(Boolean));
     }
     const openBookFix = (focus) => lastResult && RecipeFix.openFix({
       focus, recipe: currentRecipe(), result: lastResult, subs: new Map(),
@@ -932,7 +970,7 @@
       collect();
       const ingredients = draft.ingredients.filter((i) => i.name).map((i) => ({ he: i.name, measure: i.measure }));
       if (!ingredients.length) return toast('אין עדיין מצרכים');
-      const picker = ingredientPicker(ingredients);
+      const picker = ingredientPicker(ingredients, { servings: Measure.servings(draft.meta) });
       sheet.open(null, [el('button', { class: 'btn ghost small back', onclick: () => openBookRecipe(book.find((x) => x.id === draft.id) || draft) }, '→ חזרה למתכון'),
         el('h3', {}, `🛒 מצרכים מ"${draft.title}"`), picker.tools, picker.list, picker.addButton(draft.title)]);
     } }, '🛒 מצרכים לרשימת הקניות');
@@ -960,6 +998,7 @@
         el('label', { class: 'field' }, el('span', {}, 'קישור לתמונה'), image),
         el('label', { class: 'field' }, el('span', {}, 'קישור למתכון המקורי'), source)),
       el('div', { class: 'row', style: 'margin-top:14px' }, shop,
+        el('button', { class: 'btn ghost', onclick: () => shop.click() }, '⚖ כמויות ומידות'),   // the same sheet: servings and units on top
         draft.source_url ? el('a', { class: 'btn ghost', href: draft.source_url, target: '_blank', rel: 'noopener' }, '🔗 המקור') : null, del),
     ], { onLeave: () => save().then(renderBook) }); // closing (or moving on) saves whatever is still waiting
     requestAnimationFrame(() => autosize(notes));
@@ -1038,24 +1077,71 @@
   $('#bookImport').addEventListener('click', () => { setFab(false); importDialog(); });
 
   /* ================= לשוניות ================= */
-  let ketoMounted = false;
-  function showTab(which) {
-    for (const [tab, view, name] of [['#tabList', '#viewList', 'list'], ['#tabBook', '#viewBook', 'book'], ['#tabKeto', '#viewKeto', 'keto']]) {
+  let ketoMounted = false, tabNow = 'list';
+  // The tabs: the list, the book, ketosis and each other way of eating (diets.js). A diet's tab shows once it is on, or
+  // while it is open: it is reached from its app in תנועה ותזונה (/groceries/#atkins…), where its switch is. Ketosis too
+  // is the person's choice (the owner, 2026-11-13).
+  const bar = $('.tabs[role=tablist]');
+  for (const d of Diets.all) {
+    bar.insertBefore(el('button', { role: 'tab', id: 'tab-' + d.id, 'aria-selected': 'false', hidden: true, onclick: () => showTab(d.id) }, d.name), bar.querySelector('.spacer'));
+    $('main').append(el('section', { id: 'view-' + d.id, class: 'diet-view', hidden: true, 'aria-label': d.name }));
+  }
+  const TABS = [['list', '#tabList', '#viewList'], ['book', '#tabBook', '#viewBook'], ['keto', '#tabKeto', '#viewKeto'],
+    ...Diets.all.map((d) => [d.id, '#tab-' + d.id, '#view-' + d.id])];
+  const tabFromHash = () => (TABS.some(([n]) => n !== 'list' && location.hash === '#' + n) ? location.hash.slice(1) : 'list');
+  const mounted = new Set();
+  const ketoTab = () => {
+    $('#tabKeto').hidden = !(Keto.enabled || tabNow === 'keto');
+    for (const d of Diets.all) $('#tab-' + d.id).hidden = !(Diets.isOn(d.id) || tabNow === d.id);
+  };
+  // Each tab is a step in the history (the owner's tour, 2026-11-13): the back gesture or key returns to the previous tab,
+  // not out of the page (H.back in common.js). how: 'push' (a tap), 'replace' (the first draw), 'pop' (back: the history moved already).
+  function showTab(which, how = 'push') {
+    const was = tabNow;
+    tabNow = which; ketoTab();
+    for (const [name, tab, view] of TABS) {
       $(tab).setAttribute('aria-selected', String(which === name));
       $(view).hidden = which !== name;
     }
     if (which === 'book') { if (!book) loadBook(); else renderBook(); }
     if (which === 'keto' && !ketoMounted) { ketoMounted = true; Keto.mount($('#viewKeto')); }
-    history.replaceState(null, '', which === 'list' ? '#' : '#' + which);
+    if (Diets.get(which) && !mounted.has(which)) { mounted.add(which); Diets.mount($('#view-' + which), which); }
+    const url = which === 'list' ? location.pathname : '#' + which;
+    if (how === 'push' && which !== was && was && H.back) H.back.push(() => showTab(was, 'pop'), url);
+    else if (how !== 'pop') history.replaceState(history.state, '', url);
   }
   H.showTab = showTab;
+  // A sideways swipe moves to the next tab: in Hebrew the next one is on the left, so a swipe to the right brings it.
+  // Not from the screen's edges (the phone's own back gesture), not in a field, a sheet, a dialog or a sideways scroller.
+  let swipe = null;
+  document.querySelector('main').addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    swipe = e.touches.length === 1 && t.clientX > 24 && t.clientX < innerWidth - 24 && !e.target.closest('input, textarea, select, [contenteditable], dialog, .sheet, .modal-glass')
+      && !scrollsSideways(e.target) ? { x: t.clientX, y: t.clientY, at: Date.now() } : null;
+  }, { passive: true });
+  document.querySelector('main').addEventListener('touchend', (e) => {
+    if (!swipe) return;
+    const t = e.changedTouches[0], dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+    const ok = Math.abs(dx) > 70 && Math.abs(dy) < Math.abs(dx) * 0.5 && Date.now() - swipe.at < 700;
+    swipe = null;
+    if (!ok || document.querySelector('dialog[open], .modal-glass')) return;
+    const tabs = TABS.filter(([, tab]) => !$(tab).hidden).map(([n]) => n);
+    const rtl = getComputedStyle(document.documentElement).direction === 'rtl';
+    const next = tabs[tabs.indexOf(tabNow) + ((dx > 0) === rtl ? 1 : -1)];
+    if (next) showTab(next);
+  }, { passive: true });
+  function scrollsSideways(node) {
+    for (let n = node; n && n !== document.body; n = n.parentElement) if (n.scrollWidth > n.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true;
+    return false;
+  }
   $('#tabList').addEventListener('click', () => showTab('list'));
   $('#tabBook').addEventListener('click', () => showTab('book'));
   $('#tabKeto').addEventListener('click', () => showTab('keto'));
-  window.addEventListener('keto:changed', (e) => { if (e.detail !== 'state' || Keto.enabled) render(); });
+  window.addEventListener('keto:changed', (e) => { ketoTab(); if (e.detail !== 'state' || Keto.enabled) render(); });
+  window.addEventListener('diets:changed', () => { ketoTab(); render(); });
 
   render();
-  showTab(['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list');
+  showTab(tabFromHash(), 'replace');
   await flush();
   await pull();
 

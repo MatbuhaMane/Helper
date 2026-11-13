@@ -18,7 +18,7 @@
     cal: me.calendar || (me.religion ? CAL_OF[me.religion] || '' : ''),
     city: me.city || '', palette: look.palette || '', paletteSet: !!look.palette,
     figure: ANIMALS.includes(dp.figure) ? dp.figure : ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
-    family: Array.isArray(me.familyPlan) ? me.familyPlan : [],
+    family: Array.isArray(me.familyPlan) ? me.familyPlan : me.familyPlan ? [me.familyPlan] : [],   // (an older single value is read too)
   };
   // each answer, as it is given
   const save = {
@@ -38,11 +38,11 @@
   const STEPS = [
     { q: () => 'שלום! איך קוראים לך?', hint: 'ככה אפנה אליך', body: () => `<input class="wz-name" id="name" autocomplete="given-name" maxlength="40" placeholder="השם שלך" aria-label="השם שלך" value="${esc(A.name)}">`, ok: () => A.name.trim() },
     { q: () => `נעים מאוד${A.name ? ', ' + esc(A.name) : ''}! מה הלוח שלך?`, hint: 'בשביל החגים, השבת והתאריכים', body: () => tiles('cal', [['he', 'עברי ולועזי', 'שבתות וחגים'], ['hijri', 'היג׳רי ולועזי', 'רמדאן והחגים'], ['greg', 'לועזי', 'בלי חגים מיוחדים'], ['all', 'הכול יחד', 'כל החגים']]), ok: () => A.cal },
-    { q: () => 'באיזו עיר הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<input class="wz-name" id="city" maxlength="60" placeholder="עיר" aria-label="העיר" value="${esc(A.city)}" style="font-size:1.5rem"><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
+    { q: () => 'איפה הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<input class="wz-name" id="city" maxlength="60" placeholder="עיר" aria-label="העיר" value="${esc(A.city)}" style="font-size:1.5rem"><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
     { q: () => 'באיזה צבע האוהל שלך?', hint: 'אפשר להחליף בכל רגע בהגדרות', body: () => `<div class="wz-drops" role="radiogroup" aria-label="ערכת צבעים">${PALETTES.map(([v, d1, d2, n]) =>
       `<button class="wz-drop" type="button" role="radio" aria-checked="${A.paletteSet && A.palette === v}" aria-label="${n}" title="${n}" data-p="${v}" style="--d1:${d1};--d2:${d2}"></button>`).join('')}</div>`, ok: () => A.paletteSet },
     { q: () => 'מי ילווה אותך?', hint: 'החבר שלך באוהל. אפשר להחליף בכל רגע', body: () => `<div class="wz-figs" role="radiogroup" aria-label="הדמות">${ANIMALS.map((f) => `<button class="wz-tile" type="button" role="radio" aria-checked="${A.figure === f}" data-fig="${f}" aria-label="${Figure2D.FIGURES[f]?.name || f}"><span class="wz-mini" data-f="${f}"></span><b>${Figure2D.FIGURES[f]?.name || f}</b></button>`).join('')}</div>`, ok: () => A.figure },
-    { q: () => 'מי עוד באוהל שלך?', hint: 'נזמין אותם אחר כך. אפשר גם לדלג', body: () => tiles('family', [['partner', 'בן/בת זוג'], ['kids', 'ילדים'], ['parents', 'הורים'], ['siblings', 'אחים ואחיות'], ['grand', 'סבים וסבתות'], ['friends', 'חברים']], true), ok: () => true },
+    { q: () => 'מי עוד באוהל שלך?', hint: 'נזמין אותם אחר כך. אפשר גם לדלג', body: () => tiles('family', [['partner', 'בן/בת זוג'], ['kids', 'ילדים'], ['parents', 'הורים'], ['siblings', 'אחים ואחיות'], ['grand', 'סבים וסבתות'], ['friends', 'חברים'], ['none', 'אין קשרים', 'רק אני']], true), ok: () => true },
   ];
   $('trail').innerHTML = STEPS.map(() => '<i></i>').join('');
   const paintTrail = () => [...$('trail').children].forEach((d, i) => { d.className = i < at ? 'done' : i === at ? 'now' : ''; });
@@ -68,7 +68,11 @@
     }));
     box.querySelectorAll('.wz-tile[data-k]').forEach((t) => t.addEventListener('click', () => {
       const k = t.dataset.k, multi = t.getAttribute('role') === 'checkbox';
-      if (multi) { t.setAttribute('aria-checked', String(t.getAttribute('aria-checked') !== 'true')); A[k] = [...box.querySelectorAll('[data-k][aria-checked="true"]')].map((x) => x.dataset.v); }
+      if (multi) {
+        t.setAttribute('aria-checked', String(t.getAttribute('aria-checked') !== 'true'));
+        // 'none' stands alone: choosing it clears the others, and choosing another clears it
+        if (t.getAttribute('aria-checked') === 'true') box.querySelectorAll(`[data-k="${k}"]`).forEach((x) => { if (x !== t && (t.dataset.v === 'none' || x.dataset.v === 'none')) x.setAttribute('aria-checked', 'false'); });
+        A[k] = [...box.querySelectorAll('[data-k][aria-checked="true"]')].map((x) => x.dataset.v); }
       else { box.querySelectorAll(`[data-k="${k}"]`).forEach((x) => x.setAttribute('aria-checked', String(x === t))); A[k] = t.dataset.v; }
       save[k](); glad(); refresh();
     }));

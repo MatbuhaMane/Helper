@@ -11,6 +11,23 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Colour palettes are never sold; free users choose a basic palette too (business, the owner)
+
+**Decided:** palettes are not a paid item. The owner's words: "זה גרידי".
+- **Every user, free ones included,** can choose a basic colour palette, both for the app and for the free figures.
+- **The paid special figures** keep their own included palettes (five for קוסם הלילה and קוסמת היער).
+- **What is sold** is a skin, meaning a new picture of a figure, never a recolouring.
+
+**Why:** a palette is a code-only change that costs nothing, and free personalization is one of the owner's principles
+(`docs/business/vision.md`, section 1, answer 8).
+
+**Affects:**
+- **design:** a small basic palette set for the free figures (for example 3–5 colourways), drawn the way the wizards'
+  palettes are.
+- **ai-features:** the palette choice for free figures, kept per user in prefs.
+
+**Status:** Decided (the owner).
+
 ## 2026-11-13 – Prices: ₪10 for a paid figure, ₪400 for a personal figure, more for the special ones (business)
 
 **Decided (the owner):**

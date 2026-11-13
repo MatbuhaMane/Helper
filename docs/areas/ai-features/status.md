@@ -105,9 +105,19 @@ LCP has not moved yet. The causes:
   - the shopping list went from 409 menu options to 46 (TBT 264 → 186 ms; 748da50);
   - `perf-cdp --loaf` names the scripts in the long frames.
 
+- **Block 2 (2026-11-13)**:
+  - the setup wizard is live (v73);
+  - gamification: a badge for every tool, with the owner's 19 names (bb93510), and "נטית את האוהל";
+  - shared goals and encouragement, slice C (d38b43f): the household's feed, hearts, advice, and יועץ / כתף תומכת /
+    מלאך דרך. Checked end to end with three test users;
+  - the home page is within the bar on 4G (LCP 2.1 s).
+
 ## In progress
 
-- LCP on news, the tree and songs; the blocking time in groceries and the calculator.
+- Next by the owner's order:
+  - the family goal with roles, and "שבט" for family-tree relatives only (slice D);
+  - on-screen niqqud as a choice. Its cost: every screen's text through the vocalizer, so it needs a cache per text.
+- LCP on news, the tree and songs; the blocking time in the calculator.
 - **The single record** (design leads): the JS side waits for design's markup and spec. The stump is a dock, and the music
   stops from the record or from the main player.
 - Next from the batch, in small deploys:

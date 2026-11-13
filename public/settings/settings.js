@@ -134,7 +134,10 @@
 
   /* ---------- 4. the personal assistant (vision batch 5): his voice, his figure, how he shows in the chat ---------- */
   const assistantBox = section('assistant', 'העוזר האישי');
-  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
+  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['historic', 'דמויות מההיסטוריה'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
+  /* vision batch 6: a figure is free, or paid (catalogue `paid: true`); one that conflicts with the person's religion
+     setting is not shown (catalogue `hideFor: ['jewish', …]`). The full entry is read from Figure2D.FIGURES. */
+  const figureMeta = (f) => ({ ...(window.Figure2D?.FIGURES?.[f.id] || {}), ...f, paid: !!(f.paid ?? window.Figure2D?.FIGURES?.[f.id]?.paid), hideFor: f.hideFor || window.Figure2D?.FIGURES?.[f.id]?.hideFor || [] });
   async function drawAssistant() {
     const dp = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
     const set = (k, v) => { dp[k] = v; keep('daemon'); };
@@ -143,12 +146,14 @@
     try {
       await H.loadOnce('/assets/figure2d.js');
       if (!document.querySelector('link[href="/assets/figure2d.css"]')) document.head.append(el('link', { rel: 'stylesheet', href: '/assets/figure2d.css' }));
-      figures = window.Figure2D ? Figure2D.list() : [];
+      figures = (window.Figure2D ? Figure2D.list() : []).map(figureMeta).filter((f) => !f.hideFor.includes(me.religion || 'jewish'));
     } catch (_) { /* the 2D figures are not here yet */ }
     if (figures.some((f) => f.unlock)) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
     const family = !!d?.ibnEzra;
     // the figure now: the person's choice, if it is theirs to have; else Ibn Ezra for the family, the first figure for others
-    const allowed = (f) => !f.unlock || earned.has(f.unlock);
+    // (paid: only once it is the person's – the purchase comes with the credits path, the master's; until then none is owned)
+    const owned = new Set(d?.owned || []);
+    const allowed = (f) => (!f.unlock || earned.has(f.unlock)) && (!f.paid || owned.has(f.id));
     const mine = dp.figure && (dp.figure === 'ibn_ezra' ? family : figures.some((f) => f.id === dp.figure && allowed(f))) ? dp.figure : family ? 'ibn_ezra' : (figures.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : figures[0]?.id) || 'ibn_ezra';   // (the owner chose the fennec as the default)
     const voice = dp.voice || (dp.speak === false ? 'silent' : 'always');
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
@@ -172,7 +177,8 @@
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'ראב"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
-        return card(f.id, f.name, !ok ? 'נפתחת עם badge' : f.season ? f.season : '', preview2d(f), ok);
+        const sub = f.paid && !owned.has(f.id) ? '💎 בתשלום · הרכישה בקרוב' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
+        return card(f.id, f.name, sub, preview2d(f), ok);
       }))]),
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));
   }

@@ -464,10 +464,13 @@
   const wantsFlat = () => !!prefs.figure && prefs.figure !== 'ibn_ezra';
   /** the figure for someone who has not chosen (outside the owner's family): the owner chose the fennec (Figure2D.DEFAULT) */
   const defaultFigure = (list) => (list.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : list[0]?.id || null);
+  /** the figures this person may have: not hidden for their religion, and a paid one only once it is theirs (vision batch 6) */
+  const mayHave = (f) => { const m = { ...(window.Figure2D?.FIGURES?.[f.id] || {}), ...f };
+    return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!m.paid || (state?.owned || []).includes(f.id)); };
   async function flatCatalogue() {
     try { await H.loadOnce('/assets/figure2d.js'); } catch (_) { return []; }
     if (!document.querySelector('link[href="/assets/figure2d.css"]')) document.head.append(el('link', { rel: 'stylesheet', href: '/assets/figure2d.css' }));
-    return window.Figure2D ? Figure2D.list() : [];
+    return window.Figure2D ? Figure2D.list().filter(mayHave) : [];
   }
   /** each frame: his mouth while he speaks, asleep when left alone, thinking while an answer comes */
   function flatLife() {

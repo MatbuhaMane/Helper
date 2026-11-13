@@ -27,6 +27,25 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-13 – Rich notes: formatting stored as allowlist HTML (ai-features → master, design)
+The owner asked for bold, italic, underline, strikethrough, a text colour and a font in notes.
+- **Storage.** A new column `notes.rich` (appended to `COLUMNS` in `server/schema.ts`). It holds the note's formatting as
+  allowlist HTML, and only when the note has formatting; otherwise it is null and the note is plain text as before.
+  `body` is always the plain text (derived on the server), so search, tags, titles and the research are unchanged.
+- **The allowlist** (`server/notes-rich.ts`, tests in `server/test-notes-rich.mjs`): b, i, u, s, p, br, and span with
+  a class from `c-def|vine|olive|soil|red|blue` or `f-rubik|heebo|round|serif`. No other tag or attribute, no inline
+  style, no links or images. The server cleans on every save; the page cleans again on render and on every paste.
+- **Paste** is plain text, unless it is the notes' own copy (marked `data-ohel-rich`), which is cleaned too.
+- **API.** `POST /api/notes` and `PUT /api/notes/:id` accept `rich`; a plain `body` alone (the calculator's pad, an
+  older page) replaces the formatting. Notes now return `rich`.
+- **Master:** please add `node server/test-notes-rich.mjs` to `npm test`. This touches user input that is rendered as
+  HTML, so the master reviews `server/notes-rich.ts` before merging.
+- **Design:** the toolbar `.nt-tools` (sticky above the phone keyboard: `inset-block-end: var(--nt-kb)`), the buttons
+  `.nt-tool[aria-pressed]`, the pops `.nt-pop` with `.nt-swatch.c-*` and `.nt-font-b.f-*`, the colour classes
+  `.c-*` (readable in light and dark), the font classes `.f-*`, the placeholder `.nt-rich[data-placeholder]:empty::before`
+  and `.nt-rich p { margin: 0 }`. Details in the design contract note.
+Status: done (ai-features), the CSS pending (design).
+
 ## 2026-11-13 – Shared goals and encouragement (ai-features → master, design)
 Vision batch 8, slice C; the owner chose it after the badges.
 - **What it does:**

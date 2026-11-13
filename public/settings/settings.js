@@ -477,6 +477,8 @@
     setTimeout(() => (cur || a).focus(), 30);
   });
   async function drawPrivacy() {
+    let owner = false; try { owner = (await H.me()).user?.role === 'owner'; } catch (_) { /* not known: no backups button */ }
+    try { await H.loadOnce('/settings/vault-keys.js'); H.vaultBack?.(); } catch (_) { /* the vault buttons do nothing */ }
     let lock;
     try { lock = await api('/api/lock'); } catch (e) { privacyBox.body.replaceChildren(el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.'), devicesBox); return; }
     try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
@@ -486,7 +488,7 @@
     const setMode = async (which, v) => {
       try {
         if (v === 'pin' && !lock.hasPin && !(await setPin(lock))) return drawPrivacy();
-        if (v === 'bio' && !lock.hasPasskey) { toast('קודם צריך מפתח במכשיר הזה: בעץ המשפחה ← אבטחה ← הוספת מכשיר'); return drawPrivacy(); }
+        if (v === 'bio' && !lock.hasPasskey) { toast('קודם צריך מפתח במכשיר הזה: כאן למטה ← מפתחות גישה ← המכשיר הזה'); return drawPrivacy(); }
         const r = await lockChange('/api/lock', 'PUT', { [which]: v }, lock);
         if (r) toast(v === 'off' ? 'הנעילה כבויה' : 'הנעילה פעילה');
       } catch (e) { say(e); }
@@ -516,6 +518,12 @@
         } }, 'שכחתי את הקוד') : null),
       lock.closed ? el('p', { class: 'small', role: 'note' }, 'הקוד נסגר אחרי הרבה ניסיונות. היכנסו שוב עם Google, וקבעו קוד חדש.') : null,
       el('p', { class: 'st-safe muted small' }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל מקרה.'),
+      // the vault's passkeys and (the owner) its backups: moved here from the tree page (the owner, 2026-11-14)
+      el('h3', {}, 'הכספת המשפחתית'),
+      el('p', { class: 'muted small' }, 'המכשירים שפותחים את הכספת, וגיבויי הכספת. כל פתיחה כאן מבקשת אישור.'),
+      el('div', { class: 'row st-vault', style: 'gap:8px;flex-wrap:wrap' },
+        el('button', { class: 'btn small', type: 'button', onclick: () => H.vaultKeys?.() }, 'מפתחות גישה'),
+        owner ? el('button', { class: 'btn small', type: 'button', onclick: () => H.vaultBackups?.() }, 'גיבויים') : null),
       devicesBox,
     ].filter(Boolean));
   }

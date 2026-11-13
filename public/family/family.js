@@ -161,8 +161,6 @@
       el('button', { class: 'btn small ghost', onclick: relatedTool }, 'איך אנחנו קשורים?'),
       el('button', { class: 'btn small ghost', onclick: linksTool }, waiting ? `עצים מקושרים (${waiting} מחכים)` : 'עצים מקושרים'),
       el('button', { class: 'btn small ghost', onclick: activity }, 'יומן פעילות'),
-      el('button', { class: 'btn small ghost', onclick: keys }, 'מפתחות גישה'),
-      S.owner ? el('button', { class: 'btn small ghost', onclick: backups }, 'גיבויים') : null,
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
     const tools = el('div', { class: 'fv-tools' }, views, find, el('datalist', { id: 'fv-names' }, S.people.map((p) => el('option', { value: p.name }))));
     const board = el('div', { class: 'fv-tree' });
@@ -324,6 +322,7 @@
     S.view = v;
     root.querySelectorAll('.fv-views button[data-v]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.v === v)));
   }
+  const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce';
   /** move the centre to someone, with the cards gliding from where they were (FLIP) */
   function focusOn(id) {
     const board = root.querySelector('.fv-tree');
@@ -331,15 +330,22 @@
     S.focus = id;
     try { localStorage.setItem('fv-focus', id); } catch (_) { /* fine */ }
     draw();
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (reducedMotion()) return;
+    // a soft glide (the owner, 2026-11-14): short, a gentle ease-out with no overshoot; a long way is felt shorter, since
+    // the card starts a little faded and the glide is capped in time, not in distance
     const anims = [];
+    board.classList.add('fv-gliding');                 // a hook for design: no hover lift while the cards move
     for (const c of board.querySelectorAll('.fv-card')) {
       const was = before.get(c.dataset.id), now = c.getBoundingClientRect();
-      if (was) anims.push(c.animate([{ transform: `translate(${was.left - now.left}px, ${was.top - now.top}px)` }, { transform: 'none' }], { duration: 520, easing: 'cubic-bezier(.2,.7,.2,1)' }));
-      else anims.push(c.animate([{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'none' }], { duration: 420, easing: 'ease-out' }));
+      if (was) {
+        const dx = was.left - now.left, dy = was.top - now.top, far = Math.hypot(dx, dy);
+        if (far < 1) continue;
+        anims.push(c.animate([{ transform: `translate(${dx}px, ${dy}px)`, opacity: far > 160 ? 0.55 : 0.85 }, { transform: 'none', opacity: 1 }],
+          { duration: Math.round(Math.min(340, 200 + far * 0.4)), easing: 'cubic-bezier(.25, .1, .25, 1)' }));
+      } else anims.push(c.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' }));
     }
     // the lines were measured while the cards were still gliding: draw them again where the cards came to rest
-    Promise.allSettled(anims.map((a) => a.finished)).then(() => redrawLines(board));
+    Promise.allSettled(anims.map((a) => a.finished)).then(() => { board.classList.remove('fv-gliding'); redrawLines(board); });
   }
   /** the lines on the board as it is now (the layer is made anew by every drawing) */
   function redrawLines(board) {
@@ -413,14 +419,13 @@
   // only until design's sets.json is there: the sets that exist today (the owner compares them)
   const KNOWN_SETS = [{ id: 'olive', name: 'עץ א׳' }, { id: 'canopy', name: 'עץ ב׳' }];
   const LOOKS = [['leaf', 'עלים'], ['frame', 'מסגרות']];
-  /** the tree's stylesheet and sounds, added once; resolves when the styles are in (the leaves are measured after) */
+  /** the tree's stylesheet, added once (no sounds: the owner's choice, 2026-11-14); resolves when the styles are in (the leaves are measured after) */
   function treeAssets() {
     if (!TREE.css) {
       const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/assets/tree.css'; l.dataset.tree = '1';
       TREE.css = new Promise((ok) => { l.onload = ok; l.onerror = ok; setTimeout(ok, 4000); });
       document.head.append(l);
     }
-    if (!window.TreeSound && !document.querySelector('script[data-tree]')) { const x = document.createElement('script'); x.src = '/assets/tree-sound.js'; x.defer = true; x.dataset.tree = '1'; document.head.append(x); }
     return TREE.css;
   }
   async function treeSets() {
@@ -513,7 +518,6 @@
         onclick: () => {
           b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
           setTimeout(() => b.classList.remove('tap'), 900);
-          try { if (passed) window.TreeSound?.quiet(); else window.TreeSound?.leaf(); } catch (_) { /* no sound */ }
           setTimeout(() => panel(p.id), 220);
         } },
         el('span', { class: 'tr-leaf' }, face),
@@ -525,7 +529,7 @@
     const base = slots.candle || [slots.trunkPivot?.[0] ?? 50, slots.candleY ?? (slots.trunkPivot?.[1] ?? 89) + 2.4];
     candles.slice(0, 4).forEach((p, i) => tree.append(el('div', { class: 'tr-candle', style: `--x:${(base[0] + (i % 2 ? 9 : -9) * Math.ceil((i + 1) / 2)).toFixed(1)}; --y:${(+base[1]).toFixed(1)}`, role: 'img', 'aria-label': `נר זיכרון ל${p.name}, היום יום האזכרה` }, el('span', { class: 'tr-flame' }))));
     if (me) tree.append(el('button', { type: 'button', class: 'tr-bud', style: `--x:${Math.min(96, me.x + 6.5).toFixed(1)}; --y:${(me.y + 0.6).toFixed(1)}`, 'aria-label': `הוספת קרוב משפחה ל${me.p.name}`,
-      onclick: () => { try { window.TreeSound?.bud(); } catch (_) { /* no sound */ } addNear(me.p); } }));
+      onclick: () => addNear(me.p) }));
     // more than one drawing: the person picks (a pref: it follows them to every device)
     // which tree and which look: the person picks (prefs: they follow them to every device)
     const choice = (label, opts, on, key) => el('div', { class: 'fv-views tr-sets', role: 'radiogroup', 'aria-label': label },
@@ -569,7 +573,7 @@
     H.modal(el('div', { class: 'fv-form' }, el('h2', {}, `מי נוסף ליד ${first}?`),
       el('div', { style: 'display:grid;gap:8px' }, opts.map(([as, label]) => el('button', { type: 'button', class: 'btn', onclick: () => { H.closeModal(); personForm(null, { as, of: p.id }); } }, label)))));
   }
-  /** the tree sways more while the page scrolls, and settles with a sound when it stops (one listener for the page) */
+  /** the tree sways more while the page scrolls, and settles when it stops (one listener for the page) */
   function treeMotion() {
     if (TREE.motion) return;
     TREE.motion = true;
@@ -579,7 +583,7 @@
       if (!t) return;
       t.classList.add('moving');
       clearTimeout(still);
-      still = setTimeout(() => { t.classList.remove('moving'); try { window.TreeSound?.settle(); } catch (_) { /* no sound */ } }, 260);
+      still = setTimeout(() => t.classList.remove('moving'), 260);
     }, { passive: true });
   }
   function drawAll(board) {
@@ -1029,41 +1033,6 @@
         el('ul', {}, events.map((e) => { const [a, k, x] = e.action.split(':'); return el('li', {}, el('b', {}, e.email === S.me ? 'אני' : e.email.split('@')[0]), ' ', ACT[a] || a, ' ', KIND[k] || k || '', x === 'from-outside' ? ' (ממשפחה אחרת)' : x === 'tribe' ? ' (הנהלת השבט)' : '', e.person_id && names.get(e.person_id) ? ` · ${names.get(e.person_id)}` : '', el('small', { class: 'muted' }, ' ' + new Date(e.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }))); }))));
     } catch (e) { say(e); }
   }
-  async function keys() {
-    try {
-      const { passkeys } = await call('/api/vault/passkeys');
-      const box = el('div', { class: 'fv-form' }, el('h2', {}, 'מפתחות הגישה שלי'), el('p', { class: 'muted small' }, 'כל מכשיר שיכול לפתוח את הכספת בטביעת אצבע, בפנים או ב־Windows Hello. מכשיר שאבד – הסירו אותו כאן.'),
-        el('ul', { class: 'fv-list' }, passkeys.map((k) => el('li', { class: 'fv-item' }, el('b', {}, k.label || 'מכשיר'), el('small', { class: 'muted' }, ` נוסף ${new Date(k.created_at).toLocaleDateString('he-IL')}${k.last_used ? ' · בשימוש ' + new Date(k.last_used).toLocaleDateString('he-IL') : ''}`),
-          el('button', { class: 'btn small ghost danger', onclick: async () => { if (!confirm('להסיר את המפתח הזה?')) return; await call(`/api/vault/passkeys/${encodeURIComponent(k.id)}`, { method: 'DELETE' }); H.closeModal(); keys(); } }, 'הסרה')))),
-        passkeysWork() ? el('button', { class: 'btn primary', onclick: async () => { try { await addPasskey(); toast('המפתח נשמר'); H.closeModal(); keys(); } catch (err) { if (err?.name !== 'NotAllowedError') say(err); } } }, '+ המכשיר הזה') : el('p', { class: 'muted' }, 'המכשיר הזה לא תומך במפתחות גישה.'));
-      H.modal(box);
-    } catch (e) { say(e); }
-  }
-
-  /* ---------- backups (the owner): Cloudflare first, an encrypted copy on Drive, the NAS pulls its own ---------- */
-  async function backups() {
-    let b;
-    try { b = await call('/api/vault/backups'); } catch (e) { return say(e); }
-    const when = (t) => (t ? new Date(t).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : 'עוד לא');
-    const run = el('button', { class: 'btn small primary', onclick: async () => {
-      run.disabled = true; run.textContent = 'מגבה…';
-      try { const r = await call('/api/vault/backups/run', { method: 'POST' }); toast(`הגיבוי הסתיים: ${r.copied} עותקים חדשים${r.failed ? `, ${r.failed} נכשלו` : ''}`); H.closeModal(); backups(); }
-      catch (e) { say(e); run.disabled = false; run.textContent = 'גיבוי עכשיו'; }
-    } }, 'גיבוי עכשיו');
-    H.modal(el('div', { class: 'fv-form' },
-      el('h2', {}, 'גיבויים'),
-      el('p', { class: 'muted small' }, 'הקבצים נשמרים ב־Cloudflare. מכל קובץ נשמר עותק מוצפן גם ב־Google Drive, וה־NAS מושך לעצמו את כל העותקים. בלי מפתח הכספת אי אפשר לקרוא אף אחד מהם.'),
-      el('div', { class: 'fv-item' }, el('b', {}, 'Google Drive'),
-        b.drive.email
-          ? [el('span', { dir: 'ltr', class: 'muted small' }, b.drive.email), el('span', {}, `${b.drive.copies} מתוך ${b.drive.files} קבצים מגובים`),
-             el('button', { class: 'btn small ghost', onclick: async () => { if (!confirm('לנתק את Google Drive מהגיבויים? העותקים שכבר שם נשארים.')) return; await call('/api/vault/backups/drive/disconnect', { method: 'POST' }); H.closeModal(); backups(); } }, 'ניתוק')]
-          : [el('span', { class: 'muted small' }, 'לא מחובר'), el('button', { class: 'btn small primary', onclick: () => { location.href = '/api/auth/login?drive=1&next=' + encodeURIComponent('/family/?fresh=1'); } }, 'חיבור Google Drive')]),
-      el('div', { class: 'fv-item' }, el('b', {}, 'NAS'), el('span', { class: 'muted small' }, 'ה־NAS מושך את הגיבויים מ־Cloudflare בעצמו (Cloud Sync). כך שום דבר בבית לא פתוח לאינטרנט. ההגדרה מתוארת ב־docs/security.md.')),
-      el('div', { class: 'fv-item' }, el('b', {}, 'עותק לילי של האילן'), el('span', { class: 'muted small' }, `האחרון: ${when(b.lastSnapshot)}`),
-        b.lastRun ? el('span', { class: 'muted small' }, `הגיבוי האחרון: ${when(b.lastRun.at)} · ${b.lastRun.copied} עותקים חדשים${b.lastRun.failed ? ` · ${b.lastRun.failed} נכשלו` : ''}`) : null),
-      el('div', { class: 'fv-acts' }, run)));
-  }
-
   /* ---------- leaving the page alone ---------- */
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') hiddenAt = Date.now();

@@ -51,12 +51,13 @@ _Updated 2026-11-14 (the cushions' flat ellipse; the page turn between windows).
 - **The cushions on a flat ellipse again (the owner):** closer to the fire on a flatter orbit for depth (ry/rx 0.64 on the phone,
   0.33 on PC); the front cushions keep 10–14 px from the logs and flames, the label stays clear of the caption, and the back cushion
   passes partly behind the flames, which gives the depth. Checked at 375 and 1280, light and dark. Patch for `index.html`:
-  `design-index-cushions-ellipse-2026-11-14.patch` in the notes.
+  `design-index-cushions-ellipse-2026-11-14.patch`. Live in v83; the owner approved the depth ("It's good").
 - **A quiet page turn between windows (the owner):** cross-document View Transitions in base.css. The page fades and moves 6 px
   the Hebrew way (160 ms out, 200 ms in), and the top bar and tab bar stand still. It is off with reduced motion (the
   device's or the app's), and other browsers navigate as before. Checked in headless Chrome and at 375 and 1280.
   - A patch for the master's `common.js` (`design-common-nav-steady-2026-11-14.patch`): the navigation shows from the
     cached user, so it doesn't blink out while `/api/me` answers.
+  - Live in v83, with the patch.
 
 - **Settings in folding categories** (settings.css + `prototype/settings.html`): a card per category with its own drawn mark
   and colour, a line of what is set now, closed at first; ai-features to switch `section()` to `<details>`.

@@ -317,22 +317,27 @@
   ];
   /** a menu of the tent's parts or of its tools, under its button (PC) or above the tab bar (phone) */
   let openMenuEl = null;
-  function closeMenu() {
-    if (!openMenuEl) return;
-    openMenuEl.btn.setAttribute('aria-expanded', 'false');
-    openMenuEl.box.remove();
+  // closes the open menu; resolves once its history step is gone too (fromBack: back already took it)
+  function closeMenu(fromBack) {
+    if (!openMenuEl) return Promise.resolve();
+    const { btn, box, step } = openMenuEl;
+    btn.setAttribute('aria-expanded', 'false');
+    box.remove();
     openMenuEl = null;
+    return fromBack || !step ? Promise.resolve() : back.done(step);
   }
   async function toggleMenu(btn, kind, phone) {
     if (openMenuEl?.btn === btn) return closeMenu();
-    closeMenu();
+    await closeMenu();
     try { await loadOnce('/assets/apps.js'); } catch (_) { location.href = kind === 'tools' ? '/tools/' : '/'; return; }
     const here = location.pathname;
     const items = (window.H.APPS || []).filter((a) => (kind === 'parts' ? PARTS.includes(a.href) : !a.fixed && !PARTS.includes(a.href)));
-    const link = (a) => el('li', {}, el('a', { href: a.href, 'aria-current': here.startsWith(a.href.split('#')[0]) && a.href !== '/' ? 'page' : null }, icon(a.ic), el('span', {}, a.name)));
+    // a link leaves through the menu's own step, so back on the next page comes to this page, not to its open menu
+    const go = (e) => { if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; e.preventDefault(); const to = e.currentTarget.href; closeMenu().then(() => location.assign(to)); };
+    const link = (a) => el('li', {}, el('a', { href: a.href, onclick: go, 'aria-current': here.startsWith(a.href.split('#')[0]) && a.href !== '/' ? 'page' : null }, icon(a.ic), el('span', {}, a.name)));
     const box = el('div', { class: 'navmenu' + (phone ? ' navmenu-phone' : ''), id: 'navmenu-' + kind },
       el('ul', {}, items.map(link)),
-      kind === 'tools' ? el('a', { class: 'navmenu-all', href: '/tools/' }, 'כל הכלים, וסידור ›') : null);
+      kind === 'tools' ? el('a', { class: 'navmenu-all', href: '/tools/', onclick: go }, 'כל הכלים, וסידור ›') : null);
     if (!phone) {
       const r = btn.getBoundingClientRect();
       box.style.top = Math.round(r.bottom + 6) + 'px';
@@ -341,6 +346,7 @@
     document.body.append(box);
     btn.setAttribute('aria-expanded', 'true');
     openMenuEl = { btn, box };
+    openMenuEl.step = back.push(() => { if (openMenuEl) openMenuEl.step = 0; closeMenu(true); });
     box.querySelector('a')?.focus({ preventScroll: true });
   }
   addEventListener('click', (e) => { if (openMenuEl && !openMenuEl.box.contains(e.target) && !openMenuEl.btn.contains(e.target)) closeMenu(); });
@@ -444,7 +450,7 @@
   const back = (() => {
     const page = Math.random().toString(36).slice(2), stack = [];
     const waiting = [];   // done() calls whose history.go() has not landed yet
-    let seq = 0;
+    let seq = 0, closedNow = false;   // closedNow: the last back closed something (it was not a step out of the page)
     const here = () => (history.state && history.state.hpage === page ? history.state.hback || 0 : 0);
     const run = (s) => { try { s.close(); } catch (err) { console.error(err); } };
     function push(close, url) {
@@ -461,14 +467,71 @@
       return steps ? new Promise((ok) => { waiting.push(ok); history.go(-steps); }) : Promise.resolve();
     }
     addEventListener('popstate', (e) => {
+      closedNow = false;
       if (waiting.length) { e.stopImmediatePropagation(); waiting.shift()(); return; }
       const st = history.state || {};
       if (st.hback && st.hpage !== page) { e.stopImmediatePropagation(); history.back(); return; }   // from before a reload: nothing to close there
-      const to = here();
-      while (stack.length && stack[stack.length - 1].id > to) run(stack.pop());
+      // what back passed over closes; a step one of them opens while closing (a question) stays
+      const to = here(), gone = [];
+      while (stack.length && stack[stack.length - 1].id > to) gone.push(stack.pop());
+      gone.forEach(run);
+      closedNow = gone.length > 0;
     });
-    return { push, done, get depth() { return stack.length; } };
+    /* A panel that stays in the page and is shown and hidden (a side menu, a chat panel, a pop-up menu):
+     *   H.back.watch(panelEl, () => closeIt(), isOpen?)   isOpen defaults to !panelEl.hidden; also watches its class.
+     * Opening it adds the step, closing it by its own button takes the step away, and back calls closeIt. */
+    function watch(t, close, isOpen = () => !t.hidden) {
+      let step = 0;
+      const sync = () => {
+        const open = t.isConnected && isOpen();
+        if (open && !step) step = push(() => { step = 0; close(); });
+        else if (!open && step) { const s = step; step = 0; done(s); }
+      };
+      new MutationObserver(sync).observe(t, { attributes: true, attributeFilter: ['hidden', 'class', 'open'] });
+      sync();
+      return sync;
+    }
+    return { push, done, watch, get depth() { return stack.length; }, get closedNow() { return closedNow; } };
   })();
+
+  /* The first page of the tent in this tab (opened from the home screen, from a link outside, or typed): back would leave
+     the app. Instead, from any other page it goes to the home page, and on the home page it asks for a second press.
+     The guard step is added at the first touch or key (Chrome skips history steps added with no user action). */
+  if (!embedded) (() => {
+    let entry = false;
+    try { entry = !document.referrer || new URL(document.referrer).origin !== location.origin; } catch (_) { entry = true; }
+    try { if (sessionStorage.getItem('hroot') === location.pathname) { entry = true; sessionStorage.removeItem('hroot'); } } catch (_) { /* private mode */ }
+    const st = history.state || {};
+    if (!entry && !st.hroot) return;
+    if (!st.hroot) history.replaceState({ ...st, hroot: 1 }, '');
+    // the bottom step: the page itself, nothing open on it (a window opened as the page loads has its own step above it)
+    const bottom = (s) => s.hroot && !s.hguard && !s.hback;
+    const arm = () => { const s = history.state || {}; if (bottom(s)) history.pushState({ ...s, hguard: 1 }, ''); return !!(history.state || {}).hguard; };
+    const first = () => { if (arm()) ['pointerup', 'keydown'].forEach((t) => removeEventListener(t, first, true)); };
+    ['pointerup', 'keydown'].forEach((t) => addEventListener(t, first, true));
+    let warned = 0;
+    addEventListener('popstate', () => {
+      const s = history.state || {};
+      if (!bottom(s)) return;
+      if (back.closedNow) { arm(); return; }   // back closed a window that was open on the page: that was its step
+      if (location.pathname !== '/') { try { sessionStorage.setItem('hroot', '/'); } catch (_) { /* private mode */ } location.replace('/'); return; }
+      if (Date.now() - warned < 3000) { history.back(); return; }
+      warned = Date.now();
+      toast('לחצו שוב "חזרה" כדי לצאת');
+      arm();
+    });
+  })();
+
+  /* "‹ אוכל" and the like: when that is the page we came from, it goes back to it (as the phone's back does) instead of
+     adding a step, so back from there does not return here. */
+  addEventListener('click', (e) => {
+    const a = e.target.closest?.('a.folder-back[href]');
+    if (!a || e.defaultPrevented || e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || back.depth) return;
+    try {
+      const from = new URL(document.referrer), to = new URL(a.href, location.href);
+      if (from.origin === location.origin && from.pathname === to.pathname && !(history.state || {}).hroot) { e.preventDefault(); history.back(); }
+    } catch (_) { /* no referrer */ }
+  });
 
   /* Glass modal shared by apps */
   let modalStep = 0;

@@ -1081,7 +1081,10 @@
   /* ketosis is the person's choice (the owner, 2026-11-13): its tab shows only once it is on, or while it is open – it is
      reached from its app in תנועה ותזונה (/groceries/#keto), where its switch is */
   const ketoTab = () => { $('#tabKeto').hidden = !(Keto.enabled || tabNow === 'keto'); };
-  function showTab(which) {
+  // Each tab is a step in the history (the owner's tour, 2026-11-13): the back gesture or key returns to the previous tab,
+  // not out of the page. how: 'push' (a tap), 'replace' (the first draw), 'pop' (back/forward, the history moved already).
+  function showTab(which, how = 'push') {
+    const was = tabNow;
     tabNow = which; ketoTab();
     for (const [tab, view, name] of [['#tabList', '#viewList', 'list'], ['#tabBook', '#viewBook', 'book'], ['#tabKeto', '#viewKeto', 'keto']]) {
       $(tab).setAttribute('aria-selected', String(which === name));
@@ -1089,16 +1092,46 @@
     }
     if (which === 'book') { if (!book) loadBook(); else renderBook(); }
     if (which === 'keto' && !ketoMounted) { ketoMounted = true; Keto.mount($('#viewKeto')); }
-    history.replaceState(null, '', which === 'list' ? '#' : '#' + which);
+    const url = which === 'list' ? location.pathname : '#' + which;
+    if (how === 'replace' || (how === 'push' && which === was)) history.replaceState({ tab: which }, '', url);
+    else if (how === 'push') history.pushState({ tab: which }, '', url);
   }
   H.showTab = showTab;
+  window.addEventListener('popstate', (e) => {
+    const tab = e.state?.tab || (['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list');
+    if (tab !== tabNow) showTab(tab, 'pop');
+  });
+
+  // A sideways swipe moves to the next tab: in Hebrew the next one is on the left, so a swipe to the right brings it.
+  // Not from the screen's edges (the phone's own back gesture), not in a field, a sheet, a dialog or a sideways scroller.
+  let swipe = null;
+  document.querySelector('main').addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    swipe = e.touches.length === 1 && t.clientX > 24 && t.clientX < innerWidth - 24 && !e.target.closest('input, textarea, select, [contenteditable], dialog, .sheet, .modal-glass')
+      && !scrollsSideways(e.target) ? { x: t.clientX, y: t.clientY, at: Date.now() } : null;
+  }, { passive: true });
+  document.querySelector('main').addEventListener('touchend', (e) => {
+    if (!swipe) return;
+    const t = e.changedTouches[0], dx = t.clientX - swipe.x, dy = t.clientY - swipe.y;
+    const ok = Math.abs(dx) > 70 && Math.abs(dy) < Math.abs(dx) * 0.5 && Date.now() - swipe.at < 700;
+    swipe = null;
+    if (!ok || document.querySelector('dialog[open], .modal-glass')) return;
+    const tabs = ['list', 'book', 'keto'].filter((n) => !$(n === 'list' ? '#tabList' : n === 'book' ? '#tabBook' : '#tabKeto').hidden);
+    const rtl = getComputedStyle(document.documentElement).direction === 'rtl';
+    const next = tabs[tabs.indexOf(tabNow) + ((dx > 0) === rtl ? 1 : -1)];
+    if (next) showTab(next);
+  }, { passive: true });
+  function scrollsSideways(node) {
+    for (let n = node; n && n !== document.body; n = n.parentElement) if (n.scrollWidth > n.clientWidth + 2 && /auto|scroll/.test(getComputedStyle(n).overflowX)) return true;
+    return false;
+  }
   $('#tabList').addEventListener('click', () => showTab('list'));
   $('#tabBook').addEventListener('click', () => showTab('book'));
   $('#tabKeto').addEventListener('click', () => showTab('keto'));
   window.addEventListener('keto:changed', (e) => { ketoTab(); if (e.detail !== 'state' || Keto.enabled) render(); });
 
   render();
-  showTab(['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list');
+  showTab(['#book', '#keto'].includes(location.hash) ? location.hash.slice(1) : 'list', 'replace');
   await flush();
   await pull();
 

@@ -2446,7 +2446,7 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
 - **For the master:** `common.js` reckons the day times (`sunTimes`) from the time zone; it could take `me.place` (or the
   weather's place) when it is there. Your call.
 - **For design:** the look of `.wz-place` (the box's wrapper, `position: relative`), `.wz-sugg` (the `role=listbox` under the
-  box, `li[role=option][aria-selected]` > `b` + `small`) and `.wz-home` (the "🏠 X סומן כבית" line). Until then welcome.js
+  box, `li[role=option][aria-selected]` > `b` + `small`) and `.wz-home` (the "X סומן כבית" line; design draws the house, a70230a). Until then welcome.js
   floats the list with a few inline rules; it stops once `.wz-sugg` is `position: absolute` in welcome.css.
 - **Open for the owner:** the search is limited to Google's region `il`; places Google files under another region are not
   suggested, and they stay free text.

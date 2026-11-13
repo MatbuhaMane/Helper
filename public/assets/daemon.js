@@ -1648,6 +1648,11 @@
   /* ===================== mounting ===================== */
   let overlay = false;
   /** opts.dock: the spot in his tent on the home page (he lives there unless asked to come along). opts.overlay: the desktop program. */
+  /** the page loaded (its pictures too), then a quiet moment – or 2 seconds at most after the load */
+  const pageIn = () => new Promise((res) => {
+    const idle = () => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 2000 }) : setTimeout(res, 300));
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
+  });
   async function mount(container, opts = {}) {
     overlay = !!opts.overlay;
     dock = opts.dock || null;
@@ -1662,7 +1667,9 @@
     if (wantsFlat()) { try { shop = await api('/api/daemon/figures', { noRedirect: true }); } catch (_) { /* nothing paid is theirs */ } }
     const catalogue = wantsFlat() || state.ibnEzra === false ? await flatCatalogue() : [];
     const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? defaultFigure(catalogue) : null;
-    if (!flatId) { try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
+    // the 3D figure (three.js and a model of ~3 MB) waits until the page itself is in: on a slow connection it took the
+    // bandwidth from the page's own pictures (the home page's LCP was 5.5 s on 4G; the readiness bar is 2.5 s)
+    if (!flatId) { await pageIn(); try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
     if (innerWidth < 600) { box.w = 170; box.h = 170; }
     if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
     buildUI();

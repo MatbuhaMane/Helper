@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ברוכים הבאים – שקופיות ההסבר</title>
   <!-- The three showing slides of /welcome/ (the triangle, the helper, the tree) and the report sheet's kind choice.
-       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=report|helper|tree|sheet -->
+       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=report|helper|tree|city|sheet -->
   <link rel="stylesheet" href="/assets/base.css">
   <link rel="stylesheet" href="/assets/reports.css">
   <link rel="stylesheet" href="/welcome/welcome.css">
@@ -28,6 +28,7 @@
   const S = {
     helper: ['נעים מאוד, דנה! הכירו את העוזר החכם', 'החבר שמסתובב איתך באוהל', `<div class="wz-intro"><span class="wz-helper" data-f="fennec" aria-hidden="true"></span>` + lines(['הוא מפעיל בשבילך את הכלים: מוסיף לרשימת הקניות, מוצא מתכון, מסדר את המייל.', 'מקישים עליו, וכותבים או אומרים לו מה צריך.', 'עוד רגע תבחרו איך הוא ייראה.']) + '</div>'],
     tree: ['עץ המשפחה', 'כל המשפחה במקום אחד', `<div class="wz-intro"><span class="wz-tree" aria-hidden="true"></span>` + lines(['כל אחד מהמשפחה מקבל מקום על העץ: סבים למטה, ההורים באמצע, ואתם למעלה.', 'מקישים על מישהו ורואים את הסיפור, התמונות והתאריכים שלו.', 'אפשר להזמין קרובים, והם מוסיפים את עצמם.']) + '</div>'],
+    city: ['איפה הבית?', 'בשביל מזג האוויר וזמני היום', `<div class="wz-place"><input class="wz-name" id="city" style="font-size:1.5rem" value="רמת" role="combobox" aria-expanded="true" aria-controls="city-sugg"><ul class="wz-sugg" id="city-sugg" role="listbox"><li role="option" aria-selected="false"><b>רמת גן</b><small class="muted">מחוז תל אביב</small></li><li role="option" aria-selected="true"><b>רמת השרון</b><small class="muted">מחוז תל אביב</small></li><li role="option" aria-selected="false"><b>רמת ישי</b><small class="muted">מחוז הצפון</small></li><li role="option" aria-selected="false"><b>רמת גן, תל השומר – שכונה עם שם ארוך</b><small class="muted">מחוז תל אביב, ישראל</small></li></ul></div><p class="wz-home" id="city-home">🏠 <b>רמת השרון</b> סומן כבית</p><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="false">${c}</button>`).join('')}</div>`],
     report: ['האוהל עוד צעיר', 'ואתם עוזרים לו לגדול', `<div class="wz-intro"><span class="wz-alert" aria-hidden="true"></span>` + lines(['המשולש האדום שליד כפתור ההגדרות, בסרגל העליון, שולח פנייה לצוות האוהל.', 'משהו לא עובד? יש רעיון לשיפור? מקישים עליו וכותבים. התשובה מגיעה לתיבה שלך.']) + '</div>'],
   };
   if (s === 'sheet') {

@@ -134,7 +134,7 @@
 
   /* ---------- 4. the personal assistant (vision batch 5): his voice, his figure, how he shows in the chat ---------- */
   const assistantBox = section('assistant', 'העוזר האישי');
-  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['historic', 'דמויות מההיסטוריה ומהסיפורים'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
+  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['historic', 'דמויות מההיסטוריה ומהסיפורים'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['special', 'מיוחדות'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
   /* vision batch 6: a figure is free, or paid (catalogue `paid: true`); one that conflicts with the person's religion
      setting is not shown (catalogue `hideFor: ['jewish', …]`). The full entry is read from Figure2D.FIGURES. */
   // (paid: design's tier 'paid', or paid: true; tags: ['horror'] is offered only on request – prefs daemon.showHorror)
@@ -155,7 +155,7 @@
       allFigures.forEach((f) => { if ((shop.paid || []).includes(f.id)) f.paid = true; });
       figures = allFigures.filter((f) => !f.tags.includes('horror') || (!child && dp.showHorror));
     } catch (_) { /* the 2D figures are not here yet */ }
-    if (figures.some((f) => f.unlock)) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
+    if (figures.some((f) => f.unlock || f.id === 'doll')) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
     const family = !!d?.ibnEzra;
     // the figure now: the person's choice, if it is theirs to have; else Ibn Ezra for the family, the first figure for others
     // (paid: chosen once it is the person's; until then its card buys it)
@@ -166,9 +166,11 @@
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
     /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
     const price = Number(shop.priceIls) || 10;
-    const buy = (f) => H.modal(el('h2', {}, `${f.name}`), preview2d(f),
-      el('p', {}, `דמות בתשלום: ₪${price}, מהקרדיט שלך. במשפחה – בלי תשלום.`),
-      el('p', { class: 'muted small' }, 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
+    // the family (no limit) gets it for nothing: they see that, not a price (the server decides either way)
+    const buy = async (f) => { let free = false; try { free = !(await api('/api/me/ai')).limited; } catch (_) { /* not known: the price */ }
+      H.modal(el('h2', {}, `${f.name}`), preview2d(f),
+      el('p', {}, free ? 'בחינם, במשפחה.' : `דמות בתשלום: ₪${price}, מהקרדיט שלך.`),
+      el('p', { class: 'muted small' }, free ? 'היא שלך בכל מכשיר.' : 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
       el('div', { class: 'row' },
         el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
           e.target.disabled = true;
@@ -181,13 +183,13 @@
               el('div', { class: 'row' }, el('a', { class: 'btn primary', href: '#services', onclick: () => H.closeModal() }, 'לחיבור לשירותים'))); }
             else toast('הקנייה לא הצליחה – נסו שוב');
           }
-        } }, `לקנות ב־₪${price}`),
-        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו')));
+        } }, free ? 'לקחת אותה' : `לקנות ב־₪${price}`),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו'))); };
     const card = (id, name, sub, preview, ok = true, onBuy = null) => el('button', {
       type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
       title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
-    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true }).catch(() => {}); return span; };
+    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
     const groups = KINDS.map(([kind, title]) => [title, figures.filter((f) => (f.kind || 'generic') === kind)]).filter(([, list]) => list.length);
     // (native replaceChildren would print a null as text)
     assistantBox.replaceChildren(...[

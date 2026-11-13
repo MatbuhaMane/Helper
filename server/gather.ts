@@ -264,7 +264,19 @@ export async function rsvp(ctx: Ctx) {
       .bind(uid(), g.id, guest ? await sha('guest', guest) : null, ctx.user?.email || null, name, coming, n, note, Date.now()).run();
     count(ctx, g.id, 'rsvp');
   }
+  if (coming === 'yes') await founding(ctx, g);
   return json({ ok: true, guest });
+}
+
+/** the moment the gathering first has five invitees who confirmed: recorded once with its organiser, never rewritten (the
+    founders' order and "the millionth", docs/business/founders.md). An answer is never lost to it: a failure is logged. */
+async function founding(ctx: Ctx, g: Row) {
+  try {
+    const { results } = await ctx.env.DB.prepare("SELECT coming, email FROM gathering_rsvps WHERE gathering = ? AND coming = 'yes'").bind(g.id).all<{ coming: string; email: string | null }>();
+    if (!R.reachedFounding(results, g.host_email)) return;
+    await ctx.env.DB.prepare('INSERT OR IGNORE INTO gathering_milestones (gathering, host_email, household, reached_at, confirmed, dev) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(g.id, g.host_email, g.household, Date.now(), R.confirmedGuests(results, g.host_email), ctx.env.DEV_MODE === '1' ? 1 : 0).run();
+  } catch (e) { console.error('founding milestone', e instanceof Error ? e.message : e); }
 }
 
 /** take something to bring, or give it back; a member who takes it finds it in their household's grocery list */

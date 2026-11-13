@@ -462,6 +462,8 @@
   // A 2D figure walks, is dragged and points like him (the same box moves); three.js is not loaded for it at all.
   let flat = null, flatFigure = null, flatState = { talk: false, sleep: false, think: false };   // flatFigure: the id shown
   const wantsFlat = () => !!prefs.figure && prefs.figure !== 'ibn_ezra';
+  /** the figure for someone who has not chosen (outside the owner's family): the owner chose the fennec (Figure2D.DEFAULT) */
+  const defaultFigure = (list) => (list.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : list[0]?.id || null);
   async function flatCatalogue() {
     try { await H.loadOnce('/assets/figure2d.js'); } catch (_) { return []; }
     if (!document.querySelector('link[href="/assets/figure2d.css"]')) document.head.append(el('link', { rel: 'stylesheet', href: '/assets/figure2d.css' }));
@@ -1649,7 +1651,7 @@
     // a 2D figure the person chose (and that is drawn already), else the 3D Ibn Ezra
     // (Ibn Ezra is the owner's family's: anyone else who has not chosen gets the first figure, once figures are drawn)
     const catalogue = wantsFlat() || state.ibnEzra === false ? await flatCatalogue() : [];
-    const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? catalogue[0]?.id || null : null;
+    const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? defaultFigure(catalogue) : null;
     if (!flatId) { try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
     if (innerWidth < 600) { box.w = 170; box.h = 170; }
     if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less

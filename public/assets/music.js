@@ -595,7 +595,7 @@
         : r.searchUrl ? [el('p', { class: 'muted' }, 'כאן אי אפשר לחפש כרגע (אין חיבור לחיפוש של יוטיוב או לעוזר החכם).'), el('a', { class: 'btn ghost small', href: r.searchUrl, target: '_blank', rel: 'noopener' }, '↗ החיפוש ביוטיוב')]
         : [el('p', { class: 'muted' }, 'לא נמצאו סרטונים')]));
     });
-    const moods = el('div', { class: 'mu-moods', role: 'group', 'aria-label': 'לפי מצב רוח', style: 'display:flex;flex-wrap:wrap;gap:6px;margin-block:8px' },
+    const moods = el('div', { class: 'mu-moods', role: 'group', 'aria-label': 'לפי מצב רוח' },
       MOODS.map(([label, q]) => el('button', { class: 'chip', type: 'button', onclick: () => { sb.input.value = q; sb.input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })); } }, label)));
     body.append(sb.node, moods);
     if (matchMedia('(pointer: coarse)').matches) body.append(el('p', { class: 'mu-foot muted' }, 'בטלפון יוטיוב עוצר כשיוצאים מהאפליקציה (זה הכלל של יוטיוב). למוזיקה ברקע – ספוטיפיי.'));

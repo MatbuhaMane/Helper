@@ -34,16 +34,14 @@
     onclick: () => { onlyStars = !onlyStars; starFilter.setAttribute('aria-pressed', String(onlyStars)); starFilter.textContent = onlyStars ? '★ רק מסומנים' : '☆ מסומנים'; drawList(); } }, '☆ מסומנים');
   const listBox = el('div', { class: 'nt-list' });
   // the tags of all the notes, most used first; one picked filters the list
-  const tagBox = el('div', { class: 'nt-tags', role: 'group', 'aria-label': 'תגיות', style: 'display:flex;flex-wrap:wrap;gap:6px' });
+  const tagBox = el('div', { class: 'nt-tags', role: 'group', 'aria-label': 'תגיות' });
   function drawTags() {
     const count = new Map();
     for (const n of notes) for (const t of n.tags || []) count.set(t, (count.get(t) || 0) + 1);
     if (tag && !count.has(tag)) tag = null;
     tagBox.hidden = !count.size;
     tagBox.replaceChildren(...[...count].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'he')).slice(0, 24).map(([t, k]) =>
-      el('button', { type: 'button', class: 'chip nt-tag', 'aria-pressed': String(tag === t), title: `${k} פתקים`,
-        // (the picked one stands out until design's notes.css has .nt-tag[aria-pressed="true"])
-        style: tag === t ? 'background:var(--primary);border-color:var(--primary);color:var(--primary-ink)' : null, onclick: () => { tag = tag === t ? null : t; drawTags(); drawList(); } }, '#' + t)));
+      el('button', { type: 'button', class: 'chip nt-tag', 'aria-pressed': String(tag === t), title: `${k} פתקים`, onclick: () => { tag = tag === t ? null : t; drawTags(); drawList(); } }, '#' + t)));
   }
   const editor = el('section', { class: 'nt-editor card', hidden: true, 'aria-label': 'הפתק' });
 

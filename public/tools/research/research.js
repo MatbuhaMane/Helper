@@ -21,7 +21,7 @@
   const snip = (s, n = 140) => String(s || '').replace(/\s+/g, ' ').slice(0, n);
   // a citation's *italics* as <i> (the text itself is never HTML)
   const cite = (s) => el('span', { dir: 'ltr', class: 'rx-cite' }, ...String(s).split(/\*([^*]+)\*/).map((p, i) => (i % 2 ? el('i', {}, p) : p)));
-  const badge = (text, title) => el('small', { class: 'rx-role', title: title || '', style: 'border:1px solid var(--line-strong);border-radius:999px;padding:0 8px;white-space:nowrap' }, text);
+  const badge = (text, title) => el('small', { class: 'rx-role', title: title || '' }, text);
   const when = (t) => new Date(t).toLocaleString('he-IL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   /** one of my notes into a research; in a shared research a private note asks first whether the others may see it */
   async function addExisting(researchId, noteId) {
@@ -76,7 +76,7 @@
   const ROLE = { owner: 'בעלים', editor: 'עורך', contributor: 'תורם', reader: 'קורא' };
   const ROLE_HELP = { editor: 'עורך: מוסיף ומתקן הכול, משחזר מההיסטוריה, מזמין קוראים', contributor: 'תורם: מוסיף פתקים, שאלות, מקורות וטיוטות, ומתקן רק את שלו', reader: 'קורא: רואה ומגיב' };
   function invitationsCard() {
-    return el('section', { class: 'card rx-invites', style: CARD },
+    return el('section', { class: 'card rx-invites' },
       el('b', {}, `✉ הזמנות למחקרים (${L.invitations.length})`),
       el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, L.invitations.map((i) => el('li', { style: 'display:grid;gap:4px' },
         el('span', {}, `${i.from} מזמין אותך ל"`, el('b', { dir: 'auto' }, i.title), `" בתור ${i.roleName}`),
@@ -156,8 +156,8 @@
           if (me) go(null); else route();
         } }, me ? 'לעזוב' : '✕') : null);
     };
-    return el('details', { class: 'card rx-sharing', style: CARD },
-      el('summary', { style: 'cursor:pointer;font-weight:600' }, R.shared ? `👥 משותף · ${R.members.length} אנשים` : '👥 שיתוף המחקר'),
+    return el('details', { class: 'card rx-sharing' },
+      el('summary', {}, R.shared ? `👥 משותף · ${R.members.length} אנשים` : '👥 שיתוף המחקר'),
       el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:6px' }, R.members.map(memberRow)),
       R.can.invite ? el('div', { style: 'display:grid;gap:6px' },
         el('div', { style: ROW }, email, role, el('button', { class: 'btn small primary', type: 'button', onclick: send }, 'להזמין')), help,
@@ -174,7 +174,7 @@
     const what = (c) => c.on === 'note' ? R.notes.find((n) => n.id === c.onId)?.title : c.on === 'thread' ? R.threads.find((t) => t.id === c.onId)?.text : c.on === 'source' ? R.sources.find((s) => s.id === c.onId)?.csl?.title : null;
     return el('section', { class: 'rx-comments', style: 'display:grid;gap:8px' },
       el('h2', {}, `💬 תגובות (${R.comments.length})`),
-      R.comments.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, R.comments.map((c) => el('li', { class: 'card rx-comment', style: CARD },
+      R.comments.length ? el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, R.comments.map((c) => el('li', { class: 'card rx-comment' },
         el('div', { style: ROW }, el('b', {}, c.by), el('small', { class: 'muted' }, when(c.at)), what(c) ? el('small', { class: 'muted', dir: 'auto' }, '· על ' + snip(what(c), 50)) : null,
           c.mine || R.can.editAny ? el('button', { class: 'btn ghost small', type: 'button', 'aria-label': 'מחיקת התגובה', onclick: async () => { if (confirm('למחוק את התגובה?')) { await api(`/api/research/comments/${c.id}`, { method: 'DELETE' }); route(); } } }, '✕') : null),
         el('p', { dir: 'auto', style: 'margin:0;white-space:pre-line' }, c.text)))) : null,
@@ -192,8 +192,8 @@
   function historySection() {
     if (!R.history.length) return null;
     const restorable = (h) => R.can.restore && (h.action === 'remove' || h.action === 'edit') && h.kind !== 'member';
-    return el('details', { class: 'card rx-history', style: CARD },
-      el('summary', { style: 'cursor:pointer;font-weight:600' }, `🕓 היסטוריה (${R.history.length})`),
+    return el('details', { class: 'card rx-history' },
+      el('summary', {}, `🕓 היסטוריה (${R.history.length})`),
       el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:6px' }, R.history.map((h) => el('li', { style: ROW },
         el('small', { class: 'muted', style: 'min-inline-size:7.5em' }, when(h.at)),
         el('span', { style: 'flex:1' }, `${h.by} ${ACTION[h.action] || h.action} ${KIND[h.kind] || h.kind}`),

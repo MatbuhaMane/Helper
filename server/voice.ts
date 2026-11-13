@@ -3,7 +3,9 @@
 // daily per-person allowance. Uses the Gemini key the helper already has.
 
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
-import { forSpeech } from './speech-text';
+import { z } from 'zod';
+import { aiJson } from './ai';
+import { forSpeech, needsNiqqud, protect, restore } from './speech-text';
 
 export const DEFAULT_VOICE = 'Algenib';   // the owner's choice: deep and a little gravelly
 const DAILY_CHARS = 30000;
@@ -80,16 +82,36 @@ function wav(pcm: Uint8Array, rate: number) {
 
 const AUDIO_HEADERS = { 'content-type': 'audio/wav', 'cache-control': 'private, max-age=604800' };
 
+/** The line with full niqqud, so the voice reads every word right (the owner: always, for what is read aloud). Gemini
+    first (the text goes to Google's voice anyway); the approved name is kept aside; any doubt – the line as it was. */
+async function pointed(env: Env, text: string): Promise<string> {
+  if (!needsNiqqud(text)) return text;
+  const p = protect(text);
+  try {
+    const r = await aiJson(env, {
+      prefer: 'gemini', fast: true, effort: 'low',
+      system: 'You add full Hebrew niqqud (vowel points, with dagesh and shin/sin dots) to text that a speech engine will read aloud, so every word is pronounced correctly in its context. Change nothing else: the same letters, words, order and punctuation. Keep non-Hebrew text, numbers and tokens like @@1@@ exactly as they are.',
+      prompt: p.text, schema: z.object({ text: z.string() }),
+    });
+    return restore(r.text, text, p.kept);
+  } catch (e) {
+    console.warn('niqqud failed, reading as is', e instanceof Error ? e.message : e);
+    return text;
+  }
+}
+
 /** Synthesize (or fetch from the cache) one line in one voice. Returns the WAV bytes, and whether it was new. */
 async function synth(ctx: Ctx, voice: string, text: string): Promise<{ bytes: Uint8Array | ReadableStream; fresh: boolean }> {
   const env = ctx.env;
   if (!env.GEMINI_API_KEY) throw new HttpError(503, 'no voice service');
-  // what is read, not what is shown: רַאבַּ"ע as one word (server/speech-text.ts)
+  // what is read, not what is shown: רַאבַּ"ע as one word (server/speech-text.ts). The cache is keyed by that text, so
+  // the niqqud below is added only once for each line.
   text = forSpeech(text);
-  if (env.DEV_MODE === '1') console.log('TTS text:', text);
   const k = `tts/${await sha(`gemini|${model(env)}|${voice}|${STYLE}|${text}`)}.wav`;
   const stored = env.MEDIA ? await env.MEDIA.get(k) : null;
   if (stored) return { bytes: stored.body, fresh: false };
+  text = await pointed(env, text);
+  if (env.DEV_MODE === '1') console.log('TTS text:', text);
   let r: Response | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
     r = await fetch(`${base(env)}/v1beta/models/${model(env)}:generateContent`, {

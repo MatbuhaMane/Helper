@@ -298,7 +298,10 @@
     choices('הדת', [['jewish', 'יהדות'], ['muslim', 'אסלאם'], ['christian', 'נצרות'], ['druze', 'התווחיד', { title: 'التوحيد' }], ['none', 'בלי']], me.religion || 'jewish',
       (v) => { me.religion = v; keep('me'); toast('נשמר. החגים והזמנים יותאמו בהדרגה בכל האוהל.'); }),
     choices('השפה', [['he', 'עברית'], ['ar', 'العربية', { soon: true }], ['en', 'English', { soon: true }]], me.lang || 'he', (v) => { me.lang = v; keep('me'); }),
-    el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'));
+    el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'),
+    // how the app and the companions speak to this person: neutral (plural) until chosen here – the owner's rule
+    choices('איך לפנות אליי', [['', 'בלי מגדר'], ['female', 'בלשון נקבה'], ['male', 'בלשון זכר']], me.address || '',
+      (v) => { me.address = v; keep('me'); toast(v ? 'נשמר. מעכשיו העוזרים ישתמשו בפנייה הזו.' : 'נשמר. העוזרים יפנו בלשון רבים.'); }));
 
   /* ---------- my place: the city (the weather, restaurants nearby) ---------- */
   const CITIES = ['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'בני ברק', 'פתח תקווה', 'ראשון לציון', 'אשדוד', 'נתניה', 'חולון', 'רמת גן', 'רחובות',

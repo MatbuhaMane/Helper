@@ -67,9 +67,34 @@ LCP has not moved yet. The causes:
   - It refuses any address that is not a local dev server.
 - **The voice**: the owner heard the recording, and רַאבַּ"ע sounds right; the voice prompt (STYLE in `voice.ts`) stays as it is.
 
+- **The family batch (2026-11-13), the first items**:
+  - **niqqud for the voice**: every line read aloud gets full niqqud first, from Gemini, only on a cache miss.
+    - The approved name is put aside before the niqqud and put back after.
+    - The answer is used only if its letters match the line; vav and yod may come and go, as in pointed spelling.
+    - On any doubt, the line is read as it was.
+    - 23 tests, including Gemini's real answer for one line. The screen is not touched.
+  - **neutral language**: a "איך לפנות אליי" field in settings: neutral by default, female or male. The companion addresses
+    the person by it; the UI is mostly neutral plural already, and the gendered wording in the rest of the UI is still to do.
+  - **quiet companions**:
+    - No introduction unasked: a small mark instead, and the first tap offers "נעים להכיר! מה אפשר לעשות איתך?".
+    - A persona per figure: the four animals introduce themselves in a sentence or two, רַאבַּ"ע at more length.
+    - A conversation held with another figure starts fresh, keeping the memory notes (PROMPT_VERSION 12).
+    - A new person (the owner's family too) starts with a random one of the four animals; those who already have רַאבַּ"ע
+      keep him.
+    - Tested as a test user: the lamb was given, no AI call before the tap, and the lamb introduced itself in one sentence.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.
+- **The single record** (design leads): the JS side waits for design's markup and spec. The stump is a dock, and the music
+  stops from the record or from the main player.
+- Next from the batch, in small deploys:
+  - the owner's room: a usage dashboard and the feedback inbox;
+  - a feedback button;
+  - badges for every tool, with שבט for relatives only;
+  - optional on-screen niqqud;
+  - רַאבַּ"ע's astrology as an opt-in;
+  - the gendered UI wording.
 - The calendar's blocking time on 4G: 309 ms after drawing it whole (175 before). The data now arrives all at once; to look
   into.
 

@@ -39,7 +39,7 @@ with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entr
 ## People and characters (vision batch 6)
 
 Twelve, from the owner's lists, drawn from the original sources (likeness notes in the `historic-figures` skill),
-`kind: 'historic'` (`paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
+`kind: 'person'` (`tier: 'paid'` and `paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
 
 | tier | figures |
 |---|---|
@@ -51,6 +51,20 @@ every one is drawn modestly and respectfully. The one to filter is Dracula (`tag
 children under 12, and offer him only on request (or hide him for anyone who prefers no horror). Whether a tradition
 setting should hide anyone else is the owner's call (vision). Peter Pan: the UK's perpetual right (Great Ormond Street)
 is to be checked by business before anything around him is sold; he is free in the app.
+
+## The special ones (paid; the owner's choice, 2026-11-13)
+
+`kind: 'special'`, `tier: 'paid'`, `paid: true`. Each has its own move, `f.special()`, which also plays inside
+`f.happy()`, so the companion's existing "glad when something worked" already shows it:
+
+| id | name | its move |
+|---|---|---|
+| magician | הקוסם מהשוק (a man) | a dove (with an olive sprig) flies out of his tarboosh in a burst of sparks |
+| astronomer | האסטרונומית (a woman) | at night the stars of her shawl wake and twinkle, and she glows faintly; when glad, a shooting star |
+| doll | בובת הטלאים (neither) | wears the person's own badges, sewn on: `mount(el, 'doll', { patches: earnedBadgeIds })` (up to 8, newest last); `f.sew(id)` stitches a newly earned one in |
+
+For ai-features: show them as their own group ("מיוחדות"), paid; for the doll pass the person's earned badge ids
+(`D.badges.earned` in goals) as `patches`, and call `f.sew(id)` when a badge is earned while it is on screen.
 
 ## For ai-features
 

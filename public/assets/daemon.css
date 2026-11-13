@@ -40,6 +40,15 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-bhead b { font-weight: 500; font-size: .92rem; color: var(--muted); }
 .dm-say { font-size: 1rem; line-height: 1.55; white-space: pre-wrap; max-block-size: 34vh; overflow-y: auto; padding-inline-end: 2px; }
 .dm-balloon .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+/* the suggested question on the first tap ("נעים להכיר! מה אפשר לעשות איתך?"): an invitation, not a plain button –
+   a soft pill in the active colour with a small spark before it; it settles in with a short rise */
+.dm-balloon .btn.dm-suggest { display: inline-flex; align-items: center; gap: 7px; min-block-size: 36px; padding: 6px 14px; border-radius: 999px; text-align: start; white-space: normal;
+  color: var(--text); background: color-mix(in srgb, var(--primary) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--line));
+  animation: dm-suggest-in .35s var(--ease-river) .15s both; transition: background-color .15s, border-color .15s; }
+.dm-balloon .btn.dm-suggest::before { content: "✦"; color: var(--primary); font-size: .9em; flex: none; }
+.dm-balloon .btn.dm-suggest:hover { background: color-mix(in srgb, var(--primary) 20%, var(--card)); border-color: var(--primary); }
+@keyframes dm-suggest-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .dm-balloon .btn.dm-suggest { animation: none; } }
 .dm-balloon .acts:empty { display: none; }
 .dm-input { display: flex; gap: 4px; margin-top: 10px; align-items: center; }
 .dm-input input { flex: 1; min-width: 0; padding: 8px 10px; }

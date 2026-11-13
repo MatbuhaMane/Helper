@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>תקליט אחד – אב טיפוס</title>
+  <!-- One record (the owner, 2026-11-14): the player's own folded record parks on the home page's stump. The look is real
+       (base.css, music.css; the corner's CSS as in design-index-record-2026-11-14.patch); the JS below only shows the
+       behaviour music.js should have. Serve from the dev server (copy to public/ for a moment).
+
+       THE SPEC (for music.js)
+       1. The record is the existing folded float: .mu-float.folded > button.mu-record > span.mu-art. Nothing new.
+       2. The dock: '.corner .rec' (the home page only). Docked: .mu-float gets 'on-stump', --dock-size = 0.72 × the slot's width
+          (px), and stands with its centre on the slot's centre (position: fixed, kept there on scroll and resize).
+          body gets 'mu-docked'. The page marks body 'mu-one-record' when music.js supports this (the switch).
+       3. Drag: press on the record and move more than 6px → it leaves the stump (no 'on-stump', mode 'float', still
+          folded) and follows the finger, body 'mu-dragging'. Let go within 60px of the slot's centre → docked again
+          (mode 'stump'); anywhere else → it stays there, floating. The slot itself, tapped while empty, calls
+          H.music.dock(). Between screens: the mode is saved (prefs music.mode); 'stump' on a page without the stump
+          shows the folded record floating at its last place, and docks again on the home page.
+       4. A tap (no drag) on the docked record plays or stops (aria-pressed, aria-label 'לנגן' / 'לעצור'). A tap on a
+          floating folded record opens the card, as today. The main player stops as today.
+  -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/music.css">
+  <style>
+    body { padding: 0 16px; min-block-size: 140vh; }
+    .stage { position: relative; block-size: 360px; margin-block-start: 30px; }
+    /* the corner, as on the home page */
+    .corner { position: absolute; inset-inline-end: 10%; inset-block-end: 0; inline-size: min(300px, 70vw); aspect-ratio: 1.25; }
+    .corner .stump { position: absolute; inset-inline-end: 22%; inset-block-end: 0; inline-size: 62%; block-size: auto; filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .28)); }
+    .corner button { position: absolute; padding: 0; border: 0; background: none; cursor: pointer; }
+    .corner .rec { inset-inline-end: -6%; inset-block-end: 2%; inline-size: 34%; aspect-ratio: 1; }
+    /* the slot (from the patch) */
+    body.mu-one-record .corner .rec::before { content: ""; position: absolute; inset: 6%; border-radius: 50%; pointer-events: none;
+      border: 2px dashed color-mix(in srgb, var(--text) 28%, transparent); opacity: .7; transition: opacity .25s, scale .25s var(--ease-river), border-color .25s; }
+    body.mu-one-record.mu-docked .corner .rec::before { opacity: 0; }
+    body.mu-one-record.mu-dragging .corner .rec::before { opacity: 1; scale: 1.1; border-color: var(--primary); }
+    .demo-note { color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body class="mu-one-record">
+<p class="demo-note">התקליט חונה על הגדם. נגיעה: לנגן/לעצור. גרירה: לקחת אותו מהגדם; שחרור ליד הגדם: לחנות שוב.</p>
+<div class="stage"><div class="corner"><img class="stump" src="/assets/stump-guitar.webp" alt=""><button class="rec" type="button" aria-label="להחזיר את התקליט לגדם"></button></div></div>
+<div class="mu-float folded" id="float"><button class="mu-record" type="button" aria-pressed="false" aria-label="לנגן"><span class="mu-art"></span></button></div>
+<script>
+  const float = document.getElementById('float'), disc = float.firstElementChild, slot = document.querySelector('.corner .rec');
+  let mode = 'stump', free = { x: 60, y: 120 }, drag = null, playing = false;
+  const centreOf = (el) => { const r = el.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width }; };
+  function place() {
+    if (mode === 'stump' && !drag) {
+      const c = centreOf(slot);
+      float.style.setProperty('--dock-size', Math.round(c.w * 0.72) + 'px');
+      const r = float.getBoundingClientRect();
+      float.style.left = (c.x - r.width / 2) + 'px'; float.style.top = (c.y - r.height / 2) + 'px';
+    }
+    float.classList.toggle('on-stump', mode === 'stump' && !drag);
+    document.body.classList.toggle('mu-docked', mode === 'stump' && !drag);
+    document.body.classList.toggle('mu-dragging', !!drag);
+  }
+  float.style.position = 'fixed';
+  addEventListener('scroll', place, { passive: true }); addEventListener('resize', place);
+  disc.addEventListener('pointerdown', (e) => { drag = { sx: e.clientX, sy: e.clientY, moved: false, ox: e.clientX - float.getBoundingClientRect().left, oy: e.clientY - float.getBoundingClientRect().top }; disc.setPointerCapture(e.pointerId); });
+  disc.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 6) return;
+    if (!drag.moved) { drag.moved = true; mode = 'float'; place(); }
+    float.style.left = (e.clientX - drag.ox) + 'px'; float.style.top = (e.clientY - drag.oy) + 'px';
+  });
+  disc.addEventListener('pointerup', (e) => {
+    const d = drag; drag = null; if (!d) return;
+    if (!d.moved) {   // a tap
+      if (mode === 'stump') { playing = !playing; float.classList.toggle('playing', playing); disc.setAttribute('aria-pressed', String(playing)); disc.setAttribute('aria-label', playing ? 'לעצור' : 'לנגן'); }
+      else { /* music.js: open the card, as today */ }
+      place(); return;
+    }
+    const c = centreOf(slot), f = centreOf(float);
+    if (Math.hypot(c.x - f.x, c.y - f.y) < 60) mode = 'stump';
+    place();
+  });
+  slot.addEventListener('click', () => { mode = 'stump'; place(); });   // H.music.dock()
+  requestAnimationFrame(place); setTimeout(place, 300);
+</script>
+</body>
+</html>

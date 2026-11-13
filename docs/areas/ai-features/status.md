@@ -121,7 +121,7 @@ LCP has not moved yet. The causes:
     and that person's features.
   - Checked with fake data in the page alone (the server stayed locked): the tiles, open and close, the address, and
     375 px with no overflow. The real screens wait for the owner's biometric.
-  - Waiting for design's CSS and the icons for gifts, settings and ai (for now the tiles use existing icons).
+  - Fitted to design's final markup (design 489f08b: `section.ad.bd`, an empty `.ic` with the icon from `data-bd`, `.bd-back` in each panel, `.bd-state`). Checked with design's CSS brought in for the test. **Merge design 489f08b with it.**
 
 ## In progress
 

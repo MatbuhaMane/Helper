@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>פרנסה</title>
+  <!-- A sample for פרנסה (public/tools/parnasa/parnasa.css; the contract is docs/design/parnasa.md). Copy to public/ to view
+       (not committed there). ?view=import (the bank file: ?step=1|2|3)  ?entry=1 (the entry sheet)  ?scope=kupa  ?empty=1 (no holdings)
+       ?theme=dark  ?style=serious -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/tools/parnasa/parnasa.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; } main { padding-inline: 16px; }</style>
+</head>
+<body>
+<main class="pr" id="pr"></main>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  if (q.get('theme')) root.dataset.theme = q.get('theme');
+  if (q.get('style')) root.dataset.style = q.get('style');
+  /* the icons the page needs (parnasa is the tool's line icon, for the ring and the serious home) */
+  const IC = {
+    parnasa: '<path d="M4 8h15a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 19 20H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 8V7a2 2 0 0 1 1.6-2L15 3.2a1 1 0 0 1 1.2 1V8"/><path d="M20.5 12H17a2 2 0 0 0 0 4h3.5"/><circle cx="17.2" cy="14" r=".9" fill="currentColor"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    out: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>',
+    in: '<circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/>',
+    next: '<path d="m15 6-6 6 6 6"/>', prev: '<path d="m9 6 6 6-6 6"/>',
+    file: '<path d="M14 3.5H7A1.5 1.5 0 0 0 5.5 5v14A1.5 1.5 0 0 0 7 20.5h10a1.5 1.5 0 0 0 1.5-1.5V8z"/><path d="M14 3.5V8h4.5M12 17v-6M9.5 13.5 12 11l2.5 2.5"/>',
+    bulb: '<path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.7 2.7L16.5 9.5"/>',
+    repeat: '<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11.5V10a4 4 0 0 1 4-4h13"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 12.5V14a4 4 0 0 1-4 4h-13"/>',
+    trend: '<path d="M3.5 17 9.5 11l4 4 7-8"/><path d="M15 7h5.5v5.5"/>',
+  };
+  const ic = (n) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
+  const nis = (n, sign) => `<span class="pr-num">${sign && n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString('he-IL', { maximumFractionDigits: 2 })} ₪</span>`;
+  const kupa = q.get('scope') === 'kupa';
+  const faces = '<span class="pr-faces"><i>נ</i><i>ד</i></span>';
+  const head = `<a class="pr-link" href="#">→ כלים</a>
+    <header class="pr-head"><div><h1>${ic('parnasa').replace('class="icon"', 'class="icon" style="inline-size:.9em;block-size:.9em;vertical-align:-.08em"')} פרנסה</h1><p>הכסף של הבית, בנחת</p></div>
+      <div class="pr-head-tools">
+        <div class="pr-scope" role="group" aria-label="של מי"><button type="button" aria-pressed="${!kupa}">שלי</button>
+          <button type="button" aria-pressed="${kupa}"><span class="pr-kupa">${faces}<span class="pr-kupa-name">קופת הבית</span></span></button></div>
+        <div class="pr-month"><button type="button" aria-label="החודש הקודם">${ic('prev')}</button><b>נובמבר 2026</b><button type="button" aria-label="החודש הבא" disabled>${ic('next')}</button></div>
+      </div></header>`;
+
+  const cats = [['מכולת וסופר', 1, 3420, '+12% מאוקטובר'], ['דיור וחשבונות', 6, 2860], ['רכב ודלק', 3, 1240], ['ילדים וחינוך', 5, 980],
+    ['בריאות', 2, 410], ['בילוי ומסעדות', 4, 620, '−18% מאוקטובר'], ['שונות', 8, 310]];
+  const out = cats.reduce((s, c) => s + c[2], 0), inc = 14200;
+  const dashboard = () => `
+    <div class="pr-grid">
+      <section class="card pr-balance" aria-labelledby="bal-h">
+        <div class="pr-card-head"><h2 id="bal-h">נשאר החודש</h2><span class="pr-delta"><b class="pr-num">+320 ₪</b> לעומת אוקטובר</span></div>
+        <p class="pr-big" data-sign="plus">${nis(inc - out)}</p>
+        <dl class="pr-flow">
+          <div data-kind="in"><dt>נכנס</dt><dd>${nis(inc)}</dd><span class="pr-meter" aria-hidden="true"><i style="--w:100%"></i></span></div>
+          <div data-kind="out"><dt>יצא</dt><dd>${nis(out)}</dd><span class="pr-meter" aria-hidden="true"><i style="--w:${Math.round(out / inc * 100)}%"></i></span></div>
+        </dl>
+        <p class="pr-pace">עברו 13 ימים מהחודש, ויצאו 69% מההכנסה.</p>
+      </section>
+      <section class="card pr-quick" aria-labelledby="q-h">
+        <h2 id="q-h">רישום מהיר</h2>
+        <div class="pr-quick-btns"><button class="btn primary" type="button">${ic('out')}הוצאה</button><button class="btn" type="button">${ic('in')}הכנסה</button></div>
+        <div class="pr-again" aria-label="שוב, בנגיעה אחת">
+          <button class="chip" type="button" data-c="1"><i class="pr-dot"></i>סופר <span class="pr-num">~380 ₪</span></button>
+          <button class="chip" type="button" data-c="3"><i class="pr-dot"></i>דלק <span class="pr-num">250 ₪</span></button>
+          <button class="chip done" type="button" data-c="4"><i class="pr-dot"></i>קפה <span class="pr-num">14 ₪</span></button>
+          <button class="chip" type="button" data-c="5"><i class="pr-dot"></i>חוג <span class="pr-num">180 ₪</span></button>
+        </div>
+        <a class="pr-link" href="?view=import">${ic('file').replace('class="icon"', 'class="icon" style="inline-size:18px;block-size:18px;vertical-align:-.25em"')} ייבוא קובץ מהבנק או מחברת האשראי</a>
+      </section>
+      <section class="card pr-split" aria-labelledby="s-h">
+        <div class="pr-card-head"><h2 id="s-h">לאן הלך הכסף</h2><span class="pr-muted">${nis(out)} ב-7 קטגוריות</span></div>
+        <div class="pr-stack" aria-hidden="true">${cats.map((c) => `<i data-c="${c[1]}" style="--w:${(c[2] / out * 100).toFixed(1)}%"></i>`).join('')}</div>
+        <ol class="pr-cats">${cats.map((c) => `<li class="pr-cat" data-c="${c[1]}"><i class="pr-dot"></i><span class="pr-cat-name">${c[0]}</span>${nis(c[2])}<span class="pr-cat-pct">${Math.round(c[2] / out * 100)}%</span>
+          <span class="pr-meter" aria-hidden="true"><i style="--w:${(c[2] / cats[0][2] * 100).toFixed(0)}%"></i></span>${c[3] ? `<span class="pr-cat-up">${c[3]}</span>` : ''}</li>`).join('')}</ol>
+      </section>
+      <section class="card pr-recur" aria-labelledby="r-h">
+        <div class="pr-card-head"><h2 id="r-h">חיובים קבועים</h2><a href="#">כולם</a></div>
+        <ul class="pr-recur-list">
+          <li data-c="6"><span class="pr-ic">${ic('repeat')}</span><span class="pr-line"><b>שכר דירה</b><small>כל חודש · ב-1 לחודש</small></span><span class="pr-amt">${nis(-4200)}</span></li>
+          <li data-c="6"><span class="pr-ic">${ic('repeat')}</span><span class="pr-line"><b>חשמל</b><small>כל חודשיים · הבא ב-3 בדצמבר</small></span><span class="pr-amt">${nis(-412)}</span><span class="pr-flag">עלה ב-8%</span></li>
+          <li data-c="4"><span class="pr-ic">${ic('repeat')}</span><span class="pr-line"><b>סטרימינג</b><small>כל חודש <span class="pr-kupa mini">${faces}<span class="pr-kupa-name">בקופת הבית</span></span></small></span><span class="pr-amt">${nis(-49.9)}</span><span class="pr-flag" data-kind="new">חדש החודש</span></li>
+          <li data-c="5"><span class="pr-ic">${ic('repeat')}</span><span class="pr-line"><b>חוג ציור</b><small>כל חודש · ב-10 לחודש</small></span><span class="pr-amt">${nis(-180)}</span></li>
+        </ul>
+        <p class="pr-recur-sum"><span>בכל חודש</span><b>${nis(-4842)}</b></p>
+      </section>
+      <section class="card pr-tips" aria-labelledby="t-h">
+        <h2 id="t-h">כדאי לשים לב</h2>
+        <ul class="pr-tip-list">
+          <li class="pr-tip"><span class="pr-tip-ic">${ic('bulb')}</span><p>הסופר עלה ב-12% מאוקטובר. רשימת קניות לפני הסופר חוסכת בדרך כלל.</p><small>מהרישומים שלך</small></li>
+          <li class="pr-tip"><span class="pr-tip-ic">${ic('bulb')}</span><p>שני מנויי סטרימינג חופפים. אפשר לוותר על אחד ולחסוך כ-50 ₪ בחודש.</p><small>✨ העוזר החכם</small></li>
+        </ul>
+        <p class="pr-note">הכוונה כללית בלבד, לא ייעוץ פיננסי או ייעוץ השקעות.</p>
+      </section>
+      <section class="card pr-txs" aria-labelledby="x-h">
+        <div class="pr-card-head"><h2 id="x-h">תנועות אחרונות</h2><a href="#">הכל</a></div>
+        <ul class="pr-tx-list">
+          <li data-c="1"><span class="pr-ic"><b>ס</b></span><span class="pr-line"><b>שופרסל</b><small>היום · מכולת וסופר <span class="pr-kupa mini">${faces}<span class="pr-kupa-name">בקופת הבית</span></span></small></span><span class="pr-amt">${nis(-342.5)}</span></li>
+          <li data-c="3"><span class="pr-ic"><b>ד</b></span><span class="pr-line"><b>דלק, פז</b><small>אתמול · רכב ודלק</small></span><span class="pr-amt">${nis(-250)}</span></li>
+          <li><span class="pr-ic" style="--pr-c:var(--pr-in)">${ic('in')}</span><span class="pr-line"><b>משכורת</b><small>10 בנובמבר · הכנסה</small></span><span class="pr-amt" data-kind="in">${nis(11800, true)}</span></li>
+          <li data-c="4"><span class="pr-ic"><b>ק</b></span><span class="pr-line"><b>קפה</b><small>9 בנובמבר · בילוי ומסעדות</small></span><span class="pr-amt">${nis(-14)}</span></li>
+          <li data-c="5"><span class="pr-ic"><b>ח</b></span><span class="pr-line"><b>ספרים לבית הספר, צומת ספרים, הזמנה מקוונת</b><small>8 בנובמבר · ילדים וחינוך</small></span><span class="pr-amt">${nis(-236.8)}</span></li>
+        </ul>
+      </section>
+      <section class="card pr-invest" aria-labelledby="i-h">
+        <div class="pr-card-head"><h2 id="i-h">השקעות</h2><a href="#">עריכה</a></div>
+        ${q.get('empty') ? `<div class="pr-empty">${ic('trend')}<span>אין עדיין החזקות. אפשר להוסיף מניה או קרן, רק כדי לעקוב.</span><button class="btn small" type="button">הוספת החזקה</button></div>` : `
+        <p class="pr-big">${nis(48620)}</p><span class="pr-delta"><b class="pr-num">▲ 2.4%</b> החודש</span>
+        <ul class="pr-holds">
+          <li><span class="pr-ic" data-c="3"><b class="pr-sym">VOO</b></span><span class="pr-line"><b>מדד S&amp;P 500</b><small>12 יחידות</small></span><span class="pr-amt">${nis(21340)}</span><span class="pr-chg" data-dir="up">▲ 3.1%</span></li>
+          <li><span class="pr-ic" data-c="6"><b class="pr-sym">TA35</b></span><span class="pr-line"><b>קרן מחקה ת״א 35</b><small>140 יחידות</small></span><span class="pr-amt">${nis(18900)}</span><span class="pr-chg" data-dir="down">▼ 0.6%</span></li>
+          <li><span class="pr-ic" data-c="4"><b class="pr-sym">GLD</b></span><span class="pr-line"><b>זהב</b><small>4 יחידות</small></span><span class="pr-amt">${nis(8380)}</span><span class="pr-chg" data-dir="up">▲ 5.0%</span></li>
+        </ul>`}
+        <p class="pr-note">מעקב בלבד: המחירים מתעדכנים באיחור, ואין כאן קנייה, מכירה או המלצה.</p>
+      </section>
+    </div>
+    <button class="pr-fab" type="button" aria-label="רישום הוצאה">${ic('plus')}</button>`;
+
+  const step = +(q.get('step') || 2);
+  const rows = [['12.11', 'שופרסל דיל רעננה', 1, -342.5, 'new'], ['11.11', 'פז אפליקציה', 3, -250, 'new'], ['11.11', 'PAYBOX העברה', 8, -120, 'unsure', 'לא בטוח: העברה לאדם. לאיזו קטגוריה?'],
+    ['10.11', 'משכורת', 0, 11800, 'new'], ['09.11', 'ארומה', 4, -14, 'dup', 'כבר רשום ידנית ב-9 בנובמבר'], ['08.11', 'צומת ספרים - הזמנה מקוונת', 5, -236.8, 'new']];
+  const catNames = ['הכנסה', 'מכולת וסופר', 'בריאות', 'רכב ודלק', 'בילוי ומסעדות', 'ילדים וחינוך', 'דיור וחשבונות', 'שונות', 'שונות'];
+  const steps = `<ol class="pr-steps">${['הקובץ', 'בדיקה', 'נשמר'].map((t, i) => `<li${i + 1 === step ? ' aria-current="step"' : i + 1 < step ? ' class="done"' : ''}>${t}</li>`).join('')}</ol>`;
+  const importView = () => `<section class="card" aria-labelledby="im-h"><h2 id="im-h">ייבוא מהבנק או מחברת האשראי</h2>${steps}
+    ${step === 1 ? `<label class="pr-drop">${ic('file')}<b>בחירת קובץ, או גרירה לכאן</b><small>Excel או CSV, כמו שהורדת מאתר הבנק</small><input type="file" accept=".csv,.xls,.xlsx"></label>
+      <p class="pr-banks">מכיר את הקבצים של הבנקים הגדולים ושל כאל, מקס וישראכרט. הקובץ נקרא אצלך, ורק השורות שאישרת נשמרות.</p>`
+    : step === 2 ? `<div class="pr-review-sum"><span class="pr-pill">4 חדשות</span><span class="pr-pill" data-state="unsure">1 לבדיקה</span><span class="pr-pill" data-state="dup">1 כבר רשומה</span></div>
+      <ul class="pr-rows"><li class="pr-row pr-row-head" aria-hidden="true"><span></span><span>תאריך</span><span>מה</span><span>קטגוריה</span><span>סכום</span></li>
+      ${rows.map((r) => `<li class="pr-row" data-state="${r[4]}" data-c="${r[2] || ''}"><label class="pr-pick"><input type="checkbox" ${r[4] !== 'dup' ? 'checked' : ''} aria-label="לשמור: ${r[1]}"></label>
+        <span class="pr-row-date">${r[0]}</span><span class="pr-row-what">${r[1]}</span>
+        <select class="pr-row-cat" aria-label="קטגוריה: ${r[1]}">${catNames.slice(0, 8).map((n, i) => `<option${i === r[2] ? ' selected' : ''}>${n}</option>`).join('')}</select>
+        <span class="pr-amt"${r[3] > 0 ? ' data-kind="in"' : ''}>${nis(r[3], true)}</span>${r[5] ? `<span class="pr-row-why">${r[5]}</span>` : ''}</li>`).join('')}</ul>
+      <div class="pr-review-bar"><span><b>5 שורות</b> יישמרו · ${nis(10836.7, true)}</span><span style="display:flex;gap:8px"><button class="btn ghost" type="button">ביטול</button><button class="btn primary" type="button">שמירה</button></span></div>`
+    : `<div class="pr-done">${ic('check')}<b>5 תנועות נשמרו</b><span class="pr-muted">הקטגוריות שתיקנת ייזכרו לפעם הבאה.</span><a class="btn" href="?">לסקירה</a></div>`}</section>`;
+
+  const entry = () => `<div class="modal" id="modal"><div class="modal-backdrop"></div><div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="e-h"><div id="modalBody">
+    <h3 id="e-h">רישום הוצאה</h3>
+    <form class="pr-entry" onsubmit="return false">
+      <div class="pr-kind" role="radiogroup" aria-label="סוג"><button type="button" role="radio" aria-checked="true">הוצאה</button><button type="button" role="radio" aria-checked="false">הכנסה</button></div>
+      <label class="pr-amount"><input inputmode="decimal" placeholder="0" aria-label="סכום" value="86"><b>₪</b></label>
+      <label class="field" style="margin:0"><span>על מה</span><input type="text" value="ירקות בשוק"></label>
+      <div class="pr-guess" aria-live="polite"><span>קטגוריה:</span>
+        <button class="chip" type="button" data-c="1" aria-pressed="true"><i class="pr-dot"></i>מכולת וסופר</button>
+        <button class="chip" type="button" data-c="4" aria-pressed="false"><i class="pr-dot"></i>בילוי ומסעדות</button>
+        <button class="chip" type="button" data-c="8" aria-pressed="false"><i class="pr-dot"></i>אחר…</button></div>
+      <div class="pr-entry-more"><input type="date" value="2026-11-13" aria-label="תאריך">
+        <label class="toggle"><input type="checkbox">חוזר כל חודש</label>
+        <label class="toggle"><input type="checkbox" checked><span class="pr-kupa">${faces}<span class="pr-kupa-name">בקופת הבית</span></span></label></div>
+      <button class="btn primary" type="submit">שמירה</button>
+    </form></div></div></div>`;
+
+  document.getElementById('pr').innerHTML = head + (q.get('view') === 'import' ? importView() : dashboard());
+  if (q.get('entry')) document.body.insertAdjacentHTML('beforeend', entry());
+})();
+</script>
+</body>
+</html>

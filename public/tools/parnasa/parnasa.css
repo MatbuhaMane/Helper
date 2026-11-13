@@ -1,0 +1,253 @@
+/* פרנסה – the household money tool, the look (decision 2026-11-13; markup contract: docs/design/parnasa.md, prototype:
+   docs/design/prototype/parnasa.html). Friendly, intuitive and quick: one number first (what is left this month), entering
+   a payment is one tap, the split of the money is a list you can read (the coloured bar above it is only a picture), and
+   nothing shouts: an expense is ink with a minus sign, not red; money coming in is the vine. Personal by default; what sits
+   in the shared קופה wears the two-faces badge. */
+:is(.pr, .pr-entry) {
+  /* the categories: eight colours from the tent's world, each 3:1 and more against the card (bars and dots), never the
+     only sign: the name is always written beside it */
+  --pr-c1: #55622f; --pr-c2: #b5532f; --pr-c3: #3d6b9a; --pr-c4: #85660f;
+  --pr-c5: #7a4b7f; --pr-c6: #2b7a70; --pr-c7: #8a6440; --pr-c8: #5d6470;
+  --pr-in: var(--vine);                     /* money coming in */
+  --pr-out: #b5532f;                        /* money going out (bars only; the amount stays ink) */
+  --pr-up: #2f7a3e; --pr-down: #a8432c;     /* a holding's change, always with ▲/▼ and the number */
+  --pr-track: color-mix(in srgb, var(--text) 8%, transparent);
+  --pr-gold: #b8891c;                       /* the shared קופה's ring */
+  --pr-shade: 22%;                          /* coloured text by day is deepened toward the ink (4.5:1 and more); at night 0 */
+}
+.pr { max-inline-size: 1120px; margin: 0 auto; padding-block: 14px 48px; display: grid; gap: 16px; }
+:root[data-theme="dark"] :is(.pr, .pr-entry) {
+  --pr-c1: #a8c28c; --pr-c2: #e8916b; --pr-c3: #8fb6e0; --pr-c4: #dcbc62;
+  --pr-c5: #c79ccb; --pr-c6: #6cc2b5; --pr-c7: #c9a27a; --pr-c8: #a9afbd;
+  --pr-in: #a8c28c; --pr-out: #e8916b; --pr-up: #8fd19a; --pr-down: #f0a08a; --pr-gold: #e2bd5c; --pr-shade: 0%;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.pr, .pr-entry) {
+  --pr-c1: #a8c28c; --pr-c2: #e8916b; --pr-c3: #8fb6e0; --pr-c4: #dcbc62;
+  --pr-c5: #c79ccb; --pr-c6: #6cc2b5; --pr-c7: #c9a27a; --pr-c8: #a9afbd;
+  --pr-in: #a8c28c; --pr-out: #e8916b; --pr-up: #8fd19a; --pr-down: #f0a08a; --pr-gold: #e2bd5c; --pr-shade: 0%;
+} }
+:is(.pr, .pr-entry) [data-c="1"] { --pr-c: var(--pr-c1); } :is(.pr, .pr-entry) [data-c="2"] { --pr-c: var(--pr-c2); }
+:is(.pr, .pr-entry) [data-c="3"] { --pr-c: var(--pr-c3); } :is(.pr, .pr-entry) [data-c="4"] { --pr-c: var(--pr-c4); }
+:is(.pr, .pr-entry) [data-c="5"] { --pr-c: var(--pr-c5); } :is(.pr, .pr-entry) [data-c="6"] { --pr-c: var(--pr-c6); }
+:is(.pr, .pr-entry) [data-c="7"] { --pr-c: var(--pr-c7); } :is(.pr, .pr-entry) [data-c="8"] { --pr-c: var(--pr-c8); }
+
+.pr .card { margin: 0; padding: 16px; display: grid; gap: 12px; align-content: start; border-radius: var(--radius-lg);
+  box-shadow: 0 14px 32px -26px rgba(46, 42, 30, .45); min-inline-size: 0; }
+.pr h1 { margin: 0; font-size: clamp(1.7rem, 1.2rem + 2vw, 2.3rem); line-height: 1.15; }
+.pr h2 { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.pr-num { font-variant-numeric: tabular-nums; direction: ltr; unicode-bidi: isolate; white-space: nowrap; }   /* "−342.5 ₪": the sign hugs the number */
+.pr-muted { color: var(--muted); font-size: .9rem; }
+.pr-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+.pr-card-head a, .pr-link { color: var(--primary); text-decoration: none; font-size: .92rem; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; }
+.pr-card-head a:hover, .pr-link:hover { text-decoration: underline; }
+
+/* ---------- the head: the name, the month, and whose money (mine / the shared קופה) ---------- */
+.pr-head { display: flex; align-items: end; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+.pr-head p { margin: 4px 0 0; color: var(--muted); }
+.pr-head-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pr-month { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); }
+.pr-month b { min-inline-size: 7.5em; text-align: center; font-weight: 600; font-size: .98rem; }
+.pr-month button { inline-size: 44px; block-size: 44px; border: 0; background: none; color: var(--text); border-radius: 50%; cursor: pointer; display: grid; place-items: center; }
+.pr-month button:hover { color: var(--primary); }
+.pr-month button:disabled { color: var(--muted); opacity: .5; cursor: default; }
+.pr-month .icon { inline-size: 20px; block-size: 20px; }
+.pr-scope { display: inline-flex; padding: 3px; gap: 3px; border-radius: 999px; background: color-mix(in srgb, var(--text) 6%, var(--card)); }
+.pr-scope button { min-block-size: 38px; padding-inline: 14px; border: 0; border-radius: 999px; background: none; color: var(--muted);
+  font: inherit; font-size: .93rem; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.pr-scope button[aria-pressed="true"] { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(46, 42, 30, .14); }
+
+/* ---------- the shared קופה badge: two faces side by side in a gold ring, and its name ---------- */
+.pr-kupa { display: inline-flex; align-items: center; gap: 7px; font-size: .9rem; color: var(--text); }
+.pr-faces { display: inline-flex; }
+.pr-faces i { inline-size: 24px; block-size: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: .72rem; font-weight: 600;
+  color: var(--ink); background: color-mix(in srgb, var(--pr-gold) 30%, #fff); box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--pr-gold); }
+.pr-faces i + i { margin-inline-start: -7px; background: color-mix(in srgb, var(--pr-c6) 26%, #fff); }
+.pr-faces img { inline-size: 24px; block-size: 24px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--card), 0 0 0 3.5px var(--pr-gold); }
+.pr-faces img + img, .pr-faces img + i, .pr-faces i + img { margin-inline-start: -7px; }
+/* the small one, on a payment that is in the קופה: the faces only, the words for screen readers */
+.pr-kupa.mini .pr-faces i, .pr-kupa.mini .pr-faces img { inline-size: 18px; block-size: 18px; font-size: .6rem; box-shadow: 0 0 0 1.5px var(--card), 0 0 0 2.5px var(--pr-gold); }
+.pr-kupa.mini .pr-faces > * + * { margin-inline-start: -6px; }
+.pr-kupa.mini .pr-kupa-name { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ---------- the dashboard ---------- */
+.pr-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "bal" "quick" "split" "recur" "tips" "tx" "invest"; }
+.pr-balance { grid-area: bal; } .pr-quick { grid-area: quick; } .pr-split { grid-area: split; } .pr-recur { grid-area: recur; }
+.pr-tips { grid-area: tips; } .pr-txs { grid-area: tx; } .pr-invest { grid-area: invest; }
+@media (min-width: 900px) {
+  .pr-grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    grid-template-areas: "bal quick" "split recur" "tx tips" "tx invest"; align-items: start; }
+  .pr-txs { align-self: stretch; }
+}
+
+/* the balance: what is left this month, big; then in against out as two bars */
+.pr-balance { background: linear-gradient(160deg, color-mix(in srgb, var(--pr-in) 9%, var(--card)), var(--card) 60%); }
+.pr-big { margin: 0; font-size: clamp(2.2rem, 1.6rem + 2.6vw, 3rem); font-weight: 600; line-height: 1.05; letter-spacing: -.01em; }
+.pr-big[data-sign="minus"] { color: var(--danger); }
+.pr-delta { font-size: .9rem; color: var(--muted); }
+.pr-delta b { font-weight: 600; color: var(--text); }
+.pr-flow { margin: 0; display: grid; gap: 10px; }
+.pr-flow > div { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; }
+.pr-flow dt { color: var(--muted); font-size: .95rem; }
+.pr-flow dd { margin: 0; justify-self: end; font-weight: 600; }
+.pr-meter { grid-column: 1 / -1; block-size: 10px; border-radius: 999px; background: var(--pr-track); overflow: hidden; }
+.pr-meter i { display: block; block-size: 100%; inline-size: var(--w, 0%); border-radius: inherit; background: var(--pr-in);
+  transition: inline-size var(--dur-draw) var(--ease-river); }
+.pr-flow [data-kind="out"] .pr-meter i { background: var(--pr-out); }
+.pr-pace { margin: 0; font-size: .92rem; color: var(--muted); }
+
+/* the quick entry: two big buttons and the payments you make again and again, one tap each */
+.pr-quick-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pr-quick-btns .btn { min-block-size: 56px; font-size: 1.05rem; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: var(--radius); }
+.pr-quick-btns .icon { inline-size: 22px; block-size: 22px; }
+.pr-again { display: flex; flex-wrap: wrap; gap: 8px; }
+.pr-again .chip { min-block-size: 40px; display: inline-flex; align-items: center; gap: 7px; padding-inline: 12px; }
+.pr-again .chip .pr-num { color: var(--muted); font-size: .85rem; }
+.pr-again .chip:hover .pr-num { color: inherit; }
+/* a chip that was just entered: a short tick, so the tap is felt (the toast says "נרשם" with a "בטל" button) */
+.pr-again .chip.done { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); }
+.pr-dot { inline-size: 10px; block-size: 10px; border-radius: 50%; flex: none; background: var(--pr-c, var(--pr-c8)); }
+
+/* the floating add button: phones only, above the tab bar (the quick card scrolls away) */
+.pr-fab { position: fixed; z-index: var(--z-float); inset-inline-start: max(16px, env(safe-area-inset-left, 0px));
+  inset-block-end: calc(var(--tabbar-h) + 14px + env(safe-area-inset-bottom, 0px));
+  inline-size: 58px; block-size: 58px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  background: var(--primary); color: var(--primary-ink); box-shadow: 0 10px 24px -8px rgba(46, 42, 30, .55); }
+.pr-fab .icon { inline-size: 26px; block-size: 26px; }
+.pr-fab:active { transform: scale(.96); }
+@media (min-width: 900px) { .pr-fab { display: none; } }
+
+/* the split of the expenses: a picture (the stacked bar, aria-hidden) and the list you read */
+.pr-stack { display: flex; block-size: 14px; border-radius: 999px; overflow: hidden; gap: 2px; background: var(--pr-track); }
+.pr-stack i { flex: 0 0 var(--w); background: var(--pr-c); min-inline-size: 3px; }
+.pr-stack i:first-child { border-start-start-radius: 999px; border-end-start-radius: 999px; }
+.pr-cats { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.pr-cat { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto auto; align-items: center; gap: 4px 10px;
+  padding: 8px 6px; border-radius: var(--radius-sm); }
+button.pr-cat, .pr-cat > button { font: inherit; color: inherit; text-align: start; background: none; border: 0; cursor: pointer; inline-size: 100%; }
+.pr-cat:is(button, :has(> button)):hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.pr-cat-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-cat .pr-num { font-weight: 600; }
+.pr-cat-pct { color: var(--muted); font-size: .85rem; min-inline-size: 3.2em; text-align: end; }
+.pr-cat .pr-meter { grid-column: 2 / -1; block-size: 6px; }
+.pr-cat .pr-meter i { background: var(--pr-c); }
+.pr-cat-up { grid-column: 2 / -1; font-size: .82rem; color: var(--muted); }
+
+/* the recurring charges */
+.pr-recur-list, .pr-tx-list, .pr-holds, .pr-tip-list { list-style: none; margin: 0; padding: 0; display: grid; }
+.pr-recur-list li, .pr-tx-list li, .pr-holds li { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; align-items: center; gap: 2px 12px;
+  padding-block: 10px; border-block-end: 1px solid var(--line); }
+.pr-recur-list li:last-child, .pr-tx-list li:last-child, .pr-holds li:last-child { border-block-end: 0; }
+.pr-ic { inline-size: 36px; block-size: 36px; border-radius: var(--radius-sm); display: grid; place-items: center; grid-row: span 2;
+  color: var(--pr-c, var(--muted)); background: color-mix(in srgb, var(--pr-c, var(--muted)) 14%, var(--card)); }
+.pr-ic .icon { inline-size: 20px; block-size: 20px; }
+.pr-ic b { font-size: .95rem; color: color-mix(in srgb, var(--pr-c, var(--muted)) calc(100% - var(--pr-shade)), var(--ink)); }
+.pr-line { min-inline-size: 0; display: grid; gap: 1px; }
+.pr-line b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-line small { color: var(--muted); font-size: .84rem; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pr-amt { text-align: end; font-weight: 600; }
+.pr-amt[data-kind="in"] { color: color-mix(in srgb, var(--pr-in) calc(100% - var(--pr-shade)), var(--ink)); }
+.pr-flag { grid-column: 2 / -1; justify-self: start; font-size: .8rem; padding: 1px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--pr-c4) 18%, var(--card)); color: var(--text); }
+.pr-flag[data-kind="new"] { background: color-mix(in srgb, var(--pr-c3) 16%, var(--card)); }
+.pr-recur-sum { margin: 0; display: flex; justify-content: space-between; gap: 10px; padding-block-start: 4px; color: var(--muted); }
+.pr-recur-sum b { color: var(--text); }
+
+/* the tips: general guidance, the plain ones first, ✨ ones say so */
+.pr-tips { background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 16%, var(--card)), var(--card) 70%); }
+.pr-tip-list { gap: 10px; }
+.pr-tip { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 2px 10px; align-items: start; }
+.pr-tip-ic { inline-size: 30px; block-size: 30px; border-radius: 50%; display: grid; place-items: center; grid-row: span 2;
+  background: color-mix(in srgb, var(--accent) 40%, var(--card)); color: var(--ink); }
+.pr-tip-ic .icon { inline-size: 17px; block-size: 17px; }
+.pr-tip p { margin: 0; line-height: 1.5; }
+.pr-tip small { color: var(--muted); font-size: .84rem; }
+.pr-note { margin: 0; font-size: .82rem; color: var(--muted); line-height: 1.5; padding-block-start: 8px; border-block-start: 1px dashed var(--line-strong); }
+
+/* the investments: tracking only */
+.pr-invest .pr-big { font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.2rem); }
+.pr-sym { font-weight: 600; font-size: .78rem; letter-spacing: .02em; direction: ltr; }
+.pr-chg { grid-column: 3; justify-self: end; font-size: .85rem; font-weight: 600; unicode-bidi: isolate; white-space: nowrap; }
+.pr-chg[data-dir="up"] { color: var(--pr-up); }
+.pr-chg[data-dir="down"] { color: var(--pr-down); }
+.pr-holds .pr-line small { grid-column: auto; }
+.pr-empty { margin: 0; padding: 18px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: var(--radius); display: grid; gap: 10px; justify-items: center; }
+
+/* ---------- the entry sheet (inside H.modal): the amount first and big, the category guessed as you type ---------- */
+.pr-entry { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+.pr-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: var(--radius); background: color-mix(in srgb, var(--text) 6%, var(--card)); }
+.pr-kind button { min-block-size: 44px; border: 0; border-radius: var(--radius-sm); background: none; font: inherit; color: var(--muted); cursor: pointer; }
+.pr-kind button[aria-checked="true"] { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(46, 42, 30, .16); }
+.pr-amount { display: flex; align-items: center; gap: 8px; padding-inline: 16px; border: 1px solid var(--line-strong); border-radius: var(--radius); background: var(--card); }
+.pr-amount:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent); }
+.pr-amount input { flex: 1; inline-size: 0; min-inline-size: 0; border: 0 !important; background: none !important; box-shadow: none !important; outline: 0;
+  padding-block: 12px; padding-inline: 0; font: inherit; font-size: 2rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.pr-amount b { font-size: 1.5rem; color: var(--muted); font-weight: 500; }
+.pr-guess { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-block-size: 40px; }
+.pr-guess > span { color: var(--muted); font-size: .9rem; }
+.pr-guess .chip { display: inline-flex; align-items: center; gap: 7px; min-block-size: 38px; }
+.pr-guess .chip[aria-pressed="true"] .pr-dot { box-shadow: 0 0 0 2px var(--primary-ink); }
+.pr-entry-more { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.pr-entry-more .toggle { margin: 0; min-block-size: 40px; color: var(--text); }
+.pr-entry-more input[type="date"] { min-block-size: 40px; }
+.pr-entry .btn.primary { min-block-size: 52px; font-size: 1.05rem; }
+
+/* ---------- importing a bank file: the file, then a review, then done ---------- */
+.pr-steps { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; counter-reset: st; }
+.pr-steps li { counter-increment: st; flex: 1; display: flex; align-items: center; gap: 8px; padding-block-end: 8px; color: var(--muted); font-size: .92rem;
+  border-block-end: 3px solid var(--pr-track); }
+.pr-steps li::before { content: counter(st); inline-size: 24px; block-size: 24px; flex: none; border-radius: 50%; display: grid; place-items: center;
+  font-size: .8rem; font-weight: 600; background: var(--pr-track); color: var(--text); }
+.pr-steps li[aria-current="step"] { color: var(--text); font-weight: 600; border-color: var(--primary); }
+.pr-steps li[aria-current="step"]::before { background: var(--primary); color: var(--primary-ink); }
+.pr-steps li.done { border-color: color-mix(in srgb, var(--primary) 45%, var(--pr-track)); }
+.pr-steps li.done::before { content: "✓"; background: color-mix(in srgb, var(--primary) 20%, var(--card)); }
+.pr-drop { position: relative; display: grid; justify-items: center; gap: 8px; padding: 28px 16px; text-align: center; cursor: pointer;
+  border: 2px dashed var(--line-strong); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--primary) 3%, var(--card));
+  transition: border-color var(--dur-quick), background-color var(--dur-quick); }
+.pr-drop:hover, .pr-drop.over { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--card)); }
+.pr-drop:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.pr-drop input { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+.pr-drop .icon { inline-size: 34px; block-size: 34px; color: var(--primary); }
+.pr-drop b { font-size: 1.05rem; }
+.pr-drop small { color: var(--muted); }
+.pr-banks { margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.6; }
+.pr-review-sum { display: flex; flex-wrap: wrap; gap: 8px; }
+.pr-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: .88rem;
+  background: color-mix(in srgb, var(--text) 6%, var(--card)); border: 1px solid var(--line); }
+.pr-pill::before { content: ""; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--pr-in); }
+.pr-pill[data-state="dup"]::before { background: var(--muted); }
+.pr-pill[data-state="unsure"]::before { background: var(--pr-c4); }
+.pr-rows { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--card); }
+.pr-row { display: grid; grid-template-columns: 44px 5.2em minmax(0, 1fr) minmax(9em, 12em) 7.5em; align-items: center; gap: 4px 10px;
+  padding-block: 6px; padding-inline: 4px 14px; border-block-end: 1px solid var(--line); }
+.pr-row:last-child { border-block-end: 0; }
+.pr-row-head { min-block-size: 0; padding-block: 8px; font-size: .82rem; color: var(--muted); background: color-mix(in srgb, var(--text) 4%, var(--card)); }
+.pr-pick { display: grid; place-items: center; inline-size: 44px; block-size: 44px; cursor: pointer; }
+.pr-pick input { inline-size: 20px; block-size: 20px; accent-color: var(--primary); }
+.pr-row-date { color: var(--muted); font-size: .88rem; font-variant-numeric: tabular-nums; }
+.pr-row-what { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pr-row-cat { inline-size: 100%; min-block-size: 40px; border-inline-start: 4px solid var(--pr-c, var(--line-strong)) !important; }
+.pr-row .pr-amt { font-weight: 500; }
+.pr-row-why { grid-column: 3 / -1; font-size: .82rem; color: var(--muted); }
+.pr-row[data-state="dup"] { background: color-mix(in srgb, var(--text) 4%, var(--card)); }
+.pr-row[data-state="dup"] :is(.pr-row-what, .pr-amt) { color: var(--muted); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.pr-row[data-state="unsure"] { border-inline-start: 4px solid var(--pr-c4); padding-inline-start: 0; }
+.pr-row[data-state="unsure"] .pr-row-why { color: var(--text); }
+.pr-review-bar { position: sticky; inset-block-end: calc(var(--tabbar-h) + env(safe-area-inset-bottom, 0px)); z-index: 2; display: flex; align-items: center;
+  justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-radius: var(--radius); background: var(--glass);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); }
+.pr-review-bar b { font-weight: 600; }
+.pr-done { display: grid; justify-items: center; gap: 8px; padding: 22px 12px; text-align: center; }
+.pr-done .icon { inline-size: 40px; block-size: 40px; color: var(--primary); }
+@media (max-width: 699px) {
+  /* a row is a small card: the tick, the name and amount, then the date and the category under them */
+  .pr-row-head { display: none; }
+  .pr-row { grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "pick what amt" "pick date cat" ". why why"; padding-block: 10px; }
+  .pr-pick { grid-area: pick; } .pr-row-what { grid-area: what; } .pr-row .pr-amt { grid-area: amt; }
+  .pr-row-what { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.35; }
+  .pr-row-date { grid-area: date; } .pr-row-cat { grid-area: cat; inline-size: auto; max-inline-size: 11em; } .pr-row-why { grid-area: why; }
+}
+
+@media (prefers-reduced-motion: reduce) { .pr-meter i { transition: none; } }
+:root[data-motion="reduce"] .pr-meter i { transition: none; }

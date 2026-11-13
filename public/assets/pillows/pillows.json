@@ -15,6 +15,7 @@
     { "id": "p12", "look": "red-orange kilim, long, stripes and a diamond", "glow": "#c4501e", "used": null },
     { "id": "p13", "look": "green tatreez, a red star", "glow": "#2f7d4a", "used": "food (ring)" },
     { "id": "p14", "look": "red kilim, long, an orange diamond", "glow": "#b8402a", "used": null },
-    { "id": "p15", "look": "a pair: a deer and a diamond, sand colours", "glow": "#8a5a32", "used": "family admin (ring)" }
+    { "id": "p15", "look": "a pair: a deer and a diamond, sand colours", "glow": "#8a5a32", "used": "family admin (ring)" },
+    { "id": "p16", "look": "teal tatreez, square, a gold eight-point star (p01 recoloured)", "glow": "#2b7a70", "used": "parnasa (tools)" }
   ]
 }

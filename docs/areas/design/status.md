@@ -155,7 +155,13 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
     head icon becomes the bulb. `.rm-chip.idea` in the thread, `.rx-tag.idea` in the back door.
   - `.wz-intro` with `.wz-helper` (the figure on a soft disc; the corner friend hides on that step) or `.wz-alert` (the bar's
     triangle at 2.4×, the same colours, breathing). Above the lines on a phone, beside them from 700px.
-  - Checked at 375 and 1280, light and dark, no overflow; the triangle 5.35 light / 6.77 dark. The tree slide's rules wait for its markup.
+  - Checked at 375 and 1280, light and dark, no overflow; the triangle 5.35 light / 6.77 dark.
+- **The tree slide (`.wz-tree`, ai-features 7289525):** the app's own olive (four layers) on the soft disc with five faces on its slots
+  (grandparents, parents, "me" in the vine at the top); it grows in gently. Checked at 375 and 1280, no overflow.
+- **The triangle's first showing (`.rp-coach` in reports.css, the owner approved: "a gentle arrow, along the screen, a short note"):**
+  once per person after /welcome/, a soft veil with a window around the bar's real triangle (the wizard has no bar, so it lives in
+  the app), a dashed vine arrow from a short note up to it, a breathing ring. Checked at 375 and 1280, light and dark.
+  Waits for ai-features (reports.js) to add the markup and --x/--y; sample in `docs/design/prototype/triangle-coach.html`.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a

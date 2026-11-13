@@ -105,8 +105,8 @@
   .wz-star, .wz-ripple { display: none; }
 }
 
-/* ── Two slides that only tell (the owner, 2026-11-13; welcome.js, ai-features), after the name: who העוזר החכם is (#wz[data-step="helper"])
-   and the red triangle for a fault or a suggestion (data-step="report"):
+/* ── Three slides that only tell (the owner, 2026-11-13; welcome.js, ai-features), first in the wizard: the red triangle for a fault or
+   a suggestion (data-step="report"), who העוזר החכם is (#wz[data-step="helper"]) and the family tree (data-step="tree", below):
    <div class="wz-intro"><span class="wz-helper" data-f="fennec" aria-hidden="true">(Figure2D, 132)</span>   or   <span class="wz-alert" aria-hidden="true"></span>
      <div class="wz-lines"><p>…</p><p>…</p><p>…</p></div></div>
    The picture on a soft disc above the lines on a phone, beside them on a computer. .wz-alert is the bar's .rp-alert (base.css) at
@@ -133,19 +133,27 @@
 @media (max-height: 700px) { .wz-alert { --s: 1.8; } .wz-helper { min-inline-size: 140px; min-block-size: 140px; } .wz-lines { gap: 6px; } .wz-lines p { font-size: .95rem; } }
 @media (prefers-reduced-motion: reduce) { .wz-alert::before { animation: none; } .wz-friend { transition: none; } }
 
-/* (for the family-tree slide, when it comes: the olive small with five faces on its slots, in the drawing's own left/top)
-   <div class="wz-tree-box"><img src="/assets/tree/olive/ground.svg" alt=""> (+ boughs, trunk, crown) <i>סבא</i><i>סבתא</i><i>אמא</i><i>אבא</i><i class="me">אני</i></div> */
-.wz-tree-box { position: relative; block-size: min(34dvh, 280px); aspect-ratio: 1000 / 1800; }
-.wz-tree-box img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; }
-.wz-tree-box i { position: absolute; translate: -50% -50%; display: grid; place-items: center; inline-size: 38px; aspect-ratio: 1; border-radius: 50%;
-  font-style: normal; font-size: .66rem; font-weight: 600; line-height: 1; color: var(--text); background: var(--card);
-  border: 2px solid color-mix(in srgb, var(--primary) 55%, var(--line-strong)); box-shadow: 0 3px 8px -3px rgba(30, 24, 12, .5); }
-.wz-tree-box i:nth-of-type(1) { left: 31%; top: 71.4%; }
-.wz-tree-box i:nth-of-type(2) { left: 72.7%; top: 69.2%; }
-.wz-tree-box i:nth-of-type(3) { left: 30.6%; top: 56.2%; }
-.wz-tree-box i:nth-of-type(4) { left: 68.9%; top: 54.5%; }
-.wz-tree-box i.me, .wz-tree-box i:nth-of-type(5) { left: 50%; top: 35.9%; inline-size: 46px; font-size: .78rem; background: var(--primary); color: var(--primary-ink); border-color: var(--card); }
-@media (max-height: 700px) { .wz-tree-box { block-size: min(28dvh, 220px); } }
+/* the family tree (data-step="tree", ai-features 7289525): <span class="wz-tree" aria-hidden="true"></span>, empty.
+   The app's own olive (its four layers, the same drawing as /family/tree/) on the helper's soft disc, with five small faces on
+   its slots (slots.json: two grandparents low, two parents mid, and "me" in the vine at the top), so the slide shows the very tree
+   they will meet. --h is the drawing's height; its width is 1000/1800 of it; a face's centre is (x%, y%) of the drawing. */
+.wz-tree { --h: 196px; --w: calc(var(--h) * 5 / 9); display: grid; place-items: center; min-inline-size: 168px; min-block-size: calc(var(--h) + 8px); padding: 4px 20px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 18%, var(--bg)), color-mix(in srgb, var(--primary) 7%, var(--bg)) 72%, transparent); }
+.wz-tree::before { --d: 15px; --m: 21px; --face: radial-gradient(circle closest-side, var(--card) 56%, color-mix(in srgb, var(--primary) 70%, var(--line-strong)) 60% 86%, transparent 92%);
+  content: ""; inline-size: var(--w); block-size: var(--h);
+  background:
+    radial-gradient(circle closest-side, var(--primary) 56%, var(--card) 60% 86%, transparent 92%) calc(var(--w) * .5 - var(--m) / 2) calc(var(--h) * .359 - var(--m) / 2) / var(--m) var(--m),
+    var(--face) calc(var(--w) * .306 - var(--d) / 2) calc(var(--h) * .562 - var(--d) / 2) / var(--d) var(--d),
+    var(--face) calc(var(--w) * .689 - var(--d) / 2) calc(var(--h) * .545 - var(--d) / 2) / var(--d) var(--d),
+    var(--face) calc(var(--w) * .31 - var(--d) / 2) calc(var(--h) * .714 - var(--d) / 2) / var(--d) var(--d),
+    var(--face) calc(var(--w) * .727 - var(--d) / 2) calc(var(--h) * .692 - var(--d) / 2) / var(--d) var(--d),
+    url(/assets/tree/olive/crown.svg) center / 100% 100%, url(/assets/tree/olive/trunk.svg) center / 100% 100%,
+    url(/assets/tree/olive/boughs.svg) center / 100% 100%, url(/assets/tree/olive/ground.svg) center / 100% 100%;
+  background-repeat: no-repeat; filter: drop-shadow(0 4px 6px rgba(30, 24, 12, .18));
+  transform-origin: 50% 89.4%; animation: wz-grow .7s cubic-bezier(.2, .8, .3, 1.2) both; }
+@keyframes wz-grow { from { opacity: 0; transform: scale(.85); } }
+@media (max-height: 700px) { .wz-tree { --h: 150px; } }
+@media (prefers-reduced-motion: reduce) { .wz-tree::before { animation: none; } }
 
 /* with the showing slides the trail has up to nine stops: closer together on a phone, so "אחר כך" keeps its line */
 @media (max-width: 600px) {

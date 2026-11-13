@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>ברוכים הבאים – שקופיות ההסבר</title>
   <!-- The three showing slides of /welcome/ (the triangle, the helper, the tree) and the report sheet's kind choice.
-       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=helper|report|sheet -->
+       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=report|helper|tree|sheet -->
   <link rel="stylesheet" href="/assets/base.css">
   <link rel="stylesheet" href="/assets/reports.css">
   <link rel="stylesheet" href="/welcome/welcome.css">
@@ -27,6 +27,7 @@
   const lines = (a) => `<div class="wz-lines">${a.map((t) => `<p>${t}</p>`).join('')}</div>`;
   const S = {
     helper: ['נעים מאוד, דנה! הכירו את העוזר החכם', 'החבר שמסתובב איתך באוהל', `<div class="wz-intro"><span class="wz-helper" data-f="fennec" aria-hidden="true"></span>` + lines(['הוא מפעיל בשבילך את הכלים: מוסיף לרשימת הקניות, מוצא מתכון, מסדר את המייל.', 'מקישים עליו, וכותבים או אומרים לו מה צריך.', 'עוד רגע תבחרו איך הוא ייראה.']) + '</div>'],
+    tree: ['עץ המשפחה', 'כל המשפחה במקום אחד', `<div class="wz-intro"><span class="wz-tree" aria-hidden="true"></span>` + lines(['כל אחד מהמשפחה מקבל מקום על העץ: סבים למטה, ההורים באמצע, ואתם למעלה.', 'מקישים על מישהו ורואים את הסיפור, התמונות והתאריכים שלו.', 'אפשר להזמין קרובים, והם מוסיפים את עצמם.']) + '</div>'],
     report: ['האוהל עוד צעיר', 'ואתם עוזרים לו לגדול', `<div class="wz-intro"><span class="wz-alert" aria-hidden="true"></span>` + lines(['המשולש האדום שליד כפתור ההגדרות, בסרגל העליון, שולח פנייה לצוות האוהל.', 'משהו לא עובד? יש רעיון לשיפור? מקישים עליו וכותבים. התשובה מגיעה לתיבה שלך.']) + '</div>'],
   };
   if (s === 'sheet') {

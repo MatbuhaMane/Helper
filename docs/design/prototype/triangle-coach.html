@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>המשולש – הפעם הראשונה</title>
+  <!-- A sample of .rp-coach (reports.css): the bar's real triangle shown once, with a gentle arrow and a short note.
+       Copy to public/ to view (not committed there). The bar here is a stand-in for common.js's. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/reports.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; } main { padding: 20px max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 12px; }</style>
+</head>
+<body>
+<header class="appbar"><a class="brand" href="#"><span class="brand-text">הָאֹהֶל</span></a><span class="spacer"></span>
+  <button class="rp-alert" type="button" aria-label="דיווח על תקלה או הצעה לשיפור"></button>
+  <button class="userchip" id="userchip" type="button" aria-label="הגדרות"><span class="userchip-name">דנה</span></button></header>
+<main><div class="card"><h2>בוקר טוב, דנה</h2><p>רשימת הקניות, המתכונים, החדשות…</p></div><div class="card"><p>עוד כרטיס בדף הבית.</p></div><div class="card"><p>ועוד אחד.</p></div></main>
+<script>
+(() => {
+  const a = document.querySelector('.rp-alert').getBoundingClientRect();
+  const c = document.createElement('div'); c.className = 'rp-coach';
+  c.style.setProperty('--x', Math.round(a.left + a.width / 2) + 'px'); c.style.setProperty('--y', Math.round(a.top + a.height / 2) + 'px');
+  c.innerHTML = '<span class="rp-coach-line" aria-hidden="true"></span><div class="rp-coach-card" role="dialog" aria-label="המשולש האדום"><p><b>המשולש האדום</b> מחכה כאן, ליד ההגדרות. משהו לא עובד, או שיש לך רעיון? מקישים עליו.</p><button class="btn primary small" type="button">הבנתי</button></div>';
+  document.body.append(c);
+})();
+</script>
+</body>
+</html>

@@ -212,3 +212,34 @@
 .rm-chip.idea { display: inline-flex; align-items: center; gap: 4px; color: var(--text); background: color-mix(in srgb, var(--primary) 16%, transparent); }
 .rm-chip.idea::before { content: ""; inline-size: 12px; block-size: 12px; background: var(--primary);
   -webkit-mask: url(/assets/bd-icons/idea.svg) center / contain no-repeat; mask: url(/assets/bd-icons/idea.svg) center / contain no-repeat; }
+
+/* ── The triangle's first showing (the owner, 2026-11-13): once per person, the first time they reach the app after /welcome/,
+   a soft veil with a clear window around the bar's real triangle, and a gentle dashed arrow running down the screen from a
+   short note up to it. reports.js (ai-features) adds it to <body> after the triangle and sets --x/--y, the triangle's centre in
+   px from getBoundingClientRect (physical, so left/top here are physical on purpose; close it on resize):
+   <div class="rp-coach" style="--x:…px; --y:…px">
+     <span class="rp-coach-line" aria-hidden="true"></span>
+     <div class="rp-coach-card" role="dialog" aria-label="המשולש האדום"><p>…</p><button class="btn primary small" type="button">הבנתי</button></div></div>
+   "הבנתי", a tap on the veil, or on the window (= on the triangle: open the sheet) closes it. The bar is a stacking context, so
+   the triangle cannot rise above the veil: the window is a hole in the veil, and the breathing ring is drawn on the veil. */
+.rp-coach { --gap: clamp(110px, 22dvh, 200px); --ink: var(--primary); position: fixed; inset: 0; z-index: var(--z-menu, 50); cursor: pointer;
+  background: radial-gradient(circle at var(--x, 40px) var(--y, 28px), transparent 26px, rgba(20, 16, 10, .38) 30px); animation: rp-veil .35s ease both; }
+.rp-coach::after { content: ""; position: absolute; left: calc(var(--x, 40px) - 26px); top: calc(var(--y, 28px) - 26px); inline-size: 52px; block-size: 52px;
+  border-radius: 50%; border: 2px solid var(--ink); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ink) 60%, transparent); animation: rp-breathe 1.8s .9s ease-out infinite; }
+/* the arrow: down from under the triangle, a soft bend, then across to above the note's middle */
+.rp-coach-line { position: absolute; left: calc(var(--x, 40px) - 1px); top: calc(var(--y, 28px) + 42px); inline-size: max(0px, calc(50% - var(--x, 40px)));
+  block-size: var(--gap); border: 0 dashed var(--ink); border-left-width: 2px; border-bottom-width: 2px; border-bottom-left-radius: min(56px, 40%) 56px;
+  filter: drop-shadow(0 0 1.5px var(--card)) drop-shadow(0 0 1px var(--card)); animation: rp-draw .9s .3s cubic-bezier(.4, 0, .2, 1) both; }
+.rp-coach-line::before { content: ""; position: absolute; left: -8px; top: -2px; inline-size: 14px; block-size: 14px; box-sizing: border-box;
+  border: solid var(--ink); border-width: 2.5px 0 0 2.5px; border-top-left-radius: 2px; rotate: 45deg; }
+.rp-coach-line::after { content: ""; position: absolute; right: -4px; bottom: -5px; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--ink); }
+.rp-coach-card { position: absolute; left: 50%; top: calc(var(--y, 28px) + 56px + var(--gap)); translate: -50% 0; inline-size: min(320px, calc(100vw - 32px));
+  display: grid; justify-items: center; gap: 12px; padding: 16px 18px 14px; border-radius: 18px; background: var(--card); color: var(--text);
+  border: 1px solid var(--line); box-shadow: 0 14px 34px -12px rgba(20, 16, 10, .55); text-align: center; cursor: default; animation: rp-rise .4s .15s ease both; }
+.rp-coach-card p { margin: 0; line-height: 1.5; text-wrap: balance; }
+.rp-coach-card .btn { min-inline-size: 110px; }
+@keyframes rp-veil { from { opacity: 0; } }
+@keyframes rp-rise { from { opacity: 0; translate: -50% 10px; } }
+@keyframes rp-draw { 0% { clip-path: inset(100% -14px -14px 100%); } 45% { clip-path: inset(82% -14px -14px -14px); } 100% { clip-path: inset(-14px); } }
+@keyframes rp-breathe { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ink) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 14px transparent; } }
+@media (prefers-reduced-motion: reduce) { .rp-coach, .rp-coach-line, .rp-coach-card, .rp-coach::after { animation: none; } }

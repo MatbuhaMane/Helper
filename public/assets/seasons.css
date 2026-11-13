@@ -101,7 +101,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
   border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
 .dsum-close:hover { background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--text); }
 .dsum-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
-.dsum-close .icon { inline-size: 20px; block-size: 20px; }
+.dsum-close svg { inline-size: 20px; block-size: 20px; }
 .dsum-body { display: grid; gap: 10px; margin-block-start: 10px; }
 .dsum-body > section { min-inline-size: 0; }
 .dsum-sub { margin: 0 0 4px; font-size: .82rem; font-weight: 600; letter-spacing: .02em; color: var(--muted); }
@@ -112,7 +112,7 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-list a:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
 .dsum-ic { --c: var(--primary); flex: none; display: grid; place-items: center; inline-size: 36px; block-size: 36px; border-radius: 50%;
   background: color-mix(in srgb, var(--c) 15%, var(--card)); color: color-mix(in srgb, var(--c) 72%, var(--text)); }
-.dsum-ic .icon { inline-size: 20px; block-size: 20px; stroke-width: 1.7; }
+.dsum-ic svg { inline-size: 20px; block-size: 20px; stroke-width: 1.7; }   /* any svg: index.html builds them without .icon */
 .dsum-txt { flex: 1; min-inline-size: 0; display: grid; }
 .dsum-txt b { font-weight: 500; line-height: 1.35; }
 /* a long title or line keeps to two lines, so the time stays beside it and the card stays short */
@@ -130,7 +130,9 @@ html[data-shabbat] body > :not(.shb, .sos-screen, script) { visibility: hidden; 
 .dsum-calm { margin: 0; font-size: .95rem; color: var(--muted); }
 /* more than three things today: the rest behind one quiet line */
 .dsum-more { display: inline-flex; align-items: center; min-block-size: 40px; padding-inline: 2px; font-size: .92rem; font-weight: 500;
-  color: var(--primary); text-decoration: none; }
+  color: var(--primary); text-decoration: none;
+  /* a link or a button (index.html builds a button): no native button face */
+  background: none; border: 0; font-family: inherit; cursor: pointer; justify-self: start; }
 .dsum-more:hover { text-decoration: underline; text-underline-offset: 3px; }
 .dsum-more:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
 /* the day itself (vision batch 16): every day, with or without messages. A small calendar leaf beside the title (the Hebrew

@@ -19,7 +19,7 @@ Vision batch 16 (2026-11-14). This adds to `docs/design/seasons.md` §3, which k
     <button class="dsum-close" type="button" aria-label="סגירת הסיכום">(x)</button></header>
   <div class="dsum-body">
     <ul class="dsum-facts" aria-label="היום בקצרה">                                          <!-- new, always first -->
-      <li class="dsum-fact-wx" data-sky="part"><a href="/weather/">(icon)<span><b>22°</b><small>מעונן חלקית · בלילה 14°</small></span></a></li>
+      <li class="dsum-fact-wx" data-sky="part"><a href="/tools/weather/">(icon)<span><b>22°</b><small>מעונן חלקית · בלילה 14°</small></span></a></li>
       <li class="dsum-fact-sun">(sunset icon)<span><b>16:43</b><small>שקיעה</small></span></li>
     </ul>
     <section aria-labelledby="dsum-today">…"היום", as in seasons.md, now with the calendar…</section>
@@ -35,7 +35,7 @@ Vision batch 16 (2026-11-14). This adds to `docs/design/seasons.md` §3, which k
 - The leaf is decorative (`aria-hidden`), since the line under the title says it in full. That line is the Hebrew date, then " · ", then the Gregorian day and month.
 
 ## The facts row (`.dsum-facts`)
-- **The weather** (`li.dsum-fact-wx`, a link to `/weather/`):
+- **The weather** (`li.dsum-fact-wx`, a link to `/tools/weather/`):
   - `b`: the temperature now.
   - `small`: the sky's words from `sky()` in `server/weather-logic.ts`, then " · בלילה {min}°".
   - The place is the user's own, as on the weather page. If there is no weather (offline, no place), leave the `li` out.

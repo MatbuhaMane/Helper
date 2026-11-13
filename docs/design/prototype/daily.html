@@ -42,7 +42,7 @@
   const chip = (icon, n, t) => `<li><a href="#">${H.icon(icon).outerHTML}<span><b>${n}</b> ${t}</span></a></li>`;
   const mode = q.get('mode') || 'quiet', fri = q.get('fri') === '1';
   const facts = `<ul class="dsum-facts" aria-label="היום בקצרה">
-      <li class="dsum-fact-wx" data-sky="part"><a href="/weather/">${ic('part')}<span><b>22°</b><small>מעונן חלקית · בלילה 14°</small></span></a></li>
+      <li class="dsum-fact-wx" data-sky="part"><a href="/tools/weather/">${ic('part')}<span><b>22°</b><small>מעונן חלקית · בלילה 14°</small></span></a></li>
       ${fri ? `<li class="dsum-fact-candles">${ic('candles')}<span><b>16:21</b><small>הדלקת נרות</small></span></li>`
             : `<li class="dsum-fact-sun">${ic('sunset')}<span><b>16:43</b><small>שקיעה</small></span></li>`}
     </ul>`;

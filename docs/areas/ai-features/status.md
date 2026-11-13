@@ -1,9 +1,34 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the tree batch).
+Last update: 2026-11-14 (תיבת פניות).
 
 ## Done
+
+- **תיבת פניות** (the CEO, 2026-11-14), on `ai-features`:
+  1. A report from any page, by shaking the phone or from the menu ("דווח על בעיה" in the tools menu and in settings).
+     The shake has a threshold of 3 sharp peaks in 0.9 s and a 4 s debounce. It is switched by "נענוע לדיווח" in
+     settings, a per-user pref `reports.shake`: on by default where no permission is needed, and on iOS asked on the tap.
+  2. The sheet says it goes to "צוות האוהל". It keeps the page, the time, the device, the theme, the width and the text.
+     A screenshot is kept only when the person ticks it: on a PC a picture of the tab, on a phone an image from the gallery.
+     The limit is 12 reports a day.
+  3. In the back door, the tile "תיבת פניות" shows threads with the states חדשה / בטיפול / טופלה, filters, and a count
+     on the tile. The answer is private.
+  4. The person's inbox "התיבה שלי" has a red dot on the user chip and a count on the entry.
+  Server `server/reports.ts`; the rules `server/reports-rules.ts`, with 61 tests in `server/test-reports.mjs`. The tests
+  cover privacy (404 to anyone but the reporter) and the admin gate on every team handler. The companion's feedback
+  lands here too.
+  Checked on the dev server (8791):
+  - send, list and screenshot;
+  - another member gets 404 on the thread and on the picture, and so does a back-door user on the member route;
+  - a reply sets בטיפול, the dot appears and clears after reading, and a bad state gets 400;
+  - at 375 (list ↔ thread, the back button) and at 1280 (two columns), in light and dark: no overflow, contrast fine;
+  - typecheck and `npm test` pass.
+  The back door was opened in the local database as a test super (no passkey in dev).
+  Not checked: a real shake on a phone and iOS's permission prompt, the tab capture's picker (it needs a real tap), and
+  R2 on the live site (locally it ran on the local bucket).
+  Waiting: the master's common.js hook (the dot and the shake on every page), and test-reports in `npm test`.
+  For design: `.navmenu-reports`, and the pressed `.rx-*` buttons in dark mode.
 
 - **The tree batch** (the CEO, 2026-11-14), on `ai-features`:
   1. no sounds in the tree;

@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – תיבת פניות: reports from any page, the owner's inbox, private answers (ai-features → master, design)
+
+- **Appended:** the tables `reports` and `report_messages` at the end of `schema.sql`. Nine routes at the end of
+  `functions/api/[[path]].ts` (`/api/reports`, `/mine`, `/:id`, `/:id/shot`; `/api/admin/reports`, `/:id`, PUT `/:id`,
+  `/:id/reply`, `/:id/shot`) and one import line. No existing line edited; no new column.
+- **Privacy:** only the reporter sees a report, its screenshot and its answers; anyone else gets 404, the owner included,
+  outside the back door. The team's side is behind `requireAdmin(ctx, 'own')`. `server/test-reports.mjs` (61 tests)
+  checks this, and that every team handler opens with the gate.
+- **The older feedback joins the inbox.** `admin.addFeedback` (the companion's send_feedback) now writes a report, and
+  the old `feedback` rows are copied in once. The settings button became the two report entries.
+- **For the master:**
+  1. the one-line hook in `public/assets/common.js` that loads `/assets/reports.js` after sign-in, next to `messages.js`
+     (the patch is in the hand-over note);
+  2. `node server/test-reports.mjs` added to `npm test`;
+  3. perhaps `/assets/reports.js` in `sw.js`'s precache.
+  Until the hook lands, shaking and the dot work only in settings and the back door.
+- **For design:**
+  1. `.navmenu-reports`, a new wrapper for the two `.rp-entry` buttons at the foot of the tools menu (no CSS yet);
+  2. in dark mode `.rx-filters` / `.rx-state` `button[aria-pressed="true"]` is white on the light `--primary` (contrast 2.0).
+  The other class names are as in the contract (bff1c28), except `.rx[data-view="thread"]`, which follows admin.css.
+Status: done (on `ai-features`), waiting for the hook and the merge.
+
 ## 2026-11-14 – The tree batch: חיפוש ביער, the member card, keys and backups in settings (ai-features → master, design)
 
 - Appended routes in `functions/api/[[path]].ts` (with one import): `GET /api/family/find?q=&kin=1&users=1` and

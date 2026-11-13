@@ -48,6 +48,7 @@ import { featureOf, metered } from '../../server/meter';
 import * as weather from '../../server/weather';
 import * as discovery from '../../server/discover';
 import * as goalSocial from '../../server/goal-social';
+import * as reports from '../../server/reports';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -512,6 +513,16 @@ route('PUT', '/api/family/profile/cover', familyProfile.coverPut);
 route('GET', '/api/family/profile/cover', familyProfile.coverGet);
 route('GET', '/api/family/find', familyFind.find);                             // ?q=&kin=1&users=1: חיפוש ביער
 route('GET', '/api/family/card', familyFind.card);                             // ?id=: a member card in view mode
+/* the reports inbox, תיבת פניות (ai-features, server/reports.ts): only the reporter sees a report and its answer */
+route('POST', '/api/reports', reports.send);
+route('GET', '/api/reports/mine', reports.mine);
+route('GET', '/api/reports/:id', reports.thread);
+route('GET', '/api/reports/:id/shot', reports.shot);
+route('GET', '/api/admin/reports', reports.adminList);
+route('GET', '/api/admin/reports/:id', reports.adminThread);
+route('PUT', '/api/admin/reports/:id', reports.adminState);
+route('POST', '/api/admin/reports/:id/reply', reports.adminReply);
+route('GET', '/api/admin/reports/:id/shot', reports.adminShot);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

@@ -528,6 +528,15 @@
     ].filter(Boolean));
   }
 
+  /* ---------- reports: דווח על בעיה, התיבה שלי, and נענוע לדיווח (a per-user pref; iOS asks for motion on this tap) ---------- */
+  const reportsBox = el('div', { class: 'st-reports' });
+  H.loadOnce('/assets/reports.js').then(() => {
+    const sw = el('input', { type: 'checkbox', checked: H.shakeOn(), onchange: async (e) => { e.target.checked = await H.setShake(e.target.checked); } });
+    reportsBox.replaceChildren(...H.reportEntries(),
+      H.canShake() ? el('div', { class: 'st-field' }, el('label', { class: 'st-switch' }, sw, ' ', 'נענוע לדיווח'),
+        el('p', { class: 'muted small' }, 'לנער את הטלפון מכל דף, והדיווח נפתח.')) : null);
+  }).catch(() => reportsBox.replaceChildren(el('p', { class: 'muted small' }, 'לא הצלחתי לטעון את הדיווחים.')));
+
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
   const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st' },
@@ -539,8 +548,8 @@
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')),
       el('a', { class: 'btn small ghost', href: '/welcome/' }, 'ההגדרה הראשונית שוב'),
-      // feedback to the owner (the family batch): the same form any button can open
-      el('button', { class: 'btn small', type: 'button', onclick: async () => { try { await H.loadOnce('/assets/feedback.js'); H.feedback(); } catch (_) { toast('לא הצלחתי לפתוח את הטופס'); } } }, 'משוב לבעלים של האוהל'))));
+      // reports to צוות האוהל (server/reports.ts, /assets/reports.js): report a problem, the person's inbox, and the shake switch
+      reportsBox)));
   drawServices(); drawAssistant(); drawDevices(); drawPrivacy();
   paintNows();
   const want = location.hash.slice(1);

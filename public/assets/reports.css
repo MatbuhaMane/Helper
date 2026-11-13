@@ -91,7 +91,7 @@
 .rp-sent { display: grid; justify-items: center; gap: 6px; padding-block: 12px 4px; text-align: center; }
 .rp-sent h2 { margin: 6px 0 0; font-size: 1.2rem; }
 .rp-sent p { margin: 0 0 8px; color: var(--muted); }
-.rp-sent-ic { display: grid; place-items: center; inline-size: 64px; block-size: 64px; border-radius: 50%; background: var(--primary); color: #fff;
+.rp-sent-ic { display: grid; place-items: center; inline-size: 64px; block-size: 64px; border-radius: 50%; background: var(--primary); color: var(--primary-ink, #fff);
   animation: rp-pop .5s var(--ease-river, ease) both; }
 .rp-sent-ic::before { content: ""; inline-size: 32px; block-size: 32px; background: currentColor;
   -webkit-mask: url(/assets/reports/check.svg) center / contain no-repeat; mask: url(/assets/reports/check.svg) center / contain no-repeat; }
@@ -151,7 +151,7 @@
 .rm-reply textarea { font: inherit; inline-size: 100%; box-sizing: border-box; min-block-size: 48px; max-block-size: 30dvh; resize: vertical;
   padding: 11px 14px; border-radius: 22px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); line-height: 1.45; }
 .rm-send { inline-size: 48px; block-size: 48px; border-radius: 50%; border: 0; padding: 0; cursor: pointer; display: grid; place-items: center;
-  background: var(--primary); color: #fff; transition: transform var(--dur-quick, .15s) ease, opacity var(--dur-quick, .15s) ease; }
+  background: var(--primary); color: var(--primary-ink, #fff); transition: transform var(--dur-quick, .15s) ease, opacity var(--dur-quick, .15s) ease; }
 .rm-send::before { content: ""; inline-size: 22px; block-size: 22px; background: currentColor;
   -webkit-mask: url(/assets/reports/send.svg) center / contain no-repeat; mask: url(/assets/reports/send.svg) center / contain no-repeat; }
 .rm-send:dir(rtl)::before { transform: scaleX(-1); }   /* the plane flies toward the reading direction */
@@ -164,3 +164,20 @@
 
 @media (prefers-reduced-motion: reduce) { .rp-sent-ic { animation: none; } .rm-send, .rp-entry { transition: none; } }
 :root[data-motion="reduce"] .rp-sent-ic { animation: none; }
+
+/* the two entries at the foot of the tools menu (reports.js appends <div class="navmenu-reports"> to #navmenu-tools): they read as
+   menu rows, not cards: the same padding, hover and icon tile size as .navmenu a, under a hairline. Two side by side on a computer and
+   on a phone (a phone drops the subtitle). */
+.navmenu-reports { display: grid; gap: 2px; margin-block-start: 6px; padding-block-start: 6px; border-block-start: 1px solid var(--line); }
+@media (min-width: 900px) { #navmenu-tools .navmenu-reports { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.navmenu-phone .navmenu-reports { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px; }
+.navmenu-reports .rp-entry { min-block-size: 48px; gap: 12px; padding: 7px 10px 7px 12px; border: 0; border-radius: 14px; background: none; font-size: .98rem; }
+.navmenu-reports .rp-entry b { font-weight: 400; }
+.navmenu-reports .rp-entry small { font-size: .78rem; line-height: 1.3; }
+.navmenu-reports .rp-entry-ic { inline-size: 34px; block-size: 34px; border-radius: 11px; }
+.navmenu-reports .rp-entry-ic::before { inline-size: 20px; block-size: 20px; }
+.navmenu-reports .rp-entry:hover, .navmenu-reports .rp-entry:focus-visible { background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); outline: none; }
+.navmenu-reports .rp-entry:focus-visible { box-shadow: inset 0 0 0 2px var(--primary); }
+.navmenu-phone .navmenu-reports .rp-entry { padding: 8px; gap: 8px; font-size: .88rem; }
+.navmenu-phone .navmenu-reports .rp-entry small { display: none; }
+.navmenu-phone .navmenu-reports .mi-count { min-inline-size: 20px; block-size: 20px; padding: 0 5px; font-size: .72rem; }

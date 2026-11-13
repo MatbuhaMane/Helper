@@ -13,6 +13,8 @@
     too_many_tries: 'יותר מדי ניסיונות. נסו שוב בעוד רבע שעה.', challenge_expired: 'עבר יותר מדי זמן. נסו שוב.', passkey_bad_signature: 'הזיהוי לא אושר.',
     title_required: 'צריך שם.', bad_amount: 'הסכום לא תקין.', bad_date: 'צריך תאריך.', bad_value: 'הערך לא מתאים.', not_member: 'אין חבר בכתובת הזו.',
     already_owner: 'הוא כבר בעל האוהל.', owner_only: 'רק בעל האוהל ממנה הרשאת־על.', text_required: 'כתבו הודעה.',
+    bad_page: 'בחרו עמוד.', no_text: 'כתבו מה יופיע כשמוצאים.', bad_link: 'הקישור לא תקין: כתובת באוהל (/songs/) או https.', ends_first: 'תאריך הסיום לפני תאריך ההתחלה.',
+    already_over: 'תאריך הסיום כבר עבר.', bad_layout: 'המבנה לא נקרא. רעננו ונסו שוב.', too_big: 'המבנה גדול מדי.',
   };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
   const call = (path, opts = {}) => api(path, { ...opts, noRedirect: true });
@@ -107,7 +109,7 @@
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
     /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
     const APPS = st.own
-      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites], ['treetrash', 'שחזור מהעץ', treeTrash]] : []), ['settings', 'הגדרות האפליקציה', settings],
+      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites], ['treetrash', 'שחזור מהעץ', treeTrash], ['structure', 'עץ מבנה', structure]] : []), ['settings', 'הגדרות האפליקציה', settings],
          ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
       : [['features', `התכונות של ${st.as.name}`, features]];
     const panels = {}, bodies = {}, loaded = new Set();
@@ -608,6 +610,404 @@
         el('span', { class: 'bd-trash-who' }, el('b', {}, x.name), el('small', { class: 'muted' }, [x.ours ? 'המשפחה שלנו' : x.family, x.by ? `נמחק על ידי ${x.by}` : '', day(x.deleted_at)].filter(Boolean).join(' · '))),
         btn('שחזור', async () => { await call(`/api/admin/tree-trash/${x.id}/restore`, { method: 'POST' }); toast(`${x.name} חזר/ה לעץ`); again(); }, 'btn small primary')))) : null,
       el('p', { class: 'bd-trash-empty', hidden: d.people.length > 0 }, 'אין כרטיסים שנמחקו.')));
+  }
+
+  /* ---------- עץ מבנה (the owner, 2026-11-13; server/layout.ts, the merge in /assets/apps.js): the tent's structure, the
+     fire's default ring and the surprise eggs. Everything is a draft on this page until פרסום; תצוגה מקדימה shows the
+     draft on this tab only (sessionStorage 'helper.layoutPreview', read by apps.js). Design's markup: admin.css "עץ מבנה". */
+  const PILLOWS = Array.from({ length: 15 }, (_, i) => 'p' + String(i + 1).padStart(2, '0'));
+  const SWATCHES = [['#2f7d4a', 'זית'], ['#8e2435', 'בורדו'], ['#d2601a', 'כתום'], ['#c27c12', 'דבש'], ['#3557a8', 'כחול'], ['#b8457a', 'ורוד'], ['#8a5a32', 'אדמה'], ['#6c4ab4', 'סגול']];
+  const EGG_ST = { live: 'פעילה', soon: 'בקרוב', over: 'הסתיימה', off: 'כבויה' };
+  let stDirty = false;
+  addEventListener('beforeunload', (e) => { if (stDirty) e.preventDefault(); });
+
+  async function structure(box) {
+    box.classList.add('bd-part');
+    await H.loadOnce('/assets/apps.js');
+    const L = H.layout(), CODE = L.code, DFLT = { parts: L.defaultPins, pins: L.defaultPins };
+    const byHref = new Map(CODE.map((a) => [a.href, a]));
+    const d = await call('/api/admin/layout');
+    let pv = null; try { pv = JSON.parse(sessionStorage.getItem('helper.layoutPreview') || 'null'); } catch (_) { /* no storage */ }
+    const start = pv || d.layout;
+    const m0 = H.mergeLayout(CODE, DFLT, start);
+    const S = { parts: m0.tree.map((t) => ({ href: t.href, kids: t.kids.slice() })), hidden: new Set(m0.hidden), edits: { ...(start?.edits || {}) },
+      ring: (start?.ring || []).slice(), sel: null, fsel: null, held: null, open: new Set(m0.tree.map((t) => t.href)) };
+    stDirty = !!pv;
+    const toLayout = () => ({ parts: S.parts, hidden: [...S.hidden], edits: S.edits, ring: S.ring });
+    const merged = () => H.mergeLayout(CODE, DFLT, toLayout());
+    const look = (h) => ({ ...byHref.get(h), ...(S.edits[h] || {}) });
+    const pimg = (p) => (p ? el('img', { src: `/assets/pillows/${p}.webp`, alt: '' }) : null);
+    const changed = () => { stDirty = true; status(); };
+    const find = (h) => tree.querySelector(`.st-node[data-h="${CSS.escape(h)}"]`);
+
+    const tree = el('ul', { class: 'st-tree', role: 'tree', 'aria-label': 'מבנה האוהל' });
+    const zone = el('div', { class: 'st-zone' }, 'גוררים לכאן כדי לפתוח חלק חדש');
+    const panel = el('aside', { class: 'card st-panel', 'aria-labelledby': 'st-ph-h' });
+    const scrim = el('div', { class: 'st-scrim', hidden: true, onclick: () => close() });
+    const phone = matchMedia('(max-width: 999px)');
+    const state = el('p', { class: 'muted small' });
+    const note = el('input', { type: 'text', maxlength: 120, placeholder: 'מה השתנה (לא חובה)', 'aria-label': 'מה השתנה' });
+    const status = () => { state.textContent = stDirty ? 'יש שינויים שעוד לא פורסמו.' : d.v ? `הכל פורסם · גרסה ${d.v}` : 'המבנה כמו בקוד. עוד לא פורסמה גרסה.'; };
+
+    /* the tree */
+    function row(h, ring) {
+      const a = look(h), tag = S.hidden.has(h) ? ['hidden', 'מוסתר'] : a.fixed ? ['fixed', 'קבוע'] : ring.includes(h) ? ['ring', 'במדורה'] : null;
+      return el('div', { class: 'st-row', 'aria-current': S.sel === h ? 'true' : null },
+        el('button', { class: 'st-grip', type: 'button', 'aria-label': `הזזת ${a.name}` }),
+        el('button', { class: 'st-tw', type: 'button', 'aria-label': `${S.open.has(h) ? 'סגירת' : 'פתיחת'} ${a.name}` }),
+        el('span', { class: 'st-pil' }, pimg(a.pillow), H.icon(a.ic)),
+        el('span', { class: 'st-name' }, el('b', {}, a.name), a.sub ? el('small', {}, a.sub) : null),
+        tag ? el('span', { class: 'st-tag', 'data-t': tag[0] }, tag[1]) : null,
+        el('button', { class: 'st-ibtn', type: 'button', 'aria-label': `עריכת ${a.name}` }));
+    }
+    function draw() {
+      const ring = merged().pins;
+      tree.replaceChildren(...S.parts.map((t) => el('li', { class: 'st-node', role: 'treeitem', 'data-kind': 'part', 'data-h': t.href,
+        'aria-expanded': t.kids.length ? String(S.open.has(t.href)) : null, style: `--c:${look(t.href).c2 || '#8a5a32'}` },
+      row(t.href, ring),
+      t.kids.length ? el('ul', { class: 'st-kids', role: 'group' }, t.kids.map((k) => el('li', { class: 'st-node', role: 'treeitem', 'data-kind': 'tool', 'data-h': k }, row(k, ring)))) : null)));
+      if (S.held) find(S.held.h)?.classList.add('held');
+      drawFire(); status();
+    }
+    const landed = (h) => { const n = find(h); n?.classList.add('landed'); setTimeout(() => n?.classList.remove('landed'), 900); };
+    /** out of the tree; a part takes its tools with it */
+    function take(h) {
+      const i = S.parts.findIndex((p) => p.href === h);
+      if (i >= 0) return S.parts.splice(i, 1)[0].kids;
+      for (const p of S.parts) { const j = p.kids.indexOf(h); if (j >= 0) { p.kids.splice(j, 1); return []; } }
+      return [];
+    }
+    /** to = { top, before } (a part, before that one or last) or { kid: part, before } (a tool in that part) */
+    function put(h, to) {
+      const kids = take(h);
+      if (to.top) { const i = to.before ? S.parts.findIndex((p) => p.href === to.before) : -1; S.parts.splice(i < 0 ? S.parts.length : i, 0, { href: h, kids }); return; }
+      const p = S.parts.find((x) => x.href === to.kid), i = to.before ? p.kids.indexOf(to.before) : -1;
+      p.kids.splice(i < 0 ? p.kids.length : i, 0, h);
+      S.open.add(p.href);
+    }
+    /** may h go there? a fixed item and a part with tools stay on top */
+    const may = (h, to) => to.top || (!byHref.get(h).fixed && !S.parts.find((p) => p.href === h)?.kids.length);
+    const after = (list, h, skip) => { const rest = list.slice(list.indexOf(h) + 1).filter((x) => x !== skip); return rest[0] || null; };
+
+    /* drag by the grip (pointer events: a finger or a mouse) */
+    let drag = null;
+    const clearMarks = () => { tree.querySelectorAll('.into, .no').forEach((n) => n.classList.remove('into', 'no')); zone.classList.remove('over'); drag?.ghost?.classList.remove('no'); };
+    function aim(x, y) {
+      const t = document.elementFromPoint(x, y);
+      if (!t || t.closest('.st-ph')) return;
+      clearMarks();
+      let to = null, n = null;
+      if (zone.contains(t)) { to = { top: true, before: null }; zone.classList.add('over'); }
+      else {
+        const r0 = t.closest('.st-row'); n = r0 && tree.contains(r0) ? r0.closest('.st-node') : null;
+        if (!n || n === drag.node || drag.node.contains(n)) { if (!tree.contains(t)) { drag.to = null; drag.ph.remove(); } return; }
+        const r = r0.getBoundingClientRect(), f = (y - r.top) / r.height, h = n.dataset.h;
+        if (n.dataset.kind === 'part') {
+          const kids = S.parts.find((p) => p.href === h).kids, open = kids.length && S.open.has(h);
+          if (f > 0.25 && f < 0.75) to = { kid: h, before: null, into: true };
+          else if (f >= 0.75 && open) to = { kid: h, before: kids.find((k) => k !== drag.h) || null, into: true };
+          else to = { top: true, before: f <= 0.25 ? h : after(S.parts.map((p) => p.href), h, drag.h) };
+        } else {
+          const part = n.parentElement.closest('.st-node').dataset.h, kids = S.parts.find((p) => p.href === part).kids;
+          to = { kid: part, before: f < 0.5 ? h : after(kids, h, drag.h) };
+        }
+      }
+      drag.to = to; drag.ok = may(drag.h, to);
+      if (!drag.ok) { (n || zone).classList.add('no'); drag.ghost.classList.add('no'); drag.ph.remove(); return; }
+      if (to.into) n.classList.add('into');
+      // where it will land
+      if (to.top) { const b = to.before && find(to.before); b ? tree.insertBefore(drag.ph, b) : tree.append(drag.ph); }
+      else {
+        const pn = find(to.kid);
+        let ul = pn.querySelector(':scope > .st-kids');
+        if (!ul) { ul = el('ul', { class: 'st-kids', role: 'group' }); pn.append(ul); }
+        if (!S.open.has(to.kid)) { S.open.add(to.kid); pn.setAttribute('aria-expanded', 'true'); }
+        const b = to.before && find(to.before); b && b.parentElement === ul ? ul.insertBefore(drag.ph, b) : ul.append(drag.ph);
+      }
+    }
+    function endDrag(drop) {
+      if (!drag) return;
+      const { h, on, to, ok } = drag;
+      drag.ghost?.remove(); drag.ph?.remove(); clearMarks();
+      tree.classList.remove('dragging'); drag.node.classList.remove('away');
+      drag = null;
+      if (on && drop && to && ok) { put(h, to); changed(); draw(); landed(h); }
+      else if (on) draw();
+    }
+    tree.addEventListener('pointerdown', (e) => {
+      const g = e.target.closest('.st-grip');
+      if (!g || e.button > 0 || S.held) return;
+      const node = g.closest('.st-node'), r = node.querySelector('.st-row').getBoundingClientRect();
+      drag = { h: node.dataset.h, node, x0: e.clientX, y0: e.clientY, ox: e.clientX - r.left, oy: e.clientY - r.top, w: r.width, hh: r.height, on: false };
+      g.setPointerCapture(e.pointerId);
+    });
+    tree.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      if (!drag.on) {
+        if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) < 6) return;
+        drag.on = true;
+        tree.classList.add('dragging'); drag.node.classList.add('away');
+        drag.ghost = el('div', { class: 'st-ghost' }, drag.node.querySelector('.st-row').cloneNode(true));
+        drag.ph = el('li', { class: 'st-ph', 'aria-hidden': 'true', style: `--h:${Math.round(drag.hh)}px` });
+        document.body.append(drag.ghost);
+      }
+      drag.ghost.style.cssText = `--x:${e.clientX - drag.ox}px;--y:${e.clientY - drag.oy}px;--w:${drag.w}px`;
+      if (e.clientY < 70) scrollBy(0, -14); else if (e.clientY > innerHeight - 90) scrollBy(0, 14);
+      aim(e.clientX, e.clientY);
+    });
+    tree.addEventListener('pointerup', () => endDrag(true));
+    tree.addEventListener('pointercancel', () => endDrag(false));
+    tree.addEventListener('lostpointercapture', () => endDrag(false));
+
+    /* the keyboard: space on the grip picks up, the arrows move, space puts down, Esc cancels */
+    function step(h, dir) {
+      const i = S.parts.findIndex((p) => p.href === h);
+      if (i >= 0) { const j = i + dir; if (j >= 0 && j < S.parts.length) [S.parts[i], S.parts[j]] = [S.parts[j], S.parts[i]]; return; }
+      const pi = S.parts.findIndex((p) => p.kids.includes(h)), kids = S.parts[pi].kids, k = kids.indexOf(h), j = k + dir;
+      if (j >= 0 && j < kids.length) { [kids[k], kids[j]] = [kids[j], kids[k]]; return; }
+      const next = S.parts[pi + dir];
+      if (!next) return;
+      kids.splice(k, 1);
+      dir < 0 ? next.kids.push(h) : next.kids.unshift(h);
+      S.open.add(next.href);
+    }
+    const grip = (h) => find(h)?.querySelector(':scope > .st-row .st-grip');
+    tree.addEventListener('keydown', (e) => {
+      const g = e.target.closest('.st-grip');
+      if (!g) return;
+      const h = g.closest('.st-node').dataset.h, name = look(h).name;
+      if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        if (!S.held) { S.held = { h, snap: JSON.stringify(S.parts) }; find(h).classList.add('held'); toast(`${name} הורם. חצים להזזה, רווח להנחה, Esc לביטול.`); }
+        else { const moved = S.held.snap !== JSON.stringify(S.parts); S.held = null; if (moved) changed(); draw(); grip(h)?.focus(); landed(h); toast(moved ? `${name} הונח.` : `${name} נשאר במקומו.`); }
+      } else if (S.held?.h === h && e.key === 'Escape') { e.preventDefault(); S.parts = JSON.parse(S.held.snap); S.held = null; draw(); grip(h)?.focus(); }
+      else if (S.held?.h === h && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) { e.preventDefault(); step(h, e.key === 'ArrowUp' ? -1 : 1); draw(); grip(h)?.focus(); }
+    });
+    tree.addEventListener('click', (e) => {
+      const n = e.target.closest('.st-node'); if (!n) return;
+      const h = n.dataset.h;
+      if (e.target.closest('.st-tw')) { S.open.has(h) ? S.open.delete(h) : S.open.add(h); n.setAttribute('aria-expanded', String(S.open.has(h))); e.target.closest('.st-tw').setAttribute('aria-label', `${S.open.has(h) ? 'סגירת' : 'פתיחת'} ${look(h).name}`); }
+      else if (e.target.closest('.st-ibtn')) edit(h);
+    });
+
+    /* the panel: name, description, icon, cushion, colour, hide */
+    const sheet = () => { panel.hidden = phone.matches && !S.sel; scrim.hidden = !(phone.matches && S.sel); };
+    phone.addEventListener('change', sheet);
+    function close() {
+      const was = S.sel; S.sel = null;
+      panel.replaceChildren(el('div', { class: 'st-head' }, el('h3', { id: 'st-ph-h' }, 'עריכה')),
+        el('p', { class: 'muted small' }, 'מקישים על העיפרון ליד פריט כדי לשנות את השם, התיאור, הסמל, הכרית והצבע, או להסתיר אותו.'));
+      sheet(); draw();
+      if (was) find(was)?.querySelector(':scope > .st-row .st-ibtn')?.focus();
+    }
+    function edit(h) {
+      S.sel = h;
+      const a0 = byHref.get(h), a = look(h);
+      const cur = { name: a.name, sub: a.sub || '', ic: a.ic, pillow: a.pillow || '', c2: (a.c2 || '#8a5a32').toLowerCase() };
+      const prev = el('div', { class: 'st-prev' }, el('span', { class: 'pillow' }), el('b'));
+      const refresh = () => {
+        prev.style.setProperty('--c2', cur.c2);
+        prev.firstChild.replaceChildren(...[pimg(cur.pillow), el('span', { class: 'badge' }, H.icon(cur.ic))].filter(Boolean));
+        prev.lastChild.textContent = cur.name.trim() || a0.name;
+      };
+      const name = el('input', { type: 'text', maxlength: 40, value: cur.name, oninput: () => { cur.name = name.value; refresh(); } });
+      const sub = el('textarea', { rows: 2, maxlength: 120, oninput: () => { cur.sub = sub.value; } }, cur.sub);
+      const pick = (cls, legend, items) => el('fieldset', { class: 'st-pick ' + cls }, el('legend', {}, legend), ...items);
+      const radio = (nm, v, fn, extra = {}) => el('input', { type: 'radio', name: nm, value: v, checked: cur[nm.slice(3)] === v, onchange: fn, ...extra });
+      const used = {};
+      for (const x of merged().apps) if (x.href !== h && x.pillow) (used[x.pillow] ||= []).push(x.name);
+      const other = el('input', { type: 'color', value: cur.c2, 'aria-label': 'צבע אחר',
+        oninput: () => { cur.c2 = other.value; panel.querySelectorAll('[name="st-c2"]').forEach((r) => { r.checked = false; }); refresh(); } });
+      panel.replaceChildren(
+        el('div', { class: 'st-head' }, el('h3', { id: 'st-ph-h' }, `עריכה: ${a.name}`), el('button', { class: 'st-ibtn close', type: 'button', 'aria-label': 'סגירה', onclick: () => close() })),
+        prev,
+        el('label', { class: 'field' }, el('span', {}, 'שם'), name),
+        el('label', { class: 'field' }, el('span', {}, 'תיאור'), sub),
+        pick('st-icons', 'סמל', [...new Set(CODE.map((x) => x.ic))].map((n) => el('label', { title: n }, radio('st-ic', n, () => { cur.ic = n; refresh(); }, { 'aria-label': n }), H.icon(n)))),
+        pick('st-pills', 'כרית', PILLOWS.map((p) => el('label', used[p] ? { 'data-used': true, title: 'בשימוש: ' + used[p].join(', ') } : { title: p },
+          radio('st-pillow', p, () => { cur.pillow = p; refresh(); }), el('img', { src: `/assets/pillows/${p}.webp`, alt: p })))),
+        pick('st-colors', 'צבע', [...SWATCHES.map(([c, n]) => el('label', { style: `--sw:${c}`, title: n }, radio('st-c2', c, () => { cur.c2 = c; other.value = c; refresh(); }, { 'aria-label': n }))),
+          el('label', { class: 'st-other', title: 'צבע אחר' }, other)]),
+        el('div', { class: 'st-actions' },
+          el('button', { class: 'btn primary', type: 'button', onclick: () => {
+            const e = {}, nm = cur.name.trim(), sb = cur.sub.trim();
+            if (nm && nm !== a0.name) e.name = nm;
+            if (sb && sb !== (a0.sub || '')) e.sub = sb;
+            for (const k of ['ic', 'pillow', 'c2']) if (cur[k] && cur[k] !== String(a0[k] || '').toLowerCase()) e[k] = cur[k];
+            const before = JSON.stringify(S.edits[h] || {});
+            if (Object.keys(e).length) S.edits[h] = e; else delete S.edits[h];
+            if (before !== JSON.stringify(S.edits[h] || {})) changed();
+            close();
+          } }, 'שמירה'),
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => close() }, 'ביטול'),
+          S.edits[h] ? el('button', { class: 'btn ghost', type: 'button', onclick: () => { delete S.edits[h]; changed(); close(); } }, 'כמו בקוד') : null,
+          el('button', { class: 'btn ghost st-del', type: 'button', disabled: !!a0.fixed, title: a0.fixed ? 'פריט קבוע: תמיד מוצג' : null,
+            onclick: () => { S.hidden.has(h) ? S.hidden.delete(h) : S.hidden.add(h); changed(); close(); } }, S.hidden.has(h) ? 'החזרה לתפריט' : 'הסתרה')));
+      panel.onkeydown = (e) => { if (e.key === 'Escape') close(); };
+      refresh(); sheet(); draw(); name.focus();
+    }
+
+    /* the fire: the home page's ring for people who pinned nothing (each person's own pins stay theirs) */
+    const ringEl = el('div', { class: 'fe-ring' }), tray = el('div', { class: 'fe-tray', hidden: true });
+    const setRing = (list) => { S.ring = list; S.fsel = null; tray.hidden = true; changed(); draw(); };
+    let ringDrag = null, ringMoved = false;
+    function drawFire() {
+      const m = merged(), pins = m.pins, items = ['/family/', ...pins, '/tools/', '/settings/'], N = items.length + (pins.length < 12 ? 1 : 0);
+      const at = (i) => { const a = 90 + (i * 360) / N; return `--a:${a}deg;--z:${Math.round(10 + 9 * Math.sin((a * Math.PI) / 180))}`; };
+      const seats = items.map((h, i) => {
+        const a = look(h), fixed = !!byHref.get(h).fixed;
+        return el('div', { class: 'fe-seat', style: `${at(i)};--c2:${a.c2 || '#8a5a32'}`, 'data-fixed': fixed, 'data-h': h, 'aria-current': S.fsel === h ? 'true' : null },
+          el('button', { class: 'fe-pick', type: 'button', 'aria-pressed': String(S.fsel === h), 'aria-label': fixed ? `${a.name} (קבוע)` : `החלפת ${a.name}` },
+            el('span', { class: 'pillow' }, pimg(a.pillow), el('span', { class: 'badge' }, H.icon(a.ic))), el('span', { class: 'label' }, a.name)),
+          fixed ? null : el('button', { class: 'fe-x', type: 'button', 'aria-label': `הסרת ${a.name} מהמדורה`, onclick: () => setRing(pins.filter((x) => x !== h)) }));
+      });
+      if (pins.length < 12) seats.push(el('div', { class: 'fe-seat fe-add', style: at(items.length), 'data-h': '+', 'aria-current': S.fsel === '+' ? 'true' : null },
+        el('button', { class: 'fe-pick', type: 'button', 'aria-pressed': String(S.fsel === '+') }, el('span', { class: 'pillow' }), el('span', { class: 'label' }, 'הוספה'))));
+      ringEl.replaceChildren(el('div', { class: 'fe-fire', 'aria-hidden': 'true' }, el('img', { src: '/assets/campfire/base.webp', alt: '' }), el('img', { class: 'fe-flame', src: '/assets/campfire/flame-2.webp', alt: '' })), ...seats);
+      if (S.fsel) {
+        tray.replaceChildren(el('p', { class: 'fe-tray-h' }, ...(S.fsel === '+' ? ['מה להוסיף למדורה?'] : ['מה יבוא במקום ', el('b', {}, look(S.fsel).name), '?'])),
+          el('ul', { class: 'fe-opts' }, m.apps.filter((a) => !a.fixed).map((a) => el('li', {}, el('button', { class: 'fe-opt', type: 'button', 'aria-disabled': pins.includes(a.href) ? 'true' : null,
+            onclick: () => { if (pins.includes(a.href)) return; setRing(S.fsel === '+' ? [...pins, a.href] : pins.map((x) => (x === S.fsel ? a.href : x))); } }, pimg(a.pillow), el('span', {}, a.name))))));
+        tray.hidden = false;
+      } else tray.hidden = true;
+    }
+    ringEl.addEventListener('click', (e) => {
+      const s = e.target.closest('.fe-seat'), p = e.target.closest('.fe-pick');
+      if (!s || !p || ringMoved) { ringMoved = false; return; }
+      if (s.dataset.fixed === '') return toast('עץ המשפחה, כלים והגדרות קבועים במדורה.');
+      S.fsel = S.fsel === s.dataset.h ? null : s.dataset.h; draw();
+    });
+    // reorder: carry a seat to another seat's place
+    ringEl.addEventListener('pointerdown', (e) => {
+      const s = e.target.closest('.fe-seat');
+      if (!s || e.button > 0 || s.dataset.fixed === '' || s.dataset.h === '+' || e.target.closest('.fe-x')) return;
+      ringDrag = { s, h: s.dataset.h, x0: e.clientX, y0: e.clientY, on: false, id: e.pointerId };
+    });
+    ringEl.addEventListener('pointermove', (e) => {
+      if (!ringDrag) return;
+      const dx = e.clientX - ringDrag.x0, dy = e.clientY - ringDrag.y0;
+      if (!ringDrag.on) { if (Math.hypot(dx, dy) < 8) return; ringDrag.on = true; ringEl.setPointerCapture(ringDrag.id); ringEl.classList.add('dragging'); ringDrag.s.classList.add('lifted'); }
+      ringDrag.s.style.setProperty('--dx', dx + 'px'); ringDrag.s.style.setProperty('--dy', dy + 'px');
+    });
+    const ringDrop = (e, drop) => {
+      if (!ringDrag) return;
+      const { on, h, s } = ringDrag; ringDrag = null;
+      if (!on) return;
+      ringMoved = true; setTimeout(() => { ringMoved = false; }, 0);
+      ringEl.classList.remove('dragging'); s.classList.remove('lifted');
+      const pins = merged().pins;
+      let best = null, bd = 1e9;
+      if (drop) for (const o of ringEl.querySelectorAll('.fe-seat:not([data-fixed]):not(.fe-add)')) {
+        if (o === s) continue;
+        const r = o.getBoundingClientRect(), dd = Math.hypot(r.left + r.width / 2 - e.clientX, r.top + r.height / 2 - e.clientY);
+        if (dd < bd && dd < 90) { bd = dd; best = o.dataset.h; }
+      }
+      if (!best) return draw();
+      const list = pins.filter((x) => x !== h);
+      list.splice(pins.indexOf(best) > pins.indexOf(h) ? list.indexOf(best) + 1 : list.indexOf(best), 0, h);
+      setRing(list);
+    };
+    ringEl.addEventListener('pointerup', (e) => ringDrop(e, true));
+    ringEl.addEventListener('pointercancel', (e) => ringDrop(e, false));
+
+    /* publish, preview, versions */
+    async function publish() {
+      const r = await call('/api/admin/layout', { method: 'PUT', body: { layout: toLayout(), note: note.value.trim() } });
+      try { sessionStorage.removeItem('helper.layoutPreview'); localStorage.setItem('helper.layout', JSON.stringify({ v: r.v, at: Date.now(), layout: r.layout })); } catch (_) { /* no storage */ }
+      stDirty = false;
+      document.querySelector('.layout-pv')?.remove();
+      toast('המבנה פורסם. כולם יראו אותו בכניסה הבאה לעמוד.');
+      await structure(box);
+    }
+    function preview() {
+      try { sessionStorage.setItem('helper.layoutPreview', JSON.stringify(toLayout())); } catch (_) { return toast('אין אפשרות לתצוגה מקדימה בדפדפן הזה.'); }
+      stDirty = false;
+      location.href = '/';
+    }
+    const versions = el('details', { class: 'st-ver' }, el('summary', {}, `גרסאות קודמות (${d.versions.length})`),
+      d.versions.length ? el('ul', {}, d.versions.map((x) => el('li', {}, el('span', {}, `גרסה ${x.id} · ${day(x.at)}${x.note ? ' · ' + x.note : ''}`), ' ',
+        x.id === d.v ? el('small', { class: 'muted' }, 'בשימוש') : btn('שחזור', async () => {
+          await call(`/api/admin/layout/restore/${x.id}`, { method: 'POST' });
+          try { sessionStorage.removeItem('helper.layoutPreview'); localStorage.removeItem('helper.layout'); } catch (_) { /* no storage */ }
+          stDirty = false; toast(`גרסה ${x.id} חזרה ופורסמה`); await structure(box);
+        }, 'btn small ghost', `לפרסם שוב את גרסה ${x.id}? השינויים שלא פורסמו כאן יאבדו.`)))) : el('p', { class: 'muted small' }, 'עוד אין גרסאות.'));
+
+    const eggBox = el('div', { class: 'bd-part' });
+    box.replaceChildren(
+      el('div', { class: 'st-wrap' },
+        el('section', { class: 'card st' },
+          el('div', { class: 'st-head' }, el('h2', {}, 'עץ מבנה'),
+            el('button', { class: 'btn small ghost', type: 'button', onclick: () => { const all = S.parts.every((p) => !p.kids.length || S.open.has(p.href)); S.parts.forEach((p) => (all ? S.open.delete(p.href) : S.open.add(p.href))); draw(); } }, 'פתיחה וסגירה של הכל'),
+            el('p', {}, 'גוררים בידית ⠿ כדי לסדר או להעביר כלי לחלק אחר (במקלדת: רווח על הידית, חצים, רווח). מקישים על העיפרון כדי לשנות שם, סמל, כרית וצבע, או להסתיר.')),
+          tree, zone,
+          el('div', { class: 'st-actions' }, btn('פרסום', publish, 'btn primary'), btn('תצוגה מקדימה', preview, 'btn ghost'),
+            btn('ביטול השינויים', async () => { try { sessionStorage.removeItem('helper.layoutPreview'); } catch (_) { /* no storage */ } stDirty = false; document.querySelector('.layout-pv')?.remove(); await structure(box); }, 'btn ghost', 'לבטל את כל השינויים שלא פורסמו?')),
+          el('label', { class: 'field' }, el('span', {}, 'מה השתנה'), note), state, versions),
+        panel),
+      scrim,
+      el('section', { class: 'card fe' },
+        el('div', { class: 'st-head' }, el('h2', {}, 'המדורה'),
+          el('p', {}, 'כך ייראה הגלגל בעמוד הבית למי שעוד לא הצמיד כלום (מי שהצמיד שומר על שלו). מקישים על כרית כדי להחליף אותה, גוררים כדי לסדר, × מוריד ו־+ מוסיף.')),
+        ringEl, tray,
+        el('div', { class: 'st-actions' }, btn('פרסום', publish, 'btn primary'), btn('חזרה לברירת המחדל', () => setRing([]), 'btn ghost'))),
+      eggBox);
+    close();
+    eggsPart(eggBox, CODE).catch(say);
+  }
+
+  /* the surprise eggs: where, what, when; how many found each one and who */
+  async function eggsPart(host, code) {
+    const { eggs } = await call('/api/admin/eggs');
+    const pages = [['/', 'עמוד הבית']];
+    for (const a of code) { const p = a.href.split('#')[0]; if (!pages.some(([v]) => v === p)) pages.push([p, a.name]); }
+    const pageName = (p) => pages.find(([v]) => v === p)?.[1] || p;
+    const md = (t) => { const x = new Date(t); return `${x.getDate()}.${x.getMonth() + 1}`; };
+    const when = (e) => (e.starts || e.ends ? `${e.starts ? md(e.starts) : '…'} – ${e.ends ? md(e.ends) : '…'}` : '—');
+    const iso = (t) => (t ? new Date(t).toISOString().slice(0, 10) : '');
+    const form = el('form', { class: 'egg-form', hidden: true });
+    function open(e) {
+      const page = el('select', {}, (e && !pages.some(([v]) => v === e.page) ? [...pages, [e.page, e.page]] : pages)
+        .map(([v, n]) => el('option', { value: v, selected: (e?.page || '/') === v }, n)));
+      const kind = el('select', {}, [['text', 'מופיע טקסט'], ['surprise', 'טקסט וזיקוקים'], ['link', 'טקסט, ואז קישור']].map(([v, n]) => el('option', { value: v, selected: (e?.kind || 'text') === v }, n)));
+      const text = el('input', { type: 'text', maxlength: 280, value: e?.text || '', required: true });
+      const link = el('input', { type: 'text', dir: 'ltr', maxlength: 300, placeholder: '/songs/ או https://…', value: e?.link || '' });
+      const linkF = el('label', { class: 'field', hidden: (e?.kind || 'text') !== 'link' }, el('span', {}, 'לאן הקישור'), link);
+      kind.onchange = () => { linkF.hidden = kind.value !== 'link'; };
+      const from = el('input', { type: 'date', value: iso(e?.starts) }), to = el('input', { type: 'date', value: iso(e?.ends) });
+      const x = el('input', { type: 'range', min: 8, max: 92, value: e?.x ?? 50 }), y = el('input', { type: 'range', min: 8, max: 92, value: e?.y ?? 50 });
+      const on = el('input', { type: 'checkbox', checked: e ? !!e.active : true });
+      form.replaceChildren(
+        el('label', { class: 'field' }, el('span', {}, 'באיזה עמוד'), page),
+        el('label', { class: 'field' }, el('span', {}, 'מה כתוב כשמוצאים'), text),
+        el('label', { class: 'field' }, el('span', {}, 'מה קורה כשמוצאים'), kind), linkF,
+        el('div', { class: 'egg-dates' }, el('label', { class: 'field' }, el('span', {}, 'מתאריך'), from), el('label', { class: 'field' }, el('span', {}, 'עד תאריך'), to)),
+        el('div', { class: 'egg-dates' }, el('label', { class: 'field' }, el('span', {}, 'מרחק מימין'), x), el('label', { class: 'field' }, el('span', {}, 'מרחק מלמעלה'), y)),
+        el('label', { class: 'egg-on' }, on, ' פעילה'),
+        e?.finders?.length ? el('p', { class: 'muted small' }, 'מצאו: ' + e.finders.map((f) => `${f.who} (${day(f.at)})`).join(' · ')) : null,
+        el('div', { class: 'st-actions' }, el('button', { class: 'btn primary' }, 'שמירה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => { form.hidden = true; } }, 'ביטול'),
+          e ? btn('מחיקה', async () => { await call(`/api/admin/eggs/${encodeURIComponent(e.id)}`, { method: 'DELETE' }); toast('הביצה נמחקה'); await eggsPart(host, code); }, 'btn ghost st-del', 'למחוק את הביצה? גם רשימת המוצאים תימחק.') : null));
+      form.onsubmit = async (ev) => {
+        ev.preventDefault();
+        try {
+          await call(e ? `/api/admin/eggs/${encodeURIComponent(e.id)}` : '/api/admin/eggs', { method: e ? 'PUT' : 'POST',
+            body: { page: page.value, text: text.value, kind: kind.value, link: link.value, starts: from.value || null, ends: to.value || null, active: on.checked, x: +x.value, y: +y.value } });
+          toast('הביצה נשמרה'); await eggsPart(host, code);
+        } catch (err) { say(err); }
+      };
+      form.hidden = false; text.focus();
+    }
+    host.replaceChildren(el('section', { class: 'card bd-egg' },
+      el('div', { class: 'st-head' }, el('h2', {}, 'ביצי הפתעה'), btn('ביצה חדשה', () => open(null), 'btn small primary'),
+        el('p', {}, 'ביצה קטנה שמסתתרת בעמוד בימים שבחרתם. מי שמוצא אותה רואה את הטקסט, והמונה עולה. מה שבתוכה נשאר סוד עד שמוצאים.')),
+      el('ul', { class: 'egg-list' }, eggs.map((e) => el('li', { class: 'egg-row', 'data-st': e.state },
+        el('span', { class: 'egg-mini', 'aria-hidden': 'true' }),
+        el('span', { class: 'egg-what' }, el('b', {}, pageName(e.page)), el('small', {}, `"${e.text}"`)),
+        el('span', { class: 'egg-when' }, when(e)),
+        el('span', { class: 'egg-count', title: e.finders.map((f) => f.who).join(', ') || 'עוד אף אחד' }, el('b', {}, String(e.count)), ' מצאו'),
+        el('span', { class: 'egg-st' }, EGG_ST[e.state] || e.state),
+        el('button', { class: 'st-ibtn', type: 'button', 'aria-label': `עריכת הביצה ב${pageName(e.page)}`, onclick: () => open(e) })))),
+      el('p', { class: 'egg-empty', hidden: eggs.length > 0 }, 'עוד אין ביצים.'),
+      form));
   }
 
   async function invites(box) {

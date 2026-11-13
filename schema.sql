@@ -1251,8 +1251,8 @@ CREATE TABLE IF NOT EXISTS eggs (
   text       TEXT NOT NULL,
   kind       TEXT NOT NULL DEFAULT 'text',      -- text | surprise | link
   link       TEXT,
-  starts     INTEGER,                           -- ms; null = from now
-  ends       INTEGER,                           -- ms, the last day; null = no end
+  starts     INTEGER,                           -- ms, null = from now
+  ends       INTEGER,                           -- ms, the last day, null = no end
   active     INTEGER NOT NULL DEFAULT 1,
   x          REAL NOT NULL DEFAULT 50,          -- where it sits on the page, % of the width and height
   y          REAL NOT NULL DEFAULT 50,

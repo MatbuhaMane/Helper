@@ -34,6 +34,10 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 16** (2026-11-14), sent to the CEO, design and ai-features:
+  - the daily summary card shows every day;
+  - the premium-motion rule for every interface, starting with the recipe card flip;
+  - the recipe book: the feed is the default, plus the "my recipes" and "shared with me" menus.
 - **Batch 15** (2026-11-14), sent to design and the CEO: big new ideas wait, and the interface shows them only as "בקרוב". This applies to גבעה ביער and the garage. The garage study is cancelled.
 - **The owner's quick ideas** (`docs/vision/later.md`), split into three waves:
   - wave 2 waits for the family launch: the הקפדה coach, Telegram-level chat;

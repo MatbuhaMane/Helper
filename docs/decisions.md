@@ -55,6 +55,22 @@ markup `public/assets/tree.css`). No code knows any one drawing: the set is `/as
   It feeds the birthday glow, the quiet leaf of the passed and the yahrzeit candle (by the Hebrew date).
 - Leaves that would touch make the tree wider (up to about three screens); the board scrolls sideways, centred on me.
 
+## 2026-11-14 – One fridge per person; the shared fridge is "בקרוב" (the owner → ai-features → master, design)
+The owner: "אפשר מקרר אחד לכל משתמש וקשר אותו לממשקים האחרים, שמור את הפונקציה של מקרר משותף למאוחר יותר תחת 'בקרוב'".
+- **Column (appended to `COLUMNS` in `server/schema.ts`):** `fridges.owner TEXT`, the person's email. Every fridge query
+  is now scoped to it (`ownFridge`, rename, the list): someone else's fridge, or an old shared one, answers 404.
+- **Migration (in code, on each person's first visit, `myFridge` in `server/fridge.ts`):** the fridge they had called
+  "המקרר שלי" (the pref `fridge.mine`), if it is in their household and no one owns it yet, becomes theirs (one atomic
+  UPDATE). If someone already took it, they get a new "המקרר שלי" with a copy of its items and history. With no such
+  pref, a new empty fridge. The household's other fridges stay in the database with `owner` empty: hidden, never deleted.
+- `POST /api/fridges` and `DELETE /api/fridges/:id` answer 409 (one per person); rename works on one's own fridge.
+- Read by: the fridge page, the automatic shopping list (`grocery-auto.ts`, no household fallback any more) and the food
+  portal's highlights (`food.ts`). Recipes ("what can I cook") read the page's own items. Keto, diets and the daemon do
+  not read the fridge today.
+- **design:** the fridge page drops the fridge chips and the "איזה מקרר הוא שלך?" chooser; it gains a card
+  "מקרר משותף – בקרוב" (markup in the page commit). Classes like the other "בקרוב" cards are welcome.
+- When the shared fridge comes: a `fridge_members` table (fridge, email), and `ownFridge` checks membership.
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**

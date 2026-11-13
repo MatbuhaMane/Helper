@@ -162,5 +162,7 @@
     };
   }
   const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, unlock: f.unlock || null, season: f.season || null }));
-  window.Figure2D = { mount, list, FIGURES };
+  // the default companion for every family but the owner's (who has Ibn Ezra): the owner's choice, 2026-11-13
+  const DEFAULT = 'fennec';
+  window.Figure2D = { mount, list, FIGURES, DEFAULT };
 })();

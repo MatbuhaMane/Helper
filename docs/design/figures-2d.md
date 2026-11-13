@@ -32,7 +32,7 @@ mouth, cheek).
 | hedgehog | קיפוד | a soft hedgehog: small, loyal, glad of every small step |
 | lamb | טלה | a woolly lamb in an embroidered vest: calm and warm, reminds you to rest |
 
-Suggested default for families other than the owner's: **fennec** (the owner chooses after the preview).
+The default for families other than the owner's: **fennec (פנק)** – the owner's choice from the preview, 2026-11-13 (`Figure2D.DEFAULT`).
 Badge-unlocked and holiday figures come next, the same way (`kind: 'badge'` with `unlock: '<badge id>'`, `kind: 'season'`
 with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entry.
 

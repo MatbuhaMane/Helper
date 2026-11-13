@@ -88,6 +88,16 @@ LCP has not moved yet. The causes:
     "סייר" badge at 10 tools; 15 tests.
   - Checked as a test user: the badge came exactly at the 10th tool, and a page load notes the visit by itself.
 
+- **Settings in folding categories** (design's look, a8cb316): closed at first, with a line in each of what is set now.
+- **The owner's room**:
+  - "שימוש": who comes in and which tools;
+  - "פניות": the feedback inbox;
+  - the feedback form `H.feedback()`, with its first button in settings, and the companion's `send_feedback`.
+  - Checked: a family member's feedback arrives, and the room's routes refuse while the room is locked. The usage queries
+    were run on the local database. Not checked: the room's screens (the room opens only with the owner's biometric), and
+    the companion tool live (an AI call).
+  - Waiting for the master's review.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.

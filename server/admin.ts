@@ -21,6 +21,7 @@ import { saveSetting, settingsNow } from './settings';
 import * as R from './admin-rules';
 import { allowanceOf, balance, setLimited } from './credits';
 import * as C from './credits-rules';
+import { TOOLS } from './discover-logic';
 
 const rpId = (ctx: Ctx) => ctx.url.hostname;
 const b64u = (b: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -276,6 +277,57 @@ export async function messageRead(ctx: Ctx) {
   const u = requireUser(ctx);
   await ctx.env.DB.prepare('INSERT OR IGNORE INTO message_reads (message, email, at) VALUES (?, ?, ?)').bind(ctx.params.id, u.email, Date.now()).run();
   return json({ ok: true });
+}
+
+/* ---------------- the family's feedback: into the owner's inbox (the family batch: a button, and through the companion) ---------------- */
+
+/** keep one piece of feedback (any member, from a button or from the companion); no alert, the owner reads the inbox */
+export async function addFeedback(ctx: Ctx, u: Member, text: string, page: string, via: 'button' | 'companion') {
+  const t = String(text || '').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 2000);
+  if (!t) throw new HttpError(400, 'text_required');
+  await rateLimit(ctx, 'feedback:' + u.email, 20, 864e5);
+  const id = uid();
+  await ctx.env.DB.prepare('INSERT INTO feedback (id, email, name, text, page, via, at) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    .bind(id, u.email, u.he_name || u.name || null, t, String(page || '').slice(0, 120) || null, via, Date.now()).run();
+  return id;
+}
+/** POST /api/feedback {text, page} */
+export async function feedbackSend(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const b = await body<{ text?: string; page?: string }>(ctx.req);
+  return json({ id: await addFeedback(ctx, u, b.text || '', b.page || '', 'button') });
+}
+/** GET /api/admin/feedback – the inbox, the newest first (the owner's own account only) */
+export async function feedbackList(ctx: Ctx) {
+  await requireAdmin(ctx, 'own');
+  const { results } = await ctx.env.DB.prepare('SELECT id, name, email, text, page, via, at, read_at, done FROM feedback ORDER BY done, at DESC LIMIT 200').all();
+  return json({ feedback: results, unread: results.filter((f: any) => !f.read_at).length });
+}
+/** PUT /api/admin/feedback/:id {read?, done?} */
+export async function feedbackSave(ctx: Ctx) {
+  const a = await requireAdmin(ctx, 'own');
+  const b = await body<{ read?: boolean; done?: boolean }>(ctx.req);
+  if (b.read !== undefined) await ctx.env.DB.prepare('UPDATE feedback SET read_at = ? WHERE id = ?').bind(b.read ? Date.now() : null, ctx.params.id).run();
+  if (b.done !== undefined) await ctx.env.DB.prepare('UPDATE feedback SET done = ? WHERE id = ?').bind(b.done ? 1 : 0, ctx.params.id).run();
+  await log(ctx, a, 'feedback', ctx.params.id);
+  return json({ ok: true });
+}
+
+/* ---------------- usage: who comes in, and which tools (tool_visits; never what is in them) ---------------- */
+
+/** GET /api/admin/usage → { people: [{ name, last, tools, visits, top }], tools: [{ tool, people, visits, last }], week } */
+export async function usage(ctx: Ctx) {
+  await requireAdmin(ctx, 'own');
+  const week = Date.now() - 7 * 864e5;
+  const [people, tools] = await Promise.all([
+    ctx.env.DB.prepare(`SELECT m.email, COALESCE(m.he_name, m.name) AS name, MAX(v.last_at) AS last, COUNT(v.tool) AS tools, COALESCE(SUM(v.n), 0) AS visits,
+        SUM(CASE WHEN v.last_at > ? THEN 1 ELSE 0 END) AS week
+      FROM members m LEFT JOIN tool_visits v ON v.email = m.email GROUP BY m.email ORDER BY last DESC NULLS LAST`).bind(week).all(),
+    ctx.env.DB.prepare(`SELECT tool, COUNT(*) AS people, SUM(n) AS visits, MAX(last_at) AS last, SUM(CASE WHEN last_at > ? THEN 1 ELSE 0 END) AS week
+      FROM tool_visits GROUP BY tool ORDER BY people DESC, visits DESC`).bind(week).all(),
+  ]);
+  const names = new Map(TOOLS.map((t) => [t.id, t.name]));
+  return json({ people: people.results, tools: tools.results.map((t: any) => ({ ...t, name: names.get(t.tool) || t.tool })), total: TOOLS.length });
 }
 
 /* ---------------- special features for a person (the owner adds the features themselves later) ---------------- */

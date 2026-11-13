@@ -11,6 +11,23 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The owner's room: usage and the feedback inbox; a feedback button (ai-features → master, design)
+The family batch, approved by the owner. **Critical: the owner's room, to the master for review.**
+- **In the room** (from the owner's own account only, `requireAdmin('own')`):
+  - "שימוש": who comes in and which tools, from `tool_visits` (which tool and when, never what is in it);
+  - "פניות": the family's feedback, with read and done.
+- **Feedback:**
+  - `H.feedback()` (`public/assets/feedback.js`) opens a short form; the first button is in settings ("החשבון");
+  - the companion has a `send_feedback` tool (PROMPT_VERSION 13);
+  - at most 20 a day per person; no alert, as the owner asked.
+- **Appended:**
+  - the table `feedback` in `schema.sql`;
+  - the routes `GET /api/admin/usage`, `GET`/`PUT /api/admin/feedback`, `POST /api/feedback`;
+  - the code in `server/admin.ts`.
+- **For the master:** a feedback button in the header or the menu, for every page (it calls `H.feedback()`).
+- **For design:** the look of the two room sections, and of the form (inline on the tokens for now).
+Status: done (ai-features), waiting for the master's review.
+
 ## 2026-11-13 – Discovery: the tools a person has found (ai-features → master, design)
 Vision batch 8, the first minute; slice A of `docs/ai/social-plan.md`.
 - **What it does:** each page notes its tool once a day on each device (`public/settings/apply.js`). The home page can show

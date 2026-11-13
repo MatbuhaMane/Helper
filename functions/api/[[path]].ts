@@ -480,6 +480,12 @@ route('GET', '/api/weather', weather.get);
 route('POST', '/api/visits', discovery.visit);
 route('GET', '/api/discover', discovery.discover);
 
+/* the owner's room, the family batch (ai-features, server/admin.ts): usage from tool_visits, and the feedback inbox */
+route('GET', '/api/admin/usage', admin.usage);
+route('GET', '/api/admin/feedback', admin.feedbackList);
+route('PUT', '/api/admin/feedback/:id', admin.feedbackSave);
+route('POST', '/api/feedback', admin.feedbackSend);
+
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);
   // Same-origin check for state-changing calls (CSRF protection on top of SameSite cookies): the Origin header must be ours,

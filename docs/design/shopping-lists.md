@@ -66,6 +66,37 @@ a few emoji. **No button may sit on another button, anywhere: from now on that i
 - **A delete** shows one toast, "3 פריטים נמחקו", with "בטל". After it, choosing ends.
 - **Escape** ends choosing.
 
+### 2b. "למקרר" (move the chosen to the fridge)
+- In the bar, the two actions sit in one `<span class="sel-acts">`, before `.sel-x`:
+  ```html
+  <span class="sel-acts">
+    <button class="btn ghost small sel-fridge" id="selFridge" disabled>(fridge)למקרר</button>
+    <button class="btn danger small" id="selDel" disabled>(trash)מחיקה</button>
+  </span>
+  ```
+  - fridge: `<rect x="6" y="3" width="12" height="18" rx="2"/><path d="M6 10h12M9 6.5v1.5M9 13v3"/>`; trash as in §1.
+  - On a phone the bar takes two lines (the count, "בחירת הכל" and ✕ on top; the two actions half and half under them). On a wide screen, one line.
+- **What it does:** the chosen items go into the person's fridge (`/food/fridge/`, their own fridge) with today's date, and leave the list.
+  One toast: "3 פריטים עברו למקרר" with "בטל". Choosing ends.
+- Both actions are disabled while nothing is chosen.
+
+### 2c. Moving rows by a drag (only while choosing)
+- Each `li.item` ends with a grip, hidden by the CSS until choosing:
+  ```html
+  <button class="drag-h" type="button" aria-label="הזזת {name}" title="לגרור, או חצים למעלה ולמטה">(grip)</button>
+  ```
+  grip: six `circle r="1.6"` at x 9 and 15, y 6, 12 and 18 (`class="icon"`, filled).
+- **A tap on the grip does not choose the row** (the row's click handler skips `.drag-h`).
+- **The drag** (pointer events on the grip, `setPointerCapture`):
+  - `#list` gets `.dragging`, the row gets `.lifted` and follows the finger by its inline `translate` (block axis only);
+  - the rows it passes step aside by their own `translate` (± the row's height); never by height or margin;
+  - over another category's area, that `.category` gets `.drop-into`; over a list chip in the panel, the chip gets `.drop-into`;
+  - on release: the row moves there in the data (its place, its category, or another list), the list renders again, every
+    `translate` is cleared, and a polite live line says where it went ("עגבניות עברו לפירות וירקות").
+- **Without a pointer:** ArrowUp / ArrowDown on the focused grip move the row one place (past a category's edge into the next one).
+  The focus stays on the grip.
+- The reference is the "the drag" part of the sample's script.
+
 ## 3. A category of one's own: its icon
 In the new category form, after the name:
 ```html
@@ -84,3 +115,18 @@ In the new category form, after the name:
 - The choosing bar is sticky in the flow, not fixed, so it never covers the last row.
 - **For every new control:** at 375 px, scroll to the bottom of each view and check that nothing fixed (FAB, tab bar, a bar)
   covers a button.
+
+## 5. "הוספת מתכון" in the book's top row (no floating button)
+The floating ＋ in the book covered the recipe cards under it. It moves into `.book-tools`, after `#bookSearch`; the ids stay, so
+app.js needs no change:
+```html
+<div class="card book-tools">
+  <input id="bookSearch" …>
+  <div class="book-add">
+    <button id="bookFab" class="btn primary book-add-btn" aria-haspopup="menu" aria-expanded="false">(plus)מתכון</button>
+    <div id="bookFabMenu" class="fab-menu" role="menu" hidden>…the two items as now…</div>
+  </div>
+</div>
+```
+- Remove the old `.fab-wrap`. The menu opens under the button, inside the screen.
+- Checked at 375 (one line with the search, the menu inside the screen) in light and dark.

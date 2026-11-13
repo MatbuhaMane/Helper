@@ -149,7 +149,7 @@
     body.mu-one-record.mu-dragging .corner .rec::before { opacity: 1; scale: 1.1; border-color: var(--primary); }
     @keyframes rec-spin { from { transform: rotate(-14deg); } to { transform: rotate(346deg); } }
     /* the guitar: a tap strums it (a soft pluck, a short buzz on a phone) and it sways a little on the stump */
-    .corner .guitar { inset-inline-end: 60%; inset-block-end: 5%; inline-size: 25%; block-size: 56%; border-radius: 40% 40% 20% 20%; }
+    .corner .guitar { inset-inline-end: 60%; inset-block-end: 5%; inline-size: 25%; block-size: 56%; border-radius: 40% 40% 20% 20%; touch-action: none; }   /* the swipe is the guitar's, not the page's scroll */
     .corner .guitar-img { position: absolute; inset-inline-end: 22%; inset-block-end: 0; inline-size: 62%; block-size: auto; pointer-events: none; -webkit-user-drag: none;
       filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .28)); transform-origin: 74% 99%; }
     /* only the guitar: it rocks off the stump from its foot and comes back to lean on it, with a short buzz of the strings at the start */
@@ -834,11 +834,27 @@
       };
       watch();
       const corner = el('div', { class: 'corner' });
-      const guitar = el('button', { class: 'guitar', type: 'button', title: 'גיטרה', 'aria-label': 'לפרוט על הגיטרה', onclick: () => {
-        strum();
+      // a mouse clicks the guitar; a finger strums it: a swipe across the strings (a tap does nothing), down or up
+      const play = (up) => {
+        strum(up);
         try { navigator.vibrate?.([12, 30, 10, 30, 8, 30, 14]); } catch { /* no vibration here */ }
         corner.classList.remove('strum'); void corner.offsetWidth; corner.classList.add('strum');
+      };
+      let swipe = null, touched = 0;
+      const guitar = el('button', { class: 'guitar', type: 'button', title: 'גיטרה', 'aria-label': 'לפרוט על הגיטרה', onclick: (e) => {
+        if (Date.now() - touched < 800 && e.detail) return;   // a finger: only the swipe plays (the keyboard's Enter still does)
+        play(false);
       } });
+      guitar.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; touched = Date.now(); swipe = { x: e.clientX, y: e.clientY, done: false }; });
+      guitar.addEventListener('pointermove', (e) => {
+        if (!swipe || swipe.done) return;
+        const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
+        if (Math.hypot(dx, dy) < 18) return;
+        swipe.done = true; touched = Date.now();
+        play(dy < 0 || (Math.abs(dx) > Math.abs(dy) && dx > 0));   // an up-stroke plays the strings from the high one
+      });
+      const endSwipe = () => { swipe = null; };
+      guitar.addEventListener('pointerup', endSwipe); guitar.addEventListener('pointercancel', endSwipe);
       corner.addEventListener('animationend', () => corner.classList.remove('strum'));
       corner.append(el('img', { class: 'stump', src: '/assets/stump.webp', alt: '', width: 700, height: 698, draggable: 'false', loading: 'lazy' }), el('img', { class: 'guitar-img', src: '/assets/guitar.webp', alt: '', width: 700, height: 698, draggable: 'false', loading: 'lazy' }), guitar, song, rec);
       return corner;
@@ -846,7 +862,7 @@
 
     /** A gentle strum of an open G chord, made on the spot (plucked strings, Karplus-Strong): no sound file to load. */
     let strumCtx = null, strumBufs = null;
-    function strum() {
+    function strum(up = false) {
       try {
         strumCtx ||= new (window.AudioContext || window.webkitAudioContext)();
         const ac = strumCtx;
@@ -864,7 +880,7 @@
         vol.gain.setValueAtTime(0.0001, t); vol.gain.exponentialRampToValueAtTime(0.07, t + 0.03); vol.gain.setTargetAtTime(0.0001, t + 1.2, 0.5);
         out.connect(vol).connect(ac.destination);
         const t0 = ac.currentTime + 0.01;
-        strumBufs.forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * 0.05); });
+        (up ? [...strumBufs].reverse() : strumBufs).forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * 0.05); });
       } catch { /* no sound here */ }
     }
 

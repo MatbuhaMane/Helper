@@ -30,6 +30,8 @@ _Updated 2026-11-14 (the back door; images still blocked)._
 - **The app icon (94a111c):** a simple tent drawn by hand as SVG (`tent.svg`, `tent-small.svg` for 16–48 px,
   `tent-maskable.svg`), every PNG size and `tent-favicon.ico` rendered from it (`node docs/design/make-icons.mjs`);
   checked at 16/32/192/512 on light and dark. The manifest and the `<link>`s are the master's (exact lines sent to the CEO).
+- **The phone's tab bar (the owner):** a floating glass capsule, our own round icons in `/assets/tab-icons/` (outline and
+  filled), the current tab in a pale-vine pebble; checked at 375 in light and dark, the menu above it, no overflow.
 - **The cushions away from the fire (the owner):** the ring lower and wider, clear space round the fire; checked at 375 and
   1280, no overlap, no page overflow. A patch for the master's `index.html`: `design-index-cushions-2026-11-14.patch` in the notes.
 

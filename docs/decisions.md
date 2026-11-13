@@ -828,8 +828,10 @@ Full functionality with a fast response time: an app I would want to use every d
    - no errors;
    - the core flows work end to end: sign-in, a gathering with an invitation and RSVPs, the shopping list, recipes,
      the family tree, goals and research.
-5. **The owner's test:** two weeks of daily use without significant friction. Every friction point goes to the vision
-   session and comes back as a batch.
+5. **A joint test run (the owner changed this from "two weeks of daily use"):** the owner and the vision session go
+   through every core flow together, on a phone and on a PC: sign-in, a gathering, shopping, recipes, the tree, goals,
+   research and settings. Every friction point goes into a batch. After the fixes there is another run, until the owner
+   feels it is ready.
 
 **Affects:**
 - **The master:** extend `tools/audit.js` (or add a tool) to measure speed and motion (LCP, INP, CLS, long frames) on a

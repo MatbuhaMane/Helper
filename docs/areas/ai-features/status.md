@@ -112,6 +112,17 @@ LCP has not moved yet. The causes:
     מלאך דרך. Checked end to end with three test users;
   - the home page is within the bar on 4G (LCP 2.1 s).
 
+- **Block 3 (2026-11-13): "הדלת האחורית"** (the owner's room renamed, in the UI too):
+  - on top, the board: how the tent is doing, "שימוש" and "פניות";
+  - below it, every other part is an app tile in design's contract (`main.bd`, `.bd-head`, `.bd-dash`,
+    `nav.apps-grid.bd-apps > a.app[data-bd]`, `section.bd-panel[hidden]`). A tap opens the part, loads it the first
+    time, and keeps it in the address (`#members`); a second tap closes it.
+  - Access did not change, and neither did the server. A visit from someone else's account shows the board's state
+    and that person's features.
+  - Checked with fake data in the page alone (the server stayed locked): the tiles, open and close, the address, and
+    375 px with no overflow. The real screens wait for the owner's biometric.
+  - Waiting for design's CSS and the icons for gifts, settings and ai (for now the tiles use existing icons).
+
 ## In progress
 
 - Next by the owner's order:

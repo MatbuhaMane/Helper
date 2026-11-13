@@ -188,6 +188,8 @@ route('POST', '/api/groceries/ops', kitchen.applyGroceryOps);
 route('POST', '/api/groceries/lists', groceryLists.createList);
 route('DELETE', '/api/groceries/lists/:id', groceryLists.deleteList);
 route('POST', '/api/groceries/lists/:id/restore', groceryLists.restoreList);
+route('POST', '/api/groceries/lists/:id/save', groceryLists.saveList);
+route('POST', '/api/groceries/lists/:id/use', groceryLists.useList);
 route('GET', '/api/recipes', kitchen.listRecipes);
 route('POST', '/api/recipes', kitchen.saveRecipe);
 route('PUT', '/api/recipes/:id', kitchen.saveRecipe);

@@ -266,7 +266,7 @@
   const listsBar = el('nav', { class: 'lists-bar', 'aria-label': 'הרשימות' });
   $('#addForm').before(listsBar);
   function renderLists() {
-    if (cur && !lists.some((l) => l.id === cur)) cur = null;
+    if (cur && !lists.some((l) => l.id === cur && l.kind === 'list')) cur = null;   // deleted, or finished into the archive
     const show = (id) => { if (cur === id) return; cur = id; saveCache(); render(); $('#addHint').textContent = ''; };
     const chip = (id, name) => el('button', { type: 'button', class: 'chip list-chip', 'aria-pressed': String(cur === id), onclick: () => show(id) }, name);
     const on = lists.find((l) => l.id === cur);
@@ -274,6 +274,7 @@
       chip(null, '🛒 הרשימה'),
       ...lists.filter((l) => l.kind === 'list').map((l) => chip(l.id, l.name)),
       el('button', { type: 'button', class: 'chip list-new', onclick: newList }, '＋ רשימה חדשה'),
+      el('button', { type: 'button', class: 'chip list-saved', onclick: savedLists }, '📚 שמורות'),
       on?.canDelete ? el('button', { type: 'button', class: 'chip list-del', 'aria-label': `מחיקת הרשימה ${on.name}`, onclick: () => deleteList(on) }, '🗑 מחיקת הרשימה') : '');
   }
   function newList() {
@@ -316,6 +317,79 @@
           });
         } }, 'מחיקה'),
         el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'ביטול')));
+  }
+
+  /* Saved lists (the owner, 2026-11-14): templates ("קניות שבועיות", "שבת") and the archive of finished lists, on the
+     server for the whole household. A saved list comes back as a new list or into the one on show, unchecked; a name
+     already waiting there is skipped. */
+  const listName = () => lists.find((l) => l.id === cur)?.name || 'הרשימה';
+  const listCount = (id) => [...items.values()].filter((i) => i.list === id).length;
+  const nItems = (n) => (n === 1 ? 'פריט אחד' : `${n} פריטים`);
+  function savedLists() {
+    const row = (l) => el('li', { class: 'saved-row' },
+      el('span', { class: 'saved-name' }, l.name, el('small', {}, ` · ${nItems(listCount(l.id))}`)),
+      el('span', { class: 'saved-acts' },
+        el('button', { type: 'button', class: 'btn small', onclick: (e) => useSaved(l, 'new', e.currentTarget) }, 'לרשימה חדשה'),
+        el('button', { type: 'button', class: 'btn small ghost', onclick: (e) => useSaved(l, cur || 'main', e.currentTarget) }, `אל ${listName()}`),
+        l.canDelete ? el('button', { type: 'button', class: 'btn small ghost', 'aria-label': `מחיקת ${l.name}`, onclick: () => deleteList(l) }, '🗑') : ''));
+    const temps = lists.filter((l) => l.kind === 'template');
+    const arch = lists.filter((l) => l.kind === 'archive').reverse();
+    const checked = here().filter((i) => i.checked).length;
+    modal(el('div', { class: 'saved-lists' },
+      el('h2', {}, 'רשימות שמורות'),
+      el('div', { class: 'modal-acts' },
+        el('button', { class: 'btn', type: 'button', onclick: saveTemplate }, `💾 שמירת ${cur ? 'הרשימה' : 'הרשימה הראשית'} כתבנית`),
+        el('button', { class: 'btn', type: 'button', disabled: !cur && !checked, onclick: finishList },
+          cur ? '✅ סיום הרשימה – לארכיון' : `✅ הקנייה הסתיימה – ${checked === 1 ? 'המסומן' : checked + ' המסומנים'} לארכיון`)),
+      el('h3', {}, 'תבניות'),
+      temps.length ? el('ul', { class: 'saved-list' }, ...temps.map(row)) : el('p', { class: 'muted' }, 'עוד אין. שמרו רשימה כתבנית, למשל "קניות שבועיות" או "שבת".'),
+      el('h3', {}, 'ארכיון'),
+      arch.length ? el('ul', { class: 'saved-list' }, ...arch.map(row)) : el('p', { class: 'muted' }, 'רשימות שהסתיימו יופיעו כאן.')));
+  }
+  function saveTemplate() {
+    const input = el('input', { type: 'text', maxlength: '40', dir: 'auto', 'aria-label': 'שם התבנית', value: cur ? listName() : '', placeholder: 'למשל: קניות שבועיות' });
+    const go = el('button', { class: 'btn primary', type: 'submit' }, 'שמירה');
+    const pick = (name) => el('button', { type: 'button', class: 'chip', onclick: () => { input.value = name; input.focus(); } }, name);
+    modal(el('form', { class: 'list-form', onsubmit: async (e) => {
+      e.preventDefault();
+      const name = input.value.trim();
+      if (!name) { input.focus(); return; }
+      go.disabled = true;
+      try {
+        await flush();
+        const r = await api(`/api/groceries/lists/${encodeURIComponent(cur || 'main')}/save`, { body: { kind: 'template', name } });
+        lists = [...lists, r.list]; saveCache(); closeModal(); await pull(); render();
+        toast(`התבנית "${name}" נשמרה (${nItems(r.moved)})`);
+      } catch (err) { go.disabled = false; toast(err?.status === 400 ? 'הרשימה ריקה – אין מה לשמור' : 'השמירה לא הצליחה – בדקו את החיבור'); }
+    } },
+      el('h2', {}, 'שמירה כתבנית'),
+      el('p', { class: 'muted' }, `הפריטים של ${listName()} יישמרו, והרשימה עצמה תישאר כמו שהיא.`),
+      el('label', {}, 'השם', input),
+      el('div', { class: 'list-suggest' }, pick('קניות שבועיות'), pick('שבת'), pick('מסיבה')),
+      el('div', { class: 'modal-acts' }, go, el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'ביטול'))));
+    setTimeout(() => input.focus(), 60);
+  }
+  async function finishList(e) {
+    e.currentTarget.disabled = true;
+    const name = listName();
+    try {
+      await flush();
+      const r = await api(`/api/groceries/lists/${encodeURIComponent(cur || 'main')}/save`, { body: { kind: 'archive' } });
+      if (cur) { lists = lists.map((l) => (l.id === cur ? { ...l, ...r.list } : l)); cur = null; } else lists = [...lists, r.list];
+      saveCache(); closeModal(); await pull(); render();
+      toast(r.moved ? (r.moved === 1 ? 'פריט אחד עבר לארכיון' : `${r.moved} פריטים עברו לארכיון`) : `"${name}" עברה לארכיון`);
+    } catch (err) { closeModal(); toast(err?.status === 400 ? 'אין פריטים מסומנים לשמור' : 'לא הצלחתי – בדקו את החיבור'); }
+  }
+  async function useSaved(l, into, btn) {
+    btn.disabled = true;
+    try {
+      await flush();
+      const r = await api(`/api/groceries/lists/${encodeURIComponent(l.id)}/use`, { body: { into } });
+      if (r.list) lists = [...lists, r.list];
+      cur = r.into || null; saveCache(); closeModal(); await pull(); render();
+      toast(!r.added ? 'הכול כבר ברשימה' : (r.added === 1 ? 'נוסף פריט אחד' : `נוספו ${r.added} פריטים`)
+        + (r.added && r.skipped ? (r.skipped === 1 ? ' (אחד כבר היה ברשימה)' : ` (${r.skipped} כבר היו ברשימה)`) : ''));
+    } catch (_) { btn.disabled = false; toast('לא הצלחתי – בדקו את החיבור'); }
   }
 
   /* ================= טופס הוספה וסרגל ================= */

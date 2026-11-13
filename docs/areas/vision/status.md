@@ -34,8 +34,8 @@ Last update: 2026-11-13.
   - Quiet and respectful for those who passed away.
   - Before the family launch.
   - Next: the family story ("a living museum").
-- **The family story, spec 1** (`docs/vision/story.md`): decided, and in the batch queue waiting for "שלח". It comes after the launch.
-- **The family profile, spec 1** (`docs/vision/family-profile.md`): decided (the household by default, opened by choice), in the batch queue.
+- **The family story, spec 1** (`docs/vision/story.md`): decided and sent (batch 10). It comes after the launch.
+- **The family profile, spec 1** (`docs/vision/family-profile.md`): decided (the household by default, opened by choice), sent (batch 10).
 
 - **The heads' round** (decided):
   - the joint test run starts now;

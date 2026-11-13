@@ -27,3 +27,16 @@
 @keyframes cf-spark { 0% { transform: translate(0, 0) scale(1); opacity: 0; } 8% { opacity: .95; } 60% { opacity: .5; } 100% { transform: translate(6px, -46px) scale(.4); opacity: 0; } }
 .cf.still .cf-sparks { display: none; }
 @media (prefers-reduced-motion: reduce) { .cf-sparks { display: none; } }
+
+/* the roulette (a long press on the fire, index.html): while the ring spins the fire burns brighter; when it stops, a burst of
+   sparks leaps up and the cushion it landed on glows warm for a few seconds (.wheel-item.chosen) */
+.cf-roll .cf-glow { animation: cf-roar .5s ease-in-out infinite alternate; }
+@keyframes cf-roar { to { scale: 1.12; opacity: .85; } }
+.cf-win .cf-sparks i { animation: cf-burst 1.1s cubic-bezier(.2, .7, .3, 1) both; animation-delay: calc(var(--sd, 0s) * .06); }
+@keyframes cf-burst { 0% { transform: translate(0, 0) scale(1.4); opacity: 0; } 10% { opacity: 1; }
+  100% { transform: translate(calc(var(--sx, 0%) * .9), -78px) scale(.3); opacity: 0; } }
+.wheel-item.chosen .pillow img { filter: drop-shadow(0 0 10px rgba(255, 176, 70, .95)) drop-shadow(0 0 22px rgba(255, 140, 40, .55));
+  animation: cf-chosen 1.6s ease-in-out infinite alternate; }
+@keyframes cf-chosen { to { filter: drop-shadow(0 0 6px rgba(255, 176, 70, .7)) drop-shadow(0 0 14px rgba(255, 140, 40, .3)); } }
+.wheel-item.chosen .label { color: var(--olive-ink); }
+@media (prefers-reduced-motion: reduce) { .cf-roll .cf-glow, .wheel-item.chosen .pillow img { animation: none; } }

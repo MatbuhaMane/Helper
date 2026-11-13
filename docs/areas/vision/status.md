@@ -34,6 +34,9 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 17** (2026-11-14), sent to the CEO, design and ai-features:
+  - pop-up messages at the top, light and dismissible, with a switch for the songbook's recognition messages;
+  - the shopping list: multi-select, the fridge, sorting, user categories, a lists panel.
 - **Batch 16** (2026-11-14), sent to the CEO, design and ai-features:
   - the daily summary card shows every day;
   - the premium-motion rule for every interface, starting with the recipe card flip;

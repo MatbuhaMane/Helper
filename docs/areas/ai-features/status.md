@@ -1,9 +1,20 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (לשונית הדלת האחורית, שימוש מקופל, הודעה לחבר אחד).
+Last update: 2026-11-13 (the first user feedback: fun, hakpada, parasha, invitations; and "האוהל התעדכן").
 
 ## Done
+- **The first user feedback, 4 tasks (the CEO, 2026-11-13), on `ai-features`, ready to merge:**
+  - **בידור** (68468e7): a "מצחיק ואמיתי" filter (real clips from Reddit/Lemmy, AI and staged words filtered out), infinite
+    scroll; a load or refresh brings only what this device has not seen (3 days). Tests: test-fun 17.
+  - **הקפדה** (a4da0a6): weight and height can be changed from the weight card ("עריכה"); a new weight is logged for today.
+  - **פרשת השבוע** (0accd99): the chapter bar follows the reading; a tap on a verse's number marks it, then to the
+    chapter's end, then the whole chapter, then clears; a tap on the text marks nothing (a word still opens the dictionary).
+  - **הזמנות מבחוץ** (d35cf2b server, for the master's review – sign-in; 8642513 the panel and /join/): the owner makes a
+    personal link, used once, into a household of its own; status, cancel, search in invitations and members. Tests:
+    test-join 44 (27 new). The whole flow was checked locally with the dev sign-in (wrong address 403, one use, a replayed
+    cookie 403, a guest cannot reach the back door).
+  - **"האוהל התעדכן"** (9377b3a): public/assets/whatsnew.js; needs the master's loader line in common.js.
 - **"איפה הבית?" from Google (2026-11-13):** while typing in the welcome's city step, up to 5 towns in Israel (Places
   Autocomplete, key on the server); a pick saves me.city and me.place {id, name, lat, lng, at}; the weather uses the point
   (30 days, then again by the ID); free text when not found or with no key. Tests: test-places 37. Checked at 375 with a

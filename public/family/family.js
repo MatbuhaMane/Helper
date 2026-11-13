@@ -166,7 +166,7 @@
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
     const tools = el('div', { class: 'fv-tools' }, views, find);
     const board = el('div', { class: 'fv-tree' });
-    const asks = el('div', { class: 'fm-asks-slot' });
+    const asks = el('div', { class: 'fv-asks-slot' });
     root.replaceChildren(el('section', { class: 'fv' }, bar, asks, S.people.length ? tools : null, board));
     if (S.asks) asksBox(asks).catch(say);
     tickTimer = setInterval(() => {
@@ -188,61 +188,100 @@
   /* ---------- who is whose: the relationships ---------- */
   const byId = (id) => S.people.find((p) => p.id === id);
   const pendingOf = (k, id) => (S.pending || []).find((c) => c[k] === id);
-  /** "ממתין לאישור" on what I asked to change, with taking it back */
-  const pendingBadge = (c, after) => c ? el('span', { class: 'fm-pending' }, 'ממתין לאישור', ' ',
-    el('button', { type: 'button', class: 'btn small ghost', onclick: async () => { try { await call(`/api/vault/changes/${c.id}/cancel`, { method: 'POST' }); toast('הבקשה בוטלה'); await after(); } catch (e) { say(e); } } }, 'ביטול הבקשה')) : null;
+  const waitsWord = (c) => [...new Set((S.pending || []).filter((x) => x.id === c.id || (x.kind === c.kind && x.person === c.person && x.link === c.link)).map((x) => x.waitsFor))].join(' ו') || 'בן המשפחה';
+  /** design's "ממתין לאישור" tag (.fv-pend), beside a name or on a relationship's row */
+  const pendTag = (c) => c ? el('span', { class: 'fv-pend', title: `מחכה לאישור של ${waitsWord(c)}` }, 'ממתין לאישור') : null;
+  const cancelAsk = async (c, after) => { try { await call(`/api/vault/changes/${c.id}/cancel`, { method: 'POST' }); toast('הבקשה בוטלה'); await after(); } catch (e) { say(e); } };
+  /** what was / what it would be (.fv-diff); a detail that was empty leaves its <s> empty */
+  const diffList = (changes) => el('dl', { class: 'fv-diff' }, changes.map((x) => el('div', {}, el('dt', {}, FIELD[x.k] || x.k),
+    el('dd', {}, el('s', {}, x.from == null || x.from === '' ? '' : shown(x.from)), ' ', el('b', {}, shown(x.to))))));
+  /** in the panel of whoever asked: what waits, for whom, and taking it back (.fv-pendbox) */
+  function pendBox(c, after) {
+    if (!c) return null;
+    const box = el('div', { class: 'fv-pendbox' }, el('span', { class: 'fv-pend' }, 'ממתין לאישור'),
+      el('p', {}, c.kind === 'delete' ? `המחיקה תקרה רק אחרי ש${waitsWord(c)} יאשר/תאשר.` : `השינוי יופיע אחרי ש${waitsWord(c)} יאשר/תאשר.`),
+      el('div', { class: 'fv-ask-acts' }, el('button', { type: 'button', class: 'btn ghost', onclick: () => cancelAsk(c, after) }, 'ביטול הבקשה')));
+    // an edit: which details, and to what (my own words, from /api/vault/changes)
+    if (c.kind === 'edit') call('/api/vault/changes').then((d) => {
+      const mine = d.mine.find((m) => m.id === c.id || (m.person === c.person && m.kind === 'edit' && m.status === 'pending'));
+      if (mine?.changes?.length) box.querySelector('p').after(diffList(mine.changes));
+    }).catch(() => {});
+    return box;
+  }
   /** what the server said about a change to someone else's card: done, or waiting for them */
   const proposedSay = (r, who) => toast(r.waiting > 1 ? 'נשלח לאישור. כשכולם יאשרו, העץ יתעדכן.' : `נשלח לאישור של ${who || 'בן המשפחה'}. עד שיאשר/תאשר, שום דבר לא משתנה.`);
-  /** ten seconds to take a delete back ("בטל"); the look is design's .fm-undo */
-  function undoBar(text, undo) {
-    document.querySelector('.fm-undo')?.remove();
-    const bar = el('div', { class: 'fm-undo', role: 'status', 'aria-live': 'polite' }, el('span', {}, text),
-      el('button', { type: 'button', class: 'btn small', onclick: async () => { clearTimeout(t); bar.remove(); try { await undo(); toast('בוטל'); } catch (e) { say(e); } } }, 'בטל'));
+  /** ten seconds to take a delete back (design's .fv-undo, with its draining bar); then onEnd */
+  function undoBar(text, undo, onEnd) {
+    document.querySelector('.fv-undo')?.remove();
+    let t = 0;
+    const bar = el('div', { class: 'fv-undo', role: 'status', style: '--t:10s' }, el('span', {}, text),
+      el('button', { class: 'btn fv-undo-btn', type: 'button', onclick: async () => { clearTimeout(t); bar.remove(); try { await undo(); toast('בוטל'); } catch (e) { say(e); onEnd?.(); } } }, 'בטל'),
+      el('i', { class: 'fv-undo-bar', 'aria-hidden': 'true' }));
     document.body.append(bar);
-    const t = setTimeout(() => bar.remove(), 10e3);
+    t = setTimeout(() => { bar.remove(); onEnd?.(); }, 10e3);
   }
   async function refreshAll() { const t = await call('/api/vault/tree'); S.people = t.people; S.links = t.links || []; S.pending = t.pending || []; S.asks = t.asks || 0; }
+  /** the person just deleted stays on the tree, faded (.going), for the ten seconds of "בטל" */
+  const markGoing = (id, on) => document.querySelectorAll(`.tr-p[data-id="${id}"], .fv-card[data-id="${id}"]`).forEach((n) => n.classList.toggle('going', on));
 
   /* ---------- the requests that wait for my answer (a change to my card, or to a relationship of mine) ---------- */
   const FIELD = { name: 'שם', sex: 'מין', born: 'תאריך לידה', bornAfterSunset: 'נולד/ה אחרי השקיעה', died: 'תאריך פטירה', diedAfterSunset: 'נפטר/ה אחרי השקיעה',
-    place: 'מקום לידה', notes: 'הערות', birthdayBy: 'יום ההולדת לפי', calendar: 'בלוח השנה המשפחתי' };
+    place: 'מקום לידה', notes: 'הערות', birthdayBy: 'יום ההולדת לפי', calendar: 'בלוח השנה המשפחתי', kind: 'הקשר', status: 'מצב' };
   const VALUE = { m: 'זכר', f: 'נקבה', gregorian: 'התאריך הלועזי', hebrew: 'התאריך העברי' };
   const shown = (v) => v === true ? 'כן' : v === false ? 'לא' : v === '' || v == null ? '—' : VALUE[v] || String(v);
   async function asksBox(slot) {
     const d = await call('/api/vault/changes');
     if (!d.forMe.length) return slot.replaceChildren();
     const linkWords = (l) => l.type === 'parent' ? `${l.a} הורה של ${l.b}` : `${l.a} ו${l.b}`;
-    const what = (c) => c.kind === 'edit' ? `${c.by} הציע/ה לשנות את הפרטים שלך:`
-      : c.kind === 'delete' ? `${c.by} ביקש/ה להסיר את הכרטיס שלך (${c.person.name}) מהעץ.`
-      : c.kind === 'unlink' ? `${c.by} ביקש/ה להסיר את הקשר: ${linkWords(c.link)}.`
-      : `${c.by} הציע/ה לשנות את הקשר: ${linkWords(c.link)} – ${[PARENT_KIND[c.link.to?.kind] || PARTNER_KIND[c.link.to?.kind], PARTNER_STATUS[c.link.to?.status]].filter(Boolean).join(', ')}.`;
-    const answer = async (c, yes) => {
+    const kindWord = (k) => PARENT_KIND[k] || PARTNER_KIND[k] || '';
+    const asking = (c) => c.kind === 'edit' ? ['מבקש/ת לשנות את הפרטים של ', el('b', {}, c.person.name)]
+      : c.kind === 'delete' ? ['מבקש/ת למחוק את ', el('b', {}, c.person.name), ' מהעץ']
+      : c.kind === 'unlink' ? ['מבקש/ת להסיר קשר: ', el('b', {}, linkWords(c.link))]
+      : ['מבקש/ת לשנות קשר: ', el('b', {}, linkWords(c.link))];
+    const what = (c) => c.kind === 'edit' ? diffList(c.changes)
+      : c.kind === 'delete' ? el('p', { class: 'fv-ask-del' }, `${c.person.name} יימחק/תימחק מהעץ`)
+      : c.kind === 'unlink' ? el('p', { class: 'fv-ask-del' }, `הקשר ${linkWords(c.link)} יוסר מהעץ`)
+      : diffList([c.link.to?.kind !== c.link.kind ? { k: 'kind', from: kindWord(c.link.kind), to: kindWord(c.link.to?.kind) } : null,
+        c.link.to?.status !== c.link.status ? { k: 'status', from: PARTNER_STATUS[c.link.status] || '', to: PARTNER_STATUS[c.link.to?.status] || '' } : null].filter(Boolean));
+    const answer = async (c, yes, card) => {
+      const btns = card.querySelectorAll('.fv-ask-acts button');
+      btns.forEach((b) => { b.disabled = true; });
+      let said = yes ? 'אושר' : 'נדחה. שום דבר לא השתנה.';
       try {
         const r = await call(`/api/vault/changes/${c.id}/${yes ? 'approve' : 'decline'}`, { method: 'POST' });
-        toast(!yes ? 'נדחה. שום דבר לא השתנה.' : r.status === 'waiting' ? 'אושר. מחכה עוד לאישור של בן משפחה נוסף.' : 'אושר. העץ עודכן.');
-      } catch (e) { say(e); }
-      await open();
+        if (yes && r.status === 'waiting') said = 'אושר. מחכה עוד לאישור של בן משפחה נוסף.';
+      } catch (e) { say(e); btns.forEach((b) => { b.disabled = false; }); return; }
+      card.classList.add('done');
+      card.querySelector('.fv-ask-acts').replaceWith(el('p', { class: 'fv-ask-said' }, said));
+      setTimeout(() => open(), 1500);
     };
-    slot.replaceChildren(el('section', { class: 'card fm-asks', 'aria-labelledby': 'fm-asks-h' },
-      el('h2', { id: 'fm-asks-h' }, `מחכה לאישור שלך · ${d.forMe.length}`),
-      el('ul', { class: 'fm-ask-list' }, d.forMe.map((c) => el('li', { class: 'fm-ask', 'data-kind': c.kind },
-        el('p', { class: 'fm-ask-what' }, what(c)),
-        c.kind === 'edit' ? el('ul', { class: 'fm-ask-diff' }, c.changes.map((x) => el('li', {}, el('b', {}, FIELD[x.k] || x.k), ': ', el('s', {}, shown(x.from)), ' ← ', el('span', {}, shown(x.to))))) : null,
-        el('small', { class: 'muted' }, 'שום דבר לא משתנה עד שתאשרו.'),
-        el('span', { class: 'fm-ask-acts' },
-          el('button', { type: 'button', class: 'btn small primary', onclick: () => answer(c, true) }, 'אשר'), ' ',
-          el('button', { type: 'button', class: 'btn small ghost', onclick: () => answer(c, false) }, 'דחה')))))));
+    slot.replaceChildren(el('div', { class: 'fv-asks', role: 'region', 'aria-label': `מחכה לאישור שלך · ${d.forMe.length}` }, d.forMe.map((c) => {
+      const card = el('section', { class: 'card fv-ask', 'data-kind': c.kind },
+        el('header', { class: 'fv-ask-h' }, el('span', { class: 'fv-pic', 'aria-hidden': 'true' }, initials(c.by)),
+          el('div', {}, el('b', {}, c.by), el('small', {}, ...asking(c))),
+          el('time', { class: 'muted', datetime: new Date(c.at).toISOString() }, H.timeAgo(c.at))),
+        what(c),
+        el('div', { class: 'fv-ask-acts' },
+          el('button', { type: 'button', class: 'btn primary fv-ok', onclick: () => answer(c, true, card) }, 'אשר'),
+          el('button', { type: 'button', class: 'btn fv-no', onclick: () => answer(c, false, card) }, 'דחה')));
+      return card;
+    })));
   }
-  /** delete a card: someone who is not a user (or my own) goes at once, with "בטל" for ten seconds; another user's waits for them */
+  /** delete a card: someone who is not a user (or my own) goes at once, with "בטל" for ten seconds (faded on the tree
+      meanwhile); another user's waits for them */
   async function deletePerson(p) {
     let r;
     try { r = await call(`/api/vault/people/${p.id}`, { method: 'DELETE' }); } catch (e) { return say(e); }
     H.sheet?.close?.();
-    if (r.proposed) { proposedSay(r, p.name); await open(); return; }
-    if (S.focus === p.id) S.focus = null;
-    await open();
-    undoBar(`${p.name} הוסר/ה מהעץ.`, async () => { await call(`/api/vault/people/${p.id}/restore`, { method: 'POST' }); S.focus = p.id; await open(); });
+    if (r.proposed) { proposedSay(r, p.name); await refreshAll(); draw(); return; }
+    S.going = p.id; markGoing(p.id, true);
+    const gone = async () => { if (S.going !== p.id) return; S.going = null; if (S.focus === p.id) S.focus = null; await open(); };
+    undoBar(`${p.name} נמחק/ה מהעץ`, async () => {
+      await call(`/api/vault/people/${p.id}/restore`, { method: 'POST' });
+      S.going = null; markGoing(p.id, false); await refreshAll(); draw();
+    }, gone);
   }
+
   const parentLinks = (id) => S.links.filter((l) => l.type === 'parent' && l.b === id);
   const parentsOf = (id) => parentLinks(id).map((l) => l.a);
   const childrenOf = (id) => S.links.filter((l) => l.type === 'parent' && l.a === id).map((l) => l.b);
@@ -452,17 +491,16 @@
     ] : [];
     // someone else's card in our tree: edit and delete right here (another user's waits for their yes; the server decides)
     const other = c.mine && !c.self ? byId(c.id) : null;
-    const manage = other ? el('div', { class: 'mc-actions fm-acts' },
-      pendingBadge(pendingOf('person', c.id), async () => { H.closeModal(); await open(); }),
-      el('button', { type: 'button', class: 'btn small ghost', onclick: async () => {
+    const manage = other ? el('div', { class: 'fv-pacts' },
+      el('button', { type: 'button', class: 'btn fv-pact', 'data-act': 'edit', onclick: async () => {
         try { const p = await call(`/api/vault/people/${encodeURIComponent(c.id)}`); H.closeModal(); personForm(p); } catch (e) { say(e); }
       } }, 'עריכה'),
-      el('button', { type: 'button', class: 'btn small ghost danger fm-del', onclick: () => { H.closeModal(); deletePerson(other); },
+      el('button', { type: 'button', class: 'btn fv-pact danger', 'data-act': 'delete', onclick: () => { H.closeModal(); deletePerson(other); },
         title: c.user ? 'הכרטיס של משתמש/ת באוהל: הבקשה תחכה לאישור שלו/ה' : 'אפשר לבטל במשך 10 שניות' }, 'מחיקה')) : null;
     H.modal(el('article', { class: 'mc' + (c.self ? ' mine' : ''), 'aria-label': 'הכרטיס של ' + c.name },
       el('div', { class: 'mc-banner' }, cover ? el('img', { src: cover, alt: '' }) : null),
       el('div', { class: 'mc-head' }, face,
-        el('div', { class: 'mc-who' }, el('h2', { class: 'mc-name' }, c.name), rel ? el('p', { class: 'mc-rel' }, rel) : null),
+        el('div', { class: 'mc-who' }, el('h2', { class: 'mc-name' }, c.name, ' ', c.mine ? pendTag(pendingOf('person', c.id)) : null), rel ? el('p', { class: 'mc-rel' }, rel) : null),
         edit),
       list.length ? el('dl', { class: 'mc-facts' }, list.map(([k, v]) => el('div', { class: 'mc-fact' }, el('dt', {}, k), el('dd', {}, v)))) : null,
       about ? el('p', { class: 'mc-about' }, about) : null,
@@ -686,7 +724,7 @@
       const years = passed ? [life.born, life.died].map((d) => String(d || '').slice(0, 4)).filter(Boolean).join('–') : '';
       const bday = !passed && onToday(life.born, life.bornAfterSunset, life.birthdayBy);
       if (passed && onToday(life.died, life.diedAfterSunset, 'hebrew')) candles.push(p);
-      const b = el('button', { type: 'button', class: 'tr-p' + (p.id === center ? ' me' : '') + (bday ? ' bday' : '') + (passed ? ' passed' : ''),
+      const b = el('button', { type: 'button', class: 'tr-p' + (p.id === center ? ' me' : '') + (p.id === S.going ? ' going' : '') + (pendingOf('person', p.id) ? ' pending' : '') + (bday ? ' bday' : '') + (passed ? ' passed' : ''),
         style: `--x:${x.toFixed(1)}; --y:${y.toFixed(1)}`, 'data-id': p.id,
         'aria-label': [p.name, rel, bday ? 'יום הולדת היום' : '', passed ? 'זיכרונו לברכה' : ''].filter(Boolean).join(', '),
         onclick: () => {
@@ -778,7 +816,7 @@
     if (p.photo) photoInto(p.photo, pic);
     const rel = S.mine && S.mine !== p.id ? relationName(S.mine, p.id) : S.mine === p.id ? 'אני' : null;
     const isFocus = role === 'focus';
-    return el('button', { class: 'fv-card' + (role ? ' r-' + role : ''), 'data-id': p.id, title: isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
+    return el('button', { class: 'fv-card' + (role ? ' r-' + role : '') + (p.id === S.going ? ' going' : '') + (pendingOf('person', p.id) ? ' pending' : ''), 'data-id': p.id, title: isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
       onclick: () => (isFocus ? memberCard(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
       pic, el('b', {}, p.name),
       rel ? el('small', { class: 'fv-relname' }, rel) : null,
@@ -880,7 +918,8 @@
     const line = (label, id, linkObj, extra) => el('li', { class: 'fv-relrow' },
       el('button', { class: 'fv-rel-who', onclick: () => { H.sheet.close(); setView('family'); setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
       el('small', { class: 'muted' }, label), extra || null,
-      linkObj ? pendingBadge(pendingOf('link', linkObj.id), reload) : null,
+      linkObj ? pendTag(pendingOf('link', linkObj.id)) : null,
+      linkObj && pendingOf('link', linkObj.id) ? el('button', { type: 'button', class: 'btn small ghost', onclick: () => cancelAsk(pendingOf('link', linkObj.id), reload) }, 'ביטול הבקשה') : null,
       linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: () => unlink(linkObj) }, '✕') : null);
     // a relationship goes at once, with "בטל" (the same relationship added again); one of another user's waits for them
     const unlink = async (l) => {
@@ -967,14 +1006,14 @@
       tab = t;
       const items = list.items.filter((x) => x.kind === t);
       body.replaceChildren(...[
-        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
+        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name, pendingOf('person', p.id) ? ' ' : null, pendTag(pendingOf('person', p.id))), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
             el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת באוהל – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת באוהל – ראש משק הבית מנהל את הפרטים')),
           el('span', { class: 'spacer' }),
-          pendingBadge(pendingOf('person', p.id), async () => { await refreshAll(); draw(tab); }),
-          el('span', { class: 'fm-acts' },
-            el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה'),
-            el('button', { class: 'btn small ghost danger fm-del', onclick: () => deletePerson(p),
+          el('div', { class: 'fv-pacts' },
+            el('button', { type: 'button', class: 'btn fv-pact', 'data-act': 'edit', onclick: () => personForm(p) }, 'עריכה'),
+            el('button', { type: 'button', class: 'btn fv-pact danger', 'data-act': 'delete', onclick: () => deletePerson(p),
               title: p.user && S.mine !== p.id ? 'הכרטיס של משתמש/ת באוהל: הבקשה תחכה לאישור שלו/ה' : 'אפשר לבטל במשך 10 שניות' }, 'מחיקה'))),
+        pendBox(pendingOf('person', p.id), async () => { await refreshAll(); draw(tab); }),
         relationsBox(p, () => draw(tab)),
         treesBox(p),
         privacyBox(p),

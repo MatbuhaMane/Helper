@@ -502,8 +502,10 @@ async function nameFor(ctx: Ctx, v: Viewer, p: PersonRow) {
 async function waiting(ctx: Ctx, u: Member) {
   const { results } = await ctx.env.DB.prepare("SELECT id, kind, person_id, target_id, by_email, for_email FROM family_changes WHERE status = 'pending' AND (by_email = ? OR for_email = ?) ORDER BY created_at")
     .bind(u.email, u.email).all<{ id: string; kind: string; person_id: string | null; target_id: string | null; by_email: string; for_email: string }>();
+  const mine = results.filter((r) => r.by_email === u.email), n = mine.length ? await names(ctx) : new Map<string, string>();
   return {
-    pending: results.filter((r) => r.by_email === u.email).map(({ id, kind, person_id, target_id }) => ({ id, kind, person: person_id, link: target_id })),
+    // (who it waits for, by name: the page's "מחכה לאישור של …")
+    pending: mine.map(({ id, kind, person_id, target_id, for_email }) => ({ id, kind, person: person_id, link: target_id, waitsFor: n.get(for_email) || for_email.split('@')[0] })),
     asks: results.filter((r) => r.for_email === u.email).length,
   };
 }
@@ -527,13 +529,21 @@ export async function changesList(ctx: Ctx) {
     return { ...base, link: { type: l.type, a: await nameOf(l.a), b: await nameOf(l.b), kind: l.kind, status: l.status, to: c.kind === 'relink' ? { kind: pay.kind, status: pay.status, since: pay.since, until: pay.until } : null } };
   }))).filter(Boolean);
   const { results: mineRows } = await DB.prepare("SELECT * FROM family_changes WHERE by_email = ? AND (status = 'pending' OR decided_at > ?) ORDER BY created_at DESC LIMIT 100").bind(u.email, Date.now() - 7 * 864e5).all<ChangeRow>();
+  const asked = async (c: ChangeRow) => {
+    const p = await rowById(ctx, c.person_id!);
+    if (!p) return [];
+    const pay = JSON.parse((await unseal(ctx.env, c.payload_enc, `change:${c.grp}`)) || '{}'), card = await cardOf(ctx, p);
+    return K.changedKeys(card, { name: pay.name, details: pay.details || {} }).map((k) => ({ k, to: k === 'name' ? pay.name : pay.details?.[k] ?? '' }));
+  };
   const groups = new Map<string, ChangeRow[]>();
   for (const r of mineRows) (groups.get(r.grp) || groups.set(r.grp, []).get(r.grp)!).push(r);
-  const mine = [...groups.values()].map((g) => ({
+  const mine = await Promise.all([...groups.values()].map(async (g) => ({
     id: g[0].id, kind: g[0].kind, person: g[0].person_id, link: g[0].target_id, at: g[0].created_at,
+    // an edit still waiting: which details, and what I asked for (my own words; not what they have now, it may be hidden from me)
+    changes: g[0].kind === 'edit' && g.some((r) => r.status === 'pending') ? await asked(g[0]) : undefined,
     status: g.some((r) => r.status === 'declined') ? 'declined' : g.every((r) => r.status === 'approved') ? 'applied' : g.some((r) => r.status === 'pending') ? 'pending' : 'cancelled',
     waitsFor: g.filter((r) => r.status === 'pending').map((r) => nm(r.for_email)),
-  }));
+  })));
   return json({ forMe: asks, mine });
 }
 

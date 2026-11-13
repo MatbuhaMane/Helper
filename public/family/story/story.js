@@ -297,7 +297,7 @@
     main.append(head);
     if (S.mine) {
       const full = S.storage && S.storage.used >= S.storage.quota;
-      const add = (k) => el('button', { type: 'button', class: 'btn', disabled: full && k !== 'story' ? '' : null, onclick: () => addForm(k) }, KIND[k]);
+      const add = (k) => el('button', { type: 'button', class: 'btn', 'data-kind': k, disabled: full && k !== 'story' ? '' : null, onclick: () => addForm(k) }, KIND[k]);
       main.append(el('div', { class: 'st-add', role: 'group', 'aria-label': 'הוספה' },
         el('button', { type: 'button', class: 'btn primary', disabled: full ? '' : null, onclick: interview }, 'ראיון מודרך'),
         add('story'), add('recording'), add('reading'), add('photo'), add('doc')));
@@ -305,7 +305,7 @@
         const gb = (n) => (n / 1024 ** 3).toFixed(n < 1024 ** 3 ? 2 : 1);
         main.append(el('p', { class: 'st-storage' + (full ? ' full' : '') },
           full ? 'המקום של הבית מלא. כל מה שנשמר נשאר, ואפשר לצפות בו ולהוריד אותו. סיפור כתוב עדיין אפשר להוסיף.'
-            : `נוצלו ${gb(S.storage.used)} מתוך ${gb(S.storage.quota)} GB`,
+            : ['נוצלו ', el('bdi', { dir: 'ltr' }, gb(S.storage.used) + ' GB'), ' מתוך ', el('bdi', { dir: 'ltr' }, gb(S.storage.quota) + ' GB')],
           el('meter', { min: 0, max: S.storage.quota, value: S.storage.used, 'aria-label': 'המקום של הבית' })));
       }
     }

@@ -391,6 +391,19 @@
     // read here, after the sign-in, when the person's preferences have arrived)
     // serious mode (docs/vision/serious-mode.md): a plain list of the tools, no tent, no fire, no companion; chosen from the
     // preference before anything is drawn, so the screen never flashes the other mode first
+    if (r.user) dailyDigest();
+    /* the daily summary (batch 13): at the first open of the day, whatever the notification gate held (server/push.ts → /api/digest).
+       A plain window for now; design's card replaces it. The day is per device; the server marks what was shown, so another device shows only what is new. */
+    async function dailyDigest() {
+      const today = new Date().toLocaleDateString('en-CA');
+      try { if (localStorage.getItem('digestDay') === today) return; localStorage.setItem('digestDay', today); } catch (_) { /* no storage: ask every time */ }
+      const { items = [] } = await H.api('/api/digest').catch(() => ({}));
+      if (!items.length) return;
+      const when = (ms) => new Date(ms).toLocaleString('he-IL', { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+      H.modal(el('h2', {}, 'מה חיכה לך'),
+        el('ul', { class: 'digest' }, items.map((i) => el('li', {},
+          el(i.url ? 'a' : 'b', i.url ? { href: i.url } : {}, i.title), ' ', el('span', {}, i.body), ' ', el('small', { class: 'muted' }, when(i.created_at))))));
+    }
     if (H.prefs('look').style === 'serious') { document.documentElement.dataset.style = 'serious'; if (H.prefs('look').pillows === 'keep') document.documentElement.dataset.pillows = 'keep'; seriousHome(); return; }
     function seriousHome() {
       const look = H.prefs('look'), pillows = document.documentElement.dataset.pillows === 'keep';

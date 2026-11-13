@@ -2491,3 +2491,19 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - For areas: `pushTo(env, emails, msg)` and `pushHousehold(env, household, msg, except?)`. `msg.urgent` = high urgency, stays on screen, strong vibration (the emergency alert). `msg.actions` such as `{action:'handle', title:'אני מטפל'}` open `url?act=handle`.
 - Client: `H.push.state()`, `H.push.enable()`, `H.push.disable()`, `H.push.test()`.
 - Inert until the secret `VAPID_PRIVATE` is set (`/api/push/key` returns `ready:false`). On iPhone it works only from the home-screen app; a web notification never breaks silent mode.
+
+## 2026-11-13 · The notification gate and the daily summary (master, batch 13)
+- Every push passes `server/push-gate.ts` (tests: `tools/test-push-gate.mjs`).
+  - An emergency (`urgent: true`) always goes.
+  - Quiet Shabbat holds everything else, from candle lighting to havdalah, Yom Tov included. It uses Hebcal for the city in prefs `calendar.city`.
+  - Quiet hours hold everything else too.
+  - During the day only five `kind`s go at once: `family`, `gather`, `reminder`, `familyday`, `emergency`.
+  - A message without a kind is held for the summary.
+- **For areas:** pass `kind` in every `PushMsg`.
+- **Prefs `notify`** (the settings page writes them; ai-features):
+  - `quietFrom` and `quietTo` ("HH:MM", Israel time; default 22:00–07:00);
+  - `shabbat` (true for a person whose tradition keeps Shabbat).
+- **Not yet built:** the sender side ("nothing is sent from a Shabbat-keeping user") belongs to each feature. Use `inShabbat` from push-gate when that is needed.
+- **The summary:**
+  - held items go to `push_digest`, and `GET /api/digest` returns them and marks them seen;
+  - the home shows them in a plain window at the first open of the day (index.html) until design's card arrives.

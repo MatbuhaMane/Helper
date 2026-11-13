@@ -27,6 +27,36 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
 - **ai-features:** the palette choice for free figures, kept per user in prefs.
 
 **Status:** Decided (the owner).
+## 2026-11-13 – The owner's room: usage and the feedback inbox; a feedback button (ai-features → master, design)
+The family batch, approved by the owner. **Critical: the owner's room, to the master for review.**
+- **In the room** (from the owner's own account only, `requireAdmin('own')`):
+  - "שימוש": who comes in and which tools, from `tool_visits` (which tool and when, never what is in it);
+  - "פניות": the family's feedback, with read and done.
+- **Feedback:**
+  - `H.feedback()` (`public/assets/feedback.js`) opens a short form; the first button is in settings ("החשבון");
+  - the companion has a `send_feedback` tool (PROMPT_VERSION 13);
+  - at most 20 a day per person; no alert, as the owner asked.
+- **Appended:**
+  - the table `feedback` in `schema.sql`;
+  - the routes `GET /api/admin/usage`, `GET`/`PUT /api/admin/feedback`, `POST /api/feedback`;
+  - the code in `server/admin.ts`.
+- **For the master:** a feedback button in the header or the menu, for every page (it calls `H.feedback()`).
+- **For design:** the look of the two room sections, and of the form (inline on the tokens for now).
+Status: done (ai-features), waiting for the master's review.
+
+## 2026-11-13 – Discovery: the tools a person has found (ai-features → master, design)
+Vision batch 8, the first minute; slice A of `docs/ai/social-plan.md`.
+- **What it does:** each page notes its tool once a day on each device (`public/settings/apply.js`). The home page can show
+  "גילית 6 מתוך 19 כלים" (`GET /api/discover`), and finding 10 tools earns the "סייר" badge (kept with the goals' badges).
+- **Appended:**
+  - the table `tool_visits` in `schema.sql`: who, which tool, when, how many times – never what is in it;
+  - the routes `POST /api/visits` and `GET /api/discover`, with an import line;
+  - the code: `server/discover.ts` and `server/discover-logic.ts`, with tests in `server/test-discover.mjs`.
+- **For the master:** add `node server/test-discover.mjs` to `npm test`. The same table can feed the owner's usage dashboard.
+- **For design:** the event `helper:discovered` ({tool, found, total, badge}) is raised on a first find, for the
+  celebration; today the page shows a toast.
+Status: done (ai-features).
+
 ## 2026-11-13 – The weather, and no "בקרוב" on show (ai-features → master, design)
 The owner's answer on `docs/ai/ready-soon.md` (via vision): the weather is finished, the ChatGPT card and the four
 family badges in goals are hidden, and the language chips (Arabic, English) stay "בקרוב".

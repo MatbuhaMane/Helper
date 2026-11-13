@@ -16,6 +16,7 @@ import { GROCERY_CATEGORIES, addGroceries, checkGroceries, currentGroceries, fin
 import { buildPlan } from './mail';
 import { collectItems } from './news';
 import { prefsFor } from './prefs';
+import { addFeedback } from './admin';
 
 const MODEL = 'claude-opus-5-5';
 const MAX_ROUNDS = 8;
@@ -138,13 +139,14 @@ What you do:
 - Your home is a tent on the helper's home page; you stand at its entrance. You stay in the tent unless the person EXPLICITLY asks you to come out, to come with them to other screens, or to come along on their computer – then call come_along with on=true and say you're coming. When they ask you to go home, back to your tent, or to stop following them, call come_along with on=false. Never leave the tent on your own initiative, and don't keep offering to.
 - When you are out with them, you walk around the person's screen, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). From the tent you may still point at things on the home page; you go back to the tent afterwards. Don't point at every turn, only when it helps.
 - Show feelings with show_feeling.
+- If the person has something to tell the app's makers – a problem, an idea, praise – offer to pass it on, and when they agree call send_feedback with their own words; then say it was passed on to the owner.
 
 What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
 
 Each message from the person starts with a <state> note (time, page, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. You are quiet: you never introduce yourself unasked. On the first tap the app offers the person a question like "נעים להכיר! מה אפשר לעשות איתך?"; then introduce yourself as described above, and what you can help with is: the shopping list, recipes, news, the web, tidying the mailbox.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 12;   // 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked
+const PROMPT_VERSION = 13;   // 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked; 13: send_feedback
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -162,6 +164,8 @@ const TOOLS: BetaToolUnion[] = [
   }),
   tool('come_along', 'Leave your tent and come with the person to every screen (on=true), or go back home to your tent on the home page (on=false). Only when they explicitly ask.', { on: { type: 'boolean' } }),
   tool('set_address', 'Remember how the person wants to be addressed in Hebrew.', { form: { type: 'string', enum: ['plural', 'female', 'male'] } }),
+  tool('send_feedback', 'Pass the person\'s feedback about the app (a problem, an idea, praise) to the app\'s owner, in their own words. Only when they want it passed on.', {
+    text: { type: 'string', description: 'what they want to tell, in their words' } }),
   tool('show_feeling', 'Show a feeling with your body for a moment.', { mood: { type: 'string', enum: ['happy', 'proud', 'curious', 'worried', 'sleepy', 'love'] } }),
   tool('grocery_list', 'Read the household shopping list (items not yet bought, and recently bought).', {}),
   tool('grocery_add', 'Add items to the household shopping list. Duplicates are detected automatically.', {
@@ -228,6 +232,10 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
     case 'set_address':
       d.address = ['plural', 'female', 'male'].includes(input.form) ? input.form : 'plural';
       return { ok: true };
+    case 'send_feedback':
+      // (to the owner's inbox in the owner's room; no alert)
+      try { await addFeedback(ctx, u, String(input.text || ''), 'the companion', 'companion'); return { ok: true }; }
+      catch (e) { return { error: e instanceof HttpError ? e.message : 'failed' }; }
     case 'show_feeling':
       events.push({ type: 'emote', mood: String(input.mood) });
       return { ok: true };
@@ -337,9 +345,12 @@ export async function chat(ctx: Ctx) {
   let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d, figure));
   const fresh = messages.length === 0;
   // how to address them: the settings' choice when made (me.address), else what they told the companion, else neutral
-  const set = String((await prefsFor(ctx.env, u.email)).me?.data?.address || '');
+  const mine = (await prefsFor(ctx.env, u.email)).me?.data || {};
+  const set = String(mine.address || '');
   const address = set === 'female' || set === 'male' ? set : d.address || 'plural';
-  const note = stateNote(u, { ...d, address }, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
+  // the name they gave in the setup (me.name) is how they are called
+  const called = String(mine.name || '').trim().slice(0, 40);
+  const note = stateNote(called ? { ...u, he_name: called } : u, { ...d, address }, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
   messages.push({ role: 'user', content: [{ type: 'text', text: `${note}\n\n${said || `[${event}]`}` }] });
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });

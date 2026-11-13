@@ -83,6 +83,28 @@ LCP has not moved yet. The causes:
       keep him.
     - Tested as a test user: the lamb was given, no AI call before the tap, and the lamb introduced itself in one sentence.
 
+- **Vision batch 8 (the social layer, the first minute)**: the plan is in `docs/ai/social-plan.md`, with seven slices.
+  - **Slice A, discovery, is done**: `tool_visits`, `/api/visits` and `/api/discover`; "גילית N מתוך 19 כלים", and the
+    "סייר" badge at 10 tools; 15 tests.
+  - Checked as a test user: the badge came exactly at the 10th tool, and a page load notes the visit by itself.
+
+- **Settings in folding categories** (design's look, a8cb316): closed at first, with a line in each of what is set now.
+- **The owner's room**:
+  - "שימוש": who comes in and which tools;
+  - "פניות": the feedback inbox;
+  - the feedback form `H.feedback()`, with its first button in settings, and the companion's `send_feedback`.
+  - Checked: a family member's feedback arrives, and the room's routes refuse while the room is locked. The usage queries
+    were run on the local database. Not checked: the room's screens (the room opens only with the owner's biometric), and
+    the companion tool live (an AI call).
+  - Waiting for the master's review.
+
+- **Block 1 (2026-11-13)**:
+  - the owner's room is live (v71);
+  - the recognized devices are inside "פרטיות ואבטחה" (bc463f3);
+  - food and the parasha are within the bar on 4G;
+  - the shopping list went from 409 menu options to 46 (TBT 264 → 186 ms; 748da50);
+  - `perf-cdp --loaf` names the scripts in the long frames.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.

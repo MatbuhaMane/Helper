@@ -196,7 +196,12 @@
       el('button', { class: 'mini', 'aria-label': 'הפחת', onclick: () => { if (it.qty > 1) upsert({ ...it, qty: it.qty - 1 }); } }, '−'),
       el('b', {}, String(it.qty || 1)),
       el('button', { class: 'mini', 'aria-label': 'הוסף', onclick: () => upsert({ ...it, qty: (it.qty || 1) + 1 }) }, '+'));
-    const catSel = el('select', { class: 'cat-select', 'aria-label': 'שנה קטגוריה', onchange: () => upsert({ ...it, cat: catSel.value }) }, categoryOptions(it.cat));
+    // only the item's own category until the select is touched: a full list on every row was ~400 options on the page,
+    // most of the load's blocking time (the readiness bar, TBT); the rest are filled in before the picker opens
+    const own = categoryOptions(it.cat).filter((o) => o.selected);
+    const catSel = el('select', { class: 'cat-select', 'aria-label': 'שנה קטגוריה', onchange: () => upsert({ ...it, cat: catSel.value }) }, own.length ? own : categoryOptions(it.cat));
+    const fill = () => { if (catSel.options.length < CATEGORIES.length) catSel.replaceChildren(...categoryOptions(it.cat)); };
+    for (const ev of ['pointerdown', 'focus', 'keydown', 'touchstart']) catSel.addEventListener(ev, fill, { passive: true });
     li.append(
       el('label', { class: 'main' }, cb, nameEl, it.from ? el('small', { class: 'tag' }, `🍳 ${it.from}`) : null, Keto.annotate(it)),
       qty, catSel,

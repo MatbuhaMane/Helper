@@ -966,3 +966,28 @@ CREATE TABLE IF NOT EXISTS user_locks (
   tip_hidden  INTEGER NOT NULL DEFAULT 0,      -- "לא להציג שוב" on the tree's security tip
   updated_at  INTEGER NOT NULL
 );
+
+-- Discovery (ai-features, docs/ai/social-plan.md slice A): which tools a person has opened – for "גילית 6 מתוך 18 כלים",
+-- the "סייר" badge, and the owner's usage dashboard. Only the tool and when; never what is in it.
+CREATE TABLE IF NOT EXISTS tool_visits (
+  email     TEXT NOT NULL,
+  tool      TEXT NOT NULL,
+  first_at  INTEGER NOT NULL,
+  last_at   INTEGER NOT NULL,
+  n         INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (email, tool)
+);
+
+-- The family's feedback (ai-features, the family batch): a button on any page and the companion send it here; the owner
+-- reads it in the owner's room. No alert is sent.
+CREATE TABLE IF NOT EXISTS feedback (
+  id       TEXT PRIMARY KEY,
+  email    TEXT NOT NULL,
+  name     TEXT,
+  text     TEXT NOT NULL,
+  page     TEXT,
+  via      TEXT NOT NULL DEFAULT 'button',   -- button | companion
+  at       INTEGER NOT NULL,
+  read_at  INTEGER,
+  done     INTEGER NOT NULL DEFAULT 0
+);

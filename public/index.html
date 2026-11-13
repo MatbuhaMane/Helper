@@ -282,6 +282,9 @@
     const r = await H.me();
     H.header('');
 
+    // the first-run setup wizard is the only onboarding (the owner, 2026-11-13): a person who has not finished it goes there once
+    if (r.user && !H.prefs('me').welcomed) { location.replace('/welcome/'); return; }
+
     if (!r.user) {
       const next = qs.get('next') || '/';
       const err = qs.get('error');

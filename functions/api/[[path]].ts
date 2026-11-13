@@ -42,6 +42,7 @@ import * as vault from '../../server/vault';
 import * as usage from '../../server/usage';
 import { featureOf, metered } from '../../server/meter';
 import * as weather from '../../server/weather';
+import * as discovery from '../../server/discover';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -474,6 +475,17 @@ route('DELETE', '/api/vault/devices/:id', vault.deviceRevoke);
 
 /* the weather (ai-features, server/weather.ts): Open-Meteo for the person's city */
 route('GET', '/api/weather', weather.get);
+
+/* discovery (ai-features, server/discover.ts): which tools a person has found – the home page's count, the "סייר" badge */
+route('POST', '/api/visits', discovery.visit);
+route('GET', '/api/discover', discovery.discover);
+route('POST', '/api/welcome/done', discovery.welcomed);
+
+/* the owner's room, the family batch (ai-features, server/admin.ts): usage from tool_visits, and the feedback inbox */
+route('GET', '/api/admin/usage', admin.usage);
+route('GET', '/api/admin/feedback', admin.feedbackList);
+route('PUT', '/api/admin/feedback/:id', admin.feedbackSave);
+route('POST', '/api/feedback', admin.feedbackSend);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

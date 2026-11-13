@@ -346,7 +346,7 @@
   /* ---------- the badges: earned in colour, the rest with how to earn them, the secret ones a silhouette ---------- */
   function badgesGallery() {
     const got = new Map(D.badges.earned.map((b) => [b.id, b.at]));
-    const GROUPS = [['start', 'התחלה ועקביות'], ['progress', 'התקדמות'], ['family', 'משפחה וחברים']];
+    const GROUPS = [['start', 'התחלה ועקביות'], ['progress', 'התקדמות'], ['tools', 'הכלים באוהל'], ['family', 'משפחה וחברים']];
     const patch = (b) => {
       const has = got.has(b.id), hidden = b.secret && !has;
       const how = hidden ? 'badge סודי' : has ? `${b.how} · קיבלת ב־${new Date(got.get(b.id)).toLocaleDateString('he-IL')}` : b.soon ? `${b.how} (בקרוב)` : b.how;

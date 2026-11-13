@@ -4,6 +4,8 @@
 // Days are dates in Israel's time ("YYYY-MM-DD"); a weekday is 0 (Sunday) … 6 (Saturday).
 // Tests: node server/test-goals.mjs
 
+import { TOOL_BADGES } from './discover-logic';
+
 export type Kind = 'short' | 'regular' | 'long';
 export const TZ = 'Asia/Jerusalem';
 
@@ -193,13 +195,16 @@ export const SMALL_STARTERS = ['לפתוח את ', 'לכתוב שורה אחת �
 
 /* ---------------- badges ---------------- */
 
-export interface Badge { id: string; name: string; how: string; group: 'start' | 'progress' | 'family'; secret?: boolean; soon?: boolean }
+export interface Badge { id: string; name: string; how: string; group: 'start' | 'progress' | 'family' | 'tools'; secret?: boolean; soon?: boolean }
 export const BADGES: Badge[] = [
   { id: 'peg', name: 'יתד ראשונה', how: 'הצעד הראשון במטרה חדשה', group: 'start' },
   { id: 'ember', name: 'גחלת', how: '3 ימים של צעדים ברצף', group: 'start' },
   { id: 'fire', name: 'מדורה', how: '7 ימים ברצף', group: 'start' },
   { id: 'eternal', name: 'אש תמיד', how: '30 ימים ברצף ("אֵשׁ תָּמִיד תּוּקַד עַל הַמִּזְבֵּחַ, לֹא תִכְבֶּה")', group: 'start' },
   { id: 'rest_return', name: 'שבת למנוחה', how: 'חזרת לצעדים אחרי יום המנוחה', group: 'start' },
+  { id: 'scout', name: 'סייר', how: 'גילית 10 כלים באוהל', group: 'start' },   // (awarded by server/discover.ts, at discover-logic's SCOUT_AT)
+  { id: 'pitched', name: 'נטית את האוהל', how: 'השלמת את ההגדרה הראשונית', group: 'start' },   // (server/discover.ts, from the setup)
+  ...TOOL_BADGES,
   { id: 'rest_seven', name: 'אֶת־שַׁבְּתֹתַי תִּשְׁמֹרוּ', how: 'שמרת על יום המנוחה שבעה שבועות ברצף, ועבדת בשאר הימים', group: 'start' },
   { id: 'pole', name: 'עמוד האוהל', how: 'סיימת תהליך שלם', group: 'progress' },
   { id: 'standing', name: 'האוהל עומד', how: 'השגת מטרה', group: 'progress' },

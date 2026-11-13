@@ -1,6 +1,5 @@
-/* מי הקים את האוהל – the founders' roll of honour (business: docs/business/founders.md §4–5). In the tent's own terms:
-   the first ten are its poles (tall embroidered plaques), up to fifty its pegs, up to a hundred its ropes; then the founding
-   supporters. Each tier says how it was earned. The names come from the moment each gathering reached 5 RSVPs. */
+/* מי הקים את האוהל – the founders' roll of honour (business: docs/business/founders.md §4–5). The levels by number only
+   (the owner): the first ten (tall embroidered plaques), up to fifty, up to a hundred; then the founding supporters. Each tier says how it was earned. The names come from the moment each gathering reached 5 RSVPs. */
 .fd { max-inline-size: 1100px; margin: 0 auto; padding-block: 18px 56px; display: grid; gap: 30px; }
 .fd-head { display: grid; gap: 8px; justify-items: center; text-align: center; padding-block: 10px 4px; }
 .fd-head img { inline-size: min(180px, 46%); }
@@ -8,6 +7,10 @@
 .fd-head p { margin: 0; color: var(--muted); max-inline-size: 58ch; line-height: 1.6; }
 .fd-tier { display: grid; gap: 14px; }
 .fd-tier > header { display: flex; align-items: center; gap: 12px; }
+/* the level's number as a medal (the levels are named by number only) */
+.fd-rank { flex: none; display: grid; place-items: center; inline-size: 52px; block-size: 52px; border-radius: 50%; font-weight: 700; font-size: 1.05rem;
+  font-variant-numeric: tabular-nums; color: #3a2a0c; background: radial-gradient(circle at 35% 30%, #fbe6a2, #d9a63a 70%);
+  box-shadow: 0 0 0 2px #fff4d0, 0 0 0 3.5px #b9862a, 0 4px 8px -3px rgba(46, 32, 10, .5); }
 .fd-tier > header img { inline-size: 52px; block-size: 52px; flex: none; filter: drop-shadow(0 3px 3px rgba(30, 20, 10, .25)); }
 .fd-tier > header div { display: grid; gap: 2px; }
 .fd-tier h2 { margin: 0; font-size: 1.35rem; }

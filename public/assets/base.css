@@ -348,7 +348,7 @@ textarea { width: 100%; resize: vertical; }
 /* A person's name with their one title and the badges they chose to show (business, 2026-11-13: the profile, the tree,
    the RSVPs). <span class="who"><b>שם</b> <span class="who-title founder">חבר מייסד</span>
    <span class="who-badges"><img src="/assets/badges/peg.webp" alt="יתד ראשונה">…</span></span>
-   Titles: plain (עמוד האוהל, יתד האוהל, חבל האוהל, תומך קבוע, מלאך…), .founder (חבר/ה מייסד/ת, תומך/ת מייסד/ת, האור לפני
+   Titles: plain (מהעשרה / מהחמישים / מהמאה הראשונים, תומך קבוע, מלאך…), .founder (חבר/ה מייסד/ת, תומך/ת מייסד/ת, האור לפני
    המחנה), .gold (the one-off "המיליון"). Up to five badges; their names are the images' alt. */
 .who { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-inline-size: 0; }
 .who-title { display: inline-flex; align-items: center; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; line-height: 1.5; white-space: nowrap;

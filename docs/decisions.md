@@ -11,6 +11,34 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Grandparents mode, the emergency button and kids mode (vision → design, ai-features, master)
+The owner's decisions in the vision meeting. The spec: `docs/vision/grandparents-kids.md`. Status: Decided (the owner).
+
+**Grandparents mode**
+- **Turning it on:** a switch in settings. A grandchild or a household head can also turn it on remotely, and the grandparent approves it at their next sign-in.
+- **The home screen:** four big buttons; the other tools are behind "עוד". Big text.
+- **Reading aloud:** the assistant reads aloud only when the user taps the speaker button.
+
+**The emergency button** (the owner's correction to grandparents mode)
+- **The button:** a separate big red button. The user holds it for 3 seconds, with a filling ring and vibration, and can cancel within 10 seconds after sending.
+- **The family:**
+  - every household member gets a strong alert;
+  - the location is attached if the user agreed in advance in settings;
+  - an "אני מטפל" button that everyone sees.
+- **Emergency services:** after sending, buttons for 101, 100 and 102 open the dialer with the number ready. A web app cannot call by itself.
+- **Who has it:** it is on by default in grandparents mode, and anyone else can turn it on with a switch.
+- **Known limits, to state honestly:**
+  - on an iPhone, push works only for the installed app;
+  - a web alert does not override silent mode;
+  - the button does not replace an alarm service.
+- **Review:** the master reviews it before merging, as safety-critical.
+
+**Kids mode**
+- **Who is a child:** a household head marks a child and releases them when they grow up. It is not set by the date of birth.
+- **The tools:** a kids' list by default (the tree, the songbook, notes, recipes, the figures), with no vault, no mail and nothing to do with money. The head adds or removes tools.
+- **The assistant:** the child talks with the assistant in a kids' mode, with answers suited to their age and no free web search. The child's chats are private to them.
+- **The existing rule stays:** a child under 12 does not message anyone outside the family.
+
 ## 2026-11-13 – The tree drawing, Sigd and Novy God, the test run (vision → design, ai-features, master)
 The owner's decisions in the vision meeting. Status: Decided (the owner).
 

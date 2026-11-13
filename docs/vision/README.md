@@ -16,6 +16,7 @@
 | [languages-ru-am.md](languages-ru-am.md) | רוסית, אמהרית וטיגרית: אפיון קצר |
 | [profile.md](profile.md) | הפרופיל האישי: תמונה, קאבר, מסגרות, הגופן הקדום והדלת האחורית |
 | [serious-mode.md](serious-mode.md) | מצב רציניים: ממשק פשוט ומקצועי במתג |
+| [grandparents-kids.md](grandparents-kids.md) | מצב סבא וסבתא, כפתור החירום ומצב ילדים |
 | [family-profile.md](family-profile.md) | פרופיל המשפחה: קאבר, מסורות, מי עורך ומי רואה |
 | [story.md](story.md) | הסיפור המשפחתי, "המוזיאון החי": פריטים, ראיון מודרך, מוזיאון, פרטיות |
 | [tree.md](tree.md) | עץ המשפחה, אפיון 1: עץ מצויר, משחק בממשק, מי שנפטר |

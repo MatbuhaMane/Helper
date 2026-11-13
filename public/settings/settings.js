@@ -84,6 +84,9 @@
   async function drawServices() {
     let ai, spotify = null, mail = null, feed = null, drive = null;
     try { ai = await api('/api/me/ai'); } catch (e) { return say(e); }
+    // (credit is offered only while the shop is open – the owner's switch; closed, only one's own AI)
+    let shopOpen = false; try { shopOpen = !!(await H.me()).shop; } catch (_) { /* not known: closed */ }
+    const orCredit = shopOpen ? ', או הוסיפו קרדיט' : '';
     await Promise.all([
       api('/api/music/status').then((r) => { spotify = r.spotify; }).catch(() => {}),
       api('/api/mail/status').then((r) => { mail = r; }).catch(() => {}),
@@ -112,15 +115,16 @@
       el('h2', { id: 'services-h' }, 'חיבור לשירותים'),
       el('h3', {}, 'העוזר החכם (AI)'),
       el('p', { class: 'muted' }, ai.limited
-        ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים. או להוסיף קרדיט.'
+        ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים.' + (shopOpen ? ' או להוסיף קרדיט.' : '')
         : 'ה־AI של האוהל פתוח לך בלי הגבלה. אם תרצה, אפשר לחבר גם שירות משלך, והבקשות שלך ילכו דרכו.'),
       // amounts only for whoever bought credit or got a gift (the owner's decision); on the trial, only when it ran out
-      ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : 'הקרדיט נגמר. חברו שירות משלכם, או הוסיפו קרדיט.')
-        : ai.out ? el('p', { class: 'small' }, 'כדי להמשיך עם העוזר החכם, חברו שירות משלכם, או הוסיפו קרדיט.') : null,
+      ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : `הקרדיט נגמר. חברו שירות משלכם${orCredit}.`)
+        : ai.out ? el('p', { class: 'small' }, `כדי להמשיך עם העוזר החכם, חברו שירות משלכם${orCredit}.`) : null,
       el('div', { class: 'st-services-grid' },
         ...PROVIDERS.map(row),
         el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
-        el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
+        // (the credit card only while the shop is open – the owner's switch)
+        !shopOpen ? null : el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט'))),
       el('h3', {}, 'שירותים אחרים'),
       el('div', { class: 'st-services-grid' },
@@ -168,7 +172,9 @@
     // each paid figure has its own price (the special ones cost more); the server charges the same
     const priceOf = (f) => Number(shop.prices?.[f.id] ?? shop.priceIls) || 10;
     // the family (no limit) gets it for nothing: they see that, not a price (the server decides either way)
-    const buy = async (f) => { const price = priceOf(f); let free = false; try { free = !(await api('/api/me/ai')).limited; } catch (_) { /* not known: the price */ }
+    // the owner's switch (shop) and the family (no limit: every paid figure theirs to take, in any state of the switch)
+    const shopOpen = !!shop.shop, takes = !!shop.family;
+    const buy = async (f) => { const price = priceOf(f), free = takes;
       H.modal(el('h2', {}, `${f.name}`), preview2d(f),
       el('p', {}, free ? 'בחינם, במשפחה.' : `דמות בתשלום: ₪${price}, מהקרדיט שלך.`),
       el('p', { class: 'muted small' }, free ? 'היא שלך בכל מכשיר.' : 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
@@ -180,7 +186,8 @@
             H.closeModal(); toast(r.how === 'credits' ? `${f.name} שלך` : `${f.name} שלך, על חשבון המשפחה`); pick(f.id);
           } catch (err) {
             e.target.disabled = false;
-            if (err.status === 402) { H.closeModal(); H.modal(el('h2', {}, 'אין מספיק קרדיט'), el('p', {}, `צריך ₪${price} בקרדיט. אפשר להוסיף קרדיט או לחבר שירות משלך.`),
+            if (err.status === 403 && err.code === 'shop_closed') { H.closeModal(); toast('הקנייה סגורה כרגע'); drawAssistant(); }
+            else if (err.status === 402) { H.closeModal(); H.modal(el('h2', {}, 'אין מספיק קרדיט'), el('p', {}, shopOpen ? `צריך ₪${price} בקרדיט. אפשר להוסיף קרדיט או לחבר שירות משלך.` : 'כרגע אין מספיק קרדיט.'),
               el('div', { class: 'row' }, el('a', { class: 'btn primary', href: '#services', onclick: () => H.closeModal() }, 'לחיבור לשירותים'))); }
             else toast('הקנייה לא הצליחה – נסו שוב');
           }
@@ -190,8 +197,36 @@
       type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
       title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
-    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
+    // each figure keeps its own colours (palettes are never sold – the owner, 2026-11-14): prefs daemon.palettes[id]
+    const paletteOf = (id) => +(dp.palettes?.[id] ?? (id === dp.figure ? dp.palette : 0)) || 0;
+    const previews = {};   // the preview figures by id (a prankster's preview plays a trick from its own card)
+    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); previews[f.id] = Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}), ...(f.palettes?.length ? { palette: paletteOf(f.id) } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
     /** her hair colour (a figure with a hair layer, e.g. the astronomer): saved per person, prefs daemon.hair */
+    /** a figure with clothing palettes (the night wizard, the forest witch): saved per person, prefs daemon.palette; the
+        first is as drawn */
+    const paletteRow = () => {
+      const f = figures.find((x) => x.id === mine && x.palettes?.length);
+      if (!f) return null;
+      const now = paletteOf(f.id);
+      return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, `הצבעים של ${f.name}`),
+        el('div', { class: 'st-choices st-palette', role: 'radiogroup', 'aria-label': 'הצבעים', style: 'display:flex;flex-wrap:wrap;gap:6px' }, f.palettes.map((p) => el('button', {
+          type: 'button', role: 'radio', class: 'chip', 'aria-checked': String(p.index === now), title: p.name,
+          onclick: () => { dp.palettes = { ...(dp.palettes || {}), [f.id]: p.index }; keep('daemon'); drawAssistant(); },
+        }, el('span', { 'aria-hidden': 'true', style: `display:inline-block;inline-size:14px;block-size:14px;border-radius:50%;background:${p.swatch};border:1px solid var(--line-strong);margin-inline-end:6px;vertical-align:-2px` }), p.name))));
+    };
+    /** the little wizard and witch play small tricks on the page (design's pranks.js): on by default, the person's switch,
+        with a preview of one */
+    const pranksRow = () => {
+      if (!['littlewizard', 'littlewitch'].includes(mine)) return null;
+      return el('div', {}, toggle('תעלולים', dp.pranks !== false, (v) => set('pranks', v), 'מדי פעם תעלול קטן בדף – רק מראה, לא משנה כלום. לא בזמן הקלדה או גלילה.'),
+        el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+          try {
+            await H.loadOnce('/assets/pranks.js');
+            const p = Pranks.start(await previews[mine], { id: mine });
+            p.play('sprinkle'); setTimeout(() => p.stop(), 4000);
+          } catch (_) { toast('התעלול לא הצליח כרגע'); }
+        } }, '✨ להראות תעלול'));
+    };
     const hairRow = () => {
       const f = figures.find((x) => x.id === mine && x.hair);
       if (!f) return null;
@@ -213,15 +248,17 @@
       toggle('העוזר מלווה אותי בכל עמוד', !!dp.follow, (v) => set('follow', v), 'כשכבוי, הוא מחכה בדף הבית.'),
       choices('בראש השיחה', [['icon', 'הדמות כאייקון'], ['animated', 'הדמות חיה']], dp.header || 'icon', (v) => set('header', v)),
       el('h3', {}, 'הדמות'),
-      el('p', { class: 'muted small' }, 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.'),
+      el('p', { class: 'muted small' }, takes ? 'כל הדמויות לבחירה, גם דמויות 💎 – במשפחה.' : shopOpen ? 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.' : 'רוב הדמויות חינם.'),
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'ראב"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
-        const forSale = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
-        const sub = forSale ? `💎 ₪${priceOf(f)} · לקנייה` : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
+        // the family takes it (no price); an open shop sells it; a closed one: locked, no price, no button
+        const offered = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
+        const forSale = offered && (takes || shopOpen);
+        const sub = forSale ? (takes ? '💎 שלך לקחת' : `💎 ₪${priceOf(f)} · לקנייה`) : offered ? '💎 בתשלום' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
         return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
-      hairRow(),
+      hairRow(), paletteRow(), pranksRow(),
       // horror figures (Dracula) only when asked for, and never for a child (under 12, by the birth year the owner set)
       !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));

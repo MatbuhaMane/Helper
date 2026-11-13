@@ -130,11 +130,31 @@ export function useInviteHooks(h: InviteHooks) { inviteHooks = h; }
 
 /** Members must be invited by an owner; OWNER_EMAIL is admitted (and made owner) automatically; a guest who signs in from
     a gathering's invitation (a join ticket on this device, server/join.ts) gets a household of their own. */
+/** A member the owner added signs in for the first time: they have full access at once (the family: no allowance row),
+    and the owner is told, with a message only the owner sees, to approve them in the room (members.approved_at).
+    Someone who used the tent before this was kept (a session or preferences) is not "new": it is only marked. */
+async function firstSignIn(env: Env, m: Member, name: string | null) {
+  const row = await env.DB.prepare('SELECT first_seen FROM members WHERE email = ?').bind(m.email).first<{ first_seen: number | null }>();
+  if (!row || row.first_seen) return;
+  const now = Date.now();
+  const set = await env.DB.prepare('UPDATE members SET first_seen = ? WHERE email = ? AND first_seen IS NULL').bind(now, m.email).run();
+  if (!set.meta.changes || m.role === 'owner') return;                       // another tab won the race, or the owner
+  const before = await env.DB.prepare('SELECT 1 FROM sessions WHERE email = ? UNION SELECT 1 FROM user_prefs WHERE email = ? LIMIT 1').bind(m.email, m.email).first().catch(() => null);
+  if (before) return;
+  const who = (m.he_name || m.name || name || m.email).slice(0, 60);
+  const owners = (env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  for (const owner of owners) {
+    await env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
+      .bind(uid(), `${who} התחבר/ה לאוהל בפעם הראשונה, עם גישה מלאה. לאשר בחדר הבעלים?`, 'info', '/admin/#members', 'system', now, now + 30 * 86400_000, owner).run();
+  }
+}
+
 async function admitMember(env: Env, email: string, name: string | null, req?: Request): Promise<Member | null> {
-  const existing = await env.DB.prepare('SELECT email, name, household, role FROM members WHERE email = ?')
+  const existing = await env.DB.prepare('SELECT email, name, he_name, household, role FROM members WHERE email = ?')
     .bind(email).first<Member>();
   if (existing) {
     if (name && !existing.name) await env.DB.prepare('UPDATE members SET name = ? WHERE email = ?').bind(name, email).run();
+    await firstSignIn(env, existing, name).catch((e) => console.error('first sign-in', e instanceof Error ? e.message : e));
     return existing;
   }
   const owners = (env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);

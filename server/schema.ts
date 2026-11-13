@@ -40,6 +40,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['researches', 'goal_id', 'TEXT'],           // the goal it became (the goals engine: its steps come to "היום")
   ['researches', 'done_at', 'INTEGER'],         // finished ("גשש")
   ["members", "birth_year", "INTEGER"],         // private: only the owner sees it (the room); under 12 hides horror figures and keeps a child in the family
+  ["members", "first_seen", "INTEGER"],         // their first sign-in (the owner is told, core.ts firstSignIn)
+  ["members", "approved_at", "INTEGER"],        // the owner approved them in the room: full access, every special feature
   ['research_notes', 'note_email', 'TEXT'],     // shared research: whose note it is (empty: the research's owner)
   ['research_notes', 'shared', 'INTEGER'],      // 0: a private note – the others see only that there is one
   ['research_threads', 'created_by', 'TEXT'],   // who wrote it (empty: the owner)

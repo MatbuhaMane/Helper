@@ -51,12 +51,17 @@ _Updated 2026-11-14 (family batch, deploy 1)._
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
 - After the image reset (00:00 UTC): **the 19 approved badges** (the owner approved the names 2026-11-14; prompts ready in
   the design scratchpad's `badge.mjs`, one run: `badges-tools-run.sh`, ~$1.30), then cut each to `/assets/badges/<id>.webp`;
-  and a simplified small tent for the 32/48 px icons (1 image).
+  and a simple small tent for the app icon at every size (1 image).
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers
 - The companion's size and the single record need ai-features' `daemon.js` / `music.js` changes in the same merge.
 - The image quota for 2026-11-13 is used (40/40).
+
+## Decided by the owner (2026-11-14, the focus round)
+- The app icon: a simple small tent at **every** size (one drawing, after the image reset).
+- Titles on the banner: **the person chooses** which earned effect to show (glow, wings, crown, the founder's gold).
+- The horizon: only the hills, **low, on the line where the sun and moon meet the ground** (patch for index.html in the notes).
 
 ## Needs the owner
 - Nothing open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)

@@ -868,15 +868,17 @@
       }
       const run = () => { if (!raf) raf = requestAnimationFrame(tick); };
       /** Spin to an app the shortest way round. */
-      function spinTo(i) { const d = mod(i - Math.round(rot) + Math.floor(N / 2)) - Math.floor(N / 2); vel = 0; goal = Math.round(rot) + d; run(); }
+      function spinTo(i) { if (roll) return; const d = mod(i - Math.round(rot) + Math.floor(N / 2)) - Math.floor(N / 2); vel = 0; goal = Math.round(rot) + d; run(); }
 
       // a finger or the mouse: the ring follows the hand, then keeps spinning by its momentum and settles on an app
       root.addEventListener('pointerdown', (e) => {
-        if (e.button > 0 || e.target.closest('.spin')) return;
+        if (roll || e.button > 0 || e.target.closest('.spin')) return;
         drag = { x: e.clientX, rot0: rot, moved: false, t: performance.now(), lx: e.clientX, v: 0, id: e.pointerId };
         vel = 0; run();
+        if (onFire(e)) press = { id: e.pointerId, x: e.clientX, y: e.clientY, t: setTimeout(() => { press = null; drag = null; root.classList.remove('dragging'); roulette(); }, 600) };
       });
       root.addEventListener('pointermove', (e) => {
+        if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8) unpress();
         if (!drag || e.pointerId !== drag.id) return;
         const dx = e.clientX - drag.x;
         if (!drag.moved && Math.abs(dx) > 7) { drag.moved = true; root.classList.add('dragging'); try { root.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ } }
@@ -888,6 +890,7 @@
         drag.t = now; drag.lx = e.clientX;
       });
       const end = (e) => {
+        unpress();
         if (!drag || (e.pointerId != null && e.pointerId !== drag.id)) return;
         const moved = drag.moved;
         vel = moved && performance.now() - drag.t < 90 ? Math.max(-14, Math.min(14, drag.v)) : 0;
@@ -903,6 +906,7 @@
       root.addEventListener('click', (e) => {
         const it = e.target.closest('.wheel-item');
         if (!it) return;
+        if (roll) { e.preventDefault(); return; }
         const i = items.indexOf(it);
         if (root.dataset.justDragged) { e.preventDefault(); return; }
         if (i !== front) { e.preventDefault(); spinTo(i); }
@@ -914,6 +918,7 @@
         const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.shiftKey ? e.deltaY : 0;
         if (!d) return;
         e.preventDefault();
+        if (roll) return;
         rot -= d / (rx * step); vel = 0; goal = rot; run();
         clearTimeout(wheelEnd); wheelEnd = setTimeout(() => { goal = Math.round(rot); run(); }, 120);
       }, { passive: false });
@@ -925,6 +930,51 @@
           setTimeout(() => items[front]?.focus({ preventScroll: true }), 30);
         }
       });
+
+      /* the roulette (the owner, 2026-11-13): a long press on the fire spins the ring like a roulette wheel, fast and then
+         slowing, and it stops on a cushion drawn beforehand by a true random draw – so the ring can settle a question among friends */
+      const fire = root.querySelector('.fire');
+      let press = null, roll = null, chosenT = 0;
+      function onFire(e) {
+        if (!fire || e.target.closest('.wheel-item')) return false;
+        const r = fire.getBoundingClientRect();
+        return e.clientX > r.left - 12 && e.clientX < r.right + 12 && e.clientY > r.top - 16 && e.clientY < r.bottom + 8;
+      }
+      function unpress() { if (press) { clearTimeout(press.t); press = null; } }
+      // a finger held on the fire must not open the phone's menu or select anything
+      root.addEventListener('contextmenu', (e) => { if (press || roll) e.preventDefault(); });
+      function roulette() {
+        const r = new Uint32Array(2); crypto.getRandomValues(r);
+        const win = r[0] % N;   // the winner, chosen before the spin (N is a handful, so the modulo bias is nil)
+        cancelAnimationFrame(raf); raf = 0; last = 0; vel = 0;
+        clearTimeout(chosenT); items.forEach((it) => it.classList.remove('chosen'));
+        navigator.vibrate?.(14);
+        const from = rot, base = Math.round(rot);
+        // three or four whole turns, then on to the winner; the ease-out lands on it exactly
+        const to = base + mod(win - base) + (reduced ? 0 : N * (3 + (r[1] & 1)));
+        if (reduced) { rot = goal = to; layout(); return chosen(win); }
+        const t0 = performance.now(), dur = 4200 + (r[1] >>> 1) % 900;
+        fire.classList.add('cf-roll');
+        roll = {};
+        const frame = (now) => {
+          const t = Math.min(1, (now - t0) / dur);
+          rot = from + (to - from) * (1 - (1 - t) ** 4);
+          layout();
+          if (t < 1) { roll.raf = requestAnimationFrame(frame); return; }
+          rot = goal = to; layout(); roll = null; fire.classList.remove('cf-roll'); chosen(win);
+        };
+        roll.raf = requestAnimationFrame(frame);
+      }
+      /** The cushion the roulette stopped on glows warm for a while, and a few sparks leap from the fire. */
+      function chosen(win) {
+        const it = items[win];
+        it.classList.add('chosen');
+        caption.textContent = `הגורל נפל על: ${list[win].name}`;
+        navigator.vibrate?.([20, 70, 36]);
+        if (!reduced) { fire.classList.remove('cf-win'); void fire.offsetWidth; fire.classList.add('cf-win'); setTimeout(() => fire.classList.remove('cf-win'), 1400); }
+        chosenT = setTimeout(() => it.classList.remove('chosen'), 4500);
+      }
+
       next.addEventListener('click', () => spinTo(front + 1));
       prev.addEventListener('click', () => spinTo(front - 1));
       window.addEventListener('resize', () => { measure(); layout(); });

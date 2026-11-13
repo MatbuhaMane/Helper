@@ -328,22 +328,51 @@
         btn('fold', 'לקפל לתקליט', () => { P.folded = true; save(); paintModes(); }, 'foldbtn'),
         btn('dock', 'בחזרה לתפריט', () => setMode('menu'))));
     // folded: a record; a tap opens the card again
-    const disc = el('button', { class: 'mu-record', type: 'button', title: 'לחצו לפתיחה, גררו להזזה', 'aria-label': 'לפתוח את הנגן', onclick: () => { if (justDragged) return; P.folded = false; save(); paintModes(); } }, el('span', { class: 'mu-art' }));
+    const disc = el('button', { class: 'mu-record', type: 'button', title: 'לחצו לפתיחה, גררו להזזה', 'aria-label': 'לפתוח את הנגן', onclick: () => {
+      if (justDragged) return;
+      if (docked()) return E.toggle();   // on the stump: play or stop (the owner: stopping from the record or the main player)
+      P.folded = false; save(); paintModes();
+    } }, el('span', { class: 'mu-art' }));
     float.append(disc);
     // at the edge: a tab with a treble clef; a tap opens the card next to it
     edge = el('button', { class: 'mu-edge', type: 'button', hidden: true, title: 'נגן המוזיקה – לחצו לפתיחה, גררו להזזה', 'aria-label': 'לפתוח את נגן המוזיקה',
       onclick: () => { if (justDragged) return; const r = edge.getBoundingClientRect(); P.mode = 'float'; P.folded = false; save(); paintModes(false); requestAnimationFrame(() => { place(r.left < innerWidth / 2 ? 12 : innerWidth - float.offsetWidth - 12, r.top - 40); rememberSpot(); }); } },
       el('span', { class: 'clef', html: CLEF }), el('span', { class: 'eq', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
     document.body.append(float, edge);
-    painters.push((st) => { disc.firstChild.style.backgroundImage = st.art ? `url("${st.art}")` : ''; float.classList.toggle('playing', st.playing); edge.classList.toggle('playing', st.playing); });
+    painters.push((st) => {
+      disc.firstChild.style.backgroundImage = st.art ? `url("${st.art}")` : ''; float.classList.toggle('playing', st.playing); edge.classList.toggle('playing', st.playing);
+      // on the stump the record is a play/stop button; floating, it opens the card
+      if (docked()) { disc.setAttribute('aria-pressed', String(!!st.playing)); disc.setAttribute('aria-label', st.playing ? 'לעצור' : 'לנגן'); disc.title = 'לחצו לנגן או לעצור, גררו להזזה'; }
+      else { disc.removeAttribute('aria-pressed'); disc.setAttribute('aria-label', 'לפתוח את הנגן'); disc.title = 'לחצו לפתיחה, גררו להזזה'; }
+    });
+    // one record (design's spec, docs/design/prototype/record.html): the home page's stump is a place to park it
+    if (slot()) {
+      document.body.classList.add('mu-one-record');
+      addEventListener('scroll', () => { if (docked()) placeDock(); }, { passive: true });
+    }
     // a press that moves more than a few pixels becomes a drag (a press that doesn't stays a click)
     for (const h of [float, edge]) h.addEventListener('pointerdown', (e) => {
       if (e.button > 0 || e.target.closest('.mu-btn, .mu-text, .mu-bar')) return;
       const r = (h === edge ? edge : float).getBoundingClientRect();
       pendingDrag(e, h === edge ? { x: 30, y: 30 } : { x: e.clientX - r.left, y: e.clientY - r.top });
     });
-    window.addEventListener('resize', () => { if (P.mode === 'float') restoreSpot(); if (P.mode === 'edge') placeEdge(); });
+    window.addEventListener('resize', () => { if (docked()) placeDock(); else if (P.mode === 'float' || P.mode === 'stump') restoreSpot(); if (P.mode === 'edge') placeEdge(); });
   }
+
+  /* ---- 3. one record: parked on the home page's stump (mode 'stump'). On a page without the stump it floats folded at
+     its last place, and parks again on the home page. ---- */
+  // (declarations, not consts: mountFloat may run before these lines)
+  // the slot: the home page's '.corner .rec' (with design's patch to index.html, a tap on it calls H.music.dock)
+  function slot() { return document.querySelector('.corner .rec'); }
+  function docked() { return P.mode === 'stump' && !!slot() && !float?.classList.contains('dragging'); }
+  function centreOf(n) { const r = n.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width }; }
+  function placeDock() {
+    const c = centreOf(slot());
+    float.style.setProperty('--dock-size', Math.round(c.w * 0.72) + 'px');
+    const r = float.getBoundingClientRect();
+    float.style.left = (c.x - r.width / 2) + 'px'; float.style.top = (c.y - r.height / 2) + 'px';   // (not kept on screen: it goes with the stump)
+  }
+  function dock() { P.mode = 'stump'; P.folded = true; save(); paintModes(); }
 
   let justDragged = false;
   function pendingDrag(e, grab) {
@@ -367,6 +396,7 @@
     return null;
   }
   function startDrag(e, grab) {
+    if (P.mode === 'stump') { P.folded = true; float.classList.remove('on-stump'); document.body.classList.remove('mu-docked'); }
     if (P.mode !== 'float') { P.mode = 'float'; save(); paintModes(false); }
     float.classList.add('dragging');
     document.body.classList.add('mu-dragging');
@@ -384,7 +414,9 @@
       float.classList.remove('dragging');
       document.body.classList.remove('mu-dragging', 'mu-drop-menu', 'mu-drop-left', 'mu-drop-right');
       justDragged = true; setTimeout(() => { justDragged = false; }, 50);
-      if (zone === 'menu') setMode('menu');
+      const near = slot() && (() => { const c = centreOf(slot()), f = centreOf(float); return Math.hypot(c.x - f.x, c.y - f.y) < 60; })();
+      if (near) dock();
+      else if (zone === 'menu') setMode('menu');
       else if (zone) { rememberEdge(zone, ev.clientY); setMode('edge'); }
       else rememberSpot();
     };
@@ -415,11 +447,15 @@
   }
   function paintModes(restore = true) {
     if (!float) return;
-    float.hidden = P.mode !== 'float';
-    float.classList.toggle('folded', !!P.folded);
+    const parked = P.mode === 'stump' && !!slot();
+    float.hidden = P.mode !== 'float' && P.mode !== 'stump';
+    float.classList.toggle('folded', !!P.folded || P.mode === 'stump');
+    float.classList.toggle('on-stump', parked);
+    document.body.classList.toggle('mu-docked', parked);
     edge.hidden = P.mode !== 'edge';
     if (P.mode === 'edge') placeEdge();
-    if (!float.hidden && restore) requestAnimationFrame(restoreSpot);
+    if (parked) { placeDock(); requestAnimationFrame(placeDock); }   // (now, and again once the folded size is drawn)
+    else if (!float.hidden && restore) requestAnimationFrame(restoreSpot);
     if (menuSpot) menuSpot.hidden = false;   // the menu keeps its own copy; a floating one is extra
     paint(E.st);
   }
@@ -823,6 +859,6 @@
     }
   }
   // float(): a floating copy of the player (the record by the stump opens it), open where it last floated
-  H.music = { open: openPanel, engine: E, songbook, lyrics: lyricsNow, float: () => { P.mode = 'float'; P.folded = false; save(); paintModes(); } };
+  H.music = { open: openPanel, engine: E, songbook, lyrics: lyricsNow, float: () => { P.mode = 'float'; P.folded = false; save(); paintModes(); }, dock: () => (float ? dock() : null) };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(start)); else setTimeout(start);
 })();

@@ -1576,7 +1576,7 @@
      this screen he points to, a part of the tent he takes you to, or a short menu with a tip. His voice stays the
      browser's own. (Actions are links: the chat panel copies them.) ---------- */
   const TIPS = [
-    'אפשר לסמן טקסט בכל מקום באוהל וללחוץ "שמירה כפתק".',
+    'כל טקסט שהעתקתם אפשר להדביק בפתקים, והוא נפתח כפתק חדש.',
     'ברשימת הקניות, ✓ על מוצר מעביר אותו לסל; מה שלא נקנה נשאר לפעם הבאה.',
     'בחדשות, ⋯ ליד כתבה שומר אותה, משתף אותה או פותח אותה באתר המקורי.',
     'בטלפון אפשר "לשתף" כל דבר אל האוהל, והוא מחכה בתיבת הנכנסים של עוזר המחקר.',

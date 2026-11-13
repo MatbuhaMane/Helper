@@ -17,8 +17,14 @@ Updated by the department at the end of every meaningful round of work. Short: t
   one-page list of 12 questions for the quotes (section 8).
   - **No quotes (the owner, 2026-11-14):** read the published price pages instead (section 9). Recommendation:
     Sumit through the Upay aggregator: 1.1% with no fixed fee, a free plan up to 10 operations, then ₪19/month.
-    Waiting for the owner's go.
+    The owner said "not now" (2026-11-14): parked, not decided. Raise it again before the first paid feature.
   - **Blocker for opening an account:** terms of use, a privacy policy and a cancellation policy must be live first.
+
+- **Family story storage (2026-11-14, from vision batch 10, not urgent):** `docs/business/story-storage.md`.
+  Proposal: 2 GB free per household; +10 GB for ₪3/month or +50 GB for ₪10/month from the wallet, also yearly; content
+  is never deleted for non-payment. Proposes upload compression to ai-features.
+  - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
+    household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.
@@ -57,7 +63,7 @@ Updated by the department at the end of every meaningful round of work. Short: t
   - the exact monthly credits per level;
   - the regular supporters' levels (draft: ₪10 / 25 / 50);
   - the founding supporters' value.
-- **The payment provider:** approve Sumit (`payment-providers.md` section 9). No quotes needed.
+- **The payment provider:** parked by the owner ("not now"). The Sumit recommendation waits in `payment-providers.md` section 9.
 - **Before the first payment:** a tax file, terms of use and a privacy policy, and a meeting with an accountant and a
   lawyer (`monetization.md` section 4, `risks-and-rights.md` section 6).
 

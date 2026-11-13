@@ -67,7 +67,9 @@
     if (!t) {
       t = el('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite', title: 'לסגירה: לחיצה או החלקה' });
       document.body.append(t);
-      const hide = () => { clearTimeout(toastTimer); t.classList.remove('show', 'dragging'); t.style.translate = t.style.opacity = ''; };
+      // it leaves from where the finger let go: the swipe's offset is cleared only after the fade (docs/design/toast.md)
+      const hide = () => { clearTimeout(toastTimer); t.classList.remove('show', 'dragging'); t.style.opacity = '';
+        setTimeout(() => { if (!t.classList.contains('show')) t.style.translate = ''; }, 260); };
       let p = null;
       t.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; p = { x: e.clientX, y: e.clientY, id: e.pointerId, moved: false }; });
       t.addEventListener('pointermove', (e) => {

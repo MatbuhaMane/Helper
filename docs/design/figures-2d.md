@@ -39,7 +39,7 @@ with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entr
 ## People and characters (vision batch 6)
 
 Twelve, from the owner's lists, drawn from the original sources (likeness notes in the `historic-figures` skill),
-`kind: 'historic'` (`paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
+`kind: 'person'` (`tier: 'paid'` and `paid: true` on the paid ones, `hideFor: []` until the owner decides the traditions):
 
 | tier | figures |
 |---|---|

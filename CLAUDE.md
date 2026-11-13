@@ -68,7 +68,7 @@ they are stored per user on the server (`/api/prefs`, table `user_prefs`) and ar
 The project is worked on by several sessions at once, one per area, each in its own git worktree and branch,
 so no two sessions edit the same working copy.
 
-The departments, in the owner's order (the same order in the sidebar, numbered in each chat's title):
+The departments, in the owner's order (chat titles are not numbered: the owner's choice):
 
 | # | Department | Folder | Branch | Dev server (port / inspector) | Brief / status |
 |---|---|---|---|---|---|

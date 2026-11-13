@@ -66,6 +66,12 @@ eq(ids(F.find(people, 'משה', {}, isKin)), ['f5'], 'without the filter, the sa
 eq(ids(F.find(people, 'כהן', { usersOnly: true }, isKin)).sort(), ['me', 'sara'].sort(), 'users only: records that are not users are left out');
 ok(!ids(F.find(people, 'כהן', { kinOnly: true }, () => true)).includes('f3'), 'kin only never brings back a hidden card');
 
+// the card: "uses the app" only on a card the viewer may know
+eq(F.showUser({ anonymous: false, hidden: [] }, true), true, 'a visible user is marked');
+eq(F.showUser({ anonymous: true, hidden: ['identity'] }, true), false, 'an anonymous card never says it uses the app');
+eq(F.showUser({ anonymous: false, hidden: ['identity'] }, true), false, 'an identity-hidden card never says it uses the app');
+eq(F.showUser({ anonymous: false, hidden: ['dates'] }, false), false, 'a record that is not a user');
+
 // order and size
 eq(ids(F.find(people, 'שרה כהן', {}, isKin))[0], 'sara', 'the whole name first');
 const many = Array.from({ length: 50 }, (_, i) => c('p' + i, 'לוי ' + i, { user: true }));

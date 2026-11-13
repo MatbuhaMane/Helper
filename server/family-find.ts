@@ -45,7 +45,7 @@ export async function card(ctx: Ctx) {
   return json({
     id: x.pid, name: x.name, sex: x.sex, anonymous: x.anonymous, hidden: x.hidden,
     details: x.details,                                   // already only what kin.view lets this viewer see
-    household: w.label(x.household), title: w.title(x.household), mine, self, user: w.user(x),
+    household: w.label(x.household), title: w.title(x.household), mine, self, user: F.showUser(x, w.user(x)),
     photo: mine ? x.photo : null,                         // files (and so the photo) never leave their household
     relation: w.me && x.root !== w.me ? w.kin.relationName(w.me, x.root) : null,
   });

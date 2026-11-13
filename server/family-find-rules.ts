@@ -35,7 +35,10 @@ export interface Candidate {
 }
 
 /** may this card show in a search at all */
-export const findable = (c: Candidate) => !c.anonymous && !c.hidden.includes('identity');
+export const findable = (c: { anonymous: boolean; hidden: string[] }) => !c.anonymous && !c.hidden.includes('identity');
+
+/** the card's "uses the app" mark: only on a card the viewer may know (an anonymous or identity-hidden person's use of the app stays hidden too) */
+export const showUser = (c: { anonymous: boolean; hidden: string[] }, isUser: boolean) => findable(c) && isUser;
 
 /** how well a name answers the query: 3 the whole name, 2 a word starts with it, 1 inside a word, 0 not at all */
 export function match(name: string, q: string): number {

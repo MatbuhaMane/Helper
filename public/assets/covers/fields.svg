@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><title>שדות באביב</title>
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe4ee"/><stop offset="1" stop-color="#f1f2e2"/></linearGradient>
+<g id="a"><circle r="7" fill="#c8382a"/><circle r="2" fill="#2e2a1e"/></g></defs>
+<rect width="1200" height="400" fill="url(#s)"/>
+<g fill="#f7f6f0" opacity=".9"><ellipse cx="300" cy="90" rx="80" ry="20"/><ellipse cx="350" cy="76" rx="50" ry="22"/><ellipse cx="900" cy="120" rx="64" ry="16"/></g>
+<path d="M-20 230C200 170 420 190 640 220S1000 170 1220 200V420H-20Z" fill="#a9bb78"/>
+<path d="M-20 270C240 230 480 250 700 266S1040 236 1220 250V420H-20Z" fill="#d9c773"/>
+<g fill="none" stroke="#c2b04e" stroke-width="3" stroke-linecap="round" opacity=".8"><path d="M60 282C360 262 700 280 1160 262"/><path d="M40 300C380 284 740 300 1180 284"/></g>
+<path d="M-20 310C260 284 540 300 800 316S1100 296 1220 300V420H-20Z" fill="#7f9a4c"/>
+<g transform="translate(860 304)"><path d="M0 0Q-4-40 2-70" fill="none" stroke="#6a4a30" stroke-width="10" stroke-linecap="round"/><g fill="#55622f"><ellipse cx="-30" cy="-84" rx="44" ry="32"/><ellipse cx="22" cy="-100" rx="50" ry="36"/><ellipse cx="40" cy="-70" rx="34" ry="24"/></g><g fill="#6f7f3e" opacity=".8"><ellipse cx="-10" cy="-104" rx="22" ry="12"/><ellipse cx="34" cy="-112" rx="18" ry="10"/></g></g>
+<path d="M-20 350C300 330 620 344 900 356S1120 344 1220 342V420H-20Z" fill="#5f7a38"/>
+<use href="#a" x="120" y="364"/><use href="#a" x="180" y="380"/><use href="#a" x="260" y="360"/><use href="#a" x="340" y="384"/><use href="#a" x="420" y="366"/><use href="#a" x="620" y="378"/><use href="#a" x="700" y="364"/><use href="#a" x="1000" y="372"/><use href="#a" x="1080" y="386"/><use href="#a" x="1150" y="364"/>
+</svg>

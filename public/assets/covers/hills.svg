@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><title>הרי ירושלים</title>
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7c9a8"/><stop offset=".7" stop-color="#f3dfc2"/></linearGradient>
+<g id="h"><path d="M-30 0V-34Q-30-40-24-40H24Q30-40 30-34V0Z" fill="#efe4cc" stroke="#c9b48c" stroke-width="2"/><path d="M-6 0V-16Q0-24 6-16V0Z" fill="#9c7a55"/></g>
+<g id="d"><path d="M-24 0V-30Q-24-36-18-36H18Q24-36 24-30V0Z" fill="#e8dcc0" stroke="#c9b48c" stroke-width="2"/><path d="M-18-36Q0-62 18-36Z" fill="#dccba6"/><path d="M-5 0V-14Q0-20 5-14V0Z" fill="#9c7a55"/></g>
+<path id="c" d="M0 0C-9-30-8-70 0-96C8-70 9-30 0 0Z" fill="#55622f"/></defs>
+<rect width="1200" height="400" fill="url(#s)"/><circle cx="300" cy="110" r="46" fill="#fbecd0"/>
+<path d="M-20 230C180 160 380 170 600 200S1000 150 1220 190V420H-20Z" fill="#d7c39e"/>
+<use href="#h" x="470" y="222"/><use href="#h" x="520" y="214"/><use href="#d" x="580" y="208"/><use href="#h" x="640" y="206"/><use href="#h" x="700" y="200"/><use href="#d" x="756" y="196"/><use href="#h" x="812" y="194"/>
+<path d="M-20 262C140 238 300 246 470 256S820 232 1220 246V420H-20Z" fill="#cdb48a"/>
+<g fill="none" stroke="#b39a70" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M40 300C300 280 600 296 1160 282"/><path d="M20 336C340 318 700 334 1180 320"/><path d="M60 372C380 356 760 370 1170 358"/></g>
+<use href="#c" x="420" y="268"/><g transform="translate(446 272) scale(.75)"><use href="#c"/></g><use href="#c" x="900" y="252"/><g transform="translate(928 256) scale(.7)"><use href="#c"/></g>
+<g transform="translate(150 392) scale(1.5)"><use href="#c"/></g><g transform="translate(1080 394) scale(1.6)"><use href="#c"/></g>
+</svg>

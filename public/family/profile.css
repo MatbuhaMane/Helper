@@ -1,0 +1,139 @@
+/* The family profile (vision's spec, docs/vision/family-profile.md; the owner, 2026-11-13): a cover, the family's name and
+   line, its people, where it came from, its traditions and recipes, and a small window onto its tree.
+   The markup for ai-features is in docs/design/prototype/family-profile.html. The covers to choose from are
+   /assets/covers/{olive,hills,sea,desert,fields}.svg, or the family's own photo, in the same <img class="fp-cover-img">.
+   The rule of the page: it shows, it never widens. An item the viewer may not see is an empty spot (.fp-gap). */
+
+.fp { max-inline-size: 980px; margin-inline: auto; padding-block-end: 32px; display: grid; gap: 18px; }
+
+/* the cover: a wide picture, rounded at its foot like the tent's ground; the name card sits over its lower edge */
+.fp-cover { position: relative; aspect-ratio: 3 / 1; min-block-size: 150px; border-radius: 0 0 28px 28px; overflow: hidden;
+  background: linear-gradient(180deg, var(--tint), var(--chalk)); isolation: isolate; }
+.fp-cover-img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
+.fp-cover::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(180deg, transparent, rgba(46, 42, 30, .28)); pointer-events: none; }
+:root[data-theme="dark"] .fp-cover-img { filter: brightness(.82) saturate(.9); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fp-cover-img { filter: brightness(.82) saturate(.9); } }
+.fp-cover-btn { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 6px;
+  min-block-size: 40px; padding: 6px 14px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass); color: var(--text);
+  font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.fp-cover-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* the name card: the family's seal (its first letter, like an embroidered patch), the name, its own line */
+.fp-id { position: relative; z-index: 2; margin: -54px 16px 0; display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border-radius: 20px; background: var(--card); box-shadow: var(--lift); border: 1px solid var(--line); }
+.fp-seal { flex: none; display: grid; place-items: center; inline-size: 64px; block-size: 64px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--olive) 70%, #fff), var(--olive));
+  color: var(--ink); font-size: 1.9rem; font-weight: 700; line-height: 1;
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, var(--olive) 60%, var(--ink)), inset 0 0 0 7px color-mix(in srgb, #fff 55%, var(--olive)); }
+.fp-seal.has-img { background: none; overflow: hidden; }
+.fp-seal img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.fp-who { min-inline-size: 0; display: grid; gap: 2px; }
+.fp-name { margin: 0; font-size: 1.5rem; line-height: 1.2; text-wrap: balance; }
+.fp-line { margin: 0; color: var(--muted); font-size: .98rem; text-wrap: pretty; }
+.fp-sees { display: inline-flex; align-items: center; gap: 5px; justify-self: start; margin-block-start: 4px; padding: 2px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-size: .8rem; font-weight: 600; }
+.fp-sees svg { inline-size: 14px; block-size: 14px; }
+:root[data-theme="dark"] .fp-sees { color: var(--olive); background: color-mix(in srgb, var(--olive) 14%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fp-sees { color: var(--olive); background: color-mix(in srgb, var(--olive) 14%, transparent); } }
+
+/* the family's people: round faces that overlap a little, names under them */
+.fp-people { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 16px; margin: 0; padding: 0 16px; list-style: none; }
+.fp-person { display: grid; justify-items: center; gap: 4px; inline-size: 68px; text-align: center; color: var(--text); text-decoration: none; }
+.fp-face { display: grid; place-items: center; inline-size: 56px; block-size: 56px; border-radius: 50%; overflow: hidden;
+  background: color-mix(in srgb, var(--soil) 22%, var(--card)); border: 3px solid var(--card); box-shadow: 0 0 0 1.5px var(--line-strong);
+  font-weight: 700; color: var(--soil); }
+.fp-face img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.fp-person span { font-size: .8rem; line-height: 1.2; overflow-wrap: anywhere; }
+
+/* the cards */
+.fp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); gap: 16px; padding-inline: 16px; }
+.fp-card { min-inline-size: 0; display: grid; align-content: start; gap: 12px; padding: 16px 18px 18px; border-radius: 20px;
+  background: var(--card); border: 1px solid var(--line); }
+.fp-card.wide { grid-column: 1 / -1; }
+.fp-h { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.02rem; }
+.fp-h svg { inline-size: 20px; block-size: 20px; color: var(--primary); flex: none; }
+:root[data-theme="dark"] .fp-h svg { color: var(--olive); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fp-h svg { color: var(--olive); } }
+.fp-card p { margin: 0; line-height: 1.6; text-wrap: pretty; }
+
+/* where we come from: a road of places, each a small stop, joined by a dotted path */
+.fp-road { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; margin: 0; padding: 0; list-style: none; }
+.fp-road li { display: flex; align-items: center; }
+.fp-road li + li::before { content: ""; inline-size: 26px; block-size: 10px; margin-inline: 4px; border-block-start: 2px dotted var(--soil); border-radius: 50% 50% 0 0; translate: 0 3px; }
+.fp-stop { display: grid; gap: 1px; padding: 6px 12px; border-radius: 14px; background: color-mix(in srgb, var(--soil) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--soil) 30%, transparent); line-height: 1.25; }
+.fp-stop b { font-size: .95rem; }
+.fp-stop small { color: var(--muted); font-size: .76rem; }
+.fp-road li:last-child .fp-stop { background: color-mix(in srgb, var(--olive) 26%, var(--card)); border-color: color-mix(in srgb, var(--olive) 60%, transparent); }
+
+/* the traditions: their own words, set like a quotation */
+.fp-said { padding-inline-start: 14px; border-inline-start: 3px solid color-mix(in srgb, var(--olive) 70%, transparent); white-space: pre-line; }
+
+/* a window onto the tree: shaped like the tent's opening */
+.fp-window { position: relative; display: grid; place-items: end center; block-size: 210px; overflow: hidden; text-decoration: none; color: var(--text);
+  border-radius: 50% 50% 18px 18px / 34% 34% 18px 18px; border: 2px solid color-mix(in srgb, var(--soil) 45%, transparent);
+  background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--vine) 22%, transparent), transparent 60%), linear-gradient(180deg, var(--tint), var(--chalk));
+  transition: transform var(--dur-press, .15s) ease, box-shadow .2s ease; }
+.fp-window:hover { transform: translateY(-2px); box-shadow: var(--lift); }
+.fp-window:focus-visible { outline: 3px solid var(--primary); outline-offset: 3px; }
+.fp-window .fp-mini { position: absolute; inset: 12px 18% 30px; }
+.fp-window .fp-mini img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: contain; object-position: 50% 100%; }
+.fp-window .fp-go { position: relative; margin-block-end: 8px; padding: 3px 12px; border-radius: 999px; background: var(--glass); font-size: .82rem; font-weight: 600; }
+:root[data-theme="dark"] .fp-window { background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--olive) 18%, transparent), transparent 60%), linear-gradient(180deg, #1d2236, var(--card)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fp-window { background: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--olive) 18%, transparent), transparent 60%), linear-gradient(180deg, #1d2236, var(--card)); } }
+
+/* the family's recipes: small round dishes with names */
+.fp-dishes { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.fp-dish { display: grid; justify-items: center; gap: 6px; text-align: center; color: var(--text); text-decoration: none; font-size: .86rem; line-height: 1.25; }
+.fp-dish img, .fp-dish .fp-plate { inline-size: 72px; block-size: 72px; border-radius: 50%; object-fit: cover;
+  border: 4px solid var(--chalk-raised); box-shadow: 0 0 0 1.5px var(--line-strong), 0 6px 14px rgba(46, 42, 30, .14); background: color-mix(in srgb, var(--olive) 20%, var(--card)); }
+.fp-dish:hover img { transform: rotate(-6deg); transition: transform .3s var(--ease-river, ease); }
+.fp-dish:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 12px; }
+
+/* an item the viewer may not see: an empty spot, the shape of what would be there, no text */
+.fp-gap { min-block-size: 64px; border-radius: 16px; border: 1.5px dashed var(--line-strong);
+  background: repeating-linear-gradient(-45deg, transparent 0 10px, color-mix(in srgb, var(--line) 45%, transparent) 10px 11px); }
+.fp-dish.fp-gap, .fp-person.fp-gap { min-block-size: 0; border: none; background: none; }
+.fp-dish.fp-gap::before, .fp-person.fp-gap::before { content: ""; inline-size: 64px; block-size: 64px; border-radius: 50%; border: 1.5px dashed var(--line-strong); }
+
+/* an empty card the heads can fill: a quiet invitation */
+.fp-empty { color: var(--muted); font-size: .92rem; }
+.fp-add { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-block-size: 40px; padding: 6px 14px; border-radius: 999px;
+  border: 1.5px dashed color-mix(in srgb, var(--primary) 55%, transparent); background: none; color: var(--primary); font: inherit; font-weight: 600; cursor: pointer; }
+:root[data-theme="dark"] .fp-add { color: var(--olive); border-color: color-mix(in srgb, var(--olive) 55%, transparent); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fp-add { color: var(--olive); border-color: color-mix(in srgb, var(--olive) 55%, transparent); } }
+
+/* for a member who is not a head: what they change goes to a head as a suggestion */
+.fp-suggest { margin-inline: 16px; padding: 10px 14px; border-radius: 14px; background: color-mix(in srgb, var(--olive) 18%, var(--card)); font-size: .9rem; }
+
+/* choosing the cover (in a window): the drawings and the family's own photo */
+.fp-covers { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.fp-cover-opt { position: relative; display: grid; gap: 6px; padding: 0; border: none; background: none; color: var(--text); font: inherit; font-size: .86rem; text-align: center; cursor: pointer; }
+.fp-cover-opt img, .fp-cover-opt .fp-own { inline-size: 100%; aspect-ratio: 3 / 1.4; object-fit: cover; border-radius: 14px; border: 2px solid var(--line); }
+.fp-cover-opt[aria-pressed="true"] img, .fp-cover-opt[aria-pressed="true"] .fp-own { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 30%, transparent); }
+.fp-cover-opt:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 14px; }
+.fp-own { display: grid; place-items: center; border-style: dashed !important; background: color-mix(in srgb, var(--soil) 8%, var(--card)); font-size: 1.6rem; color: var(--soil); }
+.fp-cover-opt input[type="file"] { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; }
+
+/* the door from elsewhere: "member of the … family" beside a person, and the button at the top of the tree */
+.fp-link { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 600; text-decoration: none; }
+.fp-link:hover { text-decoration: underline; }
+
+@media (min-width: 720px) {
+  .fp-cover { border-radius: 0 0 36px 36px; max-block-size: 280px; inline-size: 100%; }
+  .fp-id { margin-inline: 32px; padding: 16px 22px; }
+  .fp-seal { inline-size: 76px; block-size: 76px; font-size: 2.2rem; }
+  .fp-name { font-size: 1.9rem; }
+  .fp-people, .fp-grid { padding-inline: 32px; }
+  .fp-suggest { margin-inline: 32px; }
+}
+@media (max-width: 420px) {
+  .fp-cover { aspect-ratio: 2 / 1; }
+  .fp-id { gap: 12px; padding: 12px 14px; }
+  .fp-seal { inline-size: 54px; block-size: 54px; font-size: 1.6rem; }
+  .fp-name { font-size: 1.3rem; }
+  .fp-people { gap: 10px 6px; padding-inline: 0; }
+  .fp-person { inline-size: 58px; }
+  .fp-face { inline-size: 50px; block-size: 50px; }
+}
+@media (prefers-reduced-motion: reduce) { .fp-window, .fp-dish img { transition: none; } .fp-window:hover { transform: none; } }

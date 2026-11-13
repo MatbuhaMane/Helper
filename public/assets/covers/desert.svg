@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice"><title>לילה במדבר</title>
+<defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2246"/><stop offset="1" stop-color="#4a4670"/></linearGradient>
+<radialGradient id="l"><stop offset="0" stop-color="#ffcf7a" stop-opacity=".9"/><stop offset="1" stop-color="#ffcf7a" stop-opacity="0"/></radialGradient></defs>
+<rect width="1200" height="400" fill="url(#s)"/>
+<g fill="#f6efd2"><circle cx="120" cy="60" r="2"/><circle cx="260" cy="120" r="1.6"/><circle cx="380" cy="50" r="2.2"/><circle cx="520" cy="96" r="1.5"/><circle cx="640" cy="40" r="2"/><circle cx="760" cy="130" r="1.6"/><circle cx="1040" cy="70" r="2"/><circle cx="1140" cy="140" r="1.6"/><circle cx="60" cy="170" r="1.5"/><circle cx="460" cy="180" r="1.4"/><circle cx="980" cy="190" r="1.5"/></g>
+<path d="M902 70a40 40 0 1 0 36 62a32 32 0 1 1-36-62Z" fill="#f6efd2"/>
+<path d="M-20 270C160 220 320 230 500 260S860 220 1220 250V420H-20Z" fill="#5a4560"/>
+<path d="M-20 310C220 270 440 290 640 312S1000 280 1220 300V420H-20Z" fill="#7a5a4a"/>
+<ellipse cx="640" cy="296" rx="130" ry="44" fill="url(#l)"/>
+<g transform="translate(640 304)"><path d="M-80 0Q-40-56 0-78Q40-56 80 0Q0 8-80 0Z" fill="#a8433a"/><path d="M-80 0Q-40-56 0-78Q-12-40-20 2Z" fill="#7a2f2a"/><path d="M-12 2Q0-40 12 2Z" fill="#ffcf7a"/></g>
+<path d="M470 300Q464 250 474 200" fill="none" stroke="#3c2a1e" stroke-width="7" stroke-linecap="round"/>
+<g transform="translate(474 200)" fill="#3e4a2a"><path d="M0 0Q-40-6-62 20Q-30 4 0 4Z"/><path d="M0 0Q40-8 64 18Q30 4 0 4Z"/><path d="M0 0Q-22-30-50-34Q-20-18 0 2Z"/><path d="M0 0Q24-30 52-32Q22-16 0 2Z"/></g>
+<path d="M-20 360C280 330 560 346 820 358S1100 344 1220 340V420H-20Z" fill="#8f6a50"/>
+</svg>

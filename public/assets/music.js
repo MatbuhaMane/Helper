@@ -273,7 +273,7 @@
     const art = el('span', { class: 'mu-art' });
     const title = el('b', { class: 'mu-title' }), artist = el('small', { class: 'mu-artist' });
     const play = btn('play', 'נגן', () => E.toggle(), 'main');
-    const bar = el('span', { class: 'mu-bar' }, el('i'));
+    const bar = el('span', { class: 'mu-bar scaled' }, el('i'));   // (.scaled: the bar grows by transform, from --p – smooth motion)
     const node = el('div', { class: 'mu-unit ' + kind },
       art, el('span', { class: 'mu-text', role: 'button', tabindex: '0', title: 'לפתוח את הנגן', onclick: () => openPanel(), onkeydown: (e) => { if (e.key === 'Enter') openPanel(); } }, title, artist),
       el('span', { class: 'mu-ctls', dir: 'ltr' }, btn('prev', 'הקודם', () => E.prev()), play, btn('next', 'הבא', () => E.next())),
@@ -287,7 +287,7 @@
       art.style.backgroundImage = st.art ? `url("${st.art}")` : '';
       play.replaceChildren(ic(st.playing ? 'pause' : 'play'));
       play.setAttribute('aria-label', st.playing ? 'השהיה' : 'נגן'); play.title = play.getAttribute('aria-label');
-      bar.firstChild.style.inlineSize = st.duration ? `${(now(st) / st.duration) * 100}%` : '0';
+      bar.firstChild.style.setProperty('--p', st.duration ? String(Math.min(1, now(st) / st.duration)) : '0');
     });
     return node;
   }

@@ -108,7 +108,8 @@ export async function list(ctx: Ctx) {
     week: L.week(done, today, rest), streak: L.streak(done, today, rest), why,
     review: L.reviewDue(today, rest, review?.week || null),
     badges: { earned: badges.earned, fresh: badges.fresh },
-    catalog: L.BADGES.map((b) => ({ ...b, name: L.badgeName(b, rest) })),
+    // (the family badges wait for the shared goals: not shown until they can be earned – the readiness bar)
+    catalog: L.BADGES.filter((b) => !b.soon).map((b) => ({ ...b, name: L.badgeName(b, rest) })),
   });
 }
 

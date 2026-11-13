@@ -359,7 +359,8 @@
     };
     H.modal(el('h2', {}, `🏅 badges · ${got.size}`),
       el('p', { class: 'small muted', style: 'margin:0' }, 'לחיצה על badge מראה איך משיגים אותו. הסודיים נשארים צללית עד שמקבלים אותם.'),
-      ...GROUPS.map(([k, n]) => el('section', {}, el('h3', { style: 'margin:10px 0 6px' }, n),
+      // (a group with nothing to earn yet – the family's, until the shared goals – is not shown)
+      ...GROUPS.filter(([k]) => D.catalog.some((b) => b.group === k)).map(([k, n]) => el('section', {}, el('h3', { style: 'margin:10px 0 6px' }, n),
         el('div', { style: 'display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(110px,1fr))' }, D.catalog.filter((b) => b.group === k).map(patch)))));
   }
 

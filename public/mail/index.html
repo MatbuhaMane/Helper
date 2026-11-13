@@ -26,7 +26,7 @@
     .op details { margin-top: 6px; font-size: .8rem; color: var(--muted); padding-inline-start: 32px; }
     .op code { direction: ltr; unicode-bidi: embed; }
     .progress { height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 10px 0; }
-    .progress > i { display: block; height: 100%; width: 0; background: var(--primary); transition: width .3s; }
+    .progress > i { display: block; height: 100%; width: 100%; background: var(--primary); transform: scaleX(var(--p, 0)); transform-origin: right; transition: transform .3s; }
     .hist li { margin-bottom: 10px; }
     .big { font-size: 1.05rem; padding: 12px 18px; }
   </style>

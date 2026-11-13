@@ -122,7 +122,7 @@
         : ai.out ? el('p', { class: 'small' }, `כדי להמשיך עם העוזר החכם, חברו שירות משלכם${orCredit}.`) : null,
       el('div', { class: 'st-services-grid' },
         ...PROVIDERS.map(row),
-        el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
+        // (no ChatGPT card until the app talks to it – the readiness bar: nothing "soon" on show)
         // (the credit card only while the shop is open – the owner's switch)
         !shopOpen ? null : el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט'))),
@@ -300,7 +300,7 @@
     choices('השפה', [['he', 'עברית'], ['ar', 'العربية', { soon: true }], ['en', 'English', { soon: true }]], me.lang || 'he', (v) => { me.lang = v; keep('me'); }),
     el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'));
 
-  /* ---------- my place: the city (restaurants nearby now; Shabbat times and the weather later) ---------- */
+  /* ---------- my place: the city (the weather, restaurants nearby) ---------- */
   const CITIES = ['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'בני ברק', 'פתח תקווה', 'ראשון לציון', 'אשדוד', 'נתניה', 'חולון', 'רמת גן', 'רחובות',
     'בית שמש', 'מודיעין', 'כפר סבא', 'הרצליה', 'רעננה', 'אשקלון', 'בת ים', 'טבריה', 'צפת', 'עכו', 'נצרת', 'אילת', 'אריאל', 'מעלה אדומים', 'ביתר עילית', 'אלעד'];
   function myPlace() {
@@ -312,7 +312,7 @@
     return section('place', 'המקום שלי',
       el('datalist', { id: 'st-cities' }, CITIES.map((c) => el('option', { value: c }))),
       el('div', { class: 'st-field' }, el('label', {}, el('span', { class: 'st-label' }, 'העיר שלי'), city)),
-      el('p', { class: 'muted small' }, 'משמשת לחיפוש מסעדות בסביבה, ובהמשך לזמני שבת ולמזג האוויר. המיקום המדויק של המכשיר לא נשמר: הוא נשאל רק כשמבקשים "לידי עכשיו".'));
+      el('p', { class: 'muted small' }, 'משמשת למזג האוויר ולחיפוש מסעדות בסביבה. המיקום המדויק של המכשיר לא נשמר: הוא נשאל רק כשמבקשים "לידי עכשיו".'));
   }
 
   /* ---------- the tools menu: lock its arrangement (design's launcher.js obeys it live) ---------- */

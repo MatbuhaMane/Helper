@@ -20,7 +20,11 @@
   if (window.Figure2D) return;
   const BASE = '/figures/2d/';
   const FIGURES = {
-    // filled in as the figures are drawn: see docs/design/figures-2d.md
+    // the generic ones: free for everyone (docs/design/figures-2d.md; drawn with the image tool, 2026-11-13)
+    fennec: { name: 'פנק', kind: 'generic', neck: 0.6, pivot: [0.5, 0.58], eyes: [[0.39, 0.47], [0.61, 0.47]], eyeR: 0.055, mouth: [0.5, 0.535], mouthW: 0.1, cheek: '#e89a7a' },
+    owl: { name: 'ינשוף', kind: 'generic', neck: 0.57, pivot: [0.5, 0.55], eyes: [[0.33, 0.33], [0.67, 0.33]], eyeR: 0.085, mouth: [0.5, 0.435], mouthW: 0.07, mouthFill: '#c8862a', cheek: null },
+    hedgehog: { name: 'קיפוד', kind: 'generic', neck: 0.53, pivot: [0.5, 0.5], eyes: [[0.4, 0.38], [0.6, 0.38]], eyeR: 0.05, mouth: [0.5, 0.465], mouthW: 0.09, cheek: '#eaa092' },
+    lamb: { name: 'טלה', kind: 'generic', neck: 0.53, pivot: [0.515, 0.5], eyes: [[0.42, 0.385], [0.61, 0.385]], eyeR: 0.05, mouth: [0.515, 0.465], mouthW: 0.09, cheek: '#eaa092' },
   };
   const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   const NS = 'http://www.w3.org/2000/svg';

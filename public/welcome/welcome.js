@@ -16,24 +16,13 @@
   const me = H.prefs('me', H.SETTINGS_DEFAULTS?.me || {}), look = H.prefs('look', H.SETTINGS_DEFAULTS?.look || {}), dp = H.prefs('daemon', H.DAEMON_DEFAULTS || {});
   const keep = (ns) => { H.savePrefs(ns); dispatchEvent(new CustomEvent('helper:prefs', { detail: ns })); };
   const ANIMALS = ['fennec', 'owl', 'hedgehog', 'lamb'];
-  // the owner's family has רַאבַּ"ע (/api/daemon ibnEzra), and for them an empty choice means him (daemon.js, settings.js):
-  // he is their default here and the first tile, and an empty choice is never replaced by a random animal
-  const family = await H.api('/api/daemon', { noRedirect: true }).then((d) => !!d?.ibnEzra).catch(() => false);
-  const FIGS = family ? ['ibn_ezra', ...ANIMALS] : ANIMALS;
-  const figName = (f) => (f === 'ibn_ezra' ? 'רַאבַּ"ע' : Figure2D.FIGURES[f]?.name || f);
-  // (רַאבַּ"ע is the 3D figure of daemon.js, not a Figure2D one: here he is his picture, as in the settings)
-  const mountFig = (box, f, o) => {
-    if (f !== 'ibn_ezra') return Figure2D.mount(box, f, o);
-    box.replaceChildren(H.el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: o.size, height: o.size, style: 'inline-size:100%;block-size:auto;border-radius:50%' }));
-    return Promise.resolve({ happy() {}, destroy() {} });
-  };
   const first = (s) => String(s || '').trim().split(/\s+/)[0] || '';
   const CAL_OF = { jewish: 'he', muslim: 'hijri', none: 'greg' };
   const A = {
     name: me.name || first(user.he_name || user.name),
     cal: me.calendar || (me.religion ? CAL_OF[me.religion] || '' : ''),
     city: me.city || '', place: me.place && me.place.name === me.city ? me.place : null, palette: look.palette || '', paletteSet: !!look.palette,
-    figure: FIGS.includes(dp.figure) ? dp.figure : family ? 'ibn_ezra' : ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
+    figure: ANIMALS.includes(dp.figure) ? dp.figure : ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
     family: Array.isArray(me.familyPlan) ? me.familyPlan : me.familyPlan ? [me.familyPlan] : [],   // (an older single value is read too)
   };
   // each answer, as it is given
@@ -80,7 +69,7 @@
     { id: 'city', q: () => 'איפה הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<div class="wz-place"><input class="wz-name" id="city" maxlength="60" placeholder="עיר או יישוב" aria-label="העיר או היישוב" value="${esc(A.city)}" style="font-size:1.5rem" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-sugg"><ul class="wz-sugg" id="city-sugg" role="listbox" aria-label="מקומות שנמצאו" hidden></ul></div><p class="wz-home" id="city-home" aria-live="polite"></p><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
     { q: () => 'באיזה צבע האוהל שלך?', hint: 'אפשר להחליף בכל רגע בהגדרות', body: () => `<div class="wz-drops" role="radiogroup" aria-label="ערכת צבעים">${PALETTES.map(([v, d1, d2, n]) =>
       `<button class="wz-drop" type="button" role="radio" aria-checked="${A.paletteSet && A.palette === v}" aria-label="${n}" title="${n}" data-p="${v}" style="--d1:${d1};--d2:${d2}"></button>`).join('')}</div>`, ok: () => A.paletteSet },
-    { q: () => 'מי ילווה אותך?', hint: 'החבר שלך באוהל. אפשר להחליף בכל רגע', body: () => `<div class="wz-figs" role="radiogroup" aria-label="הדמות">${FIGS.map((f) => `<button class="wz-tile" type="button" role="radio" aria-checked="${A.figure === f}" data-fig="${f}" aria-label="${esc(figName(f))}"><span class="wz-mini" data-f="${f}"></span><b>${esc(figName(f))}</b></button>`).join('')}</div>`, ok: () => A.figure },
+    { q: () => 'מי ילווה אותך?', hint: 'החבר שלך באוהל. אפשר להחליף בכל רגע', body: () => `<div class="wz-figs" role="radiogroup" aria-label="הדמות">${ANIMALS.map((f) => `<button class="wz-tile" type="button" role="radio" aria-checked="${A.figure === f}" data-fig="${f}" aria-label="${Figure2D.FIGURES[f]?.name || f}"><span class="wz-mini" data-f="${f}"></span><b>${Figure2D.FIGURES[f]?.name || f}</b></button>`).join('')}</div>`, ok: () => A.figure },
     { q: () => 'מי עוד באוהל שלך?', hint: 'נזמין אותם אחר כך. אפשר גם לדלג', body: () => tiles('family', [['partner', 'בן/בת זוג'], ['kids', 'ילדים'], ['parents', 'הורים'], ['siblings', 'אחים ואחיות'], ['grand', 'סבים וסבתות'], ['friends', 'חברים'], ['none', 'אין קשרים', 'רק אני']], true), ok: () => true },
   ];
   $('trail').innerHTML = STEPS.map(() => '<i></i>').join('');
@@ -124,8 +113,8 @@
       if (!still) { const r = document.createElement('i'); r.className = 'wz-ripple'; r.style.cssText = `left:${e.clientX}px;top:${e.clientY}px;--d1:${d.style.getPropertyValue('--d1')}`; $('wz').append(r); setTimeout(() => r.remove(), 800); }
       save.palette(); glad(); refresh();
     }));
-    box.querySelectorAll('.wz-mini').forEach((m) => mountFig(m, m.dataset.f, { size: 78, still: true }).catch(() => {}));
-    box.querySelectorAll('.wz-helper').forEach((m) => mountFig(m, m.dataset.f, { size: 132, still: still }).catch(() => {}));
+    box.querySelectorAll('.wz-mini').forEach((m) => Figure2D.mount(m, m.dataset.f, { size: 78, still: true }).catch(() => {}));
+    box.querySelectorAll('.wz-helper').forEach((m) => Figure2D.mount(m, m.dataset.f, { size: 132, still: still }).catch(() => {}));
     box.querySelectorAll('[data-fig]').forEach((t) => t.addEventListener('click', async () => {
       box.querySelectorAll('[data-fig]').forEach((x) => x.setAttribute('aria-checked', String(x === t)));
       A.figure = t.dataset.fig; save.figure(); await meet(A.figure); glad(); refresh();
@@ -200,7 +189,7 @@
   }
   async function meet(id) {
     friend?.destroy?.(); $('friend').textContent = '';
-    try { friend = await mountFig($('friend'), id, { size: parseInt(getComputedStyle($('wz')).getPropertyValue('--wz-fig')) || 120 }); friend.happy?.(); } catch (_) { friend = null; }
+    try { friend = await Figure2D.mount($('friend'), id, { size: parseInt(getComputedStyle($('wz')).getPropertyValue('--wz-fig')) || 120 }); friend.happy?.(); } catch (_) { friend = null; }
   }
   let ended = false;
   go.addEventListener('click', () => {
@@ -224,7 +213,7 @@
     }).catch(() => {});
     // finished (not skipped): the first achievement, "נטית את האוהל"
     if (!skipped) fetch('/api/welcome/done', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
-    if (!dp.figure && !(family && A.figure === 'ibn_ezra')) { dp.figure = A.figure; keep('daemon'); }   // (empty is רַאבַּ"ע for the owner's family)
+    if (!dp.figure) { dp.figure = A.figure; keep('daemon'); }
     stage.querySelector('.wz-step')?.remove(); [...$('trail').children].forEach((d) => (d.className = 'done'));
     if (!skipped && !still) for (let i = 0; i < 26; i++) {
       const s = document.createElement('i'); s.className = 'wz-star'; const a = (i / 26) * 6.283, r = 120 + (i % 5) * 34;

@@ -100,6 +100,21 @@ The owner asked for two things.
 
 Status: done (server).
 
+## 2026-11-14 – The locks' look (design → ai-features, master)
+
+For "Locks and privacy": `/assets/lock.js` + `lock.css` (design) give the padlock and its locking move, the lock screen
+(dots, keypad, passkey key, wrong code / pause / unlocked states, keyboard digits, the page made inert) and the window
+for the first visit to the tree; `settings.css` gains `.st-code`, `.st-warn`, `.st-safe` and the low level's chip for the
+"פרטיות ואבטחה" section. ai-features wires them to the routes (the API in `docs/design/locks.md`, the markup in
+`docs/design/prototype/lock.html`). Status: done (design); waiting for ai-features to build the pages.
+
+## 2026-11-14 – Dracula drawn again, younger (design → master, business)
+
+The owner: Dracula younger and more attractive, Cleopatra's counterpart. Redrawn as a handsome young count (black swept
+hair, a red-lined cape, a red waistcoat), elegant rather than frightening. Same id `dracula`, same name, still paid,
+no longer tagged `horror` (the owner: remove the tag – he is not scary now, so he is never hidden by that filter). His
+palette tints the lining and the waistcoat. Status: done (design).
+
 ## 2026-11-14 – A basic palette for every free figure (design → ai-features, master, business)
 
 Following the owner's decision that palettes are never sold: the 12 free figures (fennec, owl, lamb, hedgehog, Ibn Sina,

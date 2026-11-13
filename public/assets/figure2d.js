@@ -79,7 +79,8 @@
     littlewitch: { name: 'הקוסמת הקטנה', kind: 'special', tier: 'paid', paid: true, hideFor: [], special: 'spark', sparkFrom: [0.12, 0.34], sparkColor: '#ffd25a',
       glowAt: [0.12, 0.34], glowColor: '#ffd25a',
       neck: 0.57, pivot: [0.49, 0.55], eyes: [], eyeR: 0.04, mouth: [0.485, 0.505], mouthW: 0.055, cheek: null, sway: 0.35 },
-    dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', paid: true, hideFor: [], tags: ['horror'], neck: 0.52, pivot: [0.51, 0.5], eyes: [[0.405, 0.29], [0.62, 0.29]], eyeR: 0.04, mouth: [0.51, 0.455], mouthW: 0.06, cheek: null, eyeColor: '#3a1c1c', sway: 0.35 },
+    // Dracula drawn again (the owner, 2026-11-13): young and handsome, the romantic gothic count – Cleopatra's counterpart
+    dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', paid: true, hideFor: [], neck: 0.485, pivot: [0.5, 0.47], eyes: [[0.4, 0.315], [0.6, 0.315]], eyeR: 0.04, mouth: [0.5, 0.41], mouthW: 0.1, cheek: null, eyeColor: '#2a1418', sway: 0.45 },
   };
   // a palette for every figure, included (the owner, 2026-11-14: palettes are never sold, everyone gets them): its scarf,
   // shawl, vest, robe or coat in 5 colourways, the first as drawn; the tint layers are tint-<layer>.webp beside each
@@ -100,7 +101,7 @@
     maryshelley: { layers: ['dress'], options: [{ name: 'ירוק כהה', swatch: '#2e3e30' }, { name: 'כחול לילה', dress: '#22304a' }, { name: 'בורדו', dress: '#4a1e26' }, { name: 'סגול', dress: '#3a2a4a' }, { name: 'חום', dress: '#4a3628' }] },
     leonardo: { layers: ['robe'], options: [{ name: 'חלודה', swatch: '#9a4a30' }, { name: 'כחול', robe: '#3a5a8a' }, { name: 'ירוק', robe: '#4a6a3a' }, { name: 'סגול', robe: '#5a3a6a' }, { name: 'חרדל', robe: '#a8822a' }] },
     cleopatra: { layers: ['dress'], options: [{ name: 'לבן', swatch: '#f2efe6' }, { name: 'תכלת', dress: '#d2e2ec' }, { name: 'זהב בהיר', dress: '#efe0b0' }, { name: 'טורקיז', dress: '#c8e6e0' }, { name: 'ורוד', dress: '#ecd2d6' }] },
-    dracula: { layers: ['lining'], options: [{ name: 'אדום', swatch: '#7a1a22' }, { name: 'סגול', lining: '#4a1a5a' }, { name: 'ירוק', lining: '#1a4a32' }, { name: 'כחול', lining: '#1a2a5a' }, { name: 'זהב', lining: '#8a6a1a' }] },
+    dracula: { layers: ['lining'], options: [{ name: 'אדום', swatch: '#7a1a2a' }, { name: 'סגול', lining: '#4a1a5a' }, { name: 'ירוק', lining: '#1a4a32' }, { name: 'כחול', lining: '#1a2a5a' }, { name: 'זהב', lining: '#8a6a1a' }] },
     magician: { layers: ['robe'], options: [{ name: 'כחול', swatch: '#2a5a7a' }, { name: 'ירוק', robe: '#2a5a3e' }, { name: 'בורדו', robe: '#6a2232' }, { name: 'סגול', robe: '#4a3270' }, { name: 'חום', robe: '#6a4a2a' }] },
     astronomer: { layers: ['shawl'], options: [{ name: 'כחול', swatch: '#2f4f78' }, { name: 'ירוק', shawl: '#2f5a48' }, { name: 'בורדו', shawl: '#6a2a3a' }, { name: 'סגול', shawl: '#4a3a6a' }, { name: 'אפור', shawl: '#4a4e56' }] },
     littlewizard: { layers: ['blue'], options: [{ name: 'כחול', swatch: '#6a8cb8' }, { name: 'ירוק', blue: '#6a9a72' }, { name: 'אדום', blue: '#b05a50' }, { name: 'סגול', blue: '#8a72b0' }, { name: 'צהוב', blue: '#c8a84a' }] },

@@ -53,3 +53,7 @@ outlines kept, small specks dropped). This master still has her original dark ha
 `magician-desert-short.webp`), 1 × $0.069. The seer (was the astronomer) and the little witch swapped skin tones in
 their `public/figures/2d/` pictures (the masters here are unchanged). The night wizard and the forest witch have tint
 layers for their palettes (`tint-*.webp`, from `palette.py`).
+
+**Dracula drawn again (the owner's word):** young and handsome, the romantic gothic count – Cleopatra's counterpart
+(Cleopatra as a reference), not scary: no blood, no fangs. 1 × $0.069. The old white-haired count is kept as
+`dracula-old.webp`. His palette tints the cape's lining and the waistcoat together.

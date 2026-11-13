@@ -31,7 +31,13 @@
   const svgEl = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };
   const rnd = (a, b) => a + Math.random() * (b - a);
 
+  // the engine brings its own look: figure2d.css, once per page (a page may still link it itself)
+  function ensureCss() {
+    if (document.querySelector('link[href*="figure2d.css"]')) return;
+    const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/assets/figure2d.css'; document.head.append(l);
+  }
   async function mount(host, which, opts = {}) {
+    ensureCss();
     const cfg = typeof which === 'string' ? { id: which, ...FIGURES[which] } : which;
     if (!cfg || !cfg.neck) throw new Error('Figure2D: no such figure ' + which);
     const src = cfg.src || `${BASE}${cfg.id}/figure.webp`;

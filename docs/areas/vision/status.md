@@ -1,7 +1,7 @@
 # Status – vision
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13.
+Last update: 2026-11-14.
 
 ## Done
 
@@ -28,6 +28,15 @@ Last update: 2026-11-13.
 
 ## In progress
 
+- **Batch 14** (2026-11-14), sent to design, ai-features, the CEO and research2:
+  - the test-run findings on the phone: the slide centring, the sky spot, the missing daily summary, the guitar's horizontal strum;
+  - the cushions' arrange mode;
+  - the tools menu order with the "ניסיוני" tag;
+  - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
+  - the garage (smart home) feasibility study.
+- **The owner's quick ideas** (`docs/vision/later.md`), split into three waves:
+  - wave 2 waits for the family launch: the הקפדה coach, Telegram-level chat;
+  - wave 3: friends and "גבעה ביער" wait for a vision spec, and the garage waits for the study.
 - **The personal profile and the back door** (`docs/vision/profile.md`): decided and sent (batch 11) to design, ai-features and the CEO.
 - **Serious mode** (`docs/vision/serious-mode.md`): decided and sent (batch 11) to design, ai-features and the CEO.
 - **Grandparents mode, the emergency button and kids mode** (`docs/vision/grandparents-kids.md`): decided and sent (batch 12).

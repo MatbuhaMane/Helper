@@ -658,7 +658,7 @@
       return i < 0 ? c : String.fromCodePoint(0x10900 + i);
     });
   }
-  const UI_SEL = 'header, nav, button, label, h1, h2, h3, h4, legend, summary, th, .btn, .tab, [role=tab], [role=menuitem], .ui, .sh-item, .wheel-item';
+  const UI_SEL = 'header, nav, button, label, h1, h2, h3, h4, legend, summary, th, .btn, .tab, [role=tab], [role=menuitem], .ui, .sr-tool, .wheel-item';
   const SKIP_SEL = 'input, textarea, select, [contenteditable], [data-content], .content, .keep-he, script, style';
   const orig = new WeakMap();
   let ancientOn = false, ancientObs = null;
@@ -692,15 +692,25 @@
       while (w.nextNode()) { const t = w.currentNode; if (orig.has(t)) { t.data = orig.get(t); orig.delete(t); } }
     }
   }
-  // a tap on ancient text shows the Hebrew it stands for, for a moment
+  /** the way back: ancient letters to Hebrew (the finals return at a word's end) */
+  const PHN_RE = /[𐤀-𐤕]/u;
+  function unancient(text) {
+    const he = String(text).replace(/[𐤀-𐤕]/gu, (c) => PHN[c.codePointAt(0) - 0x10900]);
+    return he.replace(/[כמנפצ](?=$|[^א-ת])/g, (c) => ({ 'כ': 'ך', 'מ': 'ם', 'נ': 'ן', 'פ': 'ף', 'צ': 'ץ' })[c]);
+  }
+  /** what the owner writes while the ancient switch is on goes out in the ancient letters, for everyone to see that way:
+   *  every composer (messages, comments, global messages) sends H.outgoing(text) instead of text */
+  const outgoing = (text) => (hasGrant('ancient_ui') && prefs('me').ancientUi ? ancient(text) : text);
+  // a tap on ancient text, the interface's or a message's, shows the Hebrew it stands for, for a moment
   document.addEventListener('click', (e) => {
-    if (!ancientOn) return;
-    const p = e.target.closest?.('.phn'); if (!p || p.closest('a, button, [role=button], [role=tab]')) return;
-    const t = [...p.childNodes].find((n) => orig.has(n)); if (t) toast(orig.get(t));
+    const p = e.target.closest?.('.phn') || (e.target.nodeType === 1 && PHN_RE.test(e.target.textContent || '') && e.target.childElementCount === 0 ? e.target : null);
+    if (!p || p.closest('a, button, [role=button], [role=tab], input, textarea')) return;
+    const t = [...p.childNodes].find((n) => orig.has(n));
+    toast(t ? orig.get(t) : unancient(p.textContent));
   }, true);
   addEventListener('helper:prefs', (e) => { if (!e.detail || e.detail === 'me') ancientUi(); });
 
-  window.H = { api, el, toast, me, ancient, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  window.H = { api, el, toast, me, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then
@@ -717,6 +727,8 @@
     if (a.motion === 'reduce') root.dataset.motion = 'reduce';
     if (/^[a-z0-9-]{1,24}$/.test(l.palette || '')) root.dataset.palette = l.palette;
     if (/^[a-z]{1,16}$/.test(m.religion || '')) root.dataset.religion = m.religion;
+    if (l.style === 'serious') root.dataset.style = 'serious';   // מצב רציניים (vision batch 11), before paint
+    if (l.pillows === 'keep') root.dataset.pillows = 'keep';
   })();
   if (!embedded) loadOnce('/settings/apply.js').catch(() => { /* the early marks stay */ });
 })();

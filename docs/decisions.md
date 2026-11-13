@@ -2452,9 +2452,9 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
   suggested, and they stay free text.
 
 ## 2026-11-13 – Serious mode on the home screen, secret grants and the ancient script (master; vision batch 11)
-- **Serious mode:** `H.prefs('me').serious` draws a plain grid of every tool (line icons, names, a search) instead of the
-  tent, the fire and the companion, chosen before drawing. `seriousPillows` keeps the cushion icons. `body.serious` is set
-  for the other pages. Settings (ai-features) owns both switches; design may refine `.serious-home` (inline in index.html).
+- **Serious mode** (design's contract, base.css): `H.prefs('look').style = 'serious'` sets `html[data-style=serious]` before paint (common.js),
+  and the home builds design's `.sr-home` from H.APPS (places and tools, a search, grid or list kept in `look.srView`) instead of
+  the tent, the fire and the companion. `look.pillows = 'keep'` keeps the cushion icons. The switches are ai-features'.
 - **Grants** (`server/grants.ts`, table `user_grants`): `frames`, `bio_ancient`, `name_ancient`. The owner grants or
   revokes from the owner's room (`GET /api/admin/grants`, `PUT /api/admin/grants/:email {key, on}`, behind the room's
   biometric, logged). `/api/me` carries `grants`, only the person's own. Saves must check `hasGrant(env, email, key)`.
@@ -2463,3 +2463,7 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
   owner's `ancient_ui`, the interface (bar, nav, buttons, headings, labels, tool names) turns Noto Sans Phoenician.
   Content stays Hebrew (`input`, `[data-content]`, `.content`). `.keep-he` always stays plain Hebrew (the switch and the
   way out). Call `H.ancientUi()` after saving the switch.
+- **Writing in the ancient script** (the owner, 2026-11-13): while the owner's switch is on, what the owner writes in
+  messages, comments and global messages goes out in the ancient letters, so every member sees it that way. Every composer
+  sends `H.outgoing(text)`, which converts only when the switch is on. `H.unancient(text)` restores the Hebrew, and a tap
+  on any ancient text shows it. The font must be in every page's stack: design adds Noto Sans Phoenician, self-hosted.

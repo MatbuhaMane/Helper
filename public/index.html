@@ -284,18 +284,6 @@
     .gbtn:hover { border-color: var(--primary); }
     .gbtn svg { width: 20px; height: 20px; }
     .out { text-align: center; margin-top: 18px; }
-    /* serious mode: a plain, professional list of the tools (design may refine it; tokens only) */
-    .serious-home { max-inline-size: 880px; margin-inline: auto; padding: 16px; }
-    .sh-greet { font-size: 1.4rem; margin-block: 8px 12px; }
-    .sh-find { inline-size: 100%; padding: 10px 12px; border: 1px solid var(--line, #d8d2c4); border-radius: 10px; background: var(--card, #fff); color: inherit; font: inherit; margin-block-end: 12px; }
-    .sh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
-    .sh-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line, #d8d2c4); border-radius: 10px; background: var(--card, #fff); color: inherit; text-decoration: none; min-block-size: 56px; }
-    .sh-item:hover, .sh-item:focus-visible { border-color: var(--vine, #5b6b2f); }
-    .sh-ic { inline-size: 28px; block-size: 28px; display: grid; place-items: center; flex: none; color: var(--vine, #5b6b2f); }
-    .sh-ic svg { inline-size: 24px; block-size: 24px; }
-    .sh-pillow { inline-size: 40px; block-size: 40px; object-fit: contain; flex: none; }
-    .sh-txt { display: grid; gap: 2px; min-inline-size: 0; }
-    .sh-txt small { color: var(--muted, #6b655a); font-size: .85rem; }
   </style>
 </head>
 <body data-daemon="hero">
@@ -403,22 +391,36 @@
     // read here, after the sign-in, when the person's preferences have arrived)
     // serious mode (docs/vision/serious-mode.md): a plain list of the tools, no tent, no fire, no companion; chosen from the
     // preference before anything is drawn, so the screen never flashes the other mode first
-    if (H.prefs('me').serious) { seriousHome(); return; }
+    if (H.prefs('look').style === 'serious') { document.documentElement.dataset.style = 'serious'; if (H.prefs('look').pillows === 'keep') document.documentElement.dataset.pillows = 'keep'; seriousHome(); return; }
     function seriousHome() {
-      document.body.classList.add('serious');
-      const pillows = !!H.prefs('me').seriousPillows;   // the second switch: keep the tools' cushion icons
-      const card = (a) => el('a', { class: 'sh-item', href: a.href },
-        pillows ? el('img', { class: 'sh-pillow', src: `/assets/pillows/${a.pillow}.webp`, alt: '', width: 40, height: 40, loading: 'lazy' }) : el('span', { class: 'sh-ic' }, H.appIcon(a.ic)),
-        el('span', { class: 'sh-txt' }, el('b', {}, a.name), el('small', {}, a.sub)));
-      const pinned = new Set(H.ringApps().map((a) => a.href));
-      const all = [...H.ringApps(), ...H.APPS.filter((a) => !pinned.has(a.href))];
-      const grid = el('div', { class: 'sh-grid' }, ...all.map(card));
-      const find = el('input', { type: 'search', class: 'sh-find', placeholder: 'חיפוש כלי', 'aria-label': 'חיפוש כלי', oninput: () => {
-        const q = find.value.trim();
-        grid.replaceChildren(...all.filter((a) => !q || (a.name + ' ' + a.sub).includes(q)).map(card));
-      } });
-      root.append(el('div', { class: 'serious-home' },
-        el('h1', { class: 'sh-greet' }, first ? `${hello()} ${first}` : hello()), find, grid,
+      const look = H.prefs('look'), pillows = document.documentElement.dataset.pillows === 'keep';
+      let view = look.srView === 'list' ? 'list' : 'grid';
+      const tool = (a) => el('li', { 'data-q': a.name + ' ' + a.sub }, el('a', { class: 'sr-tool', href: a.href },
+        el('span', { class: 'sr-ic' }, pillows ? el('img', { src: '/assets/pillows/' + a.pillow + '.webp', alt: '', loading: 'lazy' }) : H.appIcon(a.ic)),
+        el('span', { class: 'sr-txt' }, el('b', {}, a.name), el('small', {}, a.sub))));
+      const isTool = (a) => a.href.startsWith('/tools/') || /^\/(mail|pc|gather|messages|groceries|food\/)/.test(a.href);
+      const lists = [['המקומות', H.APPS.filter((a) => !isTool(a))], ['הכלים', H.APPS.filter(isTool)]].map(([t, apps]) => {
+        const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
+        return [el('section', { class: 'sr-group' }, el('h2', {}, t), ul), ul];
+      });
+      const none = el('p', { class: 'sr-none', hidden: '' }, 'לא נמצא כלי בשם הזה');
+      const input = el('input', { type: 'search', placeholder: 'חיפוש כלי', 'aria-label': 'חיפוש כלי' });
+      input.addEventListener('input', () => {
+        const w = input.value.trim(); let any = false;
+        lists.forEach(([sec, ul]) => { let n = 0; ul.querySelectorAll('li').forEach((li) => { const on = !w || li.dataset.q.includes(w); /* the Hebrew, even with the ancient letters */ li.hidden = !on; n += on; }); sec.hidden = !n; any ||= n > 0; });
+        none.hidden = any;
+      });
+      const btn = (v, t) => el('button', { type: 'button', 'aria-pressed': String(v === view), 'data-view': v }, t);
+      const views = el('div', { class: 'sr-view', role: 'group', 'aria-label': 'תצוגה' }, btn('grid', 'רשת'), btn('list', 'רשימה'));
+      views.addEventListener('click', (e) => {
+        const b = e.target.closest('button'); if (!b) return;
+        view = b.dataset.view; look.srView = view; H.savePrefs('look');
+        views.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        lists.forEach(([, ul]) => { ul.dataset.view = view; });
+      });
+      root.append(el('main', { class: 'sr-home' },
+        el('header', { class: 'sr-head' }, el('h1', {}, ...(first ? [hello() + ' ', el('span', { 'data-content': '' }, first)] : [hello()])), el('p', {}, 'כל הכלים במקום אחד')),
+        el('label', { class: 'sr-search' }, H.icon('lens'), input), ...lists.map(([sec]) => sec), none, views,
         el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     }
     const wheel = appWheel(H.ringApps());

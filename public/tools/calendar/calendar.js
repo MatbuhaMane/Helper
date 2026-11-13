@@ -445,9 +445,15 @@
     drawAll();
     setTimeout(() => grid.querySelector('.sel')?.focus(), 50);
   });
-  await loadFamily();
-  drawAll();
-  drawRemind();
   root.querySelector('.cal-sync')?.after(linkBox);     // beside the phone's calendar
-  drawLink();
+  // the first drawing comes in whole: the reminders above the month and the month's days arrive from the network, and
+  // drawn one by one they pushed the page down (a layout shift of 0.6; the readiness bar allows 0.1). Until they are
+  // in (at most 4 seconds) the body takes its place unseen – the header is there at once.
+  const body = [remindBox, root.querySelector('.cal-cols')];
+  body.forEach((b) => { if (b) b.style.visibility = 'hidden'; });
+  const first = (async () => { await loadFamily(); await Promise.all([drawMonth(), drawDay(), drawRemind(), drawLink()].map((p) => p.catch(() => {}))); })();
+  await Promise.race([first, new Promise((r) => setTimeout(r, 4000))]);
+  body.forEach((b) => { if (b) b.style.visibility = ''; });
+  await first;
+  drawYear();
 })();

@@ -22,6 +22,7 @@
   let { items, pending, since, hideChecked: legacyHide, lists, cur } = loadCache();
   const inCur = (i) => (i.list || null) === cur;
   const here = () => [...items.values()].filter(inCur);
+  let auto = { fridge: null, items: [] };   // the automatic list's suggestions (loadAuto)
   // "Hide checked items" is a per-person preference that follows them to every device.
   const listPrefs = H.prefs('groceries', { hideChecked: false }, legacyHide ? { hideChecked: true } : null);
 
@@ -270,9 +271,12 @@
     const show = (id) => { if (cur === id) return; cur = id; saveCache(); render(); $('#addHint').textContent = ''; };
     const chip = (id, name) => el('button', { type: 'button', class: 'chip list-chip', 'aria-pressed': String(cur === id), onclick: () => show(id) }, name);
     const on = lists.find((l) => l.id === cur);
+    const autoN = auto.items.filter((i) => !isWaiting(i.name)).length;   // suggestions not on the list yet
     listsBar.replaceChildren(
       chip(null, '🛒 הרשימה'),
       ...lists.filter((l) => l.kind === 'list').map((l) => chip(l.id, l.name)),
+      el('button', { type: 'button', class: 'chip list-auto', 'aria-label': autoN ? `אוטומטית: ${nItems(autoN)} מהמקרר` : 'אוטומטית: הצעות מהמקרר', onclick: autoList },
+        '🤖 אוטומטית', autoN ? el('span', { class: 'list-auto-n' }, String(autoN)) : ''),
       el('button', { type: 'button', class: 'chip list-new', onclick: newList }, '＋ רשימה חדשה'),
       el('button', { type: 'button', class: 'chip list-saved', onclick: savedLists }, '📚 שמורות'),
       on?.canDelete ? el('button', { type: 'button', class: 'chip list-del', 'aria-label': `מחיקת הרשימה ${on.name}`, onclick: () => deleteList(on) }, '🗑 מחיקת הרשימה') : '');
@@ -317,6 +321,51 @@
           });
         } }, 'מחיקה'),
         el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'ביטול')));
+  }
+
+  /* The automatic list (the owner, 2026-11-14): what the fridge usually has and is missing now (server/grocery-auto.ts).
+     It only suggests: an item goes on the list when someone taps it, never by itself. "לא הפעם" puts one off for a week
+     (the person's own preference, so it follows them to every device). */
+  const AUTO_WHY = { gone: 'בדרך כלל יש, ועכשיו אין', expired: 'פג תוקף', low: 'נשאר אחד' };
+  async function loadAuto() {
+    try { auto = await api('/api/groceries/auto', { noRedirect: true }); renderLists(); } catch (_) { /* offline: the chip waits */ }
+    return auto;
+  }
+  const isWaiting = (name) => { const d = findDuplicate(name); return !!d && !d.checked; };
+  async function autoList() {
+    const box = el('div', { class: 'auto-list' });
+    const draw = () => {
+      const waiting = auto.items.filter((i) => !isWaiting(i.name));
+      box.replaceChildren(
+        el('h2', {}, '🤖 רשימה אוטומטית'),
+        el('p', { class: 'muted' }, `מה ש${auto.fridge ? `במקרר "${auto.fridge}"` : 'במקררים של הבית'} בדרך כלל יש, ועכשיו חסר. שום דבר לא נכנס לרשימה בלי לחיצה.`),
+        waiting.length > 1 ? el('div', { class: 'modal-acts' }, el('button', { class: 'btn primary', type: 'button', onclick: () => take(waiting) }, `＋ הכל אל ${listName()} (${waiting.length})`)) : '',
+        auto.items.length ? el('ul', { class: 'auto-rows' }, ...auto.items.map((i) => {
+          const on = isWaiting(i.name);
+          return el('li', { class: 'auto-row ' + i.why + (on ? ' listed' : '') },
+            el('span', { class: 'auto-name' }, i.name, el('small', {}, ` · ${AUTO_WHY[i.why]}`)),
+            on ? el('small', { class: 'ok' }, '✓ ברשימה')
+              : el('span', { class: 'auto-acts' },
+                el('button', { type: 'button', class: 'btn small', 'aria-label': `להוסיף "${i.name}" אל ${listName()}`, onclick: () => take([i]) }, '＋ לרשימה'),
+                el('button', { type: 'button', class: 'btn small ghost', 'aria-label': `לא הפעם: ${i.name}`, title: 'לא להציע שבוע', onclick: () => putOff(i) }, 'לא הפעם')));
+        })) : el('p', { class: 'muted' }, 'אין מה להשלים כרגע. כשמצרכים ייכנסו למקרר וייגמרו כמה פעמים, הם יופיעו כאן.'),
+        el('div', { class: 'modal-acts' }, el('a', { class: 'btn ghost', href: '/food/fridge/' }, '🧊 למקרר'), el('button', { class: 'btn ghost', type: 'button', onclick: closeModal }, 'סגירה')));
+    };
+    const take = (xs) => {
+      xs.forEach((i) => addByName(i.name, categorize(i.name), 'אוטומטית'));
+      toast(xs.length === 1 ? `"${xs[0].name}" נוסף אל ${listName()}` : `${nItems(xs.length)} נוספו אל ${listName()}`);
+      render(); draw();
+    };
+    const putOff = (i) => {
+      const until = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10), today = new Date().toISOString().slice(0, 10);
+      const skip = Object.fromEntries(Object.entries(listPrefs.autoSkip || {}).filter(([, d]) => d >= today));
+      H.savePrefs('groceries', { autoSkip: { ...skip, [i.key]: until } });
+      auto.items = auto.items.filter((x) => x !== i); renderLists(); draw();
+      toast(`"${i.name}" לא יוצע שבוע`);
+    };
+    draw();
+    modal(box);
+    await loadAuto(); draw();
   }
 
   /* Saved lists (the owner, 2026-11-14): templates ("קניות שבועיות", "שבת") and the archive of finished lists, on the
@@ -1280,6 +1329,7 @@
   window.addEventListener('diets:changed', () => { ketoTab(); render(); });
 
   render();
+  loadAuto();
   showTab(tabFromHash(), 'replace');
   await flush();
   await pull();

@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (recurring goals).
+Last update: 2026-11-14 (the automatic list).
 
 ## Done
 
@@ -13,8 +13,9 @@ Last update: 2026-11-14 (recurring goals).
   - groceries templates and an archive (bfbc416);
   - easier parasha marking: a tap on a verse number marks it, another tap stretches it (c1a59de);
   - a badge with no picture yet: a stitched patch with an emoji instead of a broken image (693efd8);
-  - recurring goals: a fresh round each day / week / month / n days, a history and a streak of whole rounds (d7d34c3).
-  - Next: the automatic list from the fridge, then the tree (olive).
+  - recurring goals: a fresh round each day / week / month / n days, a history and a streak of whole rounds (d7d34c3);
+  - the automatic shopping list from the fridge, suggestions only with one-tap approval (server 90715d3, page a3a6f02).
+  - Next: the tree (olive).
 
 - **Locks and privacy, aligned to design** (4d7c7c3, in main, v61): the lock screen on `Lock.screen`, the tree tip on
   `Lock.warnCard`, settings in design's classes. Tested end to end locally (code, wrong code, the tree, the tip).

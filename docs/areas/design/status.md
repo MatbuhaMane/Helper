@@ -2,9 +2,17 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (vision batch 18: the family tree after test run 1; batch 17b merged into main as v149 and v150)._
+_Updated 2026-11-14 (the side pages beside the tent; vision batch 18: the family tree after test run 1; batch 17b merged as v149 and v150)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: the side pages beside the tent (the owner, 2026-11-14), for the master to link and merge.**
+  - `public/assets/sides.css`. **The master adds** `<link rel="stylesheet" href="/assets/sides.css">` in index.html after campfire.css.
+    - The page is centred in the first screen, over the tent's own sky and limestone.
+    - When a page gets `.is-here`, its parts rise and fade in, staggered by `--i`. Reduced motion shows them still.
+    - The dots are restyled at 44px: small stones, and the page in view is a vine stone.
+  - `public/assets/soon/garage-scene.svg`: a symbolic shed with tools, a charging post on the right and a workbench on the left.
+  - **Checked:** 375 and 1280, light and dark. The audit of `/` is clean, motion included.
+  - **Not seen:** the entrance moving, because the pane runs neither the IntersectionObserver nor transitions.
 - **Ready: vision batch 18, design part (2026-11-14).** The contract for ai-features is `docs/design/tree-18.md`; the prototype is
   `docs/design/prototype/tree-18.html`.
   - **868cfb9, the assets:**

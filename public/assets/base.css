@@ -522,6 +522,37 @@ textarea { width: 100%; resize: vertical; }
 .tabs button { font: inherit; cursor: pointer; border: 0; background: none; color: var(--muted); padding: 10px 0; position: relative; }
 .tabs button[aria-selected="true"] { color: var(--primary); font-weight: 500; }
 .tabs button[aria-selected="true"]::after { content: ''; position: absolute; inset-inline: 0; inset-block-end: -1px; block-size: 2px; background: var(--primary); }
+/* a tab that opens a menu of its own (vision batch 16: the recipe book, "שלי" or "ששותפו איתי"). The menu is a sibling of
+   .tabs inside .tabs-wrap, never inside .tabs, which scrolls sideways on a phone and would clip it. --x is set from the
+   tab's place (docs/design/recipe-book-menu.md); the menu never leaves the wrap. */
+.tabs-wrap { position: relative; }
+.tabs button[aria-haspopup] { display: inline-flex; align-items: center; gap: 4px; }
+.tab-caret { inline-size: 16px; block-size: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  transition: transform var(--dur-quick) var(--ease-river); }
+.tabs button[aria-expanded="true"] .tab-caret { transform: rotate(180deg); }
+.tab-dot { inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--primary); flex: none; margin-inline-start: 2px; }
+.tab-menu { position: absolute; z-index: 30; inset-block-start: calc(100% + 6px); inline-size: min(300px, 100%);
+  inset-inline-start: clamp(0px, var(--x, 0px), calc(100% - min(300px, 100%)));
+  display: grid; gap: 2px; padding: 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--lift); transform-origin: top; animation: tab-menu-in var(--dur-quick) var(--ease-river) both; }
+.tab-menu[hidden] { display: none; }
+@keyframes tab-menu-in { from { opacity: 0; transform: translateY(-4px) scale(.98); } }
+.tab-menu button { font: inherit; color: var(--text); text-align: start; cursor: pointer; border: 0; background: none; border-radius: calc(var(--radius) - 4px);
+  display: flex; align-items: center; gap: 12px; min-block-size: 52px; padding: 8px 10px; }
+.tab-menu button:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.tab-menu button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.tab-menu button > .icon { inline-size: 22px; block-size: 22px; flex: none; color: var(--muted); fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tab-menu button > span { flex: 1; min-inline-size: 0; display: grid; }
+.tab-menu b { font-weight: 500; }
+.tab-menu small { font-size: .84rem; color: var(--muted); }
+.tab-menu .tab-menu-n { flex: none; min-inline-size: 26px; padding: 1px 8px; border-radius: 999px; text-align: center; font-size: .82rem; font-weight: 600;
+  font-variant-numeric: tabular-nums; background: color-mix(in srgb, var(--text) 7%, transparent); color: var(--muted); }
+/* the chosen one: the vine, as everything chosen in the hub */
+.tab-menu [aria-checked="true"] { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.tab-menu [aria-checked="true"] > .icon, .tab-menu [aria-checked="true"] b { color: var(--primary); }
+.tab-menu [aria-checked="true"] .tab-menu-n { background: color-mix(in srgb, var(--primary) 16%, transparent); color: var(--primary); }
+:root[data-motion="reduce"] .tab-menu, :root[data-motion="reduce"] .tab-caret { animation: none; transition: none; }
+@media (prefers-reduced-motion: reduce) { .tab-menu, .tab-caret { animation: none; transition: none; } }
 .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .spacer { flex: 1; }
 .notice { padding: 12px 16px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); border-inline-start: 3px solid var(--primary); }

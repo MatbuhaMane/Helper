@@ -232,6 +232,7 @@ export async function tree(ctx: Ctx) {
     const s = K.view(await cardOf(ctx, p), 'household', whoFor(v, p))!;
     return {
       id: p.id, name: s.name, member: s.member, photo: s.photo, sex: s.sex, user: isUser(v, p), linked: linked.get(p.id) || 0,
+      life: lifeOf(s.details),   // the drawn tree: a birthday's glow, the passed, a yahrzeit's candle (only what privacy lets this viewer see)
       counts: s.hidden.includes('files') ? {} : Object.fromEntries(counts.results.filter((c) => c.person_id === p.id).map((c) => [c.kind, c.n])),
     };
   }));
@@ -391,6 +392,13 @@ export async function linkDelete(ctx: Ctx) {
   await ctx.env.DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).run();
   await audit(ctx, u, 'delete:link', ctx.params.id, null);
   return json({ ok: true });
+}
+
+/** the few dates the drawn tree needs from the (already privacy-filtered) details; nothing when there are none */
+function lifeOf(d: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const k of ['born', 'bornAfterSunset', 'died', 'diedAfterSunset', 'birthdayBy']) if (d?.[k]) out[k] = d[k];
+  return Object.keys(out).length ? out : undefined;
 }
 
 /* ---------------- items: documents, pictures, details ---------------- */

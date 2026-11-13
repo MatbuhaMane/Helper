@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the automatic list).
+Last update: 2026-11-14 (one fridge per person).
 
 ## Done
 
@@ -15,7 +15,13 @@ Last update: 2026-11-14 (the automatic list).
   - a badge with no picture yet: a stitched patch with an emoji instead of a broken image (693efd8);
   - recurring goals: a fresh round each day / week / month / n days, a history and a streak of whole rounds (d7d34c3);
   - the automatic shopping list from the fridge, suggestions only with one-tap approval (server 90715d3, page a3a6f02).
-  - Next: the tree (olive).
+  - the drawn family tree: the first view of the family page, from a set chosen by a pref (no code knows "olive"),
+    birthday glow, the passed, a yahrzeit candle, a bud to add a relative; crowded leaves widen the tree (c38d7d9).
+    Waiting on design for `sets.json` and the second set; on the master for the vault read (the `life` dates).
+  - one fridge per person, scoped by email; the person's old "המקרר שלי" becomes theirs on the first visit, the other
+    shared fridges stay hidden (server 43a7523, waiting on the master's review). The automatic list, the food portal and
+    the daemon (a read-only `fridge_list`) read only that fridge (d66cc1a). The page lost its picker and gained a
+    "מקרר משותף – בקרוב" card (80d640c). For design: `.fr-fridges`, `.fr-views` and `.fr-chip` are unused now.
 
 - **Locks and privacy, aligned to design** (4d7c7c3, in main, v61): the lock screen on `Lock.screen`, the tree tip on
   `Lock.warnCard`, settings in design's classes. Tested end to end locally (code, wrong code, the tree, the tip).

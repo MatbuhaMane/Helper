@@ -1,16 +1,15 @@
-/* The fridge: an interactive list of what's in each of the family's fridges. Every fridge is shared – everyone sees and
-   edits all of them, and changes from others arrive within moments.
+/* The fridge: an interactive list of what's in the person's own fridge (one per person, the owner 2026-11-14; server/fridge.ts).
+   It says what to use first by its expiry date, and what to restock (what is usually there and ran out, or is about to).
    With the other food apps:
    - "נגמר" takes an item out and puts it on the shopping list;
    - "מהקניות" brings in what was bought (the ticked items on the shopping list) and clears them off the list;
    - "מה לבשל?" looks through the recipe book for what can be cooked from what's inside.
-   Each person can call one fridge theirs ("המקרר שלי"): its tab follows what's in it, says what to use first by its
-   expiry date, and what to restock (what is usually there and ran out, or is about to). */
+   The automatic shopping list, the food portal and the daemon read the same fridge. A fridge shared with the household
+   is "בקרוב" (the card at the bottom). */
 (async () => {
   const { el, api, toast } = H;
   await H.requireLogin();
   H.header('מקרר');
-  const P = H.prefs('fridge', { current: null, mine: null, view: 'mine' });
   const root = document.querySelector('main');
 
   // the fridge's shelves; a new item finds its shelf by the shopping list's own keywords (data.js)
@@ -41,8 +40,8 @@
   let fridges = [], items = new Map(), since = 0, current = null, pollT = 0;
 
   async function loadFridges() {
-    fridges = (await api('/api/fridges')).fridges;
-    current = fridges.find((f) => f.id === P.current)?.id || fridges[0]?.id || null;
+    const r = await api('/api/fridges');
+    fridges = r.fridges; current = r.mine;
   }
   async function loadItems(full) {
     if (!current) return;
@@ -54,8 +53,7 @@
   async function ops(list) {
     // shown at once; the server keeps the order (and everyone else gets it on their next refresh)
     for (const o of list) o.op === 'delete' ? items.delete(o.id) : items.set(o.item.id, o.item);
-    draw();
-    if (P.view === 'mine' && current === P.mine) drawMine();
+    draw(); drawMine();
     try { await api(`/api/fridges/${current}/ops`, { body: { ops: list } }); }
     catch (_) { toast('לא נשמר – בדקו את החיבור'); await loadItems(true); draw(); }
   }
@@ -69,7 +67,6 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadItems(false).then(draw).catch(() => {}); });
 
   /* ---------- drawing ---------- */
-  const bar = el('div', { class: 'fr-fridges', role: 'tablist', 'aria-label': 'המקררים' });
   const list = el('div', { class: 'fr-list' });
   const nameIn = el('input', { type: 'text', placeholder: 'מה הכנסנו למקרר?', 'aria-label': 'פריט חדש', dir: 'auto', autocomplete: 'off' });
   const qtyIn = el('input', { type: 'number', min: 1, max: 99, value: 1, 'aria-label': 'כמות', class: 'fr-qty-in' });
@@ -88,16 +85,9 @@
   const acts = el('div', { class: 'fr-acts' },
     el('button', { class: 'btn small', type: 'button', onclick: () => cook() }, '🍳 מה לבשל?'),
     el('button', { class: 'btn small', type: 'button', onclick: () => fromShopping() }, '🛒 מהקניות'),
-    el('button', { class: 'btn small ghost', type: 'button', onclick: () => fridgeMenu() }, '⋯ המקרר'));
+    el('button', { class: 'btn small ghost', type: 'button', onclick: () => fridgeMenu(), 'aria-label': 'שינוי שם המקרר' }, '✏️ שם'));
 
-  function drawFridges() {
-    bar.replaceChildren(...fridges.map((f) => el('button', { type: 'button', role: 'tab', class: 'fr-chip', 'aria-selected': String(f.id === current), onclick: () => switchTo(f.id) },
-      el('span', { class: 'ic', 'aria-hidden': 'true' }, f.id === P.mine ? '🏠' : '🧊'), el('b', {}, f.name), f.id === P.mine ? el('em', {}, 'שלי') : null, f.id === current ? el('small', {}, String(items.size)) : f.count ? el('small', {}, String(f.count)) : null,
-      f.soon && f.id !== current ? el('i', { class: 'warn', title: 'יש בו משהו שעומד לפוג' }) : null)),
-      el('button', { type: 'button', class: 'fr-chip add', onclick: newFridge, 'aria-label': 'מקרר חדש' }, '+ מקרר'));
-  }
   function draw() {
-    drawFridges();
     const all = [...items.values()];
     if (!all.length) { list.replaceChildren(el('div', { class: 'fr-empty' }, el('p', {}, 'המקרר ריק.'), el('p', { class: 'muted' }, 'הוסיפו מה שיש בו, או הביאו את מה שנקנה מרשימת הקניות.'))); return; }
     const soon = all.filter((i) => i.expires && daysTo(i.expires) <= 2).sort((a, b) => a.expires.localeCompare(b.expires));
@@ -249,73 +239,30 @@
           [...low, ...restock].some((h) => !onList(h.name)) ? el('button', { class: 'btn small primary', type: 'button', onclick: (e) => toList([...low, ...restock].map((h) => h.name), e.currentTarget) }, 'הכל לרשימת הקניות') : null)));
   }
 
-  /* ---------- the two views: my fridge, and all the family's fridges ---------- */
-  const views = el('div', { class: 'fr-views', role: 'tablist', 'aria-label': 'תצוגה' });
-  const title = el('h1', {}, 'מקרר');
-  async function layout() {
-    const mine = fridges.find((f) => f.id === P.mine);
-    document.querySelector('.fr')?.classList.toggle('mine-view', P.view === 'mine' && !!mine);
-    if (P.view === 'mine' && !mine) P.view = P.mine ? 'all' : P.view;
-    views.replaceChildren(...[['mine', '🏠 המקרר שלי'], ['all', 'כל המקררים']].map(([v, l]) =>
-      el('button', { type: 'button', role: 'tab', 'aria-selected': String(P.view === v), onclick: () => { P.view = v; H.savePrefs('fridge'); layout(); } }, l)));
-    if (P.view === 'mine') {
-      bar.hidden = true;
-      if (!mine) {
-        title.textContent = 'המקרר שלי';
-        mineBox.replaceChildren(el('div', { class: 'card fr-choose' }, el('h3', {}, 'איזה מקרר הוא שלך?'),
-          el('p', { class: 'muted' }, 'המקרר שבו את/ה משתמש/ת. כאן יופיע מה צריך לגמור לפי התוקף ומה להשלים.'),
-          el('div', { class: 'fr-recs' }, fridges.map((f) => el('button', { class: 'btn', type: 'button', onclick: () => { P.mine = f.id; H.savePrefs('fridge'); layout(); toast(`"${f.name}" הוא עכשיו המקרר שלך`); } }, '🏠 ' + f.name)))));
-        add.hidden = true; list.hidden = true;
-        return;
-      }
-      add.hidden = false; list.hidden = false;
-      title.textContent = mine.name;
-      title.append(el('small', { class: 'fr-mine-tag' }, 'המקרר שלי'));
-      if (current !== mine.id) await switchTo(mine.id);
-      await loadMine(); drawMine();
-    } else {
-      bar.hidden = false; add.hidden = false; list.hidden = false; mineBox.replaceChildren();
-      title.textContent = 'מקרר';
-      draw();
-    }
-  }
-
-  /* ---------- fridges ---------- */
-  async function switchTo(id) {
-    if (id === current) return;
-    const f = fridges.find((x) => x.id === current); if (f) f.count = items.size;
-    current = id; P.current = id; H.savePrefs('fridge'); since = 0;
-    list.replaceChildren(el('p', { class: 'muted' }, 'טוען…')); drawFridges();
-    await loadItems(true); draw();
-    if (P.view === 'mine' && current === P.mine) { await loadMine(); drawMine(); }
-  }
-  async function newFridge() {
-    const name = prompt('איך לקרוא למקרר החדש?'); if (!name?.trim()) return;
-    const r = await api('/api/fridges', { body: { name: name.trim() } });
-    fridges.push(r.fridge); switchTo(r.fridge.id);
+  /* ---------- the fridge itself: its name, and the shared fridge that is still to come ---------- */
+  const title = el('h1', {}, 'המקרר שלי');
+  function drawTitle() {
+    const f = fridges.find((x) => x.id === current);
+    title.replaceChildren(f?.name || 'המקרר שלי', f && f.name !== 'המקרר שלי' ? el('small', { class: 'fr-mine-tag' }, 'המקרר שלי') : '');
   }
   function fridgeMenu() {
     const f = fridges.find((x) => x.id === current); if (!f) return;
-    H.modal(el('h2', {}, f.name), el('p', { class: 'muted' }, 'כל בני המשפחה רואים את המקרר הזה ויכולים לערוך אותו.'),
+    H.modal(el('h2', {}, f.name), el('p', { class: 'muted' }, 'המקרר הזה שלך: רק לך יש גישה אליו.'),
       el('div', { class: 'fr-modal-acts' },
-        el('button', { class: 'btn' + (P.mine === f.id ? ' ghost' : ' primary'), type: 'button', onclick: () => { P.mine = P.mine === f.id ? null : f.id; H.savePrefs('fridge'); H.closeModal(); layout(); toast(P.mine ? `"${f.name}" הוא עכשיו המקרר שלך` : 'המקרר כבר לא משויך אליך'); } }, P.mine === f.id ? 'להפסיק לשייך אליי' : '🏠 זה המקרר שלי'),
-        el('button', { class: 'btn', type: 'button', onclick: async () => { const n = prompt('שם חדש למקרר', f.name); if (!n?.trim()) return; await api(`/api/fridges/${f.id}`, { method: 'PUT', body: { name: n.trim() } }); f.name = n.trim(); H.closeModal(); draw(); } }, 'שינוי שם'),
-        el('button', { class: 'btn ghost', type: 'button', onclick: async () => {
-          if (!confirm(`למחוק את "${f.name}" ואת כל מה שרשום בו? זה ישפיע על כל המשפחה.`)) return;
-          await api(`/api/fridges/${f.id}`, { method: 'DELETE' }); fridges = fridges.filter((x) => x.id !== f.id); H.closeModal(); current = null; if (fridges[0]) switchTo(fridges[0].id); else draw();
-        } }, 'מחיקת המקרר')));
+        el('button', { class: 'btn primary', type: 'button', onclick: async () => { const n = prompt('שם חדש למקרר', f.name); if (!n?.trim()) return; await api(`/api/fridges/${f.id}`, { method: 'PUT', body: { name: n.trim() } }); f.name = n.trim(); H.closeModal(); drawTitle(); } }, 'שינוי שם')));
   }
+  const shared = el('section', { class: 'card fr-choose fr-shared' },
+    el('h3', {}, '🧊 מקרר משותף', el('small', { class: 'fr-mine-tag' }, 'בקרוב')),
+    el('p', { class: 'muted' }, 'בקרוב אפשר יהיה לשתף מקרר עם בני הבית, וכולם יראו ויעדכנו אותו יחד. בינתיים לכל אחד יש מקרר משלו.'));
 
   /* ---------- go ---------- */
-  root.append(el('div', { class: 'fr' },
+  root.append(el('div', { class: 'fr mine-view' },
     el('a', { class: 'folder-back', href: '/food/' }, '‹ אוכל'),
-    views,
     el('div', { class: 'fr-head' }, title, acts),
-    bar, mineBox, add, list));
+    mineBox, add, list, shared));
   try {
     await loadFridges();
-    if (P.view === 'mine' && P.mine && fridges.some((f) => f.id === P.mine)) current = P.mine;
-    await loadItems(true);
-  } catch (e) { list.replaceChildren(el('p', {}, 'לא הצלחתי לטעון את המקררים: ' + e.message)); return; }
-  draw(); await layout(); poll();
+    await Promise.all([loadItems(true), loadMine()]);
+  } catch (e) { list.replaceChildren(el('p', {}, 'לא הצלחתי לטעון את המקרר: ' + e.message)); return; }
+  drawTitle(); draw(); drawMine(); poll();
 })();

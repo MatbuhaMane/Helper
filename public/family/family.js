@@ -616,6 +616,7 @@
             if (!r.ok) { const d = await r.json().catch(() => ({})); throw Object.assign(new Error(d.error), { code: d.error }); }
           }
           toast('נשמר בכספת'); await reload(); await refreshTree();
+          if (priv.checked) privateTip();
         } catch (err) { say(err); } finally { btn.disabled = false; }
       };
       return el('form', { class: 'fv-add', onsubmit: go }, title, note, file,
@@ -873,5 +874,28 @@
   });
   addEventListener('pagehide', () => wipe());
 
-  H.requireLogin().then(() => lockView()).catch(() => {});
+  /* ---------- locks and privacy (docs/decisions.md): a tip to protect the tree, and a code for a private document ---------- */
+  const lockPrefs = () => H.prefs('lock', { treeTipOff: false });
+  /** the first time in the tree (and until "לא להציג שוב"): protecting it is recommended – a code or a passkey */
+  async function treeTip() {
+    if (lockPrefs().treeTipOff) return;
+    try { if (sessionStorage.getItem('helper.treeTip')) return; } catch (_) { /* private mode: shown once a page */ }
+    let lock; try { lock = await api('/api/lock', { noRedirect: true }); } catch (_) { return; }
+    if (lock.tree !== 'off' || lock.level === 'low') return;
+    const later = () => { try { sessionStorage.setItem('helper.treeTip', '1'); } catch (_) { /* fine */ } H.closeModal(); };
+    H.modal(el('div', { class: 'fv-locktip' },
+      el('h2', {}, '🔒 להגן על עץ המשפחה?'),
+      el('p', {}, 'העץ פתוח לבני הבית שמחוברים. אפשר לנעול אותו בקוד בן 4 ספרות או בטביעת אצבע, כך שמי שמחזיק את המכשיר לא ייכנס בלעדיך.'),
+      el('div', { class: 'row' },
+        el('a', { class: 'btn primary', href: '/settings/#privacy' }, 'להגדיר עכשיו'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: later }, 'אחר כך'),
+        el('button', { class: 'linklike', type: 'button', onclick: () => { lockPrefs().treeTipOff = true; H.savePrefs('lock'); H.closeModal(); } }, 'לא להציג שוב'))));
+  }
+  /** after a private document is saved, if the tree has no lock: a code is recommended */
+  async function privateTip() {
+    let lock; try { lock = await api('/api/lock', { noRedirect: true }); } catch (_) { return; }
+    if (lock.tree === 'off') toast('מסמך פרטי: כדאי לנעול את העץ בקוד', 'להגדיר', () => { location.href = '/settings/#privacy'; });
+  }
+
+  H.requireLogin().then(() => { lockView(); setTimeout(treeTip, 1200); }).catch(() => {});
 })();

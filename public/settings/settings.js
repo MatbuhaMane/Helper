@@ -345,17 +345,108 @@
         : el('p', { class: 'muted small' }, 'עוד אין. מכשיר נעשה מוכר כשפותחים בו את עץ המשפחה בפעם הראשונה.'));
   }
 
+  /* ---------- privacy and security (docs/decisions.md, "Locks and privacy"): the app lock and its timer, the tree lock,
+     the 4-digit code, and the low level. The server keeps and enforces all of it (/api/lock, server/lock.ts); a change
+     to a lock, or the code, asks for a proof – the current code or a passkey – unless there was one in the last 5 minutes. */
+  const privacyBox = section('privacy', 'פרטיות ואבטחה');
+  const digits4 = (label) => el('input', { type: 'password', inputmode: 'numeric', autocomplete: 'off', maxlength: '4', pattern: '[0-9]{4}', 'aria-label': label,
+    style: 'inline-size:7em;letter-spacing:.6em;text-align:center;font:inherit;font-size:1.3rem;padding:8px 10px;border-radius:12px;border:1px solid var(--line-strong);background:var(--bg);color:var(--text)',
+    oninput: (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); } });
+  /** the current code, or a passkey, for a change that needs a proof; resolves to { current } or { passkey: true }, or null */
+  const askProof = (lock) => new Promise((resolve) => {
+    const cur = digits4('הקוד הנוכחי');
+    const ok = () => { if (cur.value.length !== 4) return cur.focus(); H.closeModal(); resolve({ current: cur.value }); };
+    cur.addEventListener('keydown', (e) => { if (e.key === 'Enter') ok(); });
+    H.modal(el('h2', {}, 'אישור שזה את/ה'), el('p', {}, 'כדי לשנות את הנעילה צריך את הקוד הנוכחי' + (lock.hasPasskey ? ', או טביעת אצבע.' : '.')),
+      el('div', { class: 'row' }, cur, el('button', { class: 'btn primary', type: 'button', onclick: ok }, 'אישור')),
+      lock.hasPasskey && H.passkeysWork?.() ? el('button', { class: 'btn ghost', type: 'button', onclick: async () => {
+        try { await H.loadOnce('/assets/lock-screen.js'); H.closeModal(); await H.lockScreen({ scope: 'app' }); resolve({ passkey: true }); } catch (_) { resolve(null); }
+      } }, '👆 בטביעת אצבע') : null,
+      el('button', { class: 'linklike', type: 'button', onclick: () => { H.closeModal(); resolve(null); } }, 'ביטול'));
+    setTimeout(() => cur.focus(), 30);
+  });
+  /** a lock change: tried as is, and again with a proof when the server asks for one */
+  async function lockChange(path, method, body, lock) {
+    try { return await api(path, { method, body }); }
+    catch (e) {
+      if (e.code !== 'proof_needed') throw e;
+      const proof = await askProof(lock);
+      if (!proof) return null;
+      return api(path, { method, body: { ...body, ...(proof.current ? { current: proof.current } : {}) } });
+    }
+  }
+  /** set or change the code: twice the new one (and a proof when needed) */
+  const setPin = (lock) => new Promise((resolve) => {
+    const a = digits4('קוד חדש'), b = digits4('שוב, לאישור');
+    const save = async () => {
+      if (a.value.length !== 4) return a.focus();
+      if (a.value !== b.value) { toast('שני הקודים לא זהים'); b.value = ''; return b.focus(); }
+      try { const r = await lockChange('/api/lock/pin', 'PUT', { pin: a.value }, lock); if (r) { H.closeModal(); toast('הקוד נשמר'); resolve(true); } }
+      catch (e) { say(e); }
+    };
+    H.modal(el('h2', {}, lock.pinSet ? 'קוד חדש' : 'קוד לנעילה'),
+      el('p', { class: 'muted' }, '4 ספרות. כדאי לא להשתמש בתאריך לידה.'),
+      el('div', { style: 'display:grid;gap:10px;justify-items:start' }, el('label', {}, 'הקוד ', a), el('label', {}, 'שוב ', b)),
+      el('div', { class: 'row' }, el('button', { class: 'btn primary', type: 'button', onclick: save }, 'שמירה'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => { H.closeModal(); resolve(false); } }, 'ביטול')));
+    setTimeout(() => a.focus(), 30);
+  });
+  async function drawPrivacy() {
+    let lock;
+    try { lock = await api('/api/lock'); } catch (e) { privacyBox.replaceChildren(el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'), el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
+    try { await H.loadOnce('/assets/lock-screen.js'); } catch (_) { /* the passkey buttons stay hidden */ }
+    const bio = !!H.passkeysWork?.();
+    const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['passkey', 'טביעת אצבע', { soon: !bio, title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
+    /** a lock's mode: a code needs one set first; a passkey needs one made on this device (the vault's passkeys) */
+    const setMode = async (which, v) => {
+      try {
+        if (v === 'pin' && !lock.pinSet && !(await setPin(lock))) return drawPrivacy();
+        if (v === 'passkey' && !lock.hasPasskey) { toast('קודם צריך מפתח במכשיר הזה: בעץ המשפחה ← אבטחה ← הוספת מכשיר'); return drawPrivacy(); }
+        const r = await lockChange('/api/lock', 'PUT', { [which]: v }, lock);
+        if (r) toast(v === 'off' ? 'הנעילה כבויה' : 'הנעילה פעילה');
+      } catch (e) { say(e); }
+      drawPrivacy();
+    };
+    const low = lock.level === 'low';
+    privacyBox.replaceChildren(...[
+      el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'),
+      low ? el('p', { class: 'st-warn', role: 'note' }, '⚠ הכל פתוח: אין נעילה לאוהל ולא לעץ המשפחה. לא מומלץ. מסמכים, פרטי כניסה ופרטים אישיים נשארים מוגנים בטביעת אצבע בכל מקרה.') : null,
+      el('h3', {}, 'נעילת האוהל'),
+      el('p', { class: 'muted small' }, 'כמו בטלגרם: האוהל ננעל לבד אחרי זמן שלא משתמשים בו, ונפתח בקוד או בטביעת אצבע.'),
+      choices('נעילת האוהל', modes, low ? 'off' : lock.app, (v) => setMode('app', v)),
+      lock.app !== 'off' && !low ? choices('ננעל אחרי', [[1, 'דקה'], [5, '5 דקות'], [15, 'רבע שעה'], [60, 'שעה']], lock.after, async (v) => { try { await lockChange('/api/lock', 'PUT', { after: v }, lock); } catch (e) { say(e); } drawPrivacy(); }) : null,
+      el('h3', {}, 'נעילת עץ המשפחה'),
+      el('p', { class: 'muted small' }, 'העץ פתוח לבני הבית שמחוברים. אפשר לנעול אותו בקוד או בטביעת אצבע.'),
+      choices('נעילת העץ', modes, low ? 'off' : lock.tree, (v) => setMode('tree', v)),
+      el('h3', {}, 'הקוד'),
+      el('div', { class: 'row' },
+        el('button', { class: 'btn small', type: 'button', onclick: async () => { await setPin(lock); drawPrivacy(); } }, lock.pinSet ? 'לשנות את הקוד' : 'לקבוע קוד'),
+        lock.pinSet ? el('button', { class: 'linklike', type: 'button', style: 'background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;text-decoration:underline', onclick: async () => {
+          if (!confirm('כדי לקבוע קוד חדש צריך להיכנס שוב עם חשבון Google שלך. לצאת עכשיו?')) return;
+          try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) { /* out anyway */ }
+          location.href = '/api/auth/login?next=' + encodeURIComponent('/settings/#privacy');
+        } }, 'שכחתי את הקוד') : null),
+      lock.pinClosed ? el('p', { class: 'small', role: 'note' }, 'הקוד נסגר אחרי הרבה ניסיונות. היכנסו שוב עם Google, וקבעו קוד חדש.') : null,
+      el('h3', {}, 'רמת הפרטיות'),
+      toggle('הכל פתוח (לא מומלץ)', low, async (v) => {
+        if (v && !confirm('בלי נעילה לאוהל ולא לעץ המשפחה. מי שיחזיק את המכשיר שלך יראה הכל, חוץ ממסמכים ופרטים אישיים. להמשיך?')) return drawPrivacy();
+        try { await lockChange('/api/lock', 'PUT', { level: v ? 'low' : 'normal' }, lock); } catch (e) { say(e); }
+        drawPrivacy();
+      }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל רמה.'),
+    ].filter(Boolean));
+  }
+
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
-  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
+  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st' },
     el('h1', {}, 'הגדרות'),
     el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id }, name))),
-    dayNight(), accessibility(), servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
+    dayNight(), accessibility(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')))));
-  drawServices(); drawAssistant(); drawDevices();
+  drawServices(); drawAssistant(); drawDevices(); drawPrivacy();
   const want = location.hash.slice(1);
   if (want && want !== 'services') setTimeout(() => document.getElementById(want)?.scrollIntoView({ block: 'start' }), 50);
 })();

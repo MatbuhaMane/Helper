@@ -2450,3 +2450,27 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
   floats the list with a few inline rules; it stops once `.wz-sugg` is `position: absolute` in welcome.css.
 - **Open for the owner:** the search is limited to Google's region `il`; places Google files under another region are not
   suggested, and they stay free text.
+
+## 2026-11-13 – Invitations from outside the family, from the back door (ai-features → master; sign-in, for review)
+
+The owner asked for invitations to people outside the family, made by the owner only, with tracking. **Critical (sign-in):
+the server part is in the master's `server/join.ts` and `join-rules.ts`, in one separate commit for review.**
+
+- **The flow.** In the back door, the "הזמנות" panel makes a personal link `/join/#key` (the key after the #, out of logs).
+  The page `/join/` shows who it was made for and "כניסה עם Google". The key goes into this device's `join` cookie with
+  the mark `o.` for twenty minutes; `admitFromInvite` (the hook core.ts already calls) sees the mark and admits a new member
+  **once**, into a household of their own (`g-…`, never `family`), with the trial credits, like a guest from a gathering.
+  The owner who made it gets a message for them alone. A member who is already in signs in as before; the invitation stays open.
+- **Tied to an address (optional).** An invitation that names an email admits only that address; the page shows it masked
+  (`r***@gmail.com`). An email that is already a member is refused when making it (`already_member`).
+- **Status** is computed, never stored: cancelled, then redeemed, then expired (the time), else sent. Cancel works only
+  on an open one, and its link stops at once. 1 to 30 days, a week by default.
+- **Owner only**: `requireAdmin('own')` and `level === 'owner'` (a super, or the owner visiting someone's account, cannot).
+  The page's two calls are rate limited (30 an hour per address).
+- **Stored**: only the key's hash, and a sealed copy (`seal`, aad `invite:<id>:key`) so the owner can copy the link
+  again while it is open. New table `owner_invites` (appended to schema.sql). Routes appended: `GET/POST /api/admin/invites`,
+  `POST /api/admin/invites/:id/cancel`, `POST /api/join/check`, `POST /api/join/start`.
+- **Tests**: 27 new in `server/test-join.mjs` (one use, expiry, an address, the key, only the owner, never the family).
+- **Not changed**: `core.ts`, the gathering's tickets (a cookie without the mark goes the old way), the setting
+  `gather.guest_signup` (it closes only the gathering's sign-ups, not the owner's invitations).
+- **For design**: the page `/join/` (`.jn-card`, `.jn-who`, `.jn-fine`) and the panel (`#invites-s`, `.iv-status[data-s]`, `.iv-row`).

@@ -1159,3 +1159,21 @@ CREATE TABLE IF NOT EXISTS story_items (
   deleted_at  INTEGER
 );
 CREATE INDEX IF NOT EXISTS story_items_house ON story_items(household, created_at);
+
+-- the owner's invitations from outside the family (server/join.ts, the back door's "הזמנות"): a personal link, used once,
+-- into a household of its own. Only the link key's hash (to find it) and a sealed copy (for the owner) are kept. Its
+-- status is computed: cancelled_at, then used_at, then exp (join-rules inviteStatus). email: only that address may use it.
+CREATE TABLE IF NOT EXISTS owner_invites (
+  id           TEXT PRIMARY KEY,
+  key_hash     TEXT NOT NULL UNIQUE,
+  key_enc      TEXT NOT NULL,
+  name         TEXT NOT NULL,
+  email        TEXT,
+  created_by   TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  exp          INTEGER NOT NULL,
+  used_by      TEXT,
+  used_at      INTEGER,
+  cancelled_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS owner_invites_made ON owner_invites(created_at);

@@ -554,6 +554,12 @@ route('PUT', '/api/story/:id', story.save);                                    /
 route('DELETE', '/api/story/:id', story.remove);
 route('POST', '/api/story/:id/restore', story.restore);
 route('GET', '/api/story/:id/file', story.file);
+/* the owner's invitations from outside the family (master's server/join.ts; the panel is the back door's "הזמנות"): owner only, from their own account */
+route('GET', '/api/admin/invites', join.invitesList);
+route('POST', '/api/admin/invites', join.inviteCreate);
+route('POST', '/api/admin/invites/:id/cancel', join.inviteCancel);
+route('POST', '/api/join/check', join.ownerInviteCheck);             // the link's page (/join/#key): no sign-in; rate limited
+route('POST', '/api/join/start', join.ownerInviteStart);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

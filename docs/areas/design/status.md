@@ -20,12 +20,13 @@ _Updated 2026-11-14._
 - **Readiness bar, speed (from ai-features' measurement):** the home page's pictures made lighter (535 → 348 KB for the
   stump, cushions and fire; the tent in 700/1000 px versions and a 7 KB mask, for the master's `index.html`).
 - **The owner's messages** (`.owner-msgs`/`.owner-msg` in base.css: floating cards, drawn marks by level, above the
-  groceries' cart button) and **the weather page** (`weather.css`, `.wx-*`): ready for ai-features to move off inline styles.
+  groceries' cart button) and **the weather page** (`weather.css`, `.wx-*`): wired by ai-features (ad8ecf0), off inline styles.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
-  entertainment) and our own symbols in place of the emoji, gradually.
+  entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
+  drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers

@@ -6,6 +6,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600&family=Heebo:wght@400;500;600&family=Varela+Round&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap');
 
 :root {
+  /* the layers (one scale for everything that floats, so a bubble, a menu or a sheet never lands under the wrong thing):
+     the bars 12 · floating figures and players 30 · their bubbles and panels 40 · the owner's messages 45 ·
+     menus 50 · sheets and modals 60 · toasts 70 (the lock screen and the pranks' sparks sit above all) */
+  --z-bar: 12; --z-float: 30; --z-bubble: 40; --z-msg: 45; --z-menu: 50; --z-sheet: 60; --z-toast: 70;
   --icon-ink: #2e2a1e;   /* the line of the pastel icons: dark ink in both themes, so the pastel fill keeps its colour at night too */
   --chalk: #efeee6;
   --chalk-raised: #f7f6f0;
@@ -178,7 +182,7 @@ main.wide { max-width: 1200px; }
 
 /* ---------- app shell: a top bar everywhere, the navigation in it on PC, a tab bar at the bottom on phones ---------- */
 .appbar {
-  position: sticky; top: 0; z-index: 12;
+  position: sticky; top: 0; z-index: var(--z-bar);
   block-size: calc(var(--appbar-h) + env(safe-area-inset-top));
   padding: env(safe-area-inset-top) 20px 0;
   display: flex; align-items: center; gap: 20px;
@@ -230,7 +234,7 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
   .appbar .page-title { display: block; }
   .tabbar {
     display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-    position: fixed; inset-inline: 0; inset-block-end: 0; z-index: 12;
+    position: fixed; inset-inline: 0; inset-block-end: 0; z-index: var(--z-bar);
     block-size: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
     padding-block-end: env(safe-area-inset-bottom);
     background: var(--card); border-block-start: 1px solid var(--line);
@@ -260,7 +264,7 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
 .topnav .nav-two { display: inline-grid; justify-items: center; line-height: 1.06; text-align: center; font-size: .92em; }
 .nav-caret { display: inline-block; font-size: .7em; opacity: .7; transition: transform .25s var(--ease-river); }
 .nav-menu[aria-expanded="true"] .nav-caret { transform: rotate(180deg); opacity: 1; }
-.navmenu { position: fixed; z-index: 40; min-inline-size: 240px; max-inline-size: min(340px, calc(100vw - 32px)); max-block-size: min(72vh, 540px); overflow: auto;
+.navmenu { position: fixed; z-index: var(--z-menu); min-inline-size: 240px; max-inline-size: min(340px, calc(100vw - 32px)); max-block-size: min(72vh, 540px); overflow: auto;
   padding: 8px; border-radius: 20px; color: var(--text); background: color-mix(in srgb, var(--card) 94%, transparent); border: 1px solid var(--glass-border);
   -webkit-backdrop-filter: blur(20px) saturate(1.1); backdrop-filter: blur(20px) saturate(1.1); box-shadow: var(--lift), 0 2px 0 rgba(46, 42, 30, .03);
   transform-origin: 50% 0; animation: navmenu-in .2s var(--ease-river) both; overscroll-behavior: contain; }
@@ -358,7 +362,7 @@ textarea { width: 100%; resize: vertical; }
 .chip[aria-pressed="true"]:hover, .chip[aria-checked="true"]:hover { background: color-mix(in srgb, var(--primary) 88%, var(--text)); color: var(--primary-ink); }
 
 /* ---------- the glass sheet (recipes and dialogs) ---------- */
-.modal { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; }
+.modal { position: fixed; inset: 0; z-index: var(--z-sheet); display: grid; place-items: center; padding: 16px; }
 .modal[hidden] { display: none; }
 .modal-backdrop { position: absolute; inset: 0; background: rgba(46, 42, 30, .28); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: fade var(--dur-quick) ease; }
 .modal-glass {
@@ -409,7 +413,7 @@ textarea { width: 100%; resize: vertical; }
 /* ---------- messages ---------- */
 .toast {
   position: fixed; inset-block-end: calc(var(--tabbar-h) + max(16px, env(safe-area-inset-bottom))); left: 50%; transform: translate(-50%, 160%);
-  z-index: 30; display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px);
+  z-index: var(--z-toast); display: flex; gap: 12px; align-items: center; max-width: calc(100% - 32px);
   background: var(--ink); color: var(--chalk); padding: 11px 16px; border-radius: var(--radius); box-shadow: var(--lift);
   transition: transform var(--dur-draw) var(--ease-river); font-size: .94rem;
 }
@@ -440,7 +444,7 @@ html.embedded .appbar, html.embedded .tabbar { display: none !important; }
 html.embedded body { padding-block-end: 0; }
 
 /* "שמירה כפתק" by a text selection (assets/capture.js) */
-.cap-btn { position: fixed; z-index: 60; inset-block-start: 0; left: 0; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--glass-border); font: inherit; font-size: .9rem; font-weight: 500;
+.cap-btn { position: fixed; z-index: var(--z-float); inset-block-start: 0; left: 0; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--glass-border); font: inherit; font-size: .9rem; font-weight: 500;
   background: var(--text); color: var(--bg); box-shadow: var(--lift); cursor: pointer; animation: cap-in .18s ease-out; }
 .cap-btn[hidden] { display: none; }
 @keyframes cap-in { from { opacity: 0; transform: translateY(4px); } }
@@ -467,7 +471,7 @@ html.embedded body { padding-block-end: 0; }
 .ai-note button { font: inherit; border: 0; background: none; padding: 0; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- the owner's messages (messages.js): cards floating above the tab bar, so nothing on the page moves (CLS) ---------- */
-.owner-msgs { position: fixed; z-index: 900; inset-inline: 12px; inset-block-end: calc(var(--tabbar-h, 0px) + env(safe-area-inset-bottom) + 12px);
+.owner-msgs { position: fixed; z-index: var(--z-msg); inset-inline: 12px; inset-block-end: calc(var(--tabbar-h, 0px) + env(safe-area-inset-bottom) + 12px);
   max-inline-size: 560px; margin-inline: auto; display: grid; gap: 8px; pointer-events: none; }
 /* a page with a floating button (the groceries' cart): the messages stand above it, never over it */
 .owner-msgs[hidden], .owner-msg[hidden] { display: none; }

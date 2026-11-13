@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14._
+_Updated 2026-11-14 (family batch, deploy 1)._
 
 ## Done
 - **Companions (Figure2D):** 24 figures in one illustrated series, every one with its palette (5 colourways, free, by the
@@ -22,6 +22,11 @@ _Updated 2026-11-14._
 - **The owner's messages** (`.owner-msgs`/`.owner-msg` in base.css: floating cards, drawn marks by level, above the
   groceries' cart button) and **the weather page** (`weather.css`, `.wx-*`): wired by ai-features (34be7be), off inline styles.
 
+- **The family batch, first deploy (quick visual fixes):** one layer scale for everything that floats (`--z-*` in
+  base.css: bubbles, menus, sheets and messages no longer land under each other); the companion much smaller
+  (`--dm-size` 140/112/96 px × `--dm-scale`); the sky's blob gone (halos fade as the body sinks) and soft hills on the
+  horizon; one record (music.css `.on-stump`). The `index.html` parts are patches for the CEO in the shared notes.
+
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
@@ -30,6 +35,7 @@ _Updated 2026-11-14._
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers
+- The companion's size and the single record need ai-features' `daemon.js` / `music.js` changes in the same merge.
 - The image quota for 2026-11-13 is used (40/40).
 
 ## Needs the owner

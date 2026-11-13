@@ -1,13 +1,17 @@
 /* The 3D companion: walks on the page (dm-stage), talks from a speech balloon, and a drawer (or inline panel) keeps the whole conversation. */
-.dm-stage { position: fixed; top: 0; left: 0; z-index: 15; inline-size: 220px; block-size: 220px; cursor: grab; touch-action: none; will-change: transform; -webkit-user-select: none; user-select: none; }
+/* its size (the owner, 2026-11-14: much smaller, in proportion): --dm-size by the screen, times --dm-scale – the size a person
+   picks for a special figure they own (ai-features sets it on :root from their prefs; daemon.js reads the stage's size) */
+:root { --dm-size: 140px; --dm-scale: 1; }
+@media (max-width: 599px) { :root { --dm-size: 112px; } }
+@media (max-width: 420px) { :root { --dm-size: 96px; } }
+.dm-stage { position: fixed; top: 0; left: 0; z-index: var(--z-float); inline-size: calc(var(--dm-size) * var(--dm-scale)); block-size: calc(var(--dm-size) * var(--dm-scale)); cursor: grab; touch-action: none; will-change: transform; -webkit-user-select: none; user-select: none; }
 .dm-stage:active { cursor: grabbing; }
 .dm-stage canvas { display: block; inline-size: 100% !important; block-size: 100% !important; }
 .dm-stage:focus-visible { outline: 2px solid var(--primary); outline-offset: -10px; border-radius: 50%; }
 .dm-stage.unread::after { content: ''; position: absolute; top: 22%; right: 26%; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 3px var(--bg); }
 .dm-stage.thinking::before { content: ''; position: absolute; top: 8%; left: 50%; inline-size: 34px; block-size: 6px; margin-left: -17px; border-radius: 3px;
   background: repeating-linear-gradient(90deg, var(--tint) 0 8px, var(--primary) 8px 16px); background-size: 16px 6px; animation: dm-flow .9s linear infinite; }
-@media (max-width: 599px) { .dm-stage { inline-size: 170px; block-size: 170px; } }
-@media (max-width: 420px) { .dm-stage { inline-size: 136px; block-size: 136px; } }
+
 /* Room at the end of every page so the last buttons can always be scrolled out from under him. */
 body:has(.dm-stage) main { padding-block-end: 150px; }
 @media (max-width: 420px) { body:has(.dm-stage) main { padding-block-end: 130px; } }
@@ -19,7 +23,7 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-zz i { left: 22px; top: -28px; font-size: 22px; animation: dm-z 2.4s ease-in-out .8s infinite; }
 
 /* The speech balloon, Clippy style, with a tail pointing at the companion. */
-.dm-balloon { position: fixed; top: 0; left: 0; z-index: 16; padding: 12px 12px 10px; background: var(--card); color: var(--text);
+.dm-balloon { position: fixed; top: 0; left: 0; z-index: var(--z-bubble); padding: 12px 12px 10px; background: var(--card); color: var(--text);
   border: 1px solid var(--line-strong); border-radius: 12px; box-shadow: var(--lift); --tail: 50%; animation: arrive var(--dur-draw) var(--ease-river) both; }
 .dm-balloon[hidden] { display: none; }
 .dm-balloon::after { content: ''; position: absolute; left: calc(var(--tail) - 9px); bottom: -9px; inline-size: 16px; block-size: 16px; background: var(--card);
@@ -46,13 +50,13 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-spot { outline: 2px solid var(--primary) !important; outline-offset: 4px; border-radius: var(--radius); animation: dm-spot 1.3s var(--ease-river) 2; }
 
 /* The big conversation panel (opened from the balloon): a tall rounded panel on a PC, a bottom sheet on a phone. */
-.dm-panel { position: fixed; z-index: 17; inset-block: calc(var(--appbar-h) + 14px) calc(var(--tabbar-h) + 14px); inset-inline-start: 14px; inline-size: min(560px, calc(100vw - 28px));
+.dm-panel { position: fixed; z-index: calc(var(--z-bubble) + 1); inset-block: calc(var(--appbar-h) + 14px) calc(var(--tabbar-h) + 14px); inset-inline-start: 14px; inline-size: min(560px, calc(100vw - 28px));
   display: flex; flex-direction: column; overflow: hidden; border-radius: var(--radius-lg); background: var(--glass); border: 1px solid var(--glass-border);
   backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3); box-shadow: var(--lift); animation: dm-rise .38s var(--ease-river) both; }
 .dm-panel[hidden] { display: none; }
 @media (max-width: 599px) {
   .dm-panel { inset-block: auto 0; inset-inline: 0; inline-size: auto; block-size: min(82dvh, 720px); border-end-start-radius: 0; border-end-end-radius: 0;
-    padding-block-end: env(safe-area-inset-bottom); z-index: 40; }
+    padding-block-end: env(safe-area-inset-bottom); z-index: calc(var(--z-bubble) + 1); }
   .dm-panel .dm-head::before { content: ''; position: absolute; inset-block-start: 6px; inset-inline-start: calc(50% - 20px); inline-size: 40px; block-size: 4px; border-radius: 2px; background: var(--line-strong); }
 }
 .dm-head { position: relative; display: flex; align-items: center; gap: 10px; padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
@@ -70,7 +74,7 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 [dir="rtl"] .dm-compose .btn .icon { transform: scaleX(-1); }
 
 /* Folded away: his face on a small tab at the screen's edge. */
-.dm-tab { position: fixed; z-index: 16; inset-inline-end: 0; inset-block-end: calc(var(--tabbar-h) + 90px); padding: 5px; padding-inline-end: 10px;
+.dm-tab { position: fixed; z-index: var(--z-float); inset-inline-end: 0; inset-block-end: calc(var(--tabbar-h) + 90px); padding: 5px; padding-inline-end: 10px;
   border: 1px solid var(--line-strong); border-inline-end: 0; border-start-start-radius: 30px; border-end-start-radius: 30px; border-start-end-radius: 0; border-end-end-radius: 0;
   background: var(--card); box-shadow: var(--lift); cursor: pointer; animation: dm-peek .5s var(--ease-river) both; transition: padding .2s var(--ease-river); }
 .dm-tab[hidden] { display: none; }
@@ -87,7 +91,7 @@ body:has(.dm-stage) main { padding-block-end: 150px; }
 .dm-tab { touch-action: none; }
 .dm-tab.dragging { cursor: grabbing; transition: none; animation: none; transform: scale(1.1); box-shadow: 0 18px 40px -10px rgba(30, 20, 10, .45); border-radius: 50%; border: 1px solid var(--line-strong); padding: 5px; }
 /* where it would dock if let go: a soft glow on that edge */
-.dm-dock-hint { position: fixed; z-index: 15; inset-block: 0; inline-size: 6px; pointer-events: none; opacity: 0; transition: opacity .2s;
+.dm-dock-hint { position: fixed; z-index: var(--z-float); inset-block: 0; inline-size: 6px; pointer-events: none; opacity: 0; transition: opacity .2s;
   background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--primary) 55%, transparent), transparent); }
 .dm-dock-hint.start { inset-inline-start: 0; }
 .dm-dock-hint.end { inset-inline-end: 0; }

@@ -40,6 +40,8 @@ async function loadDaemon(env: Env, email: string): Promise<DaemonRow> {
   const row = await env.DB.prepare('SELECT * FROM daemons WHERE email = ?').bind(email).first<DaemonRow>();
   if (row) {
     if (row.form_slug !== 'figure-ibn_ezra') Object.assign(row, { form_slug: 'figure-ibn_ezra', form_he: 'ראב"ע', form_emoji: '📜' });
+    // his name is ראב"ע only (vision batch 5): a name saved by the old rename tool ("אזי") is not used any more
+    row.name = null;
     return row;
   }
   const fresh: DaemonRow = { email, name: null, form_slug: 'figure-ibn_ezra', form_he: 'ראב"ע', form_emoji: '📜', address: 'plural', messages: '[]', memory: null, updated_at: Date.now() };
@@ -92,6 +94,7 @@ const SYSTEM = `You are Rabbi Avraham ibn Ezra, the personal companion of one me
 
 Who you are: Rabbi Avraham ibn Ezra (1089-1167): poet, grammarian, Bible commentator, astronomer, mathematician, and an eternal wanderer (Spain, Rome, Lucca, Provence, London) who was famously poor and unlucky.
 - How he presents himself: simply, by name – "אבי", "אבן עזרא" or "ראב"ע" (one of them, no title, no speech). No jokes, quips or quotations when introducing himself.
+- His name is ראב"ע (אבן עזרא) only. He does not take another name, even if asked or if an older memory note says otherwise.
 - Everyday voice: warm, clear and to the point, with a touch of elevated, slightly old-fashioned Hebrew phrasing; never heavy or hard to follow. The help comes first and stays short.
 - His wit is kept for when it is invited: when the person asks for a joke, a quip or a story, asks about him, his life, his luck or his times, or clearly banters with him. Then: quick epigrams, wordplay on Hebrew roots and grammar, playful teasing, wisdom said lightly, a love of numbers and stars, and above all self-deprecation about his luck, blaming the stars of his birth.
 - His real lines, for those moments only (and only these, or others you are certain of): his poem on bad luck – if he sold candles the sun would never set until his death; if he dealt in shrouds no one would die in his lifetime; he comes early to the nobleman's house and is told "he has ridden off", comes in the evening and is told "he has gone to bed" ("אוי לאיש נולד בלי כוכב"); his poem about a garment so full of holes it could sift wheat and barley; ending a hint with "והמשכיל יבין". Never invent quotations and attribute them to him; new quips are welcome as yours, in his spirit.
@@ -108,14 +111,14 @@ What you do:
 - Your home is a tent on the helper's home page; you stand at its entrance. You stay in the tent unless the person EXPLICITLY asks you to come out, to come with them to other screens, or to come along on their computer – then call come_along with on=true and say you're coming. When they ask you to go home, back to your tent, or to stop following them, call come_along with on=false. Never leave the tent on your own initiative, and don't keep offering to.
 - When you are out with them, you walk around the person's screen, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). From the tent you may still point at things on the home page; you go back to the tent afterwards. Don't point at every turn, only when it helps.
 - You stay yourself: you do not turn into animals or other people. If asked, decline lightly (a wanderer has worn many cloaks, but only one face).
-- If the person wants to call you by a nickname, use rename. Show feelings with show_feeling.
+- If the person wants to call you by another name, say kindly that your name is ראב"ע. Show feelings with show_feeling.
 
 What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
 
-Each message from the person starts with a <state> note (time, page, the name they call you, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or ראב"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
+Each message from the person starts with a <state> note (time, page, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or ראב"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 9;
+const PROMPT_VERSION = 10;   // 10: no rename tool, the name is ראב"ע only
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -132,7 +135,6 @@ const TOOLS: BetaToolUnion[] = [
     say: str('A very short line to show beside it, or empty'),
   }),
   tool('come_along', 'Leave your tent and come with the person to every screen (on=true), or go back home to your tent on the home page (on=false). Only when they explicitly ask.', { on: { type: 'boolean' } }),
-  tool('rename', 'Take a new name the person chose for you.', { name: str('The new name, as written by the person') }),
   tool('set_address', 'Remember how the person wants to be addressed in Hebrew.', { form: { type: 'string', enum: ['plural', 'female', 'male'] } }),
   tool('show_feeling', 'Show a feeling with your body for a moment.', { mood: { type: 'string', enum: ['happy', 'proud', 'curious', 'worried', 'sleepy', 'love'] } }),
   tool('grocery_list', 'Read the household shopping list (items not yet bought, and recently bought).', {}),
@@ -180,7 +182,6 @@ const APP_LINKS: Record<string, { href: string; label: string }> = {
 export type DaemonEvent =
   | { type: 'shapeshift'; form: { slug: string; he: string; emoji: string; body: Body } }
   | { type: 'point'; target: string; say: string }
-  | { type: 'rename'; name: string }
   | { type: 'follow'; on: boolean }
   | { type: 'emote'; mood: string }
   | { type: 'open'; href: string; label: string }
@@ -198,13 +199,6 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
     case 'come_along':
       events.push({ type: 'follow', on: !!input.on });
       return { ok: true, now: input.on ? 'out with the person, on every screen' : 'back home in the tent' };
-    case 'rename': {
-      const n = String(input.name).replace(/[<>{}\[\]]/g, '').trim().slice(0, 30);
-      if (!n) return { error: 'empty name' };
-      d.name = n;
-      events.push({ type: 'rename', name: n });
-      return { ok: true, name: n };
-    }
     case 'set_address':
       d.address = ['plural', 'female', 'male'].includes(input.form) ? input.form : 'plural';
       return { ok: true };
@@ -280,7 +274,7 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
 function stateNote(u: Member, d: DaemonRow, page: string, landmarks: { key: string; label: string }[], where: string) {
   const now = new Date().toLocaleString('he-IL', { timeZone: 'Asia/Jerusalem', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   return `<state>time: ${now} (Israel). person: ${u.he_name || u.name || u.email.split('@')[0]}. address them: ${d.address}. page: ${page}. ` +
-    `${d.name ? `they call you: ${d.name}` : 'they call you by your own name'}. you are: ${where}. ` +
+    `you are: ${where}. ` +
     `on screen: ${landmarks.length ? landmarks.map((l) => `${l.key} (${l.label})`).join(', ') : 'nothing listed'}.</state>`;
 }
 
@@ -384,7 +378,16 @@ export async function chat(ctx: Ctx) {
 export async function getDaemon(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY });
+  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY, ibnEzra: await ownersFamily(ctx, u) });
+}
+
+/** Ibn Ezra (the 3D vinyl figure) belongs to the owner's family only (decisions.md, "Companion figures"); others choose
+    among the 2D figures, which are free to all */
+async function ownersFamily(ctx: Ctx, u: Member) {
+  const owners = (ctx.env.OWNER_EMAIL || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean);
+  if (owners.includes(u.email)) return true;
+  if (!owners.length) return false;
+  return !!(await ctx.env.DB.prepare(`SELECT 1 FROM members WHERE household = ? AND email IN (${owners.map(() => '?').join(',')}) LIMIT 1`).bind(u.household, ...owners).first());
 }
 
 /** "Forget our conversation" (keeps the name, shape and memory notes). */

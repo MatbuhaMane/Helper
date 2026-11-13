@@ -2467,3 +2467,21 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
   messages, comments and global messages goes out in the ancient letters, so every member sees it that way. Every composer
   sends `H.outgoing(text)`, which converts only when the switch is on. `H.unancient(text)` restores the Hebrew, and a tap
   on any ancient text shows it. The font must be in every page's stack: design adds Noto Sans Phoenician, self-hosted.
+
+## 2026-11-13 – פרנסה: a new tool for the household's money (the owner; master → ai-features, design)
+The owner: a dashboard of income and expenses, stocks and investments if any, a smart split of the expenses, smart
+analysis and suggestions, and fast entry and tracking of payments and receipts. Friendly, intuitive and quick.
+- **Privacy (the owner's choice):** personal by default; each person sees only their own. A person may open a shared
+  "קופה" for the house by invitation (a spouse), and both see only what is in that shared one.
+- **Entry, phase 1 (the owner's choice):** quick manual entry (amount, what, category guessed as you type, recurring), and
+  importing an Excel/CSV export from an Israeli bank or credit card company, automatically categorised. No direct bank
+  connection (it needs a licence); no receipt photos yet.
+- **Investments:** holdings entered by hand (symbol, quantity, cost), valued with a price feed. Tracking only, never buying or
+  selling.
+- **The analysis:** where the money goes, changes from month to month, recurring charges, and saving tips. General guidance
+  only, never personal investment advice; the page says so.
+- **AI:** the financial data goes to Claude only, never to Gemini, and only what the question needs (sums by category,
+  not raw lines with names). No fallback to Gemini for this tool.
+- **Security:** the master reviews the server side before merge (a data-exposure area): every query by the owner of the row
+  or a member of the shared קופה, nothing in logs.
+- Place: on the tools page (`/tools/parnasa/`), pin-able to the ring; in serious mode it is a line icon like the rest.

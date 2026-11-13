@@ -145,6 +145,7 @@
 :root[data-font="round"] body, :root[data-font="round"] :is(button, input, select, textarea) { font-family: 'Varela Round', 'Rubik', system-ui, sans-serif; }
 :root[data-font="serif"] body, :root[data-font="serif"] :is(button, input, select, textarea) { font-family: 'Frank Ruhl Libre', 'David', serif; }
 :root[data-font="serif"] :is(h1, h2, h3) { font-weight: 700; }
+:root[data-font="alef"] body, :root[data-font="alef"] :is(button, input, select, textarea) { font-family: 'Alef', 'Rubik', system-ui, sans-serif; }
 
 /* Reading comfort (הגדרות › נגישות; settings/apply.js marks <html>): the text size is the root's font size (every rem grows
    with it); these are the rest. */
@@ -786,3 +787,28 @@ body:has(.fab-wrap) .owner-msgs { inset-block-end: calc(var(--tabbar-h, 0px) + e
   .sr-tools:not([data-view="list"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sr-head h1 { font-size: 1.45rem; }
 }
+
+/* ---------- the fonts kept here (public/assets/fonts/, OFL, the licences beside them), so they need no outside site ----------
+   Alef: a clear Hebrew sans, one more choice of font (<html data-font="alef">, like heebo / round / serif).
+   Noto Sans Phoenician as 'Ohel Ivri': the ancient Hebrew script, the owner's own (vision batch 11). Only for those the owner
+   granted it to; the server decides who gets the markup. The letters are Unicode's Phoenician block (U+10900–10915, in the
+   order of the alef-bet: א → U+10900 … ת → U+10915; a final letter is its plain form; niqqud is dropped), and the Hebrew
+   always stays beside them, for screen readers and for a tap:
+     <span class="ivri" tabindex="0" role="button" aria-label="שלום"><span class="ivri-old" aria-hidden="true">𐤔𐤋𐤅𐤌</span><span class="ivri-he">שלום</span></span>
+   A tap (or Enter) toggles .open on .ivri, which shows the Hebrew instead. The page JS writes the letters (a toIvri() is in
+   docs/design/prototype/ivri.html). */
+@font-face { font-family: 'Alef'; font-weight: 400; font-display: swap; src: url(/assets/fonts/alef-400-hebrew.woff2) format('woff2');
+  unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+@font-face { font-family: 'Alef'; font-weight: 400; font-display: swap; src: url(/assets/fonts/alef-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Alef'; font-weight: 700; font-display: swap; src: url(/assets/fonts/alef-700-hebrew.woff2) format('woff2');
+  unicode-range: U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F; }
+@font-face { font-family: 'Alef'; font-weight: 700; font-display: swap; src: url(/assets/fonts/alef-700-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Ohel Ivri'; font-display: swap; src: url(/assets/fonts/phoenician.woff2) format('woff2'); unicode-range: U+10900-1091F; }
+.ivri { display: inline-block; cursor: pointer; border-radius: 4px; -webkit-tap-highlight-color: transparent; }
+.ivri-old { font-family: 'Ohel Ivri', 'Noto Sans Phoenician', sans-serif; letter-spacing: .06em; font-weight: 400; unicode-bidi: isolate; }
+.ivri-he { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.ivri.open .ivri-old { display: none; }
+.ivri.open .ivri-he { position: static; inline-size: auto; block-size: auto; overflow: visible; clip-path: none; white-space: normal; }
+.ivri:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }

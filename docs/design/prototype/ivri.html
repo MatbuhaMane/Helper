@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>הכתב הקדום</title>
+  <!-- A sample for .ivri (the ancient Hebrew script, Noto Sans Phoenician) and the Alef font, both in base.css.
+       Copy to public/ to view (not committed there). ?theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>
+    body { opacity: 1 !important; visibility: visible !important; }
+    main { display: grid; gap: 16px; max-inline-size: 640px; margin-inline: auto; padding: 24px 16px; }
+    .card { padding: 16px; }
+    .big { font-size: 2rem; line-height: 1.4; }
+    .alef { font-family: 'Alef', sans-serif; }
+  </style>
+</head>
+<body>
+<main>
+  <section class="card"><h2>שם בכתב הקדום</h2><p class="big" id="name"></p><p id="bio"></p><small>נגיעה בטקסט מציגה אותו בעברית.</small></section>
+  <section class="card alef"><h2>Alef, רגיל ומודגש</h2><p>שלום לכל המשפחה, הנה הגופן Alef: אבגדהוזחטיכלמנסעפצקרשת ךםןףץ 0123456789.</p><p><b>ובמשקל מודגש: מה שלומכם היום?</b></p></section>
+</main>
+<script>
+  /* Hebrew → the ancient script: the 22 letters in their order are U+10900–10915; a final letter is its plain form; niqqud goes. */
+  const ABC = 'אבגדהוזחטיכלמנסעפצקרשת', FIN = { 'ך': 'כ', 'ם': 'מ', 'ן': 'נ', 'ף': 'פ', 'ץ': 'צ' };
+  const toIvri = (s) => s.normalize('NFD').replace(/[֑-ׇ]/g, '').replace(/[ךםןףץ]/g, (c) => FIN[c])
+    .replace(/[א-ת]/g, (c) => String.fromCodePoint(0x10900 + ABC.indexOf(c)));
+  const ivri = (he) => {
+    const s = document.createElement('span'); s.className = 'ivri'; s.tabIndex = 0; s.setAttribute('role', 'button'); s.setAttribute('aria-label', he);
+    s.innerHTML = '<span class="ivri-old" aria-hidden="true"></span><span class="ivri-he"></span>';
+    s.firstChild.textContent = toIvri(he); s.lastChild.textContent = he;
+    const flip = () => s.classList.toggle('open');
+    s.addEventListener('click', flip); s.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+    return s;
+  };
+  document.getElementById('name').append(ivri('שָׁלוֹם עֲלֵיכֶם'));
+  document.getElementById('bio').append(ivri('אוהב תורה, מוזיקה ומשפחה'));
+  const t = new URLSearchParams(location.search).get('theme'); if (t) document.documentElement.dataset.theme = t;
+</script>
+</body>
+</html>

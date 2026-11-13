@@ -1233,3 +1233,36 @@ CREATE TABLE IF NOT EXISTS push_subs (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS push_subs_email ON push_subs (email);
+
+-- עץ מבנה (server/layout.ts, ai-features 2026-11-13): the owner's layer over the hub's menus (H.APPS), one row a
+-- version; the newest is the one in use. json is the cleaned layout (server/layout-rules.ts).
+CREATE TABLE IF NOT EXISTS site_layout (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  json     TEXT NOT NULL,
+  by_email TEXT,
+  at       INTEGER NOT NULL,
+  note     TEXT
+);
+
+-- the surprise eggs the owner hides on a page, for a time, and who found each
+CREATE TABLE IF NOT EXISTS eggs (
+  id         TEXT PRIMARY KEY,
+  page       TEXT NOT NULL,                     -- the path, with its last slash ('/' is the home page)
+  text       TEXT NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'text',      -- text | surprise | link
+  link       TEXT,
+  starts     INTEGER,                           -- ms; null = from now
+  ends       INTEGER,                           -- ms, the last day; null = no end
+  active     INTEGER NOT NULL DEFAULT 1,
+  x          REAL NOT NULL DEFAULT 50,          -- where it sits on the page, % of the width and height
+  y          REAL NOT NULL DEFAULT 50,
+  created_at INTEGER NOT NULL,
+  by_email   TEXT
+);
+CREATE INDEX IF NOT EXISTS eggs_page ON eggs(page, active);
+CREATE TABLE IF NOT EXISTS egg_finds (
+  egg_id TEXT NOT NULL,
+  email  TEXT NOT NULL,
+  at     INTEGER NOT NULL,
+  PRIMARY KEY (egg_id, email)
+);

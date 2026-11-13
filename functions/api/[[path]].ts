@@ -56,6 +56,7 @@ import * as discovery from '../../server/discover';
 import * as goalSocial from '../../server/goal-social';
 import * as reports from '../../server/reports';
 import * as dm from '../../server/dm';
+import * as layout from '../../server/layout';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -582,6 +583,17 @@ route('POST', '/api/vault/changes/:id/cancel', vault.changeCancel);
 route('POST', '/api/vault/people/:id/restore', vault.personRestore);
 route('GET', '/api/admin/tree-trash', admin.treeTrash);
 route('POST', '/api/admin/tree-trash/:id/restore', admin.treeTrashRestore);
+/* עץ מבנה: the owner's layer over the menus, and the surprise eggs (ai-features, server/layout.ts) */
+route('GET', '/api/layout', layout.get);
+route('GET', '/api/admin/layout', layout.adminGet);
+route('PUT', '/api/admin/layout', layout.put);
+route('POST', '/api/admin/layout/restore/:id', layout.restore);
+route('GET', '/api/eggs', layout.eggsHere);
+route('POST', '/api/eggs/:id/found', layout.found);
+route('GET', '/api/admin/eggs', layout.adminEggs);
+route('POST', '/api/admin/eggs', layout.eggAdd);
+route('PUT', '/api/admin/eggs/:id', layout.eggPut);
+route('DELETE', '/api/admin/eggs/:id', layout.eggDelete);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

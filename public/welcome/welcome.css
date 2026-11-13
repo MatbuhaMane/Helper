@@ -23,6 +23,15 @@
 
 /* the stage: the step's card in the middle, the figure standing below-start, speaking it */
 .wz-stage { position: relative; display: grid; place-items: safe center; min-block-size: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }   /* a long step (who else is in the tent) scrolls inside, never under the button */
+/* …and while there is more below, its bottom edge fades softly (a scroll-driven fade: none when the step fits, none at the end;
+   a browser without scroll timelines simply shows no fade) */
+@property --wz-fade { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@supports (animation-timeline: scroll()) {
+  .wz-stage { -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - var(--wz-fade)), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--wz-fade)), transparent);
+    animation: wz-fade linear both; animation-timeline: scroll(self block); }
+  @keyframes wz-fade { 0%, 92% { --wz-fade: 36px; } 100% { --wz-fade: 0px; } }
+}
 .wz-step { inline-size: min(100%, 520px); display: grid; gap: 18px; justify-items: center; text-align: center; }
 .wz-step.in { animation: wz-in .5s cubic-bezier(.2, .9, .25, 1.15) both; }
 .wz-step.out { animation: wz-out .28s ease-in both; }

@@ -34,7 +34,7 @@
     const name = 'st-' + ++uid;
     const group = el('div', { class: 'st-choices', role: 'radiogroup', 'aria-label': label });
     const draw = (v) => group.replaceChildren(...options.map(([val, text, opts = {}]) => el('button', {
-      type: 'button', role: 'radio', class: 'chip', name, 'aria-checked': String(val === v), disabled: !!opts.soon, 'data-swatch': opts.swatch ?? null,
+      type: 'button', role: 'radio', class: 'chip', name, 'aria-checked': String(val === v), disabled: !!opts.soon, 'data-swatch': opts.swatch ?? null, 'data-font-sample': opts.font ?? null,
       title: opts.title || null, onclick: () => { onPick(val); draw(val); },
     }, text, opts.soon ? el('small', { class: 'st-soon' }, ' · בקרוב') : null)));
     draw(value);
@@ -177,11 +177,33 @@
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));
   }
 
-  /* ---------- 5. colour themes (design's palettes; the default until they arrive) ---------- */
-  const PALETTES = [['', 'אבן ובזלת'], ['sea', 'ים התיכון'], ['desert', 'מדבר'], ['vineyard', 'כרם'], ['dusk', 'בין הערביים']];
-  const palettes = () => section('palette', 'ערכות צבעים',
-    choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); }),
-    el('p', { class: 'muted small' }, 'התאמת הצבעים חינמית לכולם.'));
+  /* ---------- 5. colour themes (design's palettes), a theme of one's own, and the font (vision batch 5) ---------- */
+  const PALETTES = [['', 'אבן ובזלת'], ['sea', 'ים התיכון'], ['desert', 'מדבר'], ['vineyard', 'כרם'], ['dusk', 'בין הערביים'],
+    ['sand', 'חול'], ['sage', 'מרווה'], ['mist', 'ערפל'], ['custom', 'ערכה משלי']];
+  const FONTS = [['', 'רוביק'], ['heebo', 'Heebo'], ['round', 'עגול'], ['serif', 'פרנק רוהל']];
+  const apply = () => { H.applySettings?.(); };
+  function palettes() {
+    const own = el('div', { class: 'st-own' });
+    /** a theme of one's own: three colours; design's palette.js keeps it readable by day and at night */
+    const drawOwn = () => {
+      if (look.palette !== 'custom') return own.replaceChildren();
+      const cs = getComputedStyle(document.documentElement), now = (v, d) => { const c = cs.getPropertyValue(v).trim(); return /^#[0-9a-f]{6}$/i.test(c) ? c : d; };
+      const c = look.custom || (look.custom = { primary: now('--primary', '#4f6b2a'), field: now('--olive', '#c5c27a'), ground: '#efeee6' });
+      let t = 0;
+      const pick = (key, label) => el('label', { class: 'st-color' }, el('input', { type: 'color', value: c[key], 'aria-label': label, oninput: (e) => {
+        c[key] = e.target.value; apply(); clearTimeout(t); t = setTimeout(() => keep('look'), 500);   // seen at once, kept a moment later
+      } }), el('span', {}, label));
+      own.replaceChildren(el('div', { class: 'st-colors', style: 'display:flex;flex-wrap:wrap;gap:12px;align-items:center' },
+        pick('primary', 'הצבע הפעיל'), pick('field', 'צבע השדה'), pick('ground', 'הרקע')),
+        el('p', { class: 'muted small' }, 'הצבעים מותאמים לבד, כדי שהטקסט יישאר קריא ביום ובלילה.'));
+    };
+    drawOwn();
+    return section('palette', 'ערכות צבעים',
+      choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); apply(); drawOwn(); }),
+      own,
+      choices('הגופן', FONTS.map(([id, name]) => [id, name, { font: id || null }]), look.font || '', (v) => { look.font = v; keep('look'); apply(); }),
+      el('p', { class: 'muted small' }, 'התאמת הצבעים והגופן חינמית לכולם. גופן קריא במיוחד נמצא בנגישות.'));
+  }
 
   /* ---------- 6. religion and language ---------- */
   const faith = () => section('faith', 'דת ושפה',

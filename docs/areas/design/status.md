@@ -30,13 +30,18 @@ _Updated 2026-11-14 (family batch, deploy 1)._
 - **The app icon (vision batch 8):** a small tent in all sizes in `public/assets/icons/` (any, maskable, Apple touch);
   the manifest and the `<link>`s are the master's.
 
+- **Settings in folding categories** (settings.css + `prototype/settings.html`): a card per category with its own drawn mark
+  and colour, a line of what is set now, closed at first; ai-features to switch `section()` to `<details>`.
+- **The four animals polished:** the owl's big ringed eyes, a slow owl blink and a far tilt when it thinks; the fennec tosses
+  its head, the lamb springs twice, the hedgehog curls into a ball when touched.
+
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
-- Vision batch 8, next: the first-minute wizard (playful, with the chosen figure along) and the social screens – as
-  prototypes, in the order the CEO sets.
+- Vision batch 8 (the wizard, the social screens): on hold until the owner decides whether a wizard suits the parents.
+- After the image reset: a simplified small tent for the 32/48 px icons.
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers

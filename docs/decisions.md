@@ -11,6 +11,31 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
+
+**Decided (the owner):**
+1. **The founding members' levels are named by number only, with no metaphor:**
+   - "מהעשרה הראשונים" (the first 10);
+   - "מהחמישים הראשונים" (11–50);
+   - "מהמאה הראשונים" (51–100);
+   - and "חבר/ה מייסד/ת" for the rest in the window.
+   - The draft names עמוד / יתד / חבל are dropped.
+2. **Fundraising:** self-funded, and outside money only after the metrics. This is the roadmap in
+   `docs/business/business-plan.md`, section 9.3:
+   - no equity before the beta passes;
+   - a founding-supporters campaign at the public launch;
+   - then Tnufa or a small friends-and-family SAFE at about 1,000 families;
+   - a community round at about 10,000 families.
+3. **The payment provider:** quotes from many providers, not only three, plus a web comparison of their published
+   prices. Then choose before the public launch.
+
+**Affects:**
+- **design:** the founders page and the title pills use the number titles.
+- **ai-features:** the title strings.
+- **The owner:** asking for quotes. The business department does the web comparison.
+
+**Status:** Decided (the owner).
+
 ## 2026-11-14 – Colour palettes are never sold; free users choose a basic palette too (business, the owner)
 
 **Decided:** palettes are not a paid item. The owner's words: "זה גרידי".
@@ -136,6 +161,82 @@ For the master: add `node server/test-weather.mjs` to `npm test` in `package.jso
 can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
 For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
 with `.wx-*` classes is welcome. Status: done (ai-features).
+## 2026-11-13 – The family story, spec 1: a living museum (vision → ai-features, design, business, master)
+The owner's decision. The full spec: `docs/vision/story.md`. Status: Decided (the owner).
+
+**The items**
+- Stories (text), recordings, readings aloud, documents and photos.
+- Each item can be tagged with people from the tree, a date (approximate allowed) and a place.
+
+**Where it lives**
+- In each person's card in the tree: "הסיפור של...".
+- In a museum hall of its own, drawn in the tent's style. It can be browsed four ways:
+  - a timeline;
+  - by person;
+  - exhibitions that family members curate;
+  - by place, on a map.
+
+**Collecting**
+- A guided interview ("ראיון עם סבתא"): ready questions, each answer recorded separately, saved as items tagged with the person.
+  - Without AI: a fixed list of questions.
+  - With AI (proposed): the companion suggests a follow-up question.
+- Free upload of any item.
+- Recordings are transcribed to searchable Hebrew text. Without AI, the recording is kept with its title.
+
+**The feel**
+- No quests and no badges.
+- A pleasant recorder: a big mic, a haptic at the start and at the end, a live waveform.
+- Quiet and respectful for those who passed away, as in the tree.
+
+**Privacy**
+- A new item is seen by the household by default.
+- The uploader can widen it to the whole tribe, or narrow it to themselves.
+- Restricted documents need a passkey, per "Locks and privacy".
+- The items are part of the vault backup.
+
+**Storage**
+- A free quota, and paid extra storage. Business sets the size and the price.
+
+**When**
+- After the family launch. The new tree is the priority before it.
+
+## 2026-11-13 – Tigrinya joins Russian and Amharic (vision → master, design, ai-features, business)
+The owner's decision, through the CEO. The full notes: `docs/vision/languages-ru-am.md`, section "טיגרית". Status: Decided (the owner).
+- **The slot:** the same as Russian and Amharic, after the family launch and before the closed beta.
+- **Shared with Amharic:** the same Ge'ez (Ethiopic) script and the same left-to-right layout, so design's Ethiopic font (Noto Sans Ethiopic covers both) and the LTR checks are done once.
+- **What differs:**
+  - Tigrinya is a separate language: it gets its own term glossary and its own native-speaker reviewer (business recruits separately).
+  - The speech voices and speech-to-text are to be checked; they are likely weaker than Amharic's. With no support, the app shows text only.
+  - Whether Claude and Gemini handle it well is to be checked: ai-features runs a short test that a speaker judges. If the assistant is weak in it, the interface is in Tigrinya and the assistant answers in a language the user picks, said openly.
+- **The language choice:** a third chip next to Russian and Amharic; the browser guess is `ti`.
+
+## 2026-11-13 – The family tree, spec 1: a drawn tree, play in the interface (vision → ai-features, design, master)
+The owner's decision. The full spec: `docs/vision/tree.md`. Status: Decided (the owner).
+
+**The look**
+- One fixed, detailed tree in the tent's style. Each person is a leaf or a tag on their branch: grandparents near the roots, children in the crown.
+- The drawing is in layers (roots, boughs, crown, leaves) and is assembled in code, so it can move.
+- Later: animated trees whose roots and branches join, for linked families. That is the forest, stage 3.
+
+**The play**
+- There are no quests and no badges in the tree. The play is the interface itself, in the spirit of Not Boring's apps:
+  - drag up the trunk to the generations before;
+  - pinch to zoom;
+  - tap a leaf to open the person's card;
+  - momentum, a soft stop on a branch, a short haptic, a soft sound.
+- The tree opens with the viewer in the centre. Today's event shows on the tree: a glowing leaf for a birthday, a candle by the roots for a yahrzeit.
+- Adding a person: a "+" bud next to each person ("אמא של דנה?", the relation already filled in). Only a name is required.
+- With reduced motion, there is no movement. Everything stays within the readiness bar.
+
+**Those who passed away**
+- By default, quiet and respectful: no confetti or cheerful sounds, a candle on the yahrzeit.
+- Each user chooses in their own settings how they will be shown after their death.
+
+**When**
+- Before the family launch, as a priority. The master schedules it against the readiness bar.
+
+**Next**
+- The family story (recordings, readings, documents, photos, tagging people), "a living museum". It gets its own spec.
 
 ## 2026-11-14 – Locks and privacy: a simple entry to the tree, an app lock like Telegram's, fingerprint sign-in (master → ai-features, design)
 The owner's design. It replaces "the trusted device" for the tree.
@@ -1213,6 +1314,30 @@ Merged ai-features' gathering (07c4511) after review: the invitation routes answ
 (next to לוח שנה, with the family icon; design may give it its own). The owner's decision on the third proposal: **an
 invitation does not admit guests into the app yet** – they keep answering without an account, because each new account
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
+Status: Decided (the owner).
+
+## 2026-11-13 – Russian and Amharic: after the family launch, before the closed beta (vision, the owner via the CEO)
+
+**Decided:** הָאֹהֶל becomes accessible in Russian and Amharic, after the family launch and before the closed beta.
+The owner approved the order through the CEO.
+
+**The spec** (`docs/vision/languages-ru-am.md`):
+- **Translated:** the interface, the wizard, the badges and titles, the assistant's prompts and answers, and voice.
+- **Amharic voice** (text-to-speech and speech-to-text) is still to be checked; without it, text only.
+- **Direction:** both languages are left to right, with `dir` and `lang` set per language.
+- **Fonts:** Rubik's Cyrillic for Russian; an Ethiopic font, such as Noto Sans Ethiopic (OFL), for Amharic.
+- **Choosing the language:** in the wizard's first step and in settings, defaulting to the browser's language.
+- **Translation:** a Gemini draft, approved by a native speaker, with a fixed glossary per language.
+- **Infrastructure:** one translation infrastructure for every language, Arabic and English included.
+
+**Affects:**
+- **The CEO:** the translation infrastructure, `dir` and `lang`, and the audit in both directions.
+- **Design:** the fonts and the left-to-right layout.
+- **ai-features:** the prompts and voice per language.
+- **Business:** recruiting the native speakers.
+
+**Proposed, not yet decided:** Sigd in the calendar, and Novy God as an optional family event.
+
 Status: Decided (the owner).
 
 ## 2026-11-13 – The road to the parents: the joint run now, the parents first, the wizard first (vision, the owner)

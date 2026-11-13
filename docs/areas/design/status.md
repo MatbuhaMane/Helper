@@ -2,9 +2,17 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the back door; images still blocked)._
+_Updated 2026-11-14 (the family tree: the olive chosen)._
 
 ## Done
+- **The family tree, spec 1 (vision's batch):** one fixed drawn tree in the tent's style, in moving layers (ground, boughs,
+  trunk, crown) made in code by `docs/design/make-tree.mjs` into `/assets/tree/<kind>/` with `slots.json` (the tiers where
+  people hang). **The owner chose the olive** (2026-11-14); the oak and acacia are
+  removed. Four people on a tier no longer touch at 375 px (`docs/design/tree-family-olive.jpg`). People are leaves with a
+  wooden name tag; the passed get an autumn leaf, a dark tag and stillness; a yahrzeit candle by the roots, a birthday glow,
+  the "+" bud. Soft Web Audio sounds (`tree-sound.js`: a wooden tok, a low quiet tone for the passed, no confetti).
+  `tree.css` documents the markup for ai-features; the prototype is `docs/design/prototype/tree.html`. Checked at 375 and
+  1280, light and dark, reduced motion.
 - **Companions (Figure2D):** 24 figures in one illustrated series, every one with its palette (5 colourways, free, by the
   owner's rule; the doll excepted). New paid ones: הקוסם (redrawn taller), הרואה (her hair chosen, white by default), קוסם
   הלילה, קוסמת היער, the little wizard pair (with harmless, switchable pranks: `pranks.js`). Dracula redrawn young,
@@ -61,8 +69,8 @@ _Updated 2026-11-14 (the back door; images still blocked)._
   Checked at 375 (3×3) and 1280 (5+4), light and dark, no overflow. The markup went to ai-features for `admin.js`.
 
 ## In progress
-- The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
-  drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
+- The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a
+  fourth version if the owner wants one (about 6 images); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
 - After the image reset (00:00 UTC): **the 19 approved badges** (the owner approved the names 2026-11-14; prompts ready in

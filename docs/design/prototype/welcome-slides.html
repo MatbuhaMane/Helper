@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>ברוכים הבאים – שלוש שקופיות הסבר</title>
+  <title>ברוכים הבאים – שקופיות ההסבר</title>
   <!-- The three showing slides of /welcome/ (the triangle, the helper, the tree) and the report sheet's kind choice.
-       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=report|helper|tree|sheet -->
+       A sample for welcome.css and reports.css. Copy to public/ to view (not committed there). ?s=helper|report|sheet -->
   <link rel="stylesheet" href="/assets/base.css">
   <link rel="stylesheet" href="/assets/reports.css">
   <link rel="stylesheet" href="/welcome/welcome.css">
@@ -22,18 +22,17 @@
 <script src="/assets/figure2d.js"></script>
 <script>
 (() => {
-  const s = new URLSearchParams(location.search).get('s') || 'report';
+  const s = new URLSearchParams(location.search).get('s') || 'report'; document.getElementById('wz').dataset.step = s;
   const pts = (a) => `<ul class="wz-points">${a.map((t) => `<li>${t}</li>`).join('')}</ul>`;
+  const lines = (a) => `<div class="wz-lines">${a.map((t) => `<p>${t}</p>`).join('')}</div>`;
   const S = {
-    report: ['האוהל עוד צעיר', 'משהו לא עובד, או שיש לך רעיון?', `<div class="wz-show wz-report" aria-hidden="true"><div class="wz-bar"><b>הָאֹהֶל</b><span class="wz-bar-end"><span class="rp-alert"></span><span class="userchip">דנה</span></span></div>
-      <div class="wz-kinds"><span class="bug">תקלה</span><span class="idea">הצעה לשיפור</span></div></div>` + pts(['המשולש האדום למעלה, בכל דף', 'אפשר גם לנער את הטלפון', 'כל דיווח מגיע לצוות האוהל, והתשובה לתיבה שלך'])],
-    helper: ['זה העוזר החכם', 'החבר שלך באוהל', `<div class="wz-show wz-helper" aria-hidden="true"><span class="wz-hero" data-f="owl"></span><p class="wz-say">"תוסיף חלב לרשימה" – וזה כבר שם</p></div>` + pts(['מדברים אליו או כותבים לו, מכל דף', 'הוא עושה בשבילך: רשימות, תזכורות, מתכונים', 'לוחצים עליו כשצריך עזרה'])],
-    tree: ['עץ המשפחה', 'כל המשפחה על עץ אחד', `<div class="wz-show wz-tree" aria-hidden="true"><div class="wz-tree-box">${['ground', 'boughs', 'trunk', 'crown'].map((l) => `<img src="/assets/tree/olive/${l}.svg" alt="">`).join('')}<i>סבא</i><i>סבתא</i><i>אמא</i><i>אבא</i><i class="me">אני</i></div></div>` + pts(['מוסיפים קרובים, והעץ גדל', 'ימי הולדת ואזכרות מגיעים ללוח', 'כל אחד רואה רק את מה שמותר לו'])],
+    helper: ['נעים מאוד, דנה! הכירו את העוזר החכם', 'החבר שמסתובב איתך באוהל', `<div class="wz-intro"><span class="wz-helper" data-f="fennec" aria-hidden="true"></span>` + lines(['הוא מפעיל בשבילך את הכלים: מוסיף לרשימת הקניות, מוצא מתכון, מסדר את המייל.', 'מקישים עליו, וכותבים או אומרים לו מה צריך.', 'עוד רגע תבחרו איך הוא ייראה.']) + '</div>'],
+    report: ['האוהל עוד צעיר', 'ואתם עוזרים לו לגדול', `<div class="wz-intro"><span class="wz-alert" aria-hidden="true"></span>` + lines(['המשולש האדום שליד כפתור ההגדרות, בסרגל העליון, שולח פנייה לצוות האוהל.', 'משהו לא עובד? יש רעיון לשיפור? מקישים עליו וכותבים. התשובה מגיעה לתיבה שלך.']) + '</div>'],
   };
   if (s === 'sheet') {
     document.getElementById('wz').remove();
     document.body.insertAdjacentHTML('beforeend', `<div class="card sheetdemo"><form class="rp" onsubmit="event.preventDefault()"><header class="rp-head"><span class="rp-ic" aria-hidden="true"></span><div><h2>דיווח על בעיה</h2><p class="rp-to">הולך ל<b>צוות האוהל</b></p></div></header>
-      <div class="rp-kind" role="radiogroup" aria-label="מה שולחים?"><label class="bug"><input type="radio" name="kind" value="bug" checked><span>תקלה</span></label><label class="idea"><input type="radio" name="kind" value="idea"><span>הצעה לשיפור</span></label></div>
+      <fieldset class="rp-kind"><legend>מה תרצו לשלוח?</legend><label><input type="radio" name="rp-kind" value="bug" checked><span>תקלה</span></label><label><input type="radio" name="rp-kind" value="idea"><span>הצעה לשיפור</span></label></fieldset>
       <label class="rp-field"><span>מה קרה?</span><textarea class="rp-text" rows="3"></textarea></label><div class="rp-actions"><button class="btn primary">שליחה</button><button class="btn ghost" type="button">ביטול</button></div></form></div>`);
     return;
   }
@@ -42,7 +41,7 @@
   document.getElementById('stage').append(box);
   const fr = document.getElementById('friend');
   Figure2D.mount(fr, 'owl', { size: parseInt(getComputedStyle(document.getElementById('wz')).getPropertyValue('--wz-fig')) || 120 }).catch(() => {});
-  box.querySelectorAll('.wz-hero').forEach((h) => Figure2D.mount(h, h.dataset.f, { size: parseInt(getComputedStyle(h).getPropertyValue('--hero')) || 140 }).catch(() => {}));
+  box.querySelectorAll('.wz-helper').forEach((h) => Figure2D.mount(h, h.dataset.f, { size: 132 }).catch(() => {}));
 })();
 </script>
 </body>

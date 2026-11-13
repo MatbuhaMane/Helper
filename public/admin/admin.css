@@ -177,6 +177,9 @@
 .rx-tags { grid-column: 2 / -1; display: flex; flex-wrap: wrap; gap: 4px; margin-block-start: 4px; }
 .rx-tag { padding: 0 8px; border-radius: 999px; font-size: .74rem; line-height: 1.7; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); }
 .rx-tag.shot { display: inline-flex; align-items: center; gap: 4px; }
+.rx-tag.idea { display: inline-flex; align-items: center; gap: 4px; color: var(--text); background: color-mix(in srgb, var(--primary) 16%, transparent); }   /* הצעה (a suggestion) */
+.rx-tag.idea::before { content: ""; inline-size: 12px; block-size: 12px; background: var(--primary);
+  -webkit-mask: url(/assets/bd-icons/idea.svg) center / contain no-repeat; mask: url(/assets/bd-icons/idea.svg) center / contain no-repeat; }
 .rx-tag.shot::before { content: ""; inline-size: 12px; block-size: 12px; background: currentColor;
   -webkit-mask: url(/assets/reports/camera.svg) center / contain no-repeat; mask: url(/assets/reports/camera.svg) center / contain no-repeat; }
 .rx-row.unread { border-inline-start: 4px solid var(--primary); }

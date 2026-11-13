@@ -184,28 +184,31 @@
 
 /* The warning triangle in the top bar (.rp-alert) is in base.css, so the welcome wizard's slide draws the very same one. */
 
-/* ── The kind of report (the owner, 2026-11-13): a fault or a suggestion, two segments above the text. Real radios, so the
-   arrows and the form read them:
-   <div class="rp-kind" role="radiogroup" aria-label="מה שולחים?">
-     <label class="bug"><input type="radio" name="kind" value="bug" checked><span>תקלה</span></label>
-     <label class="idea"><input type="radio" name="kind" value="idea"><span>הצעה לשיפור</span></label></div>
-   A fault is the red of the triangle, a suggestion the vine; the sheet's head icon turns into the bulb when it is a suggestion. */
-.rp-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: color-mix(in srgb, var(--muted) 10%, var(--card));
-  border: 1px solid var(--line); }
-.rp-kind label { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-block-size: 44px; padding: 6px 10px; border-radius: 12px;
-  color: var(--muted); font-weight: 500; cursor: pointer; text-align: center; line-height: 1.2; border: 1px solid transparent;
-  transition: background-color var(--dur-quick, .15s) ease, color var(--dur-quick, .15s) ease; -webkit-tap-highlight-color: transparent; }
+/* ── The kind of report (the owner, 2026-11-13): a fault or a suggestion, right under the head (reports.js, ai-features):
+   <fieldset class="rp-kind"><legend>מה תרצו לשלוח?</legend>
+     <label><input type="radio" name="rp-kind" value="bug" checked><span>תקלה</span></label>
+     <label><input type="radio" name="rp-kind" value="idea"><span>הצעה לשיפור</span></label></fieldset>
+   and the form carries data-kind="bug|idea". Two big choices side by side, each with its icon: a fault in the triangle's red,
+   a suggestion in the vine with a bulb; on a suggestion the sheet's head icon becomes the bulb too. Real radios: the arrows work. */
+.rp-kind { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0; border: 0; min-inline-size: 0; }
+.rp-kind legend { float: inline-start; grid-column: 1 / -1; inline-size: 100%; padding: 0; margin-block-end: 6px; font-weight: 500; }
+.rp-kind label { --k: var(--danger, #9a3b2a); position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-block-size: 46px;
+  padding: 6px 10px; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); font-weight: 500;
+  text-align: center; line-height: 1.2; cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--dur-quick, .15s) ease, border-color var(--dur-quick, .15s) ease, color var(--dur-quick, .15s) ease; }
+.rp-kind label:has([value="idea"]) { --k: var(--primary); }
 .rp-kind input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
 .rp-kind label::before { content: ""; flex: none; inline-size: 20px; block-size: 20px; background: currentColor;
   -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
-.rp-kind label.idea::before { -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
-@media (hover: hover) { .rp-kind label:hover { color: var(--text); } }
-.rp-kind label:has(:checked) { background: var(--card); color: var(--text); font-weight: 600; box-shadow: 0 2px 8px -4px rgba(30, 24, 12, .35); }
-.rp-kind label.bug:has(:checked) { border-color: color-mix(in srgb, var(--danger, #9a3b2a) 45%, var(--line)); }
-.rp-kind label.bug:has(:checked)::before { background: var(--danger, #9a3b2a); }
-.rp-kind label.idea:has(:checked) { border-color: color-mix(in srgb, var(--primary) 50%, var(--line)); }
-.rp-kind label.idea:has(:checked)::before { background: var(--primary); }
-.rp-kind label:has(:focus-visible) { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; }
-.rp:has(.rp-kind .idea :checked) .rp-ic { background: color-mix(in srgb, var(--primary) 16%, var(--card)); color: var(--primary); }
-.rp:has(.rp-kind .idea :checked) .rp-ic::before { -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
+.rp-kind label:has([value="idea"])::before { -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
+@media (hover: hover) { .rp-kind label:hover { color: var(--text); border-color: var(--k); } }
+.rp-kind label:has(:checked) { color: var(--text); font-weight: 600; border-color: var(--k); background: color-mix(in srgb, var(--k) 11%, var(--card)); }
+.rp-kind label:has(:checked)::before { background: var(--k); }
+.rp-kind label:has(:focus-visible) { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.rp:is([data-kind="idea"], :has(.rp-kind [value="idea"]:checked)) .rp-ic { background: color-mix(in srgb, var(--primary) 16%, var(--card)); color: var(--primary); }
+.rp:is([data-kind="idea"], :has(.rp-kind [value="idea"]:checked)) .rp-ic::before { -webkit-mask-image: url(/assets/bd-icons/idea.svg); mask-image: url(/assets/bd-icons/idea.svg); }
 @media (prefers-reduced-motion: reduce) { .rp-kind label { transition: none; } }
+/* a suggestion's chip in the thread (and .rx-tag.idea in the back door's list, admin.css): the vine and a small bulb */
+.rm-chip.idea { display: inline-flex; align-items: center; gap: 4px; color: var(--text); background: color-mix(in srgb, var(--primary) 16%, transparent); }
+.rm-chip.idea::before { content: ""; inline-size: 12px; block-size: 12px; background: var(--primary);
+  -webkit-mask: url(/assets/bd-icons/idea.svg) center / contain no-repeat; mask: url(/assets/bd-icons/idea.svg) center / contain no-repeat; }

@@ -150,6 +150,12 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
   the dashboard on top (the tent's state across; שימוש and פניות side by side on a computer; number cards with a trend and
   a spark), then the nine parts as toolbox apps coloured by `data-bd`, a count badge, the open part under the tiles.
   Checked at 375 (3×3) and 1280 (5+4), light and dark, no overflow. The markup went to ai-features for `admin.js`.
+- **The report kind and two welcome slides, fitted to ai-features' markup (a7275c0):**
+  - `fieldset.rp-kind` (legend across, תקלה in the triangle's red and הצעה לשיפור in the vine with a bulb); on a suggestion the
+    head icon becomes the bulb. `.rm-chip.idea` in the thread, `.rx-tag.idea` in the back door.
+  - `.wz-intro` with `.wz-helper` (the figure on a soft disc; the corner friend hides on that step) or `.wz-alert` (the bar's
+    triangle at 2.4×, the same colours, breathing). Above the lines on a phone, beside them from 700px.
+  - Checked at 375 and 1280, light and dark, no overflow; the triangle 5.35 light / 6.77 dark. The tree slide's rules wait for its markup.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a

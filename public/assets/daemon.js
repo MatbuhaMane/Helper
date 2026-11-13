@@ -1717,6 +1717,7 @@
     if (!flatId) { await pageIn(); try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
     applyScale();
     buildUI();   // (it measures the stage: the size comes from daemon.css, not from here)
+    canvasBox.classList.toggle('special', !flatId); fitStage();   // the 3D רַאבַּ"ע: a little bigger (daemon.css .dm-stage.special)
     document.body.append(buildPanel());
     for (const m of state.transcript) addMsg(m.who, m.text);
     if (flatId) {

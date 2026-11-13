@@ -48,8 +48,8 @@
     .camp > .tent-glow i { position: absolute; inset: 0; background: var(--glow); }
     :root[data-theme="dark"] .camp > .tent-shine { opacity: .72; }   /* at night the canvas is dark, and the same light reads stronger */
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .camp > .tent-shine { opacity: .72; } }
-    .camp > .tent-glow.sun { --lit: var(--sun-lit); --dx: var(--sun-dx); --dy: var(--sun-dy); --glow: rgb(255, 184, 82); }
-    .camp > .tent-glow.moon { --lit: var(--moon-lit); --dx: var(--moon-dx); --dy: var(--moon-dy); --glow: rgb(196, 214, 255); }
+    .camp > .tent-glow.glow-sun { --lit: var(--sun-lit); --dx: var(--sun-dx); --dy: var(--sun-dy); --glow: rgb(255, 184, 82); }
+    .camp > .tent-glow.glow-moon { --lit: var(--moon-lit); --dx: var(--moon-dx); --dy: var(--moon-dy); --glow: rgb(196, 214, 255); }
     .camp > .tent-shine { mix-blend-mode: screen;
       background: radial-gradient(ellipse 58% 90% at var(--sun-u, -60%) var(--sun-v, 50%), rgb(255 188 92 / calc(var(--sun-lit, 0) * .56)), transparent 72%),
                   radial-gradient(ellipse 58% 90% at var(--moon-u, 160%) var(--moon-v, 50%), rgb(198 214 255 / calc(var(--moon-lit, 0) * .48)), transparent 72%); }
@@ -575,7 +575,7 @@
       const camp = document.querySelector('.camp');
       // the light of the sky on the tent: a halo behind its outline for each source, and the light on the canvas over it
       const tentImg = camp.querySelector(':scope > img');
-      tentImg.before(el('span', { class: 'tent-light tent-glow sun', 'aria-hidden': 'true' }, el('i')), el('span', { class: 'tent-light tent-glow moon', 'aria-hidden': 'true' }, el('i')));
+      tentImg.before(el('span', { class: 'tent-light tent-glow glow-sun', 'aria-hidden': 'true' }, el('i')), el('span', { class: 'tent-light tent-glow glow-moon', 'aria-hidden': 'true' }, el('i')));
       tentImg.after(el('span', { class: 'tent-light tent-shine', 'aria-hidden': 'true' }));
       /* the tent's outline in the picture (fractions of its width and height, measured from its alpha): the roof's peak, its
          slopes, the eaves, the walls and the ground line */

@@ -1,31 +1,33 @@
 /* Messages between members (server/dm.ts), on every page: the inbox in the top bar and the "הודעות" entry with its count
    in the tools menu, when a conversation waits. Polls /api/dm/unread once a minute while the page is in front (no sockets).
    Loaded by the shell once someone is signed in (common.js), like reports.js.   H.dmUnread(n): the messages page tells it at once.
-   The inbox (the owner, 2026-11-13): an empty link, a.dm-inbox, next to the red triangle and the user chip (inbox, triangle,
-   chip, whichever loads first); it opens /messages/. The unread count is data-count on it (none when there is nothing),
-   and the aria-label says it. The look is design's (.dm-inbox, 44×44, the icon and the count drawn in CSS). It took over
-   the dot on the user chip: one sign, in one place. */
+   The inbox (the owner, 2026-11-13): an empty button, button.dm-inbox, between the red triangle and the user chip
+   (triangle, inbox, chip, whichever loads first: reports.js puts the triangle before it); it opens /messages/. When a
+   conversation waits, span.dm-dot is inside it and the aria-label says how many; aria-current="page" on /messages/.
+   The look is design's (base.css, 114e603: the envelope, 44×44, paired with the triangle; the dot on its corner). */
 (() => {
   if (!window.H || window.H.dmUnread) return;
   const H = window.H, { el, api } = H;
   let unread = 0;
 
-  /** the inbox in the top bar, before the triangle (or the chip); null when the page has no top bar */
+  /** the inbox in the top bar, before the chip (and before the music pill): triangle, inbox, pill, chip; null with no top bar */
   function inbox() {
     const there = document.querySelector('.dm-inbox');
     if (there) return there;
     const chip = document.getElementById('userchip');
     if (!chip) return null;
-    const a = el('a', { class: 'dm-inbox', href: '/messages/', title: 'הודעות', 'aria-label': 'הודעות' });
+    const a = el('button', { class: 'dm-inbox', type: 'button', title: 'הודעות', 'aria-label': 'הודעות', onclick: () => { location.href = '/messages/'; } });
     if (location.pathname.startsWith('/messages')) a.setAttribute('aria-current', 'page');
-    (document.querySelector('.rp-alert') || chip).before(a);
+    (document.querySelector('.mu-menu') || chip).before(a);           // (the music pill, when it is there, stays by the chip)
     return a;
   }
   function set(n) {
     unread = Math.max(0, Number(n) || 0);
     const a = inbox();
     if (a) {
-      if (unread) a.dataset.count = unread > 99 ? '99+' : String(unread); else delete a.dataset.count;
+      let dot = a.querySelector('.dm-dot');
+      if (unread && !dot) a.append(el('span', { class: 'dm-dot', 'aria-hidden': 'true' }));
+      if (!unread && dot) dot.remove();
       const label = unread ? `הודעות, ${unread === 1 ? 'שיחה אחת מחכה' : `${unread} שיחות מחכות`}` : 'הודעות';
       a.setAttribute('aria-label', label); a.title = label;
     }

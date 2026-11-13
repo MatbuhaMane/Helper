@@ -284,19 +284,22 @@
   addEventListener('helper:prefs', (e) => { if (e.detail === 'reports') { listen(shakeOn()); askOnTap(); } });
 
   /* ---------------- the warning triangle in the top bar (the owner, 2026-11-13) ----------------
-     Next to the settings button (right before #userchip: in RTL, to its left), on every page that loads this file: a tap
+     Next to the settings button (before #userchip, and before the messages inbox of dm.js when it is there: triangle, inbox,
+     chip, whichever loads first), on every page that loads this file: a tap
      opens the same sheet. Design's markup and look (.rp-alert in reports.css: pastel red, 44×44, the triangle drawn in
      CSS, no children); added once reports.css is in, so there is no moment of a bare button. */
   function alertButton() {
     const chip = document.getElementById('userchip');
     if (!chip || document.querySelector('.rp-alert')) return;
-    chip.before(el('button', { class: 'rp-alert', type: 'button', title: 'תקלה או הצעה לשיפור', 'aria-label': 'דיווח על תקלה או הצעה לשיפור', onclick: () => report() }));
+    (document.querySelector('.dm-inbox, .mu-menu') || chip).before(el('button', { class: 'rp-alert', type: 'button', title: 'תקלה או הצעה לשיפור', 'aria-label': 'דיווח על תקלה או הצעה לשיפור', onclick: () => report() }));
   }
   /* The triangle's first showing (the owner approved design's "a gentle arrow along the screen, with a short note"):
      once per person (prefs reports.coached, on the server, so not again on another device), after the welcome wizard,
      only while the triangle is on screen and nothing else is open. The look is design's (.rp-coach in reports.css; --x/--y
      are the triangle's centre). "הבנתי", Escape, a tap on the veil, a resize or a scroll close it; a tap on the
-     triangle itself (26 px around its centre) closes it and opens the sheet. */
+     triangle itself (26 px around its centre) closes it and opens the sheet. The bar may still change under it (the
+     messages inbox comes in from dm.js and moves the triangle 44 px): it measures again on the next frame and whenever
+     the bar's buttons change, while it is open. */
   function coach() {
     const b = document.querySelector('.rp-alert');
     if (!b || prefs.coached || !H.prefs('me').welcomed || location.pathname.startsWith('/welcome')) return;
@@ -304,14 +307,21 @@
     const busy = document.body.classList.contains('modal-open') || document.getElementById('modal')?.hidden === false;
     if (!r.width || r.bottom < 0 || r.top > innerHeight || busy || document.visibilityState !== 'visible' || document.querySelector('.rp-coach')) return;
     prefs.coached = Date.now(); H.savePrefs('reports');
-    const x = Math.round(r.left + r.width / 2), y = Math.round(r.top + r.height / 2);
+    let x = 0, y = 0;
+    const place = () => {
+      const q = b.getBoundingClientRect();
+      x = Math.round(q.left + q.width / 2); y = Math.round(q.top + q.height / 2);
+      c.style.setProperty('--x', x + 'px'); c.style.setProperty('--y', y + 'px');
+    };
+    const bar = new MutationObserver(() => place());                       // (measured at once: the layout is read on demand)
     const ok = el('button', { class: 'btn primary small', type: 'button' }, 'הבנתי');
     const c = el('div', { class: 'rp-coach' }, el('span', { class: 'rp-coach-line', 'aria-hidden': 'true' }),
       el('div', { class: 'rp-coach-card', role: 'dialog', 'aria-label': 'המשולש האדום' },
         el('p', {}, el('b', {}, 'המשולש האדום'), ' מחכה כאן, ליד ההגדרות. משהו לא עובד, או שיש לך רעיון? מקישים עליו.'), ok));
-    c.style.setProperty('--x', x + 'px'); c.style.setProperty('--y', y + 'px');
+    place(); requestAnimationFrame(place);
+    bar.observe(b.parentElement, { childList: true });
     const close = () => {
-      c.remove();
+      c.remove(); bar.disconnect();
       removeEventListener('resize', close); removeEventListener('scroll', close, true); removeEventListener('keydown', esc, true);
     };
     const esc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); b.focus({ preventScroll: true }); } };

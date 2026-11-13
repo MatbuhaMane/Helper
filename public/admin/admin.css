@@ -218,3 +218,11 @@
 #ad-sugg li[aria-selected="true"] b { color: var(--primary); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #ad-sugg { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); } }
 :root[data-theme="dark"] #ad-sugg { box-shadow: 0 12px 32px rgba(0, 0, 0, .45); }
+/* The members search's advanced filters (the CEO, v110): <details class="ad-adv"><summary>חיפוש מתקדם</summary><div>select × 3</div></details>.
+   The row and the selects need no inline style. Under 600px the selects share the row two and one, each wide enough to tap. */
+.ad-adv { max-inline-size: 40rem; }
+.ad-adv > summary { inline-size: fit-content; padding-block: 10px; cursor: pointer; color: var(--muted); }
+.ad-adv[open] > summary, .ad-adv > summary:hover { color: var(--text); }
+.ad-adv > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; border-radius: var(--radius-sm); }
+.ad-adv > div { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 8px; }
+.ad-adv select { flex: 1 1 10rem; inline-size: auto; min-inline-size: 0; max-inline-size: 100%; min-block-size: 40px; }

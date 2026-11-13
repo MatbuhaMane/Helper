@@ -1089,6 +1089,44 @@ invitation does not admit guests into the app yet** – they keep answering with
 would use AI on the owner's keys; revisit when AI limits or credits exist (business's sign-up metric waits until then).
 Status: Decided (the owner).
 
+## 2026-11-13 – The social layer, the first minute, and the app icon (vision, the owner)
+
+Three decisions, read back and confirmed together. Details: `docs/vision/social.md` and `docs/vision/first-minute.md`.
+
+**1. The social layer.** It unblocks goal management, part 2.
+- **Friends:** a friend can be invited by link even without an account, or connected inside the app. Either way they
+  join the friends list.
+- **"You are related":** when a friend turns out to be a distant relative through the forest, the app tells both of
+  them, within the tree's privacy (each person's levels and anonymity).
+- **Following:** a friend's progress posts.
+- **Likes:** hearts, as on Instagram.
+- **Advice:** a short open message.
+- **A family goal:** a shared goal of two or more family members.
+- **The existing rules hold:** a friend connects only with both sides' approval; children under 12 get no messages or
+  advice from outside the family.
+
+**2. The first minute.**
+- A new user goes through a setup wizard that is playful, tight and smooth: "built like a game, runs like an app",
+  with motion, physics, haptics and sound. The reference is the feel of notbor.ing, not its look.
+- The steps: name, religion and calendar, city, colour theme, choosing a figure, and creating or joining a family.
+- Then the home page and discovery. The owner: "a little overwhelmed by the options, but happy and curious".
+- Proposed: a "סייר" (explorer) badge, and "you've discovered 6 of 18 tools".
+
+**3. The app icon.**
+- The ordinary icon is a small tent, based on our tent.
+- The current family-logo icon appears only in the owner's account, and a toggle in an owner-only "secret settings"
+  turns it off.
+- Inside the app this is per user. The home-screen icon of an installed PWA is fixed when it is installed, so the
+  master serves the manifest and the Apple touch icon per signed-in user.
+
+**Affects:**
+- **ai-features:** friends, following, likes, advice, family goals, the wizard's logic, discovery.
+- **Design:** the social screens, the wizard's game feel, the tent icon.
+- **The master:** the per-user manifest and icons, the owner's secret settings, and the order (goals part 2).
+- **Legal, later:** advice and messages between people, and minors.
+
+Status: Decided (the owner).
+
 ## 2026-11-13 – The readiness bar: הָאֹהֶל is shown to the family only when it passes (vision, the owner)
 
 The owner: "I want to feel high graphic quality, high-quality finishes with animations and smooth, working interfaces.

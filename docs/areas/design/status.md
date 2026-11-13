@@ -27,11 +27,16 @@ _Updated 2026-11-14 (family batch, deploy 1)._
   (`--dm-size` 140/112/96 px × `--dm-scale`); the sky's blob gone (halos fade as the body sinks) and soft hills on the
   horizon; one record (music.css `.on-stump`). The `index.html` parts are patches for the CEO in the shared notes.
 
+- **The app icon (vision batch 8):** a small tent in all sizes in `public/assets/icons/` (any, maskable, Apple touch);
+  the manifest and the `<link>`s are the master's.
+
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
+- Vision batch 8, next: the first-minute wizard (playful, with the chosen figure along) and the social screens – as
+  prototypes, in the order the CEO sets.
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers

@@ -1,0 +1,99 @@
+/* Arranging the home cushions (a long press on the ring). Contract: docs/design/arrange.md.
+   The ring is hard to reorder by hand (half of it is behind the fire), so while arranging it opens out into a tray:
+   the same cushions in the ring's order, in a grid, wiggling like the tools folder's arrange mode (launcher.css).
+   Each removable cushion has an ×, a fixed one (family tree, settings, tools; the accessibility tiles in the
+   grandparents and kids modes) carries a small lock instead, and the last slot is "הוסף כרית". */
+
+.arr { inline-size: min(100%, 860px); margin-inline: auto; display: grid; gap: 14px; }
+.arr[hidden] { display: none; }
+
+/* the bar: what to do, and "סיום" */
+.arr-bar { position: sticky; inset-block-start: calc(var(--appbar-h, 0px) + 8px); z-index: 6; display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 8px 12px; padding: 10px 12px 10px 16px; border-radius: 16px; background: var(--glass);
+  border: 1px solid var(--glass-border); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); box-shadow: var(--lift); }
+.arr-bar h2 { margin: 0; font-size: 1.05rem; line-height: 1.3; }
+.arr-bar p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.4; }
+.arr-bar > div { min-inline-size: 0; flex: 1 1 14em; }
+.arr-done { min-block-size: 44px; padding-inline: 22px; }
+
+/* the tray */
+.arr-tray { list-style: none; margin: 0; padding: 18px 4px 6px; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 22px 12px;
+  justify-items: center; }
+@media (max-width: 420px) { .arr-tray { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 6px; padding-inline: 0; } }
+
+.arr-item { position: relative; display: grid; justify-items: center; gap: 4px; inline-size: 100%; max-inline-size: 132px; touch-action: none; cursor: grab;
+  -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  animation: arr-wiggle .9s ease-in-out infinite; animation-delay: calc(var(--n, 0) * -137ms); }
+.arr-item:nth-child(even) { animation-direction: reverse; }
+@keyframes arr-wiggle { 0%, 100% { rotate: -1.4deg; } 50% { rotate: 1.4deg; } }
+
+.arr-pillow { position: relative; display: grid; place-items: center; inline-size: 104px; block-size: 96px; }
+.arr-pillow img { max-inline-size: 100%; max-block-size: 100%; filter: drop-shadow(0 8px 7px rgba(30, 16, 8, .3)); -webkit-user-drag: none; pointer-events: none; }
+.arr-pillow .badge { position: absolute; inset-block-end: 15%; inset-inline-start: calc(50% - 15px); inline-size: 30px; block-size: 30px; display: grid; place-items: center;
+  color: #fffaf0; pointer-events: none; }
+.arr-pillow .badge .icon { inline-size: 26px; block-size: 26px; stroke-width: 2.4;
+  filter: drop-shadow(0 0 1.5px rgba(20, 10, 4, .95)) drop-shadow(0 0 1px rgba(20, 10, 4, .95)) drop-shadow(0 2px 4px rgba(0, 0, 0, .55)); }
+.arr-name { font-size: 1rem; font-weight: 600; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+@media (max-width: 420px) { .arr-pillow { inline-size: 92px; block-size: 85px; } .arr-name { font-size: .95rem; } }
+
+/* lifted while dragged; the gap it leaves is a soft dashed cushion shape */
+.arr-item.dragging { z-index: 10; cursor: grabbing; animation: none; scale: 1.08; }
+.arr-item.dragging .arr-pillow img { filter: drop-shadow(0 20px 16px rgba(30, 16, 8, .38)); }
+.arr-item.ghost { animation: none; }
+.arr-item.ghost > * { visibility: hidden; }
+.arr-item.ghost::before { content: ''; position: absolute; inset-block-start: 4px; inset-inline: calc(50% - 50px); block-size: 90px; border-radius: 40% 40% 44% 44%;
+  border: 2px dashed color-mix(in srgb, var(--olive) 60%, transparent); background: color-mix(in srgb, var(--olive) 10%, transparent); }
+.arr-item:focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; border-radius: 18px; }
+/* picked up with the keyboard (Space), moved with the arrows */
+.arr-item[aria-grabbed="true"] { animation: none; scale: 1.06; }
+.arr-item[aria-grabbed="true"] .arr-pillow::after { content: ''; position: absolute; inset: -6px; border-radius: 22px; border: 2px solid var(--primary); }
+
+/* remove: a round × on the cushion's top corner (a 44 px touch target around a 30 px disc) */
+.arr-x { position: absolute; inset-block-start: -10px; inset-inline-start: calc(50% - 66px); z-index: 2; inline-size: 44px; block-size: 44px; padding: 0; border: 0;
+  background: none; display: grid; place-items: center; cursor: pointer; touch-action: manipulation; color: var(--text); }
+.arr-x::before { content: ''; position: absolute; inset: 7px; border-radius: 50%; background: var(--card); border: 1px solid var(--line-strong);
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, .4); transition: background .15s, border-color .15s; }
+.arr-x svg { position: relative; inline-size: 14px; block-size: 14px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.arr-x:hover::before { background: color-mix(in srgb, var(--danger) 14%, var(--card)); border-color: var(--danger); }
+.arr-x:hover { color: var(--danger); }
+.arr-x:focus-visible { outline: none; }
+.arr-x:focus-visible::before { outline: 3px solid var(--primary); outline-offset: 1px; }
+@media (max-width: 420px) { .arr-x { inset-inline-start: calc(50% - 60px); } }
+
+/* fixed: a small lock where the × would be, and the cushion does not wiggle (it can still move, not be removed) */
+.arr-item[data-fixed] { animation: none; }
+.arr-fixed { position: absolute; inset-block-start: -2px; inset-inline-start: calc(50% - 56px); z-index: 2; inline-size: 28px; block-size: 28px; border-radius: 50%;
+  display: grid; place-items: center; background: color-mix(in srgb, var(--olive) 22%, var(--card)); color: var(--olive-ink);
+  border: 1px solid color-mix(in srgb, var(--olive) 60%, var(--line)); box-shadow: 0 3px 8px -4px rgba(0, 0, 0, .35); }
+.arr-fixed svg { inline-size: 14px; block-size: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 420px) { .arr-fixed { inset-inline-start: calc(50% - 50px); } }
+
+/* "הוסף כרית": an empty cushion outline with a plus, the last slot of the tray */
+.arr-add { display: grid; justify-items: center; gap: 4px; inline-size: 100%; max-inline-size: 132px; padding: 0; border: 0; background: none; color: var(--olive-ink);
+  font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.arr-add .arr-slot { inline-size: 100px; block-size: 90px; margin-block-start: 3px; border-radius: 40% 40% 44% 44%; display: grid; place-items: center;
+  border: 2px dashed color-mix(in srgb, var(--olive) 65%, transparent); background: color-mix(in srgb, var(--olive) 8%, transparent);
+  transition: background .2s, transform .2s var(--ease-river); }
+.arr-add .arr-slot svg { inline-size: 34px; block-size: 34px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+.arr-add b { font-size: 1rem; font-weight: 600; line-height: 1.2; }
+.arr-add:hover .arr-slot { background: color-mix(in srgb, var(--olive) 18%, transparent); transform: scale(1.04); }
+.arr-add:focus-visible { outline: none; }
+.arr-add:focus-visible .arr-slot { outline: 3px solid var(--primary); outline-offset: 3px; }
+@media (max-width: 420px) { .arr-add .arr-slot { inline-size: 88px; block-size: 80px; } .arr-add b { font-size: .95rem; } }
+
+/* the sheet that "הוסף כרית" opens (inside H.modal): the tools not on the ring yet */
+.arr-pick { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.arr-pick button { inline-size: 100%; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 12px 8px 10px;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--text); font: inherit; text-align: start; cursor: pointer;
+  transition: border-color .15s, background .15s; }
+.arr-pick button:hover { border-color: var(--olive); background: color-mix(in srgb, var(--olive) 7%, var(--card)); }
+.arr-pick button:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; }
+.arr-pick img { inline-size: 56px; block-size: 52px; object-fit: contain; }
+.arr-pick b { display: block; font-weight: 600; }
+.arr-pick small { display: block; color: var(--muted); font-size: .85rem; line-height: 1.35; }
+.arr-pick .arr-plus { inline-size: 32px; block-size: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--primary); color: var(--primary-ink); }
+.arr-pick .arr-plus svg { inline-size: 16px; block-size: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.arr-pick-empty { margin: 0; color: var(--muted); text-align: center; padding: 18px 8px; }
+
+:root[data-motion="reduce"] .arr-item { animation: none; }
+@media (prefers-reduced-motion: reduce) { .arr-item { animation: none; } .arr-item.dragging { scale: 1; } }

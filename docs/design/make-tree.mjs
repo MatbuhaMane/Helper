@@ -134,6 +134,21 @@ function boughs(k) {
   }
   let s = inked(shapes, k.bark);
   s += leafCluster(k, tufts.map(([x, y, a, b]) => blob(x, y, a, b, 10, 0.16)));
+  // small leafy side twigs (from the owner's references): a thin stem drooping from each bough, narrow silvery olive leaves
+  // along it. Drawn after everything else, so the boughs and tufts above keep their shapes.
+  const stems = [], leaves = [], ribs = [];
+  for (const [side, y0, reach, y1] of k.boughs) {
+    const x0 = T.cl(y0), sx = x0 + side * reach * 0.66, sy = y0 + (y1 - y0) * 0.66 + 6, ex = sx + side * 58, ey = sy + 70;
+    stems.push(smooth(limb([sx, sy], [sx + side * 14, sy + 26], [ex - side * 22, ey - 18], [ex, ey], 9, 3, 0.06, 10)));
+    for (let i = 0; i < 6; i++) {
+      const t = 0.25 + i * 0.15, x = sx + (ex - sx) * t + side * 6 * Math.sin(t * 3), y = sy + (ey - sy) * Math.pow(t, 1.15);
+      const a = Math.atan2(ey - sy, (ex - sx)) + (i % 2 ? 1 : -1) * (0.75 + rr(-0.15, 0.15)), L = rr(30, 38), c = Math.cos(a), sn = Math.sin(a);
+      const P = (u, v) => `${f(x + u * c - v * sn)} ${f(y + u * sn + v * c)}`;
+      leaves.push(`M${P(0, 0)}C${P(L * 0.3, -L * 0.17)} ${P(L * 0.75, -L * 0.15)} ${P(L, 0)}C${P(L * 0.75, L * 0.15)} ${P(L * 0.3, L * 0.17)} ${P(0, 0)}Z`);
+      ribs.push(`M${P(L * 0.12, 0)}L${P(L * 0.8, 0)}`);
+    }
+  }
+  s += inked(stems, k.bark, 4) + inked(leaves, k.leafLight, 3.5) + strokes(ribs, k.leafDark, 1.6);
   return { svg: svg(s), slots };
 }
 

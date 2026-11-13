@@ -2,9 +2,16 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the cushions' flat ellipse; the page turn between windows)._
+_Updated 2026-11-13 (the second tree, canopy; hanging oval frames for both trees)._
 
 ## Done
+- **A second family tree, "canopy" (עץ ב׳), beside the olive (the owner's Gemini drawing, 2026-11-13), ready to merge:**
+  cut into our four layers by `docs/design/cut-tree-canopy.mjs` (webp, a cream rim so it holds at night, leafy side twigs).
+  Its box is **1000×1500**, not 1800: the tree is wide and short, and five tiers of 90 px people need ~95 px each at 375.
+  `slots.json` gains `"ext": "webp"` (svg when absent) and `"candleY"`; `tree.css` keys the box on `data-kind`, so the page
+  swaps trees by a pref with no new code. **Hanging oval frames** for both trees: `data-look="frame"` on `.tree` (gilt, bronze for
+  the passed). The olive got small leafy side twigs. The prototype has זית / עץ ב׳ and עלים / מסגרות switches. Checked at 375 and
+  1280, light and dark, reduced motion: no people overlap (only the candle and the "+" bud, beside their person by design).
 - **The family tree, spec 1 (vision's batch):** one fixed drawn tree in the tent's style, in moving layers (ground, boughs,
   trunk, crown) made in code by `docs/design/make-tree.mjs` into `/assets/tree/<kind>/` with `slots.json` (the tiers where
   people hang). **The owner chose the olive** (2026-11-14); the oak and acacia are
@@ -46,6 +53,12 @@ _Updated 2026-11-14 (the cushions' flat ellipse; the page turn between windows).
   (light, dark, list and cards) and 1280. The JS side (full list rebuilds that replay the entry) is with ai-features.
 - **The phone's tab bar (the owner):** a floating glass capsule, our own round icons in `/assets/tab-icons/` (outline and
   filled), the current tab in a pale-vine pebble; checked at 375 in light and dark, the menu above it, no overflow.
+- **Diet stamps on the shopping list (the owner, 2026-11-13, f01ee33):** no grey chips. Each diet is an ink stamp
+  (✓/⚠/✗ plus the name, coloured by the verdict), with one pie at the side, and the stamps wrap beside it. The pie's window
+  grows out of the pie and shrinks back into it; with reduced motion it opens without movement.
+  - The CSS is in groceries/style.css and base.css (`.modal.grow`/`.shrinking`).
+  - The markup is a patch for keto.js (ai-features), and `H.modalFrom` is a patch for common.js (the master); both are in the notes folder.
+  - Checked at 375 and 1280, light and dark; the grow and shrink were checked in headless Chrome.
 - **The cushions away from the fire (the owner):** the ring lower and wider, clear space round the fire; checked at 375 and
   1280, no overlap, no page overflow. A patch for the master's `index.html`: `design-index-cushions-2026-11-14.patch` in the notes.
 - **The cushions on a flat ellipse again (the owner):** closer to the fire on a flatter orbit for depth (ry/rx 0.64 on the phone,

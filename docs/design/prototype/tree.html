@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>עץ המשפחה – הזית</title>
+  <title>עץ המשפחה – זית / עץ ב׳</title>
   <!-- The family tree, spec 1 (docs/vision/tree.md): /assets/tree.css, /assets/tree-sound.js and the layers in /assets/tree/.
        The markup is in tree.css's header. This page shows the olive (the owner's choice, 2026-11-14) with a sample family (no real people):
        the eldest by the roots, a memorial candle there today, a birthday glowing in the crown, a "+" bud beside "me".
+       The switches above show the leaves or the hanging oval frames (data-look="frame"), and the second tree, "canopy" (the owner's Gemini drawing, 2026-11-13), from its own slots.json.
        People are spread along each tier's line from slots.json; that placing is ai-features' to write in the real page.
        Copy to public/ to view (it is not committed there). -->
   <link rel="stylesheet" href="/assets/base.css">
@@ -15,10 +16,19 @@
     body { margin: 0; }
     .stage { padding: 12px max(8px, env(safe-area-inset-right)) 40px max(8px, env(safe-area-inset-left)); }
     .note { text-align: center; color: var(--muted); font-size: .85rem; margin: 6px 16px 0; }
+    .kinds { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 12px 16px 0; }
   </style>
 </head>
 <body>
-<p class="note">זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.</p>
+<div class="kinds" role="radiogroup" aria-label="איזה עץ">
+  <button class="chip" type="button" role="radio" aria-checked="true" data-kind="olive">זית</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-kind="canopy">עץ ב׳</button>
+</div>
+<div class="kinds" role="radiogroup" aria-label="איך תלויים האנשים">
+  <button class="chip" type="button" role="radio" aria-checked="true" data-look="">עלים</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-look="frame">מסגרות</button>
+</div>
+<p class="note" id="note"></p>
 <div class="stage"><div class="tree" id="tree"></div></div>
 <script src="/assets/tree-sound.js"></script>
 <script>
@@ -38,11 +48,20 @@
   }
   const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); e.append(...kids.filter(Boolean)); return e; };
   const tree = document.getElementById('tree');
+  const NOTES = { olive: 'זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.', canopy: 'עץ ב׳: צמרת רחבה כמטרייה, ענפים פרושים וזרדים עם עלים.' };
+  document.querySelectorAll('.kinds .chip[data-kind]').forEach((c) => c.addEventListener('click', () => {
+    document.querySelectorAll('.kinds .chip[data-kind]').forEach((o) => o.setAttribute('aria-checked', String(o === c))); draw(c.dataset.kind);
+  }));
+  document.querySelectorAll('.kinds .chip[data-look]').forEach((c) => c.addEventListener('click', () => {
+    document.querySelectorAll('.kinds .chip[data-look]').forEach((o) => o.setAttribute('aria-checked', String(o === c)));
+    if (c.dataset.look) tree.dataset.look = c.dataset.look; else delete tree.dataset.look;
+  }));
 
   async function draw(kind) {
     const s = await (await fetch(`/assets/tree/${kind}/slots.json`)).json();
+    document.getElementById('note').textContent = NOTES[kind];
     tree.dataset.kind = kind; tree.style.cssText = `--crown-x:${s.crownPivot[0]}%; --crown-y:${s.crownPivot[1]}%`;
-    tree.replaceChildren(...['ground', 'boughs', 'trunk', 'crown'].map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${kind}/${l}.svg`, alt: '', decoding: 'async' })));
+    tree.replaceChildren(...['ground', 'boughs', 'trunk', 'crown'].map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${kind}/${l}.${s.ext || 'svg'}`, alt: '', decoding: 'async' })));
     let me = null;
     for (const tier of s.tiers) {
       const people = FAMILY[tier.name] || [], pts = spread(tier.line, people.length);
@@ -53,7 +72,7 @@
           el('span', { class: 'tr-leaf' }, el('span', { class: 'tr-face' }, p.n[0])), el('span', { class: 'tr-tag' }, el('b', {}, p.n), p.d ? el('small', {}, p.d) : null));
         tree.append(b);
         if (p.me) me = [x, y, b];
-        if (p.candle) tree.append(el('div', { class: 'tr-candle', style: `--x:${50 + (x < 50 ? -9 : 9)}; --y:${s.trunkPivot[1] + 2.4}`, role: 'img', 'aria-label': `נר זיכרון ל${p.n}, היום יום האזכרה` }, el('span', { class: 'tr-flame' })));
+        if (p.candle) tree.append(el('div', { class: 'tr-candle', style: `--x:${50 + (x < 50 ? -9 : 9)}; --y:${s.candleY ?? s.trunkPivot[1] + 2.4}`, role: 'img', 'aria-label': `נר זיכרון ל${p.n}, היום יום האזכרה` }, el('span', { class: 'tr-flame' })));
       });
     }
     // the "+" bud beside me: "add a parent of דנה?"

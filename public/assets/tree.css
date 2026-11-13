@@ -1,6 +1,8 @@
 /* The family tree, spec 1 (vision: docs/vision/tree.md): one fixed drawn tree in the tent's style, people as leaves on it.
-   The drawing is layers in /assets/tree/<kind>/ (made by docs/design/make-tree.mjs), stacked in one 1000 x 1800 box:
-   ground → boughs → trunk → crown, then the people, the buds and the candle. slots.json gives the tiers (percent points).
+   The drawing is layers in /assets/tree/<kind>/, stacked in one box: ground → boughs → trunk → crown, then the people,
+   the buds and the candle. slots.json gives the box, the layer type ("ext", svg when absent) and the tiers (percent points).
+   Kinds: olive (1000 x 1800, svg, docs/design/make-tree.mjs) and canopy (1000 x 1500, webp, docs/design/cut-tree-canopy.mjs);
+   the box follows data-kind here, so swapping the tree is data-kind plus the layer paths, no other code.
    Markup (for ai-features; the prototype is docs/design/prototype/tree.html):
      <div class="tree" data-kind="olive" style="--crown-x:50%; --crown-y:42%">      (crownPivot from slots.json)
        <img class="tree-l tree-ground" src="/assets/tree/olive/ground.svg" alt="">   (+ boughs, trunk, crown, in that order)
@@ -11,6 +13,7 @@
        <button class="tr-bud" style="--x:47; --y:66" aria-label="הוספת אמא של דנה"></button>
        <div class="tr-candle" style="--x:50; --y:93" role="img" aria-label="נר זיכרון לרחל"><span class="tr-flame"></span></div>
      </div>
+   Looks: leaves (the default) or data-look="frame", oval gilt frames on cords; the markup is the same.
    Motion is transform and opacity only; nothing moves with reduced motion (the device's or the app's own setting). */
 
 .tree { position: relative; direction: ltr;   /* the drawing's own coordinates: --x from its left, like a map */
@@ -22,6 +25,9 @@
 .tree-boughs { transform-origin: 50% 70%; animation: tr-sway 8s ease-in-out -2s infinite alternate; --sway: .25deg; }
 .tree.moving .tree-crown { --sway: 1.3deg; animation-duration: 1.6s; }
 .tree.moving .tree-boughs { --sway: .7deg; animation-duration: 2s; }
+/* the second tree, the wide canopy: a shorter box, and its boughs spring from the middle of the trunk */
+.tree[data-kind="canopy"] { aspect-ratio: 1000 / 1500; }
+.tree[data-kind="canopy"] .tree-boughs { transform-origin: 50% 45%; }
 @keyframes tr-sway { from { transform: rotate(calc(var(--sway) * -1)); } to { transform: rotate(var(--sway)); } }
 /* at night the same drawing, dimmed a little */
 :root[data-theme="dark"] .tree-l { filter: brightness(.8) saturate(.9); }
@@ -68,6 +74,11 @@
 .tr-p.passed .tr-face img { filter: grayscale(.6) sepia(.25); }
 .tr-p.passed .tr-tag { color: #f4ead6; background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(0, 0, 0, .1) 7px 8.5px), linear-gradient(#8a6a4c, #75573c); }
 .tr-p.passed.tap .tr-leaf { animation: tr-bow 900ms ease-out; }
+/* the frame look (data-look="frame" on .tree, for either tree; from the owner's references): a gilt oval frame on a short cord
+   instead of the leaf, the face an oval in it. The same box as the leaf, so the tiers and the overlap check hold. */
+.tree[data-look="frame"] .tr-leaf { background-image: url("/assets/tree/frame.svg"); }
+.tree[data-look="frame"] .tr-p.passed .tr-leaf { background-image: url("/assets/tree/frame-quiet.svg"); }
+.tree[data-look="frame"] .tr-face { inline-size: 66.7%; aspect-ratio: 4 / 5; align-self: end; margin-block-end: 13.3%; border-width: 0; }
 @keyframes tr-bow { 0% { transform: scale(.96); } 40% { transform: scale(.98) rotate(-1.5deg); } 100% { transform: none; } }
 
 /* the "+" bud beside a person: it grows in, dips under the finger, a 44 px target round a smaller drawing */

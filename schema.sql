@@ -1174,7 +1174,8 @@ CREATE TABLE IF NOT EXISTS owner_invites (
   exp          INTEGER NOT NULL,
   used_by      TEXT,
   used_at      INTEGER,
-  cancelled_at INTEGER
+  cancelled_at INTEGER,
+  opened_at    INTEGER                       -- the first time its page was opened ("נפתחה")
 );
 CREATE INDEX IF NOT EXISTS owner_invites_made ON owner_invites(created_at);
 

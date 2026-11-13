@@ -108,9 +108,9 @@ export async function invitesList(ctx: Ctx) {
   const invites = await Promise.all(results.map(async (i) => {
     const status = R.inviteStatus(i, now);
     return { id: i.id, name: i.name, email: i.email, status, created_at: i.created_at, exp: i.exp, used_by: i.used_by, used_name: i.used_name || null, used_at: i.used_at,
-      cancelled_at: i.cancelled_at, url: status === 'sent' ? linkOf(ctx, await unseal(ctx.env, i.key_enc, `invite:${i.id}:key`)) : null };
+      opened_at: i.opened_at || null, cancelled_at: i.cancelled_at, url: R.inviteOpen(status) ? linkOf(ctx, await unseal(ctx.env, i.key_enc, `invite:${i.id}:key`)) : null };
   }));
-  const count = { sent: 0, redeemed: 0, expired: 0, cancelled: 0 };
+  const count = { sent: 0, opened: 0, redeemed: 0, expired: 0, cancelled: 0 };
   for (const i of invites) count[i.status]++;
   return json({ invites, count });
 }
@@ -153,14 +153,17 @@ export async function ownerInviteCheck(ctx: Ctx) {
   const i = await inviteByKey(ctx, b.key);
   if (!i) return json({ status: 'unknown', member: !!ctx.user });
   const status = R.inviteStatus(i);
-  return json({ status, member: !!ctx.user, ...(status === 'sent' ? { name: i.name, email: i.email ? maskEmail(i.email) : null } : {}) });
+  // the first time the page is opened, by someone who is not signed in yet: the owner sees it as "נפתחה"
+  if (status === 'sent' && !ctx.user) await ctx.env.DB.prepare('UPDATE owner_invites SET opened_at = ? WHERE id = ? AND opened_at IS NULL').bind(Date.now(), i.id).run();
+  const open = R.inviteOpen(status);
+  return json({ status: open ? 'sent' : status, member: !!ctx.user, ...(open ? { name: i.name, email: i.email ? maskEmail(i.email) : null } : {}) });
 }
 
 /** POST /api/join/start {key} – the key into this device's join cookie, then Google's sign-in */
 export async function ownerInviteStart(ctx: Ctx) {
   const b = await body<{ key?: unknown }>(ctx.req);
   const i = await inviteByKey(ctx, b.key);
-  if (!i || R.inviteStatus(i) !== 'sent') throw new HttpError(410, 'closed');
+  if (!i || !R.inviteOpen(R.inviteStatus(i))) throw new HttpError(410, 'closed');
   return json({ url: '/api/auth/login?next=' + encodeURIComponent('/') }, 200, { 'set-cookie': cookie(JOIN_COOKIE, R.OWNER_MARK + String(b.key), R.TTL / 1000) });
 }
 

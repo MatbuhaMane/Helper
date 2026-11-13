@@ -28,20 +28,23 @@ export const cleanName = (s: unknown) => (typeof s === 'string' ? s.replace(/[\u
 /** the join cookie carries a gathering's ticket, or (with this mark) an owner's invitation key */
 export const OWNER_MARK = 'o.';
 
-export type InviteStatus = 'sent' | 'redeemed' | 'expired' | 'cancelled';
-export interface OwnerInvite { exp: number; used_at: number | null; cancelled_at: number | null; email: string | null }
+export type InviteStatus = 'sent' | 'opened' | 'redeemed' | 'expired' | 'cancelled';
+export interface OwnerInvite { exp: number; used_at: number | null; cancelled_at: number | null; email: string | null; opened_at?: number | null }
 
-/** what became of an invitation: cancelled and redeemed are final, before its time runs out */
+/** what became of an invitation: cancelled and redeemed are final, before its time runs out; opened: its page was seen */
 export function inviteStatus(i: OwnerInvite, now = Date.now()): InviteStatus {
   if (i.cancelled_at) return 'cancelled';
   if (i.used_at) return 'redeemed';
   if (i.exp <= now) return 'expired';
-  return 'sent';
+  return i.opened_at ? 'opened' : 'sent';
 }
+
+/** still open: sent, or opened and not used yet */
+export const inviteOpen = (s: InviteStatus) => s === 'sent' || s === 'opened';
 
 /** may this invitation admit this address now? open, and if it names an email, only that one */
 export function ownerInviteOk(i: OwnerInvite | null | undefined, email: string, now = Date.now()): boolean {
-  if (!i || inviteStatus(i, now) !== 'sent') return false;
+  if (!i || !inviteOpen(inviteStatus(i, now))) return false;
   return !i.email || i.email === String(email || '').trim().toLowerCase();
 }
 

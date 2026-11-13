@@ -44,6 +44,10 @@ ok('a long name is cut', J.cleanName('א'.repeat(200)).length === 80);
 /* ---- the owner's invitations from outside the family ---- */
 const inv = (over = {}) => ({ exp: now + 864e5, used_at: null, cancelled_at: null, email: null, ...over });
 ok('an open invitation is sent', J.inviteStatus(inv(), now) === 'sent');
+ok('a link opened and not used is opened', J.inviteStatus(inv({ opened_at: now - 5 }), now) === 'opened');
+ok('an opened invitation still admits', J.ownerInviteOk(inv({ opened_at: now - 5 }), 'ruth@example.com', now));
+ok('opened, then its time ran out: expired', J.inviteStatus(inv({ opened_at: now - 5, exp: now }), now) === 'expired');
+ok('opened and used: redeemed', J.inviteStatus(inv({ opened_at: now - 9, used_at: now - 5 }), now) === 'redeemed');
 ok('a used invitation is redeemed', J.inviteStatus(inv({ used_at: now - 5 }), now) === 'redeemed');
 ok('a late invitation is expired', J.inviteStatus(inv({ exp: now }), now) === 'expired');
 ok('a cancelled invitation stays cancelled, even after its time', J.inviteStatus(inv({ cancelled_at: now - 9, exp: now - 1 }), now) === 'cancelled');

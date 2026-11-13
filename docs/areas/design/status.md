@@ -173,6 +173,7 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
   once per person after /welcome/, a soft veil with a window around the bar's real triangle (the wizard has no bar, so it lives in
   the app), a dashed vine arrow from a short note up to it, a breathing ring. Checked at 375 and 1280, light and dark.
   Waits for ai-features (reports.js) to add the markup and --x/--y; sample in `docs/design/prototype/triangle-coach.html`.
+- **The guitar sways alone** (2026-11-13): stump-guitar.webp split into `stump.webp` + `guitar.webp` (same canvas, 400 in public/assets, the script in docs/design/split-stump-guitar.py); the sway CSS (`.guitar-img`, pivot at its foot, rocks off the stump with a short buzz) sent to the CEO for index.html; sample docs/design/prototype/guitar-sway.html.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a

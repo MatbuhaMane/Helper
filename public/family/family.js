@@ -1083,12 +1083,13 @@
       return fig;
     }
     async function show(it, known) {
-      // a document opens in a window of its own. A phone blocks a window opened after the file's fetch (it is no longer
-      // the tap's), and silently: so the window is opened now, in the tap, and gets the file when it is here; where no
-      // window can open (blocked, or the home-screen app), the file is saved instead, which a phone shows or opens
+      // a document: a phone blocks a window opened after the file's fetch (no longer the tap's), silently, and the
+      // home-screen app cannot hand a blob to the browser; so on a phone it is saved, which the phone opens in its own
+      // viewer, and on a computer the window opens now, in the tap, and gets the file when it is here (else saved)
       const doc = it.mime === 'application/pdf' || it.mime === 'text/plain';
+      const phone = matchMedia('(pointer: coarse)').matches || matchMedia('(display-mode: standalone)').matches;
       let w = null;
-      if (doc) { try { w = window.open('', '_blank'); if (w) w.opener = null; } catch (_) { w = null; } }
+      if (doc && !phone) { try { w = window.open('', '_blank'); if (w) w.opener = null; } catch (_) { w = null; } }
       try {
         const u = known || await blobUrl(it.id);
         panelBlobs.add(u);
@@ -1117,7 +1118,8 @@
     }
     draw(tab);
     H.sheet.open(document.querySelector(`.fv-card[data-id="${CSS.escape(id)}"]`), body, { size: 'large', className: 'fv-sheet',
-      onLeave: () => { for (const u of panelBlobs) { URL.revokeObjectURL(u); blobs.delete(u); } } });
+      // (a little later: a document's window or download may still be reading its file)
+      onLeave: () => { const gone = [...panelBlobs]; panelBlobs.clear(); setTimeout(() => { for (const u of gone) { URL.revokeObjectURL(u); blobs.delete(u); } }, 10000); } });
   }
   async function refreshTree() {
     const board = root.querySelector('.fv-tree');

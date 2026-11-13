@@ -45,7 +45,56 @@
     const box = el('input', { type: 'checkbox', checked: !!on, onchange: (e) => onChange(e.target.checked) });
     return el('div', { class: 'st-field' }, el('label', { class: 'st-switch' }, box, ' ', label), hint ? el('p', { class: 'muted small' }, hint) : null);
   }
-  const section = (id, title, ...kids) => el('section', { id, class: 'st-sec', 'aria-labelledby': id + '-h' }, el('h2', { id: id + '-h' }, title), ...kids);
+  /** a category: a folding card (design's details.st-sec, docs/design/prototype/settings.html), closed at first. Its
+      summary says in one line what is set now (NOW_OF[id]), so a closed card still tells something; the fields are in
+      .body (box.body), which the categories that redraw themselves fill again. */
+  const NOW_OF = {};
+  const section = (id, title, ...kids) => {
+    const body = el('div', { class: 'st-body' }, ...kids);
+    const box = el('details', { id, class: 'st-sec' },
+      el('summary', { class: 'st-sum' },
+        el('span', { class: 'st-ico', 'data-ico': id, 'aria-hidden': 'true' }),
+        el('span', { class: 'st-sum-t' }, el('h2', { id: id + '-h' }, title), el('small', { class: 'st-now' }))),
+      body);
+    box.body = body;
+    return box;
+  };
+  const paintNows = () => {
+    for (const [id, f] of Object.entries(NOW_OF)) {
+      const n = document.querySelector(`#${id} > summary .st-now`);
+      if (n) { try { n.textContent = f() || ''; } catch (_) { n.textContent = ''; } }
+    }
+  };
+  addEventListener('helper:prefs', () => setTimeout(paintNows));
+  /** open a category and bring it into view (a chip, or #id in the address) */
+  const openPart = (id) => {
+    const d = document.getElementById(id);
+    if (!d) return;
+    if (d.tagName === 'DETAILS') d.open = true;
+    d.scrollIntoView({ block: 'start', behavior: H.reducedMotion?.() ? 'auto' : 'smooth' });
+  };
+
+  /* what each closed card says is set now */
+  let privacy = null, services = null;   // (from their own draws: the lock, the connected services)
+  const SIZES = { 1: 'טקסט רגיל', 1.15: 'טקסט גדול', 1.3: 'טקסט גדול מאוד', 1.5: 'טקסט ענק' };
+  const FAITHS = { jewish: 'יהדות', muslim: 'אסלאם', christian: 'נצרות', druze: 'התווחיד', none: 'בלי דת' };
+  const FIGS = { fennec: 'פנק', owl: 'ינשוף', hedgehog: 'קיפוד', lamb: 'טלה', ibn_ezra: 'רַאבַּ"ע' };
+  const VOICES = { always: 'מדבר בקול', mirror: 'עונה כמו שפונים אליו', silent: 'שותק' };
+  const LOCKS = { pin: 'בקוד', bio: 'בטביעת אצבע' };
+  Object.assign(NOW_OF, {
+    daynight: () => { const ui = H.prefs('ui', { theme: 'auto' }); return ui.theme === 'auto' || !(Date.now() < (ui.until || 0)) || ui.until < Date.now() + 3e10 ? 'לפי השמש' : ui.theme === 'dark' ? 'תמיד לילה' : 'תמיד יום'; },
+    access: () => [SIZES[Number(access.text) || 1] || 'טקסט רגיל', access.spacing === 'wide' && 'מרווח', access.font === 'readable' && 'גופן קריא', access.contrast === 'high' && 'ניגודיות גבוהה', access.motion === 'reduce' && 'פחות תנועה'].filter(Boolean).join(' · '),
+    privacy: () => (!privacy ? '' : privacy.app === 'off' && privacy.tree === 'off' ? 'בלי נעילה'
+      : [privacy.app !== 'off' && `האוהל נעול ${LOCKS[privacy.app] || ''} · אחרי ${privacy.autolock === 60 ? 'שעה' : (privacy.autolock || 5) + ' דקות'}`, privacy.tree !== 'off' && `העץ נעול ${LOCKS[privacy.tree] || ''}`].filter(Boolean).join(' · ')),
+    services: () => (!services ? '' : services.length ? services.join(', ') : 'עוד לא חובר שירות'),
+    assistant: () => { const d = H.prefs('daemon', H.DAEMON_DEFAULTS || {}); const f = d.figure || 'ibn_ezra';
+      return [window.Figure2D?.list?.().find((x) => x.id === f)?.name || FIGS[f] || '', VOICES[d.voice || (d.speak === false ? 'silent' : 'mirror')]].filter(Boolean).join(' · '); },
+    palette: () => [(typeof PALETTES !== 'undefined' && PALETTES.find(([id]) => id === (look.palette || ''))?.[1]) || 'הצבעים של האוהל'].join(''),
+    faith: () => [FAITHS[me.religion || 'jewish'], me.address === 'female' ? 'בלשון נקבה' : me.address === 'male' ? 'בלשון זכר' : 'בלי מגדר'].join(' · '),
+    place: () => me.city || 'לא נקבעה עיר',
+    menu: () => (H.prefs('tools', { locked: false }).locked ? 'הסידור נעול' : 'אפשר לסדר'),
+    account: () => user.he_name || user.name || user.email,
+  });
 
   /* ---------- 1. day and night ---------- */
   function dayNight() {
@@ -109,10 +158,10 @@
     };
     /** a service connected elsewhere in the tent: its state here, and a link to where it is managed */
     // (connected: a plain line, which settings.css marks green with ✓; not connected: a muted one)
-    const link = (name, state, on, href, action) => el('div', { class: 'card st-service' }, el('h3', {}, name), el('p', { class: on ? null : 'muted small' }, state),
-      href ? el('a', { class: 'btn small ghost', href }, action) : null);
-    servicesBox.replaceChildren(...[
-      el('h2', { id: 'services-h' }, 'חיבור לשירותים'),
+    const on = [];
+    const link = (name, state, ok, href, action) => { if (ok) on.push(name); return el('div', { class: 'card st-service' }, el('h3', {}, name), el('p', { class: ok ? null : 'muted small' }, state),
+      href ? el('a', { class: 'btn small ghost', href }, action) : null); };
+    servicesBox.body.replaceChildren(...[
       el('h3', {}, 'העוזר החכם (AI)'),
       el('p', { class: 'muted' }, ai.limited
         ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים.' + (shopOpen ? ' או להוסיף קרדיט.' : '')
@@ -133,7 +182,8 @@
         mail ? link('Gmail', mail.connected ? 'מחובר לסידור המייל' : 'לא מחובר', mail.connected, '/mail/', mail.connected ? 'לסידור המייל' : 'חיבור') : null,
         link('לוח השנה בגוגל', feed ? 'יש קישור מנוי פעיל' : 'אין קישור מנוי', !!feed, '/tools/calendar/', feed ? 'ניהול' : 'יצירת קישור'),
         drive ? link('Google Drive', drive.connected ? 'מחובר: פתקים נשמרים ב־Drive שלך' : 'לא מחובר. מתחברים בפעם הראשונה ששומרים פתק ב־Drive.', drive.connected, '/tools/notes/', 'לפתקים') : null)].filter(Boolean));
-    if (location.hash === '#services') servicesBox.scrollIntoView({ block: 'start' });
+    services = on; paintNows();
+    if (location.hash === '#services') openPart('services');
   }
 
   /* ---------- 4. the personal assistant (vision batch 5): his voice, his figure, how he shows in the chat ---------- */
@@ -239,8 +289,7 @@
     };
     const groups = KINDS.map(([kind, title]) => [title, figures.filter((f) => (f.kind || 'generic') === kind)]).filter(([, list]) => list.length);
     // (native replaceChildren would print a null as text)
-    assistantBox.replaceChildren(...[
-      el('h2', { id: 'assistant-h' }, 'העוזר האישי'),
+    assistantBox.body.replaceChildren(...[
       // the voice: always, the way he is addressed (aloud to a spoken question, in writing to a written one), or silent
       choices('הקול', [['always', 'מדבר בקול'], ['mirror', 'עונה כמו שפונים אליו', { title: 'בקול כשמדברים אליו, בכתב כשכותבים' }], ['silent', 'שותק']], voice,
         (v) => { dp.voice = v; dp.speak = v !== 'silent'; keep('daemon'); }),
@@ -426,7 +475,7 @@
   });
   async function drawPrivacy() {
     let lock;
-    try { lock = await api('/api/lock'); } catch (e) { privacyBox.replaceChildren(el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'), el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
+    try { lock = await api('/api/lock'); } catch (e) { privacyBox.body.replaceChildren(el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
     try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
     const bio = !!H.passkeysWork?.();
     const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: bio ? false : 'לא במכשיר הזה', title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
@@ -441,8 +490,8 @@
       drawPrivacy();
     };
     const low = lock.app === 'off' && lock.tree === 'off';   // nothing locked: the "low" level
-    privacyBox.replaceChildren(...[
-      el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'),
+    privacy = lock; paintNows();
+    privacyBox.body.replaceChildren(...[
       low ? el('p', { class: 'st-warn', role: 'note' }, '⚠ הכל פתוח: אין נעילה לאוהל ולא לעץ המשפחה. לא מומלץ – מי שמחזיק את המכשיר רואה הכל, חוץ ממסמכים ופרטים אישיים.') : null,
       el('h3', {}, 'נעילת האוהל'),
       el('p', { class: 'muted small' }, 'כמו בטלגרם: האוהל ננעל לבד אחרי זמן שלא משתמשים בו, ונפתח בקוד או בטביעת אצבע.'),
@@ -471,13 +520,15 @@
   const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st' },
     el('h1', {}, 'הגדרות'),
-    el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id }, name))),
+    el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id, onclick: (e) => { e.preventDefault(); history.replaceState(null, '', '#' + id); openPart(id); } }, name))),
     dayNight(), accessibility(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),
         el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.logout() }, 'התנתקות')))));
   drawServices(); drawAssistant(); drawDevices(); drawPrivacy();
+  paintNows();
   const want = location.hash.slice(1);
-  if (want && want !== 'services') setTimeout(() => document.getElementById(want)?.scrollIntoView({ block: 'start' }), 50);
+  if (want && want !== 'services') setTimeout(() => openPart(want), 50);
+  addEventListener('hashchange', () => openPart(location.hash.slice(1)));
 })();

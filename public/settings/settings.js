@@ -145,7 +145,6 @@
     try { d = await api('/api/daemon'); } catch (_) { /* no companion yet */ }
     try {
       await H.loadOnce('/assets/figure2d.js');
-      if (!document.querySelector('link[href="/assets/figure2d.css"]')) document.head.append(el('link', { rel: 'stylesheet', href: '/assets/figure2d.css' }));
       figures = (window.Figure2D ? Figure2D.list() : []).map(figureMeta).filter((f) => !f.hideFor.includes(me.religion || 'jewish'));
     } catch (_) { /* the 2D figures are not here yet */ }
     if (figures.some((f) => f.unlock)) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }

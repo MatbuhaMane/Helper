@@ -469,7 +469,6 @@
     return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!m.paid || (state?.owned || []).includes(f.id)); };
   async function flatCatalogue() {
     try { await H.loadOnce('/assets/figure2d.js'); } catch (_) { return []; }
-    if (!document.querySelector('link[href="/assets/figure2d.css"]')) document.head.append(el('link', { rel: 'stylesheet', href: '/assets/figure2d.css' }));
     return window.Figure2D ? Figure2D.list().filter(mayHave) : [];
   }
   /** each frame: his mouth while he speaks, asleep when left alone, thinking while an answer comes */

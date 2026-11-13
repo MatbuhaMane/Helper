@@ -16,6 +16,7 @@ import { childOf } from '../../server/members';
 import { birthYear } from '../../server/figures-rules';
 import * as designImages from '../../server/design-images';
 import * as fridge from '../../server/fridge';
+import * as groceryAuto from '../../server/grocery-auto';
 import * as groceryLists from '../../server/grocery-lists';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
@@ -190,6 +191,7 @@ route('DELETE', '/api/groceries/lists/:id', groceryLists.deleteList);
 route('POST', '/api/groceries/lists/:id/restore', groceryLists.restoreList);
 route('POST', '/api/groceries/lists/:id/save', groceryLists.saveList);
 route('POST', '/api/groceries/lists/:id/use', groceryLists.useList);
+route('GET', '/api/groceries/auto', groceryAuto.autoList);   // the automatic list from the fridge: suggestions only (ai-features)
 route('GET', '/api/recipes', kitchen.listRecipes);
 route('POST', '/api/recipes', kitchen.saveRecipe);
 route('PUT', '/api/recipes/:id', kitchen.saveRecipe);

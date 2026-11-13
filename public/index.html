@@ -400,7 +400,11 @@
     async function dailyDigest() {
       const today = new Date().toLocaleDateString('en-CA');
       try { if (localStorage.getItem('digestDay') === today) return; localStorage.setItem('digestDay', today); } catch (_) { /* no storage: ask every time */ }
-      const { items = [] } = await H.api('/api/digest').catch(() => ({}));
+      // the day itself (batch 16, the owner: the card shows every day): the weather and what the calendar holds for today, each
+      // allowed 2.5 s so a slow service never holds the card back
+      const soon = (p) => Promise.race([p.catch(() => null), new Promise((r) => setTimeout(() => r(null), 2500))]);
+      const [dg, wx, cal] = await Promise.all([H.api('/api/digest').catch(() => ({})), soon(H.api('/api/weather')), soon(H.api('/api/calendar/events'))]);
+      const items = dg?.items || [];
       const svg = (d) => { const t = document.createElement('template'); t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`; return t.content.firstChild; };
       const IC = {
         familyday: ['#b8457a', '<path d="M4.5 20.5h15v-6.5a2 2 0 0 0-2-2h-11a2 2 0 0 0-2 2z"/><path d="M4.5 16c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 1.5-1.2 1.5-1.2"/><path d="M12 12V8.5"/><path d="M12 4c1 1.2 1 2.4 0 3-1-.6-1-1.8 0-3z"/>'],
@@ -418,12 +422,35 @@
       const list = el('ul', { class: 'dsum-list' }, items.slice(0, 3).map(row));
       const more = items.length > 3 ? el('button', { class: 'dsum-more', type: 'button', onclick: () => { list.append(...items.slice(3).map(row)); more.remove(); } },
         items.length === 4 ? 'ועוד דבר אחד' : `ועוד ${items.length - 3}`) : null;
+      // today's days from the calendar: one-off on the date, yearly by the Gregorian date or by the Hebrew one (after sunset = the next Hebrew day)
+      const iso = today, noon = (d) => new Date(d + 'T12:00:00');
+      const hd = (d) => { const p = new Intl.DateTimeFormat('en-u-ca-hebrew', { month: 'long', day: 'numeric' }).formatToParts(d); return p.find((x) => x.type === 'month')?.value + ' ' + p.find((x) => x.type === 'day')?.value; };
+      const hToday = hd(new Date());
+      const isToday = (e) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date || '')) return false;
+        if (e.recur === 'none') return e.date === iso;
+        if (e.recur === 'gregorian') return e.date.slice(5) === iso.slice(5);
+        const d = noon(e.date); if (e.after_sunset) d.setDate(d.getDate() + 1);
+        return hd(d) === hToday;
+      };
+      const KIND = { birthday: 'יום הולדת', yahrzeit: 'יום השנה', anniversary: 'יום נישואין' };
+      const CAL = '<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>';
+      const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>';
+      const dayRow = (c, d, b, small) => el('li', {}, el('div', {}, el('span', { class: 'dsum-ic', style: `--c:${c}` }, svg(d)), el('span', { class: 'dsum-txt' }, el('b', {}, b), small ? el('small', {}, small) : null)));
+      const todayRows = [];
+      const w = wx?.forecast?.days?.[0];
+      if (w) todayRows.push(dayRow('#c27c12', SUN, `${wx.place?.name ? wx.place.name + ': ' : ''}${w.sky?.text || 'מזג האוויר'}`,
+        `בין ${w.min}° ל־${w.max}°` + (w.rain >= 30 ? `, סיכוי לגשם ${w.rain}%` : '')));
+      for (const e of (cal?.events || []).filter(isToday).slice(0, 4))
+        todayRows.push(e.kind === 'birthday' ? dayRow(IC.familyday[0], IC.familyday[1], e.title, KIND.birthday) : dayRow('#c0402a', CAL, e.title, KIND[e.kind] || 'בלוח השנה'));
+      const todaySec = todayRows.length ? el('section', { 'aria-labelledby': 'dsum-today' }, el('h3', { class: 'dsum-sub', id: 'dsum-today' }, 'היום'), el('ul', { class: 'dsum-list' }, ...todayRows)) : null;
       const heb = new Intl.DateTimeFormat('he-u-ca-hebrew', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
       const close = el('button', { class: 'dsum-close', type: 'button', 'aria-label': 'סגירת הסיכום' }, svg('<path d="M6 6l12 12M18 6 6 18"/>'));
       const card = el('section', { class: 'dsum', 'aria-labelledby': 'dsum-h' },
         el('header', { class: 'dsum-head' }, el('div', {}, el('h2', { id: 'dsum-h' }, 'סיכום היום'), el('p', {}, heb)), close),
-        items.length ? el('div', { class: 'dsum-body' }, el('section', { 'aria-labelledby': 'dsum-since' }, el('h3', { class: 'dsum-sub', id: 'dsum-since' }, 'מאז הסיכום הקודם'), list, more))
-          : el('div', { class: 'dsum-body' }, el('p', { class: 'dsum-calm' }, 'יום שקט. מאז אתמול לא חיכה לך כלום.' + (sun?.set ? ` השקיעה היום ב־${hhmm(sun.set)}.` : ''))));
+        el('div', { class: 'dsum-body' }, todaySec,
+          items.length ? el('section', { 'aria-labelledby': 'dsum-since' }, el('h3', { class: 'dsum-sub', id: 'dsum-since' }, 'מאז הסיכום הקודם'), list, more)
+            : el('p', { class: 'dsum-calm' }, 'מאז אתמול לא חיכה לך כלום.' + (sun?.set ? ` השקיעה היום ב־${hhmm(sun.set)}.` : ''))));
       close.onclick = () => {
         const done = () => { card.remove(); document.querySelector('.greet h1, .sr-head h1')?.focus?.(); };
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();
@@ -431,6 +458,13 @@
       };
       (document.querySelector('.home > .greet, .sr-home .sr-head') || root.firstElementChild)?.after(card);
     }
+    /* ---------- "בקרוב" (batch 15, docs/design/soon.md): the big ideas, drawn only; a tap opens one sentence ---------- */
+    const SPROUT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5v-8"/><path d="M12 12.5C12 8.6 9.2 6.5 5 6.5c0 3.9 2.8 6 7 6Z"/><path d="M12 14.5c0-3.2 2.4-5.2 6.5-5.2 0 3.2-2.4 5.2-6.5 5.2Z"/></svg>';
+    const soonTag = (x) => el('span', { class: 'tag-soon', html: SPROUT + x.note });
+    const soonPic = (x) => el('img', { src: `/assets/soon/${x.id}.svg`, alt: '', loading: 'lazy', decoding: 'async' });
+    const soonSheet = (x) => H.modal(el('div', { class: 'soon-sheet' }, soonPic(x), el('h2', {}, x.name), soonTag(x), el('p', {}, x.line)));
+    const soonRow = () => (H.SOON?.length ? el('section', { class: 'soon-row', 'aria-labelledby': 'soon-h' }, el('h2', { id: 'soon-h' }, 'בקרוב ליד האוהל'),
+      el('ul', {}, ...H.SOON.map((x) => el('li', {}, el('button', { class: 'soon-card', type: 'button', 'data-id': x.id, onclick: () => soonSheet(x) }, soonPic(x), el('b', {}, x.name), soonTag(x)))))) : null);
     if (H.prefs('look').style === 'serious') { document.documentElement.dataset.style = 'serious'; if (H.prefs('look').pillows === 'keep') document.documentElement.dataset.pillows = 'keep'; seriousHome(); return; }
     function seriousHome() {
       const look = H.prefs('look'), pillows = document.documentElement.dataset.pillows === 'keep';
@@ -443,6 +477,12 @@
         const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
         return [el('section', { class: 'sr-group' }, el('h2', {}, t), ul), ul];
       });
+      if (H.SOON?.length) {
+        const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...H.SOON.map((x) => el('li', { 'data-q': x.name + ' ' + x.line },
+          el('button', { class: 'sr-tool', type: 'button', 'data-id': x.id, onclick: () => soonSheet(x) }, el('span', { class: 'sr-ic' }, soonPic(x)),
+            el('span', { class: 'sr-txt' }, el('b', {}, x.name, soonTag(x)), el('small', {}, x.line))))));
+        lists.push([el('section', { class: 'sr-group sr-soon' }, el('h2', {}, 'בקרוב'), ul), ul]);
+      }
       const none = el('p', { class: 'sr-none', hidden: '' }, 'לא נמצא כלי בשם הזה');
       const input = el('input', { type: 'search', placeholder: 'חיפוש כלי', 'aria-label': 'חיפוש כלי' });
       input.addEventListener('input', () => {
@@ -467,7 +507,7 @@
     root.append(el('div', { class: 'home' },
       greeting(),
       el('div', { class: 'camp' }, el('img', { sizes: '(max-width: 599px) 92vw, 640px', srcset: '/assets/tent-700.webp 700w, /assets/tent-1000.webp 1000w, /assets/tent.webp 1400w', src: '/assets/tent-1000.webp', alt: 'האוהל של רַאבַּ"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
-      wheel.root, wheel.caption,
+      wheel.root, wheel.caption, soonRow(),
       el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     wheel.start();
     sky();

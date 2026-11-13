@@ -1,5 +1,7 @@
 /* The page audit: every page in an iframe of a given size, in light and in dark.
    It reports sideways overflow, broken images, buttons and links with no name, and text whose contrast is under 3:1.
+   Motion (batch 16, "motion must feel premium"): it also lists animations and transitions that move layout properties
+   (width, height, top, margin, inline-size…) instead of transform and opacity. Those stutter on a phone; each one is a defect.
    Run it in the browser on the dev server (npm run dev): paste this file into the console of any page there, then
 
      await __auditDesk(['/', '/food/', '/news/', ...], 375, 812)    // a phone
@@ -20,6 +22,24 @@ window.__auditDesk = async function (pages, W = 1280, H = 800) {
     await new Promise((r) => setTimeout(r, 2500));
     const w = fr.contentWindow, d = fr.contentDocument;
     const res = {};
+    // motion: keyframes and transitions on properties that re-run the layout every frame
+    const LAYOUT = /^(width|height|top|left|right|bottom|inset(-.+)?|margin(-.+)?|padding(-.+)?|inline-size|block-size|(min|max)-(width|height|inline-size|block-size)|font-size|line-height|letter-spacing|border(-.+)?-width|flex-basis|grid-template-(rows|columns))$/;
+    const motion = new Set();
+    const walk = (rules, file) => {
+      for (const r of rules) {
+        if (r.type === 7) {                              // @keyframes
+          const props = new Set();
+          for (const k of r.cssRules) for (let i = 0; i < k.style.length; i++) if (LAYOUT.test(k.style[i])) props.add(k.style[i].replace(/-(top|bottom|left|right|block-start|block-end|inline-start|inline-end)$/, ''));
+          if (props.size) motion.add(`@keyframes ${r.name} (${file}): ${[...props].join(', ')}`);
+        } else if (r.cssRules) walk(r.cssRules, file);   // @media, @supports, @layer
+        else if (r.style?.transitionProperty) {
+          const bad = r.style.transitionProperty.split(',').map((x) => x.trim()).filter((x) => LAYOUT.test(x));
+          if (bad.length) motion.add(`transition ${bad.join(', ')} on ${(r.selectorText || '').slice(0, 60)} (${file})`);
+        }
+      }
+    };
+    for (const sh of d.styleSheets) { try { walk(sh.cssRules, (sh.href || 'inline').split('/').pop()); } catch (_) { /* another origin */ } }
+    if (motion.size) res.motion = [...motion];
     for (const theme of ['light', 'dark']) {
       if (!d.getElementById('__nt')) { const st = d.createElement('style'); st.id = '__nt'; st.textContent = '*,*::before,*::after{transition:none!important;animation-duration:0s!important}'; d.head.append(st); }
       d.documentElement.dataset.theme = theme;

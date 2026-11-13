@@ -11,6 +11,9 @@ Updated by the department at the end of every meaningful round of work. Short: t
 - **The owner's answers (2026-11-14):** the levels are named by number only; self-funded with fundraising only after
   metrics; payment quotes from many providers plus a web comparison (the next task for business).
 
+- **Payment providers, web comparison (2026-11-14):** `docs/business/payment-providers.md`. Shortlist for quotes:
+  Sumit, Grow, Cardcom, PayPlus, Tranzila, with 7 questions for each. Next: the owner asks for the quotes.
+
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.
   - The trial is about ₪1–2.

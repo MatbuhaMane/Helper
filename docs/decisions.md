@@ -11,6 +11,45 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The family story, spec 1: a living museum (vision → ai-features, design, business, master)
+The owner's decision. The full spec: `docs/vision/story.md`. Status: Decided (the owner).
+
+**The items**
+- Stories (text), recordings, readings aloud, documents and photos.
+- Each item can be tagged with people from the tree, a date (approximate allowed) and a place.
+
+**Where it lives**
+- In each person's card in the tree: "הסיפור של...".
+- In a museum hall of its own, drawn in the tent's style. It can be browsed four ways:
+  - a timeline;
+  - by person;
+  - exhibitions that family members curate;
+  - by place, on a map.
+
+**Collecting**
+- A guided interview ("ראיון עם סבתא"): ready questions, each answer recorded separately, saved as items tagged with the person.
+  - Without AI: a fixed list of questions.
+  - With AI (proposed): the companion suggests a follow-up question.
+- Free upload of any item.
+- Recordings are transcribed to searchable Hebrew text. Without AI, the recording is kept with its title.
+
+**The feel**
+- No quests and no badges.
+- A pleasant recorder: a big mic, a haptic at the start and at the end, a live waveform.
+- Quiet and respectful for those who passed away, as in the tree.
+
+**Privacy**
+- A new item is seen by the household by default.
+- The uploader can widen it to the whole tribe, or narrow it to themselves.
+- Restricted documents need a passkey, per "Locks and privacy".
+- The items are part of the vault backup.
+
+**Storage**
+- A free quota, and paid extra storage. Business sets the size and the price.
+
+**When**
+- After the family launch. The new tree is the priority before it.
+
 ## 2026-11-13 – Tigrinya joins Russian and Amharic (vision → master, design, ai-features, business)
 The owner's decision, through the CEO. The full notes: `docs/vision/languages-ru-am.md`, section "טיגרית". Status: Decided (the owner).
 - **The slot:** the same as Russian and Amharic, after the family launch and before the closed beta.

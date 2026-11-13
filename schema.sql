@@ -924,3 +924,14 @@ CREATE TABLE IF NOT EXISTS research_comments (
   PRIMARY KEY (owner, research_id, id)
 );
 CREATE INDEX IF NOT EXISTS research_comments_id ON research_comments (id);
+
+-- Paid companion figures a person has (server/figures.ts): bought with credits (usd, counted as spent in
+-- credits.balance), or given to the owner's family at the owner's cost (how = 'family', usd 0).
+CREATE TABLE IF NOT EXISTS figure_owned (
+  email     TEXT NOT NULL,
+  figure    TEXT NOT NULL,                     -- Figure2D's id (figures-rules.ts PAID)
+  usd       REAL NOT NULL DEFAULT 0,
+  how       TEXT NOT NULL,                     -- family | credits
+  bought_at INTEGER NOT NULL,
+  PRIMARY KEY (email, figure)
+);

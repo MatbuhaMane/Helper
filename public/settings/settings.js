@@ -134,18 +134,21 @@
 
   /* ---------- 4. the personal assistant (vision batch 5): his voice, his figure, how he shows in the chat ---------- */
   const assistantBox = section('assistant', 'העוזר האישי');
-  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['historic', 'דמויות מההיסטוריה'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
+  const KINDS = [['simple', 'פשוטות וחמודות'], ['generic', 'דמויות'], ['person', 'דמויות מההיסטוריה ומהסיפורים'], ['historic', 'דמויות מההיסטוריה'], ['badge', 'נפתחות עם badges'], ['holiday', 'לחגים ולאירועים']];
   /* vision batch 6: a figure is free, or paid (catalogue `paid: true`); one that conflicts with the person's religion
      setting is not shown (catalogue `hideFor: ['jewish', …]`). The full entry is read from Figure2D.FIGURES. */
-  const figureMeta = (f) => ({ ...(window.Figure2D?.FIGURES?.[f.id] || {}), ...f, paid: !!(f.paid ?? window.Figure2D?.FIGURES?.[f.id]?.paid), hideFor: f.hideFor || window.Figure2D?.FIGURES?.[f.id]?.hideFor || [] });
+  // (paid: design's tier 'paid', or paid: true; tags: ['horror'] is offered only on request – prefs daemon.showHorror)
+  const figureMeta = (f) => { const c = window.Figure2D?.FIGURES?.[f.id] || {}, m = { ...c, ...f };
+    return { ...m, paid: !!m.paid || m.tier === 'paid', hideFor: m.hideFor || [], tags: m.tags || [] }; };
   async function drawAssistant() {
     const dp = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
     const set = (k, v) => { dp[k] = v; keep('daemon'); };
-    let d = null, earned = new Set(), figures = [];
+    let d = null, earned = new Set(), figures = [], allFigures = [];
     try { d = await api('/api/daemon'); } catch (_) { /* no companion yet */ }
     try {
       await H.loadOnce('/assets/figure2d.js');
-      figures = (window.Figure2D ? Figure2D.list() : []).map(figureMeta).filter((f) => !f.hideFor.includes(me.religion || 'jewish'));
+      allFigures = (window.Figure2D ? Figure2D.list() : []).map(figureMeta).filter((f) => !f.hideFor.includes(me.religion || 'jewish'));
+      figures = allFigures.filter((f) => !f.tags.includes('horror') || dp.showHorror);
     } catch (_) { /* the 2D figures are not here yet */ }
     if (figures.some((f) => f.unlock)) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
     const family = !!d?.ibnEzra;
@@ -179,6 +182,8 @@
         const sub = f.paid && !owned.has(f.id) ? '💎 בתשלום · הרכישה בקרוב' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
         return card(f.id, f.name, sub, preview2d(f), ok);
       }))]),
+      // horror figures (Dracula) only when asked for: not for children (the members' age is not kept yet, so it is the person's switch)
+      allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));
   }
 

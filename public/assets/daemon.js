@@ -466,7 +466,8 @@
   const defaultFigure = (list) => (list.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : list[0]?.id || null);
   /** the figures this person may have: not hidden for their religion, and a paid one only once it is theirs (vision batch 6) */
   const mayHave = (f) => { const m = { ...(window.Figure2D?.FIGURES?.[f.id] || {}), ...f };
-    return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!m.paid || (state?.owned || []).includes(f.id)); };
+    return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!(m.paid || m.tier === 'paid') || (state?.owned || []).includes(f.id))
+      && (!(m.tags || []).includes('horror') || !!prefs.showHorror); };
   async function flatCatalogue() {
     try { await H.loadOnce('/assets/figure2d.js'); } catch (_) { return []; }
     return window.Figure2D ? Figure2D.list().filter(mayHave) : [];

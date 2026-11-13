@@ -55,6 +55,15 @@ eq('not a name: refused', [S.spokenName('<script>'), S.spokenName('Mishael'), S.
 const pm = S.protect(`בוקר טוב ${M}, כאן ${R}`, [M]);
 eq('the name is kept aside from the niqqud, with רַאבַּ"ע', pm.text, 'בוקר טוב @@2@@, כאן @@1@@');
 eq('and back', S.restore('בֹּקֶר טוֹב @@2@@, כָּאן @@1@@', `בוקר טוב ${M}, כאן ${R}`, pm.kept), `בֹּקֶר טוֹב ${M}, כָּאן ${R}`);
+/* ---- the owner's name for the voice: מִישָׁאֵֽל, a meteg under the alef (the screen keeps מִישָׁאֵל) ---- */
+const MV = 'מִישָׁאֵֽל';
+eq('the voice form has the meteg', MV.includes('ֽ'), true);
+eq('plain → the voice form', S.speakName('בוקר טוב מישאל!', MV), `בוקר טוב ${MV}!`);
+eq('the screen form → the voice form', S.speakName(`בוקר טוב ${M}!`, MV), `בוקר טוב ${MV}!`);
+eq('the voice form is a valid setting', S.spokenName(MV), MV);
+const pv = S.protect(`שלום ${MV}`, [MV]);
+eq('kept aside from the niqqud', pv.text, 'שלום @@1@@');
+eq('and back, meteg and all', S.restore('שָׁלוֹם @@1@@', `שלום ${MV}`, pv.kept), `שָׁלוֹם ${MV}`);
 eq('a changed word is still caught', S.restore('בֹּקֶר רַע', 'בוקר טוב', []), 'בוקר טוב');
 
 console.log(`${pass} passed, ${fail} failed`);

@@ -8,6 +8,9 @@ import { aiJson } from './ai';
 import { forSpeech, needsNiqqud, protect, restore, speakName, spokenName } from './speech-text';
 import { prefsFor } from './prefs';
 
+/** the owner's name as the voice says it: מִישָׁאֵֽל, with a meteg (U+05BD) under the alef */
+const OWNER_SPOKEN = 'מִישָׁאֵֽל';
+
 export const DEFAULT_VOICE = 'Algenib';   // the owner's choice: deep and a little gravelly
 const DAILY_CHARS = 30000;
 // the sample has ח and ע in it, so the accent can be heard
@@ -161,8 +164,9 @@ export async function say(ctx: Ctx) {
   const day = new Date().toISOString().slice(0, 10);
   const q = await env.DB.prepare('SELECT chars FROM tts_quota WHERE email = ? AND day = ?').bind(u.email, day).first<{ chars: number }>();
   if ((q?.chars || 0) + text.length > DAILY_CHARS) throw new HttpError(429, 'daily voice allowance used');
-  // the person's own name as they want it said (settings: me.nameSpoken); the owner's until he sets it: מִישָׁאֵל
-  const spoken = spokenName((await prefsFor(env, u.email)).me?.data?.nameSpoken) || (u.role === 'owner' ? 'מִישָׁאֵל' : '');
+  // the person's own name as they want it said (settings: me.nameSpoken); the owner's until he sets it – for the voice
+  // only, with a meteg under the alef (the owner's choice; on screen it is written מִישָׁאֵל)
+  const spoken = spokenName((await prefsFor(env, u.email)).me?.data?.nameSpoken) || (u.role === 'owner' ? OWNER_SPOKEN : '');
   const { bytes, fresh } = await synth(ctx, voice, speakName(text, spoken), spoken ? [spoken] : []);
   if (fresh) {
     await env.DB.prepare('INSERT INTO tts_quota (email, day, chars) VALUES (?, ?, ?) ON CONFLICT(email, day) DO UPDATE SET chars = chars + excluded.chars')

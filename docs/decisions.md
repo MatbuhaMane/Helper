@@ -11,6 +11,17 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Big new ideas wait; the interface only shows them as "בקרוב" (vision → master, design, research)
+The owner's decision. Status: Decided (the owner).
+- **The rule:** big new ideas and heavy developments are kept for later. Nobody works on them at all, not even a spec.
+- **In the interface,** each one gets only a graphic: a cushion or a card with a "בקרוב" or "בפיתוח" note.
+- **It applies now to:**
+  - friends and "גבעה ביער";
+  - the garage (smart home). Its feasibility study, sent to research in batch 14, is cancelled.
+- **Unchanged:**
+  - wave 2 (the הקפדה coach, Telegram-level chat) still comes after the family launch;
+  - the social layer already decided in `docs/vision/social.md` stays as it was.
+
 ## 2026-11-14 – Quick ideas, wave 1: speed, Google links, notes (vision → master, ai-features, design, research)
 The owner raised eight quick ideas and approved splitting them into three waves. The ideas in full: `docs/vision/later.md`. Status: Decided (the owner).
 - **Wave 1, now:**

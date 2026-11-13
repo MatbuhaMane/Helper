@@ -123,11 +123,12 @@
 .wz-alert::after { content: ""; inline-size: calc(24px * var(--s)); block-size: calc(24px * var(--s)); background: currentColor; animation: wz-breathe 2.4s ease-in-out infinite;
   -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
 @keyframes wz-breathe { 50% { scale: 1.07; } }
+.wz-tent { display: block; inline-size: min(100%, 220px); block-size: auto; }   /* האוהל slide: the 700px picture never sets the slide's width (it was half off a phone) */
 @media (min-width: 700px) {
   .wz-step:has(.wz-intro) { inline-size: min(100%, 640px); }
   .wz-intro { grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 24px; }
 }
-@media (max-height: 700px) { .wz-alert { --s: 1.8; } .wz-helper { min-inline-size: 140px; min-block-size: 140px; } .wz-lines { gap: 6px; } .wz-lines p { font-size: .95rem; } }
+@media (max-height: 700px) { .wz-alert { --s: 1.8; } .wz-tent { inline-size: min(100%, 160px); } .wz-helper { min-inline-size: 140px; min-block-size: 140px; } .wz-lines { gap: 6px; } .wz-lines p { font-size: .95rem; } }
 @media (prefers-reduced-motion: reduce) { .wz-alert::after { animation: none; } .wz-friend { transition: none; } }
 
 /* the family tree (data-step="tree", ai-features 7289525): <span class="wz-tree" aria-hidden="true"></span>, empty.

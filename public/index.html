@@ -161,14 +161,14 @@
       background: linear-gradient(to bottom, var(--sky-top, transparent), transparent 70%), radial-gradient(60% 55% at var(--sun-x, 50%) var(--sun-y, 100%), var(--sky-glow, transparent), transparent 70%);
       transition: background 2s;
       /* the sky ends at the horizon (across the tent): a setting sun sinks into it through a short soft edge */
-      -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
-    /* the horizon: soft hill curves along it (the owner, 2026-11-14: minimal, so the line is not straight), drawn over a
-       setting sun or moon; a far, paler range and a nearer one, in the ground's own colours */
+      -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 3px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 3px), transparent); }
+    /* the horizon: soft, low hill curves right on it (the owner, 2026-11-14: minimal; and low, on the line where the sun and
+       the moon meet the ground – they set and rise there, not behind hills above it); a far, paler range and a nearer one */
     .sky::before, .sky::after { content: ""; position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 1; pointer-events: none;
       -webkit-mask: var(--hills) bottom / 100% 100% no-repeat; mask: var(--hills) bottom / 100% 100% no-repeat; }
-    .sky::before { block-size: clamp(34px, 7vw, 78px); background: color-mix(in srgb, #b9a77a 20%, var(--bg));
+    .sky::before { block-size: clamp(12px, 2.4vw, 26px); background: color-mix(in srgb, #b9a77a 20%, var(--bg));
       --hills: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 80' preserveAspectRatio='none'><path d='M0 80V46C90 34 170 22 260 26S420 46 520 40 700 14 800 16 980 36 1060 34 1160 24 1200 26V80Z'/></svg>"); }
-    .sky::after { block-size: clamp(22px, 4.5vw, 50px); background: color-mix(in srgb, #b39d6a 34%, var(--bg));
+    .sky::after { block-size: clamp(8px, 1.5vw, 16px); background: color-mix(in srgb, #b39d6a 34%, var(--bg));
       --hills: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'><path d='M0 60V30C120 40 220 44 340 34S560 12 680 18 880 42 990 38 1130 20 1200 24V60Z'/></svg>"); }
     .sky.night::before { background: color-mix(in srgb, #3c4a72 26%, var(--bg)); }
     .sky.night::after { background: color-mix(in srgb, #2c3758 40%, var(--bg)); }

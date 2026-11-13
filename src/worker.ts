@@ -4,6 +4,8 @@ import { onRequest } from '../functions/api/[[path]]';
 import type { Env } from '../server/core';
 import { nightly } from '../server/vault/backup';
 import { ensureSchema } from '../server/schema';
+import * as push from '../server/push';
+const MORNING = '0 5 * * *';
 
 /** The family vault's page: only our own scripts (none inline), nothing framed, nothing from outside but the font. */
 const VAULT_CSP = [
@@ -42,8 +44,10 @@ export default {
     }
     return secure(await env.ASSETS.fetch(request), url);
   },
+  /** 05:00 UTC (07:00 in winter, 08:00 in summer): the morning note (server/push.ts). Otherwise the nightly job: */
   /** the nightly job: the vault's backups (only where the vault is configured) */
-  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (event.cron === MORNING) { ctx.waitUntil(ensureSchema(env).then(() => push.morning(env)).then((n) => console.log('morning notes', n)).catch((e) => console.error('morning failed', e))); return; }
     if (!env.VAULT_KEY) return;
     ctx.waitUntil(ensureSchema(env).then(() => nightly(env)).then((r) => console.log('vault backup', JSON.stringify(r))).catch((e) => console.error('vault backup failed', e instanceof Error ? e.stack : e)));
   },

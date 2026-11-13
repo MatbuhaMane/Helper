@@ -2507,3 +2507,11 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - **The summary:**
   - held items go to `push_digest`, and `GET /api/digest` returns them and marks them seen;
   - the home shows them in a plain window at the first open of the day (index.html) until design's card arrives.
+
+## 2026-11-14 · The summary every morning (the owner)
+- The "סיכום היום" card shows at the first open of every day.
+  - It lists what waited when something did.
+  - Otherwise it shows a quiet-day line with the day's sunset.
+- When something waited in the last day, one morning notification goes out: "סיכום היום מהאוהל".
+  - It is sent by the cron `0 5 * * *` (07:00 in winter, 08:00 in summer) through `push.morning`, with kind `summary`.
+  - Shabbat or the person's quiet hours skip it.

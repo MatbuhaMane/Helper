@@ -3,8 +3,8 @@
 // everything else, and whatever is held waits for the daily summary on the home screen.
 
 /** what a notification is about. Only the first five may arrive during the day. */
-export type Kind = 'family' | 'gather' | 'reminder' | 'familyday' | 'emergency' | 'other' | 'test';
-export const IMMEDIATE: Kind[] = ['family', 'gather', 'reminder', 'familyday', 'emergency'];
+export type Kind = 'family' | 'gather' | 'reminder' | 'familyday' | 'emergency' | 'other' | 'test' | 'summary';
+export const IMMEDIATE: Kind[] = ['family', 'gather', 'reminder', 'familyday', 'emergency', 'summary'];   // summary: the morning note, below
 
 export interface NotifyPrefs { quietFrom?: string; quietTo?: string; shabbat?: boolean }
 export interface Window { from: number; to: number }    // candle lighting → havdalah, epoch ms

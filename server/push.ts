@@ -98,6 +98,7 @@ export async function pushTo(env: Env, emails: string[], m: PushMsg): Promise<nu
   let n = 0;
   for (const raw of new Set(emails.map((e) => e.toLowerCase()))) {
     if ((await gate(env, raw, m)) === 'hold') {
+      if (m.kind === 'summary') continue;                  // a morning note held by Shabbat or quiet hours is simply skipped
       await env.DB.prepare('INSERT INTO push_digest (email, kind, title, body, url, created_at) VALUES (?, ?, ?, ?, ?, ?)')
         .bind(raw, m.kind || 'other', m.title.slice(0, 200), m.body.slice(0, 1000), m.url || null, Date.now()).run();
       continue;
@@ -150,4 +151,13 @@ export async function digest(ctx: Ctx): Promise<Response> {
   if (results.length) await ctx.env.DB.prepare('UPDATE push_digest SET seen_at = ? WHERE email = ? AND seen_at IS NULL').bind(Date.now(), u.email).run();
   await ctx.env.DB.prepare('DELETE FROM push_digest WHERE seen_at < ?').bind(Date.now() - 30 * 86400_000).run();
   return json({ items: results });
+}
+
+/** the morning note (cron, src/worker.ts; the owner, 2026-11-14): one notification to whoever has things waiting from the last day.
+ *  The card itself shows at the first open of the day whether or not there was a note. */
+export async function morning(env: Env): Promise<number> {
+  const { results } = await env.DB.prepare('SELECT email, COUNT(*) AS n FROM push_digest WHERE seen_at IS NULL AND created_at > ? GROUP BY email').bind(Date.now() - 86400_000).all<{ email: string; n: number }>();
+  let sent = 0;
+  for (const r of results) sent += await pushTo(env, [r.email], { title: 'סיכום היום מהאוהל', body: r.n === 1 ? 'דבר אחד חיכה לך מאתמול.' : `${r.n} דברים חיכו לך מאתמול.`, url: '/', tag: 'summary', kind: 'summary' });
+  return sent;
 }

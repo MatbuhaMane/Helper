@@ -441,6 +441,8 @@ async function ownersFamily(ctx: Ctx, u: Member) {
   // the owner's family by name: a brother or a sister in a home of their own (the secret OWNERS_FAMILY, comma separated, never in the repo)
   const kin = ((ctx.env as unknown as Record<string, string | undefined>).OWNERS_FAMILY || '').toLowerCase().split(',').map((s) => s.trim());
   if (kin.includes(u.email)) return true;
+  // a gift from the owner to one person (a figure_owned row, figure 'ibn_ezra', how 'family'): he is theirs wherever they live
+  try { if (await ctx.env.DB.prepare("SELECT 1 FROM figure_owned WHERE email = ? AND figure = 'ibn_ezra'").bind(u.email).first()) return true; } catch { /* not created yet */ }
   if (!owners.length) return false;
   // the owner's household, a role named in it (a brother who heads his own home), or a confirmed bridge between the two trees
   const q = owners.map(() => '?').join(',');

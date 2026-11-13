@@ -742,6 +742,22 @@
     },
     test: () => api('/api/push/test', { method: 'POST' }),
   };
+  /* /?push=test — turn notifications on for this device and send a test (a button, since a phone asks only on a tap) */
+  if (new URLSearchParams(location.search).get('push') === 'test') addEventListener('load', async () => {
+    const st = await push.state().catch(() => 'unsupported');
+    const say = { 'not-installed': 'באייפון ההתראות עובדות רק מהאוהל שמותקן במסך הבית. פתח אותו משם ונסה שוב.',
+      unsupported: 'הדפדפן הזה לא תומך בהתראות.', denied: 'ההתראות חסומות לאתר הזה. אפשר לפתוח אותן בהגדרות הדפדפן.' }[st];
+    const out = el('p', { 'aria-live': 'polite' }, say || (st === 'on' ? 'ההתראות כבר פעילות במכשיר הזה.' : ''));
+    const go = el('button', { class: 'btn', onclick: async () => {
+      go.disabled = true; out.textContent = 'רגע…';
+      try {
+        if (!(await push.enable())) { out.textContent = 'ההתראות לא הופעלו (לא אושרו, או שהשרת עוד לא מוכן).'; go.disabled = false; return; }
+        const r = await push.test();
+        out.textContent = r.devices ? 'נשלחה התראת ניסיון. היא אמורה להופיע עכשיו.' : 'ההתראות פעילות, אבל השליחה לא הגיעה למכשיר. נסה שוב בעוד רגע.';
+      } catch (e) { out.textContent = 'משהו השתבש: ' + (e.message || e); go.disabled = false; }
+    } }, st === 'on' ? 'שלח התראת ניסיון' : 'הפעל התראות ושלח ניסיון');
+    modal(...[el('h2', {}, 'התראות במכשיר הזה'), out, say ? null : go].filter(Boolean));
+  });
 
   window.H = { api, el, toast, me, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 

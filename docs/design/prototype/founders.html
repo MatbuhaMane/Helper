@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>מי הקים את האוהל – אב טיפוס</title>
-  <!-- The founders' page (docs/business/founders.md). Opt-in: whoever qualifies is asked "להופיע בדף מי הקים את האוהל?"; the city
+  <!-- The founders' page (docs/business/founders.md). The levels by number only (the owner, business 3b168ab): מהעשרה /
+       מהחמישים / מהמאה הראשונים, then חבר/ה מייסד/ת. Opt-in: whoever qualifies is asked "להופיע בדף מי הקים את האוהל?"; the city
        is optional. Proposed for signed-in users only. Placeholder names: the real list exists at the end of the beta. Serve from the
        dev server (copy to public/ for a moment) so /assets/base.css and /founders/founders.css load. -->
   <link rel="stylesheet" href="/assets/base.css">
@@ -20,7 +21,7 @@
   </header>
 
   <section class="fd-tier" aria-labelledby="t1">
-    <header><img src="/assets/badges/pole.webp" alt=""><div><h2 id="t1">עמודי האוהל</h2><small>עשרת הראשונים</small></div></header>
+    <header><span class="fd-rank" aria-hidden="true">10</span><div><h2 id="t1">מהעשרה הראשונים</h2><small>המקומות 1–10</small></div></header>
     <ol class="fd-poles">
       <li class="fd-pole"><span class="fd-num">1</span><b>שם ומשפחה</b><small>ירושלים · אלול</small></li>
       <li class="fd-pole"><span class="fd-num">2</span><b>שם ומשפחה</b><small>צפת · אלול</small></li>
@@ -36,12 +37,12 @@
   </section>
 
   <section class="fd-tier" aria-labelledby="t2">
-    <header><img src="/assets/badges/peg.webp" alt=""><div><h2 id="t2">יתדות האוהל</h2><small>עד החמישים</small></div></header>
+    <header><span class="fd-rank" aria-hidden="true">50</span><div><h2 id="t2">מהחמישים הראשונים</h2><small>המקומות 11–50</small></div></header>
     <ol class="fd-pegs" id="pegs"></ol>
   </section>
 
   <section class="fd-tier" aria-labelledby="t3">
-    <header><img src="/assets/badges/tribe.webp" alt=""><div><h2 id="t3">חבלי האוהל</h2><small>עד המאה</small></div></header>
+    <header><span class="fd-rank" aria-hidden="true">100</span><div><h2 id="t3">מהמאה הראשונים</h2><small>המקומות 51–100</small></div></header>
     <ol class="fd-ropes" id="ropes"></ol>
   </section>
 

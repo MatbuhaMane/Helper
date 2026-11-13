@@ -27,6 +27,11 @@ Last update: 2026-11-13.
 
 ## In progress
 
+- **The "בקרוב" pages:** the owner answered ai-features' list (`docs/ai/ready-soon.md`).
+  - Finish: weather.
+  - Hide: ChatGPT and the goals' family signals.
+  - Keep: the languages stay "בקרוב" (the owner's earlier choice) and the credit card stays.
+
 - **Batch 7, the readiness bar:**
   - the master builds the speed and motion measurement;
   - design finishes the style and the motion;
@@ -42,6 +47,5 @@ Last update: 2026-11-13.
 
 - **The joint test run:** when to start it, now or after the first measurement.
 - **Through the other departments:**
-  - ai-features: "finish or hide" for each "בקרוב" page;
   - business: approving the founders' "free for life" track;
   - ai-features: the restaurant source for the food slider.

@@ -20,6 +20,7 @@
     "db:local": "wrangler d1 execute helper-db --local --file schema.sql",
     "db:remote": "wrangler d1 execute helper-db --remote --file schema.sql",
     "typecheck": "tsc --noEmit",
+    "perf": "node tools/perf-cdp.mjs",
     "deploy": "wrangler deploy",
     "test:food": "node server/test-food.mjs",
     "test:restaurants": "node server/test-restaurants.mjs",

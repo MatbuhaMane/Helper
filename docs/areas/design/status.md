@@ -49,7 +49,9 @@ _Updated 2026-11-14 (family batch, deploy 1)._
   drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small
   drawn set: sun, partly cloudy, cloud, rain, storm, snow, fog, night; one image, cut).
-- After the image reset: a simplified small tent for the 32/48 px icons.
+- After the image reset (00:00 UTC): **the 19 approved badges** (the owner approved the names 2026-11-14; prompts ready in
+  the design scratchpad's `badge.mjs`, one run: `badges-tools-run.sh`, ~$1.30), then cut each to `/assets/badges/<id>.webp`;
+  and a simplified small tent for the 32/48 px icons (1 image).
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers

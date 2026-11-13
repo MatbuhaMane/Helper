@@ -14,7 +14,10 @@ Updated by the department at the end of every meaningful round of work. Short: t
 - **Payment providers, web comparison (2026-11-14):** `docs/business/payment-providers.md`. Shortlist for quotes:
   Sumit, Grow, Cardcom, PayPlus, Tranzila. It now also covers payout times, what opening an account needs, the
   Apple/Google rules (none apply while we stay a PWA and a downloaded program; inside a store they take 15-30%), and a
-  one-page list of 12 questions for the quotes (section 8). Next: the owner asks for the quotes.
+  one-page list of 12 questions for the quotes (section 8).
+  - **No quotes (the owner, 2026-11-14):** read the published price pages instead (section 9). Recommendation:
+    Sumit through the Upay aggregator: 1.1% with no fixed fee, a free plan up to 10 operations, then ₪19/month.
+    Waiting for the owner's go.
   - **Blocker for opening an account:** terms of use, a privacy policy and a cancellation policy must be live first.
 
 ## Done
@@ -54,7 +57,7 @@ Updated by the department at the end of every meaningful round of work. Short: t
   - the exact monthly credits per level;
   - the regular supporters' levels (draft: ₪10 / 25 / 50);
   - the founding supporters' value.
-- **The payment provider:** ask the five shortlisted providers for quotes, using `payment-providers.md` section 8.
+- **The payment provider:** approve Sumit (`payment-providers.md` section 9). No quotes needed.
 - **Before the first payment:** a tax file, terms of use and a privacy policy, and a meeting with an accountant and a
   lawyer (`monetization.md` section 4, `risks-and-rights.md` section 6).
 

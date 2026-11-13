@@ -41,6 +41,36 @@ docs/vision/batch.md 8: "רשימה אוטומטית" is a fixed list built from
   `.low`, `.listed`), `.auto-name`, `.auto-acts`. There is no CSS for them yet.
 Status: done (on `ai-features`).
 
+## 2026-11-14 – The family tree: the drawn tree, from a set chosen by a pref (ai-features → master, design)
+The family page opens on a new first view, "העץ": the people as leaves on a drawing (vision `docs/vision/tree.md`,
+markup `public/assets/tree.css`). No code knows any one drawing: the set is `/assets/tree/<set>/` with its layers and
+`slots.json`; the list of sets is `/assets/tree/sets.json`; the person's choice is the pref `family.treeSet`.
+- **design:** please add `public/assets/tree/sets.json`, `[{ "id": "olive", "name": "זית" }, …]`; until it exists the page
+  falls back to one constant (`FIRST_SET` in `family.js`). With two sets or more, a picker appears above the tree (class
+  `.fv-views.tr-sets`, buttons with `role=radio` and `aria-checked`). Optional keys `slots.json` may add: `self` (the
+  tier name of "me"; default: the second from the top), `layers` (default ground, boughs, trunk, crown), `candle` ([x, y];
+  default under the trunk pivot), `perRow` (default 6) and `rowGap` (in %, default 7).
+- **master (vault, read only):** `GET /api/vault/tree` now sends each person's `life` (born, died, after sunset, birthday
+  by), taken from the details after the privacy filter (`K.view`), so a viewer sees only what they could see on the card.
+  It feeds the birthday glow, the quiet leaf of the passed and the yahrzeit candle (by the Hebrew date).
+- Leaves that would touch make the tree wider (up to about three screens); the board scrolls sideways, centred on me.
+
+## 2026-11-14 – One fridge per person; the shared fridge is "בקרוב" (the owner → ai-features → master, design)
+The owner: "אפשר מקרר אחד לכל משתמש וקשר אותו לממשקים האחרים, שמור את הפונקציה של מקרר משותף למאוחר יותר תחת 'בקרוב'".
+- **Column (appended to `COLUMNS` in `server/schema.ts`):** `fridges.owner TEXT`, the person's email. Every fridge query
+  is now scoped to it (`ownFridge`, rename, the list): someone else's fridge, or an old shared one, answers 404.
+- **Migration (in code, on each person's first visit, `myFridge` in `server/fridge.ts`):** the fridge they had called
+  "המקרר שלי" (the pref `fridge.mine`), if it is in their household and no one owns it yet, becomes theirs (one atomic
+  UPDATE). If someone already took it, they get a new "המקרר שלי" with a copy of its items and history. With no such
+  pref, a new empty fridge. The household's other fridges stay in the database with `owner` empty: hidden, never deleted.
+- `POST /api/fridges` and `DELETE /api/fridges/:id` answer 409 (one per person); rename works on one's own fridge.
+- Read by: the fridge page, the automatic shopping list (`grocery-auto.ts`, no household fallback any more) and the food
+  portal's highlights (`food.ts`). Recipes ("what can I cook") read the page's own items. Keto, diets and the daemon do
+  not read the fridge today.
+- **design:** the fridge page drops the fridge chips and the "איזה מקרר הוא שלך?" chooser; it gains a card
+  "מקרר משותף – בקרוב" (markup in the page commit). Classes like the other "בקרוב" cards are welcome.
+- When the shared fridge comes: a `fridge_members` table (fridge, email), and `ownFridge` checks membership.
+
 ## 2026-11-14 – The owner's answers on the business plan: level titles, fundraising, the payment provider (business, the owner)
 
 **Decided (the owner):**

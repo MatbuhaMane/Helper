@@ -338,7 +338,7 @@
       const waiting = auto.items.filter((i) => !isWaiting(i.name));
       box.replaceChildren(
         el('h2', {}, '🤖 רשימה אוטומטית'),
-        el('p', { class: 'muted' }, `מה ש${auto.fridge ? `במקרר "${auto.fridge}"` : 'במקררים של הבית'} בדרך כלל יש, ועכשיו חסר. שום דבר לא נכנס לרשימה בלי לחיצה.`),
+        el('p', { class: 'muted' }, `מה שבמקרר שלך בדרך כלל יש, ועכשיו חסר. שום דבר לא נכנס לרשימה בלי לחיצה.`),
         waiting.length > 1 ? el('div', { class: 'modal-acts' }, el('button', { class: 'btn primary', type: 'button', onclick: () => take(waiting) }, `＋ הכל אל ${listName()} (${waiting.length})`)) : '',
         auto.items.length ? el('ul', { class: 'auto-rows' }, ...auto.items.map((i) => {
           const on = isWaiting(i.name);

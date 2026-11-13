@@ -1,54 +1,71 @@
-// The fridge: what's inside each of the family's fridges (הבית בהר, שילה, קרן היסוד…). Every fridge is shared: every
-// member sees and edits all of them, and a change shows on everyone's screen within moments (the page polls with "since").
-// The other food apps meet it on the page: what ran out goes to the shopping list, what was bought comes in from it,
-// and the recipe book says what can be cooked from what's there.
+// The fridge: one per person (the owner, 2026-11-14), its owner the person's email. Every query is scoped to that email:
+// another person's fridge is as if it were not there. A fridge shared by the household comes later ("בקרוב" on the page).
+// The other food apps meet it: what ran out goes to the shopping list, what was bought comes in from it, the recipe book
+// says what can be cooked from what's there, the automatic list (grocery-auto.ts) and the food portal (food.ts) read it.
+//
+// Before, every fridge was the household's, and each person could call one of them "המקרר שלי" (the pref fridge.mine).
+// On the first visit (myFridge) that fridge becomes theirs; if someone already took it, they get a new one with a copy of
+// what was in it. The household's other fridges stay in the database, hidden (owner empty), never deleted.
 
 import { z } from 'zod';
-import { Ctx, HttpError, body, json, requireUser, uid } from './core';
+import { Ctx, HttpError, Member, body, json, requireUser, uid } from './core';
 
-const SEED = ['הבית בהר', 'שילה', 'קרן היסוד'];
+/** The person's own fridge, made (or taken over from the old shared ones) on the first visit. */
+export async function myFridge(ctx: Ctx, u: Member): Promise<{ id: string; name: string }> {
+  const db = ctx.env.DB;
+  const find = () => db.prepare('SELECT id, name FROM fridges WHERE owner = ? AND deleted = 0 ORDER BY created_at LIMIT 1').bind(u.email).first<{ id: string; name: string }>();
+  const f = await find();
+  if (f) return f;
+  // the fridge they called theirs before, if it is their household's and no one owns it yet
+  const pref = await db.prepare("SELECT data FROM user_prefs WHERE email = ? AND ns = 'fridge'").bind(u.email).first<{ data: string }>();
+  let was: string | null = null;
+  try { const m = JSON.parse(pref?.data || '{}').mine; was = typeof m === 'string' ? m : null; } catch { /* an old row */ }
+  if (was) {
+    const took = await db.prepare(`UPDATE fridges SET owner = ? WHERE id = ? AND owner IS NULL AND deleted = 0 AND COALESCE(household, 'family') = ?
+      AND NOT EXISTS (SELECT 1 FROM fridges WHERE owner = ? AND deleted = 0)`).bind(u.email, was, u.household, u.email).run();
+    if (took.meta.changes) return (await find())!;
+  }
+  // a new one (one statement: two first visits at once still make one)
+  const id = uid();
+  const made = await db.prepare(`INSERT INTO fridges (id, name, sort, created_by, created_at, deleted, household, owner)
+    SELECT ?, ?, 0, ?, ?, 0, ?, ? WHERE NOT EXISTS (SELECT 1 FROM fridges WHERE owner = ? AND deleted = 0)`)
+    .bind(id, 'המקרר שלי', u.email, Date.now(), u.household, u.email, u.email).run();
+  if (made.meta.changes && was) {
+    // the fridge they called theirs is already someone else's: they keep a copy of what was in it (and its history)
+    const src = await db.prepare("SELECT id FROM fridges WHERE id = ? AND deleted = 0 AND COALESCE(household, 'family') = ?").bind(was, u.household).first();
+    if (src) await db.prepare(`INSERT OR IGNORE INTO fridge_items (fridge, id, name, cat, qty, unit, expires, note, added_by, updated_at, updated_by, deleted)
+      SELECT ?, id, name, cat, qty, unit, expires, note, added_by, updated_at, updated_by, deleted FROM fridge_items WHERE fridge = ?`).bind(id, was).run();
+  }
+  return (await find())!;
+}
 
-/** The fridges (the first visit ever creates the family's three). */
+/** The person's fridge (a list of one, so the page's shape stays), with how full it is and what is about to go off. */
 export async function listFridges(ctx: Ctx) {
   const u = requireUser(ctx);
-  const db = ctx.env.DB;
-  const mine = () => db.prepare("SELECT id, name, sort FROM fridges WHERE deleted = 0 AND COALESCE(household, 'family') = ? ORDER BY sort, created_at").bind(u.household).all<{ id: string; name: string; sort: number }>();
-  let { results } = await mine();
-  if (!results.length) {
-    const any = await db.prepare("SELECT COUNT(*) AS n FROM fridges WHERE COALESCE(household, 'family') = ?").bind(u.household).first<{ n: number }>();
-    if (!any?.n) {
-      const now = Date.now();
-      await db.batch(SEED.map((name, i) => db.prepare('INSERT INTO fridges (id, name, sort, created_by, created_at, deleted, household) VALUES (?, ?, ?, ?, ?, 0, ?)').bind(uid(), name, i, 'seed', now + i, u.household)));
-      ({ results } = await mine());
-    }
-  }
-  // how full each one is, and how much in it is about to go off (in the next two days)
+  const f = await myFridge(ctx, u);
   const soon = new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10);
-  const counts = await db.prepare(`SELECT fridge, COUNT(*) AS n, SUM(CASE WHEN expires IS NOT NULL AND expires <= ? THEN 1 ELSE 0 END) AS soon FROM fridge_items WHERE deleted = 0 AND fridge IN (SELECT id FROM fridges WHERE COALESCE(household, 'family') = ?) GROUP BY fridge`).bind(soon, u.household).all<{ fridge: string; n: number; soon: number }>();
-  const by = Object.fromEntries(counts.results.map((c) => [c.fridge, c]));
-  return json({ fridges: results.map((f) => ({ id: f.id, name: f.name, count: by[f.id]?.n || 0, soon: by[f.id]?.soon || 0 })) });
+  const c = await ctx.env.DB.prepare('SELECT COUNT(*) AS n, SUM(CASE WHEN expires IS NOT NULL AND expires <= ? THEN 1 ELSE 0 END) AS soon FROM fridge_items WHERE deleted = 0 AND fridge = ?')
+    .bind(soon, f.id).first<{ n: number; soon: number }>();
+  return json({ fridges: [{ id: f.id, name: f.name, count: c?.n || 0, soon: c?.soon || 0 }], mine: f.id });
+}
+
+/** More fridges, and deleting the one: not now (a shared fridge is "בקרוב"). */
+export async function createFridge(ctx: Ctx): Promise<Response> {
+  requireUser(ctx);
+  throw new HttpError(409, 'One fridge per person; a shared fridge is coming soon');
+}
+export async function deleteFridge(ctx: Ctx): Promise<Response> {
+  requireUser(ctx);
+  throw new HttpError(409, 'One fridge per person; a shared fridge is coming soon');
 }
 
 const Name = z.object({ name: z.string().trim().min(1).max(40) });
-export async function createFridge(ctx: Ctx) {
-  const u = requireUser(ctx);
-  const p = Name.safeParse(await body(ctx.req));
-  if (!p.success) throw new HttpError(400, 'Invalid name');
-  const id = uid();
-  const max = await ctx.env.DB.prepare("SELECT COALESCE(MAX(sort), 0) AS m FROM fridges WHERE COALESCE(household, 'family') = ?").bind(u.household).first<{ m: number }>();
-  await ctx.env.DB.prepare('INSERT INTO fridges (id, name, sort, created_by, created_at, deleted, household) VALUES (?, ?, ?, ?, ?, 0, ?)').bind(id, p.data.name, (max?.m || 0) + 1, u.email, Date.now(), u.household).run();
-  return json({ fridge: { id, name: p.data.name, count: 0, soon: 0 } });
-}
 export async function renameFridge(ctx: Ctx) {
   const u = requireUser(ctx);
   const p = Name.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid name');
-  await ctx.env.DB.prepare("UPDATE fridges SET name = ? WHERE id = ? AND COALESCE(household, 'family') = ?").bind(p.data.name, ctx.params.id, u.household).run();
-  return json({ ok: true });
-}
-export async function deleteFridge(ctx: Ctx) {
-  const u = requireUser(ctx);
-  await ctx.env.DB.prepare("UPDATE fridges SET deleted = 1 WHERE id = ? AND COALESCE(household, 'family') = ?").bind(ctx.params.id, u.household).run();
+  const r = await ctx.env.DB.prepare('UPDATE fridges SET name = ? WHERE id = ? AND owner = ? AND deleted = 0').bind(p.data.name, ctx.params.id, u.email).run();
+  if (!r.meta.changes) throw new HttpError(404, 'Not found');
   return json({ ok: true });
 }
 
@@ -60,16 +77,16 @@ const Item = z.object({
 const Ops = z.object({ ops: z.array(z.union([z.object({ op: z.literal('upsert'), item: Item }), z.object({ op: z.literal('delete'), id: z.string().min(1).max(40) })])).max(300) });
 const toItem = (r: any) => ({ id: r.id, name: r.name, cat: r.cat, qty: r.qty, unit: r.unit, expires: r.expires, note: r.note, addedBy: r.added_by, updatedAt: r.updated_at, updatedBy: r.updated_by, deleted: !!r.deleted });
 
-/** The fridge must be this household's (another household's fridge is as if it were not there). */
-async function ownFridge(ctx: Ctx, household: string) {
-  const f = await ctx.env.DB.prepare("SELECT id FROM fridges WHERE id = ? AND COALESCE(household, 'family') = ?").bind(ctx.params.id, household).first();
+/** The fridge must be the person's own (anyone else's, or an old shared one, is as if it were not there). */
+async function ownFridge(ctx: Ctx, email: string) {
+  const f = await ctx.env.DB.prepare('SELECT id FROM fridges WHERE id = ? AND owner = ? AND deleted = 0').bind(ctx.params.id, email).first();
   if (!f) throw new HttpError(404, 'Not found');
 }
 
 /** What's in one fridge (since=… : only what changed, deletions included, for the live refresh). */
 export async function listItems(ctx: Ctx) {
   const u = requireUser(ctx);
-  await ownFridge(ctx, u.household);
+  await ownFridge(ctx, u.email);
   const since = Number(ctx.url.searchParams.get('since') || 0);
   const { results } = since
     ? await ctx.env.DB.prepare('SELECT * FROM fridge_items WHERE fridge = ? AND updated_at > ?').bind(ctx.params.id, since).all()
@@ -79,7 +96,7 @@ export async function listItems(ctx: Ctx) {
 
 export async function applyOps(ctx: Ctx) {
   const u = requireUser(ctx);
-  await ownFridge(ctx, u.household);
+  await ownFridge(ctx, u.email);
   const p = Ops.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'Invalid ops');
   const db = ctx.env.DB, fridge = ctx.params.id;
@@ -103,7 +120,7 @@ export async function applyOps(ctx: Ctx) {
     and when it was last there – so "my fridge" can say what to restock. */
 export async function history(ctx: Ctx) {
   const u = requireUser(ctx);
-  await ownFridge(ctx, u.household);
+  await ownFridge(ctx, u.email);
   const { results } = await ctx.env.DB.prepare(
     `SELECT name, COUNT(*) AS times, MAX(updated_at) AS last, SUM(CASE WHEN deleted = 0 THEN 1 ELSE 0 END) AS here,
             SUM(CASE WHEN deleted = 0 THEN qty ELSE 0 END) AS qty, MAX(cat) AS cat

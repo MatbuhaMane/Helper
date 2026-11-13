@@ -55,6 +55,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['research_sources', 'created_by', 'TEXT'],   // who added it (empty: the owner)
   ['research_drafts', 'created_by', 'TEXT'],    // who started it (empty: the owner)
   ['goals', 'repeat', 'TEXT'],                  // a recurring goal: JSON {every: day|week|month|days, n?} (goals-logic.ts)
+  ['fridges', 'owner', 'TEXT'],                 // one fridge per person: its owner's email (fridge.ts myFridge); empty: an old shared one, hidden
 ];
 
 let ready: Promise<void> | null = null;

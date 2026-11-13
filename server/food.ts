@@ -6,6 +6,7 @@
 
 import { Ctx, json, requireUser } from './core';
 import { listRestaurants, restaurantSlides } from './restaurants';
+import { myFridge } from './fridge';
 
 export interface FridgeItem { id: string; name: string; fridge: string; fridgeName: string; expires: string | null; qty: number; unit: string | null }
 export interface RecipeLite { id: string; title: string; image: string | null; ingredients: { name: string }[]; updated_at: number }
@@ -45,8 +46,9 @@ export async function highlights(ctx: Ctx) {
   const u = requireUser(ctx);
   const db = ctx.env.DB;
   const [items, recipes, places] = await Promise.all([
-    db.prepare(`SELECT i.id, i.name, i.fridge, f.name AS fridgeName, i.expires, i.qty, i.unit FROM fridge_items i JOIN fridges f ON f.id = i.fridge
-      WHERE i.deleted = 0 AND f.deleted = 0 AND COALESCE(f.household, 'family') = ? AND i.expires IS NOT NULL`).bind(u.household).all<FridgeItem>(),
+    // the person's own fridge only (one per person, fridge.ts)
+    myFridge(ctx, u).then((f) => db.prepare(`SELECT i.id, i.name, i.fridge, f.name AS fridgeName, i.expires, i.qty, i.unit FROM fridge_items i JOIN fridges f ON f.id = i.fridge
+      WHERE i.deleted = 0 AND f.deleted = 0 AND f.id = ? AND f.owner = ? AND i.expires IS NOT NULL`).bind(f.id, u.email).all<FridgeItem>()),
     db.prepare('SELECT id, title, image, ingredients, updated_at FROM recipes WHERE household = ? ORDER BY updated_at DESC LIMIT 200').bind(u.household)
       .all<{ id: string; title: string; image: string | null; ingredients: string; updated_at: number }>(),
     listRestaurants(ctx.env, u.household).catch(() => []),   // (before its table exists: none)

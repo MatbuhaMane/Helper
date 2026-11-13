@@ -146,9 +146,9 @@
     schedule();
     const clock = el('span', { class: 'fv-clock muted' });
     const find = el('input', { type: 'search', class: 'fv-find', placeholder: 'חיפוש בעץ', 'aria-label': 'חיפוש בעץ', list: 'fv-names' });
-    find.addEventListener('change', () => { const p = S.people.find((x) => x.name === find.value.trim()) || S.people.find((x) => x.name.includes(find.value.trim())); if (p) { S.view = 'family'; focusOn(p.id); find.value = ''; } });
+    find.addEventListener('change', () => { const p = S.people.find((x) => x.name === find.value.trim()) || S.people.find((x) => x.name.includes(find.value.trim())); if (p) { setView('family'); focusOn(p.id); find.value = ''; } });
     const views = el('div', { class: 'fv-views', role: 'tablist', 'aria-label': 'תצוגה' },
-      [['family', 'המשפחה'], ['all', 'כל העץ']].map(([v, n]) => el('button', { role: 'tab', 'aria-selected': String((S.view || 'family') === v), onclick: () => { S.view = v; draw(); views.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-selected', String(['family', 'all'][i] === v))); } }, n)));
+      VIEWS.map(([v, n]) => el('button', { role: 'tab', 'data-v': v, 'aria-selected': String((S.view || VIEWS[0][0]) === v), onclick: () => { setView(v); draw(); } }, n)));
     const bar = el('div', { class: 'fv-bar' },
       el('h1', {}, 'עץ המשפחה'),
       el('span', { class: 'spacer' }),
@@ -312,7 +312,13 @@
         el('button', { class: 'btn primary', onclick: () => personForm() }, '+ בן המשפחה הראשון')));
       return;
     }
-    (S.view === 'all' ? drawAll : drawFamily)(board);
+    ({ all: drawAll, family: drawFamily }[S.view] || drawTree)(board);
+  }
+  /** the views: the drawn tree (the default), the family around one person, all the generations */
+  const VIEWS = [['tree', 'העץ'], ['family', 'המשפחה'], ['all', 'כל הדורות']];
+  function setView(v) {
+    S.view = v;
+    root.querySelectorAll('.fv-views button[data-v]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.v === v)));
   }
   /** move the centre to someone, with the cards gliding from where they were (FLIP) */
   function focusOn(id) {
@@ -366,7 +372,7 @@
     watchSize(board);
   }
   /** generations from the parent links (partners share a row) – the zoomed-out view until the forest comes */
-  function generations() {
+  function levels() {
     const lvl = new Map();
     const level = (id, seen = new Set()) => {
       if (lvl.has(id)) return lvl.get(id);
@@ -379,6 +385,10 @@
     };
     S.people.forEach((p) => level(p.id));
     for (let i = 0; i < 3; i++) for (const l of S.links) if (l.type === 'partner') { const m = Math.max(lvl.get(l.a) ?? 0, lvl.get(l.b) ?? 0); lvl.set(l.a, m); lvl.set(l.b, m); }
+    return lvl;
+  }
+  function generations() {
+    const lvl = levels();
     const rows = [];
     for (const p of S.people) (rows[lvl.get(p.id)] ||= []).push(p);
     return rows.filter(Boolean).map((row, i, all) => {
@@ -389,6 +399,184 @@
       for (const p of row) { if (out.includes(p)) continue; out.push(p); for (const q of partnersOf(p.id).map(byId)) if (q && row.includes(q) && !out.includes(q)) out.push(q); }
       return out;
     });
+  }
+  /* ---------- the drawn tree: people as leaves on a drawing (vision: docs/vision/tree.md; markup: /assets/tree.css) ----------
+     The drawing is a set: /assets/tree/<set>/ with its layers and slots.json (the tiers, in percent of its box). Which sets
+     there are comes from /assets/tree/sets.json ([{id, name}]); the person's choice is the pref family.treeSet,
+     and the look of the people on it (leaves, or gilt frames on cords: data-look) the pref family.treeLook.
+     Nothing here knows any one set: a new set is a new folder and a line in sets.json. */
+  const TREE = { sets: null, slots: {}, centred: false, run: 0, motion: false, css: null };
+  // only until design's sets.json is there: the sets that exist today (the owner compares them)
+  const KNOWN_SETS = [{ id: 'olive', name: 'זית' }, { id: 'canopy', name: 'עץ ב׳' }];
+  const LOOKS = [['leaf', 'עלים'], ['frame', 'מסגרות']];
+  /** the tree's stylesheet and sounds, added once; resolves when the styles are in (the leaves are measured after) */
+  function treeAssets() {
+    if (!TREE.css) {
+      const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/assets/tree.css'; l.dataset.tree = '1';
+      TREE.css = new Promise((ok) => { l.onload = ok; l.onerror = ok; setTimeout(ok, 4000); });
+      document.head.append(l);
+    }
+    if (!window.TreeSound && !document.querySelector('script[data-tree]')) { const x = document.createElement('script'); x.src = '/assets/tree-sound.js'; x.defer = true; x.dataset.tree = '1'; document.head.append(x); }
+    return TREE.css;
+  }
+  async function treeSets() {
+    if (TREE.sets) return TREE.sets;
+    const got = await fetch('/assets/tree/sets.json').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const ok = Array.isArray(got) ? got.filter((x) => x && typeof x.id === 'string' && /^[\w-]+$/.test(x.id)) : [];
+    TREE.sets = ok.length ? ok : KNOWN_SETS;
+    return TREE.sets;
+  }
+  async function treeSlots(set) {
+    if (!TREE.slots[set]) TREE.slots[set] = await fetch(`/assets/tree/${set}/slots.json`).then((r) => { if (!r.ok) throw new Error('slots'); return r.json(); });
+    return TREE.slots[set];
+  }
+  /** n points spread evenly along a tier's line (the vertical counts a little more: the drawing is tall) */
+  function spread(line, n) {
+    const seg = line.slice(1).map((p, i) => Math.hypot(p[0] - line[i][0], (p[1] - line[i][1]) * 1.8)), total = seg.reduce((a, b) => a + b, 0);
+    return Array.from({ length: n }, (_, k) => {
+      let d = total * (n === 1 ? 0.5 : (k + 0.5) / n), i = 0;
+      while (i < seg.length - 1 && d > seg[i]) { d -= seg[i]; i++; }
+      const t = seg[i] ? d / seg[i] : 0;
+      return [line[i][0] + (line[i + 1][0] - line[i][0]) * t, line[i][1] + (line[i + 1][1] - line[i][1]) * t];
+    });
+  }
+  /** each person's place: their generation from mine picks the tier (the eldest at the bottom), the family order its spot */
+  function treePlaces(slots, center) {
+    const avgY = (t) => t.line.reduce((a, p) => a + p[1], 0) / t.line.length;
+    const tiers = [...slots.tiers].sort((a, b) => avgY(b) - avgY(a));              // bottom (the eldest) first
+    const named = tiers.findIndex((t) => t.name === slots.self);
+    const self = named >= 0 ? named : Math.max(0, tiers.length - 2);                // the person's own tier
+    const lvl = levels(), mine = lvl.get(center) ?? 0;
+    const order = new Map(generations().flat().map((p, i) => [p.id, i]));
+    const by = tiers.map(() => []);
+    for (const p of S.people) by[Math.min(tiers.length - 1, Math.max(0, self + (lvl.get(p.id) ?? 0) - mine))].push(p);
+    const cap = slots.perRow || 6, gap = slots.rowGap || 7;
+    const out = [];
+    by.forEach((ps, t) => {
+      if (!ps.length) return;
+      ps.sort((a, b) => (lvl.get(a.id) ?? 0) - (lvl.get(b.id) ?? 0) || (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      const rows = Math.ceil(ps.length / cap), per = Math.ceil(ps.length / rows);
+      for (let r = 0; r < rows; r++) {
+        const row = ps.slice(r * per, (r + 1) * per);
+        const dy = (r % 2 ? 1 : -1) * Math.ceil(r / 2) * gap;                       // more than fit: rows below and above, in turn
+        spread(tiers[t].line, row.length).forEach(([x, y], k) => out.push({ p: row[k], x, y: Math.min(97, Math.max(3, y + dy)) }));
+      }
+    });
+    return out;
+  }
+  /** a day by the Hebrew calendar ("14 Kislev"); Adar I and II both count as Adar (for a date from a plain year) */
+  const heDay = (t) => new Intl.DateTimeFormat('en-u-ca-hebrew', { day: 'numeric', month: 'long' }).format(t).replace(/Adar I+\b/, 'Adar');
+  /** is today the day's anniversary – by the civil date, or by the Hebrew one (after sunset counts as the next day) */
+  function onToday(iso, late, by) {
+    if (!iso) return false;
+    const t = new Date(iso + 'T12:00'), now = new Date();
+    if (isNaN(t)) return false;
+    if (by !== 'hebrew') return t.getMonth() === now.getMonth() && t.getDate() === now.getDate();
+    return heDay(late ? new Date(t.getTime() + 864e5) : t) === heDay(now);
+  }
+  async function drawTree(board) {
+    const run = ++TREE.run;
+    const styled = treeAssets();
+    const pref = H.prefs('family', { treeSet: null, treeLook: 'leaf' });
+    let sets, set, slots;
+    try {
+      sets = await treeSets();
+      set = sets.some((x) => x.id === pref.treeSet) ? pref.treeSet : sets[0].id;
+      slots = await treeSlots(set);
+      await styled;
+    } catch (_) {
+      if (run === TREE.run && board.isConnected) { setView('family'); drawFamily(board); }   // no drawing: the family view instead
+      return;
+    }
+    if (run !== TREE.run || !board.isConnected || !S.people?.length) return;
+    const center = S.mine || S.focus || S.people[0].id;
+    const look = LOOKS.some(([v]) => v === pref.treeLook) ? pref.treeLook : LOOKS[0][0];
+    const tree = el('div', { class: 'tree', 'data-kind': set, 'data-look': look === 'leaf' ? null : look, style: `--crown-x:${slots.crownPivot?.[0] ?? 50}%; --crown-y:${slots.crownPivot?.[1] ?? 42}%` },
+      (slots.layers || ['ground', 'boughs', 'trunk', 'crown']).map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${set}/${l}.${/^\w+$/.test(slots.ext || '') ? slots.ext : 'svg'}`, alt: '', decoding: 'async' })));
+    let me = null;
+    const candles = [];
+    for (const { p, x, y } of treePlaces(slots, center)) {
+      const life = p.life || {}, passed = !!life.died;
+      const face = el('span', { class: 'tr-face' }, initials(p.name));
+      if (p.photo) photoInto(p.photo, face);
+      const rel = p.id === S.mine ? 'אני' : S.mine ? relationName(S.mine, p.id) : '';
+      const years = passed ? [life.born, life.died].map((d) => String(d || '').slice(0, 4)).filter(Boolean).join('–') : '';
+      const bday = !passed && onToday(life.born, life.bornAfterSunset, life.birthdayBy);
+      if (passed && onToday(life.died, life.diedAfterSunset, 'hebrew')) candles.push(p);
+      const b = el('button', { type: 'button', class: 'tr-p' + (p.id === center ? ' me' : '') + (bday ? ' bday' : '') + (passed ? ' passed' : ''),
+        style: `--x:${x.toFixed(1)}; --y:${y.toFixed(1)}`, 'data-id': p.id,
+        'aria-label': [p.name, rel, bday ? 'יום הולדת היום' : '', passed ? 'זיכרונו לברכה' : ''].filter(Boolean).join(', '),
+        onclick: () => {
+          b.classList.remove('tap'); void b.offsetWidth; b.classList.add('tap');
+          setTimeout(() => b.classList.remove('tap'), 900);
+          try { if (passed) window.TreeSound?.quiet(); else window.TreeSound?.leaf(); } catch (_) { /* no sound */ }
+          setTimeout(() => panel(p.id), 220);
+        } },
+        el('span', { class: 'tr-leaf' }, face),
+        el('span', { class: 'tr-tag' }, el('b', {}, (p.name || '?').trim().split(/\s+/)[0]), years || rel ? el('small', {}, years || rel) : null));
+      tree.append(b);
+      if (p.id === center) me = { p, x, y };
+    }
+    // a yahrzeit today: a candle by the roots (on the set's own spot if it has one)
+    const base = slots.candle || [slots.trunkPivot?.[0] ?? 50, slots.candleY ?? (slots.trunkPivot?.[1] ?? 89) + 2.4];
+    candles.slice(0, 4).forEach((p, i) => tree.append(el('div', { class: 'tr-candle', style: `--x:${(base[0] + (i % 2 ? 9 : -9) * Math.ceil((i + 1) / 2)).toFixed(1)}; --y:${(+base[1]).toFixed(1)}`, role: 'img', 'aria-label': `נר זיכרון ל${p.name}, היום יום האזכרה` }, el('span', { class: 'tr-flame' }))));
+    if (me) tree.append(el('button', { type: 'button', class: 'tr-bud', style: `--x:${Math.min(96, me.x + 6.5).toFixed(1)}; --y:${(me.y + 0.6).toFixed(1)}`, 'aria-label': `הוספת קרוב משפחה ל${me.p.name}`,
+      onclick: () => { try { window.TreeSound?.bud(); } catch (_) { /* no sound */ } addNear(me.p); } }));
+    // more than one drawing: the person picks (a pref: it follows them to every device)
+    // which tree and which look: the person picks (prefs: they follow them to every device)
+    const choice = (label, opts, on, key) => el('div', { class: 'fv-views tr-sets', role: 'radiogroup', 'aria-label': label },
+      opts.map(([v, name]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(v === on),
+        // (until design styles [aria-checked] in .fv-views like the tabs' [aria-selected])
+        style: v === on ? 'background:var(--card);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.12);font-weight:500' : null,
+        onclick: () => { if (v !== on) { H.savePrefs('family', { [key]: v }); draw(); } } }, name)));
+    const pickers = el('div', { class: 'fv-tools tr-pick' },
+      sets.length > 1 ? choice('איזה עץ', sets.map((x) => [x.id, x.name || x.id]), set, 'treeSet') : null,
+      choice('איך נראים האנשים', LOOKS, look, 'treeLook'));
+    board.replaceChildren(pickers, tree);
+    setTimeout(() => {                                                              // (a timer, not a frame: it runs in a hidden tab too)
+      if (!tree.isConnected) return;
+      fitTree(tree);
+      if (!TREE.centred) { TREE.centred = true; tree.querySelector('.tr-p.me')?.scrollIntoView({ block: 'center', inline: 'center' }); }
+    }, 0);
+    treeMotion();
+  }
+  /** leaves that touch: the tree grows wider (up to about three screens), and the board scrolls sideways to the rest */
+  function fitTree(tree) {
+    const avail = tree.parentElement?.clientWidth || innerWidth;
+    for (let k = 0; k < 8 && treeCrowded(tree); k++) {
+      const w = Math.round(tree.offsetWidth * 1.2);
+      if (w > avail * 3.2) return;
+      tree.style.inlineSize = w + 'px'; tree.style.maxInlineSize = 'none';
+    }
+  }
+  function treeCrowded(tree) {
+    const r = [...tree.querySelectorAll('.tr-p')].map((b) => b.getBoundingClientRect());
+    for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) {
+      const a = r[i], b = r[j];
+      if (a.left + 2 < b.right && b.left + 2 < a.right && a.top + 2 < b.bottom && b.top + 2 < a.bottom) return true;
+    }
+    return false;
+  }
+  /** the bud: whom to add beside a person – a parent (while they have fewer than two), a partner, a child; only a name is needed */
+  function addNear(p) {
+    const first = (p.name || '').trim().split(/\s+/)[0];
+    const opts = [parentsOf(p.id).length < 2 ? ['parent', `אמא או אבא של ${first}`] : null,
+      ['partner', `בן או בת הזוג של ${first}`], ['child', `ילד או ילדה של ${first}`]].filter(Boolean);
+    H.modal(el('div', { class: 'fv-form' }, el('h2', {}, `מי נוסף ליד ${first}?`),
+      el('div', { style: 'display:grid;gap:8px' }, opts.map(([as, label]) => el('button', { type: 'button', class: 'btn', onclick: () => { H.closeModal(); personForm(null, { as, of: p.id }); } }, label)))));
+  }
+  /** the tree sways more while the page scrolls, and settles with a sound when it stops (one listener for the page) */
+  function treeMotion() {
+    if (TREE.motion) return;
+    TREE.motion = true;
+    let still;
+    addEventListener('scroll', () => {
+      const t = root.querySelector('.tree');
+      if (!t) return;
+      t.classList.add('moving');
+      clearTimeout(still);
+      still = setTimeout(() => { t.classList.remove('moving'); try { window.TreeSound?.settle(); } catch (_) { /* no sound */ } }, 260);
+    }, { passive: true });
   }
   function drawAll(board) {
     const lines = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -405,7 +593,7 @@
     const rel = S.mine && S.mine !== p.id ? relationName(S.mine, p.id) : S.mine === p.id ? 'אני' : null;
     const isFocus = role === 'focus';
     return el('button', { class: 'fv-card' + (role ? ' r-' + role : ''), 'data-id': p.id, title: isFocus ? 'פתיחת החלונית' : 'מרכז העץ סביב ' + p.name,
-      onclick: () => (isFocus ? panel(p.id) : (S.view === 'all' ? (S.view = 'family', root.querySelectorAll('.fv-views button').forEach((b, i) => b.setAttribute('aria-selected', String(i === 0))), focusOn(p.id)) : focusOn(p.id))) },
+      onclick: () => (isFocus ? panel(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
       pic, el('b', {}, p.name),
       rel ? el('small', { class: 'fv-relname' }, rel) : null,
       el('small', { class: 'muted' }, [n.doc ? `${n.doc} מסמכים` : '', n.photo ? `${n.photo} תמונות` : ''].filter(Boolean).join(' · ') || (isFocus ? 'לחצו לפתיחה' : '')));
@@ -503,7 +691,7 @@
   const PARTNER_STATUS = { together: 'יחד', divorced: 'גרושים', widowed: 'אלמנות', separated: 'נפרדו' };
   function relationsBox(p, refresh) {
     const line = (label, id, linkObj, extra) => el('li', { class: 'fv-relrow' },
-      el('button', { class: 'fv-rel-who', onclick: () => { H.sheet.close(); S.view = 'family'; setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
+      el('button', { class: 'fv-rel-who', onclick: () => { H.sheet.close(); setView('family'); setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
       el('small', { class: 'muted' }, label), extra || null,
       linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: async () => { if (!confirm('להסיר את הקשר? האנשים עצמם נשארים בעץ.')) return; await call('/api/vault/links/' + linkObj.id, { method: 'DELETE' }); await reload(); } }, '✕') : null);
     const sel = (map, value, onchange) => { const s = el('select', { class: 'fv-mini' }, Object.entries(map).map(([v, t]) => el('option', { value: v, selected: v === value }, t))); s.addEventListener('change', () => onchange(s.value)); return s; };

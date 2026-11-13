@@ -5,7 +5,7 @@
 (() => {
   const when = (d) => (d < 0 ? (d === -1 ? 'פג אתמול' : `פג לפני ${-d} ימים`) : d === 0 ? 'פג היום' : d === 1 ? 'פג מחר' : `פג בעוד ${d} ימים`);
   const card = (s) => s.kind === 'fridge'
-    ? { kind: 'fridge', emoji: '🧊', kicker: 'מהמקרר · ' + s.fridgeName, title: s.name, sub: when(s.days), tone: s.days < 0 ? 'gone' : s.days <= 1 ? 'soon' : null, href: '/food/fridge/' }
+    ? { kind: 'fridge', emoji: '🧊', kicker: 'מהמקרר שלך', title: s.name, sub: when(s.days), tone: s.days < 0 ? 'gone' : s.days <= 1 ? 'soon' : null, href: '/food/fridge/' }
     : s.kind === 'restaurant'
       ? { kind: 'place', emoji: '🍽️', kicker: s.why === 'new' ? 'חדש ברשימה' : 'מזמן לא הייתם', title: s.name,
         sub: [s.place, s.why === 'missed' ? (s.days === null ? 'מהאהובות, עוד לא הייתם' : `הייתם לפני ${s.days} ימים`) : ''].filter(Boolean).join(' · ') || null,

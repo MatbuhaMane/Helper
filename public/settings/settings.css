@@ -128,3 +128,69 @@
 .st-safe .pl { flex: none; color: var(--ok); font-size: 1.1rem; margin-block-start: 1px; }
 /* the choice "רמה נמוכה" reads as the one not recommended */
 .st-choices .chip[data-level="low"][aria-checked="true"] { background: #9a6410; border-color: #9a6410; color: #fff; }
+
+/* ---------- the categories fold (the owner, 2026-11-14): each one a card, closed at first – its own drawn mark in its
+   own colour, its name, a line of what is set now; it opens with a short slide. Markup (settings.js):
+   <details class="st-sec" id="…"><summary class="st-sum"><span class="st-ico" data-ico="…"></span>
+   <span class="st-sum-t"><h2>…</h2><small class="st-now">…</small></span></summary><div class="st-body">…</div></details> ---------- */
+details.st-sec { display: block; gap: 0; padding: 0; border-radius: 22px; background: var(--card); border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  transition: border-color .2s, box-shadow .25s; }
+details.st-sec + details.st-sec { border-block-start: 1px solid color-mix(in srgb, var(--line) 80%, transparent); padding-block-start: 0; margin-block-start: -6px; }
+details.st-sec[open] { border-color: color-mix(in srgb, var(--ico, var(--primary)) 35%, var(--line)); box-shadow: 0 14px 30px -22px rgba(30, 24, 12, .45); }
+.st-sum { list-style: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 14px; min-block-size: 68px;
+  border-radius: 22px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background-color .15s; }
+.st-sum::-webkit-details-marker { display: none; }
+.st-sum:hover { background: color-mix(in srgb, var(--ico, var(--primary)) 6%, transparent); }
+.st-sum:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.st-sum-t { display: grid; gap: 2px; min-inline-size: 0; }
+.st-sum-t h2 { margin: 0; font-size: 1.08rem; font-weight: 600; }
+.st-now { color: var(--muted); font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the chevron turns as it opens */
+.st-sum::after { content: ""; inline-size: 10px; block-size: 10px; margin-inline-end: 6px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted);   /* (physical on purpose: a down arrow in any direction) */
+  rotate: 45deg; translate: 0 -3px; transition: rotate .25s var(--ease-river), translate .25s var(--ease-river); }
+details.st-sec[open] > .st-sum::after { rotate: 225deg; translate: 0 3px; }
+/* the mark: a rounded tile in the category's colour, the drawing inside it */
+.st-ico { position: relative; inline-size: 44px; block-size: 44px; border-radius: 14px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, var(--ico) 16%, var(--card)); transition: scale .3s var(--ease-river), rotate .3s var(--ease-river); }
+.st-ico::before { content: ""; inline-size: 24px; block-size: 24px; background: var(--ico); -webkit-mask: var(--ico-svg) center / contain no-repeat; mask: var(--ico-svg) center / contain no-repeat; }
+details.st-sec[open] .st-ico { scale: 1.06; rotate: -4deg; }
+.st-sum:active .st-ico { scale: .94; }
+/* the body: slides in when it opens (transform and opacity only) */
+.st-body { display: grid; gap: 14px; padding: 2px 16px 18px; min-inline-size: 0; }
+details.st-sec[open] > .st-body { animation: st-open .3s var(--ease-river) both; }
+@keyframes st-open { from { opacity: 0; transform: translateY(-8px); } }
+.st-body > p { margin: 0; line-height: 1.55; }
+@media (prefers-reduced-motion: reduce) { details.st-sec[open] > .st-body { animation: none; } .st-ico, .st-sum::after { transition: none; } }
+@media (max-width: 420px) { .st-sum { gap: 12px; padding: 10px 12px; } .st-ico { inline-size: 40px; block-size: 40px; border-radius: 13px; } .st-body { padding-inline: 12px; } }
+/* each category's colour and drawing */
+.st-ico[data-ico="daynight"] { --ico: #c98a1e; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 3a9 9 0 1 0 9 9A7 7 0 0 1 12 3z'/></svg>"); }
+:root[data-theme="dark"] .st-ico[data-ico="daynight"] { --ico: #8f9fe6; }
+.st-ico[data-ico="access"] { --ico: #2f8a86; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='4.5' r='2.5'/><path d='M4 8.5 12 10l8-1.5.5 2-6 1.5v3.5l2.5 7-2 .8L12 16l-3 7.3-2-.8L9.5 15.5V12l-6-1.5z'/></svg>"); }
+.st-ico[data-ico="services"] { --ico: #6f7d2e; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M8 2h2v5h4V2h2v5h2v5a6 6 0 0 1-5 5.9V22h-2v-4.1A6 6 0 0 1 6 12V7h2z'/></svg>"); }
+.st-ico[data-ico="assistant"] { --ico: var(--primary); --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M12 2l2.2 6.3L20.5 10l-6.3 2.2L12 18.5l-2.2-6.3L3.5 10l6.3-1.7zM19 15l1 2.6 2.5 1-2.5 1L19 22l-1-2.4-2.5-1 2.5-1z'/></svg>"); }
+.st-ico[data-ico="palette"] { --ico: #b0532e; background: conic-gradient(from 200deg, color-mix(in srgb, #1f5f7a 30%, var(--card)), color-mix(in srgb, #c76a3a 30%, var(--card)), color-mix(in srgb, #8e3b62 30%, var(--card)), color-mix(in srgb, #3c4a8c 30%, var(--card)), color-mix(in srgb, #55622f 30%, var(--card)), color-mix(in srgb, #1f5f7a 30%, var(--card)));
+  --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill-rule='evenodd' d='M12 2C6.5 2 2 6.2 2 11.5 2 16 5.5 19 9 19c1.5 0 2 1 2 2s1 1 1 1c5.5 0 10-4.3 10-9.8S17.5 2 12 2zM7 12a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3-4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm3 4a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z'/></svg>"); }
+.st-ico[data-ico="faith"] { --ico: #a07a1e; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 4.5C6.5 3.5 9.5 3.5 11 5v15c-1.5-1.5-4.5-1.5-7-.5zm16 0c-2.5-1-5.5-1-7 .5v15c1.5-1.5 4.5-1.5 7-.5z'/></svg>"); }
+.st-ico[data-ico="place"] { --ico: #b4552f; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 24'><path fill-rule='evenodd' d='M10 0a9 9 0 0 1 9 9c0 6.5-9 15-9 15S1 15.5 1 9a9 9 0 0 1 9-9zm0 5.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z'/></svg>"); }
+.st-ico[data-ico="menu"] { --ico: #8a6a3a; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect x='3' y='3' width='8' height='8' rx='2'/><rect x='13' y='3' width='8' height='8' rx='2'/><rect x='3' y='13' width='8' height='8' rx='2'/><rect x='13' y='13' width='8' height='8' rx='4'/></svg>"); }
+.st-ico[data-ico="privacy"] { --ico: #3f7a4a; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill-rule='evenodd' d='M7 10V7.5a5 5 0 0 1 10 0V10h1.5A1.5 1.5 0 0 1 20 11.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 20.5v-9A1.5 1.5 0 0 1 5.5 10zm2 0h6V7.5a3 3 0 0 0-6 0zm3 4a1.6 1.6 0 0 0-.8 3V19h1.6v-2a1.6 1.6 0 0 0-.8-3z'/></svg>"); }
+.st-ico[data-ico="account"] { --ico: #5a6478; --ico-svg: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><circle cx='12' cy='8' r='4.5'/><path d='M3 21c0-4.4 4-7.5 9-7.5s9 3.1 9 7.5z'/></svg>"); }
+:root[data-theme="dark"] .st-ico[data-ico="access"] { --ico: #6cc4bf; }
+:root[data-theme="dark"] .st-ico[data-ico="services"] { --ico: #b4c27a; }
+:root[data-theme="dark"] .st-ico[data-ico="faith"] { --ico: #e0b84a; }
+:root[data-theme="dark"] .st-ico[data-ico="place"] { --ico: #e88a62; }
+:root[data-theme="dark"] .st-ico[data-ico="menu"] { --ico: #d0aa72; }
+:root[data-theme="dark"] .st-ico[data-ico="privacy"] { --ico: #8cc49a; }
+:root[data-theme="dark"] .st-ico[data-ico="account"] { --ico: #a9b3c8; }
+:root[data-theme="dark"] .st-ico[data-ico="palette"] { --ico: #f0a07a; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .st-ico[data-ico="daynight"] { --ico: #8f9fe6; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="access"] { --ico: #6cc4bf; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="services"] { --ico: #b4c27a; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="faith"] { --ico: #e0b84a; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="place"] { --ico: #e88a62; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="menu"] { --ico: #d0aa72; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="privacy"] { --ico: #8cc49a; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="account"] { --ico: #a9b3c8; }
+  :root:not([data-theme="light"]) .st-ico[data-ico="palette"] { --ico: #f0a07a; }
+}

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>הגדרות מתקפלות – אב טיפוס</title>
+  <!-- The settings in folding categories (the owner, 2026-11-14). The markup settings.js should build per section:
+       <details class="st-sec" id="ID"><summary class="st-sum"><span class="st-ico" data-ico="ID" aria-hidden="true"></span>
+       <span class="st-sum-t"><h2 id="ID-h">TITLE</h2><small class="st-now">WHAT IS SET NOW</small></span></summary>
+       <div class="st-body">…the fields as today…</div></details>
+       Closed at first; a jump chip (st-jump) or a #ID in the address opens its category. Copy to public/ to view. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/settings/settings.css">
+  <style>body { padding: 0 16px; }</style>
+</head>
+<body>
+<main class="st" id="st"><h1>הגדרות</h1></main>
+<script>
+  const S = [['daynight', 'יום ולילה', 'לפי השעון · שמש וירח אמיתיים'], ['access', 'נגישות', 'גודל טקסט רגיל · תנועה מלאה'], ['services', 'חיבור לשירותים', 'ספוטיפיי מחובר · Gmail לא'],
+    ['assistant', 'העוזר האישי', 'הפנק · קול עברי'], ['palette', 'ערכות צבעים', 'זית ושעורה'], ['faith', 'דת ושפה', 'יהדות · עברית'], ['place', 'המקום שלי', 'ירושלים'],
+    ['menu', 'התפריט', '8 כלים סביב המדורה'], ['privacy', 'פרטיות ואבטחה', 'נעילה בקוד · אחרי 5 דקות'], ['account', 'החשבון', 'שם ומשפחה']];
+  document.getElementById('st').insertAdjacentHTML('beforeend', S.map(([id, t, now]) => `<details class="st-sec" id="${id}"><summary class="st-sum"><span class="st-ico" data-ico="${id}" aria-hidden="true"></span><span class="st-sum-t"><h2 id="${id}-h">${t}</h2><small class="st-now">${now}</small></span></summary><div class="st-body"><div class="st-field"><span class="st-label">דוגמה</span><div class="st-choices" role="radiogroup"><button class="chip" role="radio" aria-checked="true" type="button">אחת</button><button class="chip" role="radio" aria-checked="false" type="button">שתיים</button></div></div><div class="st-field"><label class="st-switch"><input type="checkbox" checked> מתג לדוגמה</label></div></div></details>`).join(''));
+</script>
+</body>
+</html>

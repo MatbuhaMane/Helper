@@ -2,7 +2,7 @@
 // Pure functions, tested in test-figures.mjs.
 
 /** The paid figures (design's catalogue, Figure2D.FIGURES with paid: true). Design tells the master when this changes. */
-export const PAID = ['maryshelley', 'leonardo', 'cleopatra', 'dracula'] as const;
+export const PAID = ['maryshelley', 'leonardo', 'cleopatra', 'dracula', 'magician', 'astronomer', 'doll'] as const;
 export const isPaid = (id: string) => (PAID as readonly string[]).includes(id);
 
 export type Decision =

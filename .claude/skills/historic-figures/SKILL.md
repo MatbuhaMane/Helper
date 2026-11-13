@@ -13,6 +13,12 @@ description: Rules and likeness notes for the historic figures the companion can
   claiming accuracy.
 - Personal family use. If the app is ever offered publicly, check likeness rights (some estates license famous faces).
 
+## The owner's two principles for the library (2026-11-13)
+1. **Prophets only in an agreed depiction.** If a depiction might hurt anyone, it is not added at all.
+2. **Choose figures nobody objects to, rather than hiding figures by religion.** The library is built so that every
+   figure can be shown to everyone; a figure that would need hiding for some tradition is better left out.
+And: a figure that becomes paid is announced to the master (the paid list lives on the server, `server/figures-rules.ts`).
+
 ## Likeness: what makes each one recognisable
 Write the defining features before modelling, then exaggerate them gently.
 

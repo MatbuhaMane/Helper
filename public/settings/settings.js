@@ -259,8 +259,8 @@
         return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
       hairRow(), paletteRow(), pranksRow(),
-      // horror figures (Dracula) only when asked for, and never for a child (under 12, by the birth year the owner set)
-      !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
+      // horror figures (tags: ['horror'] – none today) only when asked for, and never for a child (under 12, by the birth year the owner set)
+      !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'דמויות מפחידות. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));
   }
 

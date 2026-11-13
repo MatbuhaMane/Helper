@@ -16,7 +16,7 @@ Last update: 2026-11-13.
   - the research assistant, spec v1;
   - the companion figures: the free and paid lists, Ibn Ezra only for the owner's family, פנק as the default;
   - the readiness bar;
-  - Russian and Amharic: after the family launch, before the closed beta.
+  - Russian, Amharic and Tigrinya: after the family launch, before the closed beta.
 - **Specs written with the owner:**
   - `docs/vision/goals.md`: goal management, part 1 live;
   - `docs/vision/research.md`: the research assistant, steps 1–2 live.

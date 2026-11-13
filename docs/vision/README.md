@@ -13,7 +13,7 @@
 | [ready.md](ready.md) | רף הבשלות: מתי מציגים למשפחה |
 | [social.md](social.md) | השכבה החברתית: חברים, מעקב, לבבות, עצות, מטרה משפחתית |
 | [first-minute.md](first-minute.md) | הדקה הראשונה (ה-wizard והגילוי), וסמל האפליקציה |
-| [languages-ru-am.md](languages-ru-am.md) | רוסית ואמהרית: אפיון קצר |
+| [languages-ru-am.md](languages-ru-am.md) | רוסית, אמהרית וטיגרית: אפיון קצר |
 | [tree.md](tree.md) | עץ המשפחה, אפיון 1: עץ מצויר, משחק בממשק, מי שנפטר |
 
 ## דרך העבודה (הבעלים, 2026-11-12)

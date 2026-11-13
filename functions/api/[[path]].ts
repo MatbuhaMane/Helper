@@ -75,7 +75,7 @@ route('GET', '/api/me', async (ctx) => {
   // child: under 12 by the birth year the owner set (the year itself stays private)
   return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
     shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
-    locked: await lock.lockedNow(ctx.env, ctx.req) });   // locked: the app lock is closed (the page shows the lock screen)   // shop: the owner's switch for prices and buying
+    ...(await lock.meLock(ctx.env, ctx.req)) });   // appLock: off | pin | bio (the padlock in the bar); locked: the lock screen   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);
 route('PUT', '/api/prefs/:ns', prefs.putPrefs);

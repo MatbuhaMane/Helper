@@ -126,11 +126,11 @@ export async function save(ctx: Ctx) {
 async function wrong(env: Env, l: LockRow) {
   const f = L.afterFail(l.fails || 0, Date.now());
   await env.DB.prepare('UPDATE user_locks SET fails = ?, pause_until = ?, closed = ? WHERE email = ?').bind(f.fails, f.pauseUntil, f.closed ? 1 : 0, l.email).run();
-  throw new HttpError(401, f.closed ? 'pin_closed' : f.pauseUntil ? 'pin_paused' : 'pin_wrong');
+  throw new HttpError(403, f.closed ? 'pin_closed' : f.pauseUntil ? 'pin_paused' : 'pin_wrong');
 }
 async function checkPin(env: Env, l: LockRow | null, pin: unknown) {
   if (!l?.pin_hash || !l.pin_salt) throw new HttpError(409, 'no_pin');
-  if (l.closed) throw new HttpError(401, 'pin_closed');
+  if (l.closed) throw new HttpError(403, 'pin_closed');
   if (l.pause_until && l.pause_until > Date.now()) throw new HttpError(429, 'pin_paused');
   if (!L.validPin(pin) || !same(await hashPin(env, pin, l.pin_salt), l.pin_hash)) await wrong(env, l);
 }
@@ -192,7 +192,7 @@ async function limit(env: Env, key: string, max: number, windowMs: number) {
 type Assertion = { challengeId?: unknown; id?: unknown; response?: { clientDataJSON: string; authenticatorData: string; signature: string } };
 async function checkPasskey(ctx: Ctx, b: Assertion, c: string, email: string | null) {
   const row = await ctx.env.DB.prepare('SELECT email, alg, jwk, sign_count FROM passkeys WHERE id = ?').bind(String(b.id || '')).first<{ email: string; alg: number; jwk: string; sign_count: number }>();
-  if (!row || (email && row.email !== email) || !b.response) throw new HttpError(401, 'passkey_unknown');
+  if (!row || (email && row.email !== email) || !b.response) throw new HttpError(403, 'passkey_unknown');
   const count = await verifyAssertion(b.response, { alg: row.alg, jwk: JSON.parse(row.jwk), signCount: row.sign_count }, c, ctx.url.origin, rpId(ctx));
   await ctx.env.DB.prepare('UPDATE passkeys SET sign_count = ?, last_used = ? WHERE id = ?').bind(count, Date.now(), String(b.id)).run();
   return row.email;
@@ -232,9 +232,9 @@ export async function login(ctx: Ctx) {
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }
 
-/** for /api/me: is this session's app locked right now? (the page shows the lock screen) */
-export async function lockedNow(env: Env, req: Request): Promise<boolean> {
+/** for /api/me: the person's app lock (the padlock in the bar), and whether this session is locked now (the lock screen) */
+export async function meLock(env: Env, req: Request): Promise<{ appLock: string; locked: boolean }> {
   const r = await env.DB.prepare('SELECT l.app, l.autolock, s.app_locked, s.last_active FROM sessions s LEFT JOIN user_locks l ON l.email = s.email WHERE s.id = ?')
     .bind(sidOf(req)).first<{ app: string | null; autolock: number | null; app_locked: number | null; last_active: number | null }>().catch(() => null);
-  return !!r && L.appLocked({ mode: r.app, locked: r.app_locked, lastActive: r.last_active, autolockMin: r.autolock, now: Date.now() });
+  return { appLock: r?.app || 'off', locked: !!r && L.appLocked({ mode: r.app, locked: r.app_locked, lastActive: r.last_active, autolockMin: r.autolock, now: Date.now() }) };
 }

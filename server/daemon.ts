@@ -378,9 +378,7 @@ export async function chat(ctx: Ctx) {
 export async function getDaemon(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY, ibnEzra: await ownersFamily(ctx, u),
-    // the paid figures this person has (vision batch 6): none until the purchase path, which goes through the credits (the master's)
-    owned: [] as string[] });
+  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY, ibnEzra: await ownersFamily(ctx, u) });   // (what is owned: /api/daemon/figures)
 }
 
 /** Ibn Ezra (the 3D vinyl figure) belongs to the owner's family only (decisions.md, "Companion figures"); others choose

@@ -143,25 +143,49 @@
   async function drawAssistant() {
     const dp = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
     const set = (k, v) => { dp[k] = v; keep('daemon'); };
-    let d = null, earned = new Set(), figures = [], allFigures = [];
+    let d = null, earned = new Set(), figures = [], allFigures = [], shop = { owned: [], paid: [], priceIls: 10 }, child = false;
     try { d = await api('/api/daemon'); } catch (_) { /* no companion yet */ }
+    // what this person owns, which figures are paid, and their price (server/figures.ts); whether they are a child (/api/me)
+    try { shop = await api('/api/daemon/figures'); } catch (_) { /* no shop: nothing paid is theirs */ }
+    try { child = !!(await H.me()).child; } catch (_) { /* not known: not a child */ }
     try {
       await H.loadOnce('/assets/figure2d.js');
       allFigures = (window.Figure2D ? Figure2D.list() : []).map(figureMeta).filter((f) => !f.hideFor.includes(me.religion || 'jewish'));
-      figures = allFigures.filter((f) => !f.tags.includes('horror') || dp.showHorror);
+      // a paid figure by the server's list too; horror figures never for a child, for an adult on request
+      allFigures.forEach((f) => { if ((shop.paid || []).includes(f.id)) f.paid = true; });
+      figures = allFigures.filter((f) => !f.tags.includes('horror') || (!child && dp.showHorror));
     } catch (_) { /* the 2D figures are not here yet */ }
     if (figures.some((f) => f.unlock)) { try { earned = new Set(((await api('/api/goals')).badges?.earned || []).map((e) => e.id || e.badge || e)); } catch (_) { /* no goals yet */ } }
     const family = !!d?.ibnEzra;
     // the figure now: the person's choice, if it is theirs to have; else Ibn Ezra for the family, the first figure for others
-    // (paid: only once it is the person's – the purchase comes with the credits path, the master's; until then none is owned)
-    const owned = new Set(d?.owned || []);
+    // (paid: chosen once it is the person's; until then its card buys it)
+    const owned = new Set(shop.owned || []);
     const allowed = (f) => (!f.unlock || earned.has(f.unlock)) && (!f.paid || owned.has(f.id));
     const mine = dp.figure && (dp.figure === 'ibn_ezra' ? family : figures.some((f) => f.id === dp.figure && allowed(f))) ? dp.figure : family ? 'ibn_ezra' : (figures.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : figures[0]?.id) || 'ibn_ezra';   // (the owner chose the fennec as the default)
     const voice = dp.voice || (dp.speak === false ? 'silent' : 'always');
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
-    const card = (id, name, sub, preview, ok = true) => el('button', {
-      type: 'button', class: 'card st-skin' + (id === mine ? ' on' : ''), 'aria-pressed': String(id === mine), disabled: !ok,
-      title: ok ? name : sub, onclick: () => pick(id),
+    /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
+    const price = Number(shop.priceIls) || 10;
+    const buy = (f) => H.modal(el('h2', {}, `${f.name}`), preview2d(f),
+      el('p', {}, `דמות בתשלום: ₪${price}, מהקרדיט שלך. במשפחה – בלי תשלום.`),
+      el('p', { class: 'muted small' }, 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
+      el('div', { class: 'row' },
+        el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
+          e.target.disabled = true;
+          try {
+            const r = await api(`/api/daemon/figures/${encodeURIComponent(f.id)}/buy`, { body: { confirm: true } });
+            H.closeModal(); toast(r.how === 'credits' ? `${f.name} שלך` : `${f.name} שלך, על חשבון המשפחה`); pick(f.id);
+          } catch (err) {
+            e.target.disabled = false;
+            if (err.status === 402) { H.closeModal(); H.modal(el('h2', {}, 'אין מספיק קרדיט'), el('p', {}, `צריך ₪${price} בקרדיט. אפשר להוסיף קרדיט או לחבר שירות משלך.`),
+              el('div', { class: 'row' }, el('a', { class: 'btn primary', href: '#services', onclick: () => H.closeModal() }, 'לחיבור לשירותים'))); }
+            else toast('הקנייה לא הצליחה – נסו שוב');
+          }
+        } }, `לקנות ב־₪${price}`),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'לא עכשיו')));
+    const card = (id, name, sub, preview, ok = true, onBuy = null) => el('button', {
+      type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
+      title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
     const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true }).catch(() => {}); return span; };
     const groups = KINDS.map(([kind, title]) => [title, figures.filter((f) => (f.kind || 'generic') === kind)]).filter(([, list]) => list.length);
@@ -175,15 +199,16 @@
       toggle('העוזר מלווה אותי בכל עמוד', !!dp.follow, (v) => set('follow', v), 'כשכבוי, הוא מחכה בדף הבית.'),
       choices('בראש השיחה', [['icon', 'הדמות כאייקון'], ['animated', 'הדמות חיה']], dp.header || 'icon', (v) => set('header', v)),
       el('h3', {}, 'הדמות'),
-      el('p', { class: 'muted small' }, 'כל הדמויות לבחירה, חינם.'),
+      el('p', { class: 'muted small' }, 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.'),
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'ראב"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
-        const sub = f.paid && !owned.has(f.id) ? '💎 בתשלום · הרכישה בקרוב' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
-        return card(f.id, f.name, sub, preview2d(f), ok);
+        const forSale = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
+        const sub = forSale ? `💎 ₪${price} · לקנייה` : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
+        return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
-      // horror figures (Dracula) only when asked for: not for children (the members' age is not kept yet, so it is the person's switch)
-      allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
+      // horror figures (Dracula) only when asked for, and never for a child (under 12, by the birth year the owner set)
+      !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));
   }
 

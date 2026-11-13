@@ -8,6 +8,7 @@
      f.nod()  f.happy()  f.think(on)  f.sleep(on)
      f.special()        a special figure's own move (it also plays in happy()); f.sew('peg') sews a badge on the doll
      mount(…, { patches: ['peg', 'ember'] })   the doll wears the badges the person has
+     mount(…, { skin: 'hanukkah' })            a skin, when the figure lists it in skins: [{ id, name, free?, season? }]
      f.destroy()
      Figure2D.list()  → the catalogue (id, name, kind, unlock?, season?)
 
@@ -67,7 +68,10 @@
     ensureCss();
     const cfg = typeof which === 'string' ? { id: which, ...FIGURES[which] } : which;
     if (!cfg || !cfg.neck) throw new Error('Figure2D: no such figure ' + which);
-    const src = cfg.src || `${BASE}${cfg.id}/figure.webp`;
+    // a skin (business, 2026-11-13): another picture of the same figure – a holiday outfit, another coat – drawn to the same
+    // outline, so the face config still fits; /figures/2d/<id>/skin-<skin>.webp
+    const skin = opts.skin && (cfg.skins || []).some((k) => k.id === opts.skin) ? opts.skin : null;
+    const src = cfg.src || `${BASE}${cfg.id}/${skin ? 'skin-' + skin : 'figure'}.webp`;
     const img = new Image(); img.decoding = 'async'; img.src = src;
     // load, not decode: decode() can wait forever in a background tab; a slow network never holds the page up for long
     await new Promise((ok) => { if (img.complete && img.naturalWidth) return ok(); img.onload = img.onerror = () => ok(); setTimeout(ok, 5000); });
@@ -237,7 +241,7 @@
       destroy() { stop(); io.disconnect(); document.removeEventListener('visibilitychange', vis); removeEventListener('pointermove', onMove); box.remove(); },
     };
   }
-  const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, tier: f.tier || 'free', paid: !!f.paid, hideFor: f.hideFor || [], tags: f.tags || [], unlock: f.unlock || null, season: f.season || null }));
+  const list = () => Object.entries(FIGURES).map(([id, f]) => ({ id, name: f.name, kind: f.kind, tier: f.tier || 'free', paid: !!f.paid, hideFor: f.hideFor || [], tags: f.tags || [], unlock: f.unlock || null, season: f.season || null, skins: f.skins || [] }));
   // the default companion for every family but the owner's (who has Ibn Ezra): the owner's choice, 2026-11-13
   const DEFAULT = 'fennec';
   window.Figure2D = { mount, list, FIGURES, DEFAULT };

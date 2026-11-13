@@ -339,6 +339,19 @@ textarea { width: 100%; resize: vertical; }
 .banner { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--olive); background: color-mix(in srgb, var(--olive) 14%, var(--card)); }
 .chip { font: inherit; font-size: .88rem; cursor: pointer; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); padding: 5px 12px; transition: border-color var(--dur-quick); }
 .chip:hover { border-color: var(--primary); color: var(--primary); }
+/* A person's name with their one title and the badges they chose to show (business, 2026-11-13: the profile, the tree,
+   the RSVPs). <span class="who"><b>שם</b> <span class="who-title founder">חבר מייסד</span>
+   <span class="who-badges"><img src="/assets/badges/peg.webp" alt="יתד ראשונה">…</span></span>
+   Titles: plain (עמוד האוהל, יתד האוהל, חבל האוהל, תומך קבוע, מלאך…), .founder (חבר/ה מייסד/ת, תומך/ת מייסד/ת, האור לפני
+   המחנה), .gold (the one-off "המיליון"). Up to five badges; their names are the images' alt. */
+.who { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-inline-size: 0; }
+.who-title { display: inline-flex; align-items: center; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; line-height: 1.5; white-space: nowrap;
+  background: color-mix(in srgb, var(--text) 7%, var(--card)); color: var(--text); border: 1px solid color-mix(in srgb, var(--text) 12%, transparent); }
+.who-title.founder { background: color-mix(in srgb, var(--olive) 28%, var(--card)); border-color: color-mix(in srgb, var(--olive) 60%, transparent); }
+.who-title.gold { background: linear-gradient(135deg, #f6d77a, #d9a63a); border-color: #b9862a; color: #3a2a0c; }
+.who-badges { display: inline-flex; align-items: center; }
+.who-badges img { inline-size: 22px; block-size: 22px; object-fit: contain; filter: drop-shadow(0 1px 1px rgba(30, 20, 10, .25)); }
+.who-badges img + img { margin-inline-start: -4px; }
 .chip[aria-pressed="true"], .chip[aria-checked="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); }
 .chip[aria-pressed="true"]:hover, .chip[aria-checked="true"]:hover { background: color-mix(in srgb, var(--primary) 88%, var(--text)); color: var(--primary-ink); }
 

@@ -14,9 +14,11 @@ description: Rules and likeness notes for the historic figures the companion can
 - Personal family use. If the app is ever offered publicly, check likeness rights (some estates license famous faces).
 
 ## The owner's two principles for the library (2026-11-13)
-1. **Prophets only in an agreed depiction.** If a depiction might hurt anyone, it is not added at all.
+1. **Prophets only in an agreed depiction.** If a depiction might hurt anyone, it is not added at all. This includes
+   figures who are prophets in any tradition (Job / Ayyub in Islam, for one); no religious symbols on figures either.
 2. **Choose figures nobody objects to, rather than hiding figures by religion.** The library is built so that every
    figure can be shown to everyone; a figure that would need hiding for some tradition is better left out.
+   (`hideFor` stays empty. Age is another matter: horror figures – Dracula – are hidden from children under 12.)
 And: a figure that becomes paid is announced to the master (the paid list lives on the server, `server/figures-rules.ts`).
 
 ## Likeness: what makes each one recognisable
@@ -42,7 +44,9 @@ Write the defining features before modelling, then exaggerate them gently.
   "והמשכיל יבין". **Never invent quotations attributed to him**; new quips in his spirit are fine as the helper's own.
 - The persona text lives in `server/daemon.ts` (SYSTEM, "PERSONA ibn_ezra"). Changing it means bumping PROMPT_VERSION.
 
-### Job (איוב)
+### Job (איוב) – not to be made
+- **Under the prophets rule:** Job (Ayyub) is a prophet in Islam, and an agreed depiction does not exist, so he is not
+  added (business, 2026-11-13). The notes below are kept only as a record.
 - Biblical; depict from tradition: an elder of the land of Uz, a long white beard, a simple woollen robe and head cloth.
 - Show him in the end of his story, restored and at peace, not in suffering: a gentle smile, a shepherd's staff, a
   small sheep beside him.

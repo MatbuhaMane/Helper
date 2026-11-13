@@ -39,7 +39,7 @@ with `season: 'purim' | 'hanukkah' | …`); each is one more picture and an entr
 ## For ai-features
 
 - **Settings › העוזר האישי › הדמות:** a choice of figures (tiles with `Figure2D.mount(tile, id, { size: 96 })`, live, or
-  `still: true` for a long list), saved per person (`H.prefs('companion', { figure: 'fennec' })`); Ibn Ezra listed only
+  `still: true` for a long list), saved per person in `H.prefs('daemon').figure` (as it went into main with batch 5); with no choice, `Figure2D.DEFAULT`; Ibn Ezra listed only
   for the owner's family.
 - **The companion (daemon.js):** when the chosen figure is a 2D one, mount it instead of the three.js stage, and drive
   it from the companion's states (talk while speaking, think while waiting, happy on success, sleep when idle).

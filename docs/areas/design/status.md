@@ -33,6 +33,9 @@ _Updated 2026-11-14 (the back door; images still blocked)._
 - **The parasha study room on the phone (the owner's tour):** the sheet is half the screen and the verse stays pinned above it;
   the chapter arrows point the reading way; `--rs-scale` + `.rs-size` for ai-features' A−/A+. The two "הפרק הבא/הקודם"
   labels at the page's end need their glyphs swapped in study.js:141–142 (ai-features).
+- **News cards on the phone (0b9a857):** opacity and transform only: the hover/press shade fades on a layer under the content,
+  the list no longer clips with a rounded overflow, off-screen rows skip rendering (`content-visibility`). Checked at 375
+  (light, dark, list and cards) and 1280. The JS side (full list rebuilds that replay the entry) is with ai-features.
 - **The phone's tab bar (the owner):** a floating glass capsule, our own round icons in `/assets/tab-icons/` (outline and
   filled), the current tab in a pale-vine pebble; checked at 375 in light and dark, the menu above it, no overflow.
 - **The cushions away from the fire (the owner):** the ring lower and wider, clear space round the fire; checked at 375 and

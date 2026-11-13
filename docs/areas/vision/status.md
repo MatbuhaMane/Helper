@@ -52,7 +52,7 @@ Last update: 2026-11-13.
 ## Needs the owner
 
 - **The joint test run:** when to start it, now or after the first measurement.
-- **Which session owns the shared files now,** the master or the new CEO session? Batch 8 went to both.
+- **The master is now the new CEO session** (the owner, 2026-11-13). From now on, copies go there only.
 - **Through the other departments:**
   - business: approving the founders' "free for life" track;
   - ai-features: the restaurant source for the food slider.

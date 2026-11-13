@@ -439,7 +439,11 @@
       } else anims.push(c.animate([{ opacity: 0, transform: 'scale(.97)' }, { opacity: 1, transform: 'none' }], { duration: 260, easing: 'ease-out' }));
     }
     // the lines were measured while the cards were still gliding: draw them again where the cards came to rest
-    Promise.allSettled(anims.map((a) => a.finished)).then(() => { board.classList.remove('fv-gliding'); redrawLines(board); });
+    // (with a safety timer: a glide that never ends, e.g. in a tab sent to the background, must not leave the lines faded)
+    let done = false;
+    const end = () => { if (done) return; done = true; board.classList.remove('fv-gliding'); redrawLines(board); };
+    Promise.allSettled(anims.map((a) => a.finished)).then(end);
+    setTimeout(end, 500);
   }
   /** the lines on the board as it is now (the layer is made anew by every drawing) */
   function redrawLines(board) {

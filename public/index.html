@@ -434,7 +434,7 @@
       let view = look.srView === 'list' ? 'list' : 'grid';
       const tool = (a) => el('li', { 'data-q': a.name + ' ' + a.sub }, el('a', { class: 'sr-tool', href: a.href },
         el('span', { class: 'sr-ic' }, pillows ? el('img', { src: '/assets/pillows/' + a.pillow + '.webp', alt: '', loading: 'lazy' }) : H.appIcon(a.ic)),
-        el('span', { class: 'sr-txt' }, el('b', {}, a.name), el('small', {}, a.sub))));
+        el('span', { class: 'sr-txt' }, el('b', {}, a.name, a.tag ? el('span', { class: 'app-tag' }, a.tag) : null), el('small', {}, a.sub))));
       const isTool = (a) => a.href.startsWith('/tools/') || /^\/(mail|pc|gather|messages|groceries|food\/)/.test(a.href);
       const lists = [['המקומות', H.APPS.filter((a) => !isTool(a))], ['הכלים', H.APPS.filter(isTool)]].map(([t, apps]) => {
         const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
@@ -916,13 +916,13 @@
         if (Date.now() - touched < 800 && e.detail) return;   // a finger: only the swipe plays (the keyboard's Enter still does)
         play(false);
       } });
-      guitar.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; touched = Date.now(); swipe = { x: e.clientX, y: e.clientY, done: false }; });
+      guitar.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') return; touched = Date.now(); swipe = { x: e.clientX, y: e.clientY, done: false }; try { guitar.setPointerCapture(e.pointerId); } catch (_) { /* fine */ } });   // captured: a sideways swipe soon leaves the narrow guitar
       guitar.addEventListener('pointermove', (e) => {
         if (!swipe || swipe.done) return;
         const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
         if (Math.hypot(dx, dy) < 18) return;
         swipe.done = true; touched = Date.now();
-        play(dy < 0 || (Math.abs(dx) > Math.abs(dy) && dx > 0));   // an up-stroke plays the strings from the high one
+        play(Math.abs(dx) > Math.abs(dy) ? 'side' : dy < 0);   // up: from the high string; sideways (batch 14): a gentle picked A minor, as loud
       });
       const endSwipe = () => { swipe = null; };
       guitar.addEventListener('pointerup', endSwipe); guitar.addEventListener('pointercancel', endSwipe);
@@ -933,25 +933,29 @@
 
     /** A gentle strum of an open G chord, made on the spot (plucked strings, Karplus-Strong): no sound file to load. */
     let strumCtx = null, strumBufs = null;
+    let sideBufs;
     function strum(up = false) {
       try {
         strumCtx ||= new (window.AudioContext || window.webkitAudioContext)();
         const ac = strumCtx;
         if (ac.state === 'suspended') ac.resume();
-        if (!strumBufs) strumBufs = [98, 123.47, 146.83, 196, 246.94, 392].map((f) => {
+        const pluck = (f) => {
           const sr = ac.sampleRate, n = Math.floor(sr * 2.2), buf = ac.createBuffer(1, n, sr), d = buf.getChannelData(0);
           const p = Math.round(sr / f), line = new Float32Array(p);
           for (let i = 0; i < p; i++) line[i] = (Math.random() * 2 - 1) * Math.sin(Math.PI * i / p);   // a soft pick (a thumb, not a plectrum)
           for (let k = 0; k < 3; k++) for (let i = 1; i < p; i++) line[i] = 0.5 * (line[i] + line[i - 1]);   // rounder: fewer high overtones
           for (let i = 0, j = 0; i < n; i++, j = (j + 1) % p) { const next = line[(j + 1) % p]; d[i] = line[j]; line[j] = 0.4985 * (line[j] + next); }
           return buf;
-        });
+        };
+        if (!strumBufs) strumBufs = [98, 123.47, 146.83, 196, 246.94, 392].map(pluck);
+        if (up === 'side' && !sideBufs) sideBufs = [110, 164.81, 220, 261.63, 329.63, 440].map(pluck);   // A minor, open
         const out = ac.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 1500; out.Q.value = 0.5;
         const vol = ac.createGain(), t = ac.currentTime;
         vol.gain.setValueAtTime(0.0001, t); vol.gain.exponentialRampToValueAtTime(0.07, t + 0.03); vol.gain.setTargetAtTime(0.0001, t + 1.2, 0.5);
         out.connect(vol).connect(ac.destination);
         const t0 = ac.currentTime + 0.01;
-        (up ? [...strumBufs].reverse() : strumBufs).forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * 0.05); });
+        const side = up === 'side', gap = side ? 0.11 : 0.05;   // sideways: picked one by one, slower
+        (side ? sideBufs : up ? [...strumBufs].reverse() : strumBufs).forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * gap); });
       } catch { /* no sound here */ }
     }
 

@@ -19,8 +19,9 @@ _Updated 2026-11-14._
   fading rings, no animated blur; the list in `style-check.md`.
 
 ## In progress
-- The rest of the style check: the tool icons, the record, the tree's 12 drawings (about 14 images, ~$0.96) – after the
-  image quota resets (00:00 UTC).
+- The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, the tree's 12
+  drawings (about 14 images, ~$0.96); then, by the owner's decisions, the big folder and tab pictures (food, tools,
+  entertainment) and our own symbols in place of the emoji, gradually.
 - Waiting for the master's speed/motion tool to fix by its report (CLS, real frame rate).
 
 ## Blockers
@@ -28,4 +29,4 @@ _Updated 2026-11-14._
 - Asked of ai-features: `music.js` to grow the music bar by transform (`.mu-bar.scaled`, `--p`); the mail page's bar.
 
 ## Needs the owner
-- Two style decisions: keep the small line icons (draw only the big ones)? Replace the emoji in the interface gradually?
+- Nothing open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)

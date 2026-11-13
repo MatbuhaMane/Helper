@@ -10,9 +10,23 @@
 .fp-cover { position: relative; aspect-ratio: 3 / 1; min-block-size: 150px; border-radius: 0 0 28px 28px; overflow: hidden;
   background: linear-gradient(180deg, var(--tint), var(--chalk)); isolation: isolate; }
 .fp-cover-img { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; object-fit: cover; }
-.fp-cover::after { content: ""; position: absolute; inset: 55% 0 0; background: linear-gradient(180deg, transparent, rgba(46, 42, 30, .28)); pointer-events: none; }
-:root[data-theme="dark"] .fp-cover-img { filter: brightness(.82) saturate(.9); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fp-cover-img { filter: brightness(.82) saturate(.9); } }
+.fp-cover-img { filter: var(--fp-img, none); }
+.fp-cover::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, rgba(46, 42, 30, .28)), var(--fp-veil, none); }
+/* at night the day drawings turn to dusk (a deep-blue veil, heavier at the sky); the desert is already night, so it stays;
+   the family's own photo is only dimmed a little */
+:root[data-theme="dark"] .fp-cover { --fp-img: brightness(.88) saturate(.85);
+  --fp-veil: linear-gradient(180deg, rgba(22, 28, 62, .5), rgba(22, 28, 62, .2) 60%, rgba(12, 14, 28, .3)); }
+:root[data-theme="dark"] .fp-cover:has(.fp-cover-img[src*="desert"]) { --fp-img: none; --fp-veil: none; }
+:root[data-theme="dark"] .fp-cover:has(.fp-cover-img:not([src*="/assets/covers/"])) { --fp-img: brightness(.85) saturate(.92); --fp-veil: none; }
+:root[data-theme="dark"] .fp-cover-opt img { filter: brightness(.9) saturate(.92); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .fp-cover { --fp-img: brightness(.88) saturate(.85);
+    --fp-veil: linear-gradient(180deg, rgba(22, 28, 62, .5), rgba(22, 28, 62, .2) 60%, rgba(12, 14, 28, .3)); }
+  :root:not([data-theme="light"]) .fp-cover:has(.fp-cover-img[src*="desert"]) { --fp-img: none; --fp-veil: none; }
+  :root:not([data-theme="light"]) .fp-cover:has(.fp-cover-img:not([src*="/assets/covers/"])) { --fp-img: brightness(.85) saturate(.92); --fp-veil: none; }
+  :root:not([data-theme="light"]) .fp-cover-opt img { filter: brightness(.9) saturate(.92); }
+}
 .fp-cover-btn { position: absolute; inset-block-start: 12px; inset-inline-end: 12px; z-index: 1; display: inline-flex; align-items: center; gap: 6px;
   min-block-size: 40px; padding: 6px 14px; border: 1px solid var(--glass-border); border-radius: 999px; background: var(--glass); color: var(--text);
   font: inherit; font-size: .88rem; font-weight: 600; cursor: pointer; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }

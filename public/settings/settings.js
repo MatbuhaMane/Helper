@@ -197,8 +197,34 @@
       type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
       title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
-    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
+    const previews = {};   // the preview figures by id (a prankster's preview plays a trick from its own card)
+    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); previews[f.id] = Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}), ...(f.palettes?.length ? { palette: +dp.palette || 0 } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
     /** her hair colour (a figure with a hair layer, e.g. the astronomer): saved per person, prefs daemon.hair */
+    /** a figure with clothing palettes (the night wizard, the forest witch): saved per person, prefs daemon.palette; the
+        first is as drawn */
+    const paletteRow = () => {
+      const f = figures.find((x) => x.id === mine && x.palettes?.length);
+      if (!f) return null;
+      const now = +dp.palette || 0;
+      return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, `הצבעים של ${f.name}`),
+        el('div', { class: 'st-choices st-palette', role: 'radiogroup', 'aria-label': 'הצבעים', style: 'display:flex;flex-wrap:wrap;gap:6px' }, f.palettes.map((p) => el('button', {
+          type: 'button', role: 'radio', class: 'chip', 'aria-checked': String(p.index === now), title: p.name,
+          onclick: () => { set('palette', p.index); drawAssistant(); },
+        }, el('span', { 'aria-hidden': 'true', style: `display:inline-block;inline-size:14px;block-size:14px;border-radius:50%;background:${p.swatch};border:1px solid var(--line-strong);margin-inline-end:6px;vertical-align:-2px` }), p.name))));
+    };
+    /** the little wizard and witch play small tricks on the page (design's pranks.js): on by default, the person's switch,
+        with a preview of one */
+    const pranksRow = () => {
+      if (!['littlewizard', 'littlewitch'].includes(mine)) return null;
+      return el('div', {}, toggle('תעלולים', dp.pranks !== false, (v) => set('pranks', v), 'מדי פעם תעלול קטן בדף – רק מראה, לא משנה כלום. לא בזמן הקלדה או גלילה.'),
+        el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+          try {
+            await H.loadOnce('/assets/pranks.js');
+            const p = Pranks.start(await previews[mine], { id: mine });
+            p.play('sprinkle'); setTimeout(() => p.stop(), 4000);
+          } catch (_) { toast('התעלול לא הצליח כרגע'); }
+        } }, '✨ להראות תעלול'));
+    };
     const hairRow = () => {
       const f = figures.find((x) => x.id === mine && x.hair);
       if (!f) return null;
@@ -230,7 +256,7 @@
         const sub = forSale ? (takes ? '💎 שלך לקחת' : `💎 ₪${priceOf(f)} · לקנייה`) : offered ? '💎 בתשלום' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
         return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
-      hairRow(),
+      hairRow(), paletteRow(), pranksRow(),
       // horror figures (Dracula) only when asked for, and never for a child (under 12, by the birth year the owner set)
       !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));

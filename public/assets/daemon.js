@@ -460,6 +460,7 @@
   /* ===================== a 2D figure (vision batch 5): design's Figure2D in place of the 3D Ibn Ezra ===================== */
   // The person's choice is prefs.figure ('' or 'ibn_ezra': the 3D Ibn Ezra, the owner's family only; else a Figure2D id).
   // A 2D figure walks, is dragged and points like him (the same box moves); three.js is not loaded for it at all.
+  let pranks = null;   // the tricks of a prankster figure (Pranks.start), stopped when they are switched off
   let flat = null, flatFigure = null, flatState = { talk: false, sleep: false, think: false };   // flatFigure: the id shown
   const wantsFlat = () => !!prefs.figure && prefs.figure !== 'ibn_ezra';
   /** the figure for someone who has not chosen (outside the owner's family): the owner chose the fennec (Figure2D.DEFAULT) */
@@ -1511,7 +1512,7 @@
   const heads = [];
   function headFigure(cls = 'face', size = 34) {
     const span = el('span', { class: 'dm-headfig ' + cls, 'aria-hidden': 'true' });
-    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40, ...(prefs.hair ? { hair: prefs.hair } : {}) }).then((f) => heads.push(f)).catch(() => {});
+    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40, ...(prefs.hair ? { hair: prefs.hair } : {}), ...(prefs.palette ? { palette: +prefs.palette } : {}) }).then((f) => heads.push(f)).catch(() => {});
     else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: size, height: size }));
     return span;
   }
@@ -1673,9 +1674,16 @@
       let patches;
       if (flatId === 'doll') { try { patches = ((await api('/api/goals', { noRedirect: true })).badges?.earned || []).map((e) => e.id || e.badge || e).slice(0, 8); } catch (_) { /* no badges yet */ } }
       // her hair, if she has a hair layer (the astronomer): the person's colour (prefs daemon.hair), else her own
-      const hair = catalogue.find((x) => x.id === flatId)?.hair ? prefs.hair || undefined : undefined;
-      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true, ...(patches ? { patches } : {}), ...(hair ? { hair } : {}) }); } catch (e) { console.warn('2D figure missing', e); return; }
+      const entry = catalogue.find((x) => x.id === flatId) || {};
+      const hair = entry.hair ? prefs.hair || undefined : undefined;
+      // her clothing palette (the night wizard, the forest witch): the person's choice, prefs daemon.palette
+      const palette = entry.palettes?.length ? +prefs.palette || 0 : undefined;
+      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true, ...(patches ? { patches } : {}), ...(hair ? { hair } : {}), ...(palette !== undefined ? { palette } : {}) }); } catch (e) { console.warn('2D figure missing', e); return; }
       parts = { flat: true, wings: [] };   // (the walk asks whether he flies)
+      // the little wizard and witch play tricks on the page (design's pranks.js), unless the person switched them off
+      if (prefs.pranks !== false) H.loadOnce('/assets/pranks.js').then(() => { if (window.Pranks?.FOR.includes(flatId)) pranks = Pranks.start(flat, { id: flatId }); }).catch(() => {});
+      // switched off (settings, on this page): the tricks stop at once
+      addEventListener('helper:prefs', (e) => { if (e.detail === 'daemon' && prefs.pranks === false && pranks) { pranks.stop(); pranks = null; } });
     } else {
       const first = bodyFor(state.daemon.form);
       if (first.figure) { try { figureScenes[first.figure] = await loadFigure(first.figure); } catch (e) { console.warn('figure model missing', e); } }

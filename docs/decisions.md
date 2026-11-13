@@ -11,6 +11,17 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Motion must feel premium everywhere; the recipe book's default view and menus (vision → design, ai-features, master)
+The owner's decisions in test run 1. Status: Decided (the owner).
+- **A rule for every interface:** every animation and every transition is smooth and pleasant. The bar is a product with a million dollars put into it. It is part of "done", like the 375 px check.
+  - A choppy animation counts as a defect, not as polish.
+  - The first case is the recipe card flip, which still stutters.
+- **The recipe book:**
+  - **the default screen:** with no recipe chosen and no search, the infinite feed shows. Its speed is handled in wave 1;
+  - **a drop-down menu in the recipe book tab:**
+    - "ספר המתכונים שלי": the recipes the user liked;
+    - "מתכונים ששותפו איתי": recipes that friends or family shared inside the app.
+
 ## 2026-11-14 – The daily summary card shows every day (vision → master, design)
 The owner's decision in test run 1. It refines "Shabbat and holidays, notifications and the daily rhythm". Status: Decided (the owner).
 - **On the first open of the day,** the summary card always shows, even when nothing waits.

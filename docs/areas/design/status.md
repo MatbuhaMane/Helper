@@ -2,7 +2,16 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (the second tree, canopy; hanging oval frames for both trees)._
+_Updated 2026-11-13 (live in main: the canopy tree and frames, v87; H.modalFrom, v88)._
+
+**Where we stand (a brief for the next round, after the owner's /compact):**
+- **Holding:** nothing new until the weekly reset at 16:00 Israel. The quota is kept for the owner's tour.
+- **Live in main:** the canopy tree and frames (v87) and H.modalFrom (v88).
+- **Waiting for ai-features:** the keto.js patch for the diet stamps (`design-keto-diet-stamps-2026-11-13.patch` in the notes
+  folder). Its CSS is already in main, so the stamps show once that patch is merged.
+- **Next, after the image quota resets (02:00 Israel):** the 19 badges, one run of `badges-tools-run.sh` from the design scratchpad,
+  then cut each to `/assets/badges/<id>.webp`.
+- **Not ours, left alone:** the untracked `public/tree-proto.html` in this checkout, left by the canopy session.
 
 ## Done
 - **A second family tree, "canopy" (עץ ב׳), beside the olive (the owner's Gemini drawing, 2026-11-13), ready to merge:**

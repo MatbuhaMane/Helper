@@ -16,7 +16,11 @@ Last update: 2026-11-14 (the tree batch).
   It shows only the forest the tree already shows: no anonymous or hidden cards, no emails, 2 letters, rate-limited.
   Checked on the dev server: search, kin filter, related, own and outside cards (outside: name only, no dates), 429 after
   40 searches, no page overflow at 375, the card at 1280 dark, no nameless controls, typecheck and `npm test` clean.
-  Waiting on design's CSS (the search overflows its row at 375 until then). Not checked: a real phone; the owner's
+  Then (a57efaf): design's markup (`.fs*` for the search, `.mc*` for the card, rechecked at 375 dark and 1280), the story
+  link "הסיפור של …" on the card, and the scrolling the owner found jumpy: the scroll only toggles `.moving` once and settles
+  after 550 ms, `.off` while the tree is off screen, the lines redrawn once a frame and never during a glide.
+  For design: `.fv-tools` does not wrap at 375, so `.fs` is squeezed to about 105 px. Not checked: a real scroll on a
+  phone (the preview pane draws no frames, so only the logic was checked). Not checked: a real phone; the owner's
   backups from settings (dev user not the owner's own Drive); a tribe with a family path across households.
   Open: no personal logo or banner exists, so the card uses the tree photo and, at home, the family profile's cover;
   should users outside one's forest ever be findable (a new opt-in level)? The owner's question, through the CEO.

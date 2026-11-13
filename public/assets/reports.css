@@ -181,3 +181,21 @@
 .navmenu-phone .navmenu-reports .rp-entry { padding: 8px; gap: 8px; font-size: .88rem; }
 .navmenu-phone .navmenu-reports .rp-entry small { display: none; }
 .navmenu-phone .navmenu-reports .mi-count { min-inline-size: 20px; block-size: 20px; padding: 0 5px; font-size: .72rem; }
+
+/* ── The warning triangle in the top bar (the owner, 2026-11-13): beside the settings chip, it opens the report sheet.
+   <button class="rp-alert" type="button" aria-label="דיווח על בעיה" title="דיווח על בעיה"></button>  (no children needed:
+   the disc and the triangle are drawn here; an H.icon put inside is hidden). A 44×44 target around a 36px pastel-red disc,
+   a line border like the chip's, so it weighs the same as the chip beside it; --danger is a deep brick by day, a pastel at night. */
+.rp-alert { display: inline-grid; place-items: center; flex: none; inline-size: 44px; block-size: 44px; margin-block: -4px; margin-inline: -2px;
+  padding: 0; border: 0; background: none; color: var(--danger, #9a3b2a); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rp-alert::before { content: ""; grid-area: 1 / 1; inline-size: 36px; block-size: 36px; border-radius: 50%;
+  background: color-mix(in srgb, var(--danger, #9a3b2a) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger, #9a3b2a) 40%, var(--line-strong));
+  transition: background var(--dur-quick, .15s) ease, border-color var(--dur-quick, .15s) ease; }
+.rp-alert::after { content: ""; grid-area: 1 / 1; inline-size: 19px; block-size: 19px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; mask: url(/assets/bd-icons/alert.svg) center / contain no-repeat; }
+.rp-alert > :is(svg, .icon) { display: none; }
+.rp-alert:hover::before { background: color-mix(in srgb, var(--danger, #9a3b2a) 22%, var(--card)); border-color: var(--danger, #9a3b2a); }
+.rp-alert:focus-visible { outline: none; }
+.rp-alert:focus-visible::before { box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger, #9a3b2a) 45%, transparent); }
+.rp-alert[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .rp-alert::before { transition: none; } }

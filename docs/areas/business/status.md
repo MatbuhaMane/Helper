@@ -3,6 +3,11 @@
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 **Last updated:** 2026-11-14.
 
+- **The business plan, v1 (2026-11-14):** `docs/business/business-plan.md`. It covers a 3-year forecast in three
+  scenarios and fundraising options from light to heavy. The recommendation: self-funded and monthly support first; a
+  founding-supporters campaign at the public launch; then Tnufa or a small SAFE; then a community round. No VC or IPO in
+  the horizon. Legal points are marked for a lawyer and an accountant.
+
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.
   - The trial is about ₪1–2.

@@ -22,7 +22,7 @@
 .wz-skip { grid-column: 3; justify-self: end; font: inherit; font-size: .88rem; color: var(--muted); background: none; border: 0; padding: 6px 4px; cursor: pointer; }
 
 /* the stage: the step's card in the middle, the figure standing below-start, speaking it */
-.wz-stage { position: relative; display: grid; place-items: center; min-block-size: 0; }
+.wz-stage { position: relative; display: grid; place-items: safe center; min-block-size: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; }   /* a long step (who else is in the tent) scrolls inside, never under the button */
 .wz-step { inline-size: min(100%, 520px); display: grid; gap: 18px; justify-items: center; text-align: center; }
 .wz-step.in { animation: wz-in .5s cubic-bezier(.2, .9, .25, 1.15) both; }
 .wz-step.out { animation: wz-out .28s ease-in both; }

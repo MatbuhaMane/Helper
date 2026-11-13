@@ -68,8 +68,33 @@ function looksLikeRecipePage(url: string) {
   } catch { return false; }
 }
 
+/* og:image per page, kept in the Cloudflare cache (a week; "none" a day), so a search that comes again does not fetch
+   the same pages again. The key is an address on our own origin (the cache keeps only this zone's addresses). */
+const OG_TTL = 7 * 86400, OG_NONE_TTL = 86400;
+const ogKey = (origin: string, url: string) => `${origin}/__og/${encodeURIComponent(normUrl(url))}`;
+/** the cached og:image: a string, null for "the page has none", undefined when not cached (or no cache here) */
+async function ogCached(origin: string, url: string): Promise<string | null | undefined> {
+  try {
+    const r = await caches.default.match(ogKey(origin, url));
+    if (!r) return undefined;
+    return ((await r.json()) as { image: string | null }).image ?? null;
+  } catch { return undefined; }
+}
+/** og:image of a page: from the cache, else fetched and cached */
+async function ogImage(ctx: Ctx, url: string): Promise<string | null> {
+  const c = await ogCached(ctx.url.origin, url);
+  if (c !== undefined) return c;
+  const image = await fetchOgImage(url);
+  try {
+    const put = caches.default.put(ogKey(ctx.url.origin, url), new Response(JSON.stringify({ image }), {
+      headers: { 'content-type': 'application/json', 'cache-control': `public, max-age=${image ? OG_TTL : OG_NONE_TTL}` } }));
+    ctx.waitUntil(put.catch(() => {}));
+  } catch { /* no cache here */ }
+  return image;
+}
+
 /** og:image of a page, quickly (a few hundred KB at most, a short timeout); null when it can't be had. */
-async function ogImage(url: string): Promise<string | null> {
+async function fetchOgImage(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; FamilyHelperReader/1.0)', accept: 'text/html' }, redirect: 'follow', signal: AbortSignal.timeout(5000) });
     if (!res.ok || !res.body) return null;
@@ -96,7 +121,10 @@ export async function search(ctx: Ctx) {
   const key = q.toLowerCase();
   const cached = await ctx.env.DB.prepare('SELECT results, created_at FROM recipe_searches WHERE q = ?').bind(key).first<{ results: string; created_at: number }>();
   if (cached && Date.now() - cached.created_at < SEARCH_TTL && ctx.url.searchParams.get('fresh') !== '1') {
-    return json({ results: JSON.parse(cached.results), cached: true });
+    // an image that was not ready when the search was saved may be in the cache by now (a cache read, never a fetch)
+    const rs: Result[] = JSON.parse(cached.results);
+    await Promise.all(rs.map(async (r) => { if (!r.image && r.url) r.image = (await ogCached(ctx.url.origin, r.url)) || null; }));
+    return json({ results: rs, cached: true });
   }
   if (!ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
 
@@ -148,8 +176,13 @@ export async function search(ctx: Ctx) {
     if (!unique.has(n)) unique.set(n, { ...r, url: seen.get(n)?.url || r.url, relevance: Math.max(0, Math.min(100, Math.round(r.relevance))) });
   }
   const results = [...unique.values()].sort((a, b) => b.relevance - a.relevance).slice(0, 12);
-  const images = await Promise.all(results.map((r) => ogImage(r.url)));
-  results.forEach((r, i) => { r.image = images[i]; });
+  // the answer does not wait for the pictures: what is here within 1.5 s goes with it, the rest keeps loading into the
+  // cache (waitUntil) and comes with the next look at this search
+  const got: (string | null)[] = results.map(() => null);
+  const all = Promise.all(results.map((r, i) => ogImage(ctx, r.url).then((img) => { got[i] = img; })));
+  ctx.waitUntil(all.catch(() => {}));
+  await Promise.race([all, new Promise((r) => setTimeout(r, 1500))]);
+  results.forEach((r, i) => { r.image = got[i]; });
 
   if (results.length) {
     await ctx.env.DB.prepare('INSERT INTO recipe_searches (q, results, created_at) VALUES (?, ?, ?) ON CONFLICT(q) DO UPDATE SET results = excluded.results, created_at = excluded.created_at')
@@ -184,7 +217,9 @@ export async function searchStream(ctx: Ctx) {
   const work = (async () => {
     try {
       if (useCache) {
-        for (const r of JSON.parse(cached!.results)) send({ type: 'result', result: r });
+        const rs: Result[] = JSON.parse(cached!.results);
+        await Promise.all(rs.map(async (r) => { if (!r.image && r.url) r.image = (await ogCached(ctx.url.origin, r.url)) || null; }));
+        for (const r of rs) send({ type: 'result', result: r });
         send({ type: 'done', cached: true });
         return;
       }
@@ -217,7 +252,7 @@ async function streamClaudeSearch(ctx: Ctx, q: string, send: (o: unknown) => voi
   const imageOf = new Map<string, Promise<string | null>>();
   const ogImageOnce = (url: string) => {
     const n = normUrl(url);
-    if (!imageOf.has(n)) imageOf.set(n, ogImage(url));
+    if (!imageOf.has(n)) imageOf.set(n, ogImage(ctx, url));
     return imageOf.get(n)!;
   };
 

@@ -122,7 +122,9 @@
 .wz-figs .wz-tile .f2 { pointer-events: none; }
 
 /* the one action: a big round go-button with an arrow (it waits, dimmed, until there is an answer) */
-.wz-foot { display: flex; align-items: center; justify-content: center; gap: 12px; padding-block-start: 8px; }
+/* "הלאה" always in the middle: "חזרה" sits in its own side column (hidden on the first step, it once pushed "הלאה" off-centre on a phone, test run 1) */
+.wz-foot { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; column-gap: 12px; padding-block-start: 8px; }
+.wz-foot > .wz-back { grid-column: 1; justify-self: end; } .wz-foot > .wz-go { grid-column: 2; }
 .wz-go { font: inherit; display: inline-flex; align-items: center; gap: 10px; min-block-size: 56px; padding: 0 26px 0 22px; border-radius: 999px; border: 0; cursor: pointer;
   background: var(--primary); color: var(--primary-ink); font-size: 1.1rem; font-weight: 600; box-shadow: 0 10px 22px -12px color-mix(in srgb, var(--primary) 80%, #000);
   transition: transform .18s cubic-bezier(.3, 1.6, .5, 1), opacity .2s; }

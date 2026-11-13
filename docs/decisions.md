@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Serious mode (vision → design, ai-features, master)
+The owner's decision. The spec: `docs/vision/serious-mode.md`. Status: Decided (the owner).
+- **A per-user switch** in settings, stored on the server (`H.prefs`), that turns the whole app into a plain, professional interface. The tent style stays the default.
+- **The home screen:** a list or grid of the tools, with line icons, clear headings and a search bar. There is no tent and no campfire. A second switch keeps the pillow icons for the tools.
+- **The companion figure disappears.** The smart assistant stays, as a plain chat window with text and voice.
+- **Drawings and illustrations go,** and line icons take their place.
+- **The wording is matter-of-fact:** "שמור" rather than "יאללה, שומרים!".
+- **The family tree and the museum** switch between two views: a clean diagram with rounded lines, or the drawn tree.
+- **Kept:** animations, sounds and haptics, all tools and all data.
+
 ## 2026-11-13 – The family profile, spec 1 (vision → ai-features, design, master)
 The owner's idea, through the CEO; the owner chose who sees it. The full spec: `docs/vision/family-profile.md`. Status: Decided (the owner).
 

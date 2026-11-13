@@ -28,6 +28,8 @@ Last update: 2026-11-13.
 
 ## In progress
 
+- **Serious mode** (`docs/vision/serious-mode.md`): decided, in the batch queue.
+
 - **The family tree, spec 1** (`docs/vision/tree.md`): decided and sent (batch 9) to design, ai-features and the CEO.
   - A fixed drawn tree, with people as leaves.
   - The play is in the interface only.

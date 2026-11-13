@@ -78,6 +78,10 @@ const SHIFTS = `new Promise((res) => { const out = []; new PerformanceObserver((
     return el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\\s+/).slice(0, 2).join('.') : '')
       + ' moved ' + Math.round(s.currentRect.y - s.previousRect.y) + 'px'; }) }); }).observe({ type: 'layout-shift', buffered: true }); setTimeout(() => res(out), 200); })`;
 
+/* ---- which scripts block (--loaf): the long animation frames during load, each with its slowest scripts ---- */
+const LOAF = `new Promise((res) => { const out = []; new PerformanceObserver((l) => { for (const f of l.getEntries()) if (f.blockingDuration > 0) out.push({ t: Math.round(f.startTime), d: Math.round(f.duration), b: Math.round(f.blockingDuration),
+  scripts: (f.scripts || []).sort((a, b) => b.duration - a.duration).slice(0, 3).map((s) => (s.sourceURL || '?').replace(location.origin, '') + (s.sourceFunctionName ? ' ' + s.sourceFunctionName + '()' : '') + ' ' + Math.round(s.duration) + 'ms (' + s.invoker + ')') }); }).observe({ type: 'long-animation-frame', buffered: true }); setTimeout(() => res(out), 200); })`;
+
 const out = {};
 for (const run of RUNS) {
   await send('Emulation.setDeviceMetricsOverride', { width: run.w, height: run.h, deviceScaleFactor: run.mobile ? 3 : 1, mobile: run.mobile });
@@ -94,11 +98,12 @@ for (const run of RUNS) {
     try {
       const load = await go(BASE + p);
       await wait(run.slow ? 5000 : 3000);
-      const r = await send('Runtime.evaluate', { expression: flag('shifts') ? SHIFTS : '__perfHere()', awaitPromise: true, returnByValue: true, timeout: 30000 });
-      row = flag('shifts') ? { shifts: r.result.value } : { ...r.result.value, load };
+      const r = await send('Runtime.evaluate', { expression: flag('shifts') ? SHIFTS : flag('loaf') ? LOAF : '__perfHere()', awaitPromise: true, returnByValue: true, timeout: 30000 });
+      row = flag('shifts') ? { shifts: r.result.value } : flag('loaf') ? { loaf: r.result.value } : { ...r.result.value, load };
     } catch (e) { row = { error: String(e).slice(0, 120) }; }
     out[run.name][p] = row;
     if (flag('shifts')) { console.log(`${run.name} ${p}`); for (const s of row.shifts || []) console.log(`  ${s.t}ms ${s.v}  ${s.src.join(' | ')}`); }
+    else if (flag('loaf')) { console.log(`${run.name} ${p}`); for (const f of row.loaf || []) console.log(`  ${f.t}ms frame ${f.d}ms, blocking ${f.b}ms  ${f.scripts.join(' | ')}`); }
     else process.stdout.write(`${run.name.padEnd(9)} ${p.padEnd(22)} ${row.error || `LCP ${row.lcp}ms  CLS ${row.cls}  TBT ${row.tbt}ms  fps ${row.fps}`}\n`);
   }
   if (arg('out')) writeFileSync(arg('out'), JSON.stringify(out, null, 1));
@@ -107,7 +112,7 @@ ws.close();
 done();
 
 /* ---- the table against the bar ---- */
-if (!flag('shifts')) {
+if (!flag('shifts') && !flag('loaf')) {
   const mark = (v, max, f = (x) => x) => (v == null ? '–' : (v <= max ? '' : '✗ ') + f(v));
   for (const [run, pages] of Object.entries(out)) {
     const over = Object.entries(pages).filter(([, r]) => !r.error && (r.lcp > BAR.lcp || r.cls > BAR.cls || r.tbt > BAR.tbt || (r.scrolled && r.fps < BAR.fps)));

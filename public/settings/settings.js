@@ -84,8 +84,9 @@
   Object.assign(NOW_OF, {
     daynight: () => { const ui = H.prefs('ui', { theme: 'auto' }); return ui.theme === 'auto' || !(Date.now() < (ui.until || 0)) || ui.until < Date.now() + 3e10 ? 'לפי השמש' : ui.theme === 'dark' ? 'תמיד לילה' : 'תמיד יום'; },
     access: () => [SIZES[Number(access.text) || 1] || 'טקסט רגיל', access.spacing === 'wide' && 'מרווח', access.font === 'readable' && 'גופן קריא', access.contrast === 'high' && 'ניגודיות גבוהה', access.motion === 'reduce' && 'פחות תנועה'].filter(Boolean).join(' · '),
-    privacy: () => (!privacy ? '' : privacy.app === 'off' && privacy.tree === 'off' ? 'בלי נעילה'
-      : [privacy.app !== 'off' && `האוהל נעול ${LOCKS[privacy.app] || ''} · אחרי ${privacy.autolock === 60 ? 'שעה' : (privacy.autolock || 5) + ' דקות'}`, privacy.tree !== 'off' && `העץ נעול ${LOCKS[privacy.tree] || ''}`].filter(Boolean).join(' · ')),
+    privacy: () => (!privacy ? '' : [privacy.app === 'off' && privacy.tree === 'off' ? 'בלי נעילה' : '',
+      privacy.app !== 'off' && `האוהל נעול ${LOCKS[privacy.app] || ''} · אחרי ${privacy.autolock === 60 ? 'שעה' : (privacy.autolock || 5) + ' דקות'}`, privacy.tree !== 'off' && `העץ נעול ${LOCKS[privacy.tree] || ''}`,
+      deviceCount ? (deviceCount === 1 ? 'מכשיר מוכר אחד' : `${deviceCount} מכשירים`) : ''].filter(Boolean).join(' · ')),
     services: () => (!services ? '' : services.length ? services.join(', ') : 'עוד לא חובר שירות'),
     assistant: () => { const d = H.prefs('daemon', H.DAEMON_DEFAULTS || {}); const f = d.figure || 'ibn_ezra';
       return [window.Figure2D?.list?.().find((x) => x.id === f)?.name || FIGS[f] || '', VOICES[d.voice || (d.speak === false ? 'silent' : 'mirror')]].filter(Boolean).join(' · '); },
@@ -389,17 +390,19 @@
   }
 
   /* ---------- recognized devices: where the family tree opens with no unlock (server/vault/index.ts devices) ---------- */
-  const devicesBox = el('section', { id: 'devices', class: 'st-sec st-devices' });
+  const devicesBox = el('div', { id: 'devices', class: 'st-devices' });   // (inside "פרטיות ואבטחה", at the end of its body)
+  let deviceCount = 0;
   async function drawDevices() {
     let list = [];
-    try { list = (await api('/api/vault/devices')).devices; } catch (e) { return devicesBox.replaceChildren(); }
+    try { list = (await api('/api/vault/devices')).devices; } catch (e) { deviceCount = 0; paintNows(); return devicesBox.replaceChildren(); }
+    deviceCount = list.length; paintNows();
     const day = (t) => (t ? new Date(t).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
     const remove = async (d, signout) => {
       if (!confirm(signout ? `להסיר את ${d.label} ולהתנתק בו?` : `להסיר את ${d.label}? בפעם הבאה העץ יבקש שוב אישור שם.`)) return;
       try { await api('/api/vault/devices/' + encodeURIComponent(d.id) + (signout ? '?signout=1' : ''), { method: 'DELETE' }); toast('הוסר'); if (d.here && signout) return H.logout(); drawDevices(); } catch (e) { say(e); }
     };
     devicesBox.replaceChildren(
-      el('h2', {}, 'מכשירים מוכרים'),
+      el('h3', {}, 'מכשירים מוכרים'),
       el('p', { class: 'muted' }, 'במכשירים האלה עץ המשפחה נפתח בלי לבקש אישור, עד 30 יום מהשימוש האחרון. מסמכים, פרטיות, קישור עצים ומחיקה מבקשים אישור בכל פעם.'),
       list.length ? el('ul', { class: 'st-device-list' }, list.map((d) => el('li', { class: 'card st-device' },
         el('b', {}, d.label), d.here ? el('small', { class: 'st-here' }, ' · המכשיר הזה') : null,
@@ -475,7 +478,7 @@
   });
   async function drawPrivacy() {
     let lock;
-    try { lock = await api('/api/lock'); } catch (e) { privacyBox.body.replaceChildren(el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
+    try { lock = await api('/api/lock'); } catch (e) { privacyBox.body.replaceChildren(el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.'), devicesBox); return; }
     try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
     const bio = !!H.passkeysWork?.();
     const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: bio ? false : 'לא במכשיר הזה', title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
@@ -513,15 +516,16 @@
         } }, 'שכחתי את הקוד') : null),
       lock.closed ? el('p', { class: 'small', role: 'note' }, 'הקוד נסגר אחרי הרבה ניסיונות. היכנסו שוב עם Google, וקבעו קוד חדש.') : null,
       el('p', { class: 'st-safe muted small' }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל מקרה.'),
+      devicesBox,
     ].filter(Boolean));
   }
 
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
-  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['devices', 'מכשירים'], ['account', 'החשבון']];
+  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st' },
     el('h1', {}, 'הגדרות'),
     el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id, onclick: (e) => { e.preventDefault(); history.replaceState(null, '', '#' + id); openPart(id); } }, name))),
-    dayNight(), accessibility(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(), devicesBox,
+    dayNight(), accessibility(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(),
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),

@@ -98,6 +98,13 @@ LCP has not moved yet. The causes:
     the companion tool live (an AI call).
   - Waiting for the master's review.
 
+- **Block 1 (2026-11-13)**:
+  - the owner's room is live (v71);
+  - the recognized devices are inside "פרטיות ואבטחה" (bc463f3);
+  - food and the parasha are within the bar on 4G;
+  - the shopping list went from 409 menu options to 46 (TBT 264 → 186 ms; 748da50);
+  - `perf-cdp --loaf` names the scripts in the long frames.
+
 ## In progress
 
 - LCP on news, the tree and songs; the blocking time in groceries and the calculator.

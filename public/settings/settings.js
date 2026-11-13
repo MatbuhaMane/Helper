@@ -298,7 +298,23 @@
     choices('הדת', [['jewish', 'יהדות'], ['muslim', 'אסלאם'], ['christian', 'נצרות'], ['druze', 'התווחיד', { title: 'التوحيد' }], ['none', 'בלי']], me.religion || 'jewish',
       (v) => { me.religion = v; keep('me'); toast('נשמר. החגים והזמנים יותאמו בהדרגה בכל האוהל.'); }),
     choices('השפה', [['he', 'עברית'], ['ar', 'العربية', { soon: true }], ['en', 'English', { soon: true }]], me.lang || 'he', (v) => { me.lang = v; keep('me'); }),
-    el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'));
+    el('p', { class: 'muted small' }, 'האוהל מדבר עכשיו עברית. ערבית ואנגלית בדרך.'),
+    // how the app and the companions speak to this person: neutral (plural) until chosen here – the owner's rule
+    choices('איך לפנות אליי', [['', 'בלי מגדר'], ['female', 'בלשון נקבה'], ['male', 'בלשון זכר']], me.address || '',
+      (v) => { me.address = v; keep('me'); toast(v ? 'נשמר. מעכשיו העוזרים ישתמשו בפנייה הזו.' : 'נשמר. העוזרים יפנו בלשון רבים.'); }),
+    nameSpoken());
+  /** how the companion says this person's name aloud: the name with its niqqud (the screen shows it as it is) */
+  function nameSpoken() {
+    const input = el('input', { id: 'st-name-spoken', type: 'text', dir: 'rtl', lang: 'he', maxlength: 40, value: me.nameSpoken || '', placeholder: 'למשל: מִישָׁאֵל', 'aria-describedby': 'st-name-spoken-hint' });
+    input.addEventListener('change', () => {
+      const v = input.value.trim().replace(/\s+/g, ' ');
+      if (v && !/^[א-ת֑-ׇ '״"׳-]+$/.test(v)) { toast('רק אותיות עבריות וניקוד'); input.value = me.nameSpoken || ''; return; }
+      me.nameSpoken = v; keep('me'); toast(v ? 'נשמר. כך העוזר יגיד את השם שלך.' : 'נמחק. העוזר יקרא את השם כפי שהוא כתוב.');
+    });
+    return el('div', { class: 'st-field' },
+      el('label', { for: 'st-name-spoken' }, el('span', { class: 'st-label' }, 'איך לבטא את השם שלי'), input),
+      el('p', { class: 'muted small', id: 'st-name-spoken-hint' }, 'השם עם ניקוד, כדי שהעוזר יגיד אותו נכון בקול. על המסך השם נשאר כמו שהוא.'));
+  }
 
   /* ---------- my place: the city (the weather, restaurants nearby) ---------- */
   const CITIES = ['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'בני ברק', 'פתח תקווה', 'ראשון לציון', 'אשדוד', 'נתניה', 'חולון', 'רמת גן', 'רחובות',

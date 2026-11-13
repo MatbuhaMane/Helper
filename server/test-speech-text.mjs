@@ -25,5 +25,46 @@ eq('other acronyms untouched', S.forSpeech('רמב"ם ורש"י'), 'רמב"ם ו
 eq('the spoken form has no gershayim', /["״]/.test(R), false);
 eq('empty', S.forSpeech(''), '');
 
+/* ---- niqqud for the voice ---- */
+eq('plain Hebrew needs niqqud', S.needsNiqqud('שלום, מה שלומכם היום?'), true);
+eq('pointed Hebrew does not', S.needsNiqqud('שָׁלוֹם, מַה שְּׁלוֹמְכֶם הַיּוֹם?'), false);
+eq('English does not', S.needsNiqqud('Hello there'), false);
+eq('the name alone (pointed) does not', S.needsNiqqud(R), false);
+const p = S.protect(`שלום, אני ${R}. ו${R} שוב`);
+eq('the name is put aside', p.text, 'שלום, אני @@1@@. ו@@2@@ שוב');
+eq('twice', p.kept.length, 2);
+eq('and back', S.restore('שָׁלוֹם, אֲנִי @@1@@. וְ@@2@@ שׁוּב', `שלום, אני ${R}. ו${R} שוב`, p.kept), `שָׁלוֹם, אֲנִי ${R}. וְ${R} שׁוּב`);
+eq('a lost token: the original', S.restore('שָׁלוֹם, אֲנִי.', 'שלום, אני @@1@@.', [R]), 'שלום, אני @@1@@.');
+eq('changed letters: the original', S.restore('שָׁלוֹם רַב', 'שלום', []), 'שלום');
+eq('the same letters with niqqud: used', S.restore('שָׁלוֹם', 'שלום', []), 'שָׁלוֹם');
+eq('deficient spelling (the vav dropped): used', S.restore('בֹּקֶר טוֹב', 'בוקר טוב', []), 'בֹּקֶר טוֹב');
+// (Gemini's real answer for a line, 2026-11-13)
+const line = `בוקר טוב! הוספתי חלב ולחם לרשימת הקניות. ${R} כאן אם תצטרכו עוד משהו.`;
+const pl = S.protect(line);
+eq('a real answer comes back whole', S.restore('בֹּקֶר טוֹב! הוֹסַפְתִּי חָלָב וְלֶחֶם לִרְשִׁימַת הַקְּנִיּוֹת. @@1@@ כָּאן אִם תִּצְטָרְכוּ עוֹד מַשֶּׁהוּ.', line, pl.kept),
+  `בֹּקֶר טוֹב! הוֹסַפְתִּי חָלָב וְלֶחֶם לִרְשִׁימַת הַקְּנִיּוֹת. ${R} כָּאן אִם תִּצְטָרְכוּ עוֹד מַשֶּׁהוּ.`);
+/* ---- the person's name (the owner: מִישָׁאֵל) ---- */
+const M = 'מִישָׁאֵל';
+eq('the name, plain, becomes the pointed one', S.speakName('בוקר טוב מישאל!', M), `בוקר טוב ${M}!`);
+eq('after a prefix letter', S.speakName('אמרתי למישאל ולמישאל', M), `אמרתי ל${M} ול${M}`);
+eq('already pointed differently: the chosen pointing', S.speakName('שלום מִישְׁאַל', M), `שלום ${M}`);
+eq('inside another word: untouched', S.speakName('מישאלים ומישאלה', M), 'מישאלים ומישאלה');
+eq('no name set: untouched', S.speakName('שלום מישאל', ''), 'שלום מישאל');
+eq('a clean name is kept', S.spokenName(' מִישָׁאֵל '), M);
+eq('not a name: refused', [S.spokenName('<script>'), S.spokenName('Mishael'), S.spokenName('א')].join('|'), '||');
+const pm = S.protect(`בוקר טוב ${M}, כאן ${R}`, [M]);
+eq('the name is kept aside from the niqqud, with רַאבַּ"ע', pm.text, 'בוקר טוב @@2@@, כאן @@1@@');
+eq('and back', S.restore('בֹּקֶר טוֹב @@2@@, כָּאן @@1@@', `בוקר טוב ${M}, כאן ${R}`, pm.kept), `בֹּקֶר טוֹב ${M}, כָּאן ${R}`);
+/* ---- the owner's name for the voice: מִישָׁאֵֽל, a meteg under the alef (the screen keeps מִישָׁאֵל) ---- */
+const MV = 'מִישָׁאֵֽל';
+eq('the voice form has the meteg', MV.includes('ֽ'), true);
+eq('plain → the voice form', S.speakName('בוקר טוב מישאל!', MV), `בוקר טוב ${MV}!`);
+eq('the screen form → the voice form', S.speakName(`בוקר טוב ${M}!`, MV), `בוקר טוב ${MV}!`);
+eq('the voice form is a valid setting', S.spokenName(MV), MV);
+const pv = S.protect(`שלום ${MV}`, [MV]);
+eq('kept aside from the niqqud', pv.text, 'שלום @@1@@');
+eq('and back, meteg and all', S.restore('שָׁלוֹם @@1@@', `שלום ${MV}`, pv.kept), `שָׁלוֹם ${MV}`);
+eq('a changed word is still caught', S.restore('בֹּקֶר רַע', 'בוקר טוב', []), 'בוקר טוב');
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

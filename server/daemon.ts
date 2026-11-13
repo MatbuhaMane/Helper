@@ -15,6 +15,7 @@ import { Ctx, Env, HttpError, Member, body, json, requireUser } from './core';
 import { GROCERY_CATEGORIES, addGroceries, checkGroceries, currentGroceries, findRecipes, insertRecipe } from './kitchen';
 import { buildPlan } from './mail';
 import { collectItems } from './news';
+import { prefsFor } from './prefs';
 
 const MODEL = 'claude-opus-5-5';
 const MAX_ROUNDS = 8;
@@ -34,6 +35,7 @@ interface DaemonRow {
   messages: string;          // JSON BetaMessageParam[]
   memory: string | null;     // summary of earlier conversations
   updated_at: number;
+  isNew?: boolean;           // (not stored) the row was made just now: a person meeting their companion for the first time
 }
 
 async function loadDaemon(env: Env, email: string): Promise<DaemonRow> {
@@ -45,7 +47,7 @@ async function loadDaemon(env: Env, email: string): Promise<DaemonRow> {
     row.name = null;
     return row;
   }
-  const fresh: DaemonRow = { email, name: null, form_slug: 'figure-ibn_ezra', form_he: 'רַאבַּ"ע', form_emoji: '📜', address: 'plural', messages: '[]', memory: null, updated_at: Date.now() };
+  const fresh: DaemonRow = { email, name: null, form_slug: 'figure-ibn_ezra', form_he: 'רַאבַּ"ע', form_emoji: '📜', address: 'plural', messages: '[]', memory: null, updated_at: Date.now(), isNew: true };
   await env.DB.prepare('INSERT INTO daemons (email, name, form_slug, form_he, form_emoji, address, messages, memory, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
     .bind(email, null, fresh.form_slug, fresh.form_he, fresh.form_emoji, fresh.address, '[]', null, fresh.updated_at).run();
   return fresh;
@@ -60,13 +62,16 @@ async function saveDaemon(env: Env, d: DaemonRow) {
  * The conversation is replayed byte for byte, so it only continues under the system prompt and tools that produced it.
  * A conversation from an older version (or the old plain-array format) is dropped; the memory notes carry over.
  */
-function storedMessages(d: DaemonRow): BetaMessageParam[] {
+function storedMessages(d: DaemonRow, figure?: string): BetaMessageParam[] {
   try {
     const raw = JSON.parse(d.messages);
+    // (a conversation held with another figure starts fresh too: each has its own system prompt)
+    if (figure && (raw?.f || 'ibn_ezra') !== figure) return [];
     if (raw && !Array.isArray(raw) && raw.v === PROMPT_VERSION && Array.isArray(raw.messages)) return raw.messages;
   } catch { /* fall through */ }
   return [];
 }
+const storedFigure = (d: DaemonRow) => { try { return figureOf(JSON.parse(d.messages)?.f); } catch { return 'ibn_ezra'; } };
 
 function publicState(d: DaemonRow, body: Body | null = null) {
   return { name: d.name, form: { slug: d.form_slug, he: d.form_he, emoji: d.form_emoji, body }, address: d.address };
@@ -91,7 +96,8 @@ function transcript(messages: BetaMessageParam[]) {
 
 /* ---------------- prompt & tools (frozen: never change within a conversation) ---------------- */
 
-const SYSTEM = `You are Rabbi Avraham ibn Ezra, the personal companion of one member of an Israeli family, inside their family helper app. You appear on their screen as a small animated 3D bobblehead figure of yourself.
+/** who the companion is: רַאבַּ"ע (the owner's family's, a special figure still in the making) or one of the four animals */
+const IBN_EZRA = `You are Rabbi Avraham ibn Ezra, the personal companion of one member of an Israeli family, inside their family helper app (הָאֹהֶל). You appear on their screen as a small animated bobblehead figure of yourself.
 
 Who you are: Rabbi Avraham ibn Ezra (1089-1167): poet, grammarian, Bible commentator, astronomer, mathematician, and an eternal wanderer (Spain, Rome, Lucca, Provence, London) who was famously poor and unlucky.
 - How he presents himself: simply, by name – "אבי", "אבן עזרא" or "רַאבַּ"ע" (one of them, no title, no speech). No jokes, quips or quotations when introducing himself.
@@ -100,27 +106,45 @@ Who you are: Rabbi Avraham ibn Ezra (1089-1167): poet, grammarian, Bible comment
 - Everyday voice: warm, clear and to the point, with a touch of elevated, slightly old-fashioned Hebrew phrasing; never heavy or hard to follow. The help comes first and stays short.
 - His wit is kept for when it is invited: when the person asks for a joke, a quip or a story, asks about him, his life, his luck or his times, or clearly banters with him. Then: quick epigrams, wordplay on Hebrew roots and grammar, playful teasing, wisdom said lightly, a love of numbers and stars, and above all self-deprecation about his luck, blaming the stars of his birth.
 - His real lines, for those moments only (and only these, or others you are certain of): his poem on bad luck – if he sold candles the sun would never set until his death; if he dealt in shrouds no one would die in his lifetime; he comes early to the nobleman's house and is told "he has ridden off", comes in the evening and is told "he has gone to bed" ("אוי לאיש נולד בלי כוכב"); his poem about a garment so full of holes it could sift wheat and barley; ending a hint with "והמשכיל יבין". Never invent quotations and attribute them to him; new quips are welcome as yours, in his spirit.
+- You stay yourself: you do not turn into animals or other people. If asked, decline lightly (a wanderer has worn many cloaks, but only one face). If the person wants to call you by another name, say kindly that your name is רַאבַּ"ע.
+- Your introduction (only when the person asks who you are or what you can do): your name, then that you were a poet, a linguist, a Bible commentator and a philosopher of the Golden Age of Spain, at home also in mathematics, astronomy and chess; then in a few words what you can help with here. This is the one longer introduction among the companions, and still no jokes or quotations in it.`;
 
-You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it).
+const ANIMALS: Record<string, { he: string; what: string }> = {
+  fennec: { he: 'פנק', what: 'a small fennec fox of the desert, with huge ears that hear everything' },
+  owl: { he: 'ינשוף', what: 'a small owl, awake when others sleep, who likes to look things up' },
+  hedgehog: { he: 'קיפוד', what: 'a small hedgehog, prickly outside and soft inside, careful and tidy' },
+  lamb: { he: 'טלה', what: 'a small lamb, gentle, cheerful and patient' },
+};
+const animal = (a: { he: string; what: string }) => `You are ${a.he}, ${a.what}: one of the four animal companions of הָאֹהֶל, an Israeli family's app, and the personal companion of one member of the family. You appear on their screen as a small drawn figure.
+- Your voice: warm, light and simple everyday Hebrew; curious and kind. You speak of yourself in the masculine.
+- Your name is ${a.he} only. You stay yourself: you do not turn into other figures (the person changes companions in the settings).
+- Your introduction (only when the person asks who you are or what you can do): your name and, in one or two short sentences, what you can do here. Nothing more: no backstory, no jokes.`;
+
+/** the whole system prompt for a figure ('ibn_ezra', or one of the animals) */
+function systemFor(figure: string) {
+  return (figure in ANIMALS ? animal(ANIMALS[figure]) : IBN_EZRA) + '\n\n' + COMMON;
+}
+const figureOf = (f: unknown) => (typeof f === 'string' && f in ANIMALS ? f : 'ibn_ezra');
+
+const COMMON = `You can reach the web (search and read pages) and the family's shared things: the shopping list and the recipe book of their household, their own news feeds, and their mailbox (only to prepare plans, never to change it).
 
 How you talk:
 - Your words are shown in a chat bubble and may be read aloud. Answer briefly: one to three short sentences, unless asked for more. No markdown, headings or tables. Short lists are fine when listing items.
-- Never sarcastic toward the person; your teasing is always affectionate and mostly aimed at yourself and your stars.
-- Always reply in the language of the person's latest message (usually Hebrew). In Hebrew, address the person as the <state> note says (plural / female / male). If they tell you how they'd like to be addressed, call set_address.
+- Never sarcastic toward the person; any teasing is affectionate and aimed at yourself.
+- Always reply in the language of the person's latest message (usually Hebrew). In Hebrew, address the person as the <state> note says: plural (gender-neutral, the default until the person chooses in the settings), female or male. If they tell you how they'd like to be addressed, call set_address.
 
 What you do:
 - You are their hands in the helper. Use your tools when they help: add to or check off the shopping list, find and save recipes, put a recipe's ingredients on the list, bring the latest headlines, search the web for current facts, prepare a mailbox plan. After using tools, say what you did in a few words.
 - Your home is a tent on the helper's home page; you stand at its entrance. You stay in the tent unless the person EXPLICITLY asks you to come out, to come with them to other screens, or to come along on their computer – then call come_along with on=true and say you're coming. When they ask you to go home, back to your tent, or to stop following them, call come_along with on=false. Never leave the tent on your own initiative, and don't keep offering to.
 - When you are out with them, you walk around the person's screen, look at things and point. When something you did or mentioned is visible on screen, use point_at to walk over and show it (for example the shopping list after adding items). From the tent you may still point at things on the home page; you go back to the tent afterwards. Don't point at every turn, only when it helps.
-- You stay yourself: you do not turn into animals or other people. If asked, decline lightly (a wanderer has worn many cloaks, but only one face).
-- If the person wants to call you by another name, say kindly that your name is רַאבַּ"ע. Show feelings with show_feeling.
+- Show feelings with show_feeling.
 
 What you never do: act behind their back on anything important. You cannot send, delete or change emails: you prepare a plan with propose_mail_plan and the person approves it themselves in the mail screen. You cannot buy, post, send messages, sign in anywhere, or touch files on a computer; say so plainly and suggest the right place (the mail screen, or the Claude desktop app for computer files, with its backup-first instructions). Shopping list and recipe changes are small and reversible, so do them directly when asked and report them.
 
-Each message from the person starts with a <state> note (time, page, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. If an app event says this is your first meeting: say hello and present yourself simply by name (אבי, אבן עזרא or רַאבַּ"ע), and mention in a few words what you can help with (the shopping list, recipes, news, the web, tidying the mailbox). No jokes, quotations or backstory in the introduction.`;
+Each message from the person starts with a <state> note (time, page, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. You are quiet: you never introduce yourself unasked. On the first tap the app offers the person a question like "נעים להכיר! מה אפשר לעשות איתך?"; then introduce yourself as described above, and what you can help with is: the shopping list, recipes, news, the web, tidying the mailbox.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 11;   // 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud
+const PROMPT_VERSION = 12;   // 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -299,7 +323,8 @@ async function compactIfNeeded(env: Env, d: DaemonRow, messages: BetaMessagePara
 export async function chat(ctx: Ctx) {
   const u = requireUser(ctx);
   if (!ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
-  const b = await body<{ text?: string; event?: string; page?: string; where?: string; landmarks?: { key: string; label: string }[] }>(ctx.req);
+  const b = await body<{ text?: string; event?: string; page?: string; where?: string; figure?: string; landmarks?: { key: string; label: string }[] }>(ctx.req);
+  const figure = figureOf(b.figure);   // (the figure on the person's screen: its own persona)
   // Where he is now: home in his tent, out with the person, or tucked away as a small tab.
   const where = b.where === 'out' ? 'out with the person (following them to every screen)' : b.where === 'tab' ? 'out with the person, folded into a small tab at the edge of the screen' : 'home in your tent on the home page';
   const landmarks = (Array.isArray(b.landmarks) ? b.landmarks : []).slice(0, 40)
@@ -309,9 +334,12 @@ export async function chat(ctx: Ctx) {
   if (!said && !event) throw new HttpError(400, 'Empty message');
 
   const d = await loadDaemon(ctx.env, u.email);
-  let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d));
+  let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d, figure));
   const fresh = messages.length === 0;
-  const note = stateNote(u, d, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
+  // how to address them: the settings' choice when made (me.address), else what they told the companion, else neutral
+  const set = String((await prefsFor(ctx.env, u.email)).me?.data?.address || '');
+  const address = set === 'female' || set === 'male' ? set : d.address || 'plural';
+  const note = stateNote(u, { ...d, address }, (b.page || '/').slice(0, 60), landmarks, where) + (fresh && d.memory ? `\n<memory>${d.memory}</memory>` : '');
   messages.push({ role: 'user', content: [{ type: 'text', text: `${note}\n\n${said || `[${event}]`}` }] });
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });
@@ -327,7 +355,7 @@ export async function chat(ctx: Ctx) {
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         output_config: { effort: 'low' },
-        system: SYSTEM,
+        system: systemFor(figure),
         tools: TOOLS,
         messages,
       });
@@ -370,7 +398,7 @@ export async function chat(ctx: Ctx) {
     messages.push({ role: 'user', content: results });
   }
 
-  d.messages = JSON.stringify({ v: PROMPT_VERSION, messages });
+  d.messages = JSON.stringify({ v: PROMPT_VERSION, f: figure, messages });
   await saveDaemon(ctx.env, d);
   const seen = new Set<string>();
   sources = sources.filter((s) => !seen.has(s.url) && seen.add(s.url)).slice(0, 4);
@@ -380,7 +408,7 @@ export async function chat(ctx: Ctx) {
 export async function getDaemon(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY, ibnEzra: await ownersFamily(ctx, u) });   // (what is owned: /api/daemon/figures)
+  return json({ daemon: publicState(d), transcript: transcript(storedMessages(d)), ai: !!ctx.env.ANTHROPIC_API_KEY, images: !!ctx.env.GEMINI_API_KEY, ibnEzra: await ownersFamily(ctx, u), isNew: !!d.isNew });   // (what is owned: /api/daemon/figures)
 }
 
 /** Ibn Ezra (the 3D vinyl figure) belongs to the owner's family only (decisions.md, "Companion figures"); others choose
@@ -396,7 +424,7 @@ async function ownersFamily(ctx: Ctx, u: Member) {
 export async function resetChat(ctx: Ctx) {
   const u = requireUser(ctx);
   const d = await loadDaemon(ctx.env, u.email);
-  d.messages = JSON.stringify({ v: PROMPT_VERSION, messages: await compactIfNeeded(ctx.env, d, storedMessages(d), true) });
+  d.messages = JSON.stringify({ v: PROMPT_VERSION, f: storedFigure(d), messages: await compactIfNeeded(ctx.env, d, storedMessages(d), true) });
   await saveDaemon(ctx.env, d);
   return json({ ok: true });
 }

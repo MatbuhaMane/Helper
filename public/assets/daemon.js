@@ -466,7 +466,14 @@
   let flat = null, flatFigure = null, flatState = { talk: false, sleep: false, think: false };   // flatFigure: the id shown
   const wantsFlat = () => !!prefs.figure && prefs.figure !== 'ibn_ezra';
   /** the figure for someone who has not chosen (outside the owner's family): the owner chose the fennec (Figure2D.DEFAULT) */
-  const defaultFigure = (list) => (list.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : list[0]?.id || null);
+  const ANIMALS = ['fennec', 'owl', 'hedgehog', 'lamb'];
+  const defaultFigure = (list) => {
+    const four = ANIMALS.filter((id) => list.some((f) => f.id === id));
+    if (!four.length) return list.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : list[0]?.id || null;
+    const id = four[Math.floor(Math.random() * four.length)];
+    prefs.figure = id; savePrefs();   // (theirs from now on, on every device)
+    return id;
+  };
   /** the figures this person may have: not hidden for their religion, and a paid one only once it is theirs (vision batch 6) */
   const mayHave = (f) => { const m = { ...(window.Figure2D?.FIGURES?.[f.id] || {}), ...f };
     return !(m.hideFor || []).includes(H.prefs('me', {}).religion || 'jewish') && (!(m.paid || m.tier === 'paid' || shop.paid.includes(f.id)) || shop.owned.includes(f.id))
@@ -1089,6 +1096,22 @@
   /* ===================== speech balloon & chat ===================== */
   let log, input, micBtn, spkBtn, nameEl, balloonText, balloonActs, panel;
 
+  /** the stage's size is design's (daemon.css: --dm-size by the screen × --dm-scale, the person's own size for a special
+      figure they own); the 3D renderer or the 2D figure follows what the stage measures */
+  const SCALE = [0.75, 1.6];
+  function applyScale() {
+    const s = Number(prefs.scale);
+    if (s && s >= SCALE[0] && s <= SCALE[1] && s !== 1) document.documentElement.style.setProperty('--dm-scale', String(s));
+    else document.documentElement.style.removeProperty('--dm-scale');
+  }
+  function fitStage() {
+    const w = canvasBox?.offsetWidth, h = canvasBox?.offsetHeight;
+    if (!w || !h || (w === box.w && h === box.h)) return;
+    box.w = w; box.h = h;
+    if (renderer) { renderer.setSize(box.w, box.h); camera.aspect = box.w / box.h; camera.updateProjectionMatrix(); }
+    flat?.el?.style.setProperty('--f2-size', Math.min(box.w, box.h) + 'px');
+  }
+  addEventListener('helper:prefs', (e) => { if (e.detail === 'daemon') { applyScale(); fitStage(); if (canvasBox) pos = clampPos(pos); } });
   function buildUI() {
     canvasBox = el('div', { class: 'dm-stage', role: 'button', tabindex: '0', 'aria-label': 'העוזר שלך – לחצו כדי לדבר' });
     if (renderer) canvasBox.append(renderer.domElement);
@@ -1119,10 +1142,11 @@
       balloonText, balloonActs,
       el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
     // Folded away: a small tab with his face at the edge of the screen; a tap brings him back.
-    tab = el('button', { class: 'dm-tab', hidden: true, title: 'רַאבַּ"ע – לפתוח', 'aria-label': 'לפתוח את רַאבַּ"ע' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
+    tab = el('button', { class: 'dm-tab', hidden: true, title: 'העוזר – לפתוח', 'aria-label': 'לפתוח את העוזר' }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 48, height: 48 }));
     tab.addEventListener('click', (e) => { if (tabDragged) { tabDragged = false; e.preventDefault(); return; } minimize(false); openBalloon(); });
     dragTab();
     document.body.append(canvasBox, balloon, tab);
+    fitStage();
     syncMode();
 
     // Click to talk; drag to move.
@@ -1169,7 +1193,7 @@
     });
     canvasBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBalloon(); } });
     window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; lastMouseMove = performance.now(); if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
-    window.addEventListener('resize', () => { pos = clampPos(pos); });
+    window.addEventListener('resize', () => { fitStage(); pos = clampPos(pos); });
   }
 
   function svg(name) {
@@ -1280,7 +1304,7 @@
   function toTab() {
     if (docked) {
       prefs.follow = true; docked = false; target = null;
-      toast('רַאבַּ"ע מחכה בלשונית בצד המסך, ויבוא איתכם לכל מסך');
+      toast(`${whoName()} מחכה בלשונית בצד המסך, ויבוא איתכם לכל מסך`);
     }
     minimize(true);
   }
@@ -1291,7 +1315,7 @@
     docked = false; target = null;
     syncMode();
     if (wasDocked) walkTo(Math.min(W() - box.w * 0.6, pos.x + (pos.x < W() / 2 ? 140 : -140)), Math.min(bottomLimit(), pos.y + 30));
-    toast('רַאבַּ"ע יבוא איתכם לכל מסך. כדי להחזיר אותו לאוהל: הכפתור עם האוהל בבועה שלו.');
+    toast(`${whoName()} יבוא איתכם לכל מסך. כדי להחזיר אותו לאוהל: הכפתור עם האוהל בבועה שלו.`);
   }
   /** Back home to the tent: on the home page he walks there; anywhere else he leaves the screen. */
   function sendHome() {
@@ -1299,7 +1323,7 @@
     if (dock) { docked = true; syncMode(); goHome(); return; }
     closeBalloon(); if (panel) panel.hidden = true; stopSpeech();
     canvasBox.classList.add('leaving');
-    toast('רַאבַּ"ע חזר לאוהל שלו בדף הבית');
+    toast(`${whoName()} חזר לאוהל שלו בדף הבית`);
     setTimeout(() => { gone = true; canvasBox.remove(); balloon.remove(); tab.remove(); panel?.remove(); document.body.classList.remove('dm-folded'); window.dispatchEvent(new Event('helper:daemon-home')); }, 450);
   }
 
@@ -1310,6 +1334,11 @@
     balloon.hidden = false;
     canvasBox.classList.remove('unread');
     if (!balloonText.textContent) balloonText.textContent = 'כן? במה אפשר לעזור?';
+    // before any conversation: a suggested first question, and the companion introduces itself (short; רַאבַּ"ע a bit longer)
+    if (!state?.transcript?.length && !log?.childElementCount && !balloonActs.childElementCount) {
+      const q = 'נעים להכיר! מה אפשר לעשות איתך?';
+      balloonActs.replaceChildren(el('button', { class: 'btn ghost small dm-suggest', type: 'button', onclick: () => { balloonActs.replaceChildren(); send(q); } }, q));
+    }
     placeBalloon();
     setTimeout(() => input.focus(), 30);
   }
@@ -1414,7 +1443,7 @@
   /* Choosing his voice: the trained Hebrew voices, each with a sample; the choice is saved to the person's account. */
     async function openVoicePicker() {
     const list = el('div', { class: 'dm-voices' }, el('p', { class: 'muted' }, 'טוען קולות…'));
-    H.modal(el('h2', {}, 'הקול של רַאבַּ"ע'), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
+    H.modal(el('h2', {}, `הקול של ${whoName()}`), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
     let data, mine;
     try {
       [data, mine] = await Promise.all([fetch('/api/voice/voices').then((r) => r.json()), H.api('/api/voice/pref').catch(() => ({}))]);
@@ -1443,7 +1472,7 @@
           await H.api('/api/voice/pref', { method: 'PUT', body: { voice: v.name } });
           list.querySelectorAll('.dm-voice .btn.small:not(.play)').forEach((b) => { b.classList.remove('primary'); b.textContent = 'בחירה'; });
           pick.classList.add('primary'); pick.textContent = 'נבחר';
-          H.toast(`רַאבַּ"ע ידבר עכשיו בקול ${v.label}`);
+          H.toast(`${whoName()} ידבר עכשיו בקול ${v.label}`);
         } }, v.name === current ? 'נבחר' : 'בחירה');
         list.append(el('div', { class: 'dm-voice' },
           el('button', { class: 'btn small play', 'aria-label': `השמעת דוגמה: ${v.label}`, onclick: () => playSample(v.name) }, svg('play')),
@@ -1473,14 +1502,14 @@
   /* The full conversation: a drawer (or inline on the home page). */
   function buildPanel() {
     log = el('div', { class: 'dm-log' });
-    panelInput = el('textarea', { rows: 1, placeholder: 'כתבו לרַאבַּ"ע…', 'aria-label': 'הודעה לעוזר', dir: 'auto' });
+    panelInput = el('textarea', { rows: 1, placeholder: 'כתבו לעוזר…', 'aria-label': 'הודעה לעוזר', dir: 'auto' });
     const grow = () => { panelInput.style.blockSize = 'auto'; panelInput.style.blockSize = Math.min(140, panelInput.scrollHeight) + 'px'; };
     panelInput.addEventListener('input', grow);
     panelInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(panelInput.value); panelInput.value = ''; grow(); }
       if (e.key === 'Escape') togglePanel(false);
     });
-    panel = el('section', { class: 'dm-panel', hidden: true, role: 'dialog', 'aria-label': 'השיחה עם רַאבַּ"ע' },
+    panel = el('section', { class: 'dm-panel', hidden: true, role: 'dialog', 'aria-label': 'השיחה עם העוזר' },
       el('div', { class: 'dm-head' }, el('img', { class: 'face', src: '/assets/ibn-ezra-face.webp', alt: '', width: 34, height: 34 }), el('b', {}, 'השיחה'), el('span', { class: 'spacer' }),
         el('button', { class: 'mini', title: 'שיחה חדשה', 'aria-label': 'שיחה חדשה', onclick: async () => {
           if (!confirm('להתחיל שיחה חדשה? העוזר יזכור את הדברים החשובים.')) return;
@@ -1520,6 +1549,8 @@
     else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: size, height: size }));
     return span;
   }
+  /** the companion's name now on screen */
+  const whoName = () => (flat ? (Figure2D.list().find((f) => f.id === flatFigure)?.name || 'העוזר') : state?.daemon?.form?.he || 'העוזר');
   function updateLabels() {
     const d = state?.daemon;
     if (!d) return;
@@ -1599,7 +1630,7 @@
     canvasBox.classList.add('thinking');
     setMood('curious', 30);
     try {
-      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out' } });
+      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out', figure: flat ? flatFigure : 'ibn_ezra' } });
       state.daemon = r.daemon;
       mood = null;
       const actions = [];
@@ -1667,14 +1698,16 @@
     // (Ibn Ezra is the owner's family's: anyone else who has not chosen gets the first figure, once figures are drawn)
     isChild = !!r.child;
     if (wantsFlat()) { try { shop = await api('/api/daemon/figures', { noRedirect: true }); } catch (_) { /* nothing paid is theirs */ } }
-    const catalogue = wantsFlat() || state.ibnEzra === false ? await flatCatalogue() : [];
-    const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : state.ibnEzra === false ? defaultFigure(catalogue) : null;
+    // a new person (the owner's family too) starts with a random one of the four animals; רַאבַּ"ע only by choice in the
+    // settings – those of the family who already have him keep him
+    const newcomer = !prefs.figure && (state.ibnEzra === false || state.isNew);
+    const catalogue = wantsFlat() || newcomer ? await flatCatalogue() : [];
+    const flatId = wantsFlat() && catalogue.some((f) => f.id === prefs.figure) ? prefs.figure : newcomer ? defaultFigure(catalogue) : null;
     // the 3D figure (three.js and a model of ~3 MB) waits until the page itself is in: on a slow connection it took the
     // bandwidth from the page's own pictures (the home page's LCP was 5.5 s on 4G; the readiness bar is 2.5 s)
     if (!flatId) { await pageIn(); try { await initThree(); } catch (e) { console.warn('3D companion unavailable', e); return; } }
-    if (innerWidth < 600) { box.w = 170; box.h = 170; }
-    if (innerWidth <= 420) { box.w = 136; box.h = 136; } // matches daemon.css: smaller on phones so he covers less
-    buildUI();
+    applyScale();
+    buildUI();   // (it measures the stage: the size comes from daemon.css, not from here)
     document.body.append(buildPanel());
     for (const m of state.transcript) addMsg(m.who, m.text);
     if (flatId) {
@@ -1701,10 +1734,8 @@
       build(first);
     }
     updateLabels();
-    const firstMeeting = () => {
-      if (!state.transcript.length && dock) send('', 'first meeting: the person just opened the helper and sees you for the first time, standing at the entrance of your tent');
-      else if (!state.transcript.length) canvasBox.classList.add('unread');
-    };
+    // quiet (the owner's rule): no introduction unasked – a small mark, and the first tap offers a question (openBalloon)
+    const firstMeeting = () => { if (!state.transcript.length) canvasBox.classList.add('unread'); };
     if (docked) {
       // At home: he is already standing at the tent's entrance.
       pos = dockSpot();

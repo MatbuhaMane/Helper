@@ -138,6 +138,13 @@
     .corner .record::after { content: ''; position: absolute; inset: 35%; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .35); }
     .corner .rec:hover .record { transform: rotate(-4deg) translateY(-4px); }
     .corner .rec.playing .record { animation: rec-spin 3.5s linear infinite; }
+    /* one record (the owner, 2026-11-14): the player's own record parks on the stump (music.js docks it there, body.mu-docked);
+       the stump keeps only its place – a faint ring while the record is away, lit while it is dragged near */
+    body.mu-one-record .corner .rec .record { visibility: hidden; }
+    body.mu-one-record .corner .rec::before { content: ""; position: absolute; inset: 6%; border-radius: 50%; pointer-events: none;
+      border: 2px dashed color-mix(in srgb, var(--text) 28%, transparent); opacity: .7; transition: opacity .25s, scale .25s var(--ease-river), border-color .25s; }
+    body.mu-one-record.mu-docked .corner .rec::before { opacity: 0; }
+    body.mu-one-record.mu-dragging .corner .rec::before { opacity: 1; scale: 1.1; border-color: var(--primary); }
     @keyframes rec-spin { from { transform: rotate(-14deg); } to { transform: rotate(346deg); } }
     /* the songbook: a cushion on the ground in front of the stump */
     .corner .song { inset-inline-end: 16%; inset-block-end: -10%; inline-size: 44%; }
@@ -155,6 +162,16 @@
       transition: background 2s;
       /* the sky ends at the horizon (across the tent): a setting sun sinks into it through a short soft edge */
       -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 16px), transparent); }
+    /* the horizon: soft hill curves along it (the owner, 2026-11-14: minimal, so the line is not straight), drawn over a
+       setting sun or moon; a far, paler range and a nearer one, in the ground's own colours */
+    .sky::before, .sky::after { content: ""; position: absolute; inset-inline: 0; inset-block-end: 0; z-index: 1; pointer-events: none;
+      -webkit-mask: var(--hills) bottom / 100% 100% no-repeat; mask: var(--hills) bottom / 100% 100% no-repeat; }
+    .sky::before { block-size: clamp(34px, 7vw, 78px); background: color-mix(in srgb, #b9a77a 20%, var(--bg));
+      --hills: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 80' preserveAspectRatio='none'><path d='M0 80V46C90 34 170 22 260 26S420 46 520 40 700 14 800 16 980 36 1060 34 1160 24 1200 26V80Z'/></svg>"); }
+    .sky::after { block-size: clamp(22px, 4.5vw, 50px); background: color-mix(in srgb, #b39d6a 34%, var(--bg));
+      --hills: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 60' preserveAspectRatio='none'><path d='M0 60V30C120 40 220 44 340 34S560 12 680 18 880 42 990 38 1130 20 1200 24V60Z'/></svg>"); }
+    .sky.night::before { background: color-mix(in srgb, #3c4a72 26%, var(--bg)); }
+    .sky.night::after { background: color-mix(in srgb, #2c3758 40%, var(--bg)); }
     main#root { position: relative; z-index: 1; pointer-events: none; }
     main#root > :not(.home) { pointer-events: auto; }   /* (the sign-in card) */
     /* the empty parts of the page let a click reach the sun behind them */
@@ -175,12 +192,12 @@
     .sun .ball { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; -webkit-user-drag: none; pointer-events: none; transition: scale .5s var(--ease-river), filter .5s; }
     .sun .halo { position: absolute; inset: -55%; border-radius: 50%; pointer-events: none;
       background: radial-gradient(closest-side, rgba(255, 196, 92, var(--halo, .42)), rgba(255, 160, 60, calc(var(--halo, .42) * .35)) 48%, transparent 72%);
-      animation: sun-breathe 7s ease-in-out infinite; transition: scale .6s var(--ease-river); }
+      opacity: var(--up, 1); animation: sun-breathe 7s ease-in-out infinite; transition: scale .6s var(--ease-river), opacity .6s; }
     .sun:hover .halo, .sun:focus-visible .halo { scale: 1.12; }
     .sun:hover .ball { filter: brightness(1.05); }
     .sun:active .ball { scale: .94; }
     .sun.flash .halo { animation: sun-flash .9s var(--ease-river); }
-    @keyframes sun-breathe { 50% { scale: 1.06; opacity: .85; } }
+    @keyframes sun-breathe { 50% { scale: 1.06; } }   /* (scale only: the opacity is how high it stands, --up) */
     @keyframes sun-flash { 35% { scale: 1.35; } 100% { scale: 1; } }
     /* in night colours (chosen by day) the sun keeps its light low */
     :root[data-theme="dark"] .sun { opacity: .6; --halo: .14; }
@@ -204,7 +221,7 @@
     .sun.eclipse .halo { opacity: .35; }
     .sun-card .eclipse-now { color: var(--primary); font-weight: 500; }
     .moon img, .moon svg { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; pointer-events: none; -webkit-user-drag: none; }
-    .moon .halo { position: absolute; inset: -45%; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(214, 226, 255, var(--mhalo, .2)), transparent 70%); animation: sun-breathe 9s ease-in-out infinite; transition: scale .6s var(--ease-river); }
+    .moon .halo { position: absolute; inset: -45%; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(214, 226, 255, var(--mhalo, .2)), transparent 70%); opacity: var(--up, 1); animation: sun-breathe 9s ease-in-out infinite; transition: scale .6s var(--ease-river), opacity .6s; }
     .moon:hover .halo { scale: 1.12; }
     .moon:active img { scale: .95; }
     .sun, .moon { touch-action: none; cursor: grab; }
@@ -222,7 +239,7 @@
       animation: twinkle var(--tw) ease-in-out var(--d) infinite; }
     .stars i.big { inline-size: 3px; block-size: 3px; box-shadow: 0 0 6px rgba(220, 232, 255, .8); }
     @keyframes twinkle { 50% { opacity: calc(var(--o) * .35); } }
-    .sky.night .moon { --mhalo: .3; }
+    .sky.night .moon { --mhalo: .18; }   /* (softer: a glow round the moon, not a patch over the tent) */
     .sky-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 12px; }
     .sky-acts .btn { display: inline-flex; align-items: center; gap: 6px; }
     .sky-acts img { inline-size: 18px; block-size: 18px; }
@@ -230,7 +247,7 @@
     :root[data-theme="light"] .moon { opacity: .75; --mhalo: .08; }
 
     /* what the sun opens: the day's sun times, and (soon) the weather */
-    .sun-card { position: fixed; z-index: 39; inline-size: min(300px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: var(--radius-lg); background: var(--glass); border: 1px solid var(--glass-border);
+    .sun-card { position: fixed; z-index: var(--z-bubble); inline-size: min(300px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: var(--radius-lg); background: var(--glass); border: 1px solid var(--glass-border);
       -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: var(--lift); animation: camp-in .3s var(--ease-river) both; }
     .sun-card h3 { margin: 0 0 6px; font-size: 1.05rem; }
     .sun-card .times { display: flex; gap: 14px; font-variant-numeric: tabular-nums; }
@@ -573,6 +590,9 @@
         tentLight('moon', { x: M.x, y: M.y + sink }, -sinS, ms / 2);
         sun.classList.toggle('under', sinS < -0.12);
         moon.classList.toggle('under', -sinS < -0.12);
+        // a halo only round a body that is up: it fades as the body nears the horizon (no glow left over the tent)
+        const lift = (h) => Math.max(0, Math.min(1, (h - 0.02) / 0.22)).toFixed(3);
+        sun.style.setProperty('--up', lift(sinS)); moon.style.setProperty('--up', lift(-sinS));
         // the light in the sky follows whichever is up
         const up = sinS >= 0 ? S : M;
         box.style.setProperty('--sun-x', ((up.x / innerWidth) * 100).toFixed(1) + '%');
@@ -752,7 +772,8 @@
 
     /* ---------- the music corner ---------- */
     function musicCorner() {
-      const rec = el('button', { class: 'rec', type: 'button', title: 'נגן המוזיקה', 'aria-label': 'לפתוח את נגן המוזיקה', onclick: () => H.music?.float() },
+      // one record: an empty slot brings the player's record back to the stump (music.js H.music.dock); without it, as before
+      const rec = el('button', { class: 'rec', type: 'button', title: 'נגן המוזיקה', 'aria-label': 'לפתוח את נגן המוזיקה', onclick: () => (H.music?.dock ? H.music.dock() : H.music?.float()) },
         el('span', { class: 'record' }), el('span', { class: 'tip' }, 'נגן'));
       const song = el('button', { class: 'song', type: 'button', title: 'השירון', 'aria-label': 'לפתוח את השירון בחלון צף', onclick: () => songWindow() },
         el('img', { src: '/assets/pillows/p05.webp', alt: '', draggable: 'false', loading: 'lazy' }), el('span', { class: 'badge' }, H.icon('music')));

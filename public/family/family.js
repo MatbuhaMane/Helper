@@ -26,6 +26,12 @@
   const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
   const call = async (path, opts = {}) => {
     try { return await api(path, { ...opts, noRedirect: true }); } catch (e) {
+      // the person locked the tree (Locks and privacy): their code or passkey, then the same call again
+      if (e.code === 'tree_locked' && !opts.again) {
+        await H.loadOnce('/assets/lock-screen.js');
+        await H.lockScreen({ scope: 'tree' });
+        return call(path, { ...opts, again: true });
+      }
       if (e.code !== 'vault_locked') throw e;
       // on a trusted device the tree stays open: this step (documents, privacy, linking, a delete) asks for a fresh unlock
       if (S.trusted && !opts.again) { await stepUp(); return call(path, { ...opts, again: true }); }
@@ -127,7 +133,9 @@
   /* ---------- open: עץ המשפחה ---------- */
   async function open() {
     const [t, st] = await Promise.all([call('/api/vault/tree'), call('/api/vault/status')]);
-    S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until || 0; S.roles = t.roles || {}; S.trusted = !!st.trusted;
+    // the tree is open to the household (Locks and privacy: no trusted device any more); documents, privacy, linking and a
+    // delete still ask for a fresh unlock – the page's "trusted" path, which asks only for that step
+    S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until || 0; S.roles = t.roles || {}; S.trusted = true;
     // what waits for me in the links between trees (a request to approve, my own consent)
     const inbox = await call('/api/vault/bridges').catch(() => null);
     const waiting = inbox ? inbox.incoming.length + inbox.consent.length : 0;
@@ -158,7 +166,7 @@
     tickTimer = setInterval(() => {
       const s = Math.max(0, Math.round((S.until - Date.now()) / 1000)), mm = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
       // on a trusted device the tree does not lock; only the documents' unlock runs out
-      clock.textContent = S.trusted ? (s ? `המסמכים פתוחים עוד ${mm}` : 'מכשיר מוכר') : `ננעלת בעוד ${mm}`;
+      clock.textContent = S.trusted ? (s ? `המסמכים פתוחים עוד ${mm}` : '') : `ננעלת בעוד ${mm}`;
     }, 1000);
     draw();
   }
@@ -875,13 +883,11 @@
   addEventListener('pagehide', () => wipe());
 
   /* ---------- locks and privacy (docs/decisions.md): a tip to protect the tree, and a code for a private document ---------- */
-  const lockPrefs = () => H.prefs('lock', { treeTipOff: false });
-  /** the first time in the tree (and until "לא להציג שוב"): protecting it is recommended – a code or a passkey */
+  /** the first time in the tree (and until "לא להציג שוב", kept on the server): protecting it is recommended */
   async function treeTip() {
-    if (lockPrefs().treeTipOff) return;
     try { if (sessionStorage.getItem('helper.treeTip')) return; } catch (_) { /* private mode: shown once a page */ }
     let lock; try { lock = await api('/api/lock', { noRedirect: true }); } catch (_) { return; }
-    if (lock.tree !== 'off' || lock.level === 'low') return;
+    if (lock.tree !== 'off' || lock.tipHidden) return;
     const later = () => { try { sessionStorage.setItem('helper.treeTip', '1'); } catch (_) { /* fine */ } H.closeModal(); };
     H.modal(el('div', { class: 'fv-locktip' },
       el('h2', {}, '🔒 להגן על עץ המשפחה?'),
@@ -889,7 +895,7 @@
       el('div', { class: 'row' },
         el('a', { class: 'btn primary', href: '/settings/#privacy' }, 'להגדיר עכשיו'),
         el('button', { class: 'btn ghost', type: 'button', onclick: later }, 'אחר כך'),
-        el('button', { class: 'linklike', type: 'button', onclick: () => { lockPrefs().treeTipOff = true; H.savePrefs('lock'); H.closeModal(); } }, 'לא להציג שוב'))));
+        el('button', { class: 'linklike', type: 'button', onclick: async () => { H.closeModal(); try { await api('/api/lock', { method: 'PUT', body: { tip: true }, noRedirect: true }); } catch (_) { later(); } } }, 'לא להציג שוב'))));
   }
   /** after a private document is saved, if the tree has no lock: a code is recommended */
   async function privateTip() {
@@ -897,5 +903,8 @@
     if (lock.tree === 'off') toast('מסמך פרטי: כדאי לנעול את העץ בקוד', 'להגדיר', () => { location.href = '/settings/#privacy'; });
   }
 
-  H.requireLogin().then(() => { lockView(); setTimeout(treeTip, 1200); }).catch(() => {});
+  H.requireLogin().then(async () => {
+    try { await open(); } catch (e) { lockView(); }   // (the tree straight away; the old screen only when it cannot open)
+    setTimeout(treeTip, 1200);
+  }).catch(() => {});
 })();

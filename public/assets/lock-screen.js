@@ -31,23 +31,23 @@
   function lockScreen({ scope = 'app', animate = false } = {}) {
     if (showing) return showing;
     showing = new Promise((resolve) => {
-      let pin = '', busy = false, mode = { app: 'pin', tree: 'pin' }, hasPasskey = false;
+      let pin = '', busy = false, mode = { app: 'pin', tree: 'pin' }, hasPasskey = false;   // (modes: off | pin | bio)
       const title = scope === 'tree' ? 'עץ המשפחה נעול' : 'האוהל נעול';
       const dots = el('div', { class: 'lk-dots', 'aria-hidden': 'true', style: 'display:flex;gap:14px;justify-content:center' }, [0, 1, 2, 3].map(() => el('i', { style: 'inline-size:14px;block-size:14px;border-radius:50%;border:2px solid currentColor' })));
       const say = el('p', { class: 'lk-say', role: 'status', 'aria-live': 'polite', style: 'min-block-size:1.5em;margin:0' });
       const paint = () => dots.querySelectorAll('i').forEach((d, i) => { d.classList.toggle('on', i < pin.length); d.style.background = i < pin.length ? 'currentColor' : 'transparent'; });
       const done = () => { document.removeEventListener('keydown', keys, true); root.classList.add('opening'); setTimeout(() => root.remove(), 220); showing = null; resolve(true); };
-      const WHY = { wrong_pin: 'קוד שגוי. נסו שוב.', paused: 'יותר מדי ניסיונות. אפשר לנסות שוב בעוד רבע שעה.', pin_closed: 'הקוד נסגר אחרי הרבה ניסיונות. צריך להיכנס שוב עם Google.' };
+      const WHY = { pin_wrong: 'קוד שגוי. נסו שוב.', pin_paused: 'יותר מדי ניסיונות. אפשר לנסות שוב בעוד רבע שעה.', pin_closed: 'הקוד נסגר אחרי הרבה ניסיונות. צריך להיכנס שוב עם Google.', no_pin: 'עוד לא נקבע קוד. אפשר להיכנס שוב עם Google.' };
       const fail = (e) => {
         pin = ''; paint();
         root.classList.add('shake'); setTimeout(() => root.classList.remove('shake'), 420);
         navigator.vibrate?.(60);
         say.textContent = WHY[e?.code] || (e?.offline ? 'אין חיבור לאינטרנט.' : 'לא הצלחתי לפתוח. נסו שוב.');
-        if (e?.code === 'pin_closed') say.append(' ', el('button', { type: 'button', class: 'linklike', onclick: forgot }, 'להיכנס שוב'));
+        if (e?.code === 'pin_closed' || e?.code === 'no_pin') say.append(' ', el('button', { type: 'button', class: 'linklike', onclick: forgot }, 'להיכנס שוב'));
       };
       const submit = async () => {
         busy = true; say.textContent = '';
-        try { await api('/api/lock/unlock', { body: { pin, scope } }); done(); } catch (e) { fail(e); }
+        try { await api('/api/lock/unlock', { body: { pin } }); done(); } catch (e) { fail(e); }   // (one code opens the app and the tree)
         busy = false;
       };
       const press = (d) => { if (busy || pin.length >= 4) return; pin += d; paint(); if (pin.length === 4) submit(); };
@@ -59,7 +59,7 @@
       const usePasskey = async () => {
         if (busy) return;
         busy = true; say.textContent = '';
-        try { await api('/api/lock/passkey', { body: await assertion('/api/lock/passkey/options', { scope }) }); done(); }
+        try { await api('/api/lock/passkey', { body: await assertion('/api/lock/passkey/options') }); done(); }
         catch (e) { if (e?.name !== 'NotAllowedError') fail(e); }   // (a cancelled prompt is not a failure)
         busy = false;
       };
@@ -86,12 +86,13 @@
       api('/api/lock').then((l) => {
         mode = { app: l.app, tree: l.tree }; hasPasskey = !!l.hasPasskey;
         showBio(hasPasskey && passkeysWork());
-        if (mode[scope] === 'passkey') {
+        if (mode[scope] === 'bio') {
           pad.hidden = true; dots.hidden = true; root.querySelector('.lk-hint').textContent = 'פותחים בטביעת אצבע, פנים או Windows Hello';
           root.insertBefore(el('button', { type: 'button', class: 'btn primary', onclick: usePasskey }, '👆 לפתוח'), say.nextSibling);
           if (passkeysWork()) usePasskey();
         }
-        if (l.pinClosed) fail({ code: 'pin_closed' });
+        if (l.closed) fail({ code: 'pin_closed' });
+        else if (l.pauseUntil) fail({ code: 'pin_paused' });
       }).catch(() => { /* the pad still works */ });
     });
     return showing;

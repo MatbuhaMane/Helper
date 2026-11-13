@@ -43,6 +43,7 @@ import * as usage from '../../server/usage';
 import { featureOf, metered } from '../../server/meter';
 import * as weather from '../../server/weather';
 import * as discovery from '../../server/discover';
+import * as goalSocial from '../../server/goal-social';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -480,6 +481,12 @@ route('GET', '/api/weather', weather.get);
 route('POST', '/api/visits', discovery.visit);
 route('GET', '/api/discover', discovery.discover);
 route('POST', '/api/welcome/done', discovery.welcomed);
+
+/* shared goals and encouragement (ai-features, server/goal-social.ts): the household's feed, hearts and advice */
+route('GET', '/api/goals/feed', goalSocial.feed);
+route('POST', '/api/goals/posts/:id/heart', goalSocial.heart);
+route('POST', '/api/goals/posts/:id/advice', goalSocial.advise);
+route('POST', '/api/goals/advice/:id/heart', goalSocial.heartAdvice);
 
 /* the owner's room, the family batch (ai-features, server/admin.ts): usage from tool_visits, and the feedback inbox */
 route('GET', '/api/admin/usage', admin.usage);

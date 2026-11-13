@@ -48,7 +48,52 @@ Write the defining features before modelling, then exaggerate them gently.
 - Props: the Mishkenot Sha'ananim windmill (Jerusalem) as a tiny model, or a cane.
 - Expression: kind, dignified, generous.
 
+## The 2D figures (vision batch 6, the owner's lists; 2026-11-13)
+Drawn in 2D in the tent's style with Figure2D (`public/assets/figure2d.js`), from **the original source, never a known
+adaptation**. The picture is drawn with no eyes and no mouth (the engine adds them); the nose, hair, beards, moustaches,
+headwear and clothes carry the likeness. Modest clothing for everyone; glamour is presence, never sexuality.
+
+**Free**
+- **Ibn Sina (Avicenna), 980-1037, Persia.** No contemporary portrait; the traditional Persian depiction: a full dark
+  beard, a white turban, a long robe in deep green or blue with a sash. Props: a thick book (the Canon of Medicine), a small
+  glass flask or a sprig of herbs. Calm and attentive: the physician who listens.
+- **The Rambam (Maimonides), 1138-1204, Córdoba, Fez, Fustat.** No contemporary portrait; the traditional image (the
+  later engraving): a turban, a full rounded beard, a long robe and a cloak. Props: a book or a scroll (the Mishneh
+  Torah, the Guide), a physician's satchel. Serene and clear. Never a caricature: a rabbi revered in every community.
+- **Isaac Newton, 1642-1727, England.** Many portraits (Kneller): long shoulder-length grey hair, clean-shaven, a long
+  straight nose, a dark coat and a white cravat. Props: an apple, a small glass prism with a rainbow. Thoughtful.
+- **Juha (ג'וחא, Nasreddin), folk hero of the Middle East.** A folk figure, no likeness: a round jolly man, a short round
+  grey beard, a big white turban, a long striped robe and a sash, beside his little donkey (his signature, often ridden
+  backwards). Warm, sly, kind.
+- **Hershele Ostropoler, c. 1757-1810, Podolia (folk jester).** No portrait: an Eastern European Jew of the shtetl, a
+  scruffy short beard, a worn black wide-brimmed hat, a long patched coat (poor but proud), a walking stick. Mischievous
+  and warm, never mocking his people.
+- **Scheherazade (One Thousand and One Nights).** A young storyteller, wise and brave: modest Persian dress, a long
+  headscarf over dark hair, an embroidered robe; props: an open book of tales or an oil lamp. Dignified, never sexualised.
+- **Ali Baba (One Thousand and One Nights).** A poor, honest woodcutter: a simple turban, a striped vest over a long shirt,
+  a sash, a bundle of wood on his back or a small sack of gold coins. Cheerful and surprised.
+- **Peter Pan (J. M. Barrie, 1904/1911).** From the book, not Disney: a boy dressed in skeleton leaves and the juices of
+  trees, tousled hair, barefoot, his pan pipes; still has his first teeth (a grin). No green felt cap with a feather.
+  Note: the United Kingdom keeps a perpetual right for Great Ormond Street Hospital (to be checked before any sale).
+
+**Paid**
+- **Mary Shelley, 1797-1851, England.** Portrait (Rothwell, 1840): auburn hair parted in the middle with soft ringlets, a
+  pale oval face, a dark high-waisted dress with a shawl over the shoulders. Props: a quill and a manuscript, a candle in a
+  holder. Thoughtful, a little mysterious.
+- **Leonardo da Vinci, 1452-1519, Florence and Milan.** The traditional image (the red-chalk old man): long flowing white
+  hair and a long white beard, a soft red cap, a long robe. Props: a notebook with mirror-writing sketches, a small model
+  of a flying machine. Curious, gentle.
+- **Cleopatra VII, 69-30 BCE, Egypt.** Coins and busts: the "melon" hairstyle drawn back into a bun under a royal diadem
+  band; Egyptian royal imagery: a cobra (uraeus) on the brow, a broad gold collar, a white pleated linen gown. Props: a
+  small papyrus scroll (she was a scholar of many languages). Regal, charismatic, poised – glamour, not sexuality.
+- **Count Dracula (Bram Stoker, 1897).** From the novel, not Universal or Lugosi: a tall old aristocrat, clean-shaven
+  except a long white moustache, a high domed forehead, bushy eyebrows, pointed ears, dressed in black from head to foot
+  with a long cloak; prop: an old silver candelabrum. Charismatic and courtly, a little eerie; no blood, no fangs shown.
+  Tagged `horror`: settings can leave him out (children, and anyone who prefers).
+
 ## Adding a new figure
 1. Check the rules above. 2. Write its likeness notes here (dates, features, clothing, props, expression).
-3. Model with the `blender-figures` skill in the `figure-style` look. 4. Show the owner the renders. 5. Export to
-`public/figures/<slug>.glb` and add it to `public/figures/index.json`.
+3. For a 2D figure: draw it with the image tool (no eyes, no mouth), cut it, and add its face to `Figure2D.FIGURES`
+(docs/design/figures-2d.md). For a 3D one (Ibn Ezra's kind): model with the `blender-figures` skill in the
+`figure-style` look and export to `public/figures/<slug>.glb` (and `public/figures/index.json`).
+4. Show the owner a preview before it goes into the app.

@@ -2502,3 +2502,17 @@ with "בטל" for 10 seconds, and the owner can restore from the back door.
   ("ממתין לאישור" + "ביטול הבקשה"), `.fm-asks-slot` > `section.card.fm-asks` > `ul.fm-ask-list` > `li.fm-ask[data-kind]`
   with `.fm-ask-what`, `ul.fm-ask-diff` (b, s → span), `.fm-ask-acts`; back door `section.bd-trash` > `ul.bd-trash-list` >
   `li.bd-trash-row` (`.bd-trash-who`), `p.bd-trash-empty`.
+
+## 2026-11-13 – ai-features: the free helper (Gemini) in three steps
+
+- `H.geminiGuide(onDone)` in `public/assets/ai-invite.js`: the 402 invitation's main button is "חבר עוזר חינמי", and so is
+  the Gemini card in settings ← חיבור לשירותים (first, "עוזר חינמי מ־Google"; Claude is second, "למתקדמים"). Google's
+  page opens in a new tab; on `visibilitychange` back: "להדביק את המפתח?" – a tap reads the clipboard, checks it with
+  Google through the existing `PUT /api/me/ai/keys`, and connects ("Gemini מחובר ✓"). If the clipboard is blocked, or
+  holds something else, one paste field. No "API key" in the main text. No server change.
+- Welcome: "יש לך מתנת פתיחה, ואפשר לחבר עוזר חינמי בהמשך" at the end, only for a limited account with credit left.
+- test-credits: both ways in from an invitation (`join.ts`) call `startTrial` (limited, the gift) before letting the
+  person in.
+- **For design (no CSS yet):** `.ai-invite`; `section.gm-guide` > `.gm-body` > `ol.gm-steps` > `li.gm-step` (`span.gm-art`
+  with an inline SVG, 96×64, currentColor; `.gm-text` b + span); `.gm-back` (`p.gm-q`), `form.gm-paste`, `.gm-done`
+  (`p.gm-ok`); settings: `details.st-key-manual`; welcome: `p.wz-hint.wz-gift`.

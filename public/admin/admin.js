@@ -315,9 +315,25 @@
         el('b', {}, s.label), control(s), el('p', { class: 'muted small' }, s.help)))))));
   }
 
-  /* ---------- members (who may sign in, and to which household) ---------- */
+  /* ---------- members: my household in the table, a search across every household, and each one's name, household and role
+     (server/member-admin.ts). A change of role or household asks first. The email is not editable: it is the Google sign-in
+     and the key of everything the member keeps; a new address is a new member, and then the old one is removed. ---------- */
+  const ROLE_NAMES = { member: 'חבר', head: 'ראש בית', owner: 'מנהל' };
+  Object.assign(ERR, {
+    email_fixed: 'אי אפשר לשנות כתובת. מוסיפים את החדשה כחבר ומסירים את הישנה.',
+    owner_only_from_config: '"מנהל" הוא מנהל האוהל כולו, ושמור לכתובת של בעל האוהל. לראש של משפחה בחרו "ראש בית".',
+    owner_stays: 'בעל האוהל נשאר מנהל, ואי אפשר להסיר אותו.', last_owner: 'זה המנהל האחרון. אי אפשר להוריד אותו.',
+    owner_home_fixed: 'הבית של המנהל קבוע.', no_household: 'אין בית כזה.', bad_role: 'תפקיד לא מוכר.',
+    he_name_hebrew: 'השם בעברית צריך להיות באותיות עבריות.', confirm_needed: 'צריך לאשר את השינוי.', owner_level_only: 'רק בעל האוהל משנה תפקיד או בית.',
+  });
   async function members(box) {
-    const [{ members: list }, { allowances: ai }] = await Promise.all([call('/api/members'), call('/api/admin/allowances')]);
+    const [{ members: list, households, owners }, { allowances: ai }] = await Promise.all([call('/api/admin/people'), call('/api/admin/allowances')]);
+    const houseName = (id) => households.find((h) => h.id === id)?.title || id;
+    const save = async (m, body) => {
+      const r = await call('/api/admin/people/' + encodeURIComponent(m.email), { method: 'PUT', body });
+      toast('נשמר');
+      return r;
+    };
     // the AI: family has no limit (on you); a limited account spends its credit (server/credits.ts)
     const aiCell = (m) => {
       const a = ai[m.email] || { limited: false };
@@ -346,17 +362,80 @@
       ? el('div', { class: 'ad-first' }, el('small', {}, 'התחבר/ה לראשונה ', el('span', { class: 'muted' }, new Date(m.first_seen).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }))),
         btn('אישור', async () => { await call('/api/members/' + encodeURIComponent(m.email) + '/approve', { method: 'POST', body: {} }); toast(`${m.he_name || m.name || m.email} אושר/ה`); members(box); }, 'btn small primary'))
       : null);
+    const who = (m) => m.he_name || m.name || m.email;
+    // the two names: the Hebrew one the helper calls them by, and the name others see
+    const nameCell = (m) => el('td', { class: 'ad-names' },
+      el('input', { type: 'text', value: m.he_name || '', placeholder: 'שם בעברית', 'aria-label': 'השם בעברית של ' + (m.name || m.email), style: 'inline-size:9em',
+        onchange: async (e) => { try { await save(m, { he_name: e.target.value }); m.he_name = e.target.value.trim(); } catch (err) { say(err); e.target.value = m.he_name || ''; } } }),
+      el('input', { type: 'text', value: m.name || '', placeholder: 'שם תצוגה', 'aria-label': 'שם התצוגה של ' + m.email, style: 'inline-size:9em',
+        onchange: async (e) => { try { await save(m, { name: e.target.value }); m.name = e.target.value.trim(); } catch (err) { say(err); e.target.value = m.name || ''; } } }));
+    // the household and the role, each a list; a change asks first and then saves, or goes back
+    const houseCell = (m, redraw) => {
+      const fixed = m.role === 'owner';
+      const sel = el('select', { 'aria-label': 'הבית של ' + who(m), disabled: fixed },
+        households.map((h) => el('option', { value: h.id, selected: h.id === m.household }, h.title ? `${h.title}` : h.id)),
+        fixed ? null : el('option', { value: '+' }, 'בית חדש…'));
+      sel.onchange = async () => {
+        let body;
+        if (sel.value === '+') {
+          const t = (prompt(`שם הבית החדש של ${who(m)} (למשל: משפחת כהן)`) || '').trim();
+          if (!t) { sel.value = m.household; return; }
+          body = { newHousehold: t };
+        } else body = { household: sel.value };
+        const to = body.newHousehold || houseName(sel.value);
+        if (!confirm(`להעביר את ${who(m)} מ"${houseName(m.household)}" אל "${to}"?\nהקניות, המתכונים, לוח השנה והעץ שלו יהיו של הבית החדש.`)) { sel.value = m.household; return; }
+        try { m.household = (await save(m, { ...body, confirm: true })).household; redraw(); } catch (err) { say(err); sel.value = m.household; }
+      };
+      return el('td', {}, sel);
+    };
+    const roleCell = (m, redraw) => {
+      const isOwner = owners.includes(m.email);
+      const sel = el('select', { 'aria-label': 'התפקיד של ' + who(m), disabled: isOwner },
+        Object.entries(ROLE_NAMES).map(([v, n]) => el('option', { value: v, selected: v === m.role, disabled: v === 'owner' && !isOwner && m.role !== 'owner' }, n)));
+      sel.onchange = async () => {
+        if (!confirm(`לשנות את התפקיד של ${who(m)} מ"${ROLE_NAMES[m.role]}" ל"${ROLE_NAMES[sel.value]}"?`)) { sel.value = m.role; return; }
+        try { m.role = (await save(m, { role: sel.value, confirm: true })).role; redraw(); } catch (err) { say(err); sel.value = m.role; }
+      };
+      return el('td', {}, sel, firstSignIn(m));
+    };
+    const row = (m, redraw) => el('tr', {},
+      nameCell(m), el('td', { dir: 'ltr' }, m.email), houseCell(m, redraw), roleCell(m, redraw), yearCell(m), aiCell(m),
+      el('td', {}, m.email === st.as.email || owners.includes(m.email) ? '' : btn('✕', async () => { await call('/api/members/' + encodeURIComponent(m.email), { method: 'DELETE' }); redraw(); }, 'btn small ghost', `להסיר את ${m.email}?`)));
+    const HEAD = ['שם', 'אימייל', 'בית', 'תפקיד', 'שנת לידה', 'AI', ''];
+    const table = (rows, redraw) => el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, HEAD.map((h) => el('th', {}, h)))),
+      el('tbody', {}, rows.map((m) => row(m, redraw)))));
+
+    // the search: by name or email, in every household, with the same editors
+    const found = el('div', { class: 'ad-found', 'aria-live': 'polite' });
+    const q = el('input', { type: 'search', placeholder: 'שם או אימייל', 'aria-label': 'חיפוש חבר בכל הבתים', enterkeyhint: 'search' });
+    let timer = 0;
+    const search = async () => {
+      const s = q.value.trim();
+      if (s.length < 2) { found.replaceChildren(); return; }
+      try {
+        const r = await call('/api/admin/people?q=' + encodeURIComponent(s));
+        if (q.value.trim() !== s) return;
+        owners.push(...r.owners.filter((e) => !owners.includes(e)));
+        for (const h of r.households) if (!households.some((x) => x.id === h.id)) households.push(h);
+        found.replaceChildren(r.members.length ? table(r.members, () => { search(); members(box); }) : el('p', { class: 'muted small' }, 'לא נמצא חבר.'));
+      } catch (err) { say(err); }
+    };
+    q.oninput = () => { clearTimeout(timer); timer = setTimeout(search, 300); };
+
+    const mine = list[0]?.household;
     const email = el('input', { type: 'email', required: true, dir: 'ltr', placeholder: 'כתובת Gmail', 'aria-label': 'כתובת Gmail' });
     const he = el('input', { type: 'text', placeholder: 'שם בעברית', 'aria-label': 'השם בעברית' });
-    const house = el('input', { type: 'text', value: 'family', dir: 'ltr', 'aria-label': 'משק הבית' });
+    const house = el('select', { 'aria-label': 'משק הבית' }, households.map((h) => el('option', { value: h.id, selected: h.id === (mine || 'family') }, h.title || h.id)));
+    box.style.minInlineSize = '0';   // a grid item: without this the wide table stretches the card past a phone's width (the table scrolls instead)
     box.replaceChildren(section('members-s', 'חברים',
-      el('p', { class: 'muted small' }, 'רק מי שברשימה יכול להתחבר. משק הבית קובע עם מי חולקים רשימת קניות, מתכונים, לוח שנה ועץ משפחה.'),
-      el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ['שם', 'אימייל', 'בית', 'תפקיד', 'שנת לידה', 'AI', ''].map((h) => el('th', {}, h)))),
-        el('tbody', {}, list.map((m) => el('tr', {},
-          el('td', {}, el('input', { type: 'text', value: m.he_name || '', placeholder: m.name || '', 'aria-label': 'השם בעברית של ' + (m.name || m.email), style: 'inline-size:9em',
-            onchange: async (e) => { try { await call('/api/members/' + encodeURIComponent(m.email) + '/name', { method: 'PUT', body: { he_name: e.target.value } }); toast('נשמר'); } catch (err) { say(err); } } })),
-          el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household), el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר', firstSignIn(m)), yearCell(m), aiCell(m),
-          el('td', {}, m.email === st.as.email ? '' : btn('✕', async () => { await call('/api/members/' + encodeURIComponent(m.email), { method: 'DELETE' }); members(box); }, 'btn small ghost', `להסיר את ${m.email}?`))))))),
+      el('p', { class: 'muted small' }, 'רק מי שברשימה יכול להתחבר. משק הבית קובע עם מי חולקים רשימת קניות, מתכונים, לוח שנה ועץ משפחה. ',
+        'ראש בית מנהל את העץ של הבית שלו; מנהל הוא מנהל האוהל כולו. ',
+        'את האימייל אי אפשר לשנות: זו הכניסה עם Google והמפתח של כל מה שהחבר שומר. כתובת חדשה מוסיפים כחבר, ואת הישנה מסירים.'),
+      el('h3', {}, `הבית שלי${mine ? ` · ${houseName(mine)}` : ''}`),
+      table(list, () => members(box)),
+      el('h3', {}, 'חיפוש בכל הבתים'),
+      el('label', { class: 'ad-search' }, q), found,
+      el('h3', {}, 'הוספת חבר'),
       el('form', { class: 'ad-form', onsubmit: async (e) => {
         e.preventDefault();
         try { await call('/api/members', { body: { email: email.value, he_name: he.value, household: house.value } }); toast(`${email.value} נוסף`); members(box); } catch (err) { say(err); }

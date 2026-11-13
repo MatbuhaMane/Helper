@@ -68,7 +68,7 @@ export async function edit(ctx: Ctx) {
   let c: R.Change;
   try { c = R.checkEdit(t, await body<R.Want>(ctx.req), owners, ownerCount, hs); }
   catch (e) { if (e instanceof R.RuleError) throw new HttpError(400, e.code); throw e; }
-  if ((c.role !== undefined || c.household !== undefined) && a.level !== 'owner') throw new HttpError(403, 'owner_only');
+  if ((c.role !== undefined || c.household !== undefined) && a.level !== 'owner') throw new HttpError(403, 'owner_level_only');
 
   const DB = ctx.env.DB, now = Date.now(), steps: D1PreparedStatement[] = [];
   if (c.name !== undefined) steps.push(DB.prepare('UPDATE members SET name = ? WHERE email = ?').bind(c.name, email));

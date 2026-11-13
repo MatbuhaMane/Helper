@@ -2323,3 +2323,27 @@ Four sessions, each in its own worktree and branch: master (`main`, `M:\Claude C
 files, ports and the merge rules are in `CLAUDE.md` under "Working in parallel". Areas may append routes, tables and
 columns for their own features and log them here; `public/sw.js` `CACHE` is bumped only by the master on merge.
 The feasibility study moved to `docs/business/standalone-feasibility.md`. Status: done.
+
+## 2026-11-13 – Editing members from the back door (ai-features → master; roles and permissions, for review)
+
+The CEO's task: in the חברים section the owner edits each member's name, household and role, and searches every household.
+- New `server/member-admin.ts` and `server/member-admin-rules.ts` (33 tests in `server/test-member-admin.mjs`).
+  Appended to `functions/api/[[path]].ts`: one import line and the routes `GET /api/admin/people` (`?household=` or `?q=`)
+  and `PUT /api/admin/people/:email`. `server/admin.ts` now exports `log` and `owners`.
+- Gates: `requireOwner` and `admin.requireAdmin('own')` on both. A role or household change also needs the room opened by
+  an OWNER_EMAIL address (not a super), and `confirm: true`. Every edit is written to `admin_audit` (`member:edit`).
+- **The roles.** "מנהל" (`members.role = 'owner'`) is global: it heads every household, names the tribe head, takes the
+  vault's Drive backups and makes the design images. So only an OWNER_EMAIL address may hold it, it is never demoted or moved,
+  and the last manager stays. "ראש בית" is a `family_roles` head row for the member's own household; "חבר" is everyone else.
+  No change to the membership model.
+- **The email is not editable.** It is the Google sign-in and the key of sessions, prefs, vault items, cards and allowance.
+  A new address is added as a member and the old one removed.
+- **For the master** (shared files, not changed here):
+  1. Add `node server/test-member-admin.mjs` to `npm test`. The chain also has a typo:
+     `test-family-profile.mjs&& node server/test-family-profile.mjs node server/test-family-profile.mjs`.
+  2. `DELETE /api/members/:email` blocks only yourself. Proposed: refuse an OWNER_EMAIL address and the last manager
+     (`mayRemove` in the rules file).
+  3. `POST /api/members` is an upsert that sets `household` and `role` on an existing member. Adding an existing manager's
+     address demotes them, and `role: 'owner'` is accepted for any address. Proposed: `ON CONFLICT DO NOTHING` (editing
+     goes through `/api/admin/people`), and role owner only for OWNER_EMAIL.
+Status: ready on `ai-features`, waiting for the master's review.

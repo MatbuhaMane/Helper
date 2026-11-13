@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>פתקים: ארבע תצוגות</title>
+  <!-- A sample for notes.css: the four views and the formatting toolbar. Copy to public/ to view (not committed there).
+       ?view=cols (default) | panes | list | board · &edit=1 shows the editor with the toolbar (&pop=colors|fonts) · ?theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/tools/notes/notes.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; } .nt { padding-inline: max(16px, env(safe-area-inset-left)); }</style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const view = q.get('view') || 'cols', edit = q.get('edit'), pop = q.get('pop');
+  const SV = (d) => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+  const VIEWS = [
+    ['cols', 'עמודות', '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M10 4.5v15"/>'],
+    ['panes', 'חלוניות', '<rect x="3.5" y="4" width="7.5" height="7" rx="1.6"/><rect x="13" y="4" width="7.5" height="7" rx="1.6"/><rect x="3.5" y="13" width="7.5" height="7" rx="1.6"/><rect x="13" y="13" width="7.5" height="7" rx="1.6"/>'],
+    ['list', 'רשימה', '<path d="M8.5 6.5h12M8.5 12h12M8.5 17.5h12"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/>'],
+    ['board', 'לוח', '<rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="m7 8.5 4 .5-.4 3.8-4-.4zM13.5 9l4-.6.5 3.8-4 .6z"/><path d="M8.5 15.5h7"/>']];
+  const N = [
+    ['רשימת קניות לשבת', 'חלה, יין, שמן זית, 2 קילו עגבניות, כוסברה, פטרוזיליה, נענע, לימונים, טחינה גולמית, קמח מלא', '14 בנוב׳', 1, 'קניות'],
+    ['המתכון של סבתא לעוגת תפוזים', 'שלוש ביצים, כוס סוכר, כוס מיץ תפוזים טרי, קליפה מגוררת של שני תפוזים. לאפות ארבעים דקות ב־180 מעלות, עד שקיסם יוצא יבש.', '14 בנוב׳', 0, 'מתכונים'],
+    ['מספר של האינסטלטור', 'יוסי, מגיע בימים א׳ ו־ד׳. לבקש שיבדוק גם את הברז במרפסת.', '14 בנוב׳', 0],
+    ['ספרים לחנוכה', 'לנועה: משהו על חלל. לנועם: הספר השלישי בסדרה. לסבא: ביוגרפיה, הוא אמר שסיים את הקודמת.', '13 בנוב׳', 1, 'מתנות'],
+    ['רעיונות לטיול', 'נחל עמוד בחורף, אולי עם לינה בצפת. לבדוק אם יש מקום לשמונה.', '13 בנוב׳', 0, 'טיולים'],
+    ['שאלות לרופא', 'הכאב בברך אחרי הליכה. האם להמשיך עם הוויטמין D.', '12 בנוב׳', 0],
+  ];
+  const star = (on) => `<button type="button" class="btn ghost small nt-star${on ? ' on' : ''}" aria-pressed="${!!on}" aria-label="${on ? 'הסרת הכוכב' : 'סימון בכוכב'}">${on ? '★' : '☆'}</button>`;
+  const row = ([t, b, d, s, tag], i) => `<div class="nt-row"><button type="button" class="nt-item${edit && i === 1 ? ' on' : ''}"><b dir="auto">${t}</b>
+      <span class="nt-snip" dir="auto">${b}</span><small>${d}${tag ? ' · #' + tag : ''}</small></button>${star(s)}</div>`;
+  const groups = [['★ מסומנים', N.filter((n) => n[3])], ['היום', N.slice(1, 3)], ['אתמול', N.slice(4, 5)], ['יום רביעי', N.slice(5)]];
+  const tools = `<div class="nt-tools" role="toolbar" aria-label="עיצוב הטקסט">
+      <button type="button" class="nt-tool nt-b" aria-pressed="true" aria-label="מודגש"><b>B</b></button><button type="button" class="nt-tool nt-i" aria-pressed="false" aria-label="נטוי"><i>I</i></button>
+      <button type="button" class="nt-tool nt-u" aria-pressed="false" aria-label="קו תחתון"><u>U</u></button><button type="button" class="nt-tool nt-s" aria-pressed="false" aria-label="קו חוצה"><s>S</s></button>
+      <button type="button" class="nt-tool nt-pop-b" aria-expanded="${pop === 'colors'}" aria-label="צבע הטקסט"><span class="nt-swatch-a" aria-hidden="true">א</span></button>
+      <div class="nt-pop nt-colors" role="group" aria-label="צבע הטקסט" ${pop === 'colors' ? '' : 'hidden'}>${['def', 'vine', 'olive', 'soil', 'red', 'blue'].map((c) => `<button type="button" class="nt-swatch c-${c}" aria-label="${c}"><span aria-hidden="true">א</span></button>`).join('')}</div>
+      <button type="button" class="nt-tool nt-pop-b" aria-expanded="${pop === 'fonts'}" aria-label="גופן">גופן</button>
+      <div class="nt-pop nt-fonts" role="group" aria-label="גופן" ${pop === 'fonts' ? '' : 'hidden'}>${[['rubik', 'רוביק'], ['heebo', 'היבו'], ['round', 'עגול'], ['serif', 'ספרותי']].map(([f, n]) => `<button type="button" class="nt-font-b f-${f}">${n}</button>`).join('')}</div></div>`;
+  const editor = `<section class="nt-editor card" aria-label="הפתק" ${edit ? '' : 'hidden'}>
+      <div class="nt-ed-head"><button class="btn ghost small nt-back" type="button">‹ כל הפתקים</button>${star(0)}<span class="spacer"></span><small class="nt-state" role="status"></small>
+        <button class="btn primary small" type="button">שמירה</button><button class="btn ghost small nt-close" type="button" aria-label="סגירת הפתק">✕</button></div>
+      <input class="nt-title" value="${N[1][0]}" aria-label="כותרת" dir="auto">
+      <div class="nt-meta"><span>נוצר 14 בנוב׳</span></div>${tools}
+      <div class="nt-body nt-rich" contenteditable="true" role="textbox" aria-multiline="true" aria-label="הפתק" dir="auto"><p><b>שלוש ביצים</b>, כוס סוכר, <span class="c-soil">כוס מיץ תפוזים טרי</span>.</p><p><span class="f-serif">לאפות ארבעים דקות</span> ב־<span class="c-red">180 מעלות</span>, <u>עד שקיסם יוצא יבש</u>. <s>שעה</s></p><p class="c-blue">טיפ של סבתא: <span class="f-round c-vine">קצת יותר קליפה</span>.</p></div>
+    </section>`;
+  if (edit) document.body.classList.add('nt-editing');
+  document.body.insertAdjacentHTML('beforeend', `<div class="nt" data-view="${view}">
+    <a class="folder-back" href="#">‹ כלים</a>
+    <div class="nt-head"><h1>פתקים</h1><div class="nt-head-acts">
+      <div class="nt-views" role="group" aria-label="תצוגה">${VIEWS.map(([v, n, d]) => `<button type="button" aria-pressed="${v === view}" title="${n}">${SV(d)}<span>${n}</span></button>`).join('')}</div>
+      <button class="btn ghost" type="button">📋 הדבקה</button><button class="btn primary" type="button">+ פתק חדש</button></div></div>
+    <div class="nt-cols"><div class="nt-side"><div class="nt-search"><input type="search" placeholder="חיפוש בפתקים" aria-label="חיפוש בפתקים"></div>
+      <div class="nt-list">${groups.map(([g, ns]) => `<section class="nt-group"><h3>${g}</h3>${ns.map(row).join('')}</section>`).join('')}</div></div>${editor}</div>
+  </div>`);
+  document.querySelectorAll('.nt-views button').forEach((b, i) => b.onclick = () => { const u = new URL(location); u.searchParams.set('view', VIEWS[i][0]); location = u; });
+})();
+</script>
+</body>
+</html>

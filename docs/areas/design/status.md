@@ -2,9 +2,22 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
+_Updated 2026-11-14 (vision batch 14: the wizard centred, the sky blotch found, arrange mode, the experimental tag, the Google button, four notes views)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: vision batch 14, design part (2026-11-14).**
+  - Test-run fixes:
+    - 1573cc3 centres "הלאה" on every wizard step;
+    - the home sky blotch is the tent-glow layers in index.html sharing the classes `.sun` and `.moon` with the sky. The fix (rename them `glow-sun` and `glow-moon`) went to the master, who owns that file.
+  - 750b3a3 adds `public/assets/arrange.css`: arrange mode as a tray, not the ring. Cushions wiggle; each has an × to remove it, fixed ones carry a lock, and the last slot is "הוסף כרית" with an add sheet. Contract `docs/design/arrange.md`.
+  - e069673 adds two things to base.css:
+    - the "ניסיוני" tag `.tag-exp`, with the token `--exp`, for a tile, a cushion and the tray;
+    - the "חיפוש בגוגל" pill `.g-search`.
+  - 16262da adds four notes views, chosen by `data-view` (cols, panes, list, a cork board), plus the look of the formatting toolbar, which had none. Contract `docs/design/notes-views.md`.
+  - Checked at 375 and desktop width, light and dark.
+  - Waiting on others:
+    - the master: link arrange.css, the arrange markup in index.html and apps.js, `tag` in H.APPS, the glow rename;
+    - ai-features: saving the arrangement, the Google links, the notes view switch in H.prefs.
 - **Ready: the Shabbat screen, the holiday tent and "סיכום היום" (vision batch 13, 2026-11-13).**
   - The CSS is `public/assets/seasons.css`; the dressings are `public/assets/holidays/*.svg`, from the generator `docs/design/holidays/holidays.py`.
   - The contract is `docs/design/seasons.md` and the sample `prototype/seasons.html`.

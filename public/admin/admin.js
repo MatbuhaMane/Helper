@@ -194,6 +194,12 @@
           } catch (err) { say(err); e.target.value = m.birth_year || ''; }
         } }), mark);
     };
+    /* signed in for the first time and not yet approved (core.ts firstSignIn): approving lifts any AI limit and turns on
+       every special feature (POST /api/members/:email/approve, the master's) */
+    const firstSignIn = (m) => (m.first_seen && !m.approved_at
+      ? el('div', { class: 'ad-first' }, el('small', {}, 'התחבר/ה לראשונה ', el('span', { class: 'muted' }, new Date(m.first_seen).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }))),
+        btn('אישור', async () => { await call('/api/members/' + encodeURIComponent(m.email) + '/approve', { method: 'POST', body: {} }); toast(`${m.he_name || m.name || m.email} אושר/ה`); members(box); }, 'btn small primary'))
+      : null);
     const email = el('input', { type: 'email', required: true, dir: 'ltr', placeholder: 'כתובת Gmail', 'aria-label': 'כתובת Gmail' });
     const he = el('input', { type: 'text', placeholder: 'שם בעברית', 'aria-label': 'השם בעברית' });
     const house = el('input', { type: 'text', value: 'family', dir: 'ltr', 'aria-label': 'משק הבית' });
@@ -203,12 +209,14 @@
         el('tbody', {}, list.map((m) => el('tr', {},
           el('td', {}, el('input', { type: 'text', value: m.he_name || '', placeholder: m.name || '', 'aria-label': 'השם בעברית של ' + (m.name || m.email), style: 'inline-size:9em',
             onchange: async (e) => { try { await call('/api/members/' + encodeURIComponent(m.email) + '/name', { method: 'PUT', body: { he_name: e.target.value } }); toast('נשמר'); } catch (err) { say(err); } } })),
-          el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household), el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר'), yearCell(m), aiCell(m),
+          el('td', { dir: 'ltr' }, m.email), el('td', { dir: 'ltr' }, m.household), el('td', {}, m.role === 'owner' ? 'מנהל' : 'חבר', firstSignIn(m)), yearCell(m), aiCell(m),
           el('td', {}, m.email === st.as.email ? '' : btn('✕', async () => { await call('/api/members/' + encodeURIComponent(m.email), { method: 'DELETE' }); members(box); }, 'btn small ghost', `להסיר את ${m.email}?`))))))),
       el('form', { class: 'ad-form', onsubmit: async (e) => {
         e.preventDefault();
         try { await call('/api/members', { body: { email: email.value, he_name: he.value, household: house.value } }); toast(`${email.value} נוסף`); members(box); } catch (err) { say(err); }
       } }, el('label', {}, 'אימייל', email), el('label', {}, 'שם בעברית', he), el('label', {}, 'משק בית', house), el('button', { class: 'btn primary' }, 'הוספה'))));
+    // the first-sign-in message links here (/admin/#members): the room is drawn after the biometric, so scroll now
+    if (location.hash === '#members' && !members.scrolled) { members.scrolled = true; box.scrollIntoView({ block: 'start' }); }
   }
 
   /* ---------- credit gifts (the owner only): spent first, never expire; above ₪20 the room asks again ---------- */

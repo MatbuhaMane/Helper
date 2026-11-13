@@ -84,6 +84,9 @@
   async function drawServices() {
     let ai, spotify = null, mail = null, feed = null, drive = null;
     try { ai = await api('/api/me/ai'); } catch (e) { return say(e); }
+    // (credit is offered only while the shop is open – the owner's switch; closed, only one's own AI)
+    let shopOpen = false; try { shopOpen = !!(await H.me()).shop; } catch (_) { /* not known: closed */ }
+    const orCredit = shopOpen ? ', או הוסיפו קרדיט' : '';
     await Promise.all([
       api('/api/music/status').then((r) => { spotify = r.spotify; }).catch(() => {}),
       api('/api/mail/status').then((r) => { mail = r; }).catch(() => {}),
@@ -112,15 +115,16 @@
       el('h2', { id: 'services-h' }, 'חיבור לשירותים'),
       el('h3', {}, 'העוזר החכם (AI)'),
       el('p', { class: 'muted' }, ai.limited
-        ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים. או להוסיף קרדיט.'
+        ? 'אפשר לחבר את שירות ה־AI שלך, ואז העוזר החכם משתמש בו – בלי הגבלה ובלי קרדיטים.' + (shopOpen ? ' או להוסיף קרדיט.' : '')
         : 'ה־AI של האוהל פתוח לך בלי הגבלה. אם תרצה, אפשר לחבר גם שירות משלך, והבקשות שלך ילכו דרכו.'),
       // amounts only for whoever bought credit or got a gift (the owner's decision); on the trial, only when it ran out
-      ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : 'הקרדיט נגמר. חברו שירות משלכם, או הוסיפו קרדיט.')
-        : ai.out ? el('p', { class: 'small' }, 'כדי להמשיך עם העוזר החכם, חברו שירות משלכם, או הוסיפו קרדיט.') : null,
+      ai.left_ils !== null ? el('p', { class: 'small' }, ai.left_ils > 0 ? `נשאר לך קרדיט בשווי כ־₪${ai.left_ils}.` : `הקרדיט נגמר. חברו שירות משלכם${orCredit}.`)
+        : ai.out ? el('p', { class: 'small' }, `כדי להמשיך עם העוזר החכם, חברו שירות משלכם${orCredit}.`) : null,
       el('div', { class: 'st-services-grid' },
         ...PROVIDERS.map(row),
         el('div', { class: 'card st-service' }, el('h3', {}, 'ChatGPT (OpenAI)'), el('p', { class: 'muted small' }, 'בקרוב: האוהל עוד לא מדבר עם ChatGPT.')),
-        el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
+        // (the credit card only while the shop is open – the owner's switch)
+        !shopOpen ? null : el('div', { class: 'card st-service' }, el('h3', {}, 'קרדיט'), el('p', { class: 'muted small' }, 'בקרוב: קניית קרדיט לשימוש ב־AI של האוהל. בינתיים אפשר לחבר שירות משלכם.'),
           el('button', { class: 'btn small', type: 'button', disabled: true }, 'קניית קרדיט'))),
       el('h3', {}, 'שירותים אחרים'),
       el('div', { class: 'st-services-grid' },
@@ -168,7 +172,9 @@
     // each paid figure has its own price (the special ones cost more); the server charges the same
     const priceOf = (f) => Number(shop.prices?.[f.id] ?? shop.priceIls) || 10;
     // the family (no limit) gets it for nothing: they see that, not a price (the server decides either way)
-    const buy = async (f) => { const price = priceOf(f); let free = false; try { free = !(await api('/api/me/ai')).limited; } catch (_) { /* not known: the price */ }
+    // the owner's switch (shop) and the family (no limit: every paid figure theirs to take, in any state of the switch)
+    const shopOpen = !!shop.shop, takes = !!shop.family;
+    const buy = async (f) => { const price = priceOf(f), free = takes;
       H.modal(el('h2', {}, `${f.name}`), preview2d(f),
       el('p', {}, free ? 'בחינם, במשפחה.' : `דמות בתשלום: ₪${price}, מהקרדיט שלך.`),
       el('p', { class: 'muted small' }, free ? 'היא שלך בכל מכשיר.' : 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
@@ -180,7 +186,8 @@
             H.closeModal(); toast(r.how === 'credits' ? `${f.name} שלך` : `${f.name} שלך, על חשבון המשפחה`); pick(f.id);
           } catch (err) {
             e.target.disabled = false;
-            if (err.status === 402) { H.closeModal(); H.modal(el('h2', {}, 'אין מספיק קרדיט'), el('p', {}, `צריך ₪${price} בקרדיט. אפשר להוסיף קרדיט או לחבר שירות משלך.`),
+            if (err.status === 403 && err.code === 'shop_closed') { H.closeModal(); toast('הקנייה סגורה כרגע'); drawAssistant(); }
+            else if (err.status === 402) { H.closeModal(); H.modal(el('h2', {}, 'אין מספיק קרדיט'), el('p', {}, shopOpen ? `צריך ₪${price} בקרדיט. אפשר להוסיף קרדיט או לחבר שירות משלך.` : 'כרגע אין מספיק קרדיט.'),
               el('div', { class: 'row' }, el('a', { class: 'btn primary', href: '#services', onclick: () => H.closeModal() }, 'לחיבור לשירותים'))); }
             else toast('הקנייה לא הצליחה – נסו שוב');
           }
@@ -213,12 +220,14 @@
       toggle('העוזר מלווה אותי בכל עמוד', !!dp.follow, (v) => set('follow', v), 'כשכבוי, הוא מחכה בדף הבית.'),
       choices('בראש השיחה', [['icon', 'הדמות כאייקון'], ['animated', 'הדמות חיה']], dp.header || 'icon', (v) => set('header', v)),
       el('h3', {}, 'הדמות'),
-      el('p', { class: 'muted small' }, 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.'),
+      el('p', { class: 'muted small' }, takes ? 'כל הדמויות לבחירה, גם דמויות 💎 – במשפחה.' : shopOpen ? 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.' : 'רוב הדמויות חינם.'),
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'ראב"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
-        const forSale = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
-        const sub = forSale ? `💎 ₪${priceOf(f)} · לקנייה` : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
+        // the family takes it (no price); an open shop sells it; a closed one: locked, no price, no button
+        const offered = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
+        const forSale = offered && (takes || shopOpen);
+        const sub = forSale ? (takes ? '💎 שלך לקחת' : `💎 ₪${priceOf(f)} · לקנייה`) : offered ? '💎 בתשלום' : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
         return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
       hairRow(),

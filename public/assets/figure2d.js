@@ -81,6 +81,23 @@
       neck: 0.57, pivot: [0.49, 0.55], eyes: [], eyeR: 0.04, mouth: [0.485, 0.505], mouthW: 0.055, cheek: null, sway: 0.35 },
     dracula: { name: 'דרקולה', kind: 'person', tier: 'paid', paid: true, hideFor: [], tags: ['horror'], neck: 0.52, pivot: [0.51, 0.5], eyes: [[0.405, 0.29], [0.62, 0.29]], eyeR: 0.04, mouth: [0.51, 0.455], mouthW: 0.06, cheek: null, eyeColor: '#3a1c1c', sway: 0.35 },
   };
+  // a basic palette for every free figure (the owner, 2026-11-14: palettes are never sold): its scarf, shawl, vest, robe or
+  // coat in 5 colourways, the first as drawn; the tint layers are tint-<layer>.webp beside each picture
+  const FREE_PALETTES = {
+    fennec: { layers: ['scarf'], options: [{ name: 'אדום', swatch: '#a8322a' }, { name: 'ירוק זית', scarf: '#5f7a3a' }, { name: 'כחול', scarf: '#2f5a9a' }, { name: 'חרדל', scarf: '#c08a2a' }, { name: 'סגול', scarf: '#6a3a7a' }] },
+    owl: { layers: ['shawl'], options: [{ name: 'ירוק', swatch: '#6a7a3a' }, { name: 'אדום', shawl: '#9a3a2a' }, { name: 'כחול', shawl: '#2f5a8a' }, { name: 'חרדל', shawl: '#b08a2a' }, { name: 'סגול', shawl: '#6a4a7a' }] },
+    lamb: { layers: ['vest'], options: [{ name: 'ירוק', swatch: '#6a7a3a' }, { name: 'אדום', vest: '#9a3a2a' }, { name: 'כחול', vest: '#2f5a8a' }, { name: 'חרדל', vest: '#b08a2a' }, { name: 'סגול', vest: '#6a4a7a' }] },
+    hedgehog: { layers: ['spines'], options: [{ name: 'חום', swatch: '#7a5a3a' }, { name: 'חול', spines: '#b8905a' }, { name: 'כסוף', spines: '#8c8a86' }, { name: 'שוקולד', spines: '#4a3428' }, { name: 'ערמון', spines: '#8a4a2a' }] },
+    ibnsina: { layers: ['robe'], options: [{ name: 'ירוק', swatch: '#2f6a4a' }, { name: 'כחול', robe: '#2f5a8a' }, { name: 'בורדו', robe: '#7a2a36' }, { name: 'חום', robe: '#7a5a3a' }, { name: 'אפור כחלחל', robe: '#4a5a6a' }] },
+    rambam: { layers: ['robe', 'cloak'], options: [{ name: 'כחול', swatch: '#2f4a8a' }, { name: 'ירוק ים', robe: '#2f6a5a', cloak: '#4a3a2a' }, { name: 'בורדו', robe: '#6a2a36', cloak: '#3a2a22' }, { name: 'סגול', robe: '#5a4a7a', cloak: '#2e2a3a' }, { name: 'דבש', robe: '#8a6a3a', cloak: '#4a3a2a' }] },
+    newton: { layers: ['coat'], options: [{ name: 'חום', swatch: '#5a3a28' }, { name: 'כחול נייבי', coat: '#2a3a5a' }, { name: 'ירוק בקבוק', coat: '#2a4a3a' }, { name: 'בורדו', coat: '#5a2a2a' }, { name: 'אפור', coat: '#4a4a4e' }] },
+    juha: { layers: ['robe'], options: [{ name: 'אפור-כחול', swatch: '#7a8a9a' }, { name: 'חול', robe: '#9a8a6a' }, { name: 'מרווה', robe: '#6a8a6a' }, { name: 'ורוד עתיק', robe: '#9a6a6a' }, { name: 'כחול', robe: '#5a6a9a' }] },
+    hershele: { layers: ['coat'], options: [{ name: 'שחור', swatch: '#26282b' }, { name: 'חום', coat: '#3a2a1e' }, { name: 'אפור', coat: '#3a3c40' }, { name: 'כחול כהה', coat: '#1e2a4a' }, { name: 'ירוק כהה', coat: '#1e3a2c' }] },
+    scheherazade: { layers: ['shawl', 'dress'], options: [{ name: 'אדום וכחול', swatch: '#a8442a' }, { name: 'טורקיז ויין', shawl: '#2a6a5a', dress: '#6a2a3a' }, { name: 'סגול ותכלת', shawl: '#6a3a8a', dress: '#2a4a6a' }, { name: 'זהב וכחול', shawl: '#c08a2a', dress: '#2a3a6a' }, { name: 'ורוד וירוק', shawl: '#9a3a5a', dress: '#3a5a4a' }] },
+    alibaba: { layers: ['robe'], options: [{ name: 'לבן', swatch: '#f2efe6' }, { name: 'חול', robe: '#e6d6b8' }, { name: 'תכלת', robe: '#cfdcea' }, { name: 'ירוק בהיר', robe: '#d6e2c8' }, { name: 'ורוד', robe: '#ead2cc' }] },
+    peterpan: { layers: ['leaves'], options: [{ name: 'סתיו', swatch: '#b8662a' }, { name: 'ירוק', leaves: '#5a8a3a' }, { name: 'ירוק כהה', leaves: '#3a6a3a' }, { name: 'זהב', leaves: '#c09a2a' }, { name: 'אדום', leaves: '#b02a22' }] },
+  };
+  for (const [id, p] of Object.entries(FREE_PALETTES)) if (FIGURES[id]) FIGURES[id].palettes = p;
   const reduce = () => (window.H?.reducedMotion ? H.reducedMotion() : matchMedia('(prefers-reduced-motion: reduce)').matches);
   const NS = 'http://www.w3.org/2000/svg';
   const svgEl = (tag, attrs = {}) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); return e; };

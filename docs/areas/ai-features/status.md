@@ -148,6 +148,9 @@ LCP has not moved yet. The causes:
     through H.back, whose common.js/sheet.js patch waits for the master (ai-features-hback.patch in the notes folder; 627843e).
   - the weather's sea card: diving, surfing and a beach day per day (good / fair / not, with the reason), from Open-Meteo
     Marine; thresholds in `server/sea-logic.ts` (LIMITS), 32 tests; near the coast or a chosen beach (prefs.weather.beach).
+  - notes (the owner): the "שמירה כפתק" popup on marked text is gone in favour of paste: Ctrl+V on the notes page opens a
+    new note, and "📋 הדבקה" reads the clipboard or opens an empty note for a long-press paste (e69a2e0). Removing
+    assets/capture.js with its loader in common.js and sw.js is the master's patch (ai-features-capture-removal.patch).
   - The look of all of these is design's: the class contract is in the notes folder (ai-features-diet-pie-contract.md).
     Unstyled until then: the pie buttons are 45 px tall.
 

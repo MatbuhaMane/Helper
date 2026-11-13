@@ -18,7 +18,7 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
   work, so a figure covers itself after about 14 sales.
 - **A personal figure** costs ₪400. Design measured 45–75 minutes, which comes to ₪300–500 at the 30/30/30/10 split.
   Revisit after the first five founders' figures.
-- **The very special figures** (seven: הקוסם מהשוק, האסטרונומית, בובת הטלאים, קוסם הלילה, קוסמת היער, הקוסם הקטן,
+- **The very special figures** (seven: הקוסם, הרואה (renamed 2026-11-14), בובת הטלאים, קוסם הלילה, קוסמת היער, הקוסם הקטן,
   הקוסמת הקטנה; design's entry on `design`)
   cost more than a paid figure.
   - **₪20**, the same as one ₪20 pack. Approved by the owner (via the master, 2026-11-14), and live in cache v57 as

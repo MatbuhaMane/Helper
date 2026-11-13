@@ -13,6 +13,11 @@ _Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's 
   - **The family profile's look.** It is `public/family/profile.css` with five covers, `/assets/covers/*.svg`.
 - **Ready to merge (e83f5ed): the covers at night.** In dark mode the four day drawings turn to dusk under a deep-blue veil.
   The desert is already night and stays as it is. A family's own photo is only dimmed a little.
+- **Ready to merge (d7b8192) with a patch: הרגלי אכילה's own icon.** It is a plate with a leaf, inside a ring that comes round again.
+  - Its catalogue line is in `apps.js`, on the p13 cushion with a teal glow.
+  - The icon goes into `ICONS` in common.js through `design-habits-icon-2026-11-13.patch` in the notes folder. The same patch sets the diet page's tile to `ic: 'habits'` and adds the tile to `/tools/`, which was missing it.
+  - Checked in dark mode on the diet page; the icon shows on `/food/diet/` and `/tools/` at 375 and 1280.
+  - `habits.css` is design's from now on (the CEO, 2026-11-13).
 - **Launch prep, the page audit (v92, 28 pages incl. /food/diet/habits/, at 375 and 1280, light and dark): clean.**
   - The check found no overflow, broken images, nameless controls or contrast under 3:1.
   - It skips oklab colours, so the home page's 53 oklab texts were measured separately on a canvas: all ≥ 4.5:1.

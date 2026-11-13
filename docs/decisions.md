@@ -11,6 +11,68 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Locks and privacy: a simple entry to the tree, an app lock like Telegram's, fingerprint sign-in (master → ai-features, design)
+The owner's design. It replaces "the trusted device" for the tree.
+
+**Signing in**
+- Sign-in stays Google only. The account is a Google account.
+- Once a person has a passkey (fingerprint, face, Windows Hello), they can also sign in with it, without Google: "כניסה בטביעת אצבע".
+
+**The family tree**
+- Open by default to a signed-in member of the household. There is no unlock and no trusted device.
+- The person can lock it, with a 4-digit code or a passkey. This is an option in the privacy settings.
+- On the first entry to the tree, a small warning window recommends turning on protection, with three buttons:
+  - "להגדיר עכשיו";
+  - "אחר כך" (closes for now);
+  - "לא להציג שוב".
+- When someone creates a private document, the app recommends setting a code.
+
+**Always behind a passkey**
+- Restricted documents and files, privacy changes, deletes, linking trees, backups and the owner's room. This is level 'fresh', unchanged.
+- No privacy setting opens these.
+
+**The app lock (like Telegram)**
+- Each person may lock the whole app, with a 4-digit code or a passkey, and choose when it locks itself: after 1, 5, 15 or 60 minutes away.
+- With a lock on, an open padlock appears in the menu. Pressing it plays a locking animation and locks the app.
+- The lock is enforced on the server, not just drawn over the page: a locked session gets 423 app_locked from every route except the lock's own, /api/me and signing in and out.
+
+**The code**
+- 4 digits. Stored as PBKDF2-SHA256 (210,000 rounds) with a salt per person and a pepper derived from VAULT_KEY, so the database alone cannot be guessed through.
+- Wrong codes:
+  - 5 wrong codes: a 15-minute pause;
+  - 10 wrong codes: the code is closed until the person signs in with Google again.
+- Changing the code, or turning a lock off, needs the current code, or a code/passkey/Google proof from the last 5 minutes.
+- **Forgotten code:** "שכחתי את הקוד" signs the person out. A new sign-in with the Google account they use is the proof, and then they set a new code. Recovery goes through the email they signed in with, and no mail is sent.
+
+**Privacy level**
+- Low ("הכל פתוח"): no app lock and no tree lock. Not recommended, and the settings say so.
+- Even at low, documents, credentials and personal details stay behind a passkey.
+
+**The server (master)**
+- server/lock.ts and lock-rules.ts, table `user_locks`, and session columns.
+- The routes:
+  - `GET/PUT /api/lock`
+  - `PUT /api/lock/pin`
+  - `POST /api/lock/lock`
+  - `POST /api/lock/unlock`
+  - `POST /api/lock/passkey/options`
+  - `POST /api/lock/passkey`
+  - `POST /api/auth/passkey/options`
+  - `POST /api/auth/passkey`
+- The details are in server/lock.ts.
+
+**ai-features: the pages**
+- A "פרטיות ואבטחה" section in /settings/: the app lock (off / code / passkey) with its timer, the tree lock, the code (set or change, "שכחתי את הקוד"), and the low level with its warning.
+- The lock screen: 4 dots and a keypad, plus a passkey button.
+- The padlock in the menu. When 423 app_locked comes back, show the lock screen.
+- The warning window on the tree.
+- "כניסה בטביעת אצבע" on the sign-in screen.
+
+**design**
+- The lock screen, the keypad, the padlock and its locking animation (open → closed), and the warning window.
+
+Status: accepted; the server is being built.
+
 ## 2026-11-14 – The payments switch, and the family's first sign-in (master)
 The owner asked for two things.
 

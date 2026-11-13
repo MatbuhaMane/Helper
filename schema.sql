@@ -991,3 +991,33 @@ CREATE TABLE IF NOT EXISTS feedback (
   read_at  INTEGER,
   done     INTEGER NOT NULL DEFAULT 0
 );
+
+-- Shared goals and encouragement (ai-features, vision batch 8 slice C; server/goal-social.ts). A goal the person shares
+-- (goals.shared) makes progress posts the household sees; hearts and short advice on them.
+CREATE TABLE IF NOT EXISTS goal_posts (
+  id        TEXT PRIMARY KEY,
+  goal_id   TEXT NOT NULL,
+  email     TEXT NOT NULL,
+  household TEXT NOT NULL,
+  kind      TEXT NOT NULL,                -- step | goal
+  text      TEXT NOT NULL,
+  steps     INTEGER NOT NULL DEFAULT 0,   -- the day's steps, for a step post
+  at        INTEGER NOT NULL,
+  deleted   INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS goal_posts_household ON goal_posts (household, at);
+CREATE TABLE IF NOT EXISTS post_hearts (
+  post_id TEXT NOT NULL,
+  email   TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  PRIMARY KEY (post_id, email)
+);
+CREATE TABLE IF NOT EXISTS post_advice (
+  id      TEXT PRIMARY KEY,
+  post_id TEXT NOT NULL,
+  email   TEXT NOT NULL,
+  text    TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  hearted INTEGER NOT NULL DEFAULT 0,     -- the advised marked it good: the adviser badge
+  deleted INTEGER NOT NULL DEFAULT 0
+);

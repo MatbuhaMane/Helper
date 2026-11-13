@@ -220,9 +220,10 @@ export const BADGES: Badge[] = [
   { id: 'the_way', name: 'דרך החיים', how: 'השגת מטרה קצרה בכל יום במשך שנה, תוך כדי עבודה על מטרה של יותר משנה', group: 'progress', secret: true },
   { id: 'kings_way', name: 'דרך המלך', how: 'צעדים בכל אחת מעשר שנים', group: 'progress' },
   { id: 'tribe', name: 'שבט', how: 'עודדת בן משפחה, או השלמתם יחד מטרה משותפת', group: 'family', soon: true },
-  { id: 'angel', name: 'מלאך דרך', how: 'עזרת לבן משפחה או לחבר להשלים מטרה', group: 'family', soon: true },
-  { id: 'adviser', name: 'יועץ', how: 'נתת עצה, והיא קיבלה לייק', group: 'family', soon: true },
-  { id: 'shoulder', name: 'כתף תומכת', how: 'עקבת אחרי המסע של חבר', group: 'family', soon: true },
+  // (earned through encouragement on shared goals, server/goal-social.ts; שבט waits for the family goal and the tree's relatives)
+  { id: 'angel', name: 'מלאך דרך', how: 'נתת עצה על מטרה, והמטרה הושגה', group: 'family' },
+  { id: 'adviser', name: 'יועץ', how: 'נתת עצה, ומי שקיבל אותה סימן אותה בלב', group: 'family' },
+  { id: 'shoulder', name: 'כתף תומכת', how: 'נתת 5 לבבות להתקדמות של בני המשפחה', group: 'family' },
 ];
 /** the rest badges keep their names for those who keep Shabbat; another tradition's names are to be set with someone of it */
 export function badgeName(b: Badge, rest: number | null) {

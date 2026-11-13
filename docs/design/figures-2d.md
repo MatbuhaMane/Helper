@@ -77,6 +77,12 @@ shading stays. `Figure2D.list()` gives `hair: [{ color, name }]` (לבן, כסו
 `hairDefault: '#ffffff'`; mount with `{ hair: color }` and change it live with `f.setHair(color)`. For ai-features: a
 row of colour swatches under the figure when she is chosen, saved per person (e.g. `H.prefs('daemon').hair`).
 
+**Palettes for every free figure (the owner, 2026-11-14: palettes are never sold):** the fennec's scarf, the owl's shawl,
+the lamb's vest, the hedgehog's spines (natural tones), Ibn Sina's robe, the Rambam's robe and cloak, Newton's coat,
+Juha's robe, Hershele's coat, Scheherazade's shawl and dress, Ali Baba's robe, Peter Pan's leaves – 5 colourways each,
+the first as drawn (`FREE_PALETTES` in figure2d.js; layers made by `palette2.py` in the scratchpad). The same API as
+below. The paid people (Mary Shelley, Leonardo, Cleopatra, Dracula) have none yet.
+
 **Palettes (the night wizard, the forest witch):** their clothes in a colour of one's own. Each fabric is a grey tint
 layer (`tint-<layer>.webp`, made by `palette.py` in the scratchpad), coloured with multiply so the folds stay;
 `Figure2D.list()` gives `palettes: [{ index, name, swatch }]`, the first one is the drawing as it is. Mount with

@@ -40,7 +40,7 @@
        which way the halo leans (--*-dx, --*-dy). No motion of its own: it only follows the sky. */
     .camp > .tent-light { position: absolute; inset: 0; pointer-events: none; animation: camp-in .9s var(--ease-river) both; }
     .camp > .tent-glow { filter: blur(11px); opacity: calc(var(--lit, 0) * .9); transform: translate(var(--dx, 0px), var(--dy, 0px)); will-change: opacity, transform; }
-    .camp > .tent-glow i, .camp > .tent-shine { -webkit-mask: url(/assets/tent.webp) 0 0 / 100% 100% no-repeat; mask: url(/assets/tent.webp) 0 0 / 100% 100% no-repeat; }
+    .camp > .tent-glow i, .camp > .tent-shine { -webkit-mask: url(/assets/tent-mask.webp) 0 0 / 100% 100% no-repeat; mask: url(/assets/tent-mask.webp) 0 0 / 100% 100% no-repeat; }
     .camp > .tent-glow i { position: absolute; inset: 0; background: var(--glow); }
     :root[data-theme="dark"] .camp > .tent-shine { opacity: .72; }   /* at night the canvas is dark, and the same light reads stronger */
     @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .camp > .tent-shine { opacity: .72; } }
@@ -329,7 +329,7 @@
     const wheel = appWheel(H.ringApps());
     root.append(el('div', { class: 'home' },
       greeting(),
-      el('div', { class: 'camp' }, el('img', { src: '/assets/tent.webp', alt: 'האוהל של רַאבַּ"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
+      el('div', { class: 'camp' }, el('img', { sizes: '(max-width: 599px) 92vw, 640px', srcset: '/assets/tent-700.webp 700w, /assets/tent-1000.webp 1000w, /assets/tent.webp 1400w', src: '/assets/tent-1000.webp', alt: 'האוהל של רַאבַּ"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
       wheel.root, wheel.caption,
       el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     wheel.start();

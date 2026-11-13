@@ -408,22 +408,88 @@
     const table = (rows, redraw) => el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, HEAD.map((h) => el('th', {}, h)))),
       el('tbody', {}, rows.map((m) => row(m, redraw)))));
 
-    // the search: by name or email, in every household, with the same editors
+    /* the search, in every household (server/member-admin-rules.ts searchSql): each word in a name, the email or the
+       household's name. Typing opens suggestions under the box (a combobox: arrows, Enter, Escape); choosing one shows
+       that member's row with the same editors, and Enter with none chosen shows every result. "חיפוש מתקדם" adds filters.
+       The list's look is inline for now (design: please move it to admin.css as .ad-combo / .ad-sugg). */
     const found = el('div', { class: 'ad-found', 'aria-live': 'polite' });
-    const q = el('input', { type: 'search', placeholder: 'שם או אימייל', 'aria-label': 'חיפוש חבר בכל הבתים', enterkeyhint: 'search' });
-    let timer = 0;
+    const q = el('input', { type: 'search', placeholder: 'שם, משפחה, אימייל או בית', 'aria-label': 'חיפוש חבר בכל הבתים', enterkeyhint: 'search',
+      autocomplete: 'off', role: 'combobox', style: 'inline-size:100%', 'aria-expanded': 'false', 'aria-controls': 'ad-sugg', 'aria-autocomplete': 'list' });
+    const sugg = el('ul', { id: 'ad-sugg', role: 'listbox', 'aria-label': 'חברים שנמצאו', hidden: true,
+      style: 'position:absolute;inset-inline:0;inset-block-start:calc(100% + 4px);z-index:var(--z-menu);margin:0;padding:4px;list-style:none;'
+        + 'background:var(--card);color:var(--text);border:1px solid var(--line-strong);border-radius:var(--radius-sm);box-shadow:var(--shadow);max-block-size:min(20rem,60vh);overflow-y:auto' });
+    const pick = (o) => el('select', { 'aria-label': o.label, style: 'inline-size:auto;max-inline-size:100%' }, o.items.map(([v, t]) => el('option', { value: v }, t)));
+    const fHouse = pick({ label: 'בית', items: [['', 'כל הבתים'], ...households.map((h) => [h.id, h.title || h.id])] });
+    const fRole = pick({ label: 'תפקיד', items: [['', 'כל התפקידים'], ...Object.entries(ROLE_NAMES)] });
+    const fSeen = pick({ label: 'התחברות', items: [['', 'כולם'], ['yes', 'התחבר/ה'], ['no', 'לא התחבר/ה עדיין']] });
+    const filtered = () => fHouse.value || fRole.value || fSeen.value;
+    let timer = 0, seq = 0, hits = [], active = -1;
+    const fetchPeople = async () => {
+      const p = new URLSearchParams({ q: q.value.trim() });
+      if (fHouse.value) p.set('household', fHouse.value);
+      if (fRole.value) p.set('role', fRole.value);
+      if (fSeen.value) p.set('seen', fSeen.value);
+      const my = ++seq, r = await call('/api/admin/people?' + p);
+      if (my !== seq) return null;                                   // a newer search is on its way
+      owners.push(...r.owners.filter((e) => !owners.includes(e)));
+      for (const h of r.households) if (!households.some((x) => x.id === h.id)) households.push(h);
+      return r.members;
+    };
+    const closeSugg = () => { sugg.hidden = true; active = -1; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); };
+    const mark = (i) => {
+      active = i;
+      [...sugg.children].forEach((li, j) => { li.setAttribute('aria-selected', String(j === i)); li.style.background = j === i ? 'color-mix(in srgb, var(--primary) 14%, transparent)' : ''; });
+      if (i < 0) q.removeAttribute('aria-activedescendant');
+      else { q.setAttribute('aria-activedescendant', 'ad-sugg-' + i); sugg.children[i].scrollIntoView({ block: 'nearest' }); }
+    };
+    // after an edit the whole section is drawn again (my household may have changed): the search comes back as it was
+    const again = () => { members.keep = { q: q.value, h: fHouse.value, r: fRole.value, s: fSeen.value, shown, open: adv.open }; members(box); };
+    const showRows = (rows) => found.replaceChildren(rows.length ? table(rows, again) : el('p', { class: 'muted small' }, 'לא נמצא חבר.'));
+    let shown = null;                                                // the member chosen from the suggestions, if any
+    const choose = (m) => { shown = m.email; q.value = who(m); closeSugg(); showRows([m]); };
+    // every result as rows (Enter, a filter, the 409 of "already a member"); a chosen member stays chosen when redrawn
     const search = async () => {
-      const s = q.value.trim();
-      if (s.length < 2) { found.replaceChildren(); return; }
+      if (q.value.trim().length < 2 && !filtered()) { closeSugg(); found.replaceChildren(); return; }
       try {
-        const r = await call('/api/admin/people?q=' + encodeURIComponent(s));
-        if (q.value.trim() !== s) return;
-        owners.push(...r.owners.filter((e) => !owners.includes(e)));
-        for (const h of r.households) if (!households.some((x) => x.id === h.id)) households.push(h);
-        found.replaceChildren(r.members.length ? table(r.members, () => { search(); members(box); }) : el('p', { class: 'muted small' }, 'לא נמצא חבר.'));
+        const rows = await fetchPeople();
+        if (!rows) return;
+        closeSugg();
+        showRows(shown ? rows.filter((m) => m.email === shown).concat(rows.some((m) => m.email === shown) ? [] : rows) : rows);
       } catch (err) { say(err); }
     };
-    q.oninput = () => { clearTimeout(timer); timer = setTimeout(search, 300); };
+    const suggest = async () => {
+      shown = null;
+      if (q.value.trim().length < 2) { closeSugg(); if (!filtered()) found.replaceChildren(); return; }
+      try {
+        const rows = await fetchPeople();
+        if (!rows) return;
+        hits = rows;
+        if (!rows.length) { closeSugg(); found.replaceChildren(el('p', { class: 'muted small' }, 'לא נמצא חבר.')); return; }
+        found.replaceChildren();
+        sugg.replaceChildren(...rows.map((m, i) => el('li', { id: 'ad-sugg-' + i, role: 'option', 'aria-selected': 'false',
+          style: 'display:grid;gap:2px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;min-block-size:44px;align-content:center',
+          onpointerdown: (e) => e.preventDefault(),                 // keep the focus in the box
+          onpointermove: () => { if (active !== i) mark(i); },
+          onclick: () => choose(m) },
+          el('b', {}, [m.he_name, m.name].filter(Boolean).join(' · ') || m.email),
+          el('small', { class: 'muted', style: 'overflow-wrap:anywhere' }, el('span', { dir: 'ltr' }, m.email), ' · ', houseName(m.household)))));
+        sugg.hidden = false; q.setAttribute('aria-expanded', 'true'); mark(-1);
+      } catch (err) { say(err); }
+    };
+    q.oninput = () => { clearTimeout(timer); timer = setTimeout(suggest, 250); };
+    q.onkeydown = (e) => {
+      const open = !sugg.hidden && hits.length;
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (open) mark(Math.min(active + 1, hits.length - 1)); else suggest(); }
+      else if (e.key === 'ArrowUp' && open) { e.preventDefault(); mark(Math.max(active - 1, -1)); }
+      else if (e.key === 'Home' && open && active >= 0) { e.preventDefault(); mark(0); }
+      else if (e.key === 'End' && open && active >= 0) { e.preventDefault(); mark(hits.length - 1); }
+      else if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); if (open && active >= 0) choose(hits[active]); else { shown = null; search(); } }
+      else if (e.key === 'Escape' && !sugg.hidden) { e.preventDefault(); closeSugg(); }
+    };
+    q.onblur = () => setTimeout(closeSugg, 150);
+    for (const f of [fHouse, fRole, fSeen]) f.onchange = () => { shown = null; search(); };
+    const adv = el('details', { class: 'ad-adv' }, el('summary', {}, 'חיפוש מתקדם'),
+      el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;margin-block:8px' }, fHouse, fRole, fSeen));
 
     const mine = list[0]?.household;
     const email = el('input', { type: 'email', required: true, dir: 'ltr', placeholder: 'כתובת Gmail', 'aria-label': 'כתובת Gmail' });
@@ -437,7 +503,7 @@
       el('h3', {}, `הבית שלי${mine ? ` · ${houseName(mine)}` : ''}`),
       table(list, () => members(box)),
       el('h3', {}, 'חיפוש בכל הבתים'),
-      el('label', { class: 'ad-search' }, q), found,
+      el('div', { class: 'ad-combo', style: 'position:relative;max-inline-size:30rem' }, el('label', { class: 'ad-search', style: 'display:block' }, q), sugg), adv, found,
       el('h3', {}, 'הוספת חבר'),
       el('form', { class: 'ad-form', onsubmit: async (e) => {
         e.preventDefault();
@@ -445,9 +511,14 @@
         catch (err) {
           say(err);
           // already a member (409): nothing was changed; show them in the search, where their row is edited
-          if (err.code === 'already_member') { q.value = email.value.trim(); await search(); q.scrollIntoView({ block: 'center' }); }
+          if (err.code === 'already_member') { q.value = email.value.trim(); shown = null; await search(); q.scrollIntoView({ block: 'center' }); }
         }
       } }, el('label', {}, 'אימייל', email), el('label', {}, 'שם בעברית', he), el('label', {}, 'משק בית', house), el('button', { class: 'btn primary' }, 'הוספה'))));
+    if (members.keep) {
+      const k = members.keep; members.keep = null;
+      Object.assign(q, { value: k.q }); fHouse.value = k.h; fRole.value = k.r; fSeen.value = k.s; adv.open = k.open; shown = k.shown;
+      search();
+    }
     // the first-sign-in message links here (/admin/#members): the room is drawn after the biometric, so scroll now
     if (location.hash === '#members' && !members.scrolled) { members.scrolled = true; box.scrollIntoView({ block: 'start' }); }
   }

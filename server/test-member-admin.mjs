@@ -77,5 +77,52 @@ ok(R.likeOf('a') === null, 'two letters at least');
 ok(R.likeOf(' Dan ') === '%dan%', 'lowercased');
 ok(R.likeOf('50%_x') === '%50\\%\\_x%', "LIKE's signs escaped");
 
+// the search across every household: words in names, email and household, with the filters, run on a real SQLite
+ok(R.wordsOf('a').length === 0 && R.wordsOf(' ').length === 0, 'under two letters: no words');
+ok(R.wordsOf('דני  שבת').join() === '%דני%,%שבת%', 'words split');
+ok(R.wordsOf('a b c d e f g').length === 5, 'five words at most');
+ok(R.searchSql('', {}) === null, 'nothing to look for');
+ok(R.searchSql('x', { seen: 'no' }) !== null, 'a filter alone searches');
+const F = (o) => R.filtersOf((k) => o[k] ?? null);
+ok(JSON.stringify(F({ role: 'boss', seen: 'maybe', household: '' })) === '{}', 'unknown filters dropped');
+ok(JSON.stringify(F({ role: 'head', seen: 'yes', household: 'family' })) === '{"household":"family","role":"head","seen":"yes"}', 'filters read');
+ok(!/דני|'family'/.test(R.searchSql("דני' OR 1=1", { household: 'family' }).where), 'values are bound, never in the SQL');
+
+const { DatabaseSync } = await import('node:sqlite');
+const db = new DatabaseSync(':memory:');
+db.exec(`CREATE TABLE members (email TEXT PRIMARY KEY, name TEXT, he_name TEXT, household TEXT, role TEXT, first_seen INTEGER);
+  CREATE TABLE family_households (id TEXT PRIMARY KEY, title TEXT);
+  CREATE TABLE family_roles (household TEXT, email TEXT, role TEXT);
+  INSERT INTO family_households VALUES ('family', 'משפחת בן שבת'), ('h1', 'משפחת כהן');
+  INSERT INTO members VALUES ('owner@x.test', 'Avi Ben Shabat', 'אבי', 'family', 'owner', 1),
+    ('dani@x.test', 'Dani Ben Shabat', 'דני', 'family', 'member', 1),
+    ('bro@x.test', 'Yossi Cohen', 'יוסי', 'h1', 'member', 1),
+    ('new@x.test', NULL, 'נועה', 'h1', 'member', NULL),
+    ('pct@x.test', '50%_off', NULL, 'h2', 'member', NULL);
+  INSERT INTO family_roles VALUES ('h1', 'bro@x.test', 'head'), ('family', 'bro@x.test', 'head');`);
+const find = (q, f = {}) => {
+  const s = R.searchSql(q, f);
+  if (!s) return '';
+  return db.prepare(`SELECT m.email FROM members m LEFT JOIN family_households h ON h.id = m.household WHERE ${s.where} ORDER BY m.email LIMIT 30`)
+    .all(...s.binds).map((r) => r.email.split('@')[0]).join(',');
+};
+ok(find('dani') === 'dani', 'by the Google name, any case');
+ok(find('shabat') === 'dani,owner', 'by a last name');
+ok(find('יוסי') === 'bro', 'by the Hebrew name');
+ok(find('NEW@X') === 'new', 'by email');
+ok(find('משפחת בן שבת') === 'dani,owner', "by the household's title");
+ok(find('כהן') === 'bro,new', "a word of the title finds that household's members");
+ok(find('h1') === 'bro,new', "by the household's id");
+ok(find('דני שבת') === 'dani', 'every word must match (a name and a title)');
+ok(find('דני כהן') === '', 'words are ANDed');
+ok(find('50%') === 'pct' && find('%_') === 'pct' && find('0_') === '', "LIKE's signs are literal");
+ok(find('', { household: 'h1' }) === 'bro,new', 'filter: household');
+ok(find('', { role: 'owner' }) === 'owner', 'filter: the manager');
+ok(find('', { role: 'head' }) === 'bro', 'filter: a head of their own household only');
+ok(find('', { role: 'member' }) === 'dani,new,pct', 'filter: plain members');
+ok(find('', { seen: 'no' }) === 'new,pct', 'filter: not signed in yet');
+ok(find('', { seen: 'yes', household: 'family' }) === 'dani,owner', 'filters together');
+ok(find('נועה', { seen: 'yes' }) === '', 'words and filters together');
+
 console.log(`member-admin: ${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

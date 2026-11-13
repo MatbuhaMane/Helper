@@ -102,6 +102,53 @@ export function likeOf(q: unknown): string | null {
   return '%' + s.replace(/[\\%_]/g, (x) => '\\' + x) + '%';
 }
 
+/* The search across every household (the owner, 2026-11-13): each word of the query must appear in the email, the Google
+   name, the Hebrew name, the household's id or the household's title ("משפחת בן שבת"), so "דני שבת" finds Dani in the Ben
+   Shabat household. Words are ANDed, at most five; the filters (the advanced search) narrow further. The SQL is built here,
+   with ?n binds only, over `members m LEFT JOIN family_households h ON h.id = m.household`. */
+export interface Filters { household?: string; role?: Role; seen?: 'yes' | 'no' }
+const esc = (s: string) => '%' + s.replace(/[\\%_]/g, (x) => '\\' + x) + '%';
+
+/** the query's words, lowercased and LIKE-escaped: none when the whole query is under two letters */
+export function wordsOf(q: unknown): string[] {
+  const s = String(q ?? '').trim().toLowerCase().slice(0, 60);
+  if (s.replace(/\s/g, '').length < 2) return [];
+  return [...new Set(s.split(/\s+/))].slice(0, 5).map(esc);
+}
+
+/** the advanced search's filters, from the query string; anything unknown is dropped */
+export function filtersOf(get: (k: string) => string | null): Filters {
+  const f: Filters = {};
+  const house = (get('household') || '').trim().slice(0, 40);
+  if (house) f.household = house;
+  const role = get('role');
+  if (role && ROLES.includes(role as Role)) f.role = role as Role;
+  const seen = get('seen');
+  if (seen === 'yes' || seen === 'no') f.seen = seen;
+  return f;
+}
+
+/** the WHERE clause and its binds, or null when there is nothing to look for (no words and no filter) */
+export function searchSql(q: unknown, f: Filters): { where: string; binds: string[] } | null {
+  const words = wordsOf(q);
+  if (!words.length && !f.household && !f.role && !f.seen) return null;
+  const parts: string[] = [], binds: string[] = [];
+  const bind = (v: string) => { binds.push(v); return '?' + binds.length; };
+  for (const w of words) {
+    const n = bind(w);
+    parts.push(`(lower(m.email) LIKE ${n} ESCAPE '\\' OR lower(COALESCE(m.name, '')) LIKE ${n} ESCAPE '\\' OR COALESCE(m.he_name, '') LIKE ${n} ESCAPE '\\'`
+      + ` OR lower(m.household) LIKE ${n} ESCAPE '\\' OR lower(COALESCE(h.title, '')) LIKE ${n} ESCAPE '\\')`);
+  }
+  if (f.household) parts.push(`m.household = ${bind(f.household)}`);
+  const head = "EXISTS (SELECT 1 FROM family_roles r WHERE r.email = m.email AND r.household = m.household AND r.role = 'head')";
+  if (f.role === 'owner') parts.push("m.role = 'owner'");
+  if (f.role === 'head') parts.push(`m.role <> 'owner' AND ${head}`);
+  if (f.role === 'member') parts.push(`m.role <> 'owner' AND NOT ${head}`);
+  if (f.seen === 'yes') parts.push('m.first_seen IS NOT NULL');
+  if (f.seen === 'no') parts.push('m.first_seen IS NULL');
+  return { where: parts.join(' AND '), binds };
+}
+
 /** one line for the audit log */
 export function describe(email: string, c: Change, t: Target): string {
   const parts: string[] = [];

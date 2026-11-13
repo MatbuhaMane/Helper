@@ -1,10 +1,20 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (עריכת חברים בדלת האחורית).
+Last update: 2026-11-13 (החיפוש בכל הבתים).
 
 ## Done
 
+- **החיפוש בכל הבתים** (the owner through the CEO, 2026-11-13), on `ai-features`, waiting for the master's merge:
+  - every word must appear in the email, the Google name, the Hebrew name, the household's id or its title ("משפחת כהן");
+  - suggestions under the box while typing (a combobox: arrows, Enter, Escape, Home/End), each with name, email and household;
+    choosing one shows that member's row, Enter with none chosen shows every result (30 at most, built server-side);
+  - "חיפוש מתקדם" (folded): household, role, signed in or not yet; the search comes back after an edit redraws the section;
+  - the gate is unchanged (requireOwner + the room opened from the owner's own account);
+  - `searchSql` in member-admin-rules.ts, 62 tests (25 new, run on a real in-memory SQLite);
+  - checked on 8790: the suggestions, the keys, the filters, a role change keeping the search; 375 and 1280, light and dark.
+  - for design: the list's look is inline in admin.js for now; please move it to admin.css (.ad-combo, #ad-sugg li).
+  Not checked: a screen reader.
 - **עריכת חברים** (the CEO, 2026-11-13), on `ai-features`, waiting for the master's review (roles and permissions):
   1. In חברים, the table shows my household. Each row has the Hebrew name, the display name, the household (a list, with
      "בית חדש…") and the role (a list: חבר / ראש בית / מנהל). A change of role or household asks first.

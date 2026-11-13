@@ -165,9 +165,10 @@
     const voice = dp.voice || (dp.speak === false ? 'silent' : 'always');
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
     /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
-    const price = Number(shop.priceIls) || 10;
+    // each paid figure has its own price (the special ones cost more); the server charges the same
+    const priceOf = (f) => Number(shop.prices?.[f.id] ?? shop.priceIls) || 10;
     // the family (no limit) gets it for nothing: they see that, not a price (the server decides either way)
-    const buy = async (f) => { let free = false; try { free = !(await api('/api/me/ai')).limited; } catch (_) { /* not known: the price */ }
+    const buy = async (f) => { const price = priceOf(f); let free = false; try { free = !(await api('/api/me/ai')).limited; } catch (_) { /* not known: the price */ }
       H.modal(el('h2', {}, `${f.name}`), preview2d(f),
       el('p', {}, free ? 'בחינם, במשפחה.' : `דמות בתשלום: ₪${price}, מהקרדיט שלך.`),
       el('p', { class: 'muted small' }, free ? 'היא שלך בכל מכשיר.' : 'קונים פעם אחת, והיא שלך בכל מכשיר.'),
@@ -217,7 +218,7 @@
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
         const forSale = f.paid && !owned.has(f.id) && (!f.unlock || earned.has(f.unlock));
-        const sub = forSale ? `💎 ₪${price} · לקנייה` : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
+        const sub = forSale ? `💎 ₪${priceOf(f)} · לקנייה` : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
         return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
       hairRow(),

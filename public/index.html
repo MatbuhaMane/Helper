@@ -400,10 +400,12 @@
     async function dailyDigest() {
       const today = new Date().toLocaleDateString('en-CA');
       try { if (localStorage.getItem('digestDay') === today) return; localStorage.setItem('digestDay', today); } catch (_) { /* no storage: ask every time */ }
-      // the day itself (batch 16, the owner: the card shows every day): the weather and what the calendar holds for today, each
-      // allowed 2.5 s so a slow service never holds the card back
+      // the day itself (batch 16, docs/design/daily.md: the card shows every day): the weather, today's calendar and, on a Friday or a
+      // holiday eve, the candles; each allowed 2.5 s so a slow service never holds the card back
       const soon = (p) => Promise.race([p.catch(() => null), new Promise((r) => setTimeout(() => r(null), 2500))]);
-      const [dg, wx, cal] = await Promise.all([H.api('/api/digest').catch(() => ({})), soon(H.api('/api/weather')), soon(H.api('/api/calendar/events'))]);
+      const geo = [H.prefs('calendar').city, H.prefs('parasha').city].map(String).find((c) => /^\d{3,9}$/.test(c)) || '281184';
+      const [dg, wx, cal, hc] = await Promise.all([H.api('/api/digest').catch(() => ({})), soon(H.api('/api/weather')), soon(H.api('/api/calendar/events')),
+        soon(fetch(`https://www.hebcal.com/shabbat?cfg=json&geonameid=${geo}&M=on&lg=he`).then((r) => (r.ok ? r.json() : null)))]);
       const items = dg?.items || [];
       const svg = (d) => { const t = document.createElement('template'); t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`; return t.content.firstChild; };
       const IC = {
@@ -417,15 +419,46 @@
       const row = (i) => { const [c, d] = IC[i.kind] || IC.other;
         return el('li', {}, el(i.url ? 'a' : 'div', i.url ? { href: i.url } : {}, el('span', { class: 'dsum-ic', style: `--c:${c}` }, svg(d)),
           el('span', { class: 'dsum-txt' }, el('b', {}, i.title), el('small', {}, i.body)), el('span', { class: 'dsum-when' }, when(i.created_at)))); };
-      // every morning (the owner, 2026-11-14): with what waited, or a quiet day with the day's facts
+      // every morning (the owner, 2026-11-14): the facts of the day, today's days, and what waited
       const sun = H.sunNow?.(), hhmm = (ms) => new Date(ms).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
       const list = el('ul', { class: 'dsum-list' }, items.slice(0, 3).map(row));
       const more = items.length > 3 ? el('button', { class: 'dsum-more', type: 'button', onclick: () => { list.append(...items.slice(3).map(row)); more.remove(); } },
         items.length === 4 ? 'ועוד דבר אחד' : `ועוד ${items.length - 3}`) : null;
-      // today's days from the calendar: one-off on the date, yearly by the Gregorian date or by the Hebrew one (after sunset = the next Hebrew day)
-      const iso = today, noon = (d) => new Date(d + 'T12:00:00');
-      const hd = (d) => { const p = new Intl.DateTimeFormat('en-u-ca-hebrew', { month: 'long', day: 'numeric' }).formatToParts(d); return p.find((x) => x.type === 'month')?.value + ' ' + p.find((x) => x.type === 'day')?.value; };
-      const hToday = hd(new Date());
+      // the leaf and the date line: the Hebrew day in letters (the gematria of server/hebdate.ts), the month, then the Gregorian day
+      const now = new Date(), iso = today, noon = (d) => new Date(d + 'T12:00:00');
+      const hpart = (d, t) => new Intl.DateTimeFormat('en-u-ca-hebrew', { month: 'long', day: 'numeric', year: 'numeric' }).formatToParts(d).find((x) => x.type === t)?.value;
+      const gem = (n) => { const u = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'], t = ['', 'י', 'כ', 'ל'];
+        const s = n === 15 ? 'טו' : n === 16 ? 'טז' : t[Math.floor(n / 10)] + u[n % 10];
+        return s.length > 1 ? s.slice(0, -1) + '״' + s.slice(-1) : s + '׳'; };
+      const hDay = gem(+hpart(now, 'day')), hMonth = new Intl.DateTimeFormat('he-u-ca-hebrew', { month: 'long' }).format(now);
+      const dateLine = `${now.toLocaleDateString('he-IL', { weekday: 'long' })}, ${hDay} ב${hMonth} · ${now.toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}`;
+      // the facts row: the weather now (a link to the weather page), and the sunset, or the candles on a Friday or a holiday eve
+      const SKY = {
+        sun: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.5 5.5l1.4 1.4M17.1 17.1l1.4 1.4M5.5 18.5l1.4-1.4M17.1 6.9l1.4-1.4"/>',
+        moon: '<path d="M19 14.5A7.5 7.5 0 1 1 9.5 5a6 6 0 0 0 9.5 9.5z"/>',
+        part: '<circle cx="9" cy="9" r="3.5"/><path d="M9 2.5v1.5M2.5 9H4M4.4 4.4l1 1M13.6 4.4l-1 1"/><path d="M8 20h9a3.5 3.5 0 0 0 .4-7 5 5 0 0 0-9.3 1.2A3 3 0 0 0 8 20z"/>',
+        cloud: '<path d="M7 19h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 19z"/>',
+        fog: '<path d="M7 13h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 13z"/><path d="M4 17h16M6 20.5h12"/>',
+        rain: '<path d="M7 15h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M8.5 18l-1 2.5M12.5 18l-1 2.5M16.5 18l-1 2.5"/>',
+        storm: '<path d="M7 15h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M12.5 16.5l-2 3h3l-2 3"/>',
+        snow: '<path d="M7 15h10.5a4 4 0 0 0 .5-8 6 6 0 0 0-11.4 1.6A3.3 3.3 0 0 0 7 15z"/><path d="M8 18v2M7 19h2M12 19.5v2M11 20.5h2M16 18v2M15 19h2"/>',
+      };
+      const skyOf = (e = '') => (/☀/.test(e) ? 'sun' : /🌙/.test(e) ? 'moon' : /🌤|⛅/.test(e) ? 'part' : /🌫/.test(e) ? 'fog' : /⛈/.test(e) ? 'storm' : /🌨|❄/.test(e) ? 'snow' : /🌦|🌧/.test(e) ? 'rain' : 'cloud');
+      const icon = (d, w = '1.6') => { const s = svg(d); s.setAttribute('class', 'icon'); s.setAttribute('stroke-width', w); return s; };
+      const facts = el('ul', { class: 'dsum-facts', 'aria-label': 'היום בקצרה' });
+      const wn = wx?.forecast?.now, w0 = wx?.forecast?.days?.[0];
+      if (wn) { const k = skyOf(wn.sky?.icon);
+        facts.append(el('li', { class: 'dsum-fact-wx', 'data-sky': k }, el('a', { href: '/tools/weather/' }, icon(SKY[k]),
+          el('span', {}, el('b', {}, `${wn.temp}°`), el('small', {}, (wn.sky?.text || '') + (w0 ? ` · בלילה ${w0.min}°` : '')))))); }
+      const CANDLES = '<path d="M8 21V11M16 21V11"/><path d="M8 4.5c1.2 1.3 1.2 2.8 0 3.5-1.2-.7-1.2-2.2 0-3.5zM16 4.5c1.2 1.3 1.2 2.8 0 3.5-1.2-.7-1.2-2.2 0-3.5z"/><path d="M5 21h14"/>';
+      const candles = (hc?.items || []).find((i) => i.category === 'candles' && String(i.date).startsWith(iso) && i.date.length > 10);
+      if (candles) facts.append(el('li', { class: 'dsum-fact-candles' }, icon(CANDLES), el('span', {}, el('b', {}, hhmm(Date.parse(candles.date))), el('small', {}, 'הדלקת נרות'))));
+      else if (sun?.set) facts.append(el('li', { class: 'dsum-fact-sun' }, icon('<path d="M3 17.5h18M6.5 17.5a5.5 5.5 0 0 1 11 0"/><path d="M12 4.5v4M9.5 7 12 9.5 14.5 7M4.2 12.2l1.3.8M19.8 12.2l-1.3.8M7 20.5h10"/>'),
+        el('span', {}, el('b', {}, hhmm(sun.set)), el('small', {}, 'שקיעה'))));
+      // "היום": today's days from the calendar and the tree, birthdays first. One-off on the date, yearly by the Gregorian date or by the
+      // Hebrew one (after sunset = the next Hebrew day)
+      const hd = (d) => hpart(d, 'month') + ' ' + hpart(d, 'day');
+      const hToday = hd(now);
       const isToday = (e) => {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date || '')) return false;
         if (e.recur === 'none') return e.date === iso;
@@ -433,24 +466,29 @@
         const d = noon(e.date); if (e.after_sunset) d.setDate(d.getDate() + 1);
         return hd(d) === hToday;
       };
-      const KIND = { birthday: 'יום הולדת', yahrzeit: 'יום השנה', anniversary: 'יום נישואין' };
-      const CAL = '<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>';
-      const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>';
+      const KIND = { yahrzeit: 'יום השנה', anniversary: 'יום נישואין' };
+      const CAL = '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>';
       const dayRow = (c, d, b, small) => el('li', {}, el('div', {}, el('span', { class: 'dsum-ic', style: `--c:${c}` }, svg(d)), el('span', { class: 'dsum-txt' }, el('b', {}, b), small ? el('small', {}, small) : null)));
-      const todayRows = [];
-      const w = wx?.forecast?.days?.[0];
-      if (w) todayRows.push(dayRow('#c27c12', SUN, `${wx.place?.name ? wx.place.name + ': ' : ''}${w.sky?.text || 'מזג האוויר'}`,
-        `בין ${w.min}° ל־${w.max}°` + (w.rain >= 30 ? `, סיכוי לגשם ${w.rain}%` : '')));
-      for (const e of (cal?.events || []).filter(isToday).slice(0, 4))
-        todayRows.push(e.kind === 'birthday' ? dayRow(IC.familyday[0], IC.familyday[1], e.title, KIND.birthday) : dayRow('#c0402a', CAL, e.title, KIND[e.kind] || 'בלוח השנה'));
-      const todaySec = todayRows.length ? el('section', { 'aria-labelledby': 'dsum-today' }, el('h3', { class: 'dsum-sub', id: 'dsum-today' }, 'היום'), el('ul', { class: 'dsum-list' }, ...todayRows)) : null;
-      const heb = new Intl.DateTimeFormat('he-u-ca-hebrew', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+      const days = (cal?.events || []).filter(isToday).sort((a, b) => (b.kind === 'birthday') - (a.kind === 'birthday'));
+      const todayRows = days.map((e) => {
+        if (e.kind === 'birthday') {
+          const age = now.getFullYear() - +e.date.slice(0, 4);
+          return dayRow(IC.familyday[0], IC.familyday[1], e.from === 'tree' ? `יום הולדת ל${e.title}` : e.title, (age > 0 && age < 120 ? `${age} היום · ` : '') + 'לשלוח ברכה');
+        }
+        return e.kind === 'reminder' ? dayRow(IC.reminder[0], IC.reminder[1], e.title, e.note || '') : dayRow('#2a7fa8', CAL, e.title, KIND[e.kind] || e.note || '');
+      });
+      const todayList = el('ul', { class: 'dsum-list' }, todayRows.slice(0, 3));
+      const todayMore = todayRows.length > 3 ? el('button', { class: 'dsum-more', type: 'button', onclick: () => { todayList.append(...todayRows.slice(3)); todayMore.remove(); } },
+        todayRows.length === 4 ? 'ועוד דבר אחד' : `ועוד ${todayRows.length - 3}`) : null;
+      const todaySec = todayRows.length ? el('section', { 'aria-labelledby': 'dsum-today' }, el('h3', { class: 'dsum-sub', id: 'dsum-today' }, 'היום'), todayList, todayMore) : null;
+      const LEAF = '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>';
+      const calm = items.length ? null : el('p', { class: 'dsum-calm' }, icon(LEAF), todayRows.length ? 'אין הודעות חדשות מאז אתמול.' : 'יום שקט: אין היום שום דבר בלוח, ולא חיכה לך כלום.');
       const close = el('button', { class: 'dsum-close', type: 'button', 'aria-label': 'סגירת הסיכום' }, svg('<path d="M6 6l12 12M18 6 6 18"/>'));
       const card = el('section', { class: 'dsum', 'aria-labelledby': 'dsum-h' },
-        el('header', { class: 'dsum-head' }, el('div', {}, el('h2', { id: 'dsum-h' }, 'סיכום היום'), el('p', {}, heb)), close),
-        el('div', { class: 'dsum-body' }, todaySec,
-          items.length ? el('section', { 'aria-labelledby': 'dsum-since' }, el('h3', { class: 'dsum-sub', id: 'dsum-since' }, 'מאז הסיכום הקודם'), list, more)
-            : el('p', { class: 'dsum-calm' }, 'מאז אתמול לא חיכה לך כלום.' + (sun?.set ? ` השקיעה היום ב־${hhmm(sun.set)}.` : ''))));
+        el('header', { class: 'dsum-head' }, el('span', { class: 'dsum-leaf', 'aria-hidden': 'true' }, el('b', {}, hDay), el('small', {}, hMonth)),
+          el('div', {}, el('h2', { id: 'dsum-h' }, 'סיכום היום'), el('p', {}, dateLine)), close),
+        el('div', { class: 'dsum-body' }, facts.children.length ? facts : null, todaySec,
+          items.length ? el('section', { 'aria-labelledby': 'dsum-since' }, el('h3', { class: 'dsum-sub', id: 'dsum-since' }, 'מאז הסיכום הקודם'), list, more) : null, calm));
       close.onclick = () => {
         const done = () => { card.remove(); document.querySelector('.greet h1, .sr-head h1')?.focus?.(); };
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done();

@@ -21,7 +21,7 @@
   const A = {
     name: me.name || first(user.he_name || user.name),
     cal: me.calendar || (me.religion ? CAL_OF[me.religion] || '' : ''),
-    city: me.city || '', palette: look.palette || '', paletteSet: !!look.palette,
+    city: me.city || '', place: me.place && me.place.name === me.city ? me.place : null, palette: look.palette || '', paletteSet: !!look.palette,
     figure: ANIMALS.includes(dp.figure) ? dp.figure : ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
     family: Array.isArray(me.familyPlan) ? me.familyPlan : me.familyPlan ? [me.familyPlan] : [],   // (an older single value is read too)
   };
@@ -29,7 +29,11 @@
   const save = {
     name: () => { me.name = A.name.trim().slice(0, 40); keep('me'); },
     cal: () => { me.calendar = A.cal; if (A.cal !== 'all') me.religion = { he: 'jewish', hijri: 'muslim', greg: 'none' }[A.cal]; keep('me'); },
-    city: () => { me.city = A.city.trim().slice(0, 60); keep('me'); },
+    city: () => {
+      me.city = A.city.trim().slice(0, 60);
+      if (A.place && A.place.name === me.city) me.place = A.place; else delete me.place;   // (the point only with the name it belongs to)
+      keep('me');
+    },
     palette: () => { look.palette = A.palette; keep('look'); },
     figure: () => { dp.figure = A.figure; keep('daemon'); },
     family: () => { me.familyPlan = A.family; keep('me'); },
@@ -61,7 +65,7 @@
         + (matchMedia('(pointer: coarse)').matches ? '<p>בטלפון אפשר גם פשוט לנער אותו.</p>' : '') + '</div></div>' },
     { id: 'name', q: () => 'ועכשיו אליך: איך קוראים לך?', hint: 'ככה אפנה אליך', body: () => `<input class="wz-name" id="name" autocomplete="given-name" maxlength="40" placeholder="השם שלך" aria-label="השם שלך" value="${esc(A.name)}">`, ok: () => A.name.trim() },
     { q: () => 'מה הלוח שלך?', hint: 'בשביל החגים, השבת והתאריכים', body: () => tiles('cal', [['he', 'עברי ולועזי', 'שבתות וחגים'], ['hijri', 'היג׳רי ולועזי', 'רמדאן והחגים'], ['greg', 'לועזי', 'בלי חגים מיוחדים'], ['all', 'הכול יחד', 'כל החגים']]), ok: () => A.cal },
-    { id: 'city', q: () => 'איפה הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<input class="wz-name" id="city" maxlength="60" placeholder="עיר" aria-label="העיר" value="${esc(A.city)}" style="font-size:1.5rem"><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
+    { id: 'city', q: () => 'איפה הבית?', hint: 'בשביל מזג האוויר וזמני היום', body: () => `<div class="wz-place"><input class="wz-name" id="city" maxlength="60" placeholder="עיר או יישוב" aria-label="העיר או היישוב" value="${esc(A.city)}" style="font-size:1.5rem" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="city-sugg"><ul class="wz-sugg" id="city-sugg" role="listbox" aria-label="מקומות שנמצאו" hidden></ul></div><p class="wz-home" id="city-home" aria-live="polite"></p><div class="wz-chips">${['ירושלים', 'תל אביב', 'חיפה', 'באר שבע', 'נצרת'].map((c) => `<button class="wz-chip" type="button" aria-pressed="${A.city === c}" data-city="${c}">${c}</button>`).join('')}</div>`, ok: () => A.city.trim() },
     { q: () => 'באיזה צבע האוהל שלך?', hint: 'אפשר להחליף בכל רגע בהגדרות', body: () => `<div class="wz-drops" role="radiogroup" aria-label="ערכת צבעים">${PALETTES.map(([v, d1, d2, n]) =>
       `<button class="wz-drop" type="button" role="radio" aria-checked="${A.paletteSet && A.palette === v}" aria-label="${n}" title="${n}" data-p="${v}" style="--d1:${d1};--d2:${d2}"></button>`).join('')}</div>`, ok: () => A.paletteSet },
     { q: () => 'מי ילווה אותך?', hint: 'החבר שלך באוהל. אפשר להחליף בכל רגע', body: () => `<div class="wz-figs" role="radiogroup" aria-label="הדמות">${ANIMALS.map((f) => `<button class="wz-tile" type="button" role="radio" aria-checked="${A.figure === f}" data-fig="${f}" aria-label="${Figure2D.FIGURES[f]?.name || f}"><span class="wz-mini" data-f="${f}"></span><b>${Figure2D.FIGURES[f]?.name || f}</b></button>`).join('')}</div>`, ok: () => A.figure },
@@ -85,9 +89,10 @@
   function wire(box) {
     const typed = (k) => (e) => { A[k] = e.target.value; refresh(); clearTimeout(typing); typing = setTimeout(save[k], 500); };
     box.querySelector('#name')?.addEventListener('input', typed('name'));
-    box.querySelector('#city')?.addEventListener('input', (e) => { box.querySelectorAll('.wz-chip').forEach((c) => c.setAttribute('aria-pressed', 'false')); typed('city')(e); });
+    box.querySelector('#city')?.addEventListener('input', (e) => { box.querySelectorAll('.wz-chip').forEach((c) => c.setAttribute('aria-pressed', 'false')); A.place = null; typed('city')(e); });
+    if (box.querySelector('#city')) placeSearch(box);
     box.querySelectorAll('.wz-chip').forEach((c) => c.addEventListener('click', () => {
-      A.city = c.dataset.city; box.querySelector('#city').value = A.city; box.querySelectorAll('.wz-chip').forEach((x) => x.setAttribute('aria-pressed', String(x === c)));
+      A.city = c.dataset.city; A.place = null; box.querySelector('#city').value = A.city; placeSearch.home?.(); box.querySelectorAll('.wz-chip').forEach((x) => x.setAttribute('aria-pressed', String(x === c)));
       save.city(); glad(); refresh();
     }));
     box.querySelectorAll('.wz-tile[data-k]').forEach((t) => t.addEventListener('click', () => {
@@ -114,6 +119,72 @@
       A.figure = t.dataset.fig; save.figure(); await meet(A.figure); glad(); refresh();
     }));
     box.querySelectorAll('input').forEach((i) => i.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !go.disabled) go.click(); }));
+  }
+  /* "איפה הבית?": a real place in Israel from Google (server/places.ts, the key stays there). While typing, up to five
+     towns or neighbourhoods show under the box (a combobox: arrows, Enter, Escape); picking one marks it as home:
+     me.city gets its name and me.place {id, name, lat, lng, at} its point, which the weather uses (up to 30 days, Google's
+     terms). Anything typed and not picked stays free text, as before; with no key, a quota or no network, the box is
+     simply free text. The look is design's (.wz-place, .wz-sugg, .wz-home); until it is drawn, a few plain rules. */
+  let placesOn = true;
+  function placeSearch(box) {
+    const q = box.querySelector('#city'), list = box.querySelector('#city-sugg'), home = box.querySelector('#city-home');
+    const newToken = () => crypto.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2)).slice(0, 36);
+    let token = newToken(), hits = [], active = -1, timer = 0, seq = 0, plain = false;
+    const showHome = () => home.replaceChildren(...(A.place && A.place.name === A.city.trim() ? ['🏠 ', H.el('b', {}, A.place.name), ' סומן כבית'] : []));
+    placeSearch.home = showHome;
+    const close = () => { list.hidden = true; active = -1; q.setAttribute('aria-expanded', 'false'); q.removeAttribute('aria-activedescendant'); };
+    const mark = (i) => {
+      active = i;
+      [...list.children].forEach((li, j) => { li.setAttribute('aria-selected', String(j === i)); if (plain) li.style.background = j === i ? 'color-mix(in srgb, var(--primary) 12%, transparent)' : ''; });
+      if (i < 0) q.removeAttribute('aria-activedescendant'); else q.setAttribute('aria-activedescendant', `city-sugg-${i}`);
+    };
+    async function pick(p) {
+      close(); clearTimeout(timer); clearTimeout(typing);
+      A.city = p.name; q.value = p.name; A.place = null;
+      try {
+        const r = await H.api('/api/places/home/pick', { body: { id: p.id, session: token }, noRedirect: true });
+        A.place = { id: r.id, name: p.name, lat: r.lat, lng: r.lng, at: Date.now() };
+      } catch (_) { /* the name is kept as free text */ }
+      token = newToken();
+      save.city(); showHome(); glad(); refresh();
+    }
+    async function suggest() {
+      const text = q.value.trim();
+      if (!placesOn || text.length < 2 || A.place) { close(); return; }
+      const my = ++seq;
+      let r;
+      try { r = await H.api('/api/places/home/suggest', { body: { q: text, session: token }, noRedirect: true }); }
+      catch (e) { if (e.status === 429 || e.status === 503) placesOn = false; close(); return; }
+      if (my !== seq || q.value.trim() !== text) return;
+      if (!r.configured) { placesOn = false; close(); return; }
+      hits = r.places || [];
+      if (!hits.length) { close(); return; }
+      list.replaceChildren(...hits.map((p, i) => H.el('li', { id: `city-sugg-${i}`, role: 'option', 'aria-selected': 'false',
+        onpointerdown: (e) => e.preventDefault(), onclick: () => pick(p),
+        style: plain ? 'display:flex;gap:8px;align-items:baseline;padding:10px 12px;border-radius:8px;cursor:pointer' : null },
+        H.el('b', {}, p.name), p.sub ? H.el('small', { class: 'muted' }, p.sub) : null)));
+      list.hidden = false; q.setAttribute('aria-expanded', 'true'); mark(-1);
+    }
+    q.addEventListener('input', () => { showHome(); clearTimeout(timer); timer = setTimeout(suggest, 300); });
+    q.addEventListener('keydown', (e) => {
+      const open = !list.hidden && hits.length;
+      if (e.key === 'ArrowDown' && open) { e.preventDefault(); mark(Math.min(active + 1, hits.length - 1)); }
+      else if (e.key === 'ArrowUp' && open) { e.preventDefault(); mark(Math.max(active - 1, -1)); }
+      else if (e.key === 'Enter' && open && active >= 0) { e.preventDefault(); e.stopImmediatePropagation(); pick(hits[active]); }
+      else if (e.key === 'Escape' && open) { e.preventDefault(); e.stopPropagation(); close(); }
+    });
+    q.addEventListener('blur', () => setTimeout(close, 150));
+    // until welcome.css draws the list, it floats under the box with a few plain rules
+    queueMicrotask(() => {
+      const wrap = box.querySelector('.wz-place');
+      if (getComputedStyle(list).position === 'absolute') return;
+      plain = true;
+      Object.assign(wrap.style, { position: 'relative', inlineSize: 'min(100%, 380px)', marginInline: 'auto' });
+      Object.assign(list.style, { position: 'absolute', insetInline: '0', insetBlockStart: 'calc(100% + 4px)', zIndex: '5', margin: '0', padding: '4px', listStyle: 'none',
+        background: 'var(--card)', border: '1px solid var(--line-strong, var(--line))', borderRadius: 'var(--radius-sm, 10px)', boxShadow: 'var(--shadow)', textAlign: 'start' });
+      list.addEventListener('pointerover', (e) => { const li = e.target.closest('li'); if (li) mark([...list.children].indexOf(li)); });
+    });
+    showHome();
   }
   async function meet(id) {
     friend?.destroy?.(); $('friend').textContent = '';

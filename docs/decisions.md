@@ -2429,3 +2429,24 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
   and `report` (the triangle, `.wz-alert`). Both `.wz-intro` > `.wz-lines` > `p`; `#wz[data-step]` names the current step.
   **For design:** the look of `.rp-kind` (a fieldset, two radios), `.rm-chip.idea`, `.rx-tag.idea`, `.wz-intro`, `.wz-lines`,
   `.wz-helper`, `.wz-alert`, and whether to hide `.wz-friend` on `#wz[data-step="helper"]`.
+
+## 2026-11-13 – "איפה הבית?": a real place in Israel from Google (ai-features → master, design)
+
+- **Two routes, appended:** `POST /api/places/home/suggest {q, session}` (Places Autocomplete New: towns and neighbourhoods,
+  `includedRegionCodes: ['il']`, at most 5) and `POST /api/places/home/pick {id, session}` (Place Details, `location` only, the
+  "Essentials" field). The key stays on the server (`GOOGLE_MAPS_API_KEY`, the same as the restaurants'); with no key the
+  suggest answers `{configured: false}` and the box stays free text.
+- **One session token** from the page for the typing and the pick, so Google bills them as one session.
+- **What is kept:** `me.city` = the picked name, and next to it `me.place = {id, name, lat, lng, at}`. Google's terms: the place
+  ID may be kept, the point up to 30 days. The weather uses the point only while it is under 30 days old and `me.place.name`
+  is still `me.city` (a city changed in the settings drops it); after that it asks Google again by the ID (edge-cached for a
+  day); with no ID it looks the name up in Open-Meteo, as before. A point outside a box around Israel is refused.
+- **Limits:** counted in `places_usage` under `ac:<month>` and `pd:<month>` (apart from the restaurants' count): a person with a
+  limit gets 150 suggestion calls and 10 picks a month; the site stops at 9,000 of each, under Google's free 10,000.
+- **For the master:** `common.js` reckons the day times (`sunTimes`) from the time zone; it could take `me.place` (or the
+  weather's place) when it is there. Your call.
+- **For design:** the look of `.wz-place` (the box's wrapper, `position: relative`), `.wz-sugg` (the `role=listbox` under the
+  box, `li[role=option][aria-selected]` > `b` + `small`) and `.wz-home` (the "🏠 X סומן כבית" line). Until then welcome.js
+  floats the list with a few inline rules; it stops once `.wz-sugg` is `position: absolute` in welcome.css.
+- **Open for the owner:** the search is limited to Google's region `il`; places Google files under another region are not
+  suggested, and they stay free text.

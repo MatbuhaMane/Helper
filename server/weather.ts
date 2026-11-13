@@ -5,12 +5,14 @@
 //     sea: null | { spot: {id, name}, seaAt, days: [{date, waves, period, water, dive, surf, beach}] }, beaches: [{id, name}] }
 // The sea (server/sea-logic.ts): the beach asked for or chosen (prefs.weather.beach), else the place itself when it is on
 // the coast (Open-Meteo Marine has a cell near it), else none.
-// The city: the one asked for, else the settings' (me.city), else the calendar's (a GeoNames id), else Jerusalem.
+// The city: the one asked for, else the settings' (me.city; its point from me.place while that is fresh, server/places.ts),
+// else the calendar's (a GeoNames id), else Jerusalem.
 
 import { Ctx, HttpError, json, requireUser } from './core';
 import { prefsFor } from './prefs';
 import * as W from './weather-logic';
 import * as Sea from './sea-logic';
+import { freshPoint, pointById } from './places';
 
 const JERUSALEM = '281184';
 const GEO = 'https://geocoding-api.open-meteo.com/v1';
@@ -98,7 +100,12 @@ export async function get(ctx: Ctx) {
     else if (/^\d{3,9}$/.test(cal)) { city = cal; from = 'calendar'; }
     else { city = JERUSALEM; from = 'default'; }
   }
-  const p = await place(ctx, city);
+  // the home picked in the welcome (me.place, Google's point): used while it is the same city and under 30 days old
+  const home = prefs.me?.data?.place as { id?: string; name?: string } | undefined;
+  let pt = from === 'settings' ? freshPoint(home, city) : null;
+  if (!pt && from === 'settings' && home?.id && String(home.name || '').trim() === city)       // over 30 days: Google again, by the ID
+    pt = await edge(ctx, 'gp:' + String(home.id).slice(0, 300), 86400, () => pointById(ctx.env, home.id));
+  const p = pt ? { id: 0, name: city, latitude: pt.lat, longitude: pt.lng, country: 'ישראל' } as Place : await place(ctx, city);
   if (!p) throw new HttpError(404, 'city_not_found');
   const fc = await forecast(ctx, p);
   const sea = await seaFor(ctx, p, fc, beachId).catch(() => null);

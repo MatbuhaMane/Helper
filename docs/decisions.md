@@ -38,6 +38,13 @@ The owner asked for two things.
 
 Status: done (server).
 
+## 2026-11-14 – Dracula drawn again, younger (design → master, business)
+
+The owner: Dracula younger and more attractive, Cleopatra's counterpart. Redrawn as a handsome young count (black swept
+hair, a red-lined cape, a red waistcoat), elegant rather than frightening. Same id `dracula`, same name, still paid, still
+`tags: ['horror']` (worth asking the owner whether he still needs that tag now that he is not scary). His palette tints the
+lining and the waistcoat. Status: done (design).
+
 ## 2026-11-14 – A basic palette for every free figure (design → ai-features, master, business)
 
 Following the owner's decision that palettes are never sold: the 12 free figures (fennec, owl, lamb, hedgehog, Ibn Sina,

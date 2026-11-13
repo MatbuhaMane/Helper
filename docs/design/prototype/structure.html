@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>עץ מבנה – הדלת האחורית</title>
+  <!-- A sample of the back door's עץ מבנה tab (admin.css: .st, .st-panel, .fe, .bd-egg) and the surprise egg (base.css .egg).
+       Copy to public/ to view (not committed there). ?drag=1 shows a drag in progress, ?panel=1 opens the sheet on a phone,
+       ?no=1 shows a refused drop, ?found=1 shows the egg found. Tap the egg in the eggs card to see it crack. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/admin/admin.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; }</style>
+</head>
+<body>
+<main class="wide bd"><div class="bd-dash">
+  <div class="bd-part" id="structure">
+    <div class="st-wrap">
+      <section class="card st"><div class="st-head"><h2>עץ מבנה</h2><button class="btn small ghost" type="button">פתיחת הכל</button>
+        <p>גוררים בידית ⠿ כדי לסדר או להעביר כלי לחלק אחר. מקישים על העיפרון כדי לשנות שם, כרית וצבע.</p></div>
+        <ul class="st-tree" role="tree" aria-label="מבנה האוהל" id="tree"></ul>
+        <div class="st-zone" id="zone">גוררים לכאן כדי לפתוח חלק חדש</div></section>
+      <aside class="card st-panel" id="panel" aria-labelledby="st-ph-h"></aside>
+    </div>
+    <div class="st-scrim" id="scrim" hidden></div>
+
+    <section class="card fe" id="fire"><div class="st-head"><h2>המדורה</h2><p>כך ייראה הגלגל בעמוד הבית. מקישים על כרית כדי להחליף אותה, × מוריד אותה, ו־+ מוסיף.</p></div>
+      <div class="fe-ring" id="ring"><div class="fe-fire" aria-hidden="true"><img src="/assets/campfire/base.webp" alt=""><img class="fe-flame" src="/assets/campfire/flame-2.webp" alt=""></div></div>
+      <div class="fe-tray" id="tray"><p class="fe-tray-h">מה יבוא במקום <b>אוכל</b>?</p><ul class="fe-opts" id="opts"></ul></div>
+      <div class="st-actions"><button class="btn primary" type="button">שמירה</button><button class="btn ghost" type="button">חזרה לברירת המחדל</button></div></section>
+
+    <section class="card bd-egg" id="eggs"><div class="st-head"><h2>ביצי הפתעה <button class="egg" type="button" aria-label="ביצת הפתעה" id="egg"></button></h2><button class="btn small primary" type="button">ביצה חדשה</button>
+      <p>ביצה קטנה שמסתתרת בעמוד בימים שבחרתם. מי שמוצא אותה רואה את הטקסט, והמונה עולה.</p></div>
+      <ul class="egg-list">
+        <li class="egg-row" data-st="live"><span class="egg-mini" aria-hidden="true"></span><span class="egg-what"><b>פרשת השבוע</b><small>"מצאתם את פך השמן!"</small></span><span class="egg-when">14.12 – 22.12</span><span class="egg-count"><b>12</b> מצאו</span><span class="egg-st">פעילה</span><button class="st-ibtn" type="button" aria-label="עריכת הביצה בפרשת השבוע"></button></li>
+        <li class="egg-row" data-st="soon"><span class="egg-mini" aria-hidden="true"></span><span class="egg-what"><b>שירון</b><small>"שיר לפורים מחכה לכם בפנים"</small></span><span class="egg-when">13.3 – 15.3</span><span class="egg-count"><b>0</b> מצאו</span><span class="egg-st">בקרוב</span><button class="st-ibtn" type="button" aria-label="עריכת הביצה בשירון"></button></li>
+        <li class="egg-row" data-st="over"><span class="egg-mini" aria-hidden="true"></span><span class="egg-what"><b>עץ המשפחה – עמוד ארוך עם שם שלא נגמר</b><small>"מצאתם את הסבא רבא!"</small></span><span class="egg-when">1.11 – 7.11</span><span class="egg-count"><b>27</b> מצאו</span><span class="egg-st">הסתיימה</span><button class="st-ibtn" type="button" aria-label="עריכה"></button></li>
+        <li class="egg-row" data-st="off"><span class="egg-mini" aria-hidden="true"></span><span class="egg-what"><b>בידור</b><small>"בונוס!"</small></span><span class="egg-when">—</span><span class="egg-count"><b>3</b> מצאו</span><span class="egg-st">כבויה</span><button class="st-ibtn" type="button" aria-label="עריכה"></button></li>
+      </ul>
+      <form class="egg-form" onsubmit="event.preventDefault()">
+        <label class="field"><span>באיזה עמוד</span><select><option>פרשת השבוע</option><option>שירון</option><option>עץ המשפחה</option></select></label>
+        <label class="field"><span>מה כתוב כשמוצאים</span><input type="text" maxlength="80" value="מצאתם את פך השמן!"></label>
+        <div class="egg-dates"><label class="field"><span>מתאריך</span><input type="date" value="2026-12-14"></label><label class="field"><span>עד תאריך</span><input type="date" value="2026-12-22"></label></div>
+        <label class="egg-on"><input type="checkbox" checked> פעילה</label>
+        <div class="st-actions"><button class="btn primary">שמירה</button><button class="btn ghost" type="button">ביטול</button><button class="btn ghost st-del" type="button">מחיקה</button></div></form>
+    </section>
+  </div>
+</div></main>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search);
+  if (q.get('theme')) setTimeout(() => document.documentElement.dataset.theme = q.get('theme'), 50);
+  const ic = (n) => (H.icon ? H.icon(n) : document.createElement('i')).outerHTML;
+  const T = [
+    { n: 'עץ המשפחה', s: 'המשפחה שלנו, הקשרים והתמונות', ic: 'family', p: 'p15', c: '#8a5a32', tag: ['fixed', 'קבוע'], kids: [['מפגש משפחתי', 'family', 'p14'], ['הודעות', 'mail', '']] },
+    { n: 'אוכל', s: 'רשימת קניות, ספר מתכונים, דיאטה', ic: 'food', p: 'p13', c: '#2f7d4a', tag: ['ring', 'במדורה'], cur: 1, kids: [['רשימת קניות', 'cart', 'p12'], ['ספר מתכונים', 'food', ''], ['דיאטה קטוגנית', 'food', '']] },
+    { n: 'פרשת השבוע', s: 'הפרשה, הקריאה וזמני השבת', ic: 'torah', p: 'p02', c: '#8e2435', tag: ['ring', 'במדורה'], open: false, kids: [['לוח שנה', 'calendar', 'p07']] },
+    { n: 'חדשות', s: 'כל האתרים במקום אחד', ic: 'news', p: 'p11', c: '#3557a8', tag: ['hidden', 'מוסתר'] },
+  ];
+  const row = (o, part) => `<div class="st-row"${o.cur ? ' aria-current="true"' : ''}><button class="st-grip" type="button" aria-label="הזזת ${o.n}"></button><button class="st-tw" type="button" aria-label="פתיחה"></button>`
+    + `<span class="st-pil">${o.p ? `<img src="/assets/pillows/${o.p}.webp" alt="">` : ''}${ic(o.ic)}</span><span class="st-name"><b>${o.n}</b>${o.s ? `<small>${o.s}</small>` : ''}</span>`
+    + (o.tag ? `<span class="st-tag" data-t="${o.tag[0]}">${o.tag[1]}</span>` : '') + `<button class="st-ibtn" type="button" aria-label="עריכת ${o.n}"></button></div>`;
+  const tree = document.getElementById('tree');
+  tree.innerHTML = T.map((o, i) => `<li class="st-node" role="treeitem" data-kind="part" aria-expanded="${o.open === false ? 'false' : 'true'}" style="--c:${o.c}">${row(o)}`
+    + (o.kids ? `<ul class="st-kids" role="group">${o.kids.map(([n, k, p]) => `<li class="st-node" role="treeitem" data-kind="tool">${row({ n, ic: k, p })}</li>`).join('')}</ul>` : '') + '</li>').join('');
+  tree.querySelectorAll('.st-tw').forEach((b) => b.onclick = () => { const li = b.closest('.st-node'); li.setAttribute('aria-expanded', li.getAttribute('aria-expanded') === 'true' ? 'false' : 'true'); });
+  if (q.get('drag') || q.get('no')) {
+    const nodes = tree.querySelectorAll(':scope > .st-node'), carried = nodes[1].querySelector('.st-kids > .st-node:nth-child(2)');
+    tree.classList.add('dragging'); carried.classList.add('away');
+    const target = q.get('no') ? carried.parentElement.querySelector('.st-node') : nodes[0];
+    if (q.get('no')) target.classList.add('no'); else { nodes[0].classList.add('into'); nodes[0].querySelector('.st-kids').insertAdjacentHTML('afterbegin', '<li class="st-ph" aria-hidden="true"></li>'); }
+    const r = target.querySelector('.st-row').getBoundingClientRect();
+    const g = document.createElement('div'); g.className = 'st-ghost' + (q.get('no') ? ' no' : ''); g.innerHTML = carried.querySelector('.st-row').outerHTML;
+    g.style.cssText = `--x:${r.left + 30}px; --y:${r.top + 24}px; --w:${carried.querySelector('.st-row').offsetWidth}px`; document.body.append(g);
+  }
+  if (q.get('landed')) tree.querySelector('.st-kids .st-node').classList.add('landed');
+
+  const pills = Array.from({ length: 15 }, (_, i) => 'p' + String(i + 1).padStart(2, '0')), used = { p15: 'עץ המשפחה', p09: 'כלים', p08: 'הגדרות', p11: 'חדשות', p02: 'פרשת השבוע' };
+  const icons = ['food', 'cart', 'news', 'music', 'torah', 'calendar', 'family', 'mail', 'tools', 'settings', 'fun'];
+  const colors = [['#2f7d4a', 'זית'], ['#8e2435', 'בורדו'], ['#d2601a', 'כתום'], ['#c27c12', 'דבש'], ['#3557a8', 'כחול'], ['#b8457a', 'ורוד'], ['#8a5a32', 'אדמה'], ['#6c4ab4', 'סגול']];
+  const panel = document.getElementById('panel');
+  panel.innerHTML = `<div class="st-head"><h3 id="st-ph-h">עריכה: אוכל</h3><button class="st-ibtn close" type="button" aria-label="סגירה"></button></div>
+    <div class="st-prev" style="--c2:#2f7d4a"><span class="pillow"><img src="/assets/pillows/p13.webp" alt=""><span class="badge">${ic('food')}</span></span><b>אוכל</b></div>
+    <label class="field"><span>שם</span><input type="text" value="אוכל"></label>
+    <label class="field"><span>תיאור</span><textarea rows="2">רשימת קניות, ספר מתכונים, דיאטה והמקרר</textarea></label>
+    <fieldset class="st-pick st-icons"><legend>סמל</legend>${icons.map((n) => `<label title="${n}"><input type="radio" name="st-ic" value="${n}"${n === 'food' ? ' checked' : ''}>${ic(n)}</label>`).join('')}</fieldset>
+    <fieldset class="st-pick st-pills"><legend>כרית</legend>${pills.map((p) => `<label${used[p] ? ` data-used title="${used[p]}"` : ''}><input type="radio" name="st-pil" value="${p}"${p === 'p13' ? ' checked' : ''}><img src="/assets/pillows/${p}.webp" alt="${p}"></label>`).join('')}</fieldset>
+    <fieldset class="st-pick st-colors"><legend>צבע</legend>${colors.map(([c, n]) => `<label style="--sw:${c}" title="${n}"><input type="radio" name="st-c" value="${c}"${c === '#2f7d4a' ? ' checked' : ''} aria-label="${n}"></label>`).join('')}<label class="st-other" title="צבע אחר"><input type="color" value="#4f7a3a" aria-label="צבע אחר"></label></fieldset>
+    <div class="st-actions"><button class="btn primary" type="button">שמירה</button><button class="btn ghost" type="button">ביטול</button><button class="btn ghost st-del" type="button">הסרה</button></div>`;
+  const prev = panel.querySelector('.st-prev');
+  panel.querySelectorAll('[name="st-pil"]').forEach((r) => r.onchange = () => prev.querySelector('img').src = `/assets/pillows/${r.value}.webp`);
+  panel.querySelectorAll('[name="st-c"]').forEach((r) => r.onchange = () => prev.style.setProperty('--c2', r.value));
+  panel.querySelector('[type=color]').oninput = (e) => prev.style.setProperty('--c2', e.target.value);
+  const phone = matchMedia('(max-width: 999px)').matches;
+  if (phone && !q.get('panel')) panel.hidden = true; else if (phone) document.getElementById('scrim').hidden = false;
+  document.getElementById('scrim').onclick = panel.querySelector('.close').onclick = () => { panel.hidden = true; document.getElementById('scrim').hidden = true; };
+  tree.querySelectorAll('.st-row .st-ibtn').forEach((b) => b.onclick = () => { if (phone) { panel.hidden = false; document.getElementById('scrim').hidden = false; } });
+
+  const ring = [['עץ המשפחה', 'family', 'p15', '#8a5a32', 1], ['כלים', 'tools', 'p09', '#c27c12', 1], ['הגדרות', 'settings', 'p08', '#c98a1c', 1], ['אוכל', 'food', 'p13', '#2f7d4a'], ['שירון', 'music', 'p03', '#d2601a'], ['פרשת השבוע', 'torah', 'p02', '#8e2435']];
+  const R = document.getElementById('ring'), N = ring.length + 1;
+  R.insertAdjacentHTML('beforeend', ring.map(([n, k, p, c, fixed], i) => {
+    const a = 90 + i * 360 / N, z = Math.round(10 + 9 * Math.sin(a * Math.PI / 180));
+    return `<div class="fe-seat" style="--a:${a}deg; --z:${z}; --c2:${c}"${fixed ? ' data-fixed' : ''}${n === 'אוכל' ? ' aria-current="true"' : ''}><button class="fe-pick" type="button" aria-pressed="${n === 'אוכל'}"><span class="pillow"><img src="/assets/pillows/${p}.webp" alt=""><span class="badge">${ic(k)}</span></span><span class="label">${n}</span></button>`
+      + (fixed ? '' : `<button class="fe-x" type="button" aria-label="הסרת ${n} מהמדורה"></button>`) + '</div>';
+  }).join('') + `<div class="fe-seat fe-add" style="--a:${90 + ring.length * 360 / N}deg; --z:${Math.round(10 + 9 * Math.sin((90 + ring.length * 360 / N) * Math.PI / 180))}"><button class="fe-pick" type="button"><span class="pillow"></span><span class="label">הוספה</span></button></div>`);
+  const opts = [['חדשות', 'p11'], ['בידור', 'p05'], ['לוח שנה', 'p07'], ['מפגש משפחתי', 'p14'], ['הודעות', 'p13'], ['רשימת קניות', 'p12'], ['שירון', 'p03', 1], ['פרשת השבוע', 'p02', 1]];
+  document.getElementById('opts').innerHTML = opts.map(([n, p, on]) => `<li><button class="fe-opt" type="button"${on ? ' aria-disabled="true"' : ''}><img src="/assets/pillows/${p}.webp" alt=""><span>${n}</span></button></li>`).join('');
+
+  const egg = document.getElementById('egg');
+  const crack = () => { egg.classList.add('found'); document.body.insertAdjacentHTML('beforeend', '<div class="egg-note" role="status">מצאתם את פך השמן!</div>'); };
+  egg.onclick = crack; if (q.get('found')) crack();
+})();
+</script>
+</body>
+</html>

@@ -100,11 +100,11 @@
 /* the parts as apps (the toolbox's tiles): each one's colours and line icon from data-bd */
 .bd-apps { padding-block: 6px; inline-size: 100%; max-inline-size: 640px; margin-inline: auto; }   /* as wide as the toolbox: 5 + 4 on a computer, 3 × 3 on a phone */
 .bd-apps .app:is([data-bd="messages"], [data-bd="credits"], [data-bd="gifts"], [data-bd="settings"], [data-bd="members"], [data-bd="features"],
-  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"], [data-bd="reports"]) .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
+  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"], [data-bd="reports"], [data-bd="structure"]) .ic::before { content: ""; inline-size: 36px; block-size: 36px; background: currentColor;
   -webkit-mask: var(--bd-ic) center / contain no-repeat; mask: var(--bd-ic) center / contain no-repeat; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .25)); }
 /* only design's icon: a line icon the page put inside the tile is hidden for these nine */
 .bd-apps .app:is([data-bd="messages"], [data-bd="credits"], [data-bd="gifts"], [data-bd="settings"], [data-bd="members"], [data-bd="features"],
-  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"], [data-bd="reports"]) .ic > svg { display: none; }
+  [data-bd="permissions"], [data-bd="ai"], [data-bd="log"], [data-bd="reports"], [data-bd="structure"]) .ic > svg { display: none; }
 .bd-apps .app[data-bd="messages"]    { --c1: #ffb56e; --c2: #c4621e; --bd-ic: url(/assets/bd-icons/messages.svg); }
 .bd-apps .app[data-bd="credits"]     { --c1: #f2cf5b; --c2: #a3721a; --bd-ic: url(/assets/bd-icons/credits.svg); }
 .bd-apps .app[data-bd="gifts"]       { --c1: #ff9fb8; --c2: #c4476a; --bd-ic: url(/assets/bd-icons/gifts.svg); }
@@ -115,6 +115,7 @@
 .bd-apps .app[data-bd="ai"]          { --c1: #7fd6cf; --c2: #1f7f77; --bd-ic: url(/assets/bd-icons/ai.svg); }
 .bd-apps .app[data-bd="log"]         { --c1: #cdb98e; --c2: #77603a; --bd-ic: url(/assets/bd-icons/log.svg); }
 .bd-apps .app[data-bd="reports"]     { --c1: #a9b6f2; --c2: #4a55a8; --bd-ic: url(/assets/bd-icons/reports.svg); }   /* תיבת פניות, beside the announcement */
+.bd-apps .app[data-bd="structure"]   { --c1: #e8c48a; --c2: #8a5a32; --bd-ic: url(/assets/bd-icons/structure.svg); }   /* עץ מבנה: the tree, the fire, the eggs */
 /* a count of new things on a part (new requests, members waiting): a small red dot with the number */
 .bd-count { position: absolute; inset-block-start: -6px; inset-inline-end: 6px; min-inline-size: 22px; block-size: 22px; padding: 0 6px; border-radius: 999px;
   display: grid; place-items: center; font-size: .76rem; font-weight: 700; font-variant-numeric: tabular-nums; color: #fff; background: #c2412d;
@@ -157,13 +158,13 @@
 @media (min-width: 900px) { .rx { grid-template-columns: minmax(270px, 340px) minmax(0, 1fr); } }
 @media (max-width: 899px) { .rx[data-view="thread"] > .rx-side, .rx:not([data-view="thread"]) > .rx-thread { display: none; } }
 .rx-side { display: grid; gap: 10px; }
-.rx-filters, .rx-state { display: flex; flex-wrap: wrap; gap: 6px; }
-.rx-filters button, .rx-state button { font: inherit; font-size: .86rem; min-block-size: 36px; padding: 0 12px; border-radius: 999px; cursor: pointer;
+.rx-filters, .rx-state, .bd-inv-f { display: flex; flex-wrap: wrap; gap: 6px; }
+.rx-filters button, .rx-state button, .bd-inv-f button { font: inherit; font-size: .86rem; min-block-size: 36px; padding: 0 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--line-strong); background: var(--card); color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
-.rx-filters button span { min-inline-size: 20px; block-size: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
+.rx-filters button span, .bd-inv-f button span { min-inline-size: 20px; block-size: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: .74rem; font-weight: 700;
   color: #fff; background: #c2412d; font-variant-numeric: tabular-nums; }
-.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink, #fff); }   /* dark ink on the light vine at night */
-.rx-filters button:focus-visible, .rx-state button:focus-visible, .rx-row:focus-visible, .rx-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
+.rx-filters button[aria-pressed="true"], .rx-state button[aria-pressed="true"], .bd-inv-f button[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--primary-ink, #fff); }   /* dark ink on the light vine at night */
+.rx-filters button:focus-visible, .rx-state button:focus-visible, .bd-inv-f button:focus-visible, .rx-row:focus-visible, .rx-back:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 .rx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 @media (min-width: 900px) { .rx-list { max-block-size: min(70dvh, 720px); overflow-y: auto; overscroll-behavior: contain; padding: 2px; } }
 .rx-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 1px 10px; align-items: center; inline-size: 100%; padding: 10px 12px;
@@ -243,3 +244,378 @@
 .ad-fold[open] > summary { margin-block-end: 6px; }
 .ad-fold > summary:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; border-radius: var(--radius-sm); }
 @media (prefers-reduced-motion: reduce) { .ad-fold > summary::after { transition: none; } }
+
+/* ── הזמנות – invitations outside the family (the users, 2026-11-14), a part of the dashboard (admin.js, ai-features):
+   <div class="bd-part" id="invites"><section class="card bd-inv"><h2>הזמנות</h2>
+     <div class="bd-inv-tools">(.ad-combo, the members search) <div class="bd-inv-f" role="group" aria-label="סינון"><button aria-pressed="true">הכל</button>…</div></div>
+     <ul class="bd-inv-list"><li class="bd-inv-row" data-st="sent|opened|joined|expired">
+       <span class="bd-inv-who"><b>name or address</b><small class="muted">הזמין: … · 14.11</small></span>
+       <span class="bd-inv-st">נשלחה</span> [<button class="btn small ghost">שליחה שוב</button>]</li></ul>
+     <p class="bd-inv-empty" hidden>…</p></section></div>
+   Like the dashboard's other cards: the filters are the inbox's pills (.rx-filters above); each invitation a quiet row, its state a
+   small pill whose colour tells the way: sent grey, opened honey, joined vine, expired the alert's red, faded. The search box
+   and the filters share a row on a computer and stack on a phone. */
+.bd-inv { display: grid; gap: 10px; padding: 14px 16px; }
+@media (max-width: 520px) { .bd-inv { padding: 12px; } }
+.bd-inv h2 { margin: 0; }
+.bd-inv-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.bd-inv-tools > .ad-combo { flex: 1 1 16rem; min-inline-size: 0; }
+.bd-inv-list { list-style: none; margin: 0; padding: 0; display: grid; max-block-size: min(26rem, 60vh); overflow-y: auto; overscroll-behavior: contain; }
+.bd-inv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px 10px; min-block-size: 52px; padding: 8px 4px; border-block-end: 1px solid var(--line); }
+.bd-inv-row:last-child { border-block-end: 0; }
+.bd-inv-who { display: grid; gap: 1px; min-inline-size: 0; }
+.bd-inv-who b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-inv-who small { font-size: .82rem; overflow-wrap: anywhere; }
+.bd-inv-st { --st: var(--muted); justify-self: end; padding: 1px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; line-height: 1.7; white-space: nowrap;
+  color: var(--text); background: color-mix(in srgb, var(--st) 18%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st) 40%, transparent); }
+.bd-inv-st::before { content: ""; display: inline-block; inline-size: 7px; block-size: 7px; margin-inline-end: 6px; border-radius: 50%; background: var(--st); vertical-align: 1px; }
+.bd-inv-row[data-st="opened"] .bd-inv-st { --st: #d39a2c; }
+.bd-inv-row[data-st="joined"] .bd-inv-st { --st: var(--primary); }
+.bd-inv-row[data-st="expired"] .bd-inv-st { --st: var(--alert, #cc5a46); }
+.bd-inv-row[data-st="expired"] .bd-inv-who { opacity: .7; }
+.bd-inv-row .btn { min-block-size: 36px; }
+.bd-inv-empty { margin: 0; padding: 18px 12px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+/* a phone: the name and its line at the start, the state and the button stacked at the end */
+@media (max-width: 520px) { .bd-inv-row { grid-template-columns: minmax(0, 1fr) auto; } .bd-inv-who { grid-row: span 2; } .bd-inv-row .btn { justify-self: end; min-block-size: 32px; } }
+
+/* ══ עץ מבנה (the owner, 2026-11-13): the tent's structure, the fire's ring and the surprise eggs, one tab of the back door.
+   The look is design's; the logic (admin.js, ai-features) comes after the feedback round. Sample: docs/design/prototype/structure.html.
+   The tile: <a class="app" data-bd="structure">…</a> (its colours and icon are in the list above).
+   Small helpers shared by the three cards: .st-head (a title, buttons at the end, a muted line under) and .st-actions. */
+.st, .fe, .bd-egg, .st-panel { padding: 14px 16px; }
+@media (max-width: 519px) { .st, .fe, .bd-egg, .st-panel { padding: 12px; } }
+.st-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-block-end: 12px; }
+.st-head h2, .st-head h3 { flex: 1; margin: 0; font-size: 1.1rem; }
+.st-head > p { flex-basis: 100%; order: 3; margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
+.st-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-block-start: 14px; }
+.st-actions .st-del { margin-inline-start: auto; color: var(--danger); }
+.st-actions .st-del:hover { border-color: var(--danger); color: var(--danger); }
+/* a round icon button (edit, close): 44px, the icon from --i */
+.st-ibtn { flex: none; display: inline-grid; place-items: center; inline-size: 44px; block-size: 44px; padding: 0; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.st-ibtn::before { content: ""; inline-size: 20px; block-size: 20px; background: currentColor;
+  -webkit-mask: var(--i, url(/assets/bd-icons/pencil.svg)) center / contain no-repeat; mask: var(--i, url(/assets/bd-icons/pencil.svg)) center / contain no-repeat; }
+.st-ibtn:hover { color: var(--primary); background: color-mix(in srgb, var(--primary) 9%, transparent); }
+.st-ibtn:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: -3px; }
+.st-ibtn.close { --i: url(/assets/bd-icons/x.svg); }
+
+/* ── 1. The tree. Parts (data-kind="part") hold tools; a part's colour is --c.
+   <div class="st-wrap">
+     <section class="card st"><div class="st-head"><h2>עץ מבנה</h2><button class="btn small ghost">פתיחת הכל</button><p>גוררים בידית ⠿ …</p></div>
+       <ul class="st-tree" role="tree" aria-label="מבנה האוהל">
+         <li class="st-node" role="treeitem" data-kind="part" aria-expanded="true" style="--c:#2f7d4a">
+           <div class="st-row" [aria-current="true" while in the panel]>
+             <button class="st-grip" type="button" aria-label="הזזת אוכל"></button>
+             <button class="st-tw" type="button" aria-label="סגירת אוכל"></button>
+             <span class="st-pil"><img src="/assets/pillows/p13.webp" alt=""><svg class="icon">…</svg></span>   (no <img>: the icon on --c)
+             <span class="st-name"><b>אוכל</b><small>רשימת קניות, ספר מתכונים…</small></span>
+             <span class="st-tag" data-t="ring|fixed|hidden">במדורה</span>   (optional)
+             <button class="st-ibtn" type="button" aria-label="עריכת אוכל"></button></div>
+           <ul class="st-kids" role="group"> …tools: <li class="st-node" role="treeitem" data-kind="tool">… </ul></li>
+       </ul>
+       <div class="st-zone">גוררים לכאן כדי לפתוח חלק חדש</div></section>
+     <aside class="card st-panel">…the edit panel, below…</aside></div>
+   Dragging (pointer events on .st-grip; touch-action is none there only, so the page still scrolls under a finger elsewhere):
+     .st-tree.dragging              while a node is carried
+     .st-node.away                  the carried node, left in its place, faint
+     <div class="st-ghost" style="--x:120px; --y:340px; --w:420px"><div class="st-row">…a copy…</div></div>  on <body>, follows the finger
+     <li class="st-ph" aria-hidden="true" style="--h:58px"></li>  where it will land (between rows)
+     .st-node.into                  dropping into this part (the row glows, its branch line turns vine)
+     .st-ghost.no / .st-node.no     cannot go there (a tool into a tool, a fixed one out of its place)
+     .st-zone.over                  over the new-part zone
+     .st-node.held                  picked up from the keyboard (space on the grip; arrows move; space drops; Esc cancels)
+     .st-node.landed                just dropped: a short vine flash */
+.st-wrap { display: grid; gap: 14px; align-items: start; min-inline-size: 0; }
+.bd-part > :is(.st-wrap, .fe, .bd-egg) { min-inline-size: 0; }
+.st-wrap > * { min-inline-size: 0; margin: 0; }
+@media (min-width: 1000px) {
+  .st-wrap { grid-template-columns: minmax(0, 1fr) 340px; }
+  .st-panel { position: sticky; inset-block-start: calc(var(--appbar-h, 60px) + 12px); max-block-size: calc(100dvh - var(--appbar-h, 60px) - 24px); overflow-y: auto; overscroll-behavior: contain; }
+}
+.st-tree, .st-kids { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.st-kids { margin-inline-start: 26px; padding-block: 4px 2px; padding-inline-start: 12px;
+  border-inline-start: 2px solid color-mix(in srgb, var(--c, var(--primary)) 32%, var(--line)); border-end-start-radius: 10px; }
+.st-node[aria-expanded="false"] > .st-kids { display: none; }
+.st-row { display: grid; grid-template-columns: 30px 28px 46px minmax(0, 1fr) auto 44px; align-items: center; gap: 6px; min-block-size: 58px;
+  padding: 4px; padding-inline: 2px 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card);
+  transition: background-color var(--dur-quick) ease, border-color var(--dur-quick) ease, box-shadow var(--dur-quick) ease, opacity var(--dur-quick) ease; }
+.st-node[data-kind="part"] > .st-row { background: color-mix(in srgb, var(--c, var(--primary)) 7%, var(--card)); border-color: color-mix(in srgb, var(--c, var(--primary)) 22%, var(--line)); }
+.st-node[data-kind="part"] > .st-row .st-name b { font-weight: 600; }
+.st-row[aria-current="true"] { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary) inset; }
+/* the grip: six dots, the only place a drag starts */
+.st-grip { align-self: stretch; display: grid; place-items: center; inline-size: 30px; min-block-size: 44px; padding: 0; border: 0; border-radius: 8px;
+  background: none; color: var(--muted); cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.st-grip::before { content: ""; inline-size: 18px; block-size: 18px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/drag.svg) center / contain no-repeat; mask: url(/assets/bd-icons/drag.svg) center / contain no-repeat; }
+.st-grip:hover { color: var(--text); background: color-mix(in srgb, var(--muted) 10%, transparent); }
+.st-grip:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: -2px; }
+/* the twist: open or close a part (a chevron; pointing down when open) */
+.st-tw { display: grid; place-items: center; inline-size: 28px; block-size: 44px; padding: 0; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.st-tw::before { content: ""; inline-size: 7px; block-size: 7px; border: solid currentColor; border-width: 0 0 2px 2px; rotate: 45deg; translate: -1px 0;
+  transition: rotate var(--dur-quick) var(--ease-river); }
+.st-node[aria-expanded="true"] > .st-row .st-tw::before { rotate: -45deg; translate: 0 -2px; }
+.st-tw:hover { color: var(--primary); }
+.st-node:not(:has(> .st-kids)) > .st-row .st-tw { visibility: hidden; }
+/* the pillow (or the icon on the part's colour) */
+.st-pil { position: relative; display: grid; place-items: center; inline-size: 46px; block-size: 42px; }
+.st-pil img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(30, 16, 8, .28)); -webkit-user-drag: none; }
+.st-pil > .icon, .st-pil > svg { position: absolute; inline-size: 18px; block-size: 18px; color: #fffaf0; stroke-width: 2.4; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .5)); }
+.st-pil:not(:has(img)) { inline-size: 38px; block-size: 38px; margin-inline: 4px; border-radius: 12px; background: var(--c, var(--primary)); }
+.st-pil:not(:has(img)) > :is(.icon, svg) { filter: none; }
+.st-name { display: grid; min-inline-size: 0; line-height: 1.25; }
+.st-name b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-name small { color: var(--muted); font-size: .8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-tag { --t: var(--muted); display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: .74rem; font-weight: 600;
+  white-space: nowrap; color: var(--text); background: color-mix(in srgb, var(--t) 14%, transparent); }
+.st-tag::before { content: ""; inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--t); }
+.st-tag[data-t="ring"] { --t: #d39a2c; }
+.st-tag[data-t="fixed"] { --t: var(--primary); }
+.st-tag[data-t="hidden"] { --t: var(--muted); color: var(--muted); }
+.st-tag:empty { display: none; }
+.st-row:not(:has(.st-tag)) { grid-template-columns: 30px 28px 46px minmax(0, 1fr) 44px; }
+/* the zone at the end: a new part */
+.st-zone { display: grid; place-items: center; min-block-size: 52px; margin-block-start: 10px; padding: 8px 12px; text-align: center;
+  border: 2px dashed var(--line-strong); border-radius: var(--radius-sm); color: var(--muted); font-size: .88rem;
+  transition: background-color var(--dur-quick) ease, border-color var(--dur-quick) ease, color var(--dur-quick) ease; }
+.st-tree:not(.dragging) ~ .st-zone { opacity: .7; }
+.st-zone.over { border-color: var(--primary); color: var(--text); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+
+/* dragging */
+.st-tree.dragging, .st-tree.dragging * { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.st-node.away { opacity: .38; }
+.st-node.away > .st-row { border-style: dashed; box-shadow: none; }
+.st-ph { block-size: var(--h, 58px); border: 2px dashed color-mix(in srgb, var(--primary) 70%, transparent); border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary) 8%, transparent); animation: st-ph .16s var(--ease-river) both; }
+@keyframes st-ph { from { block-size: 0; opacity: 0; } }
+.st-node.into > .st-row { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--card)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+.st-node.into > .st-kids { border-inline-start-color: var(--primary); }
+.st-node.no > .st-row { border-color: var(--alert); background: color-mix(in srgb, var(--alert) 10%, var(--card)); }
+/* the carried copy: lifted, a little tilted, under the finger (physical left/top: it follows the pointer's own coordinates) */
+.st-ghost { position: fixed; top: 0; left: 0; z-index: var(--z-sheet, 60); inline-size: var(--w, 360px); max-inline-size: calc(100vw - 16px);
+  translate: var(--x, 0) var(--y, 0); pointer-events: none; }
+.st-ghost > .st-row { border-color: var(--primary); background: var(--card); rotate: -1.5deg; scale: 1.03;
+  box-shadow: 0 14px 30px -10px rgba(30, 24, 12, .45), 0 3px 8px -2px rgba(30, 24, 12, .25); }
+.st-ghost .st-grip { cursor: grabbing; color: var(--primary); }
+.st-ghost .st-tw { visibility: hidden; }
+.st-ghost.no > .st-row { border-color: var(--alert); }
+.st-ghost.no::after { content: ""; position: absolute; inset-block-start: -10px; inset-inline-end: -8px; inline-size: 26px; block-size: 26px; border-radius: 50%;
+  background: var(--alert); box-shadow: 0 0 0 3px var(--card); -webkit-mask: none; }
+.st-ghost.no::before { content: ""; position: absolute; z-index: 1; inset-block-start: -6px; inset-inline-end: -4px; inline-size: 18px; block-size: 18px; background: var(--card);
+  -webkit-mask: url(/assets/bd-icons/no.svg) center / contain no-repeat; mask: url(/assets/bd-icons/no.svg) center / contain no-repeat; }
+.st-node.held > .st-row { border-color: var(--primary); box-shadow: 0 10px 22px -10px rgba(30, 24, 12, .45), 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
+.st-node.held > .st-row .st-grip { color: var(--primary); }
+.st-node.landed > .st-row { animation: st-land .9s ease-out; }
+@keyframes st-land { 0% { background: color-mix(in srgb, var(--primary) 26%, var(--card)); border-color: var(--primary); } }
+:root[data-theme="dark"] .st-ghost > .st-row { box-shadow: 0 14px 30px -8px rgba(0, 0, 0, .7), 0 0 0 1px var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st-ghost > .st-row { box-shadow: 0 14px 30px -8px rgba(0, 0, 0, .7), 0 0 0 1px var(--primary); } }
+@media (max-width: 519px) {
+  .st-kids { margin-inline-start: 14px; padding-inline-start: 8px; }
+  .st-row { grid-template-columns: 26px 22px 40px minmax(0, 1fr) auto 40px; gap: 4px; min-block-size: 54px; }
+  .st-row:not(:has(.st-tag)) { grid-template-columns: 26px 22px 40px minmax(0, 1fr) 40px; }
+  .st-grip { inline-size: 26px; } .st-tw { inline-size: 22px; } .st-pil { inline-size: 40px; block-size: 38px; }
+  .st-row .st-ibtn { inline-size: 40px; block-size: 44px; }
+  .st-tag { font-size: 0; gap: 0; padding: 3px; }   /* only the dot on a phone; the word stays for a reader (aria) */
+  .st-name small { display: none; }
+}
+
+/* ── the edit panel: beside the tree on a computer, a sheet from the bottom on a phone (with .st-scrim behind it)
+   <aside class="card st-panel" aria-labelledby="st-ph-h" [hidden]>
+     <div class="st-head"><h3 id="st-ph-h">עריכה</h3><button class="st-ibtn close" aria-label="סגירה"></button></div>
+     <div class="st-prev" style="--c2:#2f7d4a"><span class="pillow"><img src="/assets/pillows/p13.webp" alt=""><span class="badge"><svg class="icon">…</svg></span></span><b>אוכל</b></div>
+     <label class="field"><span>שם</span><input type="text"></label>
+     <label class="field"><span>תיאור</span><textarea rows="2"></textarea></label>
+     <fieldset class="st-pick st-icons"><legend>סמל</legend><label title="אוכל"><input type="radio" name="st-ic" value="food"><svg class="icon">…</svg></label>…</fieldset>
+     <fieldset class="st-pick st-pills"><legend>כרית</legend><label [data-used="שירון"]><input type="radio" name="st-pil" value="p01"><img src="/assets/pillows/p01.webp" alt="p01"></label>…</fieldset>
+     <fieldset class="st-pick st-colors"><legend>צבע</legend><label style="--sw:#8e2435" title="בורדו"><input type="radio" name="st-c" value="#8e2435"></label>…
+       <label class="st-other" title="צבע אחר"><input type="color" value="#4f7a3a"></label></fieldset>
+     <div class="st-actions"><button class="btn primary">שמירה</button><button class="btn ghost">ביטול</button><button class="btn ghost st-del">הסרה</button></div></aside>
+   <div class="st-scrim" hidden></div>  (phone only; a tap closes) */
+.st-panel[hidden], .st-scrim[hidden] { display: none; }
+.st-panel .st-head { margin-block-end: 6px; }
+.st-panel .field { margin: 8px 0; }
+.st-panel textarea { min-block-size: 64px; }
+/* the preview: the pillow as on the ring, its letters glowing in the colour */
+.st-prev { display: grid; justify-items: center; gap: 2px; padding: 12px 8px 10px; margin-block-end: 4px; border-radius: var(--radius-sm);
+  background: radial-gradient(closest-side at 50% 60%, color-mix(in srgb, var(--c2, var(--primary)) 16%, transparent), transparent); }
+.st-prev .pillow { position: relative; display: grid; place-items: center; inline-size: 104px; block-size: 96px; }
+.st-prev .pillow img { max-inline-size: 100%; max-block-size: 100%; filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .3)); }
+.st-prev .badge { position: absolute; inset-block-end: 16%; inset-inline-start: calc(50% - 14px); display: grid; place-items: center; inline-size: 28px; block-size: 28px; color: #fffaf0; }
+.st-prev .badge :is(.icon, svg) { inline-size: 26px; block-size: 26px; stroke-width: 2.4; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .55)); }
+.st-prev b { font-size: 1.25rem; font-weight: 600; color: color-mix(in srgb, var(--c2, var(--text)) 80%, #000); text-shadow: 0 0 14px color-mix(in srgb, var(--c2, var(--primary)) 35%, transparent); }
+:root[data-theme="dark"] .st-prev b { color: color-mix(in srgb, var(--c2, var(--text)) 45%, #fff); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .st-prev b { color: color-mix(in srgb, var(--c2, var(--text)) 45%, #fff); } }
+/* the three pickers: real radios hidden over each choice, so the arrows work */
+.st-pick { margin: 12px 0 0; padding: 0; border: 0; min-inline-size: 0; display: grid; gap: 6px; }
+.st-pick legend { float: inline-start; inline-size: 100%; padding: 0; margin-block-end: 4px; font-size: .85rem; color: var(--muted); }
+.st-pick label { position: relative; display: grid; place-items: center; cursor: pointer; border: 1px solid var(--line); border-radius: 12px; background: var(--card);
+  -webkit-tap-highlight-color: transparent; transition: border-color var(--dur-quick) ease, background-color var(--dur-quick) ease; }
+.st-pick input { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.st-pick label:hover { border-color: var(--line-strong); }
+.st-pick label:has(:checked) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); box-shadow: 0 0 0 1px var(--primary) inset; }
+.st-pick label:has(:focus-visible) { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; }
+.st-icons { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
+.st-icons label { block-size: 44px; color: var(--muted); }
+.st-icons label :is(.icon, svg) { inline-size: 22px; block-size: 22px; pointer-events: none; }
+.st-icons label:has(:checked) { color: var(--primary); }
+.st-pills { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+.st-pills label { block-size: 56px; padding: 4px; }
+.st-pills img { max-inline-size: 100%; max-block-size: 100%; object-fit: contain; pointer-events: none; filter: drop-shadow(0 2px 2px rgba(30, 16, 8, .25)); }
+.st-pills label[data-used]::after { content: ""; position: absolute; inset-block-start: 4px; inset-inline-end: 4px; inline-size: 8px; block-size: 8px; border-radius: 50%;
+  background: #d39a2c; box-shadow: 0 0 0 2px var(--card); }   /* taken by another item; its name in title */
+.st-colors { display: flex; flex-wrap: wrap; gap: 4px; }
+.st-colors legend { float: none; }
+.st-colors label { inline-size: 44px; block-size: 44px; border: 0; border-radius: 50%; background: none; }
+.st-colors label::before { content: ""; inline-size: 30px; block-size: 30px; border-radius: 50%; background: var(--sw, var(--primary));
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .15); transition: scale var(--dur-quick) var(--ease-river); }
+.st-colors label:has(:checked) { background: none; box-shadow: none; }
+.st-colors label:has(:checked)::before { scale: 1.12; box-shadow: 0 0 0 2px var(--card), 0 0 0 4px var(--text); }
+.st-colors .st-other::before { background: conic-gradient(#c0402a, #e3ad3c, #4f7a3a, #3557a8, #8e2435, #c0402a); }
+.st-colors .st-other input { cursor: pointer; }
+@media (max-width: 999px) {
+  .st-panel { position: fixed; inset-inline: 0; inset-block-end: 0; z-index: var(--z-sheet, 60); max-block-size: 86dvh; margin: 0; overflow-y: auto; overscroll-behavior: contain;
+    border-radius: 20px 20px 0 0; border-block-end: 0; padding-block-end: max(16px, env(safe-area-inset-bottom, 0px));
+    padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px));
+    box-shadow: 0 -12px 34px -10px rgba(30, 24, 12, .35); animation: st-sheet .28s var(--ease-river) both; }
+  .st-panel::before { content: ""; display: block; inline-size: 40px; block-size: 4px; margin: 0 auto 8px; border-radius: 2px; background: var(--line-strong); }
+  .st-scrim { position: fixed; inset: 0; z-index: calc(var(--z-sheet, 60) - 1); background: rgba(20, 16, 10, .38); animation: st-fade .2s ease both; }
+}
+@media (min-width: 1000px) { .st-scrim { display: none; } .st-panel .st-ibtn.close { display: none; } }
+@keyframes st-sheet { from { translate: 0 100%; } }
+@keyframes st-fade { from { opacity: 0; } }
+
+/* ── 2. The fire: the home page's ring as a live preview. Each seat sits on an ellipse at its angle --a (90deg is the front,
+   nearest, biggest), as on the home page; JS sets --a (and --z, front on top) from the order.
+   <section class="card fe"><div class="st-head"><h2>המדורה</h2><p>…</p></div>
+     <div class="fe-ring">
+       <div class="fe-fire" aria-hidden="true"><img src="/assets/campfire/base.webp" alt=""><img class="fe-flame" src="/assets/campfire/flame-2.webp" alt=""></div>
+       <div class="fe-seat" style="--a:90deg; --z:9; --c2:#8a5a32" [data-fixed] [aria-current="true"]>
+         <button class="fe-pick" type="button" aria-pressed="false"><span class="pillow"><img src="/assets/pillows/p15.webp" alt=""><span class="badge"><svg class="icon">…</svg></span></span><span class="label">עץ המשפחה</span></button>
+         <button class="fe-x" type="button" aria-label="הסרת עץ המשפחה מהמדורה"></button></div>   (no .fe-x on a fixed one)
+       <div class="fe-seat fe-add" style="--a:…"><button class="fe-pick" type="button"><span class="pillow"></span><span class="label">הוספה</span></button></div></div>
+     <div class="fe-tray" [hidden]><p class="fe-tray-h">מה יבוא במקום <b>אוכל</b>?</p>
+       <ul class="fe-opts"><li><button class="fe-opt" type="button" [aria-disabled="true" when it is on the ring already]><img src="/assets/pillows/p11.webp" alt=""><span>חדשות</span></button></li>…</ul></div>
+     <div class="st-actions"><button class="btn primary">שמירה</button><button class="btn ghost">חזרה לברירת המחדל</button></div></section>
+   Reordering on the ring: .fe-ring.dragging, .fe-seat.lifted on the carried one (it follows --dx/--dy). */
+.fe-ring { --rx: 250px; --ry: 112px; --pw: 92px; position: relative; isolation: isolate; inline-size: 100%; block-size: 330px; margin-block: 4px 8px; touch-action: pan-y; }
+.fe-ring::before { content: ""; position: absolute; z-index: -1; inset: 0; margin: auto; inline-size: calc(var(--rx) * 2); block-size: calc(var(--ry) * 2);
+  border-radius: 50%; border: 2px dashed color-mix(in srgb, var(--muted) 30%, transparent);
+  background: radial-gradient(closest-side, color-mix(in srgb, #e3ad3c 16%, transparent), transparent); translate: 0 6px; }
+.fe-fire { position: absolute; inset: 0; margin: auto; inline-size: 120px; block-size: 92px; z-index: 5; pointer-events: none; }
+.fe-fire img { position: absolute; inset-inline: 0; inset-block-end: 0; inline-size: 100%; }
+.fe-fire .fe-flame { inline-size: 46%; inset-inline: 27%; inset-block-end: 42%; transform-origin: 50% 100%; animation: fe-flick 2.6s ease-in-out infinite; }
+@keyframes fe-flick { 0%, 100% { scale: 1 1; } 40% { scale: .94 1.06; } 70% { scale: 1.04 .96; } }
+.fe-seat { position: absolute; z-index: var(--z, 1); left: calc(50% + cos(var(--a, 90deg)) * var(--rx)); top: calc(50% + sin(var(--a, 90deg)) * var(--ry));
+  translate: -50% -58%; scale: calc(.74 + .26 * (sin(var(--a, 90deg)) + 1) / 2 + .0001); transition: left .35s var(--ease-river), top .35s var(--ease-river), scale .35s var(--ease-river); }
+.fe-pick { display: grid; justify-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--text); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.fe-pick .pillow { position: relative; display: grid; place-items: center; inline-size: var(--pw); block-size: calc(var(--pw) * .92); transition: transform .3s var(--ease-river); }
+.fe-pick .pillow img { max-inline-size: 100%; max-block-size: 100%; filter: drop-shadow(0 8px 6px rgba(30, 16, 8, .32)); -webkit-user-drag: none; }
+.fe-pick .badge { position: absolute; inset-block-end: 16%; inset-inline-start: calc(50% - 13px); display: grid; place-items: center; inline-size: 26px; block-size: 26px; color: #fffaf0; pointer-events: none; }
+.fe-pick .badge :is(.icon, svg) { inline-size: 24px; block-size: 24px; stroke-width: 2.4; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .55)); }
+.fe-pick .label { max-inline-size: 9em; padding: 0 6px; border-radius: 999px; font-size: .92rem; font-weight: 600; line-height: 1.35; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; background: color-mix(in srgb, var(--card) 82%, transparent); }
+.fe-pick:hover .pillow { transform: translateY(-3px); }
+.fe-pick:active .pillow { transform: scale(.93, .88); }
+.fe-pick:focus-visible { outline: none; }
+.fe-pick:focus-visible .pillow img { outline: 3px solid var(--primary); outline-offset: 3px; border-radius: 14px; }
+.fe-seat[aria-current="true"] .pillow img, .fe-pick[aria-pressed="true"] .pillow img { filter: drop-shadow(0 0 2px var(--primary)) drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 70%, transparent)) drop-shadow(0 8px 6px rgba(30, 16, 8, .3)); }
+.fe-seat[aria-current="true"] .label, .fe-pick[aria-pressed="true"] .label { color: var(--primary-ink); background: var(--primary); }
+.fe-seat[data-fixed] .label::after { content: ""; display: inline-block; inline-size: 11px; block-size: 11px; margin-inline-start: 4px; vertical-align: -1px; background: currentColor; opacity: .6;
+  -webkit-mask: url(/assets/bd-icons/pin.svg) center / contain no-repeat; mask: url(/assets/bd-icons/pin.svg) center / contain no-repeat; }
+/* remove: a small round × on the pillow's top corner, a 44px target */
+.fe-x { position: absolute; inset-block-start: 0; inset-inline-end: 2px; display: grid; place-items: center; inline-size: 28px; block-size: 28px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--line-strong); background: var(--card); color: var(--muted); cursor: pointer; box-shadow: 0 2px 5px -1px rgba(30, 24, 12, .3); }
+.fe-x::before { content: ""; inline-size: 14px; block-size: 14px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/x.svg) center / contain no-repeat; mask: url(/assets/bd-icons/x.svg) center / contain no-repeat; }
+.fe-x::after { content: ""; position: absolute; inset: -8px; }
+.fe-x:hover { color: #fff; background: var(--danger); border-color: var(--danger); }
+.fe-x:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) { .fe-seat:not(:hover, :focus-within, [aria-current="true"]) .fe-x { opacity: 0; } .fe-x { transition: opacity var(--dur-quick) ease; } }
+/* add: an empty dashed cushion */
+.fe-add .pillow { border: 2px dashed color-mix(in srgb, var(--primary) 60%, var(--line-strong)); border-radius: 22px; inline-size: calc(var(--pw) * .82); block-size: calc(var(--pw) * .66);
+  background: color-mix(in srgb, var(--primary) 6%, transparent); color: var(--primary); }
+.fe-add .pillow::before { content: ""; inline-size: 26px; block-size: 26px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/plus.svg) center / contain no-repeat; mask: url(/assets/bd-icons/plus.svg) center / contain no-repeat; }
+.fe-add .label { color: var(--primary); }
+.fe-add .fe-pick:hover .pillow { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+/* reordering on the ring */
+.fe-ring.dragging, .fe-ring.dragging * { cursor: grabbing; user-select: none; -webkit-user-select: none; }
+.fe-seat.lifted { z-index: 50; transition: none; translate: calc(-50% + var(--dx, 0px)) calc(-58% + var(--dy, 0px)); scale: 1.08; }
+.fe-seat.lifted .pillow img { filter: drop-shadow(0 18px 14px rgba(30, 16, 8, .38)); }
+.fe-seat.lifted .fe-x { display: none; }
+/* the tray: what can take a seat */
+.fe-tray[hidden] { display: none; }
+.fe-tray { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--muted) 5%, var(--card));
+  animation: bd-open .25s var(--ease-river) both; }
+.fe-tray-h { margin: 0 0 8px; font-size: .9rem; color: var(--muted); }
+.fe-tray-h b { color: var(--text); }
+.fe-opts { list-style: none; margin: 0; padding: 2px 2px 6px; display: flex; gap: 6px; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: inline proximity; scrollbar-width: thin; }
+.fe-opts li { flex: none; scroll-snap-align: start; }
+.fe-opt { display: grid; justify-items: center; gap: 2px; inline-size: 84px; padding: 6px 4px; border: 1px solid transparent; border-radius: 12px; background: none;
+  color: var(--text); font: inherit; font-size: .8rem; line-height: 1.2; cursor: pointer; }
+.fe-opt img { inline-size: 60px; block-size: 52px; object-fit: contain; filter: drop-shadow(0 3px 3px rgba(30, 16, 8, .25)); }
+.fe-opt span { max-inline-size: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fe-opt:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.fe-opt:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 1px; }
+.fe-opt[aria-disabled="true"] { opacity: .45; cursor: default; }
+.fe-opt[aria-disabled="true"]:hover { border-color: transparent; background: none; }
+:root[data-theme="dark"] :is(.fe-pick .pillow img, .st-prev .pillow img, .fe-opt img, .st-pil img) { filter: drop-shadow(0 0 1px rgba(255, 236, 210, .45)) drop-shadow(0 8px 6px rgba(0, 0, 0, .45)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) :is(.fe-pick .pillow img, .st-prev .pillow img, .fe-opt img, .st-pil img) { filter: drop-shadow(0 0 1px rgba(255, 236, 210, .45)) drop-shadow(0 8px 6px rgba(0, 0, 0, .45)); } }
+@media (max-width: 719px) { .fe-ring { --rx: min(140px, 38vw); --ry: 92px; --pw: 66px; block-size: 290px; } .fe-pick .label { font-size: .8rem; max-inline-size: 7.5em; }
+  .fe-fire { inline-size: 92px; block-size: 70px; } .fe-pick .badge { inline-size: 20px; block-size: 20px; inset-inline-start: calc(50% - 10px); } .fe-pick .badge :is(.icon, svg) { inline-size: 18px; block-size: 18px; } }
+@media (prefers-reduced-motion: reduce) { .fe-fire .fe-flame { animation: none; } .fe-seat { transition: none; } .st-ph, .st-panel, .st-scrim, .st-node.landed > .st-row { animation: none; } }
+
+/* ── 3. The surprise eggs: where an egg hides, what it says when found, from when to when, and how many found it.
+   (The egg itself on the pages is in base.css, .egg.)
+   <section class="card bd-egg"><div class="st-head"><h2>ביצי הפתעה</h2><button class="btn small primary">ביצה חדשה</button><p>…</p></div>
+     <ul class="egg-list"><li class="egg-row" data-st="live|soon|over|off">
+       <span class="egg-mini" aria-hidden="true"></span>
+       <span class="egg-what"><b>פרשת השבוע</b><small>"מצאתם את ביצת החנוכה!"</small></span>
+       <span class="egg-when">25.12 – 2.1</span>
+       <span class="egg-count"><b>12</b> מצאו</span>
+       <span class="egg-st">פעילה</span>
+       <button class="st-ibtn" type="button" aria-label="עריכה"></button></li></ul>
+     <p class="egg-empty" hidden>עוד אין ביצים…</p>
+     <form class="egg-form" [hidden]>
+       <label class="field"><span>באיזה עמוד</span><select>…</select></label>
+       <label class="field"><span>מה כתוב כשמוצאים</span><input type="text" maxlength="80"></label>
+       <div class="egg-dates"><label class="field"><span>מתאריך</span><input type="date"></label><label class="field"><span>עד תאריך</span><input type="date"></label></div>
+       <label class="egg-on"><input type="checkbox" checked> פעילה</label>
+       <div class="st-actions"><button class="btn primary">שמירה</button><button class="btn ghost" type="button">ביטול</button><button class="btn ghost st-del" type="button">מחיקה</button></div></form></section> */
+.egg-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.egg-row { --st: var(--muted); display: grid; grid-template-columns: 34px minmax(0, 1fr) auto auto auto 44px; align-items: center; gap: 4px 12px;
+  min-block-size: 58px; padding: 6px; padding-inline: 10px 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); }
+.egg-row[data-st="live"] { --st: var(--primary); border-color: color-mix(in srgb, var(--primary) 35%, var(--line)); }
+.egg-row[data-st="soon"] { --st: #d39a2c; }
+.egg-row[data-st="over"] { --st: var(--muted); }
+.egg-row[data-st="off"] { --st: var(--alert); }
+.egg-row:is([data-st="over"], [data-st="off"]) .egg-mini { filter: grayscale(.85); opacity: .6; }
+.egg-mini { inline-size: 26px; block-size: 32px; justify-self: center; background: url(/assets/egg/egg.svg) center / contain no-repeat; filter: drop-shadow(0 2px 2px rgba(30, 24, 12, .25)); }
+.egg-what { display: grid; min-inline-size: 0; line-height: 1.3; }
+.egg-what b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.egg-what small { color: var(--muted); font-size: .82rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.egg-when { color: var(--muted); font-size: .84rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.egg-count { display: inline-flex; align-items: baseline; gap: 4px; color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.egg-count b { color: var(--text); font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.egg-st { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: .8rem; font-weight: 600; white-space: nowrap;
+  color: var(--text); background: color-mix(in srgb, var(--st) 15%, transparent); }
+.egg-st::before { content: ""; inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--st); }
+.egg-row[data-st="live"] .egg-st::before { animation: egg-live 2.4s ease-in-out infinite; }
+@keyframes egg-live { 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 25%, transparent); } }
+.egg-empty { margin: 0; padding: 18px 12px; text-align: center; color: var(--muted); font-size: .9rem; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
+.egg-form[hidden] { display: none; }
+.egg-form { margin-block-start: 12px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--line)); border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--primary) 4%, var(--card)); animation: bd-open .25s var(--ease-river) both; }
+.egg-form .field { margin: 8px 0; }
+.egg-form input[type="date"] { inline-size: 100%; min-inline-size: 0; font: inherit; font-size: 1rem; color: var(--text); background: var(--card);
+  border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 9px 12px; }
+.egg-form input[type="date"]:focus { outline: none; border-color: var(--primary); box-shadow: inset 0 -2px 0 var(--primary); }
+.egg-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+.egg-on { display: inline-flex; align-items: center; gap: 8px; min-block-size: 44px; cursor: pointer; }
+.egg-on input { inline-size: 20px; block-size: 20px; accent-color: var(--primary); }
+@media (max-width: 639px) {
+  .egg-row { grid-template-columns: 30px minmax(0, 1fr) auto 40px; grid-template-areas: "m w s e" "m t c e"; gap: 2px 8px; padding-block: 8px; }
+  .egg-mini { grid-area: m; } .egg-what { grid-area: w; } .egg-when { grid-area: t; } .egg-count { grid-area: c; justify-self: end; } .egg-st { grid-area: s; justify-self: end; }
+  .egg-row > .st-ibtn { grid-area: e; inline-size: 40px; }
+}
+@media (max-width: 379px) { .egg-dates { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .egg-row[data-st="live"] .egg-st::before, .egg-form, .fe-tray { animation: none; } }

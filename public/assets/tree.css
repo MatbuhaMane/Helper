@@ -138,3 +138,9 @@
 :root[data-motion="reduce"] :is(.tree-crown, .tree-boughs) { will-change: auto; }
 :root[data-motion="reduce"] :is(.tr-p .tr-leaf, .tr-bud) { transform: none !important; }
 :root[data-motion="reduce"] .tr-tag { translate: none !important; }
+
+/* a person with a change waiting for approval: a small clock on the leaf's corner (family.css .fv-pend);
+   a person just deleted, while בטל is still open: faded */
+.tr-p.pending .tr-leaf::after { content: ""; position: absolute; inset-block-start: 4%; inset-inline-end: -6%; inline-size: max(20px, calc(var(--leaf) * .34)); aspect-ratio: 1; box-sizing: border-box;
+  border-radius: 50%; background: #f3e3a6 url(/assets/bd-icons/clock.svg) center / 64% no-repeat; border: 2px solid #2a1c12; box-shadow: 0 2px 0 -1px rgba(42, 28, 18, .35); }
+.tr-p.going { opacity: .42; filter: grayscale(.7); pointer-events: none; animation: none; transition: opacity .4s, filter .4s; }

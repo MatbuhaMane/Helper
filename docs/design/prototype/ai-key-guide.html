@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>חבר עוזר חינמי</title>
+  <!-- A sample for the .gk guide in base.css (ai-invite.js; the logic is ai-features'). Copy to public/ to view (not committed there).
+       ?s=1|2|3|all|err|done (the step you are on; all = no current step) -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; }</style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search); const s = q.get('s') || '1';
+  const n = /^[123]$/.test(s) ? +s : s === 'err' ? 3 : 0;
+  const step = (i, pic, b, small, btn) => `<li class="gk-step" data-pic="${pic}"${i === n ? ' aria-current="step"' : ''}${n && i < n ? ' data-done' : ''}>
+      <span class="gk-pic" aria-hidden="true"></span><div class="gk-txt"><b>${b}</b><small>${small}</small></div>${btn}</li>`;
+  const html = `<div class="gk" data-state="${s === 'done' ? 'done' : 'steps'}">
+    <header class="gk-head"><span class="gk-free">חינם</span><h2>חבר עוזר חינמי</h2><p>שלושה צעדים, בערך דקה</p></header>
+    <ol class="gk-steps">
+      ${step(1, 'signin', 'נכנסים ל־Google', 'עם החשבון הרגיל שלכם', '<a class="btn primary gk-go" href="#" onclick="return false">פתיחת Google</a>')}
+      ${step(2, 'key', 'לוחצים <span class="gk-en">Create API key</span> ומעתיקים', 'ואז Copy, להעתקה', '<button class="btn primary gk-go" type="button">העתקתי</button>')}
+      ${step(3, 'paste', 'חוזרים לאוהל ולוחצים „הדבק”', 'המפתח נשמר רק אצלכם', '<button class="btn primary gk-go" type="button">הדבק</button>')}
+    </ol>
+    <p class="gk-err" role="alert"${s === 'err' ? '' : ' hidden'}>המפתח לא עבד. נסו להעתיק שוב.</p>
+    <div class="gk-done" role="status"><span class="gk-ok">מחובר ✓</span><p>העוזר החכם עובד עכשיו על החשבון שלכם, בחינם.</p><button class="btn primary gk-go" type="button">סיום</button></div>
+    <button class="btn ghost gk-later" type="button">לא עכשיו</button></div>`;
+  const box = document.createElement('div'); box.innerHTML = html;
+  H.modal(box.firstElementChild);
+  if (q.get('theme')) setTimeout(() => { document.documentElement.dataset.theme = q.get('theme'); }, 300);
+})();
+</script>
+</body>
+</html>

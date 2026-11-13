@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="he" dir="rtl" data-style="serious">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>מצב רציניים</title>
+  <!-- A sample for the serious home (.sr-home in base.css), built from H.APPS like index.html would. Copy to public/ to view (not committed there).
+       ?view=list  ?pillows=1 (the second switch)  ?theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <style>body { opacity: 1 !important; visibility: visible !important; }</style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script src="/assets/apps.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement, { el } = H;
+  if (q.get('pillows')) root.dataset.pillows = 'keep';
+  if (q.get('theme')) root.dataset.theme = q.get('theme');
+  let view = q.get('view') || 'grid';
+  const groups = [['המקומות', H.APPS.filter((a) => !a.href.startsWith('/tools/') && !/^\/(mail|pc|gather|messages|groceries|food\/)/.test(a.href))],
+    ['הכלים', H.APPS.filter((a) => a.href.startsWith('/tools/') || /^\/(mail|pc|gather|messages|groceries|food\/)/.test(a.href))]];
+  const tool = (a) => el('li', {}, el('a', { class: 'sr-tool', href: '#' + a.href },
+    el('span', { class: 'sr-ic' }, root.dataset.pillows ? el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '' }) : H.icon(a.ic)),
+    el('span', { class: 'sr-txt' }, el('b', {}, a.name), el('small', {}, a.sub))));
+  const lists = groups.map(([t, apps]) => { const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool)); return [el('section', { class: 'sr-group' }, el('h2', {}, t), ul), ul]; });
+  const none = el('p', { class: 'sr-none', hidden: '' }, 'לא נמצא כלי בשם הזה');
+  const input = el('input', { type: 'search', placeholder: 'חיפוש כלי', 'aria-label': 'חיפוש כלי' });
+  input.addEventListener('input', () => {
+    const w = input.value.trim(); let any = false;
+    lists.forEach(([sec, ul]) => { let n = 0; ul.querySelectorAll('li').forEach((li) => { const on = !w || li.textContent.includes(w); li.hidden = !on; n += on; }); sec.hidden = !n; any ||= n > 0; });
+    none.hidden = any;
+  });
+  const btn = (v, t) => el('button', { type: 'button', 'aria-pressed': String(v === view), 'data-view': v }, t);
+  const views = el('div', { class: 'sr-view', role: 'group', 'aria-label': 'תצוגה' }, btn('grid', 'רשת'), btn('list', 'רשימה'));
+  views.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; view = b.dataset.view;
+    views.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); lists.forEach(([, ul]) => { ul.dataset.view = view; }); });
+  const search = el('label', { class: 'sr-search' }, H.icon('lens'), input);
+  document.body.append(el('main', { class: 'sr-home' }, el('header', { class: 'sr-head' }, el('h1', {}, 'שלום, נעמה'), el('p', {}, 'כל הכלים במקום אחד')),
+    search, ...lists.map(([s]) => s), none, views));
+})();
+</script>
+</body>
+</html>

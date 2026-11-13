@@ -5,6 +5,28 @@ Updated by the department at the end of every meaningful round of work. Short: t
 _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; ready: the app icon set, the tree smoother, the reports look, the family story's look)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: the "חבר עוזר חינמי" guide (ai-invite.js, the logic is ai-features').** In base.css as `.gk`:
+  - three steps, each with a line drawing (`/assets/ai-invite/signin|key|paste.svg`) and a number;
+  - only the current step (`aria-current="step"`) shows its big 56px button; finished steps get `data-done` and a ✓;
+  - `.gk-err` for a key that failed; `data-state="done"` shows `.gk-done` (a big check, "מחובר ✓"); `.gk-ok.small` is the tag for a settings row;
+  - big type for older eyes. Sample: `docs/design/prototype/ai-key-guide.html` (`?s=1|2|3|err|done`). Checked at 375 and 1280, light and dark; contrast ≥5.9.
+- **Ready: editing and deleting in the family tree (a user's bug, 2026-11-13; the logic is ai-features').**
+  - **The person's panel:** big edit and delete buttons with icons in the header (`.fv-pacts` / `.fv-pact`). At 375 they take their own row, 48px tall.
+  - **Undo for 10 seconds:** `.fv-undo` above the tab bar, with a draining line. The deleted person stays on the tree, faded (`.tr-p.going` / `.fv-card.going`).
+  - **Waiting for approval:** a `.fv-pend` tag, a `.fv-pendbox` with the change (`.fv-diff`, struck old value and new value), and a clock on the leaf (`.tr-p.pending`).
+  - **The approval request:** the `.fv-ask` card with אשר / דחה.
+  - **Sample and checks:** `docs/design/prototype/family-edit.html`. Checked at 375 and 1280, light and dark. All text contrast ≥5.7.
+- **Ready: the look of עץ מבנה (the owner's new back door tab, 2026-11-13).** The logic is ai-features' after the feedback round.
+  - **The tree** (admin.css `.st`): rows for parts and tools, with the pillow and the icon. Dragging starts only from the ⠿ grip, so the page still scrolls under a finger. The states are `.away`, `.st-ghost`, `.st-ph`, `.into`, `.no`, `.st-zone.over`, `.held` (keyboard) and `.landed`.
+  - **The edit panel** (`.st-panel`): name, description, an icon picker, the 15 pillows (a dot marks a taken one) and colour swatches with "other", over a live preview. It sits beside the tree on a computer and is a bottom sheet on a phone.
+  - **The fire editor** (`.fe`): the ring drawn with CSS cos/sin from `--a`, with × to remove, a dashed + to add, and a tray to replace a pillow.
+  - **The eggs:** a new drawing, `assets/egg/egg.svg` (limestone shell, vine tatreez band, honey dots). `.egg` in base.css rocks a little every 7s; when found it cracks along the band and a bubble rises over the tab bar. The back door card `.bd-egg` lists page, text, dates, finders and state, and has a form.
+  - Sample: `docs/design/prototype/structure.html`. Checked at 375 and 1280, light and dark: no overflow, and text contrast ≥4.7.
+- **Ready to merge: the users' feedback round (v127, main merged in):**
+  - **Marking verses** (study.css): `.rs-v.mk` is a see-through honey wash with no frame, and marked verses in a row join into one band. It looks the same at all three levels, and the browser's selection is a quiet honey. The verse numbers are faint pebbles that say "tap me". Checked on Genesis 1 at 375 and 1280, light and dark.
+  - **The invitations card** (admin.css `.bd-inv`): the inbox's filter pills, quiet rows, and a state pill (sent grey, opened honey, joined vine, expired red). Checked on `docs/design/prototype/invites.html` at 375 and 1280, light and dark, contrast 9:1 and up.
+  - **Fun:** a two-word tab ("מצחיק ואמיתי") stays one line at 375; the tile widens and the row scrolls.
+  - **Waiting on ai-features:** `.mk` in study.js and the `.bd-inv` markup (the classes were sent to them).
 - **Ready to merge: the messages inbox in the top bar (v125, main merged in):** `.dm-inbox` in base.css with `bd-icons/envelope.svg`:
   - the triangle's twin: 44×44, a 24px line envelope at stroke 1.9, no circle, in the text's ink, the vine on hover;
   - the unread `.dm-dot` sits on the envelope's corner, and the two icons sit a little closer to each other than to the chip;
@@ -174,8 +196,10 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
   the app), a dashed vine arrow from a short note up to it, a breathing ring. Checked at 375 and 1280, light and dark.
   Waits for ai-features (reports.js) to add the markup and --x/--y; sample in `docs/design/prototype/triangle-coach.html`.
 - **The guitar sways alone** (2026-11-13): stump-guitar.webp split into `stump.webp` + `guitar.webp` (same canvas, 400 in public/assets, the script in docs/design/split-stump-guitar.py); the sway CSS (`.guitar-img`, pivot at its foot, rocks off the stump with a short buzz) sent to the CEO for index.html; sample docs/design/prototype/guitar-sway.html.
+- **Serious mode, round 1** (vision batch 11, 2026-11-13): `<html data-style="serious">` in base.css (tighter corners, a hairline for the shadow, firmer headings; `.deco` and the companion hidden) and the serious home `.sr-home` (search, tools as a grid or a list from H.APPS, `data-pillows="keep"` keeps the cushions); sample docs/design/prototype/serious-home.html. Wiring: ai-features (apply.js) and the master (common.js early settings, index.html).
 
 ## In progress
+- **Vision batch 11, still to come:** the clean tree diagram (serious mode's family tree and museum), the profile frames (open and secret), the default covers in the tent's style, an animated picture for each companion figure, the business card's structure, and Noto Sans Phoenician (waits for the owner's OK to download it).
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a
   fourth version if the owner wants one (about 6 images); then, by the owner's decisions, the big folder and tab pictures (food, tools,
   entertainment) and our own symbols in place of the emoji, gradually – next among them the weather's sky icons (a small

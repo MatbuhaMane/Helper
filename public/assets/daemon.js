@@ -1511,7 +1511,7 @@
   const heads = [];
   function headFigure(cls = 'face', size = 34) {
     const span = el('span', { class: 'dm-headfig ' + cls, 'aria-hidden': 'true' });
-    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40 }).then((f) => heads.push(f)).catch(() => {});
+    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40, ...(prefs.hair ? { hair: prefs.hair } : {}) }).then((f) => heads.push(f)).catch(() => {});
     else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: size, height: size }));
     return span;
   }
@@ -1672,7 +1672,9 @@
       // the patchwork doll wears the person's own badges (up to 8, design's figures-2d.md)
       let patches;
       if (flatId === 'doll') { try { patches = ((await api('/api/goals', { noRedirect: true })).badges?.earned || []).map((e) => e.id || e.badge || e).slice(0, 8); } catch (_) { /* no badges yet */ } }
-      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true, ...(patches ? { patches } : {}) }); } catch (e) { console.warn('2D figure missing', e); return; }
+      // her hair, if she has a hair layer (the astronomer): the person's colour (prefs daemon.hair), else her own
+      const hair = catalogue.find((x) => x.id === flatId)?.hair ? prefs.hair || undefined : undefined;
+      try { flat = await Figure2D.mount(holder, flatId, { size: Math.min(box.w, box.h), look: true, ...(patches ? { patches } : {}), ...(hair ? { hair } : {}) }); } catch (e) { console.warn('2D figure missing', e); return; }
       parts = { flat: true, wings: [] };   // (the walk asks whether he flies)
     } else {
       const first = bodyFor(state.daemon.form);

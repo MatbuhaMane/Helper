@@ -189,7 +189,18 @@
       type: 'button', class: 'card st-skin' + (id === mine ? ' on' : '') + (onBuy ? ' buy' : ''), 'aria-pressed': String(id === mine), disabled: !ok && !onBuy,
       title: ok ? name : sub, onclick: () => (onBuy ? onBuy() : pick(id)),
     }, preview, el('b', {}, name), sub ? el('small', { class: 'muted' }, sub) : null);
-    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
+    const preview2d = (f) => { const span = el('span', { class: 'st-skin-pic', 'aria-hidden': 'true' }); Figure2D.mount(span, f.id, { size: 64, still: true, ...(f.id === 'doll' ? { patches: [...earned].slice(0, 8) } : {}), ...(f.hair ? { hair: dp.hair || f.hairDefault } : {}) }).catch(() => {}); return span; };   // (the patchwork doll wears the person's badges)
+    /** her hair colour (a figure with a hair layer, e.g. the astronomer): saved per person, prefs daemon.hair */
+    const hairRow = () => {
+      const f = figures.find((x) => x.id === mine && x.hair);
+      if (!f) return null;
+      const now = dp.hair || f.hairDefault;
+      return el('div', { class: 'st-field' }, el('span', { class: 'st-label' }, `צבע השיער של ${f.name}`),
+        el('div', { class: 'st-choices st-hair', role: 'radiogroup', 'aria-label': 'צבע השיער', style: 'display:flex;flex-wrap:wrap;gap:6px' }, f.hair.map((h) => el('button', {
+          type: 'button', role: 'radio', class: 'chip', 'aria-checked': String(h.color === now), title: h.name,
+          onclick: () => { set('hair', h.color); drawAssistant(); },
+        }, el('span', { 'aria-hidden': 'true', style: `display:inline-block;inline-size:14px;block-size:14px;border-radius:50%;background:${h.color};border:1px solid var(--line-strong);margin-inline-end:6px;vertical-align:-2px` }), h.name))));
+    };
     const groups = KINDS.map(([kind, title]) => [title, figures.filter((f) => (f.kind || 'generic') === kind)]).filter(([, list]) => list.length);
     // (native replaceChildren would print a null as text)
     assistantBox.replaceChildren(...[
@@ -209,6 +220,7 @@
         const sub = forSale ? `💎 ₪${price} · לקנייה` : f.unlock && !earned.has(f.unlock) ? 'נפתחת עם badge' : f.paid ? '💎 שלך' : f.season || 'חינם';
         return card(f.id, f.name, sub, preview2d(f), ok, forSale ? () => buy(f) : null);
       }))]),
+      hairRow(),
       // horror figures (Dracula) only when asked for, and never for a child (under 12, by the birth year the owner set)
       !child && allFigures.some((f) => f.tags.includes('horror')) ? toggle('להציג גם דמויות אימה', !!dp.showHorror, (v) => { set('showHorror', v); drawAssistant(); }, 'כמו דרקולה. לא לילדים.') : null,
       figures.length ? null : el('p', { class: 'muted small' }, 'דמויות נוספות, פשוטות וחמודות, בדרך.')].filter(Boolean));

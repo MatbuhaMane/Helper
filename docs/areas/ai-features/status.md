@@ -11,6 +11,7 @@ Last update: 2026-11-13 (עריכת חברים בדלת האחורית).
   2. A search across every household, by name or email, edits the same fields.
   3. The email stays read-only. The section explains why: it is the Google sign-in and the key of everything the member keeps.
   4. "מנהל" is global (members.role owner), so it is only for OWNER_EMAIL. The brother gets "ראש בית" of a new household instead.
+  5. "משק בית חדש" in the household list opens an empty household with that member as its head; the AI allowance is unchanged.
   Server `server/member-admin.ts`; the rules `server/member-admin-rules.ts`, with 33 tests in `server/test-member-admin.mjs`.
   Every change is written to the audit log.
   Checked on the dev server (8790), with the back door and the vault opened in the local database:

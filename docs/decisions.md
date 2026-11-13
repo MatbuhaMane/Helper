@@ -2336,6 +2336,8 @@ The CEO's task: in the חברים section the owner edits each member's name, ho
   vault's Drive backups and makes the design images. So only an OWNER_EMAIL address may hold it, it is never demoted or moved,
   and the last manager stays. "ראש בית" is a `family_roles` head row for the member's own household; "חבר" is everyone else.
   No change to the membership model.
+- **"משק בית חדש"** (the CEO's addition): choosing it opens an empty household whose head is that member (a new tree that
+  starts from nothing); a new household is never opened without its head. The AI allowance stays as it was.
 - **The email is not editable.** It is the Google sign-in and the key of sessions, prefs, vault items, cards and allowance.
   A new address is added as a member and the old one removed.
 - **For the master** (shared files, not changed here):

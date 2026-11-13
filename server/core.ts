@@ -1,5 +1,7 @@
 // Shared backend pieces: environment, HTTP helpers, sessions, Google sign-in, token encryption.
 
+import { deniedTicket } from './access';
+
 export interface Env {
   DB: D1Database;
   OWNER_EMAIL: string;          // the first owner; signs in without an invitation
@@ -248,7 +250,11 @@ export async function googleCallback(ctx: Ctx): Promise<Response> {
   const email = String(claims.email).toLowerCase();
 
   const member = await admitMember(env, email, claims.name || null, saved.preview ? undefined : req);
-  if (!member) return redirect('/?error=not_invited&email=' + encodeURIComponent(email));
+  if (!member) {
+    // not a member and no invitation: a one-hour ticket for the request form (server/access.ts); the email is shown, never trusted back
+    const t = await deniedTicket(env, email, claims.name || null).catch((e) => { console.error('access ticket', e instanceof Error ? e.message : e); return ''; });
+    return redirect('/?error=not_invited&email=' + encodeURIComponent(email) + (t ? '&req=' + t : ''));
+  }
 
   // a preview asked: no session here – a signed one-minute ticket for that preview
   if (saved.preview && isPreviewOf(url, saved.preview)) {

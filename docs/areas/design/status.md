@@ -56,6 +56,15 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
 
 
 ## Done
+- **The kind of report and three welcome slides (the owner, 2026-11-13):** `.rp-kind` in reports.css (תקלה / הצעה לשיפור, real radios; a fault in
+  the triangle's red, a suggestion in the vine with a new bulb icon `bd-icons/idea.svg`; the sheet's head icon turns into the bulb). `.rp-alert` moved
+  from reports.css to base.css so /welcome/ draws the very same triangle. welcome.css: `.wz-show`, `.wz-points`, the report slide (a mini top bar
+  with the breathing triangle), the helper slide (`.wz-hero`, the figure big, the corner friend steps aside), the tree slide (the olive with five faces),
+  and a tighter trail for nine stops on a phone. Markup in the comments and in `docs/design/prototype/welcome-slides.html`. 375/1280 checked.
+- **/messages/ has its own look (`public/messages/messages.css`, 2026-11-13):** list and thread side by side from 900px, one at a time
+  on a phone (`data-open`); my bubbles in the vine at the start, theirs on a warm neutral; "נקרא" under my last one; a pill send button.
+  `.dm-msg`/`.dm-compose` collide with daemon.css, so they are scoped under `.dm-thread`. `.dm-dot` (the unread dot on the chip) moved to base.css.
+  Checked 375/1280, light and dark, no overflow. Waits on ai-features: link the CSS in `messages/index.html`, drop the inline styles in messages.js and dm.js.
 - **A second family tree, "canopy" (עץ ב׳), beside the olive (the owner's Gemini drawing, 2026-11-13), ready to merge:**
   cut into our four layers by `docs/design/cut-tree-canopy.mjs` (webp, a cream rim so it holds at night, leafy side twigs).
   Its box is **1000×1500**, not 1800: the tree is wide and short, and five tiers of 90 px people need ~95 px each at 375.
@@ -141,6 +150,20 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
   the dashboard on top (the tent's state across; שימוש and פניות side by side on a computer; number cards with a trend and
   a spark), then the nine parts as toolbox apps coloured by `data-bd`, a count badge, the open part under the tiles.
   Checked at 375 (3×3) and 1280 (5+4), light and dark, no overflow. The markup went to ai-features for `admin.js`.
+- **The report kind and two welcome slides, fitted to ai-features' markup (a7275c0):**
+  - `fieldset.rp-kind` (legend across, תקלה in the triangle's red and הצעה לשיפור in the vine with a bulb); on a suggestion the
+    head icon becomes the bulb. `.rm-chip.idea` in the thread, `.rx-tag.idea` in the back door.
+  - `.wz-intro` with `.wz-helper` (the figure on a soft disc; the corner friend hides on that step) or `.wz-alert` (the bar's
+    triangle at 2.4×, the same colours, breathing). Above the lines on a phone, beside them from 700px.
+  - Checked at 375 and 1280, light and dark, no overflow; the triangle 5.35 light / 6.77 dark.
+- **The bar's triangle without its circle (the owner, 2026-11-13):** only the triangle, 24px, in a new `--alert` token (coral #cc5a46 by
+  day, 3.53:1; pastel #e79a85 at night, 8.77:1); still a 44×44 target, a ring only on keyboard focus. The welcome slide's big one matches.
+- **The tree slide (`.wz-tree`, ai-features 7289525):** the app's own olive (four layers) on the soft disc with five faces on its slots
+  (grandparents, parents, "me" in the vine at the top); it grows in gently. Checked at 375 and 1280, no overflow.
+- **The triangle's first showing (`.rp-coach` in reports.css, the owner approved: "a gentle arrow, along the screen, a short note"):**
+  once per person after /welcome/, a soft veil with a window around the bar's real triangle (the wizard has no bar, so it lives in
+  the app), a dashed vine arrow from a short note up to it, a breathing ring. Checked at 375 and 1280, light and dark.
+  Waits for ai-features (reports.js) to add the markup and --x/--y; sample in `docs/design/prototype/triangle-coach.html`.
 
 ## In progress
 - The rest of the style check, after the image quota resets (00:00 UTC): the tool icons, the record, a painted, image-made tree as a

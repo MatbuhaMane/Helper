@@ -56,6 +56,10 @@ _Updated 2026-11-13 (main v99: the owner's logo in the bar and the tree batch; r
 
 
 ## Done
+- **/messages/ has its own look (`public/messages/messages.css`, 2026-11-13):** list and thread side by side from 900px, one at a time
+  on a phone (`data-open`); my bubbles in the vine at the start, theirs on a warm neutral; "נקרא" under my last one; a pill send button.
+  `.dm-msg`/`.dm-compose` collide with daemon.css, so they are scoped under `.dm-thread`. `.dm-dot` (the unread dot on the chip) moved to base.css.
+  Checked 375/1280, light and dark, no overflow. Waits on ai-features: link the CSS in `messages/index.html`, drop the inline styles in messages.js and dm.js.
 - **A second family tree, "canopy" (עץ ב׳), beside the olive (the owner's Gemini drawing, 2026-11-13), ready to merge:**
   cut into our four layers by `docs/design/cut-tree-canopy.mjs` (webp, a cream rim so it holds at night, leafy side twigs).
   Its box is **1000×1500**, not 1800: the tree is wide and short, and five tiers of 90 px people need ~95 px each at 375.

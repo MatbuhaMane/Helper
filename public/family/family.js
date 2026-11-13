@@ -889,13 +889,17 @@
     let lock; try { lock = await api('/api/lock', { noRedirect: true }); } catch (_) { return; }
     if (lock.tree !== 'off' || lock.tipHidden) return;
     const later = () => { try { sessionStorage.setItem('helper.treeTip', '1'); } catch (_) { /* fine */ } H.closeModal(); };
+    const never = async () => { H.closeModal(); try { await api('/api/lock', { method: 'PUT', body: { tip: true }, noRedirect: true }); } catch (_) { later(); } };
+    // design's window (/assets/lock.js), else a plain one
+    try { await H.loadOnce('/assets/lock.js'); } catch (_) { /* the plain one */ }
+    if (window.Lock?.warnCard) return H.modal(Lock.warnCard({ onSetup: () => { location.href = '/settings/#privacy'; }, onLater: later, onNever: never }));
     H.modal(el('div', { class: 'fv-locktip' },
       el('h2', {}, '🔒 להגן על עץ המשפחה?'),
       el('p', {}, 'העץ פתוח לבני הבית שמחוברים. אפשר לנעול אותו בקוד בן 4 ספרות או בטביעת אצבע, כך שמי שמחזיק את המכשיר לא ייכנס בלעדיך.'),
       el('div', { class: 'row' },
         el('a', { class: 'btn primary', href: '/settings/#privacy' }, 'להגדיר עכשיו'),
         el('button', { class: 'btn ghost', type: 'button', onclick: later }, 'אחר כך'),
-        el('button', { class: 'linklike', type: 'button', onclick: async () => { H.closeModal(); try { await api('/api/lock', { method: 'PUT', body: { tip: true }, noRedirect: true }); } catch (_) { later(); } } }, 'לא להציג שוב'))));
+        el('button', { class: 'linklike', type: 'button', onclick: never }, 'לא להציג שוב'))));
   }
   /** after a private document is saved, if the tree has no lock: a code is recommended */
   async function privateTip() {

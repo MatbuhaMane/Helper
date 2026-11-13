@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>שבת וחגים</title>
+  <!-- A sample for seasons.css: the home with "סיכום היום" and the dressed tent, and the calm Shabbat screen.
+       Copy to public/ to view (not committed there).
+       ?view=home (default; &holiday=hanukkah&night=3 | sukkot | shabbat | rosh-hashanah | tu-bishvat | purim | pesach | yom-haatzmaut | shavuot;
+                   &sum=0 hides the card, &sum=calm shows the quiet day)
+       ?view=shabbat (&holiday=pesach shows the holiday screen)
+       ?theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/care.css">
+  <link rel="stylesheet" href="/assets/seasons.css">
+  <style>
+    body { opacity: 1 !important; visibility: visible !important; }
+    /* a stand-in for the home's own layout in index.html (the master's file) */
+    .home { display: grid; justify-items: center; padding: 12px max(16px, env(safe-area-inset-left)) 24px; gap: 2px; }
+    .greet { justify-self: start; inline-size: min(100%, 640px); margin-inline: auto; }
+    .greet h1 { margin: 0; font-size: clamp(2.1rem, 1.3rem + 2.6vw, 3.2rem); }
+    .camp { position: relative; inline-size: min(100%, 640px); margin-block-start: 40px; }
+    .camp > img:first-child { display: block; inline-size: 100%; block-size: auto; }
+  </style>
+</head>
+<body>
+<script src="/assets/common.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search), root = document.documentElement;
+  const th = q.get('theme');   /* common.js applies the saved prefs later; keep the asked-for theme */
+  if (th) { root.dataset.theme = th; new MutationObserver(() => { if (root.dataset.theme !== th) root.dataset.theme = th; }).observe(root, { attributes: true, attributeFilter: ['data-theme'] }); }
+  const view = q.get('view') || 'home', hol = q.get('holiday'), night = q.get('night');
+  const IC = {
+    x: '<path d="M6 6l12 12M18 6 6 18"/>',
+    cake: '<path d="M4.5 20.5h15v-6.5a2 2 0 0 0-2-2h-11a2 2 0 0 0-2 2z"/><path d="M4.5 16c1.5 1.2 3 1.2 4.5 0s3-1.2 4.5 0 3 1.2 4.5 0 1.5-1.2 1.5-1.2"/><path d="M12 12V8.5"/><path d="M12 4c1 1.2 1 2.4 0 3-1-.6-1-1.8 0-3z"/>',
+    candles: '<path d="M8 21V11M16 21V11"/><path d="M8 4.5c1.2 1.3 1.2 2.8 0 3.5-1.2-.7-1.2-2.2 0-3.5zM16 4.5c1.2 1.3 1.2 2.8 0 3.5-1.2-.7-1.2-2.2 0-3.5z"/><path d="M5 21h14"/>',
+    bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21h4"/>',
+    photo: '<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4.5 17.5 5-4.5 3.5 3 2.5-2 4 3.5"/>',
+    chat: '<path d="M5 18.5V7a2.5 2.5 0 0 1 2.5-2.5h9A2.5 2.5 0 0 1 19 7v6a2.5 2.5 0 0 1-2.5 2.5H9z"/>',
+    gather: '<circle cx="8" cy="9" r="2.6"/><circle cx="16" cy="9" r="2.6"/><path d="M3.5 19c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6M11.5 19c.6-3 2.4-4.6 4.5-4.6s3.9 1.6 4.5 4.6"/>',
+  };
+  const ic = (n) => IC[n] ? `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${IC[n]}</svg>` : H.icon(n).outerHTML;
+  const NAMES = { hanukkah: 'חנוכה', sukkot: 'סוכות', shabbat: 'שבת', 'rosh-hashanah': 'ראש השנה', 'tu-bishvat': 'ט"ו בשבט', purim: 'פורים',
+    pesach: 'פסח', 'yom-haatzmaut': 'יום העצמאות', shavuot: 'שבועות' };
+  const NIGHTS = ['', 'נר ראשון', 'נר שני', 'נר שלישי', 'נר רביעי', 'נר חמישי', 'נר שישי', 'נר שביעי', 'נר שמיני'];
+  const tent = `<img src="/assets/tent-700.webp" srcset="/assets/tent-700.webp 700w, /assets/tent-1000.webp 1000w, /assets/tent.webp 1400w" sizes="(max-width: 640px) 100vw, 640px" width="1400" height="794" alt='האוהל של רַאבַּ"ע'>`;
+  const dress = (id) => id ? `<img class="holiday" src="/assets/holidays/${id}.svg${id === 'hanukkah' && night ? '#n' + night : ''}" alt="" aria-hidden="true">` : '';
+  let html = '';
+
+  if (view === 'home') {
+    const sum = q.get('sum');
+    const row = (c, icon, b, s, href = '#', when = '') => `<li><a href="${href}"><span class="dsum-ic" style="--c:${c}">${ic(icon)}</span>
+      <span class="dsum-txt"><b>${b}</b>${s ? `<small>${s}</small>` : ''}</span>${when ? `<span class="dsum-when">${when}</span>` : ''}</a></li>`;
+    const chip = (icon, n, t) => `<li><a href="#">${ic(icon)}<span><b>${n}</b> ${t}</span></a></li>`;
+    const card = sum === '0' ? '' : sum === 'calm'
+      ? `<section class="dsum" aria-labelledby="dsum-h"><header class="dsum-head"><div><h2 id="dsum-h">סיכום היום</h2><p>יום שלישי, ט"ז בכסלו</p></div>
+          <button class="dsum-close" type="button" aria-label="סגירת הסיכום">${ic('x')}</button></header>
+          <div class="dsum-body"><p class="dsum-calm">יום שקט. אין היום שום דבר מיוחד, ומאז אתמול לא נוסף כלום.</p></div></section>`
+      : `<section class="dsum" aria-labelledby="dsum-h">
+          <header class="dsum-head"><div><h2 id="dsum-h">סיכום היום</h2><p>יום שישי, י"ב בכסלו</p></div>
+            <button class="dsum-close" type="button" aria-label="סגירת הסיכום">${ic('x')}</button></header>
+          <div class="dsum-body">
+            <section aria-labelledby="dsum-today"><h3 class="dsum-sub" id="dsum-today">היום</h3><ul class="dsum-list">
+              ${row('#b8457a', 'cake', 'יום הולדת לנועה', 'בת 9 היום · לשלוח ברכה')}
+              ${row('#2a7fa8', 'gather', 'ארוחת שישי אצל סבתא', '8 מגיעים · דנה מביאה סלטים', '#', '19:00')}
+              ${row('#b07a1e', 'candles', 'הדלקת נרות בירושלים', 'צאת השבת מחר ב־17:35', '#', '16:21')}
+            </ul><a class="dsum-more" href="#">ועוד תזכורת אחת להיום</a></section>
+            <section aria-labelledby="dsum-since"><h3 class="dsum-sub" id="dsum-since">מאז הסיכום הקודם</h3><ul class="dsum-quiet">
+              ${chip('book', 2, 'מתכונים חדשים')}${chip('photo', 12, 'תמונות באלבום')}${chip('chat', 4, 'הודעות בקבוצה')}${chip('music', 1, 'שיר בשירון')}
+            </ul></section>
+          </div></section>`;
+    const band = hol && hol !== 'shabbat' ? `<div class="hol-band"><b>${NAMES[hol]} שמח</b>${hol === 'hanukkah' && night ? `<small>${NIGHTS[night]}, הערב</small>` : ''}
+        <a class="hol-gather" href="#">${ic('gather')}נתכנס לחג</a></div>` : '';
+    html = `<main class="home">
+      <div class="greet"><h1>ערב טוב, דנה</h1></div>
+      ${card}
+      <div class="camp">${tent}${dress(hol)}</div>
+      ${band}
+    </main>`;
+  }
+
+  if (view === 'shabbat') {
+    const yt = hol && hol !== 'shabbat';
+    html = `<div class="shb" role="dialog" aria-modal="true" aria-labelledby="shb-h"><div class="shb-in">
+      <figure class="shb-tent">${tent}${dress(yt ? hol : 'shabbat')}</figure>
+      <h1 class="shb-h" id="shb-h">${yt ? 'חג שמח' : 'שבת שלום'}</h1>
+      <p class="shb-par">${yt ? 'פסח · יום טוב ראשון' : 'פרשת וַיִּשְׁלַח'}</p>
+      <dl class="shb-times"><div><dt>הדלקת נרות</dt><dd>16:21</dd></div><div><dt>${yt ? 'צאת החג' : 'צאת השבת'}</dt><dd>17:35</dd></div></dl>
+      <p class="shb-city">לפי ירושלים</p>
+      <p class="shb-note">האוהל נח ${yt ? 'בחג' : 'בשבת'}. אין התראות, ושום דבר לא נשלח בשמך. נתראה ${yt ? 'במוצאי החג' : 'במוצאי שבת'}.</p>
+      <section class="sos" aria-label="קריאה לעזרה">
+        <button class="sos-btn" type="button" style="--p:0" aria-describedby="sos-how"><span class="sos-core">${ic('bell')}<b>עזרה</b></span></button>
+        <p class="sos-how" id="sos-how" aria-live="polite"><b>חירום? לחצו והחזיקו 3 שניות</b><span>גם ${yt ? 'בחג' : 'בשבת'}, כל המשפחה תקבל הודעה מיד.</span></p>
+      </section>
+      <a class="shb-anyway" href="#">כניסה לאוהל בכל זאת</a>
+    </div></div>`;
+  }
+  document.body.insertAdjacentHTML('beforeend', html);
+})();
+</script>
+</body>
+</html>

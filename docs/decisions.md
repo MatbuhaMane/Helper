@@ -11,6 +11,23 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – Prices: ₪10 for a paid figure, ₪400 for a personal figure, more for the special ones (business)
+
+**Decided (the owner):**
+- **A paid figure** (Mary Shelley, Leonardo, Cleopatra, Dracula) costs ₪10 in credits. Design measured 15–20 minutes of
+  work, so a figure covers itself after about 14 sales.
+- **A personal figure** costs ₪400. Design measured 45–75 minutes, which comes to ₪300–500 at the 30/30/30/10 split.
+  Revisit after the first five founders' figures.
+- **The very special figures** (הקוסם מהשוק, האסטרונומית, בובת הטלאים, and the further wizards when they are logged)
+  cost more than a paid figure.
+  - **Proposed: ₪20**, the same as one ₪20 pack. Not yet decided.
+- Founding members get the special figures too (paid items with no per-use cost).
+
+**Affects:** ai-features and master (`server/figures-rules.ts`, the paid list): the price per figure in credits, with
+the special ones in their own price group.
+
+**Status:** Decided, except the special figures' exact price.
+
 ## 2026-11-13 – How money is collected: one credits wallet, an Israeli provider, standing orders (business)
 
 **Decision:**

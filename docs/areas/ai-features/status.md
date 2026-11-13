@@ -238,3 +238,12 @@ LCP has not moved yet. The causes:
   stays as it is.
 - For the CEO: an `"perf": "node tools/perf-cdp.mjs"` script in `package.json`, if wanted. Also add the tests
   `test-weather.mjs` and `test-speech-text.mjs` to `npm test`.
+
+## The family story, v1 (branch `claude/story-4cc985`, 2026-11-13)
+
+- **Done:** the page `/family/story/`, the server, the view filter with 38 tests, the table and the routes (decisions.md).
+  - Checked: typecheck and `npm test` are clean; the audit passed at 375 and 1280, light and dark; it works end to end on
+    the dev server (adding, tags, the timeline, a file opening, a fake file refused, another household gets 404).
+- **Waiting:** design's `story.css`; the master's patches (top menu, npm test); the owner's approval for the backup.
+- **Not in v1:** exhibitions; the place map; transcription; the fingerprint for a restricted document; the AI's follow-up
+  question. Not yet tested: recording on a real phone (iOS writes audio/mp4).

@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The family story, v1: a table, routes, the view filter (ai-features)
+
+**Built** (branch `claude/story-4cc985`, from `ai-features`): the page `/family/story/` (timeline, by person, by place,
+search; the recorder and the guided interview), `server/story.ts`, the rules in `server/story-rules.ts` with
+`server/test-story.mjs`.
+- **Appended:** the table `story_items` in `schema.sql`; six route lines `/api/story…` in `functions/api/[[path]].ts`.
+- **Privacy:** an item is `household` by default. `private` means only the one who added it, and `tribe` means the linked
+  households too. Only the one who added an item changes its level. Outside the household there are no people tags
+  (each is an empty spot), no uploader email and no file, because files never leave their household (kin.sees). An
+  unknown level opens to nobody.
+- **Sealed** with the vault key like `vault_items`. Files are stored as ciphertext at `story/<household>/<id>` in the
+  vault's store, using crypto.ts and store.ts as they are. The household's own story opens like its tree (the tree lock).
+- **Storage:** 2 GB a household, counted from `size`. Over it only uploads with a file stop; a written story still goes in.
+  Recordings are Opus at 40 kbps and photos WebP up to 2560 px, made on the device.
+
+**For the master:** patches in the CEO notes folder: `ai-story-common-nav-2026-11-13.patch` (the top-menu entry, PC
+only) and `ai-story-package-test-2026-11-13.patch` (the test in `npm test`). The backup is a proposal that needs the owner.
+**For design:** `public/family/story/story.css` (the page links it; the class contract is in the message to design).
+**For the tree session:** a "הסיפור של…" link on a person's card to `/family/story/?person=<id>`.
+
+**Status:** Done on the branch (v1); waiting for the master's review of the privacy filter.
+
 ## 2026-11-14 – הרגלי אכילה: one tool for every way of eating (ai-features → master, design)
 
 `/food/diet/habits/` (the owner's words, through the CEO): ketosis, Atkins, paleo, low-carb, low sugar and fasting, each

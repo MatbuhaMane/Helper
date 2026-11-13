@@ -1,9 +1,27 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (תיבת פניות).
+Last update: 2026-11-13 (עריכת חברים בדלת האחורית).
 
 ## Done
+
+- **עריכת חברים** (the CEO, 2026-11-13), on `ai-features`, waiting for the master's review (roles and permissions):
+  1. In חברים, the table shows my household. Each row has the Hebrew name, the display name, the household (a list, with
+     "בית חדש…") and the role (a list: חבר / ראש בית / מנהל). A change of role or household asks first.
+  2. A search across every household, by name or email, edits the same fields.
+  3. The email stays read-only. The section explains why: it is the Google sign-in and the key of everything the member keeps.
+  4. "מנהל" is global (members.role owner), so it is only for OWNER_EMAIL. The brother gets "ראש בית" of a new household instead.
+  Server `server/member-admin.ts`; the rules `server/member-admin-rules.ts`, with 33 tests in `server/test-member-admin.mjs`.
+  Every change is written to the audit log.
+  Checked on the dev server (8790), with the back door and the vault opened in the local database:
+  - the guards: no confirm, מנהל for another address, demoting the owner and changing an email are each refused;
+  - the brother, end to end: moved to his own household as its head, with members.role still member;
+    - a card with his email in our tree, and the bridge asked from our tree;
+    - he signed in, saw the request, approved it with his own card, and it was confirmed with no consent step;
+    - the forest shows both trees;
+  - the audit log lines;
+  - 375 (the card now stays inside the screen and the table scrolls) and 1280, light and dark: no overflow, the inputs have names.
+  Not checked: a real passkey entry, and the live database.
 
 - **תיבת פניות** (the CEO, 2026-11-14), on `ai-features`:
   1. A report from any page, by shaking the phone or from the menu ("דווח על בעיה" in the tools menu and in settings).

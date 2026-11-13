@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's look and its covers)._
+_Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's look and its covers; ready to merge: the covers at night)._
 
 **Where we stand (a brief for the next round):**
 - **Live in main (v91):**
@@ -11,6 +11,12 @@ _Updated 2026-11-13 (live in main, v91: the fire roulette, the family profile's 
     - with a real touch long press at 375, in dark mode;
     - with reduced motion.
   - **The family profile's look.** It is `public/family/profile.css` with five covers, `/assets/covers/*.svg`.
+- **Ready to merge (e83f5ed): the covers at night.** In dark mode the four day drawings turn to dusk under a deep-blue veil.
+  The desert is already night and stays as it is. A family's own photo is only dimmed a little.
+- **Launch prep, the page audit (v92, 28 pages incl. /food/diet/habits/, at 375 and 1280, light and dark): clean.**
+  - The check found no overflow, broken images, nameless controls or contrast under 3:1.
+  - It skips oklab colours, so the home page's 53 oklab texts were measured separately on a canvas: all ≥ 4.5:1.
+  - Not covered: text over pictures (the cushions' names by the fire) and the profile page, which does not exist yet.
 - **Waiting for ai-features:**
   - **The profile page.** Its markup contract is in the header of `docs/design/prototype/family-profile.html`. We adjust the CSS on request.
   - **The keto.js patch for the diet stamps.** It is `design-keto-diet-stamps-2026-11-13.patch` in the notes folder.

@@ -43,3 +43,7 @@ in `docs/areas/`, `docs/business/` (vision, plan, closed questions), `docs/desig
 ## Open questions
 
 - Which themes does the owner want to think through first?
+
+## Status file
+At the end of every meaningful round of work, update `docs/areas/vision/status.md` on your branch and commit it: what was done,
+what is in progress, blockers, and what you need from the owner. Keep it short; the master reads it for the board meeting.

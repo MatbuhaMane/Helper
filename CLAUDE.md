@@ -68,13 +68,44 @@ they are stored per user on the server (`/api/prefs`, table `user_prefs`) and ar
 The project is worked on by several sessions at once, one per area, each in its own git worktree and branch,
 so no two sessions edit the same working copy.
 
-| Session | Folder | Branch | Dev server (port / inspector) | Brief |
-|---|---|---|---|---|
-| Master | `M:\Claude Code\Helper` | `main` | 8788 / 9229 | this file, `docs/decisions.md` |
-| Design & graphics | `M:\Claude Code\Helper-design` | `design` | 8789 / 9230 | `docs/areas/design.md` |
-| Business modeling | `M:\Claude Code\Helper-business` | `business` | none (docs only) | `docs/areas/business.md` |
-| AI & feature mechanics | `M:\Claude Code\Helper-ai` | `ai-features` | 8790 / 9231 | `docs/areas/ai-features.md` |
-| Vision & conversation (חזון ודיבור) | `M:\Claude Code\Helper-vision` | `vision` | none (conversation) | `docs/areas/vision.md` |
+The departments, in the owner's order (the same order in the sidebar, numbered in each chat's title):
+
+| # | Department | Folder | Branch | Dev server (port / inspector) | Brief / status |
+|---|---|---|---|---|---|
+| 1 | האֹהֶל, the master (the CEO) | `M:\Claude Code\Helper` | `main` | 8788 / 9229 | this file, `docs/decisions.md` |
+| 2 | חזון ודיבור (vision) | `M:\Claude Code\Helper-vision` | `vision` | none (conversation) | `docs/areas/vision/` |
+| 3 | פיתוח עסקי (business) | `M:\Claude Code\Helper-business` | `business` | none (docs only) | `docs/areas/business/` |
+| 4 | פיתוח טכני (ai-features) | `M:\Claude Code\Helper-ai` | `ai-features` | 8790 / 9231 | `docs/areas/ai-features/` |
+| 5 | עיצוב וגרפיקה (design) | `M:\Claude Code\Helper-design` | `design` | 8789 / 9230 | `docs/areas/design/` |
+| 6 | חקר שוק (research), mostly dormant | `M:\Claude Code\Helper-private\research` | none (private, local git) | none | `research/BRIEF.md`, `research/status.md` |
+| 7 | משפטי (legal and taxes), dormant | `M:\Claude Code\Helper-private\legal` | none (private, local git) | none | `legal/BRIEF.md`, `legal/status.md` |
+
+### The master is the CEO; the owner is the board
+
+- The owner is the one and only owner, and the big decisions are the owner's. The master runs this chat like a board meeting:
+  - the department heads report to it;
+  - it supervises and coordinates;
+  - it finds blockers and contradictions between departments;
+  - it brings decisions to the owner, each with a recommendation.
+- The master does **not** do the departments' work. It remains the only one who merges into `main`, owns the shared files and
+  pushes (with the owner's approval where needed).
+- **Status files.** Each department keeps `docs/areas/<department>/status.md` short and current, on its own branch, at the end
+  of every meaningful round. Research and legal keep theirs in the private folder.
+  - The master reads them: `git show <branch>:docs/areas/<d>/status.md`, plus `docs/decisions.md` and `git log main..<branch>`.
+- **"ישיבת board".** When the owner asks for a board meeting, the master gives, in this order:
+  1. an executive summary in three lines;
+  2. a short report from each department, in the order above;
+  3. contradictions and dependencies between departments;
+  4. the decisions waiting for the owner, each with the master's recommendation;
+  5. the next step for each department.
+- **Dormant departments.** Research wakes for a weekly market scan (a scheduled task) or when called. Legal wakes only when called.
+
+### The private folder (`M:\Claude Code\Helper-private`)
+
+The GitHub repo is **public**, so research and legal live outside it, in a local git repository with **no remote**.
+- Never add a remote there, and never copy its files into this repo.
+- No sensitive personal data anywhere, private folder included: no ID numbers, bank details, passwords or personal documents.
+  Write a pointer instead ("המסמך נמצא אצל הבעלים").
 
 Run an area's dev server with `npm run dev -- --port 8789 --inspector-port 9230` (each worktree has its own
 untracked `.claude/launch.json` with its port). Each worktree has its own `node_modules`, its own `.dev.vars` (copied by the owner, never
@@ -98,7 +129,7 @@ A file has one owner. Other sessions propose changes to it (in `docs/decisions.m
   `server/meter.ts`, `server/prices.ts`, the vault's security (`server/vault/crypto.ts`, `webauthn.ts`, `store.ts`, `backup.ts`),
   `src/`, `wrangler.toml`, `package.json`, `package-lock.json`, `public/sw.js`, `public/_headers`, `public/manifest.json`,
   `public/assets/common.js`, `public/index.html`, `desktop/`, `tools/`, `.github/`, `.gitignore`, `README.md`, this file,
-  `docs/areas/`, `docs/decisions.md`, `docs/security.md`.
+  `docs/areas/` (each department writes only its own `status.md`), `docs/decisions.md`, `docs/security.md`.
 
 Exception: an area may **append** a route line to `functions/api/[[path]].ts`, a table to `schema.sql` or a column to the
 `COLUMNS` list in `server/schema.ts` for its own feature, never editing existing lines, and records it in `docs/decisions.md`.

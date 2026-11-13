@@ -4,8 +4,10 @@
 :root { --dm-size: 140px; --dm-scale: 1; }
 @media (max-width: 599px) { :root { --dm-size: 112px; } }
 @media (max-width: 420px) { :root { --dm-size: 96px; } }
-.dm-stage { position: fixed; top: 0; left: 0; z-index: var(--z-float); inline-size: calc(var(--dm-size) * var(--dm-scale)); block-size: calc(var(--dm-size) * var(--dm-scale)); cursor: grab; touch-action: none; will-change: transform; -webkit-user-select: none; user-select: none; }
+.dm-stage { position: fixed; top: 0; left: 0; z-index: var(--z-float); inline-size: calc(var(--dm-size) * var(--dm-scale) * var(--dm-special, 1)); block-size: calc(var(--dm-size) * var(--dm-scale) * var(--dm-special, 1)); cursor: grab; touch-action: none; will-change: transform; -webkit-user-select: none; user-select: none; }
 .dm-stage:active { cursor: grabbing; }
+/* רַאבַּ"ע, the special figure, stands a little taller than the animals (the owner, 2026-11-14: "a bit, not too much") */
+.dm-stage.special { --dm-special: 1.15; }
 .dm-stage canvas { display: block; inline-size: 100% !important; block-size: 100% !important; }
 .dm-stage:focus-visible { outline: 2px solid var(--primary); outline-offset: -10px; border-radius: 50%; }
 .dm-stage.unread::after { content: ''; position: absolute; top: 22%; right: 26%; inline-size: 12px; block-size: 12px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 3px var(--bg); }

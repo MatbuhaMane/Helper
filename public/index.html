@@ -287,6 +287,14 @@
     .gbtn:hover { border-color: var(--primary); }
     .gbtn svg { width: 20px; height: 20px; }
     .out { text-align: center; margin-top: 18px; }
+    /* the side pages (the owner, 2026-11-14): a sideways pager, the tent in the middle; the look of the pages is design's */
+    .pager { display: flex; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+    .pager::-webkit-scrollbar { display: none; }
+    .pager > .pager-page { flex: 0 0 100%; min-inline-size: 0; scroll-snap-align: start; scroll-snap-stop: always; }
+    .pager-dots { display: flex; justify-content: center; gap: 4px; }
+    .pager-dots button { inline-size: 28px; block-size: 28px; border: 0; background: none; padding: 0; display: grid; place-items: center; cursor: pointer; }
+    .pager-dots button::after { content: ''; inline-size: 8px; block-size: 8px; border-radius: 50%; background: var(--ink-3, #8a8478); opacity: .45; transition: transform .2s, opacity .2s; }
+    .pager-dots button[aria-current="true"]::after { opacity: 1; transform: scale(1.3); }
   </style>
 </head>
 <body data-daemon="hero">
@@ -501,8 +509,38 @@
     const soonTag = (x) => el('span', { class: 'tag-soon', html: SPROUT + x.note });
     const soonPic = (x) => el('img', { src: `/assets/soon/${x.id}.svg`, alt: '', loading: 'lazy', decoding: 'async' });
     const soonSheet = (x) => H.modal(el('div', { class: 'soon-sheet' }, soonPic(x), el('h2', {}, x.name), soonTag(x), el('p', {}, x.line)));
-    const soonRow = () => (H.SOON?.length ? el('section', { class: 'soon-row', 'aria-labelledby': 'soon-h' }, el('h2', { id: 'soon-h' }, 'בקרוב ליד האוהל'),
-      el('ul', {}, ...H.SOON.map((x) => el('li', {}, el('button', { class: 'soon-card', type: 'button', 'data-id': x.id, onclick: () => soonSheet(x) }, soonPic(x), el('b', {}, x.name), soonTag(x)))))) : null);
+    /* the side pages (the owner, 2026-11-14): each big idea has a page of its own beside the tent, reached by a sideways swipe (or the
+       dots, on a PC). The tent is always the middle page. look.sides is the order: the first goes to the right of the tent, the second to
+       its left (and so on, alternately). The switch "הצג כלים בפיתוח" in the settings (look.devTools === false) hides them. */
+    const sidePage = (x) => {
+      const pic = x.id === 'garage'
+        ? el('img', { src: '/assets/soon/garage-scene.svg', alt: 'סככה עם כלי עבודה, עמוד טעינה לרכב חשמלי ושולחן עבודה', decoding: 'async',
+            onerror: (e) => { e.target.onerror = null; e.target.src = '/assets/soon/garage.svg'; e.target.alt = ''; } })
+        : el('img', { src: `/assets/soon/${x.id}.svg`, alt: '', decoding: 'async' });
+      const kids = [el('div', { class: 'side-pic' }, pic), el('h2', { id: `side-${x.id}-h` }, x.name), soonTag(x), el('p', { class: 'side-line' }, x.line)];
+      kids.forEach((k, i) => k.style.setProperty('--i', i));
+      return el('div', { class: 'pager-page', 'data-name': x.name }, el('section', { class: `side side-${x.id}`, 'data-side': x.id, 'aria-labelledby': `side-${x.id}-h` }, ...kids));
+    };
+    const withSides = (home) => {
+      const ids = Array.isArray(H.prefs('look').sides) && H.prefs('look').sides.length ? H.prefs('look').sides : ['garage', 'hill'];
+      const ideas = H.prefs('look').devTools === false ? [] : ids.map((id) => H.SOON?.find((x) => x.id === id)).filter(Boolean);
+      if (!ideas.length) return [home];
+      const mid = el('div', { class: 'pager-page', 'data-name': 'האוהל' }, home);
+      const right = ideas.filter((_, i) => i % 2 === 0).map(sidePage).reverse(), left = ideas.filter((_, i) => i % 2).map(sidePage);
+      const pages = [...right, mid, ...left];                            // right to left: the document is RTL
+      const pager = el('div', { class: 'pager' }, ...pages);
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const dots = pages.map((p) => el('button', { type: 'button', 'aria-label': p.dataset.name, 'aria-current': String(p === mid),
+        onclick: () => p.scrollIntoView({ behavior: still ? 'auto' : 'smooth', inline: 'start', block: 'nearest' }) }));
+      // the page in view gets .is-here (design staggers its parts by --i) and its dot
+      const io = new IntersectionObserver((es) => es.forEach((e) => {
+        e.target.classList.toggle('is-here', e.isIntersecting);
+        if (e.isIntersecting) dots.forEach((d, i) => d.setAttribute('aria-current', String(pages[i] === e.target)));
+      }), { root: pager, threshold: 0.6 });
+      pages.forEach((p) => io.observe(p));
+      queueMicrotask(() => mid.scrollIntoView({ behavior: 'instant', inline: 'start', block: 'nearest' }));
+      return [el('nav', { class: 'pager-dots', 'aria-label': 'המסכים' }, ...dots), pager];
+    };
     if (H.prefs('look').style === 'serious') { document.documentElement.dataset.style = 'serious'; if (H.prefs('look').pillows === 'keep') document.documentElement.dataset.pillows = 'keep'; seriousHome(); return; }
     function seriousHome() {
       const look = H.prefs('look'), pillows = document.documentElement.dataset.pillows === 'keep';
@@ -515,7 +553,7 @@
         const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
         return [el('section', { class: 'sr-group' }, el('h2', {}, t), ul), ul];
       });
-      if (H.SOON?.length) {
+      if (H.SOON?.length && H.prefs('look').devTools !== false) {
         const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...H.SOON.map((x) => el('li', { 'data-q': x.name + ' ' + x.line },
           el('button', { class: 'sr-tool', type: 'button', 'data-id': x.id, onclick: () => soonSheet(x) }, el('span', { class: 'sr-ic' }, soonPic(x)),
             el('span', { class: 'sr-txt' }, el('b', {}, x.name, soonTag(x)), el('small', {}, x.line))))));
@@ -542,11 +580,11 @@
         el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
     }
     let wheel = appWheel(H.ringApps());
-    root.append(el('div', { class: 'home' },
+    root.append(...withSides(el('div', { class: 'home' },
       greeting(),
       el('div', { class: 'camp' }, el('img', { sizes: '(max-width: 599px) 92vw, 640px', srcset: '/assets/tent-700.webp 700w, /assets/tent-1000.webp 1000w, /assets/tent.webp 1400w', src: '/assets/tent-1000.webp', alt: 'האוהל של רַאבַּ"ע', width: 1400, height: 794, fetchpriority: 'high' }), dock, musicCorner()),
-      wheel.root, wheel.caption, soonRow(),
-      el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
+      wheel.root, wheel.caption,
+      el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות')))));
     wheel.start();
     sky();
     swellPointer();

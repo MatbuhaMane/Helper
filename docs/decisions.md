@@ -2515,3 +2515,15 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - When something waited in the last day, one morning notification goes out: "סיכום היום מהאוהל".
   - It is sent by the cron `0 5 * * *` (07:00 in winter, 08:00 in summer) through `push.morning`, with kind `summary`.
   - Shabbat or the person's quiet hours skip it.
+
+## 2026-11-14 · The side pages beside the tent (the owner)
+
+- The "בקרוב" row under the ring is gone. Each big idea (`H.SOON`) gets a page of its own beside the tent.
+  - The pages are reached by a sideways swipe; on a PC, by the dots above.
+  - The tent is always the middle page.
+- Order: `look.sides`, default `['garage','hill']`. The first goes to the right of the tent, the second to its left, alternately. Changing it later is a pref only.
+- Switch: `look.devTools` (default on). The settings switch "הצג כלים בפיתוח" sets it, and it also hides the "בקרוב" group on the serious home.
+- Ownership:
+  - master: the pager in `public/index.html` (`.pager`, `.pager-page`, `.pager-dots`). The page in view gets `.is-here`, and each part of a side page carries `--i` for a stagger.
+  - design: the look and the staggered motion (transform and opacity only), plus `public/assets/soon/garage-scene.svg`. Until it exists, the page falls back to `garage.svg`.
+  - ai-features: the switch in `public/settings/settings.js`.

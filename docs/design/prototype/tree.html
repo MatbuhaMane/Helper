@@ -7,7 +7,7 @@
   <!-- The family tree, spec 1 (docs/vision/tree.md): /assets/tree.css, /assets/tree-sound.js and the layers in /assets/tree/.
        The markup is in tree.css's header. This page shows the olive (the owner's choice, 2026-11-14) with a sample family (no real people):
        the eldest by the roots, a memorial candle there today, a birthday glowing in the crown, a "+" bud beside "me".
-       The switch above shows the second tree, "canopy" (the owner's Gemini drawing, 2026-11-13), from its own slots.json.
+       The switches above show the leaves or the hanging oval frames (data-look="frame"), and the second tree, "canopy" (the owner's Gemini drawing, 2026-11-13), from its own slots.json.
        People are spread along each tier's line from slots.json; that placing is ai-features' to write in the real page.
        Copy to public/ to view (it is not committed there). -->
   <link rel="stylesheet" href="/assets/base.css">
@@ -23,6 +23,10 @@
 <div class="kinds" role="radiogroup" aria-label="איזה עץ">
   <button class="chip" type="button" role="radio" aria-checked="true" data-kind="olive">זית</button>
   <button class="chip" type="button" role="radio" aria-checked="false" data-kind="canopy">עץ ב׳</button>
+</div>
+<div class="kinds" role="radiogroup" aria-label="איך תלויים האנשים">
+  <button class="chip" type="button" role="radio" aria-checked="true" data-look="">עלים</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-look="frame">מסגרות</button>
 </div>
 <p class="note" id="note"></p>
 <div class="stage"><div class="tree" id="tree"></div></div>
@@ -45,8 +49,12 @@
   const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); e.append(...kids.filter(Boolean)); return e; };
   const tree = document.getElementById('tree');
   const NOTES = { olive: 'זית: גזע מפותל ועתיק, צמרת רחבה בירוק־כסף וזיתים קטנים.', canopy: 'עץ ב׳: צמרת רחבה כמטרייה, ענפים פרושים וזרדים עם עלים.' };
-  document.querySelectorAll('.kinds .chip').forEach((c) => c.addEventListener('click', () => {
-    document.querySelectorAll('.kinds .chip').forEach((o) => o.setAttribute('aria-checked', String(o === c))); draw(c.dataset.kind);
+  document.querySelectorAll('.kinds .chip[data-kind]').forEach((c) => c.addEventListener('click', () => {
+    document.querySelectorAll('.kinds .chip[data-kind]').forEach((o) => o.setAttribute('aria-checked', String(o === c))); draw(c.dataset.kind);
+  }));
+  document.querySelectorAll('.kinds .chip[data-look]').forEach((c) => c.addEventListener('click', () => {
+    document.querySelectorAll('.kinds .chip[data-look]').forEach((o) => o.setAttribute('aria-checked', String(o === c)));
+    if (c.dataset.look) tree.dataset.look = c.dataset.look; else delete tree.dataset.look;
   }));
 
   async function draw(kind) {

@@ -1184,3 +1184,13 @@ CREATE TABLE IF NOT EXISTS user_grants (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (email, grant_key)
 );
+
+-- web push subscriptions, one row per device (server/push.ts)
+CREATE TABLE IF NOT EXISTS push_subs (
+  endpoint   TEXT PRIMARY KEY,
+  email      TEXT NOT NULL,
+  p256dh     TEXT NOT NULL,
+  auth       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS push_subs_email ON push_subs (email);

@@ -5,6 +5,7 @@ import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll,
 import * as daemon from '../../server/daemon';
 import * as access from '../../server/access';
 import * as grants from '../../server/grants';
+import * as push from '../../server/push';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
@@ -71,6 +72,10 @@ route('GET', '/api/auth/dev', devLogin);
 route('POST', '/api/access/request', access.request);              // asking the owner for access, no session (server/access.ts)
 route('GET', '/api/admin/access-requests', access.list);
 route('GET', '/api/admin/grants', grants.list);
+route('GET', '/api/push/key', push.key);
+route('POST', '/api/push/subscribe', push.subscribe);
+route('DELETE', '/api/push/subscribe', push.unsubscribe);
+route('POST', '/api/push/test', push.test);
 route('PUT', '/api/admin/grants/:email', grants.put);
 route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
 route('POST', '/api/auth/passkey', lock.login);

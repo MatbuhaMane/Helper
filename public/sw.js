@@ -1,7 +1,7 @@
 /* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls go to the network,
    except the sources of the study room: Sefaria's texts (through /api/sefaria/), the concordance and the textual witnesses
    are kept on the device in a cache of their own that a new version of the app does not clear – once read, always there. */
-const CACHE = 'helper-v136';
+const CACHE = 'helper-v137';
 const SOURCES = 'helper-sources-v1';
 // the companion's 3D engine and figures (about 6.5 MB): served from the device at once, refreshed quietly in the background
 const MODELS = 'helper-models-v2';
@@ -45,4 +45,29 @@ self.addEventListener('fetch', (e) => {
       .then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); return res; })
       .catch(() => caches.match(e.request))
   );
+});
+
+/* Web Push (server/push.ts): the app's notifications. An urgent one (the emergency alert) stays until touched and vibrates hard. */
+self.addEventListener('push', (e) => {
+  let m = {};
+  try { m = e.data ? e.data.json() : {}; } catch (_) { m = { title: 'האוהל', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(m.title || 'האוהל', {
+    body: m.body || '', tag: m.tag || undefined, renotify: !!m.tag, dir: 'rtl', lang: 'he',
+    icon: '/assets/icons/ohel-icon-192.png', badge: '/assets/icons/ohel-icon-192.png',
+    requireInteraction: !!m.urgent, vibrate: m.urgent ? [400, 150, 400, 150, 400, 150, 800] : [80],
+    actions: Array.isArray(m.actions) ? m.actions.slice(0, 2) : [],
+    data: { url: m.url || '/', ...(m.data || {}) },
+  }));
+});
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const d = e.notification.data || {};
+  const url = new URL(d.url || '/', self.location.origin);
+  if (e.action) url.searchParams.set('act', e.action);   // the page acts on it (e.g. act=handle: "אני מטפל")
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const same = all.find((c) => new URL(c.url).origin === url.origin);
+    if (same) { await same.navigate(url.href).catch(() => {}); return same.focus(); }
+    return self.clients.openWindow(url.href);
+  })());
 });

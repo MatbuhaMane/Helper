@@ -2485,3 +2485,9 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - **Security:** the master reviews the server side before merge (a data-exposure area): every query by the owner of the row
   or a member of the shared קופה, nothing in logs.
 - Place: on the tools page (`/tools/parnasa/`), pin-able to the ring; in serious mode it is a line icon like the rest.
+
+## 2026-11-13 · Web Push, the app's own notifications (master)
+- `server/push.ts`: RFC 8291/8292 with WebCrypto, no library. Table `push_subs` (one row per device). Routes `/api/push/key`, `/api/push/subscribe` (POST/DELETE), `/api/push/test`.
+- For areas: `pushTo(env, emails, msg)` and `pushHousehold(env, household, msg, except?)`. `msg.urgent` = high urgency, stays on screen, strong vibration (the emergency alert). `msg.actions` such as `{action:'handle', title:'אני מטפל'}` open `url?act=handle`.
+- Client: `H.push.state()`, `H.push.enable()`, `H.push.disable()`, `H.push.test()`.
+- Inert until the secret `VAPID_PRIVATE` is set (`/api/push/key` returns `ready:false`). On iPhone it works only from the home-screen app; a web notification never breaks silent mode.

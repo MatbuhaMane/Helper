@@ -11,6 +11,32 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-13 – The personal profile, frames and the back door (vision → design, ai-features, master)
+The owner's decision. The spec: `docs/vision/profile.md`. Status: Decided (the owner).
+
+**For everyone**
+- **The profile picture:** tap it to upload a photo, or to pick an animated picture of a companion figure (the user's own or any from the list).
+- **The cover:** upload one, or pick one of a few default drawings in the tent's style.
+- **Frames** for the picture and the cover. The regular frames are open to all.
+- **Built ready for a future "business card"** that shows achievements, for when the user base grows to social-network size. Only the structure is built now.
+
+**The ancient font (Noto Sans Phoenician, OFL, from Google Fonts)**
+- It is the owner's special font, and others get it only by his grant.
+- Hebrew text is mapped letter by letter: 22 letters, with final forms mapped to the regular letter.
+- The Hebrew original is always kept and shown on touch.
+
+**The back door**
+- The owner grants a specific user secret options, from the owner's room, behind a passkey:
+  - secret frames;
+  - the bio in the ancient font;
+  - the name in the ancient font.
+- The grant is checked on the server and can be revoked at any time. Users without a grant do not see that the options exist.
+
+**Only the owner**
+- A switch in the secret settings shows the whole interface in the ancient font. It cannot be granted to anyone.
+- The switch itself and the way out always stay in plain Hebrew.
+- Content stays in Hebrew: recipes, notes and people's names.
+
 ## 2026-11-13 – Serious mode (vision → design, ai-features, master)
 The owner's decision. The spec: `docs/vision/serious-mode.md`. Status: Decided (the owner).
 - **A per-user switch** in settings, stored on the server (`H.prefs`), that turns the whole app into a plain, professional interface. The tent style stays the default.

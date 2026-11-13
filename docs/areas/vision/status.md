@@ -28,6 +28,7 @@ Last update: 2026-11-13.
 
 ## In progress
 
+- **The personal profile and the back door** (`docs/vision/profile.md`): decided, in the batch queue.
 - **Serious mode** (`docs/vision/serious-mode.md`): decided, in the batch queue.
 
 - **The family tree, spec 1** (`docs/vision/tree.md`): decided and sent (batch 9) to design, ai-features and the CEO.

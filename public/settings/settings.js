@@ -411,7 +411,7 @@
   async function drawPrivacy() {
     let lock;
     try { lock = await api('/api/lock'); } catch (e) { privacyBox.replaceChildren(el('h2', { id: 'privacy-h' }, 'פרטיות ואבטחה'), el('p', { class: 'muted' }, 'הנעילות עוד לא זמינות כאן.')); return; }
-    try { await H.loadOnce('/assets/lock-screen.js'); } catch (_) { /* the passkey buttons stay hidden */ }
+    try { await H.loadOnce('/assets/lock-screen.js'); await H.loadOnce('/assets/lock.js'); } catch (_) { /* the passkey buttons stay hidden; no padlock */ }
     const bio = !!H.passkeysWork?.();
     const modes = [['off', 'כבוי'], ['pin', 'קוד'], ['bio', 'טביעת אצבע', { soon: !bio, title: bio ? 'טביעת אצבע, פנים או Windows Hello' : 'המכשיר הזה לא תומך' }]];
     /** a lock's mode: a code needs one set first; a passkey needs one made on this device (the vault's passkeys) */
@@ -436,15 +436,18 @@
       el('p', { class: 'muted small' }, 'העץ פתוח לבני הבית שמחוברים. אפשר לנעול אותו בקוד או בטביעת אצבע.'),
       choices('נעילת העץ', modes, lock.tree, (v) => setMode('tree', v)),
       el('h3', {}, 'הקוד'),
-      el('div', { class: 'row' },
+      // the code row (design's .st-code: the padlock, the state, the buttons)
+      el('div', { class: 'st-code' },
+        window.Lock?.padlock ? Lock.padlock(lock.hasPin ? 'closed' : 'open') : null,
+        el('b', {}, 'קוד בן 4 ספרות'), el('span', {}, lock.closed ? 'נסגר' : lock.hasPin ? 'נקבע' : 'עוד לא נקבע'),
         el('button', { class: 'btn small', type: 'button', onclick: async () => { await setPin(lock); drawPrivacy(); } }, lock.hasPin ? 'לשנות את הקוד' : 'לקבוע קוד'),
-        lock.hasPin ? el('button', { class: 'linklike', type: 'button', style: 'background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;text-decoration:underline', onclick: async () => {
+        lock.hasPin ? el('button', { class: 'lk-forgot', type: 'button', style: 'background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;text-decoration:underline', onclick: async () => {
           if (!confirm('כדי לקבוע קוד חדש צריך להיכנס שוב עם חשבון Google שלך. לצאת עכשיו?')) return;
           try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) { /* out anyway */ }
           location.href = '/api/auth/login?next=' + encodeURIComponent('/settings/#privacy');
         } }, 'שכחתי את הקוד') : null),
       lock.closed ? el('p', { class: 'small', role: 'note' }, 'הקוד נסגר אחרי הרבה ניסיונות. היכנסו שוב עם Google, וקבעו קוד חדש.') : null,
-      el('p', { class: 'muted small' }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל מקרה.'),
+      el('p', { class: 'st-safe muted small' }, 'מסמכים, פרטי כניסה ופרטים אישיים מוגנים בטביעת אצבע בכל מקרה.'),
     ].filter(Boolean));
   }
 

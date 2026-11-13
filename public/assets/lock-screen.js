@@ -4,7 +4,8 @@
      H.lockScreen({ scope: 'app' | 'tree', animate }) → a Promise, resolved once it is open (one screen at a time)
      H.passkeySignIn(next)   "כניסה בטביעת אצבע" on the sign-in screen: a passkey instead of Google
      H.passkeysWork()        whether this device can use a passkey at all
-   The look is design's (.lk-*); a few inline rules keep it usable before its stylesheet. */
+   The look is design's Lock.screen (/assets/lock.js: the keypad, the shake, a pause, the page behind made inert); this
+   file is the server's side of it. Should lock.js not load, a plain screen of its own stands in. */
 (() => {
   if (!window.H || window.H.lockScreen) return;
   const { el } = window.H;
@@ -27,8 +28,42 @@
     location.href = '/api/auth/login?next=' + encodeURIComponent('/settings/#privacy');
   }
 
+  const WHY = { pin_wrong: 'קוד שגוי. נסו שוב.', pin_paused: 'יותר מדי ניסיונות. אפשר לנסות שוב בעוד רבע שעה.', pin_closed: 'הקוד נסגר אחרי הרבה ניסיונות. צריך להיכנס שוב עם Google.',
+    no_pin: 'עוד לא נקבע קוד. אפשר להיכנס שוב עם Google.', passkey_unknown: 'טביעת האצבע הזו לא מוכרת כאן. אפשר להקליד את הקוד.' };
   let showing = null;
+  /** the lock screen: design's Lock.screen, answered by the server (one code or passkey opens the app and the tree) */
   function lockScreen({ scope = 'app', animate = false } = {}) {
+    if (showing) return showing;
+    showing = (async () => {
+      let l = {};
+      try { l = await api('/api/lock'); } catch (_) { /* the keypad still works */ }
+      try { await window.H.loadOnce('/assets/lock.js'); } catch (_) { /* the plain screen below */ }
+      if (!window.Lock?.screen) { showing = null; return plainScreen({ scope, animate }); }
+      const no = (e) => ({ ok: false, msg: WHY[e?.code] || (e?.offline ? 'אין חיבור לאינטרנט.' : 'לא הצלחתי לפתוח. נסו שוב.'), wait: e?.code === 'pin_paused' || e?.code === 'pin_closed' });
+      const bio = !!l.hasPasskey && passkeysWork();
+      const s = window.Lock.screen({
+        title: scope === 'tree' ? 'עץ המשפחה נעול' : 'האוהל נעול',
+        hint: (scope === 'tree' ? l.tree : l.app) === 'bio' && bio ? 'פותחים בטביעת אצבע, פנים או Windows Hello' : 'הקוד שלך',
+        passkey: bio,
+        onCode: async (pin) => { try { await api('/api/lock/unlock', { body: { pin } }); return { ok: true }; } catch (e) { return no(e); } },
+        onPasskey: async () => {
+          try { await api('/api/lock/passkey', { body: await assertion('/api/lock/passkey/options') }); return { ok: true }; }
+          catch (e) { return e?.name === 'NotAllowedError' ? { ok: false, msg: '' } : no(e); }   // (a cancelled prompt is not a failure)
+        },
+        onForgot: forgot,
+      });
+      if (l.closed) s.pause(WHY.pin_closed);
+      else if (l.pauseUntil) s.pause(WHY.pin_paused);
+      // a passkey-only lock asks for the passkey at once
+      else if ((scope === 'tree' ? l.tree : l.app) === 'bio' && bio) s.el.querySelector('[data-bio]')?.click();
+      await s.done;
+      showing = null;
+      return true;
+    })();
+    return showing;
+  }
+  /** the plain screen (lock.js did not load) */
+  function plainScreen({ scope = 'app', animate = false } = {}) {
     if (showing) return showing;
     showing = new Promise((resolve) => {
       let pin = '', busy = false, mode = { app: 'pin', tree: 'pin' }, hasPasskey = false;   // (modes: off | pin | bio)
@@ -37,7 +72,6 @@
       const say = el('p', { class: 'lk-say', role: 'status', 'aria-live': 'polite', style: 'min-block-size:1.5em;margin:0' });
       const paint = () => dots.querySelectorAll('i').forEach((d, i) => { d.classList.toggle('on', i < pin.length); d.style.background = i < pin.length ? 'currentColor' : 'transparent'; });
       const done = () => { document.removeEventListener('keydown', keys, true); root.classList.add('opening'); setTimeout(() => root.remove(), 220); showing = null; resolve(true); };
-      const WHY = { pin_wrong: 'קוד שגוי. נסו שוב.', pin_paused: 'יותר מדי ניסיונות. אפשר לנסות שוב בעוד רבע שעה.', pin_closed: 'הקוד נסגר אחרי הרבה ניסיונות. צריך להיכנס שוב עם Google.', no_pin: 'עוד לא נקבע קוד. אפשר להיכנס שוב עם Google.' };
       const fail = (e) => {
         pin = ''; paint();
         root.classList.add('shake'); setTimeout(() => root.classList.remove('shake'), 420);

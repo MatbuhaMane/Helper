@@ -6,7 +6,7 @@
 <script>
 const el = H.el, icon = (n) => (H.appIcon ? H.appIcon(n) : H.icon(n));
 const tile = (a, n) => a.future
-  ? el('button', { class: 'app tb-future', type: 'button', style: `--n:${n}`, 'aria-label': a.name + ', בעתיד' },
+  ? el('button', { class: 'app tb-future', type: 'button', style: `--n:${n}`, 'aria-label': (a.label || a.name) + ', בעתיד' },
       el('span', { class: 'ic tb-pic' }, el('img', { src: `/assets/soon/${a.id}.svg`, alt: '', decoding: 'async' })), el('span', { class: 'name' }, a.name), el('span', { class: 'tag-soon' }, 'בעתיד'))
   : el('a', { class: 'app', href: a.href, style: `--c1:${a.c1};--c2:${a.c2};--n:${n}${a.tint ? ';--tint:' + a.tint : ''}` },
       el('span', { class: 'ic' }, icon(a.ic)), el('span', { class: 'name' }, a.name), H.expTag(a));

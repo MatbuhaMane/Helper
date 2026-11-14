@@ -35,11 +35,11 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
 - **A known trap:** a pseudo-element inside `:is()` is dropped silently. Write `X::before` as its own selector.
 - **When SendMessage is blocked:** hand-overs go to the shared notes folder (`side-session-notes/local_3881a822-…/design-*.md`).
 
-**Unmerged on `design`** (oldest first; main is fully merged in, the last merge cbc6abb (299b135)):
+**Unmerged on `design`** (oldest first; main is fully merged in, the last merge 53a867c (217b86d)):
 - 868cfb9, 90bd6a4, 9ced735: batch 18, the tree after test run 1. CSS plus the contract `docs/design/tree-18.md`.
 - 17bdc33, 0089d21, 5274c04: the side pages beside the tent (`sides.css`, `soon/garage-scene.svg`).
 - 892a1d6, 3fc1a5c: the toolbox's new look (`launcher.css` `tb-`, contract `docs/design/toolbox.md`).
-- The future items' pictures: batch 19 (a49ae07) and batch 20 (bc3ce8c).
+- The future items' pictures: batch 19 (a49ae07), batch 20 (bc3ce8c) and batch 22's `eye`.
 - All of it is inert until its markup arrives, so it is safe to merge now.
 
 **Open:**
@@ -95,14 +95,12 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
      picture was asked for, and it has no `H.FUTURE` id.
    - **Checked:** 375 and 1280, light and dark, as tiles in the prototype. The audit is clean on the prototype and `/tools/`.
 
-9. **Vision batch 22 (2026-11-14), noted, waiting for the master to schedule it:** a "בקרוב" note for the language game
-   "ع ב-ע" (read "עין בעין"; the accessible name is "עין בעין"). See '"ع ב-ע", the language-learning game' in `docs/decisions.md`
-   on `vision`.
-   - **Its place:** beside מתורגמן in the toolbox, as the uniform "בקרוב" note (`.tb-future` with `.tb-pic`).
-   - **The picture, as an idea only:** two eyes, or the two letters ayin (Arabic ع and Hebrew ע), looking at each other. The game's
-     own look is a word carved in stone (limestone and basalt).
-   - **A proposed id,** for the master to fix in `H.FUTURE`: `ayin`, giving `/assets/soon/ayin.svg`.
-   - **Not started:** the master said nothing new before the handover, and the master schedules. The game itself is not built.
+9. **Vision batch 22 (2026-11-14): the picture for ع ב-ע (`eye`, labelled "עין בעין") is done.**
+   - `public/assets/soon/eye.svg`: two carved stones looking at each other, limestone with ع and basalt with ע, with a gaze between them.
+   - The id is `eye`, fixed in `H.FUTURE` on main (217b86d), beside מתורגמן in כלי עבודה.
+   - **The name:** it renders in Rubik, which has an Arabic subset, in the right RTL order. The accessible name comes from `f.label`;
+     the contract is `toolbox.md` §3, and the prototype now uses `a.label || a.name`.
+   - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and `/tools/`. The game itself is not built.
 
 ---
 

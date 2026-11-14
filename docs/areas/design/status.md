@@ -35,10 +35,11 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
 - **A known trap:** a pseudo-element inside `:is()` is dropped silently. Write `X::before` as its own selector.
 - **When SendMessage is blocked:** hand-overs go to the shared notes folder (`side-session-notes/local_3881a822-…/design-*.md`).
 
-**Unmerged on `design`** (oldest first; main is fully merged in, the last merge 9e16f66):
+**Unmerged on `design`** (oldest first; main is fully merged in, the last merge c90caf7 (b78dd3c)):
 - 868cfb9, 90bd6a4, 9ced735: batch 18, the tree after test run 1. CSS plus the contract `docs/design/tree-18.md`.
 - 17bdc33, 0089d21, 5274c04: the side pages beside the tent (`sides.css`, `soon/garage-scene.svg`).
 - 892a1d6, 3fc1a5c: the toolbox's new look (`launcher.css` `tb-`, contract `docs/design/toolbox.md`).
+- The batch 19 pictures for the future items (the commit after 20abc5f).
 - All of it is inert until its markup arrives, so it is safe to merge now.
 
 **Open:**
@@ -75,13 +76,13 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
    - contrast over pseudo-element backgrounds;
    - hit areas made of pseudo-elements.
 
-7. **Vision batch 19 (2026-11-14), for the record:** two future tools ("Two future tools" in `docs/decisions.md` on `vision`).
-   - **עוזר מטבח:** its note goes in the recipe book.
-   - **איך אני עושה:** its note goes in the tools menu.
-   - **Design's part:** only the uniform "בקרוב" note from batch 15 (`.tag-soon` or `.soon-card`).
-     - In the toolbox, `button.app.tb-future` with "בעתיד" already fits.
-     - No new CSS is needed.
-     - The tools themselves are not ours to build. The master schedules.
+7. **Vision batch 19 (2026-11-14): the three future items have pictures.**
+   - `public/assets/soon/kitchen.svg`, `breath.svg` and `howto.svg`, in the batch 15 style (320×240, ink #3b2416).
+   - **In the toolbox:** `.app.tb-future .ic.tb-pic > img` (`launcher.css`), described in `toolbox.md` §3.
+   - **The note's place:** עוזר מטבח in the recipe book, איך אני עושה in the tools menu. It is the uniform "בקרוב" note
+     (`.tag-soon` or `.soon-card`).
+   - The tools themselves are not ours to build.
+   - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and on `/tools/`.
 
 ---
 

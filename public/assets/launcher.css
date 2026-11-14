@@ -237,3 +237,9 @@ button.app.tb-future { border: 0; background: none; padding: 0; font: inherit; c
 .apps-grid.flat .app.tb-future:hover .ic .icon { transform: none; }
 .app.tb-future:hover .ic::after { opacity: 0; }
 .app.tb-future:focus-visible .ic { outline: 3px solid var(--primary); outline-offset: 4px; box-shadow: none; }
+/* the future item's picture (vision batch 19): the batch 15 "soon" drawing, /assets/soon/<id>.svg (kitchen, breath, howto),
+   in place of the line icon. A little quieter than a real tool, dimmed with the night like the side pages. */
+.app.tb-future .ic.tb-pic { inline-size: 96px; block-size: 84px; border-radius: 18px; overflow: hidden; background: color-mix(in srgb, var(--soon) 6%, var(--card)); box-shadow: none; }
+.app.tb-future .ic.tb-pic > img { display: block; inline-size: 100%; block-size: 100%; object-fit: contain; transform: scale(1.18); opacity: .92; filter: saturate(.85); }
+:root[data-theme="dark"] .app.tb-future .ic.tb-pic > img { filter: saturate(.85) brightness(.88); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .app.tb-future .ic.tb-pic > img { filter: saturate(.85) brightness(.88); } }

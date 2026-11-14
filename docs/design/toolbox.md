@@ -53,12 +53,16 @@ The categories come from `H.CATS` and the future items from `H.FUTURE` (apps.js,
 - **The markup:**
   ```html
   <button type="button" class="app tb-future" style="--n:4" aria-label="מדיטציה ונשימה, בעתיד">
-    <span class="ic"><!-- H.appIcon(f.ic) --></span>
+    <span class="ic tb-pic"><img src="/assets/soon/breath.svg" alt="" decoding="async"></span>
     <span class="name">מדיטציה ונשימה</span>
     <span class="tag-soon">בעתיד</span>
   </button>
   ```
-- **The look:** a pale icon in a dashed ring, the name in `--muted`, and the "בעתיד" pill in the corner in the dusk blue of
+- **The picture** (vision batch 19): each future item has its drawing at `/assets/soon/<id>.svg`.
+  - The ids are `kitchen`, `breath` and `howto`, in the batch 15 style.
+  - The `.ic` takes `tb-pic`, with an `<img>` inside it in place of the line icon.
+  - If a future id has no drawing yet, use `<span class="ic">` with `H.appIcon(f.ic)`; the CSS covers both.
+- **The look:** the picture (or a pale icon) in a dashed ring, the name in `--muted`, and the "בעתיד" pill in the corner in the dusk blue of
   בקרוב. It doesn't lift on hover.
 - **A tap** shows its `line`: `H.toast(f.line)`. It isn't a link.
 - **In arrange mode:** it can't be dragged or pinned.

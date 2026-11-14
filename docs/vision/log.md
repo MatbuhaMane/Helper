@@ -133,3 +133,4 @@
 - 2026-11-15: legal's answer arrived through the CEO (the tax question no longer blocks stage 1, no illegal services); three additions to the spec recorded in yad-beyad.md, waiting for the owner; the vision's recommendation on simplification 6 changed to yes.
 - 2026-11-15: a second legal update through the CEO: regulated professionals may give services for ידיים; the Ohel only connects people and checks no licences. Recorded as addition 4 in yad-beyad.md, waiting for the owner.
 - 2026-11-15: legal closed its check (through the CEO): no legal blocker, trade with everyone and youth allowed; "ידיים have no monetary value" goes into the terms of use. Recorded in yad-beyad.md, waiting for the owner.
+- 2026-11-15: the owner approved all six stage 1 simplifications, legal's product rules and the licence declaration; decisions.md entry written; batch 37 sent to design, ai-features, legal and the CEO; the approval queue spec opened.

@@ -11,6 +11,41 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד", stage 1: the simplifications and the legal rules (vision → design, ai-features, legal, master)
+Status: Decided (the owner). New information: the refined estimate from ai-features (3-4 times goals with everything)
+and legal's answer. It updates the screen spec entry below; where the two differ, this entry wins for stage 1.
+
+- **Legal closed its check: there is no legal blocker,** also for trade with everyone and for youth. The written answer
+  comes later and stays with the owner. The stages do not change because of it: trade with everyone still waits for
+  enough users, and youth for kids mode.
+- **Six simplifications for stage 1** (with them the scope returns to 2-3 times goals):
+  1. **Redeeming the tithe moves to stage 2.** The ledger records from the first day how much tithe each person paid,
+     so redemption is added later without converting data.
+  2. **No GPS.** Each person picks an area by hand.
+  3. **"לוח הדרושים":** sorting by distance and by type only. Advanced filtering comes later.
+  4. **A matching need** sends one simple notification, until the notification settings ("רמת הניג'וס") are built.
+  5. **Distance is shown as a range** ("עד 5 ק"מ", "5 עד 15"), not as a number.
+  6. **A need outside the owner's list** is shown only to the person who posted it until the owner approves it and its
+     tier, and to everyone after that. This replaces "published at once" in the screen spec.
+- **The product rules** (legal's conditions, in the rules of "יד ביד" and in the terms of use):
+  - no illegal services;
+  - a service is published only with the owner's approval: the service types on the owner's list are approved already,
+    and a need outside the list waits for approval;
+  - a service can be reported and removed;
+  - **regulated professionals** (a doctor, a lawyer) may give services for ידיים. The Ohel only connects people: it
+    checks no licences and is not responsible for the service, and the professional keeps the rules of the profession
+    (confidentiality, liability, insurance);
+  - **a declaration:** whoever marks in the profile a service type that requires a licence declares that they hold
+    one. The Ohel does not check it;
+  - ידיים have no monetary value;
+  - the three trust rules and the youth rules stay as approved (a parent approves each service; trade with strangers
+    only from age 18).
+- **Who does what:**
+  - design: the screens, with these changes;
+  - ai-features: stage 1 is this scope; nothing is built yet;
+  - the master: who writes the wording for the terms of use and the rules, with legal; the security check as before;
+  - legal: keeps the rules, and checks the wording.
+
 ## 2026-11-15 – "יד ביד", stage 1: the screen spec (vision → design, ai-features, master)
 Status: Decided (the owner). The full spec, in Hebrew, is in `docs/vision/yad-beyad.md`. Nothing is built yet; design
 designs the screens, and ai-features refines its estimate.

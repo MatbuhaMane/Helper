@@ -453,3 +453,85 @@
 .fv-ask.done { opacity: .75; }
 .fv-ask-said { margin: 0; font-weight: 500; color: var(--muted); }
 @media (max-width: 599px) { .fv-ask { padding: 14px; } .fv-ask-h time { display: none; } }
+
+/* Arranging (drag to arrange, docs/design/tree-edit.md): the views המשפחה and כל הדורות, for editors.
+   Motion is transform and opacity only; every control is 44px on touch. */
+.fv-arrange-btn::before { content: ""; inline-size: 16px; block-size: 16px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/drag.svg) center / contain no-repeat; mask: url(/assets/bd-icons/drag.svg) center / contain no-repeat; }
+.fv-arrange-btn[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+@media (pointer: coarse) { .fv-arrange-btn { min-block-size: 44px; } }
+
+/* the banner: sticks above the board while it scrolls */
+.fv-arrange-bar { position: sticky; inset-block-start: 8px; z-index: var(--z-bar); display: flex; align-items: center; gap: 12px;
+  margin-block: 4px 10px; padding-block: 6px; padding-inline: 16px 6px; border-radius: var(--radius);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--line));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .08); animation: fv-arrange-in var(--dur-quick, .2s) var(--ease-river, ease-out); }
+.fv-arrange-bar > span { flex: 1 1 auto; min-inline-size: 0; line-height: 1.35; overflow-wrap: anywhere; }
+.fv-arrange-done { flex: none; min-block-size: 44px; padding-inline: 20px; font-weight: 600; }
+@keyframes fv-arrange-in { from { opacity: 0; transform: translateY(-6px); } }
+
+/* the cards: a grip in the corner, grab with a mouse anywhere */
+.fv.arranging .fv-tree { -webkit-user-select: none; user-select: none; }
+.fv.arranging .fv-card { cursor: grab; border-color: color-mix(in srgb, var(--primary) 45%, var(--line-strong)); }
+.fv.arranging .fv-card:hover { transform: translateY(-2px); }
+.fv.dragging, .fv.dragging * { cursor: grabbing; }
+.fv.dragging .fv-card:hover { transform: none; }
+.fv-grip { position: absolute; inset-block-start: 0; inset-inline-end: 0; inline-size: 44px; block-size: 44px; display: grid; place-items: center;
+  touch-action: none; cursor: grab; border-start-end-radius: 20px; color: var(--muted); }
+.fv-grip::before { content: ""; inline-size: 18px; block-size: 18px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/drag.svg) center / contain no-repeat; mask: url(/assets/bd-icons/drag.svg) center / contain no-repeat; }
+.fv-card:hover > .fv-grip { color: var(--primary); }
+/* the place it left, faded and dashed; and a card picked up from the keyboard */
+.fv-card.lifted { opacity: .35; border-style: dashed; box-shadow: none; transform: scale(.96); }
+.fv.arranging .fv-card.picked { transform: translateY(-4px); box-shadow: 0 0 0 3px var(--primary), 0 10px 24px rgba(0, 0, 0, .16); }
+
+/* the ghost under the finger: the JS sets its translate, the CSS its tilt and lift */
+.fv-ghost { position: fixed; inset-block-start: 0; left: 0;   /* physical: the JS translates in viewport px from the top-left */
+  z-index: var(--z-float); pointer-events: none; rotate: -2deg; scale: 1.05; opacity: .96;
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .22)); transition: rotate var(--dur-press) var(--ease-river), scale var(--dur-press) var(--ease-river), opacity var(--dur-quick) var(--ease-river); }
+.fv-ghost > .fv-card { margin: 0; border-color: var(--primary); }
+.fv-ghost.landing { rotate: 0deg; scale: 1; opacity: 0; }
+
+/* the targets: each generation shows a faint dashed outline; the one under the pointer fills with vine */
+.fv.arranging :is(.fv-gen, .fv-tree > .fv-row) { position: relative; }
+.fv.arranging :is(.fv-gen, .fv-tree > .fv-row)::before { content: ""; position: absolute; inset: -8px -10px; border-radius: 24px; pointer-events: none;
+  border: 1.5px dashed color-mix(in srgb, var(--primary) 30%, transparent); opacity: .7; transition: opacity var(--dur-quick) var(--ease-river); }
+.fv.arranging :is(.fv-gen, .fv-tree > .fv-row)::after { content: ""; position: absolute; inset: -8px -10px; border-radius: 24px; pointer-events: none; z-index: -1;
+  border: 2px solid var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); opacity: 0; transition: opacity var(--dur-quick) var(--ease-river); }
+.fv.arranging :is(.fv-gen, .fv-tree > .fv-row).drop::before { opacity: 0; }
+.fv.arranging :is(.fv-gen, .fv-tree > .fv-row).drop::after { opacity: 1; }
+.fv-gen.drop > .fv-gen-label { color: var(--primary); font-weight: 600; }
+.fv.arranging .fv-tree { isolation: isolate; }
+
+/* the line between two cards: --x --y from the row's physical top-left, --h the card's height */
+.fv-drop-line { position: absolute; inset-block-start: 0; left: 0; z-index: 2; inline-size: 4px; block-size: var(--h, 120px); margin-inline-start: 0;
+  border-radius: 2px; background: var(--primary); pointer-events: none; opacity: 0;
+  transform: translate(calc(var(--x, 0px) - 2px), var(--y, 0px));
+  transition: transform var(--dur-press) var(--ease-river), opacity var(--dur-press) var(--ease-river); }
+.fv-drop-line::before, .fv-drop-line::after { content: ""; position: absolute; left: -4px; inline-size: 12px; block-size: 12px; border-radius: 50%;
+  background: var(--primary); box-shadow: 0 0 0 2px var(--card); }
+.fv-drop-line::before { inset-block-start: -6px; }
+.fv-drop-line::after { inset-block-end: -6px; }
+.fv-drop-line.on { opacity: 1; }
+
+/* the confirm sheet (inside H.modal), before a move to another generation */
+.fv-arrange-confirm { display: grid; gap: 14px; text-align: center; }
+.fv-arrange-confirm h2 { margin: 0; font-size: 1.2rem; }
+.fv-arrange-confirm p { margin: 0; }
+.fv-move { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
+.fv-move > span { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); font-weight: 500; }
+.fv-move > .fv-move-to { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--card)); color: var(--text); }
+.fv-move-arrow { font-style: normal; color: var(--muted); font-size: 1.3rem; line-height: 1; }
+.fv-move-arrow::before { content: "←"; }   /* from the right to the left, the way Hebrew reads on */
+.fv-arrange-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.fv-arrange-actions > .btn { min-block-size: 44px; min-inline-size: 120px; justify-content: center; }
+@media (max-width: 599px) {
+  .fv-arrange-actions { flex-direction: column; }
+  .fv-arrange-actions > .btn { inline-size: 100%; }
+  .fv-arrange-bar { padding-inline: 12px 6px; font-size: .92rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fv-arrange-bar { animation: none; }
+  .fv-ghost, .fv-drop-line, .fv.arranging :is(.fv-gen, .fv-tree > .fv-row)::before, .fv.arranging :is(.fv-gen, .fv-tree > .fv-row)::after { transition: none; }
+  .fv-ghost { rotate: none; }
+}

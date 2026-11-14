@@ -2,7 +2,20 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 7)._
+_Updated 2026-11-14 (the new chat, round 8)._
+
+
+## Round 8: the look of drag-to-arrange (המשפחה, כל הדורות)
+- `docs/design/tree-edit.md`: the class names and markup for ai-features. The CSS is at the end of `public/family/family.css`. It covers:
+  - the סידור button, the sticky banner with סיום;
+  - the grip on each card (44px, `touch-action: none`), the source card and the ghost (moved with `translate`);
+  - the generation highlight (`drop`), the insertion line and the confirm sheet in H.modal;
+  - undo, which reuses `.fv-undo`.
+- Checked on a static mock at 375 and 1280, light and dark. The audit is clean; its one overlap was the mock's fixed undo bar. Motion uses transform/opacity only.
+- Weak spots:
+  - not yet tested with the real drag logic;
+  - the insertion line takes physical coordinates from the JS;
+  - the keyboard path (`.picked`) is a recommendation only.
 
 ## Round 7 (2026-11-14): the olive's faces smaller (the owner's choice)
 

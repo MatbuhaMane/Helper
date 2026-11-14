@@ -53,6 +53,7 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - b78b55c the polite page (H.gate);
   - 1878f63 decisions and status.
   - 1884a83 the toolbox hides a FUTURE item with `only: 'child'` (homework) from anyone not a child (checked locally both ways); e41437a merged main (299b135, the 7 FUTURE items; apps.js conflict in שוטף: kept פרנסה and main's soon:garden, soon:home).
+  - Then main merged again (217b86d, the eye item), and the toolbox gives a tile with a `label` (עין בעין for ع ב-ע) that label as its aria-label.
 
 ### Open
 

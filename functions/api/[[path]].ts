@@ -643,6 +643,9 @@ route('POST', '/api/garden/:id/water', garden.water);
 route('GET', '/api/cook/ask', cook.quota);
 route('POST', '/api/cook/ask', cook.ask);
 route('PUT', '/api/cook/timers', cook.setTimers);
+/* the family tree's "סידור" (ai-features, server/vault/index.ts): a card moved to another generation, and the order along a row */
+route('POST', '/api/vault/move', vault.linkMove);
+route('PUT', '/api/vault/order', vault.orderSave);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

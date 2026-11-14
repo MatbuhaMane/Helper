@@ -64,6 +64,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['family_people', 'deleted_snap', 'TEXT'],   // JSON {links, bridges} it had, so that a restore brings them back
   ['home_items', 'remind_to', 'TEXT'],         // home maintenance: who gets the reminder; null: whoever added it (ai-features)
   ['home_items', 'reminded', 'TEXT'],          // the due date last reminded (ai-features)
+  ['family_people', 'ord', 'INTEGER'],         // the card's place along its row ("סידור" in the family tree); null: by creation (ai-features)
 ];
 
 let ready: Promise<void> | null = null;

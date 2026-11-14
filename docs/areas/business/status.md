@@ -54,15 +54,16 @@ Updated by the department at the end of every meaningful round of work. Short: t
 
 ## In progress
 - Nothing active. Waiting for the AI cost measurement, around 2026-11-26. The checklist is in `cost-model.md` section 6.
+- **Three drafts wait for that measurement** (the owner, 2026-11-14, via vision batch 21). They are settled from the
+  owner's 14-day usage export:
+  - the monthly credits per founder level;
+  - the regular supporters' levels (draft ₪10 / 25 / 50);
+  - what founding supporters get.
 
 ## Blockers
 - The cost per user needs the owner's export of `/api/usage?days=14`. This department doesn't read live data.
 
 ## Needs the owner
-- **Drafts to settle:**
-  - the exact monthly credits per level;
-  - the regular supporters' levels (draft: ₪10 / 25 / 50);
-  - the founding supporters' value.
 - **The payment provider:** parked by the owner ("not now"). The Sumit recommendation waits in `payment-providers.md` section 9.
 - **Before the first payment:** a tax file, terms of use and a privacy policy, and a meeting with an accountant and a
   lawyer (`monetization.md` section 4, `risks-and-rights.md` section 6).

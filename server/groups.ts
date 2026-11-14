@@ -5,13 +5,13 @@
 //   * a child under 12 is in a group only when everyone else in it is family to that child (friends-rules groupMembers);
 //   * leaving is always possible; the back door gets counts only.
 
-import { Ctx, HttpError, body, json, requireUser, uid } from './core';
+import { Ctx, HttpError, Member, body, json, requireUser, uid } from './core';
 import { rateLimit } from './vault';
 import { tribe } from './vault/kin';
 import { childOf } from './members';
 import * as D from './dm-rules';
 import * as F from './friends-rules';
-import { check, resolve } from './dm';
+import { blocks, check, member, resolve } from './dm';
 
 type Group = { id: string; name: string; maker: string; created_at: number; last_at: number | null; last_by: string | null };
 type Row = { email: string; name: string | null; he_name: string | null; household: string };
@@ -22,6 +22,22 @@ async function familyCheck(ctx: Ctx) {
   const cache = new Map<string, Set<string>>();
   const t = (h: string) => { if (!cache.has(h)) cache.set(h, tribe(h, results)); return cache.get(h)!; };
   return (hx: string, hy: string) => hx === hy || t(hx).has(hy);
+}
+
+/** Every member is checked again (privacy: who may be in a group was only checked at its creation). A member I can no longer
+    write to is removed if I blocked them; otherwise I am the one out (friends-rules staleGroup). Throws 404 if I am out. */
+async function prune(ctx: Ctx, u: Member, g: Group) {
+  const me = u.email.toLowerCase();
+  const others = (await membersOf(ctx, g.id)).filter((m) => m.email !== me);
+  const rows = [];
+  for (const m of others) {
+    let why: string | null = null;
+    try { await check(ctx, u, await member(ctx, m.email)); } catch { why = 'no'; }
+    rows.push({ email: m.email, why, iBlocked: why ? (await blocks(ctx, me, m.email)).iBlocked : false });
+  }
+  const r = F.staleGroup(rows);
+  for (const e of r.drop) await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE grp = ? AND email = ?').bind(g.id, e).run();
+  if (r.leave) { await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE grp = ? AND email = ?').bind(g.id, me).run(); throw new HttpError(404, 'not_found'); }
 }
 
 /** the group, if I am in it; else 404 as if there were none */
@@ -89,6 +105,7 @@ export async function create(ctx: Ctx) {
 export async function thread(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const g = await groupFor(ctx, me);
+  await prune(ctx, u, g);
   const after = Number(ctx.url.searchParams.get('after')) || 0;
   const [{ results }, ms] = await Promise.all([
     ctx.env.DB.prepare('SELECT * FROM dm_group_messages WHERE grp = ? AND at > ? ORDER BY at DESC LIMIT ?').bind(g.id, after, D.PAGE).all<{ id: string; sender: string; text: string; at: number }>(),
@@ -111,6 +128,7 @@ export async function thread(ctx: Ctx) {
 export async function send(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const g = await groupFor(ctx, me);
+  await prune(ctx, u, g);
   const text = D.cleanText((await body<{ text?: string }>(ctx.req)).text);
   await rateLimit(ctx, 'dm:' + me, D.RATE.send.max, D.RATE.send.windowMs);
   await rateLimit(ctx, 'dmday:' + me, D.RATE.sendDay.max, D.RATE.sendDay.windowMs);

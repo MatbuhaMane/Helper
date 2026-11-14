@@ -76,5 +76,13 @@ eq('initials of nothing', F.initials(''), '?');
 ok('neighbouring ids get colours far apart', Math.abs(parseInt(F.hue('g0').slice(4)) - parseInt(F.hue('g1').slice(4))) > 10);
 ok('a steady colour', F.hue('f123') === F.hue('f123') && /^hsl\(\d+ 45% 42%\)$/.test(F.hue('f123')));
 
+/* ---- a group is checked again (the master's review of batch 27) ---- */
+eq('everyone still reachable: nothing changes', F.staleGroup([{ email: 'a@x', why: null, iBlocked: false }, { email: 'b@x', why: null, iBlocked: false }]), { drop: [], leave: false });
+eq('I blocked one: they go', F.staleGroup([{ email: 'a@x', why: 'cannot_send', iBlocked: true }, { email: 'b@x', why: null, iBlocked: false }]), { drop: ['a@x'], leave: false });
+eq('they blocked me: I am out, they stay', F.staleGroup([{ email: 'a@x', why: 'cannot_send', iBlocked: false }]), { drop: [], leave: true });
+eq('the friendship ended: I am out', F.staleGroup([{ email: 'a@x', why: 'cannot_send', iBlocked: false }, { email: 'b@x', why: null, iBlocked: false }]), { drop: [], leave: true });
+eq('a mix: the one I blocked goes, and I leave for the other', F.staleGroup([{ email: 'a@x', why: 'x', iBlocked: true }, { email: 'b@x', why: 'x', iBlocked: false }]), { drop: ['a@x'], leave: true });
+eq('nobody else in it', F.staleGroup([]), { drop: [], leave: false });
+
 console.log(`friends: ${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

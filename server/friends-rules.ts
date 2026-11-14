@@ -108,3 +108,17 @@ export function hue(id: string): string {
   h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; h = (h ^ (h >>> 16)) >>> 0;   // so ids that differ in one letter differ in colour
   return `hsl(${h % 360} 45% 42%)`;
 }
+
+/** A group is checked again every time it is read or written (the master's review of batch 27): when a member can no longer
+    be written to by me (the friendship ended, a block, the family link gone), someone has to go. If I blocked them they go;
+    in any other case I go, so a blocker or a person who stays is never removed by the other side's visit.
+    `others`: each other member and why I may not write to them (null = I may). */
+export function staleGroup(others: { email: string; why: string | null; iBlocked: boolean }[]): { drop: string[]; leave: boolean } {
+  const drop: string[] = [];
+  let leave = false;
+  for (const o of others) {
+    if (!o.why) continue;
+    if (o.iBlocked) drop.push(o.email); else leave = true;
+  }
+  return { drop, leave };
+}

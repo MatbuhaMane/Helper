@@ -206,6 +206,8 @@ export async function block(ctx: Ctx) {
   const { other } = await threadFor(ctx, u);
   if (ctx.req.method === 'DELETE') await ctx.env.DB.prepare('DELETE FROM dm_blocks WHERE blocker = ? AND blocked = ?').bind(me, other).run();
   else await ctx.env.DB.prepare('INSERT INTO dm_blocks (blocker, blocked, at) VALUES (?, ?, ?) ON CONFLICT(blocker, blocked) DO NOTHING').bind(me, other, Date.now()).run();
+  // a block also takes the blocked person out of every group we share (they no longer read or write there)
+  if (ctx.req.method !== 'DELETE') await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE email = ? AND grp IN (SELECT grp FROM dm_group_members WHERE email = ?)').bind(other, me).run();
   return json({ ok: true, blocked: ctx.req.method !== 'DELETE' });
 }
 

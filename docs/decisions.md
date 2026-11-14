@@ -320,6 +320,407 @@ For the master: add `node server/test-weather.mjs` to `npm test` in `package.jso
 can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
 For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
 with `.wx-*` classes is welcome. Status: done (ai-features).
+## 2026-11-14 – The owner answers the 21 future-tool questions; AI inside a tool is free with a quota (vision → ai-features, business, design, master)
+The owner answered all 21 questions in `docs/vision/future-specs.md` (relayed by the CEO). The answers are written into
+each spec and into the table at the end of that file. Status: Decided (the owner).
+
+- **The rule for AI inside a tool: free with a quota.** A few uses a day are free; beyond that they cost credits.
+  This holds for the kitchen (ש3), the garden's plant photo (ש10), "איך אני עושה" (ש19) and every later tool.
+  Business sets the quota and the price.
+- **Kitchen, v1:**
+  - a voice chef assistant (the owner's own addition);
+  - "הבא" by voice;
+  - a background timer that rings even when the app is closed.
+  - The always-on screen was not chosen.
+  - Two ways in: a "לבשל" button in every recipe, and a kitchen screen of its own.
+- **Breath:**
+  - guided breathing only, with no meditations for now;
+  - a guiding voice that can be turned off;
+  - linked to habits: a breathing session ticks the habit off.
+- **Home:**
+  - a reminder goes to whoever added the appliance, and can be handed to someone else;
+  - receipts and warranties are ordinary family data, not vault data, so photos may be stored.
+- **Garden:** the plants are shared by the household.
+- **Translator:**
+  - conversations are not saved by default, and a button saves a single conversation;
+  - Amharic and Tigrinya go through Gemini, with a notice that the recording goes out for processing and nothing is saved.
+- **Homework:**
+  - English and Arabic only in v1;
+  - it starts on the `child` flag, and kids mode comes later;
+  - the parent sees the topics only, not the conversation;
+  - up to age 12.
+- **איך אני עושה:**
+  - embedded YouTube only, from channels that allow embedding;
+  - the PC guide is merged into it later.
+- **ع ב-ע:**
+  - it starts with Arabic;
+  - the legal check waits until we build it.
+- **Who does what:** ai-features builds by priority; business sets the quota and the credit price; changes to
+  `apps.js` go through the master.
+
+## 2026-11-14 – How a person is shown on each tree skin (vision → design, ai-features, master)
+On each tree skin a person is shown in a form that belongs to that tree, instead of one leaf for every tree.
+Status: Decided (the owner).
+
+- **Pine:** each person is shown on a pine cone, with the portrait on its face.
+- **Olive:** each person is shown in a round frame of olive branches that twist around it, sitting on the tree's
+  branches.
+- **Maple and African juniper:** decided when they come.
+- **A person with no record yet:** the same form, pale, as an outline only, like the empty leaf today.
+- **Seasons:** the cone and the frame change with the season, like the tree.
+- **The prompts:** in `docs/vision/asset-prompts-full.md`. The owner makes the images.
+- **Who does what:**
+  - design cuts and places them;
+  - ai-features draws the form that belongs to the chosen tree.
+
+## 2026-11-14 – Tree skins: pine by default, olive; maple and African juniper later (vision → design, ai-features, master)
+Later on, the family tree can be drawn as one of several trees, chosen like a theme. Status: Decided (the owner).
+
+- **The trees:** the pine (an Aleppo pine) is the default. The olive is the second tree, from the start. The maple and the
+  African juniper are planned for later.
+- **The owner draws them.** The owner makes each tree with an image generator, using the prompts in
+  `docs/vision/asset-prompts.md`. They share one structure block, so the family sits in the same places on every tree:
+  - five tiers, from the roots to the top of the crown;
+  - four places in each tier;
+  - portrait 2:3;
+  - three seasons per tree.
+- **Design:** cuts each tree into its layers and measures `slots.json` for each one.
+- **ai-features:** adds the choice of tree, kept per user in `H.prefs`.
+- **Until the art arrives:** the current tree stays.
+
+## 2026-11-14 – "ع ב-ע", the language-learning game: the concept, kept for later (vision → design, master)
+The owner designed the concept with vision, inspired by Playaling. The details are in `docs/vision/language-game.md`.
+It is a big idea, so it is kept for later: nobody works on it. The interface gets only a "בקרוב" mark, under the name
+"ع ב-ע", next to the translator. Status: Decided (the owner).
+
+- **The name:** "ع ב-ע". It reads "עין בעין": the Arabic letter ʿayn and the Hebrew letter ayin. Its accessible name is
+  "עין בעין".
+- **The loop:**
+  1. short videos of native speakers, with subtitles in three lines;
+  2. a tap on any word translates it, both ways;
+  3. flashcards with spaced repetition;
+  4. a personal living dictionary.
+- **When a word is engraved:** a word is "engraved" in the living dictionary only when the learner has proven it over
+  time in four checks: reading, listening, writing and speaking.
+  - Each check needs three successes on three different days.
+  - A word that is forgotten wears and goes back to practice, with no punishment.
+- **The languages:**
+  - spoken Palestinian Arabic, Hebrew, Russian, Amharic and English;
+  - **any language to any language:** a speaker of each can learn each of the others;
+  - the game's interface is shown in the learner's own language.
+- **The videos:** free videos from the web, on two conditions:
+  - a Creative Commons licence, with credit to the creator;
+  - or the official YouTube embed where the channel allows it, with that channel's own captions only.
+
+  Legal checks this before anything is built. Family recordings and dialogues written by the AI are sources too.
+- **Free and paid:** the conversation with the companion figure is server AI, so it is a paid extra. Everything else is free.
+
+## 2026-11-14 – The owner closes the open questions (vision → design, ai-features, business, master)
+The owner answered the questions that were waiting across the departments. Status: Decided (the owner).
+
+1. **The brand mark:** the owner's logo stays, as it is in use now (`/assets/brand/ohel-logo.svg`). Design's options A, B
+   and C (`docs/design/brand/`) are dropped.
+2. **Kids mode:** the `child` flag (under 12, from the birth year) is enough for now. The homework helper is shown only
+   to a child. A fuller kids mode (a simple home screen, another age range) is not planned.
+3. **Test gatherings on the live site:** a "ניסיון" mark when a gathering is created.
+   - Only the owner sees the mark.
+   - A marked gathering does not count anywhere: the founders' order, `gathering_milestones`, the launch check.
+4. **The places search** stays limited to Google's region `il`. It is reopened when there are users abroad.
+5. **The business drafts wait for the AI measurement:**
+   - the monthly credits per level;
+   - the supporters' levels (draft ₪10 / 25 / 50);
+   - the founding supporters' value.
+
+   They are set around 2026-11-26, from the 14-day usage export that the owner takes from the back door.
+6. **Shared songbooks** can be shared inside the family (linked households) **and by link**. The link opens only for a
+   signed-in user of האוהל, and the songbook's owner can turn the link off.
+   - The sharing model is the master's, then ai-features.
+   - It is not urgent: the CEO schedules it.
+
+## 2026-11-14 – Five more future tools, "בקרוב" only (vision → design, master)
+The owner chose five more tools for the future. All are kept for later under the rule "Big new ideas wait". Nobody works on
+them, not even a spec. In the interface each gets only the shared "בקרוב" mark. Details are in `docs/vision/later.md`.
+Status: Decided (the owner).
+
+- **The garden and the plants.** Identify a plant from a photo, watering reminders by the weather, and a "plant doctor".
+  "בקרוב" in the tools menu.
+- **Home maintenance.** A regular schedule of care for the home, and warranty reminders from a photo of the receipt.
+  Later it links to the garage. "בקרוב" in the tools menu.
+- **Grandma and grandpa's stories.** This is part of the family tree, not a separate tool.
+  - A recorded story or recipe is transcribed and kept in that person's profile.
+  - The recordings are family data, with the tree's protection.
+  - "בקרוב" in the profile.
+- **The homework helper.** It guides the child to the answer instead of giving it, and it is shown **in kids mode only**.
+  "בקרוב" in kids mode.
+- **The translator.** Live translation between family members. A language-learning game will join it later, and that
+  game is kept for later too. "בקרוב" in the tools menu.
+
+## 2026-11-14 – Two future tools: the kitchen helper and "איך אני עושה" (vision → design, master)
+The owner's ideas for future tools. Both are kept for later under the rule "Big new ideas wait": nobody works on them, not even a spec.
+In the interface each gets only a "בקרוב" mark, in the shared style from batch 15. Details are in `docs/vision/later.md`.
+Status: Decided (the owner).
+
+- **The kitchen helper** grows out of the recipe book. It is wave 2, after the family launch.
+  - It covers unit conversion, timers, step-by-step guided cooking on a recipe from the book, and live AI tips.
+  - "בקרוב" goes in the recipe book.
+- **"איך אני עושה"** is a how-to tool. You ask how to do something, and the tool:
+  - finds an embedded video and a written guide;
+  - walks you through the task with the AI helper.
+
+  It is kept for later, and "בקרוב" goes in the tools menu.
+
+## 2026-11-14 – The family tree after test run 1 (vision → ai-features, design, master)
+The owner's decisions on his phone. It builds on "The family tree, spec 1" (`docs/vision/tree.md`). Status: Decided (the owner).
+
+**A. Fixes, first:**
+- **Documents** in the tree do not open.
+- **Undo your own changes:** whoever added a record can delete it and undo their own edits. The owner's test records (a son named מהללאל, a duplicate מירי) must be removable by him. Records added by others stay read-only.
+- **One screen:**
+  - the tree fits the phone screen;
+  - scrolling only when a big family needs it;
+  - pinch zoom.
+- **"All generations"** reaches at least the parents of the great-grandparents. A person with no record gets an empty leaf. Pinch zoom works there and in the family tab.
+- **The profile loads fast.**
+
+**B. The new tree interface:**
+- **Gentle motion:** the tree moves very gently.
+- **Seasons:** autumn, winter and spring versions, by the season or by the user's choice.
+- **Tap a person:** a floating, translucent menu opens with "profile", "photos" and "message".
+- **Drag a person:** their leaf detaches from the tree.
+- **Expand and collapse:** a leaf expands into a banner with the avatar, and again into the full profile. It collapses back to any state.
+- **Dock:** a profile can be docked as a draggable tab at the side of the screen, like the music player and the helper.
+- **Editing, for users with permission:** a long press on a profile or tab adds "edit" to the menu. They can:
+  - change position and lineage by dragging;
+  - edit the person's details;
+  - if allowed, edit the person's permissions.
+- **The family and all-generations tabs** also get easier, richer editing.
+
+**C. Kept for later, under "Big new ideas wait":** these get only a "בקרוב" graphic. The ideas: `docs/vision/later.md`.
+- tree, frame and background designs unlocked by use;
+- the profile as a personal page with a status line, music, stories and a life feed;
+- sharing achievements graphically;
+- decorating photos and videos.
+
+**Who acts:**
+- **ai-features:**
+  - the tree code and `server/vault/index.ts`;
+  - deleting your own additions;
+  - one screen and zoom;
+  - the generations;
+  - the profile speed.
+- **design:**
+  - the gentle motion;
+  - the seasons;
+  - the floating menu;
+  - the leaf, banner and profile states;
+  - the docked tab.
+- **The master:**
+  - reviews the permission changes (undo, editing others, editing permissions) before merging, as with anything in the vault;
+  - checks why documents do not open, if the cause is in `store.ts`.
+
+## 2026-11-14 – Pop-up messages at the top, light and dismissible; the shopping list (vision → master, design, ai-features)
+The owner's decisions in test run 1. Status: Decided (the owner).
+- **A rule for the whole app, pop-up messages (toasts):**
+  - they appear at the top of the screen, not the bottom;
+  - they are more transparent;
+  - they disappear sooner;
+  - they are dismissed by a swipe on the phone or a click on the PC;
+  - they must never nag.
+- **The songbook:** the song and lyrics recognition messages follow the same style. A switch in the settings turns them off, per user (`H.prefs`).
+- **The shopping list:**
+  - **multi-select and delete:** "select all", or select a whole category;
+  - **the fridge:**
+    - a button moves the bought items into the fridge;
+    - the automatic list is built from what is missing in the fridge and from the household's habits;
+  - **the list bubbles** move to their own panel at the top, above the search. All the lists are managed from there, and no buttons overlap;
+  - **sorting:**
+    - drag, also between categories, which switches the list to "my order";
+    - A–Z;
+    - automatic by category;
+  - **user categories:**
+    - the user creates a category and picks its icon from a few options, like the emoji of the built-in categories;
+    - an item assigned to it lands there automatically the next time it is searched.
+- **Overlapping buttons anywhere** count as a defect under the premium bar.
+
+## 2026-11-14 – Motion must feel premium everywhere; the recipe book's default view and menus (vision → design, ai-features, master)
+The owner's decisions in test run 1. Status: Decided (the owner).
+- **A rule for every interface:** every animation and every transition is smooth and pleasant. The bar is a product with a million dollars put into it. It is part of "done", like the 375 px check.
+  - A choppy animation counts as a defect, not as polish.
+  - The first case is the recipe card flip, which still stutters.
+- **The recipe book:**
+  - **the default screen:** with no recipe chosen and no search, the infinite feed shows. Its speed is handled in wave 1;
+  - **a drop-down menu in the recipe book tab:**
+    - "ספר המתכונים שלי": the recipes the user liked;
+    - "מתכונים ששותפו איתי": recipes that friends or family shared inside the app.
+
+## 2026-11-14 – The daily summary card shows every day (vision → master, design)
+The owner's decision in test run 1. It refines "Shabbat and holidays, notifications and the daily rhythm". Status: Decided (the owner).
+- **On the first open of the day,** the summary card always shows, even when nothing waits.
+- **On a day with nothing waiting,** it is a short card for today:
+  - the Hebrew date;
+  - the weather;
+  - birthdays;
+  - what is on the calendar.
+- **On a day when items were held,** they are added to the card.
+- **Who acts:** the card is design's since v140; the master handles its logic.
+
+## 2026-11-14 – Big new ideas wait; the interface only shows them as "בקרוב" (vision → master, design, research)
+The owner's decision. Status: Decided (the owner).
+- **The rule:** big new ideas and heavy developments are kept for later. Nobody works on them at all, not even a spec.
+- **In the interface,** each one gets only a graphic: a cushion or a card with a "בקרוב" or "בפיתוח" note.
+- **It applies now to:**
+  - friends and "גבעה ביער";
+  - the garage (smart home). Its feasibility study, sent to research in batch 14, is cancelled.
+- **Unchanged:**
+  - wave 2 (the הקפדה coach, Telegram-level chat) still comes after the family launch;
+  - the social layer already decided in `docs/vision/social.md` stays as it was.
+
+## 2026-11-14 – Quick ideas, wave 1: speed, Google links, notes (vision → master, ai-features, design, research)
+The owner raised eight quick ideas and approved splitting them into three waves. The ideas in full: `docs/vision/later.md`. Status: Decided (the owner).
+- **Wave 1, now:**
+  - **faster AI replies:** streaming, a fast model for everyday chat and prompt caching (master, `server/ai.ts`), and a streaming chat UI (ai-features);
+  - **a feed refreshed in the background** for recipes and entertainment: the server prepares it (ai-features), and the app shows the cached copy first and revalidates (master, `sw.js`). It must stay light on the device;
+  - **no Google links in cards:** each is replaced by a "חיפוש בגוגל" button (ai-features, design);
+  - **notes:**
+    - sorting: drag, by date or A–Z;
+    - four views, including a real post-it board;
+    - sharing out through the phone's share sheet (ai-features, design).
+- **The garage (smart home): a feasibility study first,** by research. The question is how a web app reaches devices on the home network. The study covers the car, the solar heater, the AC, floor heating, the robot vacuum and the TV remote.
+- **Wave 2, after the family launch:**
+  - a training plan and an AI coach in הקפדה;
+  - Telegram-level chat, with floating bubbles and an end-to-end encryption feasibility check.
+- **Wave 3:**
+  - friends and "גבעה ביער" (a friends' social feed) wait for a vision spec with the owner;
+  - the garage build waits for the study.
+
+## 2026-11-13 – The tools menu order and the experimental tag (vision → master, design)
+The owner's decision during joint test run 1. Status: Decided (the owner).
+- **The order in the tools menu,** by how often the family uses each tool:
+  - shopping list, recipe book, fridge;
+  - messages, family gathering, calendar;
+  - weather, notes, calculator;
+  - goals, movement and nutrition, הקפדה, eating habits;
+  - research helper;
+  - last: mail organizer and PC organizer.
+- **The experimental tag:** the mail organizer and the PC organizer carry a "ניסיוני" tag.
+- **The parts of the tent** (food, news, entertainment, songbook, the weekly portion) stay in their own group above the tools.
+- **Who acts:**
+  - the master: the order in `H.APPS` in `public/assets/apps.js`, and a field for the tag;
+  - design: the tag's look.
+
+## 2026-11-13 – The home cushions: arrange, remove, add; fixed cushions (vision → master, design, ai-features)
+The owner's decision during joint test run 1. It extends batch 2 #6 (arranging by a long press). Status: Decided (the owner).
+- **Arrange mode:** a long press on a cushion opens it. In it the user can:
+  - move cushions around the wheel by the fire;
+  - remove cushions they do not want;
+  - add cushions from the toolbox.
+- **Fixed cushions:** they can be moved but not removed. They are:
+  - the family tree;
+  - the settings;
+  - the toolbox ("כלים").
+- **Grandparents and kids modes:** their special accessibility buttons are fixed. Examples are the emergency button and the grandparents' big buttons.
+- **Saving:** the arrangement is saved per user on the server (`H.prefs`).
+
+## 2026-11-13 – Shabbat and holidays, notifications and the daily rhythm (vision → design, ai-features, master)
+The owner's decisions in the vision meeting. The spec: `docs/vision/shabbat-notifications.md`. Status: Decided (the owner).
+
+**Shabbat and holidays** (for users whose tradition in settings keeps Shabbat)
+- **Quiet Shabbat mode:** from candle lighting to havdalah, by the city in settings:
+  - no notifications to the user;
+  - nothing is sent from them;
+  - opening the app shows a calm Shabbat screen;
+  - the emergency button always works.
+- **Before Shabbat and before a holiday:** one notification on Friday morning, with the candle-lighting time in the user's city, the shopping list, and who is coming and who brings what.
+- **Holidays:**
+  - the tent dresses for the holiday in its style (a sukkah roof, a hanukkiah);
+  - the holiday's recipes and songs move to the top;
+  - a "נתכנס לחג" button opens a gathering.
+- **Other traditions get the same by their own days and holidays:** Friday, Ramadan and Eid; Sunday, Christmas and Easter. The names and decorations are set with a source or partner from that tradition.
+
+**Notifications and the daily rhythm**
+- **The daily summary:** no morning notification. It sits at the top of the home screen at the first open of the day.
+- **Push during the day only for:**
+  - a personal message from the family;
+  - a gathering invitation or a change to it;
+  - a reminder the user set;
+  - a family birthday or memorial day, on the day;
+  - an emergency.
+  Everything else waits for the summary.
+- **Quiet hours:** 22:00–07:00 by default, and each user can change them. An emergency passes through quiet hours, and also through Shabbat mode.
+
+## 2026-11-13 – Grandparents mode, the emergency button and kids mode (vision → design, ai-features, master)
+The owner's decisions in the vision meeting. The spec: `docs/vision/grandparents-kids.md`. Status: Decided (the owner).
+
+**Grandparents mode**
+- **Turning it on:** a switch in settings. A grandchild or a household head can also turn it on remotely, and the grandparent approves it at their next sign-in.
+- **The home screen:** four big buttons; the other tools are behind "עוד". Big text.
+- **Reading aloud:** the assistant reads aloud only when the user taps the speaker button.
+
+**The emergency button** (the owner's correction to grandparents mode)
+- **The button:** a separate big red button. The user holds it for 3 seconds, with a filling ring and vibration, and can cancel within 10 seconds after sending.
+- **The family:**
+  - every household member gets a strong alert;
+  - the location is attached if the user agreed in advance in settings;
+  - an "אני מטפל" button that everyone sees.
+- **Emergency services:** after sending, buttons for 101, 100 and 102 open the dialer with the number ready. A web app cannot call by itself.
+- **Who has it:** it is on by default in grandparents mode, and anyone else can turn it on with a switch.
+- **Known limits, to state honestly:**
+  - on an iPhone, push works only for the installed app;
+  - a web alert does not override silent mode;
+  - the button does not replace an alarm service.
+- **Review:** the master reviews it before merging, as safety-critical.
+
+**Kids mode**
+- **Who is a child:** a household head marks a child and releases them when they grow up. It is not set by the date of birth.
+- **The tools:** a kids' list by default (the tree, the songbook, notes, recipes, the figures), with no vault, no mail and nothing to do with money. The head adds or removes tools.
+- **The assistant:** the child talks with the assistant in a kids' mode, with answers suited to their age and no free web search. The child's chats are private to them.
+- **The existing rule stays:** a child under 12 does not message anyone outside the family.
+
+## 2026-11-13 – The tree drawing, Sigd and Novy God, the test run (vision → design, ai-features, master)
+The owner's decisions in the vision meeting. Status: Decided (the owner).
+
+- **The tree drawing:** the family tree (spec 1, `docs/vision/tree.md`) uses the default tree the app already has.
+  None of design's three new versions (olive, Tabor oak, acacia) is chosen.
+- **The calendar:** Sigd joins the calendar, for the families of Ethiopian origin, and Novy God joins as an optional family event, for Russian speakers.
+  This was a proposal in "Russian and Amharic" and is now decided. The calendar logic belongs to ai-features (`server/hebdate.ts` and the calendar).
+- **Joint test run 1** (paused at the wizard) resumes after the next merge into `main`. The master tells vision when that merge is live.
+
+## 2026-11-13 – The personal profile, frames and the back door (vision → design, ai-features, master)
+The owner's decision. The spec: `docs/vision/profile.md`. Status: Decided (the owner).
+
+**For everyone**
+- **The profile picture:** tap it to upload a photo, or to pick an animated picture of a companion figure (the user's own or any from the list).
+- **The cover:** upload one, or pick one of a few default drawings in the tent's style.
+- **Frames** for the picture and the cover. The regular frames are open to all.
+- **Built ready for a future "business card"** that shows achievements, for when the user base grows to social-network size. Only the structure is built now.
+
+**The ancient font (Noto Sans Phoenician, OFL, from Google Fonts)**
+- It is the owner's special font, and others get it only by his grant.
+- Hebrew text is mapped letter by letter: 22 letters, with final forms mapped to the regular letter.
+- The Hebrew original is always kept and shown on touch.
+
+**The back door**
+- The owner grants a specific user secret options, from the owner's room, behind a passkey:
+  - secret frames;
+  - the bio in the ancient font;
+  - the name in the ancient font.
+- The grant is checked on the server and can be revoked at any time. Users without a grant do not see that the options exist.
+
+**Only the owner**
+- A switch in the secret settings shows the whole interface in the ancient font. It cannot be granted to anyone.
+- The switch itself and the way out always stay in plain Hebrew.
+- Content stays in Hebrew: recipes, notes and people's names.
+
+## 2026-11-13 – Serious mode (vision → design, ai-features, master)
+The owner's decision. The spec: `docs/vision/serious-mode.md`. Status: Decided (the owner).
+- **A per-user switch** in settings, stored on the server (`H.prefs`), that turns the whole app into a plain, professional interface. The tent style stays the default.
+- **The home screen:** a list or grid of the tools, with line icons, clear headings and a search bar. There is no tent and no campfire. A second switch keeps the pillow icons for the tools.
+- **The companion figure disappears.** The smart assistant stays, as a plain chat window with text and voice.
+- **Drawings and illustrations go,** and line icons take their place.
+- **The wording is matter-of-fact:** "שמור" rather than "יאללה, שומרים!".
+- **The family tree and the museum** switch between two views: a clean diagram with rounded lines, or the drawn tree.
+- **Kept:** animations, sounds and haptics, all tools and all data.
+
 ## 2026-11-13 – The family profile, spec 1 (vision → ai-features, design, master)
 The owner's idea, through the CEO; the owner chose who sees it. The full spec: `docs/vision/family-profile.md`. Status: Decided (the owner).
 
@@ -1541,7 +1942,7 @@ The owner approved the order through the CEO.
 - **ai-features:** the prompts and voice per language.
 - **Business:** recruiting the native speakers.
 
-**Proposed, not yet decided:** Sigd in the calendar, and Novy God as an optional family event.
+**Sigd in the calendar, and Novy God as an optional family event:** decided by the owner on 2026-11-13 (see the entry above).
 
 Status: Decided (the owner).
 

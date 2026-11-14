@@ -14,6 +14,10 @@
 | [social.md](social.md) | השכבה החברתית: חברים, מעקב, לבבות, עצות, מטרה משפחתית |
 | [first-minute.md](first-minute.md) | הדקה הראשונה (ה-wizard והגילוי), וסמל האפליקציה |
 | [languages-ru-am.md](languages-ru-am.md) | רוסית, אמהרית וטיגרית: אפיון קצר |
+| [profile.md](profile.md) | הפרופיל האישי: תמונה, קאבר, מסגרות, הגופן הקדום והדלת האחורית |
+| [serious-mode.md](serious-mode.md) | מצב רציניים: ממשק פשוט ומקצועי במתג |
+| [grandparents-kids.md](grandparents-kids.md) | מצב סבא וסבתא, כפתור החירום ומצב ילדים |
+| [shabbat-notifications.md](shabbat-notifications.md) | שבת וחגים, התראות וקצב יומי |
 | [family-profile.md](family-profile.md) | פרופיל המשפחה: קאבר, מסורות, מי עורך ומי רואה |
 | [story.md](story.md) | הסיפור המשפחתי, "המוזיאון החי": פריטים, ראיון מודרך, מוזיאון, פרטיות |
 | [tree.md](tree.md) | עץ המשפחה, אפיון 1: עץ מצויר, משחק בממשק, מי שנפטר |

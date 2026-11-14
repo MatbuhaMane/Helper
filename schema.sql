@@ -1279,3 +1279,71 @@ CREATE TABLE IF NOT EXISTS push_digest (
   seen_at    INTEGER
 );
 CREATE INDEX IF NOT EXISTS push_digest_email ON push_digest (email, seen_at);
+
+-- פרנסה, the household's money (server/parnasa.ts). A row is personal (kupa_id NULL, seen by owner_email only) or in a
+-- shared קופה (seen by that קופה's members). Amounts are shekels, an expense negative. Nothing here goes to the logs.
+CREATE TABLE IF NOT EXISTS pr_tx (
+  id          TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  kupa_id     TEXT,
+  date        TEXT NOT NULL,
+  amount      REAL NOT NULL,
+  what        TEXT NOT NULL,
+  cat         TEXT NOT NULL,
+  learn_key   TEXT,
+  dup_key     TEXT NOT NULL,
+  recur_id    TEXT,
+  source      TEXT NOT NULL DEFAULT 'manual',
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_tx_owner ON pr_tx (owner_email, kupa_id, date);
+CREATE INDEX IF NOT EXISTS pr_tx_kupa ON pr_tx (kupa_id, date);
+CREATE TABLE IF NOT EXISTS pr_recur (
+  id          TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  kupa_id     TEXT,
+  what        TEXT NOT NULL,
+  amount      REAL NOT NULL,
+  cat         TEXT NOT NULL,
+  every       INTEGER NOT NULL DEFAULT 1,
+  day         INTEGER NOT NULL,
+  next_date   TEXT NOT NULL,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_recur_owner ON pr_recur (owner_email, kupa_id);
+-- the categories a person chose for a business, remembered for the next guess
+CREATE TABLE IF NOT EXISTS pr_learn (
+  email TEXT NOT NULL,
+  key   TEXT NOT NULL,
+  cat   TEXT NOT NULL,
+  at    INTEGER NOT NULL,
+  PRIMARY KEY (email, key)
+);
+CREATE TABLE IF NOT EXISTS pr_kupa (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+-- status: 'invited' until the person accepts, then 'member'
+CREATE TABLE IF NOT EXISTS pr_kupa_members (
+  kupa_id    TEXT NOT NULL,
+  email      TEXT NOT NULL,
+  status     TEXT NOT NULL,
+  invited_by TEXT,
+  at         INTEGER NOT NULL,
+  PRIMARY KEY (kupa_id, email)
+);
+CREATE INDEX IF NOT EXISTS pr_kupa_members_email ON pr_kupa_members (email, status);
+CREATE TABLE IF NOT EXISTS pr_holdings (
+  id          TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  kupa_id     TEXT,
+  symbol      TEXT NOT NULL,
+  name        TEXT NOT NULL,
+  qty         REAL NOT NULL,
+  cost        REAL NOT NULL,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_holdings_owner ON pr_holdings (owner_email, kupa_id);

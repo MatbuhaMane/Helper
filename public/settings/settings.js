@@ -227,7 +227,9 @@
     const allowed = (f) => (!f.unlock || earned.has(f.unlock)) && (!f.paid || owned.has(f.id));
     const mine = dp.figure && (dp.figure === 'ibn_ezra' ? family : figures.some((f) => f.id === dp.figure && allowed(f))) ? dp.figure : family ? 'ibn_ezra' : (figures.some((f) => f.id === window.Figure2D?.DEFAULT) ? Figure2D.DEFAULT : figures[0]?.id) || 'ibn_ezra';   // (the owner chose the fennec as the default)
     const voice = dp.voice || (dp.speak === false ? 'silent' : 'always');
-    const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant(); };
+    const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant();
+      // the first time he is picked, רַאבַּ"ע introduces himself (once per person)
+      if (id === 'ibn_ezra') H.loadOnce('/assets/raba-intro.js').then(() => window.RabaIntro.maybe()).catch(() => {}); };
     /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
     // each paid figure has its own price (the special ones cost more); the server charges the same
     const priceOf = (f) => Number(shop.prices?.[f.id] ?? shop.priceIls) || 10;

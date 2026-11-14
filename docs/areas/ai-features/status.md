@@ -3,6 +3,24 @@
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum's first hub step).
 
+## FOR THE MASTER'S REVIEW (privacy): groups re-check their members (commit after 28e5dee)
+
+- The bug from the batch 27 review: a member whose friendship ended or who was blocked kept reading and writing in the group.
+- The fix (second version, after the master's review): `prune()` in `server/groups.ts` applies the creation rule on every read and write, as the pure `staleGroup` in `friends-rules.ts` (64 test-friends checks): I am reachable from the maker (or, the maker gone, from a remaining member); a member I blocked goes, a member who blocked me puts me out; a friendship ended between two ordinary members drops nobody; a child under 12 stays only among family. One query for the blocks, one `check` (the maker) per visit. A block (`dm.ts block`) also removes the blocked person from shared groups at once.
+- Not covered: the list/unread of a person who was not opened yet still counts the group until someone opens it; no UI test with two accounts.
+
+## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - the owner approved the wording (b6b6006); checked at 375 and 1280, light and dark (no overflow, buttons 44px+)
+
+- `public/assets/raba-intro.js`: 5 cards on design's `raba-intro.css` (the same class names), spoken in his voice (`/api/voice/say`) with the
+  words lighting as he speaks; mute, "דלג", Esc, dots, swipe; silent and reduced-motion work. Seen once per person: `H.prefs('raba').seen`.
+  It opens from the settings when רַאבַּ"ע is picked for the first time (`window.RabaIntro.maybe()`; `.open()` shows it again).
+- The persona (`server/daemon.ts`): "Golden Age of Spain" became "תור הזהב הנצחי", and he may say that only this family has a helper like him.
+  PROMPT_VERSION was NOT bumped (it would wipe everyone's chat history); the persona is sent fresh on every call.
+- The wording (cards 1-5): שלום, אני רַאבַּ"ע / רק אצלכם / מה אני יודע לעשות / והאוהל כולו / מה שאני אוהב. In the file's CARDS.
+- Not checked: the look at 375/1280 (the browser pane had a 0-size viewport; only the logic was checked), the voice itself, a real swipe.
+- Not done: the family who keep him by default never see the intro (it opens only on a pick); `sw.js` should precache the two new files (master).
+- The css was copied from the design branch (same content, so the merge is clean). `.claude/skills/historic-figures` still says "Spain" (design's file).
+
 ## Latest: batch 27 and the gathering's food calculator
 
 - **The food calculator** (0fc50c0; master files 48857ce): rules in gather-rules.ts with tests; the RSVP's diet ticks.

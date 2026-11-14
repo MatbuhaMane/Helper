@@ -1,0 +1,138 @@
+/* ---------- רַאבַּ"ע introduces himself (the owner, 2026-11-14; docs/design/raba-intro.md) ----------
+   The first time a person picks him: 4–5 cards, like signing up for an app, in his own voice. He lives in "תור הזהב הנצחי",
+   an eternal golden hour: a warm dusk sky by day, a deep night with a gold glow in dark mode, parchment cards, his words in
+   Frank Ruhl Libre. The JS (ai-features) links this file before it opens, sets .on on the card shown (.past on those read),
+   .speaking on the figure while he talks, .said on each word already spoken, and aria-pressed on the mute button.
+   Motion: transform and opacity only. */
+.rb-intro {
+  --rb-gold: #b8862b;                                   /* the gold of the eternal hour: a field and a rim, never small text */
+  --rb-gold-ink: #7a5513;                               /* gold as text: deep enough on the parchment */
+  --rb-glow: rgba(232, 178, 74, .42);
+  --rb-sky: linear-gradient(180deg, #f3dcab 0%, #f6e8c8 38%, var(--chalk) 78%);
+  --rb-paper: color-mix(in srgb, #fbf3df 88%, var(--card));
+  --rb-paper-line: color-mix(in srgb, var(--rb-gold) 22%, transparent);
+  position: fixed; inset: 0; z-index: calc(var(--z-sheet, 60) + 5); display: grid; place-items: center;
+  background: var(--chalk); background-image: var(--rb-sky); color: var(--text); animation: fade var(--dur-quick) ease both; overscroll-behavior: contain;
+}
+.rb-intro[hidden] { display: none; }
+:root[data-theme="dark"] .rb-intro {
+  --rb-gold: #e2b25c; --rb-gold-ink: #ecc27a; --rb-glow: rgba(226, 178, 92, .30);
+  --rb-sky: radial-gradient(120% 70% at 50% 18%, #2a2214 0%, #141522 52%, var(--bg) 100%);
+  --rb-paper: color-mix(in srgb, #2b2416 55%, var(--card)); --rb-paper-line: rgba(226, 178, 92, .16);
+  background-color: var(--bg);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rb-intro {
+  --rb-gold: #e2b25c; --rb-gold-ink: #ecc27a; --rb-glow: rgba(226, 178, 92, .30);
+  --rb-sky: radial-gradient(120% 70% at 50% 18%, #2a2214 0%, #141522 52%, var(--bg) 100%);
+  --rb-paper: color-mix(in srgb, #2b2416 55%, var(--card)); --rb-paper-line: rgba(226, 178, 92, .16);
+  background-color: var(--bg);
+} }
+/* a few still stars of the eternal hour (scenery: no animation, nothing to press) */
+.rb-intro::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .55;
+  background: radial-gradient(1.5px 1.5px at 18% 12%, var(--rb-gold) 50%, transparent 51%), radial-gradient(1px 1px at 72% 8%, var(--rb-gold) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 86% 22%, var(--rb-gold) 50%, transparent 51%), radial-gradient(1px 1px at 34% 26%, var(--rb-gold) 50%, transparent 51%),
+    radial-gradient(1px 1px at 58% 18%, var(--rb-gold) 50%, transparent 51%); }
+
+/* the box: the whole screen on a phone; from 720 px a card of parchment in the middle of the sky */
+.rb-box { position: relative; display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto auto; inline-size: 100%; block-size: 100%; min-inline-size: 0;
+  padding: max(10px, env(safe-area-inset-top)) 18px max(16px, env(safe-area-inset-bottom)); gap: 10px;
+  animation: rb-rise var(--dur-draw) var(--ease-river) both; }
+.rb-box > * { min-inline-size: 0; }
+@media (min-width: 720px) {
+  .rb-box { inline-size: min(560px, calc(100vw - 48px)); block-size: auto; max-block-size: min(760px, calc(100vh - 48px)); padding: 16px 28px 26px;
+    border-radius: 28px; background: color-mix(in srgb, var(--rb-paper) 70%, transparent); border: 1px solid var(--rb-paper-line);
+    box-shadow: 0 30px 80px -30px rgba(90, 60, 10, .45), 0 0 0 6px color-mix(in srgb, var(--rb-gold) 7%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+}
+@keyframes rb-rise { from { opacity: 0; transform: translateY(18px); } }
+
+/* the top: mute at the start, "דלג" at the end */
+.rb-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.rb-mute { inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--rb-paper-line); background: color-mix(in srgb, var(--rb-paper) 80%, transparent);
+  color: var(--text); display: grid; place-items: center; cursor: pointer; transition: transform var(--dur-press) var(--ease-river); }
+.rb-mute::before { content: ""; inline-size: 22px; block-size: 22px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/sound.svg) center / contain no-repeat; mask: url(/assets/bd-icons/sound.svg) center / contain no-repeat; }
+.rb-mute[aria-pressed="true"] { color: var(--muted); }
+.rb-mute[aria-pressed="true"]::before { -webkit-mask-image: url(/assets/bd-icons/sound-off.svg); mask-image: url(/assets/bd-icons/sound-off.svg); }
+.rb-skip { min-block-size: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: none; color: var(--muted); font: inherit; font-size: .95rem; cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-river); }
+.rb-skip:hover { color: var(--text); }
+.rb-mute:active, .rb-skip:active { transform: scale(.94); }
+
+/* the figure: his face (img) or the 3D canvas, in a gold halo that breathes only while he speaks */
+.rb-fig { position: relative; justify-self: center; inline-size: 148px; block-size: 148px; display: grid; place-items: center; }
+@media (min-width: 720px) { .rb-fig { inline-size: 184px; block-size: 184px; } }
+@media (max-height: 640px) { .rb-fig { inline-size: 112px; block-size: 112px; } }
+.rb-fig::before { content: ""; position: absolute; inset: -14%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(closest-side, var(--rb-glow), transparent 72%); }
+.rb-fig > img { position: relative; inline-size: 100%; block-size: 100%; object-fit: cover; border-radius: 50%;
+  border: 3px solid var(--rb-gold); box-shadow: 0 8px 26px -10px rgba(90, 60, 10, .5); }
+.rb-fig > canvas, .rb-fig > .dm-headfig { position: relative; inline-size: 100%; block-size: 100%; }
+.rb-fig.speaking::before { animation: rb-speak 1.6s ease-in-out infinite; }
+@keyframes rb-speak { 0%, 100% { opacity: .7; transform: scale(.96); } 50% { opacity: 1; transform: scale(1.06); } }
+/* his name under the figure, and where he lives */
+.rb-name { margin: 0; text-align: center; font-family: 'Frank Ruhl Libre', 'David', serif; font-weight: 700; font-size: 1.2rem; color: var(--rb-gold-ink); }
+.rb-name > small { display: block; font-weight: 400; font-size: .82rem; color: var(--muted); }
+
+/* the cards: all in one grid cell, so the box keeps the tallest one's height and nothing jumps.
+   RTL: the next card comes in from the left, the one read leaves to the right. */
+.rb-cards { display: grid; min-block-size: 0; overflow: hidden auto; overscroll-behavior: contain; }   /* x hidden: the sliding cards make no scrollbar */
+.rb-card { grid-area: 1 / 1; align-self: start; display: grid; gap: 10px; padding: 18px 20px 20px; border-radius: 22px;
+  background-color: var(--rb-paper); border: 1px solid var(--rb-paper-line);
+  background-image: repeating-linear-gradient(180deg, transparent 0 31px, var(--rb-paper-line) 31px 32px);   /* the ruled lines of a manuscript page */
+  background-position: 0 14px; opacity: 0; transform: translateX(-28px); visibility: hidden; pointer-events: none;
+  transition: opacity var(--dur-quick) ease, transform var(--dur-quick) var(--ease-river), visibility 0s linear var(--dur-quick); }
+.rb-card.past { transform: translateX(28px); }
+.rb-card.on { opacity: 1; transform: none; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+.rb-card > h2 { margin: 0; font-family: 'Frank Ruhl Libre', 'David', serif; font-size: 1.45rem; font-weight: 700; line-height: 1.3; }
+.rb-card > h2::after { content: ""; display: block; inline-size: 44px; block-size: 2px; margin-block-start: 8px; border-radius: 2px; background: var(--rb-gold); }
+
+/* what he says: the subtitle while he speaks. The JS wraps each word in a span and marks .said as the voice passes it;
+   muted, or with no voice, the paragraph gets .done and every word is lit at once. */
+.rb-say { margin: 0; font-family: 'Frank Ruhl Libre', 'David', serif; font-size: 1.14rem; line-height: 1.75; }
+.rb-say > span { opacity: .45; transition: opacity 160ms ease; }
+.rb-say > span.said, .rb-say.done > span { opacity: 1; }
+
+/* a list of what he can do, or what the Ohel can do (cards 3–4): a gold diamond for each */
+.rb-can { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rb-can > li { position: relative; padding-inline-start: 22px; line-height: 1.5; }
+.rb-can > li::before { content: ""; position: absolute; inset-inline-start: 4px; inset-block-start: .55em; inline-size: 7px; block-size: 7px;
+  background: var(--rb-gold); transform: rotate(45deg); }
+.rb-can > li > b { font-weight: 600; }
+/* a line from the sources (the last card: learning Torah together) */
+.rb-quote { margin: 0; padding: 10px 14px; border-inline-start: 3px solid var(--rb-gold); border-start-start-radius: 4px; border-end-start-radius: 4px;
+  border-start-end-radius: 12px; border-end-end-radius: 12px; background: color-mix(in srgb, var(--rb-gold) 9%, transparent);
+  font-family: 'Frank Ruhl Libre', 'David', serif; line-height: 1.6; }
+.rb-quote > cite { display: block; margin-block-start: 4px; font-style: normal; font-size: .82rem; color: var(--muted); }
+
+/* the dots: one per card; the current one is gold and larger (scale). Each is a 24 × 44 px target. */
+.rb-dots { display: flex; justify-content: center; gap: 2px; min-block-size: 44px; align-items: center; }
+.rb-dots > button { inline-size: 24px; block-size: 44px; border: 0; padding: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.rb-dots > button::before { content: ""; inline-size: 8px; block-size: 8px; border-radius: 50%; background: color-mix(in srgb, var(--text) 28%, transparent);
+  transition: transform var(--dur-quick) var(--ease-river); }
+.rb-dots > button[aria-current="step"]::before { background: var(--rb-gold); transform: scale(1.45); }
+
+/* "הבא" (on the last card "בואו נתחיל", with .last), and "הקודם" from the second card on */
+.rb-acts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
+.rb-next { grid-column: 2; min-block-size: 52px; border: 0; border-radius: 16px; background: var(--primary); color: var(--primary-ink); font: inherit; font-size: 1.06rem;
+  font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform var(--dur-press) var(--ease-river); }
+.rb-next::after { content: ""; inline-size: 9px; block-size: 9px; border-block-start: 2px solid currentColor; border-inline-end: 2px solid currentColor;
+  transform: rotate(-45deg); }   /* a chevron to the inline end (the tent is RTL: it points left) */
+.rb-next.last::after { display: none; }
+.rb-next:active { transform: scale(.97); }
+.rb-back { grid-column: 1; min-inline-size: 52px; min-block-size: 52px; padding: 0 14px; border: 1px solid var(--rb-paper-line); border-radius: 16px; background: var(--rb-paper);
+  color: var(--text); font: inherit; cursor: pointer; transition: transform var(--dur-press) var(--ease-river); }
+.rb-back::before { content: ""; display: inline-block; inline-size: 9px; block-size: 9px; border-block-start: 2px solid currentColor;
+  border-inline-start: 2px solid currentColor; transform: rotate(45deg); }   /* a chevron to the inline start (RTL: right); leave the button empty, aria-label "הקודם" */
+.rb-back:active { transform: scale(.95); }
+.rb-back[hidden] { display: none; }
+:is(.rb-mute, .rb-skip, .rb-next, .rb-back, .rb-dots > button):focus-visible { outline: 2px solid var(--rb-gold-ink); outline-offset: 2px; }
+
+/* reduced motion: the cards simply change, the halo stands still */
+@media (prefers-reduced-motion: reduce) {
+  .rb-box, .rb-intro { animation: none; }
+  .rb-card, .rb-card.past { transform: none; }
+  .rb-fig.speaking::before { animation: none; }
+}
+:root[data-motion="reduce"] :is(.rb-card, .rb-card.past) { transform: none; }
+:root[data-motion="reduce"] .rb-fig.speaking::before { animation: none; }

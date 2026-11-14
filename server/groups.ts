@@ -5,13 +5,13 @@
 //   * a child under 12 is in a group only when everyone else in it is family to that child (friends-rules groupMembers);
 //   * leaving is always possible; the back door gets counts only.
 
-import { Ctx, HttpError, body, json, requireUser, uid } from './core';
+import { Ctx, HttpError, Member, body, json, requireUser, uid } from './core';
 import { rateLimit } from './vault';
 import { tribe } from './vault/kin';
 import { childOf } from './members';
 import * as D from './dm-rules';
 import * as F from './friends-rules';
-import { check, resolve } from './dm';
+import { blocks, check, member, resolve } from './dm';
 
 type Group = { id: string; name: string; maker: string; created_at: number; last_at: number | null; last_by: string | null };
 type Row = { email: string; name: string | null; he_name: string | null; household: string };
@@ -22,6 +22,32 @@ async function familyCheck(ctx: Ctx) {
   const cache = new Map<string, Set<string>>();
   const t = (h: string) => { if (!cache.has(h)) cache.set(h, tribe(h, results)); return cache.get(h)!; };
   return (hx: string, hy: string) => hx === hy || t(hx).has(hy);
+}
+
+/** The creation rule again on every read and write (friends-rules staleGroup): I am reachable from the maker (or, the maker
+    gone, from a remaining member), blocks between me and a member, a child only among family. Light: one query for the
+    members and one for the blocks; a `check` only for the maker (several only when the maker has left); `childOf` and
+    the family bridges only when the group has more than me. Throws 404 if I am out. */
+async function prune(ctx: Ctx, u: Member, g: Group) {
+  const me = u.email.toLowerCase();
+  const ms = (await membersOf(ctx, g.id)).map((m) => m.email);
+  const others = ms.filter((e) => e !== me);
+  if (!others.length) return;
+  const marks = others.map((_, k) => '?' + (k + 2)).join(',');
+  const { results: bl } = await ctx.env.DB.prepare(`SELECT blocker, blocked FROM dm_blocks WHERE (blocker = ?1 AND blocked IN (${marks})) OR (blocked = ?1 AND blocker IN (${marks}))`)
+    .bind(me, ...others).all<{ blocker: string; blocked: string }>();
+  const reach = async (e: string) => { try { await check(ctx, u, await member(ctx, e)); return true; } catch { return false; } };
+  const maker = g.maker.toLowerCase();
+  let reachMaker = true, reachAny = true;
+  if (maker !== me && ms.includes(maker)) reachMaker = await reach(maker);
+  else if (maker !== me) { reachAny = false; for (const e of others) if (await reach(e)) { reachAny = true; break; } }
+  const fam = await familyCheck(ctx);
+  const house = new Map<string, string>();
+  const kids = new Set<string>();
+  for (const e of ms) { const m = await member(ctx, e); house.set(e, m?.household || '?' + e); if (m && (await childOf(ctx.env, e))) kids.add(e); }
+  const r = F.staleGroup({ me, maker, members: ms, blocks: bl, reachMaker, reachAny, child: (e) => kids.has(e), familyOf: (x, y) => fam(house.get(x) || '?x', house.get(y) || '?y') });
+  for (const e of r.drop) await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE grp = ? AND email = ?').bind(g.id, e).run();
+  if (r.leave) { await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE grp = ? AND email = ?').bind(g.id, me).run(); throw new HttpError(404, 'not_found'); }
 }
 
 /** the group, if I am in it; else 404 as if there were none */
@@ -47,7 +73,9 @@ export async function list(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const { results } = await ctx.env.DB.prepare('SELECT g.*, m.seen AS seen FROM dm_groups g JOIN dm_group_members m ON m.grp = g.id AND m.email = ? ORDER BY COALESCE(g.last_at, g.created_at) DESC LIMIT 100')
     .bind(me).all<Group & { seen: number | null }>();
-  const groups = await Promise.all(results.map(async (g) => {
+  // (the creation rule again: a group I am out of is left out, and its preview is never read)
+  const kept = (await Promise.all(results.map(async (g) => { try { await prune(ctx, u, g); return g; } catch { return null; } }))).filter((g): g is NonNullable<typeof g> => !!g);
+  const groups = await Promise.all(kept.map(async (g) => {
     const ms = (await membersOf(ctx, g.id)).filter((m) => m.email !== me);
     const last = await ctx.env.DB.prepare('SELECT * FROM dm_group_messages WHERE grp = ? ORDER BY at DESC LIMIT 1').bind(g.id).first<{ sender: string; text: string; at: number }>();
     return {
@@ -89,6 +117,7 @@ export async function create(ctx: Ctx) {
 export async function thread(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const g = await groupFor(ctx, me);
+  await prune(ctx, u, g);
   const after = Number(ctx.url.searchParams.get('after')) || 0;
   const [{ results }, ms] = await Promise.all([
     ctx.env.DB.prepare('SELECT * FROM dm_group_messages WHERE grp = ? AND at > ? ORDER BY at DESC LIMIT ?').bind(g.id, after, D.PAGE).all<{ id: string; sender: string; text: string; at: number }>(),
@@ -111,6 +140,7 @@ export async function thread(ctx: Ctx) {
 export async function send(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const g = await groupFor(ctx, me);
+  await prune(ctx, u, g);
   const text = D.cleanText((await body<{ text?: string }>(ctx.req)).text);
   await rateLimit(ctx, 'dm:' + me, D.RATE.send.max, D.RATE.send.windowMs);
   await rateLimit(ctx, 'dmday:' + me, D.RATE.sendDay.max, D.RATE.sendDay.windowMs);
@@ -137,8 +167,12 @@ export async function leave(ctx: Ctx) {
 }
 
 /** for the unread dot: how many of my groups wait */
-export async function unreadCount(ctx: Ctx, me: string): Promise<number> {
-  const r = await ctx.env.DB.prepare(`SELECT COUNT(*) AS n FROM dm_groups g JOIN dm_group_members m ON m.grp = g.id AND m.email = ?1
-    WHERE g.last_by IS NOT NULL AND g.last_by <> ?1 AND (m.seen IS NULL OR m.seen < g.last_at)`).bind(me).first<{ n: number }>();
-  return r?.n || 0;
+export async function unreadCount(ctx: Ctx, u: Member): Promise<number> {
+  const me = u.email.toLowerCase();
+  const { results } = await ctx.env.DB.prepare(`SELECT g.* FROM dm_groups g JOIN dm_group_members m ON m.grp = g.id AND m.email = ?1
+    WHERE g.last_by IS NOT NULL AND g.last_by <> ?1 AND (m.seen IS NULL OR m.seen < g.last_at)`).bind(me).all<Group>();
+  // only the groups I am still in count (the same check as the list)
+  let n = 0;
+  for (const g of results) { try { await prune(ctx, u, g); n++; } catch { /* out of it */ } }
+  return n;
 }

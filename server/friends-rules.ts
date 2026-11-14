@@ -108,3 +108,40 @@ export function hue(id: string): string {
   h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; h = (h ^ (h >>> 16)) >>> 0;   // so ids that differ in one letter differ in colour
   return `hsl(${h % 360} 45% 42%)`;
 }
+
+/** A group is checked again every time it is read or written (the master's review of batch 27): the creation rule, again.
+ *  (a) I am still reachable from the maker; if the maker has left, from at least one member who remains.
+ *  (b) blocks: a member I blocked goes; a member who blocked me puts me out. A friendship that ended between two ordinary
+ *      members drops nobody (members are each reachable from the maker, not from one another).
+ *  (c) a child under 12 stays only while everyone else in the group is family to them (a child who no longer fits goes;
+ *      if it is me, I go).
+ *  The server computes the facts (`reachMaker`: check(me, maker), only when the maker is a member and not me; `reachAny`: some
+ *  other member is reachable from me, only when the maker has left); this decides. Answers who to remove and whether I leave. */
+export function staleGroup(i: {
+  me: string; maker: string; members: string[];
+  blocks: { blocker: string; blocked: string }[];
+  reachMaker: boolean; reachAny: boolean;
+  child: (e: string) => boolean; familyOf: (x: string, y: string) => boolean;
+}): { drop: string[]; leave: boolean } {
+  const me = i.me.toLowerCase(), maker = i.maker.toLowerCase();
+  const all = new Set(i.members.map((m) => m.toLowerCase()));
+  all.add(me);
+  const others = [...all].filter((e) => e !== me);
+  const drop = new Set<string>();
+  let leave = false;
+  for (const b of i.blocks) {
+    const x = b.blocker.toLowerCase(), y = b.blocked.toLowerCase();
+    if (x === me && all.has(y) && y !== me) drop.add(y);
+    if (y === me && all.has(x) && x !== me) leave = true;
+  }
+  if (others.length && maker !== me) {
+    if (all.has(maker)) { if (!i.reachMaker) leave = true; }
+    else if (!i.reachAny) leave = true;
+  }
+  const stay = [...all].filter((e) => !drop.has(e));
+  for (const e of stay) {
+    if (!i.child(e)) continue;
+    if (stay.some((o) => o !== e && !i.familyOf(e, o))) { if (e === me) leave = true; else drop.add(e); }
+  }
+  return { drop: [...drop], leave };
+}

@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": the wording of the rules page and the terms chapter (master → vision, legal, ai-features)
+Status: Decided (the owner, in the master's session; recorded by vision as the master reported it). The owner approved
+the vision's tone version of legal's draft. The drafts stay outside the repo until the final wording.
+
+- **Legal's five additions all stay:**
+  - ידיים are cancelled when an account closes or the tool stops, with no compensation. This is also a product rule
+    for ai-features;
+  - the Ohel may correct mistakes in the ledger and cancel ידיים received against the rules;
+  - what enters and leaves the fund is visible to users; the name of a person the fund helped is shown only if they agreed;
+  - information is handed to the authorities when the law requires;
+  - the Ohel may change the rules, the list of services and their value, with notice ahead of a material change.
+- **The word "בתמורה" in the tool's line:** legal checks it against "ידיים are not consideration". If it is a problem,
+  the line ends with "בחזרה" instead.
+- **The rules page in stage 1,** the rule on children and youth: "בשלב הזה יד ביד פתוח בין משפחה וחברים, ומגיל 18.
+  ילדים ונוער יצטרפו בהמשך, באישור הורה." The minors clause in the terms stays as written.
+- **A recommendation after a service is optional.** This settles trust rule 2 of the internal economy entry.
+- **Next:** legal writes the final version, then the owner's lawyer gives the last word. Only then does it enter the app.
+
 ## 2026-11-15 – "יד ביד": four conditions on the licence declaration (vision → design, ai-features, legal, master)
 Status: Decided (the owner). Legal's conditions; they complete the declaration in the entry below.
 

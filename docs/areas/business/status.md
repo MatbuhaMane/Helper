@@ -44,8 +44,9 @@ Updated by the department at the end of every meaningful round of work. Short: t
   `business-plan.md` section 4ה and to the risks table, with no price change.
   - Hands and credits are two separate currencies. A hand cannot be bought, sold or redeemed, so it is no revenue and
     no liability; the cost is the owner's time for approvals.
-  - The open question, any link between hands and credits: business recommends none, in either direction. It sent that
-    to vision for the owner. The tax and licensing question is with legal ⚖.
+  - **Decided (the owner, 2026-11-14, batch 33): no link between hands and credits, in either direction.** The only
+    tie: the owner may give gift credits for a notable community deed, with no rate and no right to it. A permanent
+    link only after legal answers the tax and licensing question ⚖. The tool is named "יד ביד", the token "יד".
 
 - **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
   with a ceiling of about ₪120,000 a year.

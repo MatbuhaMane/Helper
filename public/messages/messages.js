@@ -75,7 +75,7 @@
   const FROM = { system: 'האוהל', owner: 'הודעה אישית', all: 'לכל בני האוהל', news: 'האוהל התעדכן' };
   const ICON = { party: '🎉 ', warn: '⚠️ ' };
   async function openInbox() {
-    if (!inbox) { inboxBox.replaceChildren(el('p', { class: 'muted' }, 'טוען…')); try { await loadInbox(); } catch (e) { inboxBox.replaceChildren(el('p', { class: 'notice' }, e.message || 'לא הצלחנו לטעון')); return; } }
+    if (!inbox) { inboxBox.replaceChildren(el('div', { 'aria-hidden': 'true' }, el('div', { class: 'skel line', style: '--w:70%' }), el('div', { class: 'skel line', style: '--w:50%' }))); try { await loadInbox(); } catch (e) { inboxBox.replaceChildren(el('p', { class: 'notice' }, e.message || 'לא הצלחנו לטעון')); return; } }
     const items = inbox.items;
     inboxBox.replaceChildren(
       el('h2', { style: 'margin:0 0 4px' }, 'מהאוהל'),
@@ -101,7 +101,10 @@
   const urlOf = (o) => (o.group ? '/api/groups/' : '/api/dm/') + encodeURIComponent(o.id);
 
   /* ---------- the list ---------- */
+  let firstDraw = true;
+  const skelRows = () => [74, 58, 66].map((w) => el('li', { 'aria-hidden': 'true' }, el('div', { class: 'dm-row' }, el('div', { class: 'skel line', style: `--w:${w}%` }), el('div', { class: 'skel line', style: '--w:40%' }))));
   async function loadList() {
+    if (firstDraw && !threads.length) rows.replaceChildren(...skelRows());   // its shape, so nothing jumps when the rows come
     try {
       const [d, g] = await Promise.all([api('/api/dm'), api('/api/groups').catch(() => ({ groups: [] }))]);
       threads = [...d.threads, ...g.groups.map((x) => ({ ...x, group: true }))].sort((a, b) => b.at - a.at);
@@ -112,12 +115,15 @@
   const av = (f, sm) => el('span', { class: 'fr-av' + (sm ? ' sm' : ''), style: `--c:${f.c}`, 'aria-hidden': 'true' }, f.ini);
   function drawList() {
     listEmpty.hidden = threads.length > 0;
-    rows.replaceChildren(...threads.map((t) => el('li', {}, el('button', {
+    const arrive = firstDraw && threads.length;   // the rows arrive once, not on every refresh
+    firstDraw = false;
+    rows.replaceChildren(...threads.map((t, n) => el('li', arrive ? { style: `--i:${n}` } : {}, el('button', {
       class: 'dm-row' + (t.group ? ' group' : '') + (t.unread ? ' unread' : ''), type: 'button', 'aria-current': open?.id === t.id ? 'true' : 'false',
       onclick: () => go(t.id, t.group),
     }, t.group ? el('span', { class: 'fr-av-stack', 'aria-hidden': 'true' }, ...t.faces.map((f) => av(f, true)), t.more ? el('span', { class: 'fr-more' }, '+' + t.more) : null) : null,
       el('b', { dir: 'auto' }, t.name), el('time', {}, when(t.at)),
       el('small', { dir: 'auto' }, t.blocked ? 'חסום' : t.last ? (t.last.mine ? 'את/ה: ' : '') + t.last.text : t.group ? `קבוצה · ${t.count} משתתפים` : '')))));
+    if (arrive) { rows.classList.add('arrive'); setTimeout(() => rows.classList.remove('arrive'), 700); }
   }
 
   /* ---------- one conversation ---------- */

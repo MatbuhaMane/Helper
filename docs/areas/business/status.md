@@ -26,6 +26,15 @@ Updated by the department at the end of every meaningful round of work. Short: t
   - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
+- **AI inside a tool, free with a quota (2026-11-14, from vision batch 26):** `docs/business/ai-quota.md`.
+  Proposal, waiting for the owner:
+  - A daily free quota per person: 20 answers from the voice chef, 3 plant photos, 5 "איך אני עושה" questions.
+  - Beyond the quota: credits at the real cost, by the existing rule in pricing.md 6א.
+  - Until there is a payment provider, only trial and gift credits beyond the quota; after that, "come back tomorrow".
+  - It proposes cheaper defaults to ai-features: the browser's voice for the chef, and Gemini grounding (free under
+    5,000 a month) for the search.
+  - The numbers are revised after the 2026-11-26 measurement.
+
 - **Investor deck (2026-11-14, from the CEO):** a private Slides Artifact, 15 Hebrew slides, shared with no one:
   https://claude.ai/artifact/EtQnfQgitX4ysvcjEfCaD6
   - It covers the problem, the product, the market, the model, honest metrics (family stage, no revenue), the

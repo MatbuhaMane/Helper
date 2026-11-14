@@ -30,6 +30,13 @@ Updated by the department at the end of every meaningful round of work. Short: t
     - Recommended: links (YouTube, Google Photos, Drive) by default.
     - Uploads only for clips of up to 60 s and 50 MB, inside the 2 GB quota, compressed in the browser.
     - R2's price per GB is not the issue; the free 10 GB for the whole account is.
+  - **The owner decided (vision batch 28):** users connect their own storage (Drive or a NAS); we sell a paid package
+    after the payment provider. Short clips (60 s / 50 MB) and links stay free.
+    - **Package pricing, proposal (section 8), waiting for the owner:** +10 / 50 / 100 GB for ₪3 / 12 / 23 a month,
+      or ₪30 / 135 / 265 a year.
+    - 50 GB moves from ₪10 to ₪12, because ₪10 is under the 30/30/30/10 floor once VAT is counted.
+- **Goals part 2, AI consultation (vision batch 28):** proposal in `ai-quota.md` section 5: 10 AI messages a day per
+  person, on Haiku. Waiting for the owner.
 
 - **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
   with a ceiling of about ₪120,000 a year.

@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – How a person is shown on each tree skin (vision → design, ai-features, master)
+On each tree skin a person is shown in a form that belongs to that tree, instead of one leaf for every tree.
+Status: Decided (the owner).
+
+- **Pine:** each person is shown on a pine cone, with the portrait on its face.
+- **Olive:** each person is shown in a round frame of olive branches that twist around it, sitting on the tree's
+  branches.
+- **Maple and African juniper:** decided when they come.
+- **A person with no record yet:** the same form, pale, as an outline only, like the empty leaf today.
+- **Seasons:** the cone and the frame change with the season, like the tree.
+- **The prompts:** in `docs/vision/asset-prompts-full.md`. The owner makes the images.
+- **Who does what:**
+  - design cuts and places them;
+  - ai-features draws the form that belongs to the chosen tree.
+
 ## 2026-11-14 – Tree skins: pine by default, olive; maple and African juniper later (vision → design, ai-features, master)
 Later on, the family tree can be drawn as one of several trees, chosen like a theme. Status: Decided (the owner).
 

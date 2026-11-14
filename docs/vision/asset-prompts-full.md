@@ -158,38 +158,72 @@ Style: a hand-drawn cartoon illustration exactly like the attached reference ima
 The same tree as the second attached image: exactly the same trunk, branches, crown outline, ground, size, position and composition, same canvas size, portrait 2:3. Keep every branch and every empty space exactly where it is. Only the season changes: SPRING: bright fresh green tips on the tufts, small golden pollen cones, green grass and small wildflowers on the ground.
 ```
 
-## ב. עלים, באנר ופרופיל
+## ב. האדם על העץ, הבאנר והפרופיל
 
-#### עלה סתיו
-`03-leaf-autumn.png`: 1:1
+בכל עץ אדם מוצג בצורה ששייכת לעץ. באורן הוא מוצג על אצטרובל, ובזית במסגרת שענפי הזית משתרגים סביבה. התמונה של האדם מונחת במרכז, ולכן המרכז נשאר פשוט ופנוי. הצורה הריקה היא למי שאין לו עדיין רשומה.
+
+#### אורן: אצטרובל בסתיו
+`03-pine-cone-autumn.png`: 1:1
 ```
 Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
 
-A single leaf, centred, seen from above, filling most of a square image: an amber-rust autumn leaf with darker veins.
+A single pine cone of the Aleppo pine, upright, centred, filling most of a square image, its front face slightly flattened into a smooth round plain area in the middle where a small round portrait will be placed later. A ripe, open, warm brown cone with rust tones, with a few yellowed needles at its stem.
 ```
 
-#### ניצן חורף
-`03-leaf-winter.png`: 1:1
-```
-Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
-
-A single small closed bud on a short twig, centred, filling most of a square image, with a touch of white frost on its tip.
-```
-
-#### עלה אביב
-`03-leaf-spring.png`: 1:1
+#### אורן: אצטרובל בחורף
+`03-pine-cone-winter.png`: 1:1
 ```
 Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
 
-A single fresh green leaf, centred, seen from above, filling most of a square image, with one small white blossom at its stem.
+A single pine cone of the Aleppo pine, upright, centred, filling most of a square image, its front face slightly flattened into a smooth round plain area in the middle where a small round portrait will be placed later. A dark brown closed cone with a light dusting of snow on its top scales and a few dark green needles at its stem.
 ```
 
-#### עלה ריק
-`04-leaf-empty.png`: 1:1. למי שאין לו עדיין רשומה.
+#### אורן: אצטרובל באביב
+`03-pine-cone-spring.png`: 1:1
 ```
 Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
 
-A single leaf, centred, filling most of a square image, drawn only as a pale outline with faint dotted veins, almost empty inside, very light warm grey, as if waiting to be filled in.
+A single pine cone of the Aleppo pine, upright, centred, filling most of a square image, its front face slightly flattened into a smooth round plain area in the middle where a small round portrait will be placed later. A young green cone with a soft reddish blush, with a few fresh light-green needles at its stem.
+```
+
+#### אורן: אצטרובל ריק
+`04-pine-cone-empty.png`: 1:1. למי שאין לו עדיין רשומה.
+```
+Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
+
+A single pine cone of the Aleppo pine, upright, centred, filling most of a square image, its front face slightly flattened into a smooth round plain area in the middle where a small round portrait will be placed later. Drawn only as a pale outline with faint lines for the scales, almost empty inside, very light warm grey, as if waiting to be filled in.
+```
+
+#### זית: מסגרת בסתיו
+`03-olive-frame-autumn.png`: 1:1
+```
+Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
+
+A single round frame woven from living olive branches that twist and intertwine around it, centred, filling most of a square image, the branches reaching a little beyond the ring at the top and the bottom as if growing from the tree; the inside of the ring completely empty and white, where a small round portrait will be placed later. Silver-green leaves with a few yellowed ones, and a few ripe dark purple and black olives on the branches.
+```
+
+#### זית: מסגרת בחורף
+`03-olive-frame-winter.png`: 1:1
+```
+Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
+
+A single round frame woven from living olive branches that twist and intertwine around it, centred, filling most of a square image, the branches reaching a little beyond the ring at the top and the bottom as if growing from the tree; the inside of the ring completely empty and white, where a small round portrait will be placed later. Silver-green leaves with a light dusting of snow on the top of the ring.
+```
+
+#### זית: מסגרת באביב
+`03-olive-frame-spring.png`: 1:1
+```
+Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
+
+A single round frame woven from living olive branches that twist and intertwine around it, centred, filling most of a square image, the branches reaching a little beyond the ring at the top and the bottom as if growing from the tree; the inside of the ring completely empty and white, where a small round portrait will be placed later. Fresh light-green new leaves and small clusters of tiny creamy-white olive blossoms.
+```
+
+#### זית: מסגרת ריקה
+`04-olive-frame-empty.png`: 1:1. למי שאין לו עדיין רשומה.
+```
+Style: a hand-drawn cartoon illustration exactly like the attached reference image (a warm cartoon of a Bedouin tent): bold, even, dark brown-black ink outlines; flat, warm, earthy colours with a painted texture; soft hand-drawn shading; no realistic lighting, no photographic detail, no 3D render look. Plain flat pure white background (#ffffff), nothing else on it, no shadow on the background, no text, no letters, no numbers, no logos, no watermark, no people, no animals, no frame.
+
+A single round frame woven from living olive branches that twist and intertwine around it, centred, filling most of a square image, the branches reaching a little beyond the ring at the top and the bottom as if growing from the tree; the inside of the ring completely empty and white, where a small round portrait will be placed later. Drawn only as a pale outline with faint leaves, almost empty, very light warm grey, as if waiting to be filled in.
 ```
 
 #### רקע לבאנר של אדם

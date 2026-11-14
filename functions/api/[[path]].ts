@@ -61,6 +61,7 @@ import * as parnasa from '../../server/parnasa';
 import * as appAccess from '../../server/app-access';
 import * as home from '../../server/home';
 import * as garden from '../../server/garden';
+import * as inbox from '../../server/inbox';
 import * as cook from '../../server/cook';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
@@ -497,6 +498,9 @@ route('PUT', '/api/admin/features', admin.featuresSave);
 route('GET', '/api/admin/audit', admin.auditList);
 route('GET', '/api/messages', admin.messagesForMe);
 route('POST', '/api/messages/:id/read', admin.messageRead);
+/* the inbox's מהאוהל tab (ai-features, server/inbox.ts; docs/decisions.md 2026-11-14): האוהל's own messages to a member, read only */
+route('GET', '/api/inbox', inbox.list);
+route('POST', '/api/inbox/read', inbox.read);
 route('GET', '/api/me/features', admin.myFeatures);
 
 /* the AI allowance (ai-features, server/credits.ts): a person's own services, and the room's view of everyone's */

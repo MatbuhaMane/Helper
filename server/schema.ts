@@ -28,6 +28,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['ai_usage', 'free', 'INTEGER'],           // 1: within a tool's free daily quota (cook.ts): counted as usage, never taken from credits        // 1: sent with the person's own key (costs the owner nothing, needs no credit)
   ['admin_entries', 'stay', 'INTEGER'],      // 1: "stay unlocked" – the room's idle limit lifted (own account only)
   ['admin_messages', 'to_email', 'TEXT'],    // a message for one person (a gift's note); empty: for everyone
+  ['admin_messages', 'keep', 'INTEGER'],     // 1: a message to everyone the owner kept in the inbox's מהאוהל tab (server/inbox.ts)
   ['design_images', 'usd', 'REAL'],          // what this picture cost (from Gemini's answer, priced as the meter prices it)
   ['design_images', 'started_at', 'INTEGER'], // when its batch started (the same for each picture of a batch)
   ['sessions', 'vault_trust_until', 'INTEGER'], // the family tree opens on this device with no unlock until then (30 days from its last use)

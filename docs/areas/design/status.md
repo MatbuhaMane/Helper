@@ -2,9 +2,17 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 9)._
+_Updated 2026-11-14 (the new chat, round 10)._
 
 
+
+
+## Round 10: the relation picker in the edit form (for ai-features f61951a)
+- `family.css` styles `.fv-form-rels`, the picker `.fv-rels .fv-pick` and the list `.fv-pick-list` with `.fv-pick-who` and `.fv-pick-new`.
+  - Every button is 44px, and on a phone the four "+" buttons sit two per row.
+  - `.fv-pick[hidden]` is now actually hidden; the old `display: grid` overrode it.
+- Checked on a mock in H.modal at 375 and 1280, light and dark. The audit is clean.
+- Drag-to-arrange (ai 2fde072) was cross-checked against e019b5f by reading the code, and every class matches. The live check waits for the merge.
 
 ## Round 9: the look of the food calculator (gathering)
 - `docs/design/gather-calc.md` gives the class names. The CSS is at the end of `public/gather/gather.css` and covers:

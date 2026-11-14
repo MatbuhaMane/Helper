@@ -535,3 +535,35 @@
   .fv-ghost, .fv-drop-line, .fv.arranging :is(.fv-gen, .fv-tree > .fv-row)::before, .fv.arranging :is(.fv-gen, .fv-tree > .fv-row)::after { transition: none; }
   .fv-ghost { rotate: none; }
 }
+
+/* The relation picker in a person's edit form (f61951a): "+ הורה / בן/בת זוג / ילד/ה / אח/אחות" opens a chooser below the buttons.
+     <div class="fv-form-rels"><section class="fv-rels"> … <div class="fv-acts-row">(4 × "+")</div>
+       <div class="fv-pick" hidden><p class="small">…מי מהעץ?</p><input type="search"><ul class="fv-pick-list">
+         <li><button class="fv-pick-who">שם<small class="muted"> · דודה</small></button></li> … <li><button class="fv-pick-new">אדם חדש שעוד לא בעץ</button></li></ul></div>
+   After "+ אח/אחות" the chooser holds a sentence and a .fv-acts-row (לחבר / ביטול) instead. */
+.fv-form-rels { display: grid; padding-block-start: 4px; }
+.fv-form-rels > .fv-rels { background: color-mix(in srgb, var(--text) 2.5%, var(--card)); }
+.fv-rels .fv-pick[hidden] { display: none; }   /* .fv-pick has a display of its own (the "how are we related" form) */
+.fv-rels .fv-pick { gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--line));
+  background: color-mix(in srgb, var(--primary) 5%, var(--card)); animation: fv-pick-in var(--dur-quick) var(--ease-river); }
+.fv-rels .fv-pick > p { margin: 0; line-height: 1.5; color: var(--text); }
+.fv-rels .fv-pick > p.small { font-weight: 500; }
+.fv-rels .fv-pick > input[type="search"] { inline-size: 100%; box-sizing: border-box; min-block-size: 44px; font: inherit; color: var(--text);
+  background: var(--card); border: 1px solid var(--line-strong); border-radius: 12px; padding: 9px 12px; }
+.fv-rels .fv-pick > input[type="search"]:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 1px; border-color: var(--primary); }
+.fv-pick-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-block-size: min(46vh, 380px); overflow-y: auto; overscroll-behavior: contain; }
+.fv-pick-who, .fv-pick-new { inline-size: 100%; min-block-size: 44px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; padding: 8px 12px; box-sizing: border-box;
+  font: inherit; text-align: start; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-river); }
+.fv-pick-who { font-weight: 500; }
+.fv-pick-who small { font-weight: 400; font-size: .86rem; }
+.fv-pick-who:hover, .fv-pick-new:hover { border-color: var(--primary); }
+.fv-pick-who:active, .fv-pick-new:active { transform: scale(.98); }
+.fv-pick-who:focus-visible, .fv-pick-new:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 1px; }
+.fv-pick-new { color: var(--primary); border-style: dashed; border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); background: none; }
+.fv-pick-new::before { content: "+"; font-weight: 600; margin-inline-end: 4px; }
+.fv-rels .fv-acts-row .btn { min-block-size: 44px; }
+.fv-rels .fv-acts-row .btn:not(.primary):not(.ghost) { border-color: var(--line-strong); background: var(--bg); }
+@media (max-width: 599px) { .fv-rels > .fv-acts-row > .btn { flex: 1 1 calc(50% - 3px); justify-content: center; } }
+@keyframes fv-pick-in { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .fv-rels .fv-pick { animation: none; } .fv-pick-who, .fv-pick-new { transition: none; } }

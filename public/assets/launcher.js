@@ -87,7 +87,7 @@
     }
     function enter() {
       if (on || P.locked) return;
-      on = true; grid.classList.add('arranging'); bar.hidden = false; syncLock();
+      on = true; grid.classList.add('arranging'); grid.style.touchAction = 'none'; bar.hidden = false; syncLock();   // (inline: from this very frame, not when the stylesheet is recalculated)
       tiles().forEach((t) => { t.setAttribute('aria-roledescription', 'אריח שאפשר להזיז'); t.setAttribute('draggable', 'false'); });
       pins();
       navigator.vibrate?.(12);
@@ -95,7 +95,7 @@
     }
     function leave() {
       if (!on) return;
-      on = false; grid.classList.remove('arranging'); bar.hidden = true; syncLock();
+      on = false; grid.classList.remove('arranging'); grid.style.touchAction = ''; bar.hidden = true; syncLock();
       tiles().forEach((t) => t.removeAttribute('aria-roledescription'));
       pins();
     }
@@ -196,6 +196,13 @@
     grid.addEventListener('pointerup', drop);
     // a finger's pointer may be cancelled by the phone (it starts a scroll); the touch events say when the finger is really up
     grid.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') drop(e); });
+    // a finger on a tile in the mode starts the drag from its own touch, whatever the pointer events do (Android may cancel them at once)
+    grid.addEventListener('touchstart', (e) => {
+      if (!on || drag || e.touches.length !== 1 || e.target.closest('.app-pin')) return;
+      const t = e.target.closest('.app'); if (!t) return;
+      const f = e.touches[0], r0 = t.getBoundingClientRect();
+      drag = { t, id: -1, sx: f.clientX, sy: f.clientY, gx: f.clientX - r0.left, gy: f.clientY - r0.top, moved: false };
+    }, { passive: true });
     grid.addEventListener('touchmove', (e) => { if (!drag) return; if (e.cancelable) e.preventDefault(); const f = e.touches[0]; if (f) moveAt(f.clientX, f.clientY); }, { passive: false });
     grid.addEventListener('touchend', () => drop()); grid.addEventListener('touchcancel', () => drop());
 

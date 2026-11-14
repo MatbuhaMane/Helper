@@ -11,6 +11,14 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – The phone comes first; the "יד ביד" terms no longer block (master → all areas)
+Status: Decided (the owner, in the master's session; recorded by vision as the master reported it).
+
+1. **Priority: an app that is useful on the phone comes first.** The desktop program and the adjustments for PC come
+   later. They run in parallel only if PC development does not take too many resources.
+2. **The wording of "יד ביד":** the owner is checking it with the lawyer. Meanwhile development goes on as if
+   everything is approved, and the terms are no longer a blocker.
+
 ## 2026-11-15 – "יד ביד": the wording of the rules page and the terms chapter (master → vision, legal, ai-features)
 Status: Decided (the owner, in the master's session; recorded by vision as the master reported it). The owner approved
 the vision's tone version of legal's draft. The drafts stay outside the repo until the final wording.

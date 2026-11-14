@@ -140,3 +140,4 @@
 - 2026-11-15: the CEO reported that the owner approved the tone version of the יד ביד wording in the CEO's session; recorded in decisions.md with that provenance.
 - 2026-11-15: legal wrote the final wording; the tool's line now ends with "בחזרה" instead of "בתמורה"; the wording is with the owner's lawyer.
 - 2026-11-15: approval queue spec, question 2: the value of a deed for the community comes from a list the owner prepares (type, tier, hours).
+- 2026-11-15: the CEO reported two owner decisions, recorded in decisions.md: the phone comes first (PC later, or in parallel only if cheap), and the יד ביד terms no longer block development.

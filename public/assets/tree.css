@@ -53,16 +53,19 @@
   display: grid; justify-items: center; gap: 2px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;
   -webkit-tap-highlight-color: transparent; transform-origin: 50% 0; z-index: 1;
   --leaf: clamp(44px, 11cqi, 88px); animation: tr-hang 7.5s var(--breath) infinite alternate; animation-delay: calc(var(--x) * -97ms);
-  rotate: 0deg; transition: rotate 1.8s var(--settle); }
+ }
+/* the people lean with the tree and settle slowly: scenery, so the lean is on the parts (pointer-events none), and the button itself answers at once */
+.tr-p > :is(.tr-leaf, .tr-tag) { pointer-events: none; rotate: 0deg; }
+.tr-p > .tr-leaf { transform-origin: 50% 0; }
 @keyframes tr-hang { from { transform: rotate(-.8deg); } to { transform: rotate(.8deg); } }
-.tree.moving .tr-p { rotate: .7deg; transition-duration: 1s; }
+.tree.moving .tr-p > :is(.tr-leaf, .tr-tag) { rotate: .7deg; transition-duration: 320ms, var(--dur-quick), 1s; }
 .tr-leaf { position: relative; display: grid; place-items: center; inline-size: var(--leaf); aspect-ratio: var(--leaf-ar, 120 / 152);
   background: url("/assets/tree/leaf.svg") center / contain no-repeat;
-  transition: transform 320ms var(--settle), filter var(--dur-quick) ease; }
+  transition: transform 320ms var(--settle), filter var(--dur-quick) ease, rotate 1.8s var(--settle); }
 .tr-face { inline-size: var(--face-w, 62%); aspect-ratio: 1; margin-block-end: var(--face-y, 22%); border-radius: 50%; overflow: hidden; display: grid; place-items: center;
   background: #f6efe0; border: 2.5px solid #2a1c12; color: #3b2a1a; font-weight: 700; font-size: calc(var(--leaf) * .22); line-height: 1; }
 .tr-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
-.tr-tag { position: relative; display: grid; transition: translate 320ms var(--settle), filter var(--dur-quick) ease; justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
+.tr-tag { position: relative; display: grid; transition: translate 320ms var(--settle), filter var(--dur-quick) ease, rotate 1.8s var(--settle); justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
   border: 2px solid #2a1c12; border-radius: 10px; color: #3a2614; line-height: 1.2; text-align: center; direction: rtl;
   background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(122, 82, 40, .12) 7px 8.5px), linear-gradient(#e2bf88, #d3a86e);
   box-shadow: inset 0 0 0 2px rgba(255, 240, 210, .45), 0 3px 0 -1px rgba(42, 28, 18, .35); }

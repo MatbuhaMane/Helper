@@ -17,6 +17,9 @@ _Updated 2026-11-14 (the new chat, round 18)._
   - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
   - Exercise illustrations come later.
 - Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 20: the Telegram audit after v161
+- The tree's people lean with the tree on their parts (the leaf and the tag, pointer-events none), so the button itself stays still. /family/ passes T3.
+- Left for the CEO: the moon (in index.html), two images without a size in index.html, and a style flush for T11 in the audit (f2-tw).
 ## Round 19: batch 31, "רמת הניג׳וס" (the look)
 - Four levels by `data-nag`, with a bell icon each (`assets/nag-icons/`).
 - The picker `.nag`, the bell `.nag-bell` (`.own` gets a dot), the item's mark `.nag-mark` and `.nag-inherit`, all in base.css.

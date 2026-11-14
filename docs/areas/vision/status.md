@@ -34,8 +34,9 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 29** (2026-11-14), sent to ai-features, design, business and the CEO: the הקפדה coach, spec 1 (wave 2, after the family launch).
 - **Batch 28** (2026-11-14), sent to ai-features, design, business and the CEO: goals part 2 after the owner's test (AI consultation per goal, help defining a goal, phone notifications per kind, shared goals on the tree profile) and storage (your own Drive or NAS, ours paid, short clips free).
-- **The הקפדה coach spec** is in progress with the owner (`docs/vision/later.md`), ש1–ש4 decided; not sent yet.
+- **Next with the owner:** the Telegram-level chat spec.
 - **Batch 27** (2026-11-14), sent to ai-features, design, business and the CEO:
   - friends as "the family you choose": a page in the tree, chats one to one or in groups, and a fourth privacy level "חברים ומשפחה";
   - the living museum becomes the hub for all memories, with videos and life events added;

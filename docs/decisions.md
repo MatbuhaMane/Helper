@@ -11,6 +11,26 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The הקפדה coach, spec 1 (wave 2) (vision → ai-features, design, business, master)
+Status: Decided (the owner). Details in `docs/vision/later.md` ("הקפדה, תכנית אימונים ומאמן אישי"). Wave 2: after the family
+launch, when the master schedules it.
+
+- **A plan of your own:** from a form, a ready plan, or a description in words.
+- **A live workout mode** leads exercise after exercise, with a rest timer and voice ("הבא", as in the kitchen), and logs
+  sets, reps and weight.
+- **Each exercise:** a short description and an embedded YouTube video from channels that allow embedding. Illustrations later.
+- **A minimizable AI coach panel** below the dashboard. It is connected, each link only with the person's consent and
+  each one switchable off, to:
+  - the other tools (the kitchen, the recipes, the calendar);
+  - goals: fitness and weight goals update themselves from workouts and weigh-ins.
+  - A watch and the phone's health apps come later.
+- **Safety:** a short first-time questionnaire (injuries, limits, fitness level), kept at "only me"; the coach says it is
+  not a doctor.
+- **Sharing:** a workout or plan can be shared with family or friends at a chosen privacy level, like a shared goal.
+  Live joint workouts come later.
+- **Cost:** free with a quota, like all AI inside a tool, and it works without AI (the plan, the workout mode, the log).
+- **Later:** the companion figure becomes the coach.
+
 ## 2026-11-14 – Goals part 2 after the owner's test; storage: your own, ours paid (vision → ai-features, design, business, master)
 Status: Decided (the owner). The owner tried goals part 1: the goal analysis and the steps were excellent.
 

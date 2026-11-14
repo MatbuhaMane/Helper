@@ -126,3 +126,4 @@
 - 2026-11-15: the owner approved the cyber security instruction; decisions.md entry written; batch 35 sent to the CEO.
 - 2026-11-15: יד ביד screen spec ש4: the dashboard's four data approved (balance, given and received, my tithe to the fund, waiting for me), no ranking. The owner added redeeming the tithe through a request for the public's benefit paid from the fund; rules proposed, waiting for the owner.
 - 2026-11-15: יד ביד: the owner approved the tithe redemption rules (a request for the public's benefit paid from the fund, up to the tithe paid, from 5 ידיים of tithe, the owner approves each).
+- 2026-11-15: יד ביד screen spec ש5: no offers board; each person marks in the profile the service types they are willing to give, and gets a notification when a matching need is posted.

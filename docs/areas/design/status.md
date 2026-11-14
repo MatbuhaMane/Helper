@@ -2,10 +2,22 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 11)._
+_Updated 2026-11-14 (the new chat, round 13)._
 
 
 
+
+## Round 13: the night sky is full-bleed and global (the owner's image 39)
+- One fixed sky layer for the whole window, in base.css, with tokens for day and night (`--sky-top`, `--sky-mid`, `--sky-stars`). The stars twinkle by opacity only. Spec: `docs/design/sky.md`.
+- The tent turns it on through `.sky`; the future scenes (the garage, the hill) turn it on with `data-scene` on `<html>`.
+- The tent's box keeps only the sun and the moon. On a wide window its sides and hills fade out, so no edge or strip shows.
+- Checked at 375, 1280 and 1920, light and dark. The audit on the home page is clean.
+
+## Round 12: the back door's switchboard and the tent's moods (look only; the logic is ai-features')
+- Spec and class names: `docs/design/switchboard.md`.
+- `admin.css`: מצב האוהל as a collapsible `<details>` (one line when closed, an alert dot); the switchboard as category cards, friendly switches (44px targets, a danger colour) and a segmented control for three states; row states saving/saved/failed.
+- `base.css`: `html[data-mood="celebrate"|"mourn"]` and `html[data-kodesh]` token overrides, light and dark. Celebration has a confetti and balloon burst (`.cel-burst`); mourning has a candle note (`.mood-note`). Motion is transform and opacity only, and reduced motion is respected.
+- Checked on a mock at 375 and 1280, light and dark: the audit was clean, and the token contrast in every mood is ≥6:1. Kodesh is a look default; the owner decides what it means.
 
 ## Round 11: the drawn app icons (the owner's sheet 38)
 - 21 icons cut from the sheet into `public/assets/app-icons/<name>.webp` (256px, transparent; script `docs/design/art/cut-tool-icons-38.py`).

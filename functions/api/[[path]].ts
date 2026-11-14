@@ -60,6 +60,7 @@ import * as layout from '../../server/layout';
 import * as parnasa from '../../server/parnasa';
 import * as appAccess from '../../server/app-access';
 import * as home from '../../server/home';
+import * as garden from '../../server/garden';
 import * as cook from '../../server/cook';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
@@ -625,6 +626,15 @@ route('POST', '/api/home', home.save);
 route('PUT', '/api/home/:id', home.save);
 route('DELETE', '/api/home/:id', home.remove);
 route('POST', '/api/home/:id/done', home.done);
+/* הגינה (ai-features, server/garden.ts; docs/decisions.md 2026-11-14): the household's plants, watering by the weather, identify and the plant doctor */
+route('GET', '/api/garden', garden.list);
+route('POST', '/api/garden', garden.save);
+route('POST', '/api/garden/identify', garden.identify);
+route('POST', '/api/garden/doctor', garden.doctor);
+route('PUT', '/api/garden/:id', garden.save);
+route('DELETE', '/api/garden/:id', garden.remove);
+route('GET', '/api/garden/:id/photo', garden.photo);
+route('POST', '/api/garden/:id/water', garden.water);
 /* עוזר מטבח (ai-features, server/cook.ts): the voice chef, and the timers that ring with the app closed */
 route('GET', '/api/cook/ask', cook.quota);
 route('POST', '/api/cook/ask', cook.ask);

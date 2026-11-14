@@ -26,6 +26,15 @@ Updated by the department at the end of every meaningful round of work. Short: t
   - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
+- **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
+  with a ceiling of about ₪120,000 a year.
+  - Added to `business-plan.md` (sections 8 and 9) and to the deck's forecast slide, as a threshold to plan for and not
+    tax advice ⚖.
+  - The ceiling counts all of that עוסק's turnover. No VAT is charged below it, so the tables' net figures are
+    conservative.
+  - Preparation point [הנחה]: plan the move with an accountant when the last 12 months' turnover passes about ₪90,000.
+  - The middle scenario crosses the ceiling in year 3, the optimistic one in year 2.
+
 - **AI inside a tool, free with a quota (2026-11-14, from vision batch 26):** `docs/business/ai-quota.md`.
   **Decided (the owner, 2026-11-14), all of it.** Recorded in `docs/decisions.md`, sent to vision and ai-features:
   - A daily free quota per person: 20 answers from the voice chef, 3 plant photos, 5 "איך אני עושה" questions.

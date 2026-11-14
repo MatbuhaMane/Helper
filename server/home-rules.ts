@@ -58,6 +58,14 @@ export function due(it: Pick<HomeItem, 'every_days' | 'last_done'>, today: strin
   return { next, days, state: days < 0 ? 'late' : days <= near ? 'soon' : 'ok' };
 }
 
+/** the morning reminder (the owner's answer ש7): the due date to remind about today, or null. It goes on the day an item
+    is due, or the first morning it is late, and once for each due date (reminded holds the last one). */
+export function remindFor(it: Pick<HomeItem, 'every_days' | 'last_done'> & { reminded?: string | null }, today: string): string | null {
+  const d = due(it, today);
+  if (!d.next || d.days == null || d.days > 0) return null;
+  return it.reminded === d.next ? null : d.next;
+}
+
 /** the warranty: 'over', 'ending' (within 60 days), 'on', or null when none was written */
 export function warranty(until: string | null, today: string): { state: 'over' | 'ending' | 'on'; days: number } | null {
   if (!until) return null;

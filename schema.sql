@@ -1369,6 +1369,8 @@ CREATE TABLE IF NOT EXISTS home_items (
   warranty_until TEXT,               -- YYYY-MM-DD
   note           TEXT,
   created_by     TEXT,
+  remind_to      TEXT,               -- who gets the reminder (the owner's answer ש7); null: whoever added it
+  reminded       TEXT,               -- the due date last reminded, so a reminder goes once
   created_at     INTEGER NOT NULL,
   updated_at     INTEGER NOT NULL,
   PRIMARY KEY (household, id)
@@ -1381,3 +1383,13 @@ CREATE TABLE IF NOT EXISTS home_log (
   at         INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS home_log_hh ON home_log (household, at);
+
+-- עוזר מטבח (ai-features, server/cook.ts): the running kitchen timers, so they ring with the app closed (the minute cron)
+CREATE TABLE IF NOT EXISTS cook_timers (
+  email   TEXT NOT NULL,
+  id      TEXT NOT NULL,
+  name    TEXT NOT NULL,
+  end_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE INDEX IF NOT EXISTS cook_timers_end ON cook_timers (end_at);

@@ -67,5 +67,13 @@ eq('the warranty rides along', R.sortItems(items, T).find((x) => x.id === 'c').w
 eq('every preset has a name, an interval and a tip', R.PRESETS.every((p) => p.name && p.every_days > 0 && p.tip), true);
 eq('kinds are unique', new Set(R.PRESETS.map((p) => p.kind)).size, R.PRESETS.length);
 
+// the morning reminder (ש7): on the day it is due or the first morning it is late, once for each due date
+eq('remind: due today', R.remindFor({ every_days: 30, last_done: '2026-10-15' }, T), '2026-11-14');
+eq('remind: late, not yet reminded', R.remindFor({ every_days: 30, last_done: '2026-10-01' }, T), '2026-10-31');
+eq('remind: once per due date', R.remindFor({ every_days: 30, last_done: '2026-10-01', reminded: '2026-10-31' }, T), null);
+eq('remind: done again, a new date', R.remindFor({ every_days: 30, last_done: '2026-10-15', reminded: '2026-10-31' }, T), '2026-11-14');
+eq('remind: not yet due', R.remindFor({ every_days: 30, last_done: '2026-11-01' }, T), null);
+eq('remind: no interval', R.remindFor({ every_days: null, last_done: '2026-01-01' }, T), null);
+eq('remind: never done', R.remindFor({ every_days: 30, last_done: null }, T), null);
 console.log(fail ? `home: ${fail} failed, ${pass} passed` : `home: all ${pass} tests passed`);
 process.exit(fail ? 1 : 0);

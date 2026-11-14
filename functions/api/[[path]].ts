@@ -60,6 +60,7 @@ import * as layout from '../../server/layout';
 import * as parnasa from '../../server/parnasa';
 import * as appAccess from '../../server/app-access';
 import * as home from '../../server/home';
+import * as cook from '../../server/cook';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -624,6 +625,10 @@ route('POST', '/api/home', home.save);
 route('PUT', '/api/home/:id', home.save);
 route('DELETE', '/api/home/:id', home.remove);
 route('POST', '/api/home/:id/done', home.done);
+/* עוזר מטבח (ai-features, server/cook.ts): the voice chef, and the timers that ring with the app closed */
+route('GET', '/api/cook/ask', cook.quota);
+route('POST', '/api/cook/ask', cook.ask);
+route('PUT', '/api/cook/timers', cook.setTimers);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

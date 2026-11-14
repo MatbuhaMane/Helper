@@ -34,6 +34,10 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 27** (2026-11-14), sent to ai-features, design, business and the CEO:
+  - friends as "the family you choose": a page in the tree, chats one to one or in groups, and a fourth privacy level "חברים ומשפחה";
+  - the living museum becomes the hub for all memories, with videos and life events added;
+  - "גבעה ביער" waits for enough users.
 - **Batch 26** (2026-11-14), sent to ai-features-2, business and the CEO: the owner answered all 21 future-tool questions.
   - The answers are in `docs/vision/future-specs.md` and in `docs/decisions.md`.
   - AI inside a tool is free with a quota; business sets the quota and the price.

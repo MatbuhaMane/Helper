@@ -11,6 +11,33 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Friends ("the family you choose"), a fourth privacy level, the story hub; "גבעה ביער" waits (vision → ai-features, design, business, master)
+Status: Decided (the owner).
+
+- **Friends: "the family you choose".**
+  - A new page in the family tree: friends, from inside the family and from outside it.
+  - People talk with them one to one, or in groups.
+  - Friends see only what a person published.
+  - **A fourth privacy level, "חברים ומשפחה" (friends and family).** The four levels:
+    - everyone;
+    - friends and family (new);
+    - family only;
+    - only me.
+  - Everything the social layer already decided (`docs/vision/social.md`) stays: invitation by link, mutual approval,
+    and the "a cousin of your grandmother" notice when a friend is also in the family forest.
+- **The family story ("the living museum") is the hub for all the family's memories.**
+  - It holds all the family's photos, videos and recordings, each with the story behind it.
+  - People add events from their own lives.
+  - Others read what was left and look back together.
+  - Spec 1 (`docs/vision/story.md`) stands; videos and life events are added. It still comes after the family launch.
+  - Business checks the storage cost of videos against the owner's rule "what we have, no extra investment".
+- **"גבעה ביער" waits** until enough people have joined to justify a social network. It gets no spec until then and stays
+  "בקרוב".
+- **Who does what:**
+  - ai-features: the friends page, the privacy level on every published item, and later the story hub;
+  - design: the friends page in the tree, and how the privacy choice looks;
+  - the master: the new privacy level touches the permission checks, so the master reviews it before merging.
+
 ## 2026-11-14 – The owner answers the 21 future-tool questions; AI inside a tool is free with a quota (vision → ai-features, business, design, master)
 The owner answered all 21 questions in `docs/vision/future-specs.md` (relayed by the CEO). The answers are written into
 each spec and into the table at the end of that file. Status: Decided (the owner).

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>העץ, באץ' 18</title>
   <!-- The sample for vision batch 18 (contract: docs/design/tree-18.md). Copy to public/ to view it.
-       ?season=auto|summer|autumn|winter|spring  ?kind=olive|canopy  ?state=menu|edit|banner|full|dock  &theme=dark -->
+       ?season=auto|summer|autumn|winter|spring  ?kind=pine|olive|canopy  ?state=menu|edit|banner|full|dock  &theme=dark -->
   <link rel="stylesheet" href="/assets/base.css">
   <link rel="stylesheet" href="/assets/tree.css">
   <style>
@@ -17,7 +17,8 @@
 <body>
 <div class="bar fv-views" role="radiogroup" aria-label="עונה" id="seasons"></div>
 <div class="bar" role="radiogroup" aria-label="איזה עץ" id="kinds">
-  <button class="chip" type="button" role="radio" aria-checked="true" data-kind="canopy">עץ ב׳</button>
+  <button class="chip" type="button" role="radio" aria-checked="true" data-kind="pine">אורן</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-kind="canopy">עץ ב׳</button>
   <button class="chip" type="button" role="radio" aria-checked="false" data-kind="olive">עץ א׳</button>
   <button class="chip" type="button" aria-disabled="true" title="עיצובי עץ, מסגרות ורקעים שנפתחים בשימוש">עיצובים <span class="tag-soon">בקרוב</span></button>
 </div>
@@ -172,7 +173,7 @@
       if (st === 'dock') toDock(b, p);
     }, 50);
   }
-  if (Q.get('kind') === 'olive') document.querySelector('#kinds [data-kind="olive"]').click(); else draw('canopy');
+  const k0 = ['olive', 'canopy'].includes(Q.get('kind')) ? Q.get('kind') : 'pine'; if (k0 === 'pine') draw('pine'); else document.querySelector(`#kinds [data-kind="${k0}"]`).click();
 </script>
 </body>
 </html>

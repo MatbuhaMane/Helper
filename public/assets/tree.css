@@ -35,6 +35,10 @@
 /* the second tree, the wide canopy: a shorter box, and its boughs spring from the middle of the trunk */
 .tree[data-kind="canopy"] { aspect-ratio: 1000 / 1500; }
 .tree[data-kind="canopy"] .tree-boughs { transform-origin: 50% 45%; }
+/* the pine (אורן, the default after vision batch 23): the same 2:3 box; its boughs come off the trunk in three tiers, so they
+   sway from the trunk's middle */
+.tree[data-kind="pine"] { aspect-ratio: 1000 / 1500; }
+.tree[data-kind="pine"] .tree-boughs { transform-origin: 50% 55%; }
 @keyframes tr-sway { from { transform: rotate(-.3deg); } to { transform: rotate(.3deg); } }
 @keyframes tr-sway-low { from { transform: rotate(-.15deg); } to { transform: rotate(.15deg); } }
 /* off screen (the JS adds .off from an IntersectionObserver) the tree holds still, so it costs nothing while you read elsewhere */
@@ -154,7 +158,7 @@
 /* ---- one screen: the tree fits the height left between the bars (ai-features sets .fit; --tree-chrome is what the page
    keeps above and below it). Pinch and pan move the tree inside .tree-stage by --z, --px and --py (scale and translate). */
 .tree.fit { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1800)); }
-.tree.fit[data-kind="canopy"] { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1500)); }
+.tree.fit:is([data-kind="canopy"], [data-kind="pine"]) { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1500)); }
 .tree-stage { position: relative; overflow: hidden; touch-action: none; overscroll-behavior: contain; border-radius: 18px; }
 .tree-stage > .tree { transform-origin: 0 0; translate: var(--px, 0px) var(--py, 0px); scale: var(--z, 1); }
 .tree-stage.zooming > .tree, .tree-stage.zooming .tr-p { transition: none; }
@@ -178,6 +182,8 @@
 .tree[data-season]:not([data-season="summer"]) :is(.tree-dress, .tree-fall) { display: block; }
 .tree[data-kind="olive"] { --crown-mask: url("/assets/tree/olive/crown.svg"); }
 .tree[data-kind="canopy"] { --crown-mask: url("/assets/tree/canopy/crown.webp"); }
+/* the pine's needles are spread over all its tiers, so its mask is the foliage alone (foliage.webp), not the crown layer */
+.tree[data-kind="pine"] { --crown-mask: url("/assets/tree/pine/foliage.webp"); }
 .tree-dress { background: var(--dress) 0 0 / 15cqi 15cqi repeat; opacity: .92;
   -webkit-mask: var(--crown-mask) center / 100% 100% no-repeat; mask: var(--crown-mask) center / 100% 100% no-repeat;
   transform-origin: var(--crown-x) var(--crown-y); animation: tr-sway 9s var(--breath) infinite alternate; rotate: 0deg; transition: rotate 1.6s var(--settle); }
@@ -203,6 +209,9 @@
 .tree[data-season="spring"] .tree-crown { --season-f: hue-rotate(10deg) saturate(1.2) brightness(1.05); }
 .tree[data-season="spring"] .tree-ground { --season-f: hue-rotate(8deg) saturate(1.15) brightness(1.04); }
 .tree[data-season="spring"] .tree-dress { opacity: .85; background-size: 17cqi 17cqi; }
+/* a pine is evergreen: in autumn it only dulls a little (no turn to red), the falling leaves still pass in front */
+.tree[data-kind="pine"][data-season="autumn"] :is(.tree-crown, .tree-boughs) { --season-f: saturate(.85) sepia(.12) brightness(1.02); }
+.tree[data-kind="pine"][data-season="autumn"] .tree-dress { opacity: .55; }
 .tree.off .tree-dress, .tree.off .tree-fall::before, .tree.off .tree-fall::after { animation-play-state: paused; }
 
 /* ---- the empty leaf: a person in the generations with no record yet. Pale, a dashed leaf, a "?" for a face; a tap adds them.

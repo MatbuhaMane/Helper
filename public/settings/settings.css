@@ -209,3 +209,43 @@ details.st-sec[open] > .st-body { animation: st-open .3s var(--ease-river) both;
 .fv-item > .btn, .fv-item > .row { justify-self: start; }
 .fv-form .btn.danger { color: var(--danger, #b3261e); }
 .st-vault .btn { min-block-size: 40px; }
+
+/* ---------- notifications: each kind on its row, with "גם כהודעה לטלפון" (goals part 2, docs/design/goals-2.md) ---------- */
+.st-ntfs { list-style: none; margin: 0; padding: 0; display: grid; }
+.st-ntf { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 10px 0; border-block-end: 1px solid var(--line); }
+.st-ntf:last-child { border-block-end: 0; }
+.st-ntf > div > b { display: block; font-weight: 500; }
+.st-ntf > div > small { color: var(--muted); font-size: .84rem; }
+/* the phone switch: a small phone mark and the switch (.st-switch); its text can hide on a phone, the aria-label stays */
+.st-ntf .st-switch { gap: 8px; font-size: .84rem; color: var(--muted); min-block-size: 44px; }
+.st-ntf .st-switch::before { content: ""; inline-size: 14px; block-size: 20px; border: 2px solid currentColor; border-radius: 4px; box-sizing: border-box; flex: none; opacity: .7; }
+.st-ntf .st-switch:has(input:checked) { color: var(--text); }
+.st-ntf.fixed .st-switch { cursor: default; }   /* on the default list (shabbat-notifications.md): on, with the reason in small */
+.st-ntf .st-switch input:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 480px) { .st-ntf .st-switch > span { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); } }
+.st-quiet { margin: 0; padding: 10px 14px; border-radius: 14px; font-size: .86rem; background: color-mix(in srgb, var(--olive) 12%, var(--card)); }
+
+/* ---------- connect your storage: Google Drive or a NAS (later; the cards are .st-service, the same as the services) ---------- */
+.st-store { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; align-items: start; }
+.st-store > h2, .st-store > p { grid-column: 1 / -1; margin: 0; line-height: 1.55; }
+.st-service[data-store="drive"] h3::before { background: url(/assets/bd-icons/structure.svg) center / 18px no-repeat, color-mix(in srgb, #3d7ea6 16%, var(--card)); }
+.st-service[data-store="nas"] h3::before { background: url(/assets/bd-icons/home.svg) center / 18px no-repeat, color-mix(in srgb, var(--olive) 22%, var(--card)); }
+/* what gets kept there: a short list with ticks */
+.st-store-what { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .9rem; }
+.st-store-what > li { display: flex; gap: 8px; align-items: baseline; }
+.st-store-what > li::before { content: "✓"; color: var(--primary); font-weight: 700; }
+/* the space used: a bar that fills by transform (--p: 0–100) */
+.st-meter { display: grid; gap: 4px; font-size: .82rem; color: var(--muted); }
+.st-meter > i { display: block; block-size: 8px; border-radius: 8px; overflow: hidden; background: color-mix(in srgb, var(--text) 9%, transparent); contain: paint; }
+.st-meter > i::before { content: ""; display: block; block-size: 100%; background: var(--primary); transform-origin: 100% 50%; transform: scaleX(calc(var(--p, 0) / 100));
+  transition: transform var(--dur-draw, .6s) var(--ease-river, ease); }
+:root[dir="ltr"] .st-meter > i::before { transform-origin: 0 50%; }
+.st-meter.full > i::before { background: var(--danger); }
+/* the state line of a store: waiting for the permission, syncing, an error */
+.st-store-state { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; font-size: .84rem;
+  background: color-mix(in srgb, var(--text) 6%, transparent); color: var(--text); }
+.st-store-state[data-s="wait"] { background: color-mix(in srgb, #b8862b 16%, var(--card)); }
+.st-store-state[data-s="sync"] { background: color-mix(in srgb, #3d7ea6 14%, var(--card)); }
+.st-store-state[data-s="error"] { background: color-mix(in srgb, var(--danger) 14%, var(--card)); }
+.st-nas-form { display: grid; gap: 10px; }
+.st-nas-form input { inline-size: 100%; direction: ltr; text-align: start; }

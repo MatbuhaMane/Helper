@@ -2,10 +2,49 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 13)._
+_Updated 2026-11-14 (the new chat, round 17)._
 
 
 
+
+## Queued
+- Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
+- Vision batch 29 (vision dfd8ce9), the הקפדה coach, wave 2 after the family launch, planning only:
+  - a live workout screen (the exercise, a rest timer, voice, logging sets, reps and weight);
+  - an exercise card (a short description and an embedded video);
+  - a coach panel that minimizes, under the הקפדה dashboard;
+  - a first-time safety questionnaire;
+  - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
+  - Exercise illustrations come later.
+- Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 17: batch 30, the motion for the whole tent (the Telegram test)
+- The "Motion" section of base.css:
+  - instant taps (`touch-action`), smooth scrolling, and a spinner only after 400 ms;
+  - skeletons (`.skel`), arriving lists (`.arrive`), the swipe row and swipe-to-reply (`.swipe`), the long-press menu (`.lp-menu`), and the phone sheet's drag (`.sheet-grip`);
+  - hold-to-speed on videos (`.vid-speed`), plus the tokens `--ease-spring` and `--dur-settle`.
+- The rules for every department are in `docs/design/motion.md`. The gestures' JS belongs to ai-features and the master (`common.js` for the sheet).
+- Checked with the audit at 375 and 1280 px, light and dark, on a mock and on the home, messages, goals and settings pages: clean.
+
+## Round 16: batch 28, the look of goals part 2 (the logic is ai-features')
+- The advice window on a goal's page (`.gl-ask`), with "שמור מסקנה" (`.gl-keep`) pinning to `.gl-pins`. From 1000 px it is a sticky column (`.gl-split`).
+- "עזור לי להגדיר" (`.gl-helpdef`) and the AI's wording as a draft (`.gl-draft`).
+- A shared goal: `.gl-share` with `.priv-chip`; on the profile in the tree, `.fv-goals` / `.fv-goal` with a ring and a `.priv-tag`.
+- The settings: `.st-ntfs` / `.st-ntf` with a "גם כהודעה לטלפון" switch per kind, and `.st-quiet`.
+- The storage screen (`.st-store`, reusing `.st-service`): designed now, connected last, because the Drive permission waits for the CEO's review.
+- The spec is `docs/design/goals-2.md`, sent to ai-features (local_4953355f). Checked on a mock at 375 and 1280 px, light and dark, with the audit clean.
+
+## Round 15: batch 27, the privacy picker and the friends page (look only; the logic is ai-features')
+- **Four levels** (`data-level` all / friends / family / me): a full picker (2×2 on a phone, 4 across on a PC), a chip and a tag. They live in base.css and use four new icons in `assets/priv-icons/`.
+- **The friends page:** in family.css, with the invite link, "גילינו שאתם קרובים", requests, the friends grid and the new-group picker, plus the note on the children's rule.
+- **Group chats:** they reuse `.dm`, adding an avatar stack, the sender's name and a member count, all in messages.css.
+- **Spec:** `docs/design/friends.md`, with the class names sent to ai-features.
+- **Checked** on a mock at 375 and 1280 px, light and dark, with the audit clean (one low-contrast avatar was fixed).
+- **Not done:** the real pages (they wait for ai-features' JS), and the mapping of the old story levels (household / tribe / private), which is the JS's job.
+
+## Round 14: v158 checked after merging main
+- /admin: its switchboard markup, run in the real page, is clean at 375 and 1280, light and dark. The page itself is behind the biometric sign-in, so the switchboard was built there from admin.js's own markup.
+- The moods: party (confetti and balloons from switches.js), mourning (the candles above the tab bar; the palette and pictures faded) and kodesh.
+- The sky at 1920 has no box edge. The audit of / and /tools is clean at 375, 1280 and 1920.
 
 ## Round 13: the night sky is full-bleed and global (the owner's image 39)
 - One fixed sky layer for the whole window, in base.css, with tokens for day and night (`--sky-top`, `--sky-mid`, `--sky-stars`). The stars twinkle by opacity only. Spec: `docs/design/sky.md`.

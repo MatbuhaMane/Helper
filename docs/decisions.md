@@ -11,6 +11,42 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Telegram-level smoothness across the whole app; the chat, spec 1 (wave 2) (vision → design, ai-features, master)
+Status: Decided (the owner). Details in `docs/vision/later.md` ("ממשק השיחות, ברמה של טלגרם").
+
+- **The whole app, now: Telegram's smooth feel, in the Ohel's own look** (our tokens, font and backgrounds, not
+  Telegram's). This widens the premium-motion rule of batch 16 to every screen:
+  - an action shows at once, without waiting for the server;
+  - no spinners;
+  - smooth scrolling;
+  - swipe gestures;
+  - gentle animated transitions; nothing jumps.
+  - **The Telegram test:** a screen that feels slower or clumsier than Telegram on the phone is not done.
+  - **Who does what:** design defines the motion, ai-features the speed, and the master measures.
+- **Every video player:** hold a finger on the video and slide to raise the speed gradually, up to high speeds; release
+  to return to normal.
+- **The chat, spec 1 (wave 2, after the family launch):**
+  - **Quality before quantity:** fewer features, each polished to Telegram's level.
+  - **Encryption like Telegram:**
+    - ordinary chats are encrypted on the server, and the assistant and search work on them;
+    - a one-to-one "secret chat" is end-to-end encrypted, with no assistant;
+    - the master reviews the secret chat's security before it is built.
+  - **v1:**
+    - reply, reactions, edit and delete, read and typing marks;
+    - voice messages (hold to record, slide to cancel, slide up to lock);
+    - photos, videos and files, with a viewer (pinch zoom, swipe down to close);
+    - Ohel stickers;
+    - pin, forward, search, mute;
+    - swipe actions in the chat list;
+    - floating bubbles (pin, drag, drag to close);
+    - a wallpaper per chat;
+    - **the Ohel live card:** share a recipe, a shopping list, a goal or a museum item into a chat.
+  - **Groups and communities.** A community is an umbrella of groups, such as the extended family with "the cousins"
+    and "the parents" inside it. In v1 they are for family and friends only; public communities wait for "גבעה ביער".
+  - **Disappearing messages:** a timer per chat. This is an explicit choice of the participants, so it is allowed; the
+    "never delete" rule still holds for memories and documents.
+  - **Later:** polls, scheduled messages, video circles, chat folders, channels, voice and video calls.
+
 ## 2026-11-14 – The הקפדה coach, spec 1 (wave 2) (vision → ai-features, design, business, master)
 Status: Decided (the owner). Details in `docs/vision/later.md` ("הקפדה, תכנית אימונים ומאמן אישי"). Wave 2: after the family
 launch, when the master schedules it.

@@ -101,3 +101,4 @@
 - 2026-11-14: the owner approved goals part 2 and the storage model (own storage, paid package, short clips free); coach ש1-ש4 decided in later.md; batch 28 sent.
 - 2026-11-14: ai-features batches now go to the current ai-features chat local_4953355f (CEO); batches 27-28 queued there by the CEO; the Drive scope and the 4th privacy level wait for the CEO's review and the owner's OK before going live.
 - 2026-11-14: coach ש5 decided (share with family or friends); the coach spec 1 closed and sent as batch 29 (wave 2); the chat spec started.
+- 2026-11-14: the owner wants Telegram's sleek feel across the whole app; chat spec 1 closed (quality first, encryption like Telegram, groups and communities, disappearing messages, the live card); batch 30 sent.

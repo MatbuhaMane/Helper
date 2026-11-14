@@ -2,7 +2,82 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the toolbox's new look; the side pages beside the tent; vision batch 18: the family tree after test run 1; batch 17b merged as v149 and v150)._
+_Updated 2026-11-14: a full handover. This chat moves to a fresh one with the same name (the owner's decision)._
+
+## Handover (2026-11-14) – read this first
+
+**Who and where:**
+- I am the design department (ד).
+- I work only in `M:\Claude Code\Helper-design`, on branch `design`. Dev server: port 8789, inspector 9230 (`.claude/launch.json`).
+- I answer the owner in Hebrew.
+
+**My files:**
+- `public/**/*.css` (base.css with the tokens, launcher.css, sides.css, tree.css, admin.css, campfire.css…);
+- images, icons and fonts under `public/assets/` (not `common.js` or `apps.js`);
+- `public/figures/`, `figures/`, the figure skills in `.claude/skills/`, `docs/design/`, and this file.
+- Files owned by others get a proposal, never an edit.
+
+**The rules I work by:**
+- **Commits:** small ones, ending with the `Co-Authored-By` line.
+- **Never:** bump `CACHE`, merge into main, or push. Merging main into design is allowed, and wanted before each commit.
+- **Send each finished piece for merge right away,** in small, frequent batches.
+- **Scope class names** with a component prefix (`tb-`, `tr-`, `st-`…), and scope a page's rules under its root, as sides.css
+  is under `.pager-page`.
+- **"Done"** means checked at 375 and 1280, light and dark, with the audit clean. Motion is `transform` and `opacity` only.
+- **Saving usage:** check with text or JS first; screenshots at scale ≤ 0.5 or `zoom`.
+- **Security:** never read or print `.dev.vars`. Ask the owner before installing any tool.
+- **Not run in the browser pane:** the IntersectionObserver, smooth scrolling, CSS transitions and view transitions. To
+  check, add `*{animation:none!important;transition:none!important}`, set the classes by hand, and use
+  `scrollIntoView({behavior:'instant'})`.
+- **Running the audit:** copy `tools/audit.js` to `public/__audit.js`, load it in the page, then run
+  `await __auditDesk(['/page/'], 375, 812)` and `(…, 1280, 800)`. Delete the copy afterwards.
+- **The audit's blind spots:** it doesn't see text over a pseudo-element background, or hit areas made of pseudo-elements.
+- **A known trap:** a pseudo-element inside `:is()` is dropped silently. Write `X::before` as its own selector.
+- **When SendMessage is blocked:** hand-overs go to the shared notes folder (`side-session-notes/local_3881a822-…/design-*.md`).
+
+**Unmerged on `design`** (oldest first; main is fully merged in, the last merge 9e16f66):
+- 868cfb9, 90bd6a4, 9ced735: batch 18, the tree after test run 1. CSS plus the contract `docs/design/tree-18.md`.
+- 17bdc33, 0089d21, 5274c04: the side pages beside the tent (`sides.css`, `soon/garage-scene.svg`).
+- 892a1d6, 3fc1a5c: the toolbox's new look (`launcher.css` `tb-`, contract `docs/design/toolbox.md`).
+- All of it is inert until its markup arrives, so it is safe to merge now.
+
+**Open:**
+1. **The side pages.**
+   - The master adds `<link rel="stylesheet" href="/assets/sides.css">` in index.html, after campfire.css.
+   - **A risk:** the parts are hidden until `.is-here`. If the observer never fires, they stay hidden. The proposed safety
+     net: the master sets `pager.dataset.watch` when it starts the observer, and I hide the parts only under `[data-watch]`.
+   - **A limit:** a side page is as tall as the tent page, so you can scroll down into empty space. A fix in index.html:
+     pages out of view get `block-size: 100svh; overflow: hidden`.
+   - **A proposal:** rename `.side` to `.pg-side` in index.html. sides.css would follow.
+   - **Not seen:** the entrance moving.
+2. **The toolbox look.**
+   - Waiting for ai-features' markup, by `docs/design/toolbox.md`: `.folder.tb`, `.tb-sort` (a radiogroup), `.tb-cats` and
+     `.tb-cat`, `button.app.tb-future` with `.tag-soon` "בעתיד", and the beta badge through `H.expTag`.
+   - When the markup lands:
+     - check the slide and the arrange mode together;
+     - check whether the בעתיד icon is too pale at night (`.app.tb-future .ic > * { opacity: .5 }`).
+   - **Proposals:** sticky category headers on a phone; a letter divider in לפי שם; folding a category by its count.
+3. **`st-ph`, the drop spot in עץ מבנה** (admin.css ~387).
+   - **The defect:** `@keyframes st-ph { from { block-size: 0; opacity: 0 } }` animates a layout property, which breaks the
+     motion rule.
+   - **The proposed fix:** fade it in with `opacity` and `scale: 1 .6`, with `transform-origin: top`, and no `block-size`.
+     The rows then make room at once instead of opening smoothly; that is the price of the rule.
+   - Check it on `docs/design/prototype/structure.html`. Not started (the master: nothing new before the handover).
+4. **Batch 18, the tree.**
+   - Waiting for ai-features (`family.js`), by `tree-18.md` sections 1–8.
+   - Not checked: touch (the pinch, the long press, the dock drag) and the view transitions animating.
+5. **Waiting on ai-features from earlier rounds:**
+   - `.mk` in study.js, and the `.bd-inv` markup;
+   - the book's ＋ in the top row, and the daemon's resting spot (`no-overlap.md`);
+   - the shopping list's markup (`shopping-lists.md`).
+6. **For the master's audit (`tools/audit.js`):**
+   - a check for a pseudo-element inside `:is()` (grep `:is([^)]*::`);
+   - contrast over pseudo-element backgrounds;
+   - hit areas made of pseudo-elements.
+
+---
+
+## History (newest first)
 
 **Where we stand (a brief for the next round):**
 - **Ready: the toolbox's new look (the owner, 2026-11-14), CSS only, waiting for ai-features' markup.** Commit 892a1d6.

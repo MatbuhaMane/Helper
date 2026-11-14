@@ -109,3 +109,4 @@
 - 2026-11-14: internal economy ש3 decided: the owner keeps the list of services and their tiers; a tier belongs to the service, by difficulty and required expertise together.
 - 2026-11-14: internal economy: the owner approved the closed loop (no buying or cashing out, separate from credits), the two-question scoring rule and the values 1/2/4/8 per hour tier.
 - 2026-11-14: internal economy ש4 decided: first tokens come only through approved community deeds (no join grant, no negative balance).
+- 2026-11-14: internal economy: the owner wants a 10% tithe of every token kept in a public fund; what it applies to and what the fund does are open; ש5 (who can trade) still open.

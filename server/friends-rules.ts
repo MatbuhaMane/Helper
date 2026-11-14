@@ -105,5 +105,6 @@ export function initials(name: string): string {
 export function hue(id: string): string {
   let h = 0;
   for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  h = Math.imul(h ^ (h >>> 16), 0x45d9f3b) >>> 0; h = (h ^ (h >>> 16)) >>> 0;   // so ids that differ in one letter differ in colour
   return `hsl(${h % 360} 45% 42%)`;
 }

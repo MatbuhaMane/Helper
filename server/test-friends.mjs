@@ -73,6 +73,7 @@ eq('a child when the maker is not family', F.groupMembers('me@x', [P('kid@home',
 eq('initials of two words', F.initials('דנה לוי'), 'דל');
 eq('initials of one', F.initials('Noa'), 'NO');
 eq('initials of nothing', F.initials(''), '?');
+ok('neighbouring ids get colours far apart', Math.abs(parseInt(F.hue('g0').slice(4)) - parseInt(F.hue('g1').slice(4))) > 10);
 ok('a steady colour', F.hue('f123') === F.hue('f123') && /^hsl\(\d+ 45% 42%\)$/.test(F.hue('f123')));
 
 console.log(`friends: ${pass} passed, ${fail} failed`);

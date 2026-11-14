@@ -195,7 +195,9 @@ export async function exportDraft(ctx: Ctx) {
   if (fmt === 'html') return new Response(htmlPage(d.title, c), { headers: { 'content-type': 'text/html; charset=utf-8' } });   // shown, to print or save as PDF
   // a real .docx, written here (research-pack.ts): headings, lists, the notes and the bibliography, right to left
   if (fmt === 'docx') return new Response(Pk.docx(d.title, c.text, c.bibliography, c.notes), { headers: { 'content-type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'content-disposition': disp('docx') } });
-  if (fmt === 'slides') return new Response(Pk.slidesHtml(d.title, c.text, C.mdToHtml), { headers: { 'content-type': 'text/html; charset=utf-8' } });
+  if (fmt === 'slides') return new Response(Pk.slidesHtml(d.title, c.text, C.mdToHtml), { headers: { 'content-type': 'text/html; charset=utf-8',
+    // its own small inline script turns the slides; sandboxed, so that script (and anything in the text) runs with no access to the Ohel
+    'content-security-policy': "sandbox allow-scripts allow-modals; default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src https: data: blob:" } });
   const used = new Set<string>(), keys = new Map<string, string>(), entries: string[] = [];
   for (const s of m.sources) { const e = C.bibtex(s.csl, used); keys.set(s.id, /\{([^,]+),/.exec(e)![1]); if (c.cited.includes(s.id)) entries.push(e); }
   // the .bib is always references.bib, the name the LaTeX file asks for (a Hebrew file name trips BibTeX)

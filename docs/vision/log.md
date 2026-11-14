@@ -129,3 +129,4 @@
 - 2026-11-15: יד ביד screen spec ש5: no offers board; each person marks in the profile the service types they are willing to give, and gets a notification when a matching need is posted.
 - 2026-11-15: יד ביד screen spec ש6: community deeds live inside לוח הדרושים marked "לטובת הציבור", "עשיתי מעשה" in the create-need panel, and the fund page opens from the dashboard. The screen spec is complete; read back to the owner.
 - 2026-11-15: the owner approved the whole screen spec of יד ביד stage 1, including the location privacy rules and the fund page privacy; decisions.md entry written; batch 36 sent to design, ai-features and the CEO.
+- 2026-11-15: the CEO confirmed batch 36 (design may start; the estimate after the family bugs); ai-features sent the refined estimate (3-4 times goals, six parts) and six simplifications for stage 1, recorded in yad-beyad.md and waiting for the owner.

@@ -3190,3 +3190,22 @@ On `ai-features`, not yet merged. Status: ready for the master's review.
   - package.json: npm test runs test-inbox, and test:inbox (2b7581c and the fix 599ad1e: apply both).
 - **For design, if wanted:** the tab uses `.tabs`, `.card` and the existing list styles.
   - `.dm` sets `display: grid`, which beats `[hidden]`. So messages.js hides the conversations panel with an inline `display: none`. A `.dm[hidden] { display: none }` rule in messages.css would make that line unneeded.
+
+## 2026-11-14 · The companion answers faster (ai-features, the master's batch 14 §7)
+On  (32d5a7c), not yet merged. No master file is touched: the stream is on the same route.
+
+- **Streaming.** POST /api/daemon/chat streams server-sent events when the client sends :
+  -  {t}: the words as they come;
+  -  {t}: "בודק…" between tool rounds, and "מחפש…" during a web search;
+  - one  at the end, the JSON answer's shape ({reply, events, sources, daemon}, plus model), or  {error}.
+  - Other clients get JSON as before. An error before the first byte (credit 402, 429, a bad request) is an ordinary JSON error, and the client then retries on JSON.
+- **Models** ( in server/daemon.ts): claude-sonnet-5-5 for everyday chat; claude-opus-5-5 for research, comparison, analysis, planning, the mailbox, more than 400 characters, or three question marks. Both use effort low, fallbacks 'default' and the same beta. The meter records the model.
+- **Caching:** a breakpoint on the system prompt's block and on the last tool, plus top-level automatic caching for the conversation. The system prompt was already stable (the time and state ride in the user turn).
+  - Measured locally: the uncached input fell from about 12,000 tokens a turn to 2–4, and the rest is read from the cache.
+- **A shorter context, cut in steps:** past 16 turns of the person, the last 8 are kept, with the memory notes in front. That is about 12 turns on average.
+  - A fixed window of 12 would change the start of the history every turn. That would break the cache and invalidate Claude's thinking, which is bound to its history.
+  - At a cut, the old thinking blocks are dropped once.
+- **PROMPT_VERSION 15:** stored conversations start fresh, keeping the memory notes.
+- **Time to the first word** (locally, 5 questions):
+  - before: 3.1–5.8 s, average 4.0, on Opus with no cache and no stream;
+  - after: 1.0–1.3 s for chat, 2.3 s on a fresh conversation, 3.4–5.0 s when a tool runs first. The figure shows "thinking" at once (4 ms).

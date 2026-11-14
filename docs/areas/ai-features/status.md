@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the inbox's מהאוהל tab).
+Last update: 2026-11-14 (the companion answers faster).
 
 ## Handover to the next ai-features chat (2026-11-14)
 
@@ -36,6 +36,9 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 
 ### Not merged into main (on `ai-features`, after 1ca3564)
 
+- **The companion answers faster** (batch 14 §7), ready for review: 32d5a7c, no master files.
+  - It streams (SSE on the same route, with JSON as the fallback), uses Sonnet for chat and Opus for heavy work, caches the prompt, and cuts the context in steps.
+  - First word: 4.0 s before, about 1.1 s after (chat). Tests and the audit pass at 375 and 1280, light and dark.
 - **The inbox's מהאוהל tab**, ready for the master's review:
   - c10ecd5 the feature (/messages tab, /api/inbox, the /admin keep box, test-inbox 13);
   - 657f33f router and COLUMNS (master, patch);

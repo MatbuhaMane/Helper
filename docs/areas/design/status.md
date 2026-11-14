@@ -8,6 +8,7 @@ _Updated 2026-11-14 (the new chat, round 18)._
 
 
 ## Queued
+- Vision batch 31 (vision d5472bf): "רמת הניג׳וס", the notification settings. Each tool gets four levels (כבוי/שקט/רגיל/נודניק), plus quiet hours, a bell in each tool, and a mark on an item that differs from its tool. It comes next, after the motion round.
 - Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
 - Vision batch 29 (vision dfd8ce9), the הקפדה coach, wave 2 after the family launch, planning only:
   - a live workout screen (the exercise, a rest timer, voice, logging sets, reps and weight);
@@ -22,7 +23,7 @@ _Updated 2026-11-14 (the new chat, round 18)._
 - A new museum kind, "אירוע מהחיים" (`data-kind="event"`): a calendar-and-star icon (`assets/story/event.svg`) and a blue-olive `--k`.
 - The friends page: an email invite in `.fr-invite`, the card's museum link and "הסרה" on a second row, `a.fr-talk`, and an invite that came by link with no avatar.
 - The audit is clean at 375 and 1280 px, light and dark. `friends.md` is updated.
-- After the v159 merge, the new Telegram audit was run on 5 pages. Fixed: the user chip icon, the tab pebble (240 ms), the settings card shadow, and the tree's filters. Messages, tasks and settings are clean. Waiting for the CEO: an allowlist for the ambient scenes (the home sky and sun, the tree's leaves and swaying), and the T11 false positive.
+- After the v159 merge, the new Telegram audit was run on 5 pages. Fixed: the user chip icon, the tab pebble (240 ms), the settings card shadow, and the tree's filters. Messages, tasks and settings are clean. The allowlist of endless animations (four kinds: waiting, live, edit mode, scenery) and the rule for slow scenery are in `motion.md`, for the CEO to copy into ENDLESS. The rest is in the CEO's files: index.html's timings, plus T7 and T11 in the audit.
 ## Round 17: batch 30, the motion for the whole tent (the Telegram test)
 - The "Motion" section of base.css:
   - instant taps (`touch-action`), smooth scrolling, and a spinner only after 400 ms;

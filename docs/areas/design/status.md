@@ -2,10 +2,268 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (vision batch 17b: the toast fits v148, no control on another, למקרר and the drag; batch 17: the toast at the top, the lists panel, choosing many, a category icon; batch 16: a smoother recipe flip and animation audit, "סיכום היום" every day, the recipe book's tab menu; batch 15: the "בקרוב" pictures and note)._
+_Updated 2026-11-14: a full handover. This chat moves to a fresh one with the same name (the owner's decision)._
+
+## Handover (2026-11-14) – read this first
+
+**Who and where:**
+- I am the design department (ד).
+- I work only in `M:\Claude Code\Helper-design`, on branch `design`. Dev server: port 8789, inspector 9230 (`.claude/launch.json`).
+- I answer the owner in Hebrew.
+
+**My files:**
+- `public/**/*.css` (base.css with the tokens, launcher.css, sides.css, tree.css, admin.css, campfire.css…);
+- images, icons and fonts under `public/assets/` (not `common.js` or `apps.js`);
+- `public/figures/`, `figures/`, the figure skills in `.claude/skills/`, `docs/design/`, and this file.
+- Files owned by others get a proposal, never an edit.
+
+**The rules I work by:**
+- **Commits:** small ones, ending with the `Co-Authored-By` line.
+- **Never:** bump `CACHE`, merge into main, or push. Merging main into design is allowed, and wanted before each commit.
+- **Send each finished piece for merge right away,** in small, frequent batches.
+- **Scope class names** with a component prefix (`tb-`, `tr-`, `st-`…), and scope a page's rules under its root, as sides.css
+  is under `.pager-page`.
+- **"Done"** means checked at 375 and 1280, light and dark, with the audit clean. Motion is `transform` and `opacity` only.
+- **Saving usage:** check with text or JS first; screenshots at scale ≤ 0.5 or `zoom`.
+- **Security:** never read or print `.dev.vars`. Ask the owner before installing any tool.
+- **Not run in the browser pane:** the IntersectionObserver, smooth scrolling, CSS transitions and view transitions. To
+  check, add `*{animation:none!important;transition:none!important}`, set the classes by hand, and use
+  `scrollIntoView({behavior:'instant'})`.
+- **Running the audit:** copy `tools/audit.js` to `public/__audit.js`, load it in the page, then run
+  `await __auditDesk(['/page/'], 375, 812)` and `(…, 1280, 800)`. Delete the copy afterwards.
+- **The audit's blind spots:** it doesn't see text over a pseudo-element background, or hit areas made of pseudo-elements.
+- **A known trap:** a pseudo-element inside `:is()` is dropped silently. Write `X::before` as its own selector.
+- **When SendMessage is blocked:** hand-overs go to the shared notes folder (`side-session-notes/local_3881a822-…/design-*.md`).
+
+**Unmerged on `design`** (oldest first; main is fully merged in, the last merge 53a867c (217b86d)):
+- 868cfb9, 90bd6a4, 9ced735: batch 18, the tree after test run 1. CSS plus the contract `docs/design/tree-18.md`.
+- 17bdc33, 0089d21, 5274c04: the side pages beside the tent (`sides.css`, `soon/garage-scene.svg`).
+- 892a1d6, 3fc1a5c: the toolbox's new look (`launcher.css` `tb-`, contract `docs/design/toolbox.md`).
+- The future items' pictures: batch 19 (a49ae07), batch 20 (bc3ce8c) and batch 22's `eye`.
+- All of it is inert until its markup arrives, so it is safe to merge now.
+
+**Open:**
+1. **The side pages.**
+   - The master adds `<link rel="stylesheet" href="/assets/sides.css">` in index.html, after campfire.css.
+   - **A risk:** the parts are hidden until `.is-here`. If the observer never fires, they stay hidden. The proposed safety
+     net: the master sets `pager.dataset.watch` when it starts the observer, and I hide the parts only under `[data-watch]`.
+   - **A limit:** a side page is as tall as the tent page, so you can scroll down into empty space. A fix in index.html:
+     pages out of view get `block-size: 100svh; overflow: hidden`.
+   - **A proposal:** rename `.side` to `.pg-side` in index.html. sides.css would follow.
+   - **Not seen:** the entrance moving.
+2. **The toolbox look.**
+   - Waiting for ai-features' markup, by `docs/design/toolbox.md`: `.folder.tb`, `.tb-sort` (a radiogroup), `.tb-cats` and
+     `.tb-cat`, `button.app.tb-future` with `.tag-soon` "בעתיד", and the beta badge through `H.expTag`.
+   - When the markup lands:
+     - check the slide and the arrange mode together;
+     - check whether the בעתיד icon is too pale at night (`.app.tb-future .ic > * { opacity: .5 }`).
+   - **Proposals:** sticky category headers on a phone; a letter divider in לפי שם; folding a category by its count.
+3. **`st-ph`, the drop spot in עץ מבנה** (admin.css ~387).
+   - **The defect:** `@keyframes st-ph { from { block-size: 0; opacity: 0 } }` animates a layout property, which breaks the
+     motion rule.
+   - **The proposed fix:** fade it in with `opacity` and `scale: 1 .6`, with `transform-origin: top`, and no `block-size`.
+     The rows then make room at once instead of opening smoothly; that is the price of the rule.
+   - Check it on `docs/design/prototype/structure.html`. Not started (the master: nothing new before the handover).
+4. **Batch 18, the tree.**
+   - Waiting for ai-features (`family.js`), by `tree-18.md` sections 1–8.
+   - Not checked: touch (the pinch, the long press, the dock drag) and the view transitions animating.
+5. **Waiting on ai-features from earlier rounds:**
+   - `.mk` in study.js, and the `.bd-inv` markup;
+   - the book's ＋ in the top row, and the daemon's resting spot (`no-overlap.md`);
+   - the shopping list's markup (`shopping-lists.md`).
+6. **For the master's audit (`tools/audit.js`):**
+   - a check for a pseudo-element inside `:is()` (grep `:is([^)]*::`);
+   - contrast over pseudo-element backgrounds;
+   - hit areas made of pseudo-elements.
+
+7. **Vision batch 19 (2026-11-14): the three future items have pictures.**
+   - `public/assets/soon/kitchen.svg`, `breath.svg` and `howto.svg`, in the batch 15 style (320×240, ink #3b2416).
+   - **In the toolbox:** `.app.tb-future .ic.tb-pic > img` (`launcher.css`), described in `toolbox.md` §3.
+   - **The note's place:** עוזר מטבח in the recipe book, איך אני עושה in the tools menu. It is the uniform "בקרוב" note
+     (`.tag-soon` or `.soon-card`).
+   - The tools themselves are not ours to build.
+   - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and on `/tools/`.
+
+8. **Vision batch 20 (2026-11-14): the four future tools have pictures (bc3ce8c).**
+   - `public/assets/soon/garden.svg`, `home.svg`, `translate.svg` and `homework.svg`, the ids fixed in `H.FUTURE` on main
+     (299b135). The same style and the same `.tb-pic` tile as batch 19.
+     - garden: a pot with a plant, a watering can pouring, a seedling and a trowel, a sun;
+     - home: a house with a check badge, a wrench, a bulb and a drop (the things that need a look);
+     - translate: a globe, two bubbles (א and A), arrows between them, a die for the language game to come;
+     - homework: an open squared notebook with shapes, a pencil and an eraser, a lightbulb (it explains, it doesn't solve).
+   - **הסיפורים של סבא וסבתא** stays a note in a person's profile in the tree (`ul.tr-full-soon`, `tree-18.md` §8). No
+     picture was asked for, and it has no `H.FUTURE` id.
+   - **Checked:** 375 and 1280, light and dark, as tiles in the prototype. The audit is clean on the prototype and `/tools/`.
+
+9. **Vision batch 22 (2026-11-14): the picture for ع ב-ע (`eye`, labelled "עין בעין") is done.**
+   - `public/assets/soon/eye.svg`: two carved stones looking at each other, limestone with ع and basalt with ע, with a gaze between them.
+   - The id is `eye`, fixed in `H.FUTURE` on main (217b86d), beside מתורגמן in כלי עבודה.
+   - **The name:** it renders in Rubik, which has an Arabic subset, in the right RTL order. The accessible name comes from `f.label`;
+     the contract is `toolbox.md` §3, and the prototype now uses `a.label || a.name`.
+   - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and `/tools/`. The game itself is not built.
+
+10. **The owner draws some pictures himself (vision, 2026-11-14; the list is `docs/vision/assets.md` on `vision`).**
+    - **Section א (the tree, items 1–6: seasonal crowns and grounds, the leaf in three seasons, the empty leaf, the banner and
+      profile-head backgrounds):** the owner's. Design does not draw these; the CSS, motion and states go on, with placeholders
+      until the files arrive.
+    - **Section ב (the soon pictures):** stays design's. 8 exist.
+    - **Section ג (items 15–23, the art inside the future tools):** the owner's. None of it is ours.
+    - **When the folder arrives** (numbered by the list): convert, crop and place.
+    - **The missing specs went to vision** (`side-session-notes/…/design-assets-specs.md`, SendMessage was blocked):
+      - the crown and ground frame is 1400×2100 and must line up with crown.webp;
+      - the leaf is 120×152 portrait with a face circle of 62%;
+      - is a quiet leaf needed for the dead?
+      - the banner background must be light and calm;
+      - the profile head keeps a safe middle of 1000×500 for the phone.
+
+11. **Vision batch 23 (2026-11-14): tree skins.** Noted; nothing to do until the art arrives. The decision is "Tree skins" in
+    `docs/decisions.md` on `vision`, and the prompts are in `docs/vision/asset-prompts.md` there.
+    - **The skins:** the pine (an Aleppo pine) is the default and the olive is there from the start; the maple and the African
+      juniper come later.
+    - **The art:** the owner makes it with an image generator. Each tree comes as a whole image on white, plus three seasons.
+      - Portrait 2:3, five tiers, four open places per tier at about 15, 35, 65 and 85% of the width, and an open spot at the
+        bottom centre for the candle.
+    - **Design's part when it arrives:**
+      - cut each tree into its layers, the way `cut-tree-canopy.mjs` does (white background, not transparent, so the cut needs a key);
+      - measure a `slots.json` for each tree;
+      - check that the current canopy stays the fallback.
+
+12. **Vision batch 24 (2026-11-14): a person's form on each skin.** Noted; nothing to do until the art arrives. The decision is
+    "How a person is shown on each tree skin" in `docs/decisions.md` on `vision`; the prompts are in
+    `docs/vision/asset-prompts-full.md`.
+    - **The forms:**
+      - on the pine, a pine cone with the portrait on its face;
+      - on the olive, a round frame of twisting olive branches;
+      - the maple and the juniper are decided later.
+    - **The empty form,** for a person with no record: the same shape, pale and as an outline only.
+    - **The seasons:** the form changes with the season, like the tree.
+    - **The files:** `03-pine-cone-*`, `04-pine-cone-empty`, `03-olive-frame-*` and `04-olive-frame-empty`.
+    - **Design's part when they arrive:** cut them and size them like `leaf.svg`.
+      - `.tr-leaf` today has a fixed `aspect-ratio: 120 / 152` and the face at 62% width with `margin-block-end: 22%`.
+      - The forms need these per skin, as variables (`--leaf-ar`, `--face-w`, `--face-y`), set on `.tree[data-kind]`. The round
+        olive frame is about 1:1.
+      - The quiet look for a person who has died is then derived in CSS (open question 3 in `design-assets-specs.md`).
+
+13. **The owner's first images (4–21, 2026-11-14): cleaned, placed, and the tree ones wired in. Merge-ready.**
+    - **Commits:** e300510 (the pine), 7127662 (the cones), 84c3812 (the border and the sprites), 5c4f3b4 (the scenes).
+    - **The originals** are in `data/art/owner-2026-11-14/` (ignored by git). The scripts that make every file from them are
+      `docs/design/cut-tree-pine.py`, `docs/design/cut-pine-cones.py` and `docs/design/art/cut-art-2026-11-14.py`.
+    - **Wired in, CSS and data only:**
+      - **The pine (16)** is `/assets/tree/pine/`: four layers, `slots.json`, and `foliage.webp` as the season-dress mask.
+        - The seams at rows 749–752 and 1453–1456 are filled.
+        - `sets.json` now lists pine first, so the pine is the default tree; then canopy and olive.
+        - A pine is evergreen, so in autumn it only dulls a little.
+      - **The person forms on the pine:** 12 for spring, 13 for summer and autumn, 14 for winter, a faded 13 for those who have
+        passed, and 11, darkened, for the empty form.
+        - In tree.css, `.tr-leaf` and `.tr-face` now read `--leaf-ar`, `--face-w` and `--face-y`. The pine sets them;
+          the defaults keep the leaf as it was, and the frame look keeps its own.
+      - **The prototype** `tree-18.html` has a pine chip, and `?kind=pine` is its default.
+    - **Placed, not wired:** the markup for these belongs to the master or ai-features.
+      - `/assets/frames/olive-border.webp` (4): a 9:16 border, transparent inside and out. It fits a profile page or a
+        share card. It is not the round olive form (see the re-roll).
+      - `/assets/kit/garage/` (6, the drawn labels left out): robot-vacuum, car, ev-charger, floor-heating, tv, set-top-box, remote.
+      - `/assets/kit/garden/` (7): monstera, pothos, snake-plant, cactus, basil, mint, tomato, olive.
+      - `/assets/kit/kitchen/` (8): measuring-jug (frosted glass), tablespoon, teaspoon, scale, timer.
+        Each sprite is 256×256 webp, 2–21 KB.
+      - `/assets/scenes/`, each at two widths:
+        - `desert-banner-1600|800` (9, cropped to the scene: rows 253–861);
+        - `scroll-1200|600` (10, transparent);
+        - `night-tent-1600|800` (5), proposed for the home page at night.
+    - **Checked:**
+      - the tree prototype at 375 and 1280, light and dark, in summer, autumn and winter;
+      - the audit shows the pine equal to the canopy. Its only findings are 3 overlaps among the four root-tier tags, the same
+        on the canopy, so they were there before;
+      - every sprite and scene on light and dark.
+    - **Weak spots:**
+      - **The face on a cone** is 49% of the form, against 62% on the leaf: about 22px at 375. A bigger cone crowded the tiers
+        (13 overlaps), so the leaf size stays.
+      - **The layers render late:** the tree layers (1334×2001) took about a second to appear in the pane, the same as the
+        canopy's.
+    - **Re-rolls for the owner:**
+      - **4 (the olive form):** it came as a tall 9:16 border. The olive form needs: "a round 1:1 wreath of twisting olive
+        branches, an open circle about 62% of the width in the centre, on white". It also needs an outline-only empty version.
+      - **11 (the empty cone):** used, darkened by the script. If the owner re-rolls it: "a darker brown line, the same
+        thickness as 13".
+      - **6 (the garage):** usable. For a cleaner set: "no text or labels anywhere in the image".
+      - **15:** a duplicate of 13 and not used. 17, 18, 20 and 21 are references only and not shipped.
+    - **Superseded by item 14:** the pine's layers, its foliage mask and the cones (12–14, 11) are retired.
+
+14. **The pine with seats (the owner's decision, 2026-11-14, from the master). Merge-ready.**
+    - **The decision:** the trees with the empty circles (21 summer, 20 autumn, 17 light snow, 18 heavy snow) are the family
+      tree. Wherever no person sits, the clean tree (16) shows instead.
+    - **Lighter than both options the master offered** (a clipped layer per circle, or a patch PNG per circle × season):
+      - the circles are filled in offline, from 16, in each seasonal picture. That gives one still picture per season,
+        `tree-{summer,autumn,winter,snow}.webp`, with only the clearings the circles left;
+      - the ring is CSS, only round a seated person (`#31231f`, the drawing's line weight; dashed on cream for the empty form);
+      - there are no runtime patches, and a fifth person on a tier still gets a ring.
+    - **The colour:** 16's foliage takes the season's colour from a smooth colour field of the season's foliage round each
+      circle. The autumn crown comes out yellow and the snowy trees keep their green, with no lilac from the snow.
+    - **20 seats, not 16** (5 tiers × 4). The coordinates, the slots fields and the placement rule are in
+      `docs/design/tree-pine-seats.md`. The script is `docs/design/cut-tree-pine-seats.py`.
+    - **The prototype** places people on the seats (`seats()`: the seats nearest the middle).
+    - **For ai-features (family.js):**
+      - placement on the seats when `slots.seat` is set;
+      - `data-season` on `.tree`.
+      - Until then the pine shows summer, and people are spread along the lines, not on the seats.
+    - **tree.css:** the pine's tag is capped at 13.4cqi (the closest seats are 13.8% apart), and the dates may wrap.
+      - This also removed the 3 old overlaps in the roots row on the pine.
+    - **Checked:** 375 and 1280, light and dark; summer, autumn, winter, snow and spring. The audit is clean.
+    - **Weak spots:**
+      - the filled-in clumps at the outer seats of `low` and `mid` are a little rounded, which shows only when the seat is empty;
+      - each picture is 229–305 KB, and only the active one loads;
+      - the pine no longer sways.
+
+---
+
+## History (newest first)
 
 **Where we stand (a brief for the next round):**
-- **Ready: vision batch 17b, after v148 (2026-11-14).**
+- **Ready: the toolbox's new look (the owner, 2026-11-14), CSS only, waiting for ai-features' markup.** Commit 892a1d6.
+  - In `launcher.css`, with the `tb-` prefix:
+    - the sort switch `.tb-sort`: three ways, a vine stone, and a trail that slides by `:has`;
+    - the category headers `.tb-cat`;
+    - the "בעתיד" items `.app.tb-future`, with a `.tag-soon` in the corner;
+    - the beta badge reuses `.tag-exp`.
+  - The folder takes `.tb`, so the tool rack stays.
+  - **The contract for ai-features:** `docs/design/toolbox.md`, with the prototype `docs/design/prototype/toolbox.html`.
+  - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and on `/tools/`.
+- **Ready: the side pages beside the tent (the owner, 2026-11-14), for the master to link and merge.**
+  - `public/assets/sides.css`. **The master adds** `<link rel="stylesheet" href="/assets/sides.css">` in index.html after campfire.css.
+    - The page is centred in the first screen, over the tent's own sky and limestone.
+    - When a page gets `.is-here`, its parts rise and fade in, staggered by `--i`. Reduced motion shows them still.
+    - The dots are restyled at 44px: small stones, and the page in view is a vine stone.
+  - `public/assets/soon/garage-scene.svg`: a symbolic shed with tools, a charging post on the right and a workbench on the left.
+  - **Checked:** 375 and 1280, light and dark. The audit of `/` is clean, motion included.
+  - **Not seen:** the entrance moving, because the pane runs neither the IntersectionObserver nor transitions.
+- **Ready: vision batch 18, design part (2026-11-14).** The contract for ai-features is `docs/design/tree-18.md`; the prototype is
+  `docs/design/prototype/tree-18.html`.
+  - **868cfb9, the assets:**
+    - autumn, winter and spring tiles in `assets/tree/season/`: a dress masked by the crown, and a sparse fall;
+    - `leaf-empty.svg`, a dashed leaf;
+    - generated by `docs/design/make-seasons.mjs`.
+  - **90bd6a4, tree.css** (block "vision batch 18"):
+    - the seasons (`data-season`; "לפי העונה" goes by the month, kept in prefs `family.treeSeason`);
+    - `.fit` for one screen, and the stage with pinch and zoom (`--z`, `--px`, `--py`);
+    - the empty leaf;
+    - the floating glass menu (פרופיל, תמונות, הודעה, and עריכה on a long press);
+    - leaf ⇄ banner ⇄ full profile through view transitions (a sheet on a phone, a 420px panel from 900px);
+    - the profile docked as a side tab;
+    - the leaf detached by a drag;
+    - the "בקרוב" notes: the "עיצובים" chip and a list in the profile.
+    - Also fixed: pseudo-elements inside `:is()` dropped silently, so the fall didn't stop under reduced motion or pause off
+      screen. An old rule had the same flaw.
+  - **Checked:**
+    - at 375 and 1280, light and dark;
+    - no overflow;
+    - the menu clamped, with its arrow on the leaf;
+    - contrast about 8:1;
+    - buttons of 44px or more.
+  - **Not checked:**
+    - touch: the pinch, the long press, the dock drag;
+    - the view transitions animating, since the pane doesn't run them.
+  - **Waiting for ai-features:** the tree code (`family.js`), which is theirs.
+- **Merged: vision batch 17b** (a474983, 4fc5227, e95ed41, 99d77fd), in main as v149 and v150.
+- **Batch 17b details (merged):**
   - **a474983, the toast:** fits the v148 `H.toast` (centred by margin, so `translate` is the swipe alone; `.dragging` without
     transition; pointer cursor, touch-action none). For the master: clear `translate` only after the fade (`docs/design/toast.md`).
   - **4fc5227, no control on another (`campfire.css`, `docs/design/no-overlap.md`):**
@@ -141,11 +399,9 @@ _Updated 2026-11-14 (vision batch 17b: the toast fits v148, no control on anothe
     - with reduced motion.
   - **The family profile's look.** It is `public/family/profile.css` with five covers, `/assets/covers/*.svg`.
 - **Live in main (v93, v95): the covers at night** (e83f5ed) and **הרגלי אכילה's own icon** (d7b8192 and its common.js patch).
-- **Waiting for the owner: the new brand mark** (1a32930, `docs/design/brand/`, the sheet `options.jpg`). Three options join the tent and the old script:
-  - A: the script with the tent at its start; the app icon stays the tent.
-  - B: the shin glowing in the tent's doorway, one mark for the bar and the icon (recommended). The letter reads only from ~32 px.
-  - C: the shin turned over as a two-peaked roof; at small sizes it looks a little like mountains.
-  - Once the owner chooses, the `--bm-*` tokens go into base.css and the SVG goes to the CEO for BRAND in common.js.
+- **Closed by the owner (vision batch 21, 2026-11-14): the brand mark.** The current logo stays (`/assets/brand/ohel-logo.svg`).
+  Options A, B and C in `docs/design/brand/` (1a32930) are dropped; the folder is kept only as history. Details: "The owner closes
+  the open questions" in `docs/decisions.md` on `vision`.
 - **Ready to merge:** the profile faces' initial is darker (≥ 4.5:1 in light, it was 2.9:1, from ai-features' audit), and the tree prototype names עץ ב׳ (canopy) first and the olive עץ א׳ (v97).
 - **Ready to merge: the app icon from the owner's logo** (`public/assets/icons/ohel-*`, `docs/design/make-ohel-icons.mjs`): limestone tile, basalt ink,
   any + maskable, 16/32/48/180/192/512, `ohel-favicon.ico`, `ohel-apple-touch-icon.png`; looked at on a light and a dark ground. The master wires manifest.json and index.html.

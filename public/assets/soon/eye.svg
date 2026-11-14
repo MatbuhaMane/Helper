@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>ع ב-ע, עין בעין</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- the limestone stone, to the left, carved with the Arabic ain -->
+<path d="M30 214L24 104Q26 78 54 74L116 70Q140 72 142 98L146 214Z" fill="#eadcbc"/>
+<path d="M40 96Q44 84 60 84" stroke="#f6eedb" stroke-width="3"/>
+<path d="M102 130C90 120 74 126 78 140C82 148 94 148 102 144C80 150 64 164 68 184C72 200 94 202 110 194" stroke="#a88a5e" stroke-width="10"/>
+<path d="M102 130C90 120 74 126 78 140C82 148 94 148 102 144C80 150 64 164 68 184C72 200 94 202 110 194" stroke="#6e5434" stroke-width="5"/>
+<!-- its eye, looking right -->
+<path d="M66 102Q84 88 102 102Q84 116 66 102Z" fill="#fff" stroke-width="3"/><circle cx="90" cy="102" r="5" fill="#3b2416" stroke="none"/><circle cx="92" cy="100" r="1.6" fill="#fff" stroke="none"/>
+<!-- the basalt stone, to the right, carved with the Hebrew ayin -->
+<path d="M176 214L172 100Q174 76 200 72L266 74Q294 78 294 106L290 214Z" fill="#3e3a38"/>
+<path d="M186 96Q190 84 206 84" stroke="#5c5753" stroke-width="3"/>
+<path d="M266 122C266 160 260 184 230 191L204 194M218 122L256 170" stroke="#1f1c1b" stroke-width="10"/>
+<path d="M266 122C266 160 260 184 230 191L204 194M218 122L256 170" stroke="#d8cfbd" stroke-width="5"/>
+<!-- its eye, looking left -->
+<path d="M218 100Q236 86 254 100Q236 114 218 100Z" fill="#fff" stroke-width="3"/><circle cx="230" cy="100" r="5" fill="#3b2416" stroke="none"/><circle cx="232" cy="98" r="1.6" fill="#fff" stroke="none"/>
+<!-- the gaze between them, and a spark where it meets -->
+<path d="M110 100h8M128 100h8M146 100h8M164 100h8M182 100h8M200 100h8" stroke="#c9944e" stroke-width="3"/>
+<path d="M159 66l3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#f0b62e" stroke-width="2.5"/>
+<!-- a sprout between the stones: the tent's world -->
+<path d="M160 214v-14" stroke="#5e8a3a" stroke-width="3"/><path d="M160 206c-6-1-9-5-9-9c5 0 9 3 9 9ZM160 204c5-1 8-4 8-8c-5 0-8 3-8 8Z" fill="#7aa64e" stroke="#2f4f22" stroke-width="2"/>
+</svg>

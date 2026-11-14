@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>tb test</title><link rel="stylesheet" href="/assets/base.css"><link rel="stylesheet" href="/assets/launcher.css"></head>
+<body><main class="wide"></main>
+<script src="/assets/common.js"></script><script src="/assets/apps.js"></script>
+<script>
+const el = H.el, icon = (n) => (H.appIcon ? H.appIcon(n) : H.icon(n));
+const tile = (a, n) => a.future
+  ? el('button', { class: 'app tb-future', type: 'button', style: `--n:${n}`, 'aria-label': (a.label || a.name) + ', בעתיד' },
+      el('span', { class: 'ic tb-pic' }, el('img', { src: `/assets/soon/${a.id}.svg`, alt: '', decoding: 'async' })), el('span', { class: 'name' }, a.name), el('span', { class: 'tag-soon' }, 'בעתיד'))
+  : el('a', { class: 'app', href: a.href, style: `--c1:${a.c1};--c2:${a.c2};--n:${n}${a.tint ? ';--tint:' + a.tint : ''}` },
+      el('span', { class: 'ic' }, icon(a.ic)), el('span', { class: 'name' }, a.name), H.expTag(a));
+const find = (h) => h.startsWith('soon:') ? { ...H.FUTURE.find((f) => f.id === h.slice(5)), future: true } : H.APPS.find((a) => a.href === h);
+const sort = el('div', { class: 'tb-sort', role: 'radiogroup', 'aria-label': 'סידור הכלים' },
+  ['ידני', 'לפי שם', 'לפי קטגוריה'].map((t, i) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(i === 2),
+    onclick: (e) => { for (const b of sort.children) b.setAttribute('aria-checked', String(b === e.currentTarget)); } }, t)));
+const cats = el('div', { class: 'tb-cats' }, H.CATS.map((c, k) => {
+  const list = c.apps.map(find).filter(Boolean);
+  return el('section', { class: 'tb-cat', style: `--k:${k}`, 'aria-labelledby': 'tb-cat-' + c.id },
+    el('h2', { class: 'tb-cat-head', id: 'tb-cat-' + c.id }, el('span', {}, c.name), el('span', { class: 'tb-cat-count', 'aria-label': list.length + ' כלים' }, String(list.length))),
+    el('nav', { class: 'apps-grid flat', 'aria-label': c.name }, list.map(tile)));
+}));
+document.querySelector('main').append(el('div', { class: 'folder tb' },
+  el('div', { class: 'folder-head' }, el('h1', {}, 'כלים'), el('p', {}, 'עוזרים קטנים לסדר בבית, וכל חלקי האוהל')), sort, cats));
+</script></body></html>

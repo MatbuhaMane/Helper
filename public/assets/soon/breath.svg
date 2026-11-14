@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>מדיטציה ונשימה</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- a low sun and the quiet sky -->
+<circle cx="252" cy="62" r="20" fill="#f6e6b4"/>
+<path d="M252 30v-8M282 62h8M273 41l6-6M231 41l-6-6" stroke="#e3a12b" stroke-width="3"/>
+<!-- the ground, a soft rise of grass -->
+<path d="M24 220Q160 182 296 220Z" fill="#b7cc95" stroke-width="3.5"/>
+<!-- the cushion of the ring round the fire -->
+<path d="M96 200q0-26 64-28q64 2 64 28q0 18-64 18q-64 0-64-18Z" fill="#e3a12b"/>
+<path d="M104 196q56 12 112 0" stroke="#f6c86a" stroke-width="3"/>
+<!-- a cairn of three stones, balanced -->
+<ellipse cx="160" cy="160" rx="32" ry="13" fill="#9a9488"/>
+<ellipse cx="158" cy="135" rx="23" ry="11" fill="#b4ad9f"/>
+<ellipse cx="161" cy="114" rx="14" ry="8" fill="#d9d2c2"/>
+<!-- the breath: soft curls in and out -->
+<path d="M110 118c-22-4-24-32-2-36c14-2 18 14 6 16" stroke="#6f9ccc" stroke-width="3.5"/>
+<path d="M210 118c22-4 24-32 2-36c-14-2-18 14-6 16" stroke="#6f9ccc" stroke-width="3.5"/>
+<path d="M84 140h0M236 140h0M74 104h0M246 104h0" stroke="#6f9ccc" stroke-width="5"/>
+<!-- a sprout and a leaf on the air: the tent's world -->
+<path d="M250 210v-14" stroke="#5e8a3a" stroke-width="3"/><path d="M250 202c-6-1-9-5-9-9c5 0 9 3 9 9ZM250 200c5-1 8-4 8-8c-5 0-8 3-8 8Z" fill="#7aa64e" stroke="#2f4f22" stroke-width="2"/>
+<path d="M62 62c10-8 22-6 26 2c-10 6-20 6-26-2Z" fill="#7aa64e" stroke="#2f4f22" stroke-width="2.5"/>
+</svg>

@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>העץ, באץ' 18</title>
+  <!-- The sample for vision batch 18 (contract: docs/design/tree-18.md). Copy to public/ to view it.
+       ?season=auto|summer|autumn|winter|spring  ?kind=pine|olive|canopy  ?state=menu|edit|banner|full|dock  &theme=dark -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/assets/tree.css">
+  <style>
+    body { margin: 0; }
+    .bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 10px 16px 0; }
+    .stage-wrap { padding: 10px max(8px, env(safe-area-inset-right)) 120px max(8px, env(safe-area-inset-left)); }
+  </style>
+</head>
+<body>
+<div class="bar fv-views" role="radiogroup" aria-label="עונה" id="seasons"></div>
+<div class="bar" role="radiogroup" aria-label="איזה עץ" id="kinds">
+  <button class="chip" type="button" role="radio" aria-checked="true" data-kind="pine">אורן</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-kind="canopy">עץ ב׳</button>
+  <button class="chip" type="button" role="radio" aria-checked="false" data-kind="olive">עץ א׳</button>
+  <button class="chip" type="button" aria-disabled="true" title="עיצובי עץ, מסגרות ורקעים שנפתחים בשימוש">עיצובים <span class="tag-soon">בקרוב</span></button>
+</div>
+<div class="stage-wrap"><div class="tree fit" id="tree" style="--tree-chrome: 230px"></div></div>
+<div class="tr-menu" id="trMenu" role="menu" hidden>
+  <b class="tr-menu-name"></b>
+  <div class="tr-menu-acts">
+    <button role="menuitem" type="button" data-act="profile"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.8 3.6-6 7-6s6.2 2.2 7 6"/></svg><span>פרופיל</span></button>
+    <button role="menuitem" type="button" data-act="photos"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4.5 3 3 2.5-2.5L19 17"/></svg><span>תמונות</span></button>
+    <button role="menuitem" type="button" data-act="message"><svg viewBox="0 0 24 24"><path d="M5 5h14a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 19 16h-7l-4.5 3.5V16H5a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 5 5z"/></svg><span>הודעה</span></button>
+    <button role="menuitem" type="button" data-act="edit" hidden><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg><span>עריכה</span></button>
+  </div>
+</div>
+<script>
+  const FAMILY = {
+    roots: [{ n: '?', empty: 'אבא של אברהם' }, { n: 'אברהם כהן', r: 'סבא רבא', d: 'תר״ן–תשכ״ב', passed: 1 }, { n: 'שרה כהן', r: 'סבתא רבתא', d: 'תרנ״ה–תשל״א', passed: 1 }, { n: '?', empty: 'אמא של שרה' }],
+    low: [{ n: 'יעקב לוי', r: 'סבא', d: 'תרפ״ה–תשס״ב', passed: 1 }, { n: 'רחל לוי', r: 'סבתא' }, { n: 'משה כהן', r: 'סבא' }, { n: 'מרים כהן', r: 'סבתא' }],
+    mid: [{ n: 'דוד כהן', r: 'אבא' }, { n: 'רות כהן', r: 'אמא' }, { n: 'נעמי', r: 'דודה' }, { n: 'יוסף', r: 'דוד' }],
+    crown: [{ n: 'איתי', r: 'אח' }, { n: 'דנה כהן', r: 'אני', me: 1 }, { n: 'נועה', r: 'אחות', bday: 1 }, { n: 'עומר', r: 'בן דוד' }],
+    top: [{ n: 'אורי', r: 'בן' }, { n: 'מאיה', r: 'בת' }],
+  };
+  const Q = new URLSearchParams(location.search);
+  if (Q.get('theme')) document.documentElement.dataset.theme = Q.get('theme');
+  const el = (tag, attrs = {}, ...kids) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) if (v == null) continue; else if (k === 'style') e.style.cssText = v; else if (k.startsWith('on')) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v); e.append(...kids.flat().filter((x) => x != null && x !== false)); return e; };
+  const svgI = (d) => { const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = d; return s; };
+  const IC = { leaf: '<path d="M12 21c-5-3-7-7-6-11 1-4 4-6 6-7 2 1 5 3 6 7 1 4-1 8-6 11z"/><path d="M12 19V7"/>', down: '<path d="M6 9l6 6 6-6"/>', pin: '<path d="M9 4h6l-1 5 3 3H7l3-3zM12 12v8"/>', x: '<path d="M6 6l12 12M18 6L6 18"/>' };
+  const tree = document.getElementById('tree'), menu = document.getElementById('trMenu');
+  const ini = (n) => n.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join('');
+  function spread(line, n) {
+    const seg = line.slice(1).map((p, i) => Math.hypot(p[0] - line[i][0], (p[1] - line[i][1]) * 1.8)), total = seg.reduce((a, b) => a + b, 0);
+    return Array.from({ length: n }, (_, k) => { let d = total * (n === 1 ? 0.5 : (k + 0.5) / n), i = 0; while (i < seg.length - 1 && d > seg[i]) { d -= seg[i]; i++; }
+      const t = seg[i] ? d / seg[i] : 0; return [line[i][0] + (line[i + 1][0] - line[i][0]) * t, line[i][1] + (line[i + 1][1] - line[i][1]) * t]; });
+  }
+  // a set with seats (slots.seat, the pine): the tier's line is its seats; people take the middle ones first, in order.
+  // More people than seats: spread along the line as on any tree (the ring is drawn by CSS, so it still shows)
+  function seats(line, n) {
+    if (n > line.length) return spread(line, n);
+    const mid = (line.length - 1) / 2;
+    const pick = line.map((_, i) => i).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid) || a - b).slice(0, n).sort((a, b) => a - b);
+    return pick.map((i) => line[i]);
+  }
+  // the seasons: auto is by the month (Elul–Kislev autumn, Tevet–Adar winter, Nisan–Sivan spring, else summer)
+  const autoSeason = () => { const m = new Date().getMonth(); return m >= 8 && m <= 10 ? 'autumn' : m === 11 || m <= 1 ? 'winter' : m <= 4 ? 'spring' : 'summer'; };
+  const SEASONS = [['auto', 'לפי העונה'], ['summer', 'קיץ'], ['autumn', 'סתיו'], ['winter', 'חורף'], ['spring', 'אביב']];
+  let season = Q.get('season') || 'auto';
+  const seasonsBox = document.getElementById('seasons');
+  const drawSeasons = () => seasonsBox.replaceChildren(...SEASONS.map(([v, name]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(v === season), onclick: () => { season = v; drawSeasons(); tree.dataset.season = v === 'auto' ? autoSeason() : v; } }, name)));
+  drawSeasons();
+  document.querySelectorAll('#kinds .chip[data-kind]').forEach((c) => c.addEventListener('click', () => { document.querySelectorAll('#kinds .chip[data-kind]').forEach((o) => o.setAttribute('aria-checked', String(o === c))); draw(c.dataset.kind); }));
+
+  const morph = (fn) => (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches) ? document.startViewTransition(fn) : fn();
+  const name = (e, n) => { if (e) { e.style.viewTransitionName = n; e.style.viewTransitionClass = 'tr-morph'; } };
+  const clearNames = () => document.querySelectorAll('[style*="view-transition-name"]').forEach((e) => { e.style.viewTransitionName = ''; });
+  let current = null;   // { b, p }
+
+  function openMenu(b, p, edit) {
+    current = { b, p };
+    document.querySelectorAll('.tr-p.menu-on').forEach((x) => x.classList.remove('menu-on'));
+    b.classList.add('menu-on');
+    const r = b.querySelector('.tr-leaf').getBoundingClientRect(), cx = r.left + r.width / 2;
+    const below = r.top < 150;
+    menu.style.setProperty('--mx', (getComputedStyle(document.documentElement).direction === 'rtl' ? innerWidth - cx : cx) + 'px');
+    menu.style.setProperty('--my', (below ? r.bottom : r.top) + 'px');
+    if (below) menu.dataset.place = 'below'; else delete menu.dataset.place;
+    menu.toggleAttribute('data-edit', !!edit); menu.querySelector('[data-act="edit"]').hidden = !edit;
+    menu.querySelector('.tr-menu-name').textContent = p.n; menu.setAttribute('aria-label', p.n);
+    menu.hidden = false; menu.querySelector('button').focus({ preventScroll: true });
+  }
+  function closeMenu() { menu.hidden = true; document.querySelectorAll('.tr-p.menu-on').forEach((x) => x.classList.remove('menu-on')); }
+  menu.addEventListener('click', (e) => {
+    const a = e.target.closest('[data-act]')?.dataset.act; if (!a || !current) return;
+    closeMenu();
+    if (a === 'profile') toBanner(current.b, current.p);
+  });
+  addEventListener('pointerdown', (e) => { if (!menu.hidden && !e.target.closest('.tr-menu, .tr-p')) closeMenu(); });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeMenu(); } });
+
+  const face = (cls, p) => el('span', { class: cls }, p.empty ? '?' : ini(p.n));
+  function toBanner(b, p) {
+    clearNames(); name(b.querySelector('.tr-face'), 'tr-face');
+    morph(() => {
+      clearNames(); document.querySelector('.tr-full')?.remove(); document.querySelector('.tr-banner')?.remove();
+      b.classList.add('away');
+      const bn = el('div', { class: 'tr-banner' + (p.passed ? ' passed' : ''), style: b.style.cssText, role: 'group', 'aria-label': p.n },
+        el('button', { class: 'tr-banner-main', type: 'button', 'aria-label': 'הפרופיל המלא של ' + p.n, onclick: () => toFull(b, p) }, face('tr-banner-face', p),
+          el('span', { class: 'tr-banner-txt' }, el('b', {}, p.n), el('small', {}, [p.r, p.d].filter(Boolean).join(' · ')))),
+        el('button', { class: 'tr-banner-fold', type: 'button', 'aria-label': 'חזרה לעלה', onclick: () => toLeaf(b) }, svgI(IC.leaf)));
+      tree.append(bn); name(bn.querySelector('.tr-banner-face'), 'tr-face');
+    });
+  }
+  function toFull(b, p) {
+    clearNames(); name(document.querySelector('.tr-banner-face'), 'tr-face');
+    morph(() => {
+      clearNames(); document.querySelector('.tr-banner')?.remove();
+      const f = el('section', { class: 'tr-full', role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'trFullName' },
+        el('header', { class: 'tr-full-head' }, face('tr-full-face', p),
+          el('div', { class: 'tr-full-id' }, el('h2', { id: 'trFullName' }, p.n), el('small', {}, [p.r, p.d].filter(Boolean).join(' · '))),
+          el('div', { class: 'tr-full-acts' },
+            el('button', { class: 'tr-ic', type: 'button', 'aria-label': 'להקטין לבאנר', title: 'להקטין לבאנר', onclick: () => toBanner(b, p) }, svgI(IC.down)),
+            el('button', { class: 'tr-ic', type: 'button', 'aria-label': 'לעגן בצד', title: 'לעגן בצד', onclick: () => toDock(b, p) }, svgI(IC.pin)),
+            el('button', { class: 'tr-ic', type: 'button', 'aria-label': 'סגירה, חזרה לעלה', title: 'סגירה', onclick: () => toLeaf(b) }, svgI(IC.x)))),
+        el('div', { class: 'tr-full-body' },
+          el('p', { class: 'muted' }, 'כאן התוכן של הפרופיל, כמו בדף הפרופיל: תאריכים, קשרים, תמונות ומסמכים.'),
+          el('div', { class: 'card' }, el('b', {}, 'נולדה'), ' ', 'ט״ו בשבט תרפ״ה, ירושלים'),
+          el('ul', { class: 'tr-full-soon', 'aria-label': 'רעיונות שבדרך' },
+            ['דף אישי: שורת מצב, מוזיקה, סיפורים', 'שיתוף הישגים בתמונה', 'קישוט תמונות וסרטונים'].map((t) => el('li', {}, el('span', {}, t), el('span', { class: 'tag-soon' }, 'בקרוב'))))));
+      document.body.append(f); name(f.querySelector('.tr-full-face'), 'tr-face');
+    });
+  }
+  function toLeaf(b) {
+    const from = document.querySelector('.tr-banner-face, .tr-full-face');
+    clearNames(); name(from, 'tr-face');
+    morph(() => { clearNames(); document.querySelector('.tr-banner')?.remove(); document.querySelector('.tr-full')?.remove(); b.classList.remove('away'); name(b.querySelector('.tr-face'), 'tr-face'); b.focus({ preventScroll: true }); });
+  }
+  function toDock(b, p) {
+    morph(() => {
+      clearNames(); document.querySelector('.tr-full')?.remove(); b.classList.remove('away');
+      if ([...document.querySelectorAll('.tr-dock')].some((d) => d.dataset.n === p.n)) return;
+      const i = document.querySelectorAll('.tr-dock').length;
+      const d = el('button', { class: 'tr-dock', type: 'button', 'data-n': p.n, style: `--i:${i}`, 'aria-label': `${p.n}, פרופיל מעוגן. פתיחה` }, el('span', { class: 'tr-dock-ini' }, ini(p.n)), el('b', {}, p.n.split(' ')[0]));
+      // a drag moves it up and down; a tap opens the profile
+      let y0 = null, dy0 = 0, moved = false;
+      d.addEventListener('pointerdown', (e) => { y0 = e.clientY; dy0 = parseFloat(d.style.getPropertyValue('--dy')) || 0; moved = false; d.setPointerCapture(e.pointerId); });
+      d.addEventListener('pointermove', (e) => { if (y0 == null) return; const dy = e.clientY - y0; if (Math.abs(dy) > 6) { moved = true; d.classList.add('dragging'); } if (moved) d.style.setProperty('--dy', (dy0 + dy) + 'px'); });
+      d.addEventListener('pointerup', () => { y0 = null; d.classList.remove('dragging'); });
+      d.addEventListener('click', () => { if (moved) return; d.remove(); toFull(b, p); });
+      document.body.append(d);
+    });
+  }
+
+  async function draw(kind) {
+    const s = await (await fetch(`/assets/tree/${kind}/slots.json`)).json();
+    tree.dataset.kind = kind; tree.style.setProperty('--crown-x', s.crownPivot[0] + '%'); tree.style.setProperty('--crown-y', s.crownPivot[1] + '%');
+    tree.dataset.season = season === 'auto' ? autoSeason() : season;
+    const layers = (s.layers || ['ground', 'boughs', 'trunk', 'crown']).map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${kind}/${l}.${s.ext || 'svg'}`, alt: '', decoding: 'async' }));
+    tree.replaceChildren(...layers, el('span', { class: 'tree-l tree-dress', 'aria-hidden': 'true' }), el('span', { class: 'tree-l tree-fall', 'aria-hidden': 'true' }));
+    for (const tier of s.tiers) {
+      const people = FAMILY[tier.name] || [], pts = (s.seat ? seats : spread)(tier.line, people.length);
+      people.forEach((p, i) => {
+        const [x, y] = pts[i];
+        const cls = 'tr-p' + (p.me ? ' me' : '') + (p.bday ? ' bday' : '') + (p.passed ? ' passed' : '') + (p.empty ? ' empty' : '');
+        let timer = null, long = false;
+        const b = el('button', { class: cls, type: 'button', style: `--x:${x.toFixed(1)}; --y:${y.toFixed(1)}`,
+          'aria-label': p.empty ? `אין רשומה: ${p.empty}. הוספה` : [p.n, p.r].filter(Boolean).join(', '),
+          onpointerdown: () => { long = false; timer = setTimeout(() => { long = true; if (!p.empty) openMenu(b, p, true); }, 550); },
+          onpointerup: () => clearTimeout(timer), onpointerleave: () => clearTimeout(timer),
+          onclick: () => { if (long) return; if (p.empty) return; openMenu(b, p, false); } },
+          el('span', { class: 'tr-leaf' }, el('span', { class: 'tr-face' }, p.empty ? '?' : ini(p.n))),
+          el('span', { class: 'tr-tag' }, el('b', {}, p.empty || p.n.split(' ')[0]), p.d ? el('small', {}, p.d) : null));
+        b._p = p;
+        tree.append(b);
+      });
+    }
+    const st = Q.get('state');
+    if (st) setTimeout(() => {
+      const b = [...tree.querySelectorAll('.tr-p')].find((x) => x._p.n === 'רחל לוי'), p = b._p;
+      if (st === 'menu' || st === 'edit') { b.scrollIntoView({ block: 'center' }); openMenu(b, p, st === 'edit'); }
+      if (st === 'banner') toBanner(b, p);
+      if (st === 'full') toFull(b, p);
+      if (st === 'dock') toDock(b, p);
+    }, 50);
+  }
+  const k0 = ['olive', 'canopy'].includes(Q.get('kind')) ? Q.get('kind') : 'pine'; if (k0 === 'pine') draw('pine'); else document.querySelector(`#kinds [data-kind="${k0}"]`).click();
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>איך אני עושה</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- a screen on a stand, playing the guide's video -->
+<path d="M232 144L222 214M232 144L244 214M214 214h40" stroke-width="4"/>
+<rect x="168" y="56" width="128" height="92" rx="10" fill="#3a2a22"/>
+<rect x="177" y="65" width="110" height="74" rx="4" fill="#cfe7ff" stroke-width="2.5"/>
+<path d="M177 120q30-14 55 0t55 0v15q0 4-4 4H181q-4 0-4-4Z" fill="#a9d08e" stroke="none" opacity=".8"/>
+<circle cx="232" cy="100" r="20" fill="#fff3c4"/>
+<path d="M225 89L243 100L225 111Z" fill="#c2332b" stroke-width="3"/>
+<!-- the open book of written steps, in front -->
+<path d="M28 198Q72 184 116 198V134Q72 120 28 134Z" fill="#f3efe4"/>
+<path d="M116 198Q160 184 204 198V134Q160 120 116 134Z" fill="#f3efe4"/>
+<path d="M116 134V198" stroke-width="3"/>
+<circle cx="100" cy="148" r="6" fill="#5e8a3a" stroke-width="2.5"/><path d="M97 148l2 3 4-5" stroke="#fff" stroke-width="2"/><path d="M88 148h-44" stroke-width="3"/>
+<circle cx="100" cy="166" r="6" fill="#5e8a3a" stroke-width="2.5"/><path d="M97 166l2 3 4-5" stroke="#fff" stroke-width="2"/><path d="M88 166h-36" stroke-width="3"/>
+<circle cx="100" cy="184" r="6" fill="#f3efe4" stroke-width="2.5"/><path d="M88 184h-40" stroke-width="3" opacity=".5"/>
+<path d="M132 146h56M132 158h48M132 170h56M132 182h40" stroke-width="2.5" opacity=".45"/>
+<!-- the helper beside you: a speech bubble -->
+<path d="M44 58h84a16 16 0 0 1 16 16v8a16 16 0 0 1-16 16H82l-14 14v-14H44a16 16 0 0 1-16-16v-8a16 16 0 0 1 16-16Z" fill="#fff"/>
+<circle cx="66" cy="78" r="5" fill="#5e8a3a" stroke="none"/><circle cx="86" cy="78" r="5" fill="#5e8a3a" stroke="none"/><circle cx="106" cy="78" r="5" fill="#5e8a3a" stroke="none"/>
+<!-- a lens, for looking closely -->
+<path d="M282 200L298 216" stroke-width="9"/><path d="M282 200L298 216" stroke="#b98a52" stroke-width="4"/>
+<circle cx="270" cy="188" r="16" fill="#e8f2f8"/><path d="M262 182a9 9 0 0 1 8-5" stroke="#fff" stroke-width="3"/>
+</svg>

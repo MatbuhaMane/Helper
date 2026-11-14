@@ -1,0 +1,48 @@
+/* The side pages beside the tent (the owner, 2026-11-14): המוסך to the right of the tent, גבעה ביער to its left.
+   The structure is the master's (public/index.html, withSides):
+     .pager > .pager-page[.is-here] > section.side.side-garage|side-hill > div.side-pic > img, h2, span.tag-soon, p.side-line
+   each part carries --i (0..3). The look is design's: a short page made to look intentional, centred on the first screen over the
+   tent's own sky and limestone ground, and a staggered entrance when the page comes into view (transform and opacity only). */
+
+/* ---- the page: centred in the first screen (the tent page beside it is tall, so the side page fills a screen and rests) */
+.pager-page > .side {
+  box-sizing: border-box; min-block-size: calc(100svh - var(--appbar-h, 54px) - var(--tabbar-h, 64px) - 44px);
+  display: grid; align-content: center; justify-items: center; gap: 12px; text-align: center;
+  max-inline-size: 34rem; margin-inline: auto; padding-block: 20px 28px; padding-inline: 12px; }
+.pager-page .side-pic { position: relative; display: grid; place-items: center; inline-size: min(100%, 440px); margin-block-end: 6px; }
+/* a soft pool of light on the ground under the picture, in the ground's own colours */
+.pager-page .side-pic::before { content: ""; position: absolute; inset: 18% 4% 2%; z-index: -1; border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--card) 85%, transparent), transparent); }
+.pager-page .side-pic img { display: block; inline-size: 100%; block-size: auto; aspect-ratio: 4 / 3; object-fit: contain;
+  filter: drop-shadow(0 10px 14px rgba(42, 28, 18, .14)); }
+.pager-page > .side > h2 { margin: 0; font-size: clamp(1.7rem, 7vw, 2.3rem); font-weight: 700; line-height: 1.15; color: var(--text); text-wrap: balance; }
+.pager-page > .side > .tag-soon { font-size: .85rem; }
+.pager-page .side-line { margin: 2px 0 0; max-inline-size: 30ch; font-size: 1.05rem; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+
+/* גבעה ביער: only the hill, large, a little taller than the garage's wide scene */
+.pager-page > .side-hill > .side-pic { inline-size: min(100%, 480px); }
+
+/* dark: the picture keeps its own paint, a touch dimmed with the night like the tent */
+:root[data-theme="dark"] .pager-page .side-pic img { filter: brightness(.88) drop-shadow(0 10px 16px rgba(0, 0, 0, .35)); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pager-page .side-pic img { filter: brightness(.88) drop-shadow(0 10px 16px rgba(0, 0, 0, .35)); } }
+
+/* ---- the entrance: when a side page comes into view (.is-here) its parts rise and fade in one after another by --i.
+   Out of view they rest hidden with no transition, so the entrance plays again on every visit. */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-motion="reduce"]) .pager-page > .side > * { opacity: 0; transform: translateY(18px); }
+  :root:not([data-motion="reduce"]) .pager-page > .side > .side-pic { transform: translateY(26px) scale(.94); }
+  :root:not([data-motion="reduce"]) .pager-page.is-here > .side > * {
+    opacity: 1; transform: none;
+    transition: opacity 520ms ease, transform 760ms var(--ease-river, cubic-bezier(.22, .9, .3, 1));
+    transition-delay: calc(var(--i, 0) * 90ms + 60ms); }
+}
+
+/* ---- the dots (the master's minimal style, restyled): small stones on the ground, the page in view is a vine stone */
+nav.pager-dots { gap: 0; margin-block: 0 -10px; }
+nav.pager-dots button { inline-size: 44px; block-size: 44px; border-radius: 50%; }
+nav.pager-dots button::after { inline-size: 9px; block-size: 9px; opacity: 1; background: color-mix(in srgb, var(--muted) 40%, transparent);
+  transition: transform 240ms var(--ease-river, ease), opacity 240ms ease; }
+nav.pager-dots button[aria-current="true"]::after { background: var(--primary); transform: scale(1.35); }
+nav.pager-dots button:hover::after { transform: scale(1.2); }
+nav.pager-dots button[aria-current="true"]:hover::after { transform: scale(1.35); }
+nav.pager-dots button:focus-visible { outline: 3px solid var(--primary); outline-offset: -2px; }

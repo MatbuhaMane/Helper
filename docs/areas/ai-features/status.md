@@ -1,10 +1,16 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (the structure tree, ready to merge).
+Last update: 2026-11-14 (פרנסה phase 1, ready for the CEO's server review).
 
 ## Done
 
+- **פרנסה, phase 1 (2026-11-14), on `ai-features`, ready for the CEO's review of the server:** 41e5af3 server (6 tables, 14 routes, rules + test-parnasa 68),
+  ed6d47d prices from Yahoo + fixes, 249b577 the page (dashboard, one-tap entry with a guessed category, recurring, the shared קופה
+  by invitation within the household, bank/card import with review, investments, Claude-only tips on sums by category), 945198f decisions,
+  and the master's apps.js entry (patch in the shared notes). Checked: isolation by API with three users (another household 404 everywhere,
+  no emails reach the page), import of a card file, the audit at 375 and 1280 in light and dark (clean). Needs: test-parnasa in npm test
+  (master), and design's styles for .pr-invite, .pr-foot, the review's flip toggle and the manage lists' rows.
 - 2026-11-14: family tree documents open on a phone (saved, so the phone opens them in its own viewer; on a computer the window opens in the tap); the welcome wizard change reverted (the owner: not a bug, רַאבַּ"ע stays in the settings).
 - **עץ מבנה (2026-11-13), on `ai-features`, ready to merge:** e5547a8 server (site_layout versions, eggs, egg_finds, routes,
   pure layout-rules + test-layout 74), 6acb646 the back door's tab (tree drag by pointer/touch and keyboard, edit panel,

@@ -122,3 +122,4 @@
 - 2026-11-15: ai-features sent the scope estimate for יד ביד stage 1 (2-3x goals, five parts, the ledger is the risk; the friends page and the fourth privacy level are already built); recorded in yad-beyad.md. The CEO will review the ledger at money level.
 - 2026-11-15: יד ביד screen spec ש1: the owner described the home screen (banner and dashboard, "לוח הדרושים" and "יצירת צורך" buttons with floating panels, two lists: needs I filled and my needs); open points listed in yad-beyad.md.
 - 2026-11-15: יד ביד screen spec ש2: the tier of a need comes from the owner's list; a need outside the list is published at once and the ידיים move only after the owner approves its tier.
+- 2026-11-15: יד ביד screen spec ש3: location is an area the person sets, plus GPS with permission. The owner also asked to strengthen the project's cyber security; an instruction for the CEO was read back, waiting for "מאשר".

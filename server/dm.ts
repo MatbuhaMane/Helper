@@ -86,7 +86,7 @@ export async function unread(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const r = await ctx.env.DB.prepare(`SELECT COUNT(*) AS n FROM dm_threads WHERE last_by IS NOT NULL AND last_by <> ?1
     AND ((a = ?1 AND (a_seen IS NULL OR a_seen < last_at)) OR (b = ?1 AND (b_seen IS NULL OR b_seen < last_at)))`).bind(me).first<{ n: number }>();
-  return json({ unread: (r?.n || 0) + (await groupsUnread(ctx, me)) });
+  return json({ unread: (r?.n || 0) + (await groupsUnread(ctx, u)) });
 }
 
 /** GET /api/dm/people: who I may write to – the household, then (on a device the tree is open on) the joined trees' users */

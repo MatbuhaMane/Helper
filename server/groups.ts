@@ -73,7 +73,9 @@ export async function list(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const { results } = await ctx.env.DB.prepare('SELECT g.*, m.seen AS seen FROM dm_groups g JOIN dm_group_members m ON m.grp = g.id AND m.email = ? ORDER BY COALESCE(g.last_at, g.created_at) DESC LIMIT 100')
     .bind(me).all<Group & { seen: number | null }>();
-  const groups = await Promise.all(results.map(async (g) => {
+  // (the creation rule again: a group I am out of is left out, and its preview is never read)
+  const kept = (await Promise.all(results.map(async (g) => { try { await prune(ctx, u, g); return g; } catch { return null; } }))).filter((g): g is NonNullable<typeof g> => !!g);
+  const groups = await Promise.all(kept.map(async (g) => {
     const ms = (await membersOf(ctx, g.id)).filter((m) => m.email !== me);
     const last = await ctx.env.DB.prepare('SELECT * FROM dm_group_messages WHERE grp = ? ORDER BY at DESC LIMIT 1').bind(g.id).first<{ sender: string; text: string; at: number }>();
     return {
@@ -165,8 +167,12 @@ export async function leave(ctx: Ctx) {
 }
 
 /** for the unread dot: how many of my groups wait */
-export async function unreadCount(ctx: Ctx, me: string): Promise<number> {
-  const r = await ctx.env.DB.prepare(`SELECT COUNT(*) AS n FROM dm_groups g JOIN dm_group_members m ON m.grp = g.id AND m.email = ?1
-    WHERE g.last_by IS NOT NULL AND g.last_by <> ?1 AND (m.seen IS NULL OR m.seen < g.last_at)`).bind(me).first<{ n: number }>();
-  return r?.n || 0;
+export async function unreadCount(ctx: Ctx, u: Member): Promise<number> {
+  const me = u.email.toLowerCase();
+  const { results } = await ctx.env.DB.prepare(`SELECT g.* FROM dm_groups g JOIN dm_group_members m ON m.grp = g.id AND m.email = ?1
+    WHERE g.last_by IS NOT NULL AND g.last_by <> ?1 AND (m.seen IS NULL OR m.seen < g.last_at)`).bind(me).all<Group>();
+  // only the groups I am still in count (the same check as the list)
+  let n = 0;
+  for (const g of results) { try { await prune(ctx, u, g); n++; } catch { /* out of it */ } }
+  return n;
 }

@@ -11,6 +11,20 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The tool is named "יד ביד"; ידיים and credits stay unlinked (vision → master, business)
+Status: Decided (the owner). It completes the internal economy entry below.
+
+- **The tool's name: "יד ביד"** (the master's proposal, approved). The token stays "יד".
+- **The line under the name, in the owner's wording:** "לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בתמורה".
+  It replaces the line the master placed in `apps.js` (main c74f826).
+- **No link between ידיים and credits, in either direction** (business's recommendation, approved):
+  - ידיים never buy credits or AI;
+  - credits never buy ידיים.
+  - **The one tie allowed:** the owner may, at their own discretion, give gift credits for a notable deed for the
+    community. There is no rate and no right to it, and the יד itself never moves.
+  - A permanent link, if ever, is decided only after legal answers the tax and licensing question.
+- **Who does what:** the master changes the line in `apps.js`; business keeps the rule in the business plan.
+
 ## 2026-11-14 – The internal economy: the "יד" token, "תועלת אישית על ידי עשייה ציבורית" (vision → design, master, business, legal)
 Status: Decided (the owner). A big idea: it waits, and the interface shows it only as "בקרוב". Nothing is built now.
 The full spec is in `docs/vision/later.md` ("כלכלה פנימית").

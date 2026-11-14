@@ -815,3 +815,5 @@ _Updated 2026-11-14 (round 23)._
 - Round 27: יד ביד stage 1 screens: `public/tools/yad/yad.css`, prototype `docs/design/prototype/yad.html`, spec `docs/design/yad.md`. Waiting for ai-features to build; the owner approval queue is not designed (separate spec).
 
 - Round 28: יד ביד batch 37 applied (no redeem/GPS/filters, distance ranges, own-only pending need, report + removed, licence declaration, rules link); see docs/design/yad.md.
+
+- Round 29: batch 38: licence is "לפי הצהרת המשתמש" only, never verified-looking; the owner queue stays in the ממתין לאישור page (no design until its spec).

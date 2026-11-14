@@ -42,3 +42,8 @@ Four figures and two buttons above two lists fit on a phone as designed (the fir
 7. **Licence:** in the profile, a service that needs a licence carries `.yd-tag.pend` "דורש רישיון", and its group has `.yd-check.yd-decl`: "אני מצהיר/ה שיש לי רישיון לעסוק בזה. האוהל לא בודק זאת." (ticked before the service counts).
 8. **The rules:** a small link "כללי יד ביד" under the two buttons opens a sheet with `ol.yd-rules` (3 rules; the final wording is the master and legal).
 Checked at 375 px light (the audit clean); desktop and dark use the same classes as batch 36.
+
+## Batch 38: never look verified (2026-11-15)
+- A professional's service shows only the plain grey note `.yd-tag` "לפי הצהרת המשתמש" (board card, my lists). **Never** "מוסמך" or "מאומת", never a tick, a shield, a seal or a green colour beside it. "דורש רישיון" stays only on the type in the profile list.
+- The profile asks only for the declaration tick-box: no licence number field, no upload.
+- **The owner queue** lives in the existing "ממתין לאישור" page (a filter "יד ביד" and one count of what waits). No new screen from design yet: the page exists, and vision is still writing the rest of the queue spec with the owner.

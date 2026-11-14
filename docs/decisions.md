@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Priority after Ibn Ezra: a Telegram-smooth interface (owner → design, ai-features, master)
+
+The owner's most urgent goal once Ibn Ezra's onboarding ships: the interface must feel as smooth and comfortable as
+Telegram. Not new features — the things a person feels: menus and sheets opening and closing, an animated passage
+between the items of the main menu, press feedback, and every small motion. Targets (design leads, master and
+ai-features apply their files):
+- Sheets and dialogs (`H.modal`): rise with `transform` + `opacity` on a soft spring-like curve (~220 ms in, ~170 ms out),
+  backdrop fades, drag to dismiss follows the finger and honours velocity.
+- Menus and popovers: grow from their trigger (`transform-origin`, scale .96→1 + fade).
+- Between the main menu's items and pages: cross-document View Transitions (`@view-transition { navigation: auto; }`,
+  shared-axis slide, the tab bar and header stay put), with a plain fade where unsupported.
+- Press feedback on every tappable thing (short scale on `:active`), a sliding active-tab indicator, no tap delay
+  (`touch-action: manipulation`), instant-feeling navigation (prefetch/speculation rules in `index.html`, master).
+- Only `transform`/`opacity` (principle 4), `prefers-reduced-motion` honoured, checked at 375 px and desktop, light and dark,
+  and by the owner on a real phone for frame smoothness.
+Status: accepted (owner). Design writes the motion spec and the CSS first; changes to `common.js`/`index.html` come to
+the master as a patch; page JS goes to ai-features after its Ibn Ezra and group-privacy work.
+
 ## 2026-11-14 – the switchboard in the back door: app-wide on/offs, experimental content, moods, קודש (ai-features → master, design)
 
 - **Appended:** the table `app_switches` at the end of `schema.sql`; GET and PUT `/api/admin/switches` and one import line in
@@ -3290,3 +3308,42 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
   - It also drops a wrong parent link between the two, which is the עברי case.
   - When neither has parents, it returns `no_parents`.
 - No master file is touched.
+
+## 2026-11-14 · Friends, the fourth privacy level, the museum's first hub step (ai-features, vision batch 27)
+
+**Privacy (for review by the master, approval by the owner before it goes live):** commits 94bd9b1, 2b0f7aa and 33a9e7f.
+
+- **The four levels** are `all` / `friends` / `family` / `me`, in `server/audience-rules.ts`.
+  - The old values are read and never widened: `private` is `me`, `tribe` is `family`, and `household` stays the household only.
+  - A child under 12 chooses only `family` or `me`.
+- **The museum:**
+  - a friend of the one who added an item sees it at `friends` and `all`;
+  - any member sees `all`, but only through a friend's page (`/api/story?f=<friend id>`);
+  - files (recordings, photos, documents) stay in the household at every level.
+  - New items default to `family`.
+- **Messages:** friends may write to each other. A child under 12 writes and is written to only within the family.
+
+**Friends:**
+- A request answers the same whether or not the address exists.
+- A one-time link lasts 7 days; only its fingerprint is stored.
+- The page gets opaque ids, never emails.
+
+**Master files** (append only, commit 4aa226b, patch in the master's notes):
+- the tables `friends`, `friend_links`, `dm_groups`, `dm_group_members` and `dm_group_messages`;
+- the routes `/api/friends…` and `/api/groups…`;
+- `test-audience` and `test-friends` in `npm test`.
+
+**The gathering's food calculator:** master files 48857ce add the `/api/gather/:id/calc` and `/items/many` routes and `gathering_rsvps.diets`.
+
+**The museum hub:**
+- The kind `event` ("אירוע מהחיים") is text and a date, with no file.
+- No video until business prices its storage.
+- "גבעה ביער" not started.
+
+**For design:**
+- move `.fr-pick`, `.fr-group-name` and `.fr-kid-note` from family.css to messages.css (the messages page doesn't load family.css);
+- `.fr-pick` clashes with `public/food/fridge/fridge.css`;
+- a style and icon for `.st-item[data-kind="event"]`;
+- the friend card also holds `a.btn.ghost.small` links ("המוזיאון") and a "הסרה" button, and `.fr-talk` is an `a`.
+
+**For the master:** a friend link can't admit someone who isn't a member yet. That would need a hook in join.ts, which is the master's file and its decision.

@@ -1431,3 +1431,50 @@ CREATE TABLE IF NOT EXISTS app_switches (
   updated_by TEXT,
   updated_at INTEGER NOT NULL
 );
+
+-- Friends, "the family you choose" (server/friends.ts, rules in server/friends-rules.ts; ai-features, batch 27):
+-- one row per pair (a < b, emails in lower case); pending until the other side accepts. Either side may end it.
+CREATE TABLE IF NOT EXISTS friends (
+  a           TEXT NOT NULL,
+  b           TEXT NOT NULL,
+  asker       TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'pending',   -- pending | accepted
+  created_at  INTEGER NOT NULL,
+  accepted_at INTEGER,
+  PRIMARY KEY (a, b)
+);
+CREATE INDEX IF NOT EXISTS friends_b ON friends (b, status);
+-- a friend link: works once, ends after 7 days; only the token's fingerprint is kept, never the token itself
+CREATE TABLE IF NOT EXISTS friend_links (
+  token      TEXT PRIMARY KEY,                   -- fingerprint of the token in the link
+  owner      TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL,
+  used_by    TEXT
+);
+CREATE INDEX IF NOT EXISTS friend_links_owner ON friend_links (owner, created_at);
+-- group chats (server/groups.ts): only the group's members read it; the back door gets counts only
+CREATE TABLE IF NOT EXISTS dm_groups (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  maker      TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  last_at    INTEGER,
+  last_by    TEXT
+);
+CREATE TABLE IF NOT EXISTS dm_group_members (
+  grp       TEXT NOT NULL,
+  email     TEXT NOT NULL,
+  joined_at INTEGER NOT NULL,
+  seen      INTEGER,
+  PRIMARY KEY (grp, email)
+);
+CREATE INDEX IF NOT EXISTS dm_group_members_email ON dm_group_members (email);
+CREATE TABLE IF NOT EXISTS dm_group_messages (
+  id     TEXT PRIMARY KEY,
+  grp    TEXT NOT NULL,
+  sender TEXT NOT NULL,
+  text   TEXT NOT NULL,
+  at     INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS dm_group_messages_grp ON dm_group_messages (grp, at);

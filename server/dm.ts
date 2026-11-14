@@ -14,32 +14,38 @@ import { fingerprint } from './vault/crypto';
 import { tribe } from './vault/kin';
 import { requireAdmin } from './admin';
 import * as D from './dm-rules';
+import { areFriends, friendById, friendEmails, friendId } from './friends';
+import { childOf } from './members';
+import { unreadCount as groupsUnread } from './groups';
 
 type Row = { email: string; name: string | null; he_name: string | null; household: string };
 
-const member = (ctx: Ctx, email: string) =>
+export const member = (ctx: Ctx, email: string) =>
   ctx.env.DB.prepare('SELECT email, name, he_name, household FROM members WHERE lower(email) = ?').bind(email.toLowerCase()).first<Row>();
 
-async function myTribe(ctx: Ctx, u: Member) {
+export async function myTribe(ctx: Ctx, u: Member) {
   const { results } = await ctx.env.DB.prepare("SELECT house_a, person_a, house_b, person_b FROM family_bridges WHERE status = 'confirmed'")
     .all<{ house_a: string; person_a: string; house_b: string; person_b: string }>();
   return tribe(u.household, results);
 }
 
-async function blocks(ctx: Ctx, me: string, other: string) {
+export async function blocks(ctx: Ctx, me: string, other: string) {
   const { results } = await ctx.env.DB.prepare('SELECT blocker FROM dm_blocks WHERE (blocker = ? AND blocked = ?) OR (blocker = ? AND blocked = ?)')
     .bind(me, other, other, me).all<{ blocker: string }>();
   return { iBlocked: results.some((r) => r.blocker === me), theyBlocked: results.some((r) => r.blocker === other) };
 }
 
-/** may u write to `other` now (the household, the tribe, no block); throws the reason */
-async function check(ctx: Ctx, u: Member, other: Row | null) {
+/** may u write to `other` now (the household, the tribe, a friend; a child under 12 only within the family; no block); throws the reason */
+export async function check(ctx: Ctx, u: Member, other: Row | null) {
   const me = u.email.toLowerCase();
   if (!other) throw new HttpError(404, 'not_found');
   const t = other.household === u.household ? null : await myTribe(ctx, u);
+  const family = other.household === u.household || (!!t && t.has(other.household));
+  const friend = !family && (await areFriends(ctx, me, other.email));
+  const child = friend && ((await childOf(ctx.env, u.email)) || (await childOf(ctx.env, other.email)));
   const why = D.mayMessage({
     self: other.email.toLowerCase() === me, sameHousehold: other.household === u.household,
-    sameTribe: !!t && t.has(other.household), ...(await blocks(ctx, me, other.email.toLowerCase())),
+    sameTribe: !!t && t.has(other.household), friend, child, ...(await blocks(ctx, me, other.email.toLowerCase())),
   });
   if (why === 'self') throw new HttpError(400, 'self');
   if (why) throw new HttpError(403, 'cannot_send');
@@ -80,7 +86,7 @@ export async function unread(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const r = await ctx.env.DB.prepare(`SELECT COUNT(*) AS n FROM dm_threads WHERE last_by IS NOT NULL AND last_by <> ?1
     AND ((a = ?1 AND (a_seen IS NULL OR a_seen < last_at)) OR (b = ?1 AND (b_seen IS NULL OR b_seen < last_at)))`).bind(me).first<{ n: number }>();
-  return json({ unread: r?.n || 0 });
+  return json({ unread: (r?.n || 0) + (await groupsUnread(ctx, me)) });
 }
 
 /** GET /api/dm/people: who I may write to – the household, then (on a device the tree is open on) the joined trees' users */
@@ -88,7 +94,7 @@ export async function people(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   await rateLimit(ctx, 'dmpeople:' + me, D.RATE.people.max, D.RATE.people.windowMs);
   const { results: home } = await ctx.env.DB.prepare('SELECT email, name, he_name, household FROM members WHERE household = ? AND lower(email) <> ?').bind(u.household, me).all<Row>();
-  const homeC: D.Contact[] = await Promise.all(home.map(async (m) => ({ id: await homeId(ctx, u, m.email), name: D.nameOf(m), where: 'home' as const })));
+  const homeC: D.Contact[] = await Promise.all(home.map(async (m) => ({ id: await homeId(ctx, u, m.email), name: D.nameOf(m), where: 'home' as const, kid: await childOf(ctx.env, m.email) })));
   let tribeC: D.Contact[] = [], forest: 'open' | 'locked' | 'none' = 'none';
   try {
     const w = await forestFor(ctx);
@@ -100,7 +106,7 @@ export async function people(ctx: Ctx) {
       const email = w.emailOf(x);
       if (!email || email.toLowerCase() === me) continue;
       seen.add(x.root);
-      tribeC.push({ id: 'p' + x.pid, name: x.name, where: 'tribe', title: w.title(x.household), relation: w.me && x.root !== w.me ? w.kin.relationName(w.me, x.root) : null });
+      tribeC.push({ id: 'p' + x.pid, name: x.name, where: 'tribe', title: w.title(x.household), relation: w.me && x.root !== w.me ? w.kin.relationName(w.me, x.root) : null, kid: await childOf(ctx.env, email) });
     }
     const touched = new Set(w.people.filter((x) => tribeC.some((c) => c.id === 'p' + x.pid)).map((x) => x.household));
     if (touched.size) await w.audit(touched, 'view:dm-people');
@@ -108,16 +114,28 @@ export async function people(ctx: Ctx) {
     if (!(e instanceof HttpError)) throw e;
     forest = 'locked';                                   // the tree is not open on this device: the household only
   }
-  return json({ people: D.contacts(homeC, tribeC), forest });
+  // friends (both sides approved) who are not family already; a child under 12 has none to write to
+  const friendC: D.Contact[] = [];
+  if (!(await childOf(ctx.env, u.email))) {
+    const emails = await friendEmails(ctx, me);
+    if (emails.length) {
+      const t = await myTribe(ctx, u);
+      const { results: fs } = await ctx.env.DB.prepare(`SELECT email, name, he_name, household FROM members WHERE lower(email) IN (${emails.map(() => '?').join(', ')})`).bind(...emails).all<Row>();
+      for (const m of fs) if (m.household !== u.household && !t.has(m.household) && !(await childOf(ctx.env, m.email)))
+        friendC.push({ id: await friendId(ctx, me, m.email), name: D.nameOf(m), where: 'friend' });
+    }
+  }
+  return json({ people: D.contacts(homeC, tribeC, friendC), forest });
 }
 
 /** the member behind a contact id (as GET /api/dm/people gave it), or null */
-async function resolve(ctx: Ctx, u: Member, id: string): Promise<Row | null> {
+export async function resolve(ctx: Ctx, u: Member, id: string): Promise<Row | null> {
   if (id.startsWith('h')) {
     const { results } = await ctx.env.DB.prepare('SELECT email, name, he_name, household FROM members WHERE household = ?').bind(u.household).all<Row>();
     for (const m of results) if ((await homeId(ctx, u, m.email)) === id) return m;
     return null;
   }
+  if (id.startsWith('f')) return friendById(ctx, u, id);
   if (id.startsWith('p')) {
     const w = await forestFor(ctx);
     const x = w.people.find((p) => p.pid === id.slice(1));

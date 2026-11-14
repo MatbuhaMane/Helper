@@ -96,6 +96,8 @@ These are planned, not designed yet:
 
 ## Smooth: the patterns (the owner's priority, 2026-11-14)
 
+_This fills the gaps over the rules above; every earlier token, class name and number stays. What it changes: the sheet's entrance is now 240 ms (it was a 420 ms spring), the page turn slides 20 px (it was 6 px), and `.btn:active` scales (it was a 1 px shift). The drag's spring-back (`--drag`, `--dur-settle`, `--ease-spring`) is untouched._
+
 The rule for every department: pick the pattern from this table. Do not invent a new curve or duration. CSS is in the second "Telegram-smooth" section at the end of `base.css`.
 
 | Thing | In | Out | Curve | How |

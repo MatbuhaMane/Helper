@@ -1284,7 +1284,7 @@ html { -webkit-tap-highlight-color: transparent; }
 .modal.closing .modal-backdrop { animation: fade-out var(--dur-sheet-out) ease both; }
 .modal.grow .modal-glass { animation: none; }
 @media (max-width: 520px) {
-  .modal-glass { animation: sheet-up var(--dur-sheet-in) var(--ease-sheet) both; transform-origin: 50% 100%; transition: transform var(--dur-sheet-in) var(--ease-sheet); }
+  .modal-glass { animation: sheet-up var(--dur-sheet-in) var(--ease-sheet) both; transform-origin: 50% 100%; }   /* the drag's spring-back (transition on transform, --dur-settle / --ease-spring) stays as batch 30 set it */
   .modal.closing .modal-glass { animation: sheet-down var(--dur-sheet-out) var(--ease-leave) both; }
   @keyframes sheet-down { to { transform: translateY(100%); } }
 }

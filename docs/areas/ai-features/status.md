@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the owner's answers applied: kitchen, breath, home).
+Last update: 2026-11-14 (the garden).
 
 ## Handover to the next ai-features chat (2026-11-14)
 
@@ -79,7 +79,11 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - **Checked:** typecheck, npm test, the audit at 375 and 1280, light and dark (clean); in the browser: the chef answered in Hebrew, timers stored (past ones dropped), the reminder handed to Noa and back, the habit ticked and undone.
   - **Not checked:** a real push from the cron (needs a deployed preview), listening by voice (the pane has no microphone), the chef window and the cook view in the audit (it checks first screens).
   - **Waiting for the master:** the free-quota exemption in the credits gate; the push.ts regex.
-- **Next, by the owner's order:** garden (shared by the household), then translate. Tree skins first when the art arrives.
+- **Tree** d2486c1: on the pine people sit on the seats nearest the middle; the season by the date (snow on the pine Jan 10 – Feb 10) or the person's choice.
+- **Garden** (f3c7756, f67a089, plus worker and package.json for the master): the household's plants, watering by the weather, השקיתי, a new plant from a photo and the plant doctor, 3 free photos a day. test-garden 50.
+  - **Checked:** typecheck, npm test, the audit at 375 and 1280, light and dark (garden, home, family: clean); in the browser: a real identify (Gemini knew the basil, recorded as free), the quota's 402 after three, the weather from open-meteo, the plant's own picture.
+  - **Not checked:** the morning push (needs a deployed preview), a real photo from a phone camera, the doctor on a sick plant.
+- **Next, by the owner's order:** translate.
 
 ### Open
 

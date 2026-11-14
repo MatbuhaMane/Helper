@@ -3152,3 +3152,18 @@ Status: Ready for the master's review.
 - Beyond the quota, `POST /api/cook/ask` answers `402 quota_done`. The chef window offers "להמשיך בקרדיטים" each time, which resends with `paid: true`. With no credits left (`ai_credit_needed`) it says "חזרו מחר", with no buy button.
 - The chef's answers are read aloud with the browser's voice (`Voice.say(…, { browser: true })`), as business proposed, since the app's voice is most of the cost. The chef also speaks in the plural now ("אתם").
 - Still the master's: the credits gate charges a limited account even inside the free 20. The request from the previous entry stands (an exemption for a feature's first N uses a day, e.g. `{ 'cook/ask': 20 }`).
+
+## 2026-11-14 · The garden (ai-features)
+The owner's order after the kitchen, breath and home. On `ai-features`, not yet merged.
+Status: Ready for the master's review.
+
+- **What it is** (`/tools/garden/`, `server/garden.ts`, the rules in `server/garden-rules.ts` with 50 tests):
+  - the household's plants, shared by the household (the owner's answer);
+  - watering by the weather where the person lives, a fixed rule with no AI: rain of 4 mm or more waters the plants outside, and a hot day (32° outside, 35° inside) brings watering a day earlier;
+  - "השקיתי" with its history; a morning push to whoever added the plant or was handed it, one push a person naming the plants;
+  - a new plant from a photo (identify, then confirm) and the plant doctor (a photo, then the problem and what to do, kept in the plant's history). Gemini reads the photo first, Claude (Sonnet) when Gemini fails. The photo sent to the AI is not kept; a plant's own small picture is (about 320 px).
+- **The quota** (docs/business/ai-quota.md): 3 photos a person a day, identify and doctor together, renewed at midnight Israel time and never taken from a limited account's credits (`freeOfCredits`); then 402 `quota_done` and "להמשיך בקרדיטים".
+- **Appended:** tables `garden_plants` and `garden_log`; routes `/api/garden` (list, save, identify, doctor, water, photo, remove).
+- **For the master** (patches in the CEO's notes folder): `src/worker.ts` runs `garden.remind` with the home reminders in the morning; `package.json` adds test-garden to `npm test`.
+- **For design:** the page uses shared classes; the few sizes held inline (the plant's picture, the grid of common plants) wait for `garden.css`. The kit pictures in `/assets/kit/garden/` are used as they are.
+- **In passing:** `H.modal` shows a `null` part as the text "null". home.js and garden.js filter their parts. A fix in `common.js` (skip null, as `el()` does) would be the master's.

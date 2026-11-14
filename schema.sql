@@ -1357,3 +1357,27 @@ CREATE TABLE IF NOT EXISTS app_access (
   created_at  INTEGER NOT NULL,
   PRIMARY KEY (email, app)
 );
+
+-- תחזוקת הבית (ai-features, server/home.ts): the household's things that need regular care
+CREATE TABLE IF NOT EXISTS home_items (
+  household      TEXT NOT NULL,
+  id             TEXT NOT NULL,
+  name           TEXT NOT NULL,
+  kind           TEXT NOT NULL,      -- a preset's kind (home-rules.ts PRESETS) or 'custom'
+  every_days     INTEGER,            -- null: no regular care (a warranty only)
+  last_done      TEXT,               -- YYYY-MM-DD
+  warranty_until TEXT,               -- YYYY-MM-DD
+  note           TEXT,
+  created_by     TEXT,
+  created_at     INTEGER NOT NULL,
+  updated_at     INTEGER NOT NULL,
+  PRIMARY KEY (household, id)
+);
+CREATE TABLE IF NOT EXISTS home_log (
+  household  TEXT NOT NULL,
+  item       TEXT NOT NULL,
+  done_on    TEXT NOT NULL,
+  by_email   TEXT NOT NULL,
+  at         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS home_log_hh ON home_log (household, at);

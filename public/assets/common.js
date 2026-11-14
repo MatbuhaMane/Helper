@@ -210,7 +210,10 @@
         if (r.stale) { setLocal(ns, r.data, r.at, false); window.dispatchEvent(new CustomEvent('helper:prefs', { detail: ns })); }
         else delete prefStore.dirty[ns];
         savePrefCache();
-      } catch (_) { return; } // offline or signed out: try again later
+      } catch (e) {
+        if (e && (e.status === 400 || e.status === 413)) { delete prefStore.dirty[ns]; savePrefCache(); continue; } // the server will never take this one (a bad name, too large): it must not hold back the others
+        return; // offline or signed out: try again later
+      }
     }
   }
   window.addEventListener('online', schedulePrefFlush);

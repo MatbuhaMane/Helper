@@ -69,5 +69,16 @@ def sprites():
                 part = np.dstack([raw, np.where(sil, veil, 0) * 255]).astype(np.uint8)
             sprite(part, f'public/assets/kit/{folder}/{name}.webp')
 
+def scenes():
+    # 9, the desert banner (olive tree, dunes, a tent): only the scene, rows 253..861 (above it a flat band, below it white)
+    img = Image.open(glob.glob(f'{SRC}9.*')[0]).convert('RGB').crop((0, 253, 2000, 861))
+    for w in (1600, 800): save(img.resize((w, round(img.height * w / img.width)), Image.LANCZOS), f'public/assets/scenes/desert-banner-{w}.webp', q=80)
+    # 10, the parchment scroll for headings and banners: the white out
+    img = Image.fromarray(unwhite(load(10)), 'RGBA'); img = img.crop(img.getchannel('A').getbbox())
+    for w in (1200, 600): save(img.resize((w, round(img.height * w / img.width)), Image.LANCZOS), f'public/assets/scenes/scroll-{w}.webp', q=82)
+    # 5, the tent at night with the fire: the whole scene, a candidate for the home page at night
+    img = Image.open(glob.glob(f'{SRC}5.*')[0]).convert('RGB')
+    for w in (1600, 800): save(img.resize((w, round(img.height * w / img.width)), Image.LANCZOS), f'public/assets/scenes/night-tent-{w}.webp', q=78)
+
 what = sys.argv[1:] or ['frame', 'sprites', 'scenes']
 for w in what: globals()[w]()

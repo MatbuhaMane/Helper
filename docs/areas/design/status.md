@@ -2,17 +2,31 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 10)._
+_Updated 2026-11-14 (the new chat, round 11)._
 
 
 
+
+## Round 11: the drawn app icons (the owner's sheet 38)
+- 21 icons cut from the sheet into `public/assets/app-icons/<name>.webp` (256px, transparent; script `docs/design/art/cut-tool-icons-38.py`).
+  - One scale for all, so the outline keeps one weight. The pink edge is un-mixed, and the gear's and wrench's holes are see-through.
+- Wired with CSS only, at the end of `launcher.css`: on the tools page (the flat look) each tile's picture is chosen by its `data-href`, and the line icon is hidden underneath. apps.js is unchanged.
+  - 18 tiles get one: family, settings, news, songs, messages, mail, habits, restaurants, parnasa, pc, and the 8 future ones (kitchen, howto, garden, home, translate, eye, homework, breath).
+  - tools, hill and garage are cut and waiting for a tile.
+- Checked on /tools/ at 375 and 1280, light and dark. The audit is clean.
+- Possible clashes: הרגלי אכילה (a round plate) next to הקפדה (a round target); the songbook (a book) next to ספר מתכונים.
 
 ## Round 10: the relation picker in the edit form (for ai-features f61951a)
 - `family.css` styles `.fv-form-rels`, the picker `.fv-rels .fv-pick` and the list `.fv-pick-list` with `.fv-pick-who` and `.fv-pick-new`.
   - Every button is 44px, and on a phone the four "+" buttons sit two per row.
   - `.fv-pick[hidden]` is now actually hidden; the old `display: grid` overrode it.
 - Checked on a mock in H.modal at 375 and 1280, light and dark. The audit is clean.
-- Drag-to-arrange (ai 2fde072) was cross-checked against e019b5f by reading the code, and every class matches. The live check waits for the merge.
+- Checked live too, on the real edit form after merging main: at 1280 dark and 375 light every target is 44px and nothing overflows.
+- Drag-to-arrange was checked live after merging main (CSS and logic together):
+  - the grip, the banner, the faded source card and the ghost all render;
+  - the `.drop` row lights up, and the insertion line lands in the gap between the cards at 375 and at 1280;
+  - there is no page overflow (the "all" view's own row scrolls sideways, as before).
+- Open: at 375 the banner runs to three lines because its text includes the keyboard hint. Proposal to ai-features: wrap the hint in `span.fv-kbd-hint`, and design will hide it on `(pointer: coarse)`.
 
 ## Round 9: the look of the food calculator (gathering)
 - `docs/design/gather-calc.md` gives the class names. The CSS is at the end of `public/gather/gather.css` and covers:

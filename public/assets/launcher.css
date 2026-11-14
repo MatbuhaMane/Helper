@@ -249,3 +249,34 @@ button.app.tb-future { border: 0; background: none; padding: 0; font: inherit; c
 .app.tb-future .ic.tb-pic > img { display: block; inline-size: 100%; block-size: 100%; object-fit: contain; transform: scale(1.18); opacity: .92; filter: saturate(.85); }
 :root[data-theme="dark"] .app.tb-future .ic.tb-pic > img { filter: saturate(.85) brightness(.88); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .app.tb-future .ic.tb-pic > img { filter: saturate(.85) brightness(.88); } }
+
+/* The drawn app icons (the owner's sheet 38, 2026-11-14; docs/design/art/cut-tool-icons-38.py): for the tools that had a borrowed
+   line icon, a colour picture in the flat look's own style (a pastel fill, a round ink outline), by the tile's address.
+   /assets/app-icons/ also holds tools, hill and garage for when they get a tile. No JS: the line icon stays underneath, hidden. */
+.apps-grid.flat .app[data-href="/family/"] { --pic: url(/assets/app-icons/family.webp); }
+.apps-grid.flat .app[data-href="/settings/"] { --pic: url(/assets/app-icons/settings.webp); }
+.apps-grid.flat .app[data-href="/news/"] { --pic: url(/assets/app-icons/news.webp); }
+.apps-grid.flat .app[data-href="/songs/"] { --pic: url(/assets/app-icons/songs.webp); }
+.apps-grid.flat .app[data-href="/messages/"] { --pic: url(/assets/app-icons/messages.webp); }
+.apps-grid.flat .app[data-href="/mail/"] { --pic: url(/assets/app-icons/mail.webp); }
+.apps-grid.flat .app[data-href="/food/diet/habits/"] { --pic: url(/assets/app-icons/habits.webp); }
+.apps-grid.flat .app[data-href="/food/restaurants/"] { --pic: url(/assets/app-icons/restaurant.webp); }
+.apps-grid.flat .app[data-href="/tools/parnasa/"] { --pic: url(/assets/app-icons/parnasa.webp); }
+.apps-grid.flat .app[data-href="/pc/"] { --pic: url(/assets/app-icons/pc.webp); }
+.apps-grid.flat .app[data-href="#soon-kitchen"] { --pic: url(/assets/app-icons/kitchen.webp); }
+.apps-grid.flat .app[data-href="#soon-howto"] { --pic: url(/assets/app-icons/howto.webp); }
+.apps-grid.flat .app[data-href="#soon-garden"] { --pic: url(/assets/app-icons/garden.webp); }
+.apps-grid.flat .app[data-href="#soon-home"] { --pic: url(/assets/app-icons/home.webp); }
+.apps-grid.flat .app[data-href="#soon-translate"] { --pic: url(/assets/app-icons/translate.webp); }
+.apps-grid.flat .app[data-href="#soon-eye"] { --pic: url(/assets/app-icons/eye.webp); }
+.apps-grid.flat .app[data-href="#soon-homework"] { --pic: url(/assets/app-icons/homework.webp); }
+.apps-grid.flat .app[data-href="#soon-breath"] { --pic: url(/assets/app-icons/breath.webp); }
+.apps-grid.flat .app:is([data-href="/family/"], [data-href="/settings/"], [data-href="/news/"], [data-href="/songs/"], [data-href="/messages/"], [data-href="/mail/"], [data-href="/food/diet/habits/"], [data-href="/food/restaurants/"], [data-href="/tools/parnasa/"], [data-href="/pc/"], [data-href="#soon-kitchen"], [data-href="#soon-howto"], [data-href="#soon-garden"], [data-href="#soon-home"], [data-href="#soon-translate"], [data-href="#soon-eye"], [data-href="#soon-homework"], [data-href="#soon-breath"]) .ic .icon { display: none; }
+.apps-grid.flat .app .ic::before { content: ""; position: absolute; inset: 4px; background: var(--pic, none) center / contain no-repeat;
+  transition: transform .35s var(--ease-river); }
+.apps-grid.flat .app:hover .ic::before { transform: rotate(-6deg) scale(1.06); }
+.apps-grid.flat .app.tb-future:hover .ic::before { transform: none; }
+/* at night the pastels are dimmed a little, like the side pages' pictures */
+:root[data-theme="dark"] .apps-grid.flat .app .ic::before { filter: brightness(.92); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .apps-grid.flat .app .ic::before { filter: brightness(.92); } }
+@media (prefers-reduced-motion: reduce) { .apps-grid.flat .app .ic::before { transition: none; } }

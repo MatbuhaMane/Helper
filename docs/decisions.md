@@ -11,6 +11,14 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": four conditions on the licence declaration (vision → design, ai-features, legal, master)
+Status: Decided (the owner). Legal's conditions; they complete the declaration in the entry below.
+
+1. **It never looks verified.** No "מוסמך" or "מאומת" badge and no tick, only the words "לפי הצהרת המשתמש".
+2. **No licence number and no documents are collected.**
+3. **A false declaration is grounds for removal.** A report on one reaches the owner like any other report.
+4. **The terms of use say** that the Ohel does not check the declarations and is not responsible for their truth.
+
 ## 2026-11-15 – "יד ביד", stage 1: the simplifications and the legal rules (vision → design, ai-features, legal, master)
 Status: Decided (the owner). New information: the refined estimate from ai-features (3-4 times goals with everything)
 and legal's answer. It updates the screen spec entry below; where the two differ, this entry wins for stage 1.

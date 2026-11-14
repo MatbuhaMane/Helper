@@ -34,12 +34,14 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 38** (2026-11-15), sent to design, ai-features, legal and the CEO: four conditions on the licence declaration in "יד ביד" (never looks verified, no licence numbers or documents, a false declaration is grounds for removal, the terms say the Ohel does not check).
 - **Batch 37** (2026-11-15), sent to design, ai-features, legal and the CEO: the six stage 1 simplifications of "יד ביד" (tithe redemption to stage 2, no GPS, simple sorting, one simple notification, distance as a range, a need outside the list waits for the owner) and the product rules from legal (no illegal services, publication only with the owner's approval, report and removal, regulated professionals with a self-declared licence, ידיים have no monetary value).
 - **Batch 36** (2026-11-15), sent to design, ai-features and the CEO: the screen spec of "יד ביד" stage 1 (home screen with banner and dashboard, "לוח הדרושים", "יצירת צורך", what I can give in the profile, location, the fund page and redeeming the tithe).
 - **Batch 35** (2026-11-15), sent to the CEO: strengthen the Ohel's cyber security (a full review, findings by severity for the owner, and a standing security check for every feature that touches personal data).
 - **Batch 34** (2026-11-15), sent to design, ai-features, legal and the CEO: "יד ביד" starts in stages. Stage 1 now is the spec and design of the social interface for family and friends only (`docs/vision/yad-beyad.md`); legal starts the tax check; ai-features estimates the scope; building waits for the end of the family's two weeks.
 - **Legal closed its check (through the CEO, 2026-11-15):** no legal blocker, also for trade with everyone and for youth; the written answer comes later and stays with the owner. The product rules went out in batch 37.
-- **In progress with the owner:** the spec of the owner's approval queue for "יד ביד".
+- **In progress with the owner:** the spec of the owner's approval queue for "יד ביד" (`docs/vision/yad-beyad.md`); decided so far: it lives inside the existing "ממתין לאישור" page.
+- **Waiting for the owner's approval:** the rules page and the terms chapter of "יד ביד" (legal's draft with the vision's tone pass, outside the repo).
 - **Batch 33** (2026-11-14), sent to the CEO and business: the tool is named "יד ביד" with the owner's line, and ידיים stay unlinked from credits (only discretionary gift credits).
 - **Batch 32** (2026-11-14), sent to design, the CEO, business and legal: the internal economy and the "יד" token (closed loop, earned only by doing, four hour tiers, a 10% tithe to a public fund, trade with everyone under three trust rules, youth inside the family). A big idea: "בקרוב" only.
 - **Batch 31** (2026-11-14), sent to ai-features, design and the CEO: "רמת הניג'וס", phone notifications per tool with four levels (off, quiet, normal, nag), main settings plus per-tool and per-item overrides.

@@ -2632,3 +2632,16 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - World recipes: og:image is cached per page in the Cloudflare Cache API. The key is under `<origin>/__og/`. A found picture is kept a week; none found, a day.
 - A plain search waits at most 1.5 s for the pictures.
 - A saved search fills its missing pictures from the cache.
+
+## 2026-11-14 · פרנסה, phase 1 (ai-features, the CEO's request, the owner's approval)
+
+- New tables (appended to schema.sql): `pr_tx`, `pr_recur`, `pr_learn`, `pr_kupa`, `pr_kupa_members`, `pr_holdings`.
+- New routes (appended to `functions/api/[[path]].ts`), all under `/api/parnasa`: the dashboard, `tx`, `import/check`, `import`, `recur/:id`, `holdings`, `people`, `kupa` (open, invite, accept, leave) and `tips`.
+- Every query is limited to the row's owner, or to a member (status `member`) of that row's קופה; anything else is 404.
+  - A קופה invitation goes only to someone in the same household.
+  - Members' emails never reach the page; only their names.
+- The AI tips: Claude only (no fallback to Gemini), seeing the month's sums by category only. Cached a day by the hash of those sums.
+- Prices: Yahoo's public chart (unofficial, delayed), cached an hour; only the symbol leaves. A US ticker in dollars × the day's ILS=X rate, a Tel Aviv one (`.TA`) in agorot ÷ 100. An Israeli fund's number is valued at its cost.
+- The page says it gives general guidance, not investment advice.
+- For the master: the hub entry in `public/assets/apps.js` (patch in the shared notes), and `node server/test-parnasa.mjs` to be added to `npm test`.
+- For design: `public/tools/parnasa/parnasa.css` is still missing some parts (listed in ai-features' status).

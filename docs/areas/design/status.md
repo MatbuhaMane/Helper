@@ -128,6 +128,22 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
       - measure a `slots.json` for each tree;
       - check that the current canopy stays the fallback.
 
+12. **Vision batch 24 (2026-11-14): a person's form on each skin.** Noted; nothing to do until the art arrives. The decision is
+    "How a person is shown on each tree skin" in `docs/decisions.md` on `vision`; the prompts are in
+    `docs/vision/asset-prompts-full.md`.
+    - **The forms:**
+      - on the pine, a pine cone with the portrait on its face;
+      - on the olive, a round frame of twisting olive branches;
+      - the maple and the juniper are decided later.
+    - **The empty form,** for a person with no record: the same shape, pale and as an outline only.
+    - **The seasons:** the form changes with the season, like the tree.
+    - **The files:** `03-pine-cone-*`, `04-pine-cone-empty`, `03-olive-frame-*` and `04-olive-frame-empty`.
+    - **Design's part when they arrive:** cut them and size them like `leaf.svg`.
+      - `.tr-leaf` today has a fixed `aspect-ratio: 120 / 152` and the face at 62% width with `margin-block-end: 22%`.
+      - The forms need these per skin, as variables (`--leaf-ar`, `--face-w`, `--face-y`), set on `.tree[data-kind]`. The round
+        olive frame is about 1:1.
+      - The quiet look for a person who has died is then derived in CSS (open question 3 in `design-assets-specs.md`).
+
 ---
 
 ## History (newest first)

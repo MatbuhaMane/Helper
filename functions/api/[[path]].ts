@@ -57,6 +57,8 @@ import * as discovery from '../../server/discover';
 import * as goalSocial from '../../server/goal-social';
 import * as reports from '../../server/reports';
 import * as dm from '../../server/dm';
+import * as friends from '../../server/friends';     // batch 27 (ai-features, 2026-11-14)
+import * as groups from '../../server/groups';
 import * as layout from '../../server/layout';
 import * as parnasa from '../../server/parnasa';
 import * as appAccess from '../../server/app-access';
@@ -573,6 +575,19 @@ route('GET', '/api/dm/:id', dm.thread);                                         
 route('POST', '/api/dm/:id', dm.send);                                          // { text }
 route('POST', '/api/dm/:id/block', dm.block);
 route('DELETE', '/api/dm/:id/block', dm.block);
+// friends and group chats (ai-features, batch 27, 2026-11-14; for the master's review)
+route('GET', '/api/friends', friends.list);
+route('POST', '/api/friends', friends.request);                                 // { email }: the same answer whether or not anyone has it
+route('POST', '/api/friends/link', friends.link);                               // a one-time link, 7 days
+route('GET', '/api/friends/link/:token', friends.linkPeek);
+route('POST', '/api/friends/link/:token', friends.linkAccept);
+route('POST', '/api/friends/:id/accept', friends.accept);
+route('DELETE', '/api/friends/:id', friends.remove);                            // decline, take back, or end
+route('GET', '/api/groups', groups.list);
+route('POST', '/api/groups', groups.create);                                    // { name, people: [contact ids] }
+route('GET', '/api/groups/:id', groups.thread);                                 // ?after=
+route('POST', '/api/groups/:id', groups.send);                                  // { text }
+route('DELETE', '/api/groups/:id', groups.leave);
 route('GET', '/api/admin/dm-stats', dm.adminStats);                             // counts only
 route('GET', '/api/admin/reports/:id/shot', reports.adminShot);
 /* the owner edits members' names, households and roles, and searches every household (server/member-admin.ts) */

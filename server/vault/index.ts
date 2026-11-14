@@ -507,6 +507,13 @@ async function nameFor(ctx: Ctx, v: Viewer, p: PersonRow) {
   const s = K.view(await cardOf(ctx, p), p.household === v.u.household ? 'household' : K.distance(v.u.household, p.household, v.bridges), whoFor(v, p));
   return s?.name || 'קרוב/ת משפחה';
 }
+/** how many requests really wait for my answer (the same ones the list shows: a card that moved to someone else no longer counts) */
+export async function asksFor(ctx: Ctx, email: string): Promise<number> {
+  const { results } = await ctx.env.DB.prepare("SELECT * FROM family_changes WHERE for_email = ? AND status = 'pending' LIMIT 50").bind(email).all<ChangeRow>();
+  let n = 0;
+  for (const c of results) { try { if (await stillTheirs(ctx, c)) n++; } catch { /* gone */ } }
+  return n;
+}
 /** for the tree: what I asked that still waits (its badge), and how many wait for my answer */
 async function waiting(ctx: Ctx, u: Member) {
   const { results } = await ctx.env.DB.prepare("SELECT id, kind, person_id, target_id, by_email, for_email FROM family_changes WHERE status = 'pending' AND (by_email = ? OR for_email = ?) ORDER BY created_at")
@@ -515,7 +522,7 @@ async function waiting(ctx: Ctx, u: Member) {
   return {
     // (who it waits for, by name: the page's "מחכה לאישור של …")
     pending: mine.map(({ id, kind, person_id, target_id, for_email }) => ({ id, kind, person: person_id, link: target_id, waitsFor: n.get(for_email) || for_email.split('@')[0] })),
-    asks: results.filter((r) => r.for_email === u.email).length,
+    asks: await asksFor(ctx, u.email),
   };
 }
 /** GET /api/vault/changes – what waits for my answer (with what it would change), and what I asked */

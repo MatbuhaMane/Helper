@@ -940,7 +940,12 @@
     modal(...[el('h2', {}, 'התראות במכשיר הזה'), out, say ? null : go].filter(Boolean));
   });
 
-  window.H = { api, el, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  /** A skeleton of a few text lines (design's .skel): what a list or card shows while it loads, in the size it will have, so nothing jumps. */
+  function skel(n = 3, label = 'טוען') {
+    const w = [72, 54, 63, 45];
+    return el('div', { class: 'skel-block', role: 'status', 'aria-label': label }, ...Array.from({ length: n }, (_, i) => el('div', { class: 'skel line', style: `--w:${w[i % 4]}%`, 'aria-hidden': 'true' })));
+  }
+  window.H = { skel, api, el, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

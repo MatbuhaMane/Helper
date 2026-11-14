@@ -93,3 +93,24 @@ These are planned, not designed yet:
 - floating bubbles;
 - the live card;
 - communities as umbrellas of groups.
+
+## Smooth: the patterns (the owner's priority, 2026-11-14)
+
+The rule for every department: pick the pattern from this table. Do not invent a new curve or duration. CSS is in the second "Telegram-smooth" section at the end of `base.css`.
+
+| Thing | In | Out | Curve | How |
+|---|---|---|---|---|
+| Sheet on a phone (`.modal`, ≤520 px) | 240 ms, rises from the bottom | 170 ms, down | `--ease-sheet` in, `--ease-leave` out (no overshoot, so no gap under it) | `sheet-up` / `sheet-down` |
+| Window on a desktop | 200 ms, scale .96→1 + fade | 170 ms, .97 + fade | the same | `pop-in` / `pop-out` |
+| Backdrop | fade 200 ms | fade 170 ms | linear-ish | opacity only (no animated blur) |
+| Menu or popover (`.navmenu`, `.lp-menu`, `.tr-menu`) | 200 ms, scale .96→1 + fade, grows from its trigger | 120 ms | `--ease-sheet` / `--ease-leave` | `--ox` / `--oy` is the trigger's centre; `.closing` on exit |
+| Page to page | old leaves 140 ms, new arrives 220 ms after 40 ms, 20 px on the reading axis | — | `--ease-leave` / `--ease-river` | cross-document view transition; `html[data-vt="back"]` reverses it |
+| Active tab | the pebble slides to the new tab in 280 ms (its own view transition, `tab-pebble`) | — | `--ease-river` | the bar and header stay still |
+| Press | 120 ms | 120 ms | `--ease-river` | `scale(.97)` on `.btn`, `.96` on chips, tabs, menu rows, `.985` on a card or row |
+
+- **Tokens:** `--ease-sheet` is `cubic-bezier(.2, .9, .25, 1)`, `--dur-sheet-in` 240 ms, `--dur-sheet-out` 170 ms. A closing thing is always faster than an opening one.
+- **A finger that lets go** (a dragged sheet, a swipe) uses `--ease-spring`, which may overshoot. Anything that opens by itself uses `--ease-sheet`, which does not.
+- **Only `transform` and `opacity`.** The tap highlight is off (`-webkit-tap-highlight-color`), and `touch-action: manipulation` is on every pressable thing already.
+- **Reduced motion:** a closing sheet only fades; the page turn, the pebble's slide and every press give are off.
+- **Not supported** (a browser without cross-document view transitions): the page loads as before, the pebble fades in on the new tab, and the rest is plain CSS and works everywhere.
+- **Still for a real phone:** frame smoothness is judged by the owner. T9 is not measured in the pane.

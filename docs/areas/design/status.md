@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (round 22)._
+_Updated 2026-11-14 (round 23)._
 
 
 
@@ -17,6 +17,12 @@ _Updated 2026-11-14 (round 22)._
   - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
   - Exercise illustrations come later.
 - Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 23: Telegram-smooth, part 2 (the owner's priority)
+- The spec: "Smooth: the patterns" in `docs/design/motion.md` (durations, curves, which pattern goes where).
+- CSS, the last section of base.css: sheets in 240 ms and out 170 ms (`.modal.closing`), windows pop in and out, menus grow from `--ox/--oy`, a shared-axis page turn (20 px, with `data-vt="back"` to reverse), the active tab's pebble slides between pages (view transition `tab-pebble`), more press feedback (`.btn` scale .97, chips, tabs, menu rows).
+- The audit is clean at 375 and 1280 px. Frame smoothness is for the owner's phone.
+- Patch for the master (common.js `.closing`, menu origin, page direction, speculation rules in index.html): `design-smooth-patch.md` in the CEO's notes folder.
+- The Ibn Ezra look (1431148) stays held, as it is.
 ## Round 22: רַאבַּ"ע introduces himself (the owner's ask, through the CEO)
 - `public/assets/raba-intro.css`: "תור הזהב הנצחי" (a dusk sky, a gold night in dark mode), parchment cards, his words in Frank Ruhl Libre.
 - The pieces: the figure in a halo that breathes while he speaks, the subtitles word by word, the dots, הבא / הקודם / דלג, and the mute button (new icons `bd-icons/sound*.svg`).

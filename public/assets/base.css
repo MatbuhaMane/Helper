@@ -342,7 +342,7 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
 @keyframes navmenu-in { from { opacity: 0; transform: translateY(-6px) scale(.98); } }
 .navmenu ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .navmenu a { display: flex; align-items: center; gap: 12px; padding: 7px 10px 7px 12px; border-radius: 14px; color: var(--text); text-decoration: none; font-size: .98rem;
-  transition: background-color .15s; }
+  transition: transform var(--dur-press) var(--ease-river), background-color .15s; }
 /* the icon on its own pale tile */
 .navmenu li > a > .icon { box-sizing: content-box; inline-size: 20px; block-size: 20px; padding: 7px; border-radius: 11px; flex: none;
   color: var(--icon-ink); background: color-mix(in srgb, var(--olive) 26%, #f7f6f0); stroke-width: 1.7; }   /* a pastel tile, in ink, by day and at night */
@@ -417,7 +417,7 @@ textarea { width: 100%; resize: vertical; }
   padding: 10px 16px; background: transparent; color: var(--text); white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
   transition: background-color var(--dur-quick) var(--ease-river), border-color var(--dur-quick) var(--ease-river), color var(--dur-quick) var(--ease-river), transform var(--dur-press) var(--ease-river);
 }
-.btn:active { transform: translateY(1px); }
+.btn:active { transform: scale(.97); }
 .btn.primary { background: var(--primary); color: var(--primary-ink); }
 .btn.primary:hover { background: color-mix(in srgb, var(--primary) 88%, var(--ink)); }
 .btn.accent { background: var(--accent); color: var(--accent-ink); }
@@ -437,7 +437,7 @@ textarea { width: 100%; resize: vertical; }
 .toggle input { accent-color: var(--primary); inline-size: 18px; block-size: 18px; }
 
 .banner { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border: 1px solid var(--olive); background: color-mix(in srgb, var(--olive) 14%, var(--card)); }
-.chip { font: inherit; font-size: .88rem; cursor: pointer; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); padding: 5px 12px; transition: border-color var(--dur-quick); }
+.chip { font: inherit; font-size: .88rem; cursor: pointer; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); padding: 5px 12px; transition: border-color var(--dur-quick), transform var(--dur-press) var(--ease-river); }
 .chip:hover { border-color: var(--primary); color: var(--primary); }
 /* A person's name with their one title and the badges they chose to show (business, 2026-11-13: the profile, the tree,
    the RSVPs). <span class="who"><b>שם</b> <span class="who-title founder">חבר מייסד</span>
@@ -554,10 +554,17 @@ textarea { width: 100%; resize: vertical; }
 .tabbar { view-transition-name: tabbar; }
 ::view-transition-group(appbar), ::view-transition-group(tabbar) { animation: none; }
 ::view-transition-old(appbar), ::view-transition-old(tabbar), ::view-transition-new(appbar), ::view-transition-new(tabbar) { animation-duration: 120ms; }
-::view-transition-old(root) { animation: page-out 160ms ease-in both; }
-::view-transition-new(root) { animation: page-in var(--dur-quick) var(--ease-river) 40ms both; }
-@keyframes page-out { to { opacity: 0; transform: translateX(6px); } }
-@keyframes page-in { from { opacity: 0; transform: translateX(-6px); } }
+/* a shared axis (Telegram's way): the old page leaves 20 px along the reading axis while it fades, the new one arrives from the other side.
+   Forward = the new page from the start side's far edge (RTL: from the left); html[data-vt="back"] reverses it (set by the master's pageswap
+   listener: going to an earlier tab, or the browser's back). Without View Transitions the page just loads, as before. */
+::view-transition-old(root) { animation: page-out 140ms var(--ease-leave) both; }
+::view-transition-new(root) { animation: page-in 220ms var(--ease-river) 40ms both; }
+@keyframes page-out { to { opacity: 0; transform: translateX(20px); } }
+@keyframes page-in { from { opacity: 0; transform: translateX(-20px); } }
+:root[data-vt="back"]::view-transition-old(root) { animation-name: page-out-back; }
+:root[data-vt="back"]::view-transition-new(root) { animation-name: page-in-back; }
+@keyframes page-out-back { to { opacity: 0; transform: translateX(-20px); } }
+@keyframes page-in-back { from { opacity: 0; transform: translateX(20px); } }
 @media (prefers-reduced-motion: reduce) { @view-transition { navigation: none; } }
 :root[data-motion="reduce"]::view-transition-group(*), :root[data-motion="reduce"]::view-transition-old(*), :root[data-motion="reduce"]::view-transition-new(*) { animation: none !important; }
 
@@ -1259,3 +1266,44 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
 /* in the picker of an item: "כמו הממשק (רגיל)" to go back to the tool's level */
 .nag-inherit { display: flex; align-items: center; gap: 8px; min-block-size: 44px; margin-block-start: 6px; font-size: .86rem; color: var(--muted); cursor: pointer; }
 .nag-inherit input { inline-size: 20px; block-size: 20px; accent-color: var(--primary); }
+
+/* ---------- Telegram-smooth, part 2 (the owner's priority, docs/decisions.md 2026-11-14; spec in docs/design/motion.md "Smooth: the patterns") ----------
+   Sheets rise 240 ms and leave 170 ms; menus grow from their trigger; the active tab's pebble slides to the next page's tab; every
+   tappable thing gives under the finger. Only transform and opacity. */
+:root { --ease-sheet: cubic-bezier(.2, .9, .25, 1); --dur-sheet-in: 240ms; --dur-sheet-out: 170ms; }
+html { -webkit-tap-highlight-color: transparent; }
+
+/* sheets and windows: in, and out (the JS adds .closing for 170 ms before it hides; see the patch in the notes) */
+@keyframes pop-in { from { opacity: 0; transform: scale(.96); } }
+@keyframes pop-out { to { opacity: 0; transform: scale(.97); } }
+@keyframes fade-out { to { opacity: 0; } }
+.modal-glass { animation: pop-in var(--dur-quick) var(--ease-sheet) both; transform-origin: 50% 60%; }
+.modal-backdrop { animation: fade var(--dur-quick) ease both; }
+.modal.closing { pointer-events: none; }
+.modal.closing .modal-glass { animation: pop-out var(--dur-sheet-out) var(--ease-leave) both; }
+.modal.closing .modal-backdrop { animation: fade-out var(--dur-sheet-out) ease both; }
+.modal.grow .modal-glass { animation: none; }
+@media (max-width: 520px) {
+  .modal-glass { animation: sheet-up var(--dur-sheet-in) var(--ease-sheet) both; transform-origin: 50% 100%; transition: transform var(--dur-sheet-in) var(--ease-sheet); }
+  .modal.closing .modal-glass { animation: sheet-down var(--dur-sheet-out) var(--ease-leave) both; }
+  @keyframes sheet-down { to { transform: translateY(100%); } }
+}
+@media (prefers-reduced-motion: reduce) { .modal.closing .modal-glass { animation: none; opacity: 0; } }
+
+/* menus and popovers grow from their trigger: the JS sets --ox / --oy (the trigger's centre in the menu's own box); .closing leaves in 120 ms */
+@keyframes menu-in { from { opacity: 0; transform: scale(.96); } }
+@keyframes menu-out { to { opacity: 0; transform: scale(.96); } }
+.navmenu, .lp-menu, .tr-menu { transform-origin: var(--ox, 50%) var(--oy, 0%); }
+.navmenu { animation: menu-in var(--dur-quick) var(--ease-sheet) both; }
+.navmenu.closing, .lp-menu.closing, .tr-menu.closing { animation: menu-out 120ms var(--ease-leave) both; pointer-events: none; }
+
+/* the tab bar's pebble slides from the old page's tab to the new one's (a view transition of its own, so it travels while the page turns) */
+@media (max-width: 899px) {
+  .tabbar > a[aria-current="page"]::before, .tabbar > .tab-pick[aria-current="page"]::before { view-transition-name: tab-pebble; }
+}
+::view-transition-group(tab-pebble) { animation-duration: 280ms; animation-timing-function: var(--ease-river); }
+@supports (view-transition-name: x) { .tabbar > :is(a, .tab-pick)[aria-current="page"]::before { animation: none; } }
+
+/* press feedback on what had none: chips, tabs, the window's close, menu rows, bar links (a short give, 120 ms, on transform) */
+:where(.tabs button, .modal-close, .topnav a, .nav-menu, .lp-menu > button, .tr-menu button):not(:disabled) { transition: transform var(--dur-press) var(--ease-river); }   /* (.chip and .navmenu a carry transform in their own transition) */
+:where(.chip, .tabs button, .modal-close, .navmenu a, .topnav a, .nav-menu, .lp-menu > button, .tr-menu button):not(:disabled):active { transform: scale(.96); }

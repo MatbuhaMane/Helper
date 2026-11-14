@@ -3290,3 +3290,42 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
   - It also drops a wrong parent link between the two, which is the עברי case.
   - When neither has parents, it returns `no_parents`.
 - No master file is touched.
+
+## 2026-11-14 · Friends, the fourth privacy level, the museum's first hub step (ai-features, vision batch 27)
+
+**Privacy (for review by the master, approval by the owner before it goes live):** commits 94bd9b1, 2b0f7aa and 33a9e7f.
+
+- **The four levels** are `all` / `friends` / `family` / `me`, in `server/audience-rules.ts`.
+  - The old values are read and never widened: `private` is `me`, `tribe` is `family`, and `household` stays the household only.
+  - A child under 12 chooses only `family` or `me`.
+- **The museum:**
+  - a friend of the one who added an item sees it at `friends` and `all`;
+  - any member sees `all`, but only through a friend's page (`/api/story?f=<friend id>`);
+  - files (recordings, photos, documents) stay in the household at every level.
+  - New items default to `family`.
+- **Messages:** friends may write to each other. A child under 12 writes and is written to only within the family.
+
+**Friends:**
+- A request answers the same whether or not the address exists.
+- A one-time link lasts 7 days; only its fingerprint is stored.
+- The page gets opaque ids, never emails.
+
+**Master files** (append only, commit 4aa226b, patch in the master's notes):
+- the tables `friends`, `friend_links`, `dm_groups`, `dm_group_members` and `dm_group_messages`;
+- the routes `/api/friends…` and `/api/groups…`;
+- `test-audience` and `test-friends` in `npm test`.
+
+**The gathering's food calculator:** master files 48857ce add the `/api/gather/:id/calc` and `/items/many` routes and `gathering_rsvps.diets`.
+
+**The museum hub:**
+- The kind `event` ("אירוע מהחיים") is text and a date, with no file.
+- No video until business prices its storage.
+- "גבעה ביער" not started.
+
+**For design:**
+- move `.fr-pick`, `.fr-group-name` and `.fr-kid-note` from family.css to messages.css (the messages page doesn't load family.css);
+- `.fr-pick` clashes with `public/food/fridge/fridge.css`;
+- a style and icon for `.st-item[data-kind="event"]`;
+- the friend card also holds `a.btn.ghost.small` links ("המוזיאון") and a "הסרה" button, and `.fr-talk` is an `a`.
+
+**For the master:** a friend link can't admit someone who isn't a member yet. That would need a hook in join.ts, which is the master's file and its decision.

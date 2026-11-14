@@ -58,6 +58,7 @@ import * as reports from '../../server/reports';
 import * as dm from '../../server/dm';
 import * as layout from '../../server/layout';
 import * as parnasa from '../../server/parnasa';
+import * as appAccess from '../../server/app-access';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -611,6 +612,9 @@ route('POST', '/api/parnasa/kupa/:id/invite', parnasa.kupaInvite);
 route('POST', '/api/parnasa/kupa/:id/accept', parnasa.kupaAccept);
 route('POST', '/api/parnasa/kupa/:id/leave', parnasa.kupaLeave);
 route('POST', '/api/parnasa/tips', parnasa.tips);
+/* beta and secret apps: the back door's leave (ai-features, server/app-access.ts) */
+route('GET', '/api/admin/app-access', appAccess.list);
+route('PUT', '/api/admin/app-access/:email', appAccess.put);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

@@ -1347,3 +1347,13 @@ CREATE TABLE IF NOT EXISTS pr_holdings (
   created_at  INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS pr_holdings_owner ON pr_holdings (owner_email, kupa_id);
+
+-- the back door's leave to open beta and secret apps (server/app-access.ts): app is 'beta' for a beta tester, or a
+-- secret app's address. The owner needs none
+CREATE TABLE IF NOT EXISTS app_access (
+  email       TEXT NOT NULL,
+  app         TEXT NOT NULL,
+  by_email    TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, app)
+);

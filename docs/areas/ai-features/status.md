@@ -1,9 +1,18 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (arranging the family tree).
+Last update: 2026-11-14 (the switchboard).
 
-## Latest: relationships in the profile edit, pick before create, "+ אח/אחות" (the עברי fix)
+## Latest: the switchboard in the back door (9c7d7e7; master daa0474, patch in the master's notes)
+
+"מצב האוהל" folds to one line (per device); under it, every app-wide on/off by category, the three-state experimental switch,
+רגיל/חגיגה/אבל and קודש/חול (with auto by Shabbat times). test-switches 37, npm test and typecheck pass.
+- Checked in the browser (port 8791, the local DB): hide/only/kodesh change the menus, party draws confetti and balloons,
+  mourning the candles, the companion stays away when off; members read the state; the routes answer admin_locked to others.
+  The audit is clean at 375 and 1280, light and dark (/, /tools/, /admin/).
+- Not checked: the board itself (behind the owner's passkey: admin_locked in dev); the look waits for design's CSS.
+
+## Before: relationships in the profile edit, pick before create, "+ אח/אחות" (the עברי fix)
 
 ## Before: the family tree's "סידור" (2fde072, 953a273)
 

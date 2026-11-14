@@ -97,3 +97,4 @@
 - 2026-11-14: business reported the owner-approved quota numbers (20 chef answers, 3 plant photos, 5 howto questions a day; renews at midnight Israel time); pointer added to future-specs.md and forwarded to ai-features-2.
 - 2026-11-14: ai-features-2 reports batch 26 and the quota numbers applied on branch ai-features (kitchen voice and timers, breathing voice and habits, home reminders), not yet merged; next the garden, then the translator.
 - 2026-11-14: the owner approved friends ("the family you choose", a page in the tree, a fourth privacy level), the story hub (videos, life events) and "גבעה ביער" waiting for users; batch 27 sent. Goals part 1 feedback and the הקפדה coach spec started.
+- 2026-11-14: business prepared the video storage options for the museum (story-storage.md §7, recommended: links by default, short clips up to 60 s / 50 MB); pointer in story.md; goes to the owner when the museum nears.

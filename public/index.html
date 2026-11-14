@@ -593,7 +593,8 @@
     sky();
     swellPointer();
     // Ibn Ezra lives here: he stands on the rug at his tent's entrance (unless he was asked to come along with the person).
-    const meetHim = () => H.loadDaemon().then((d) => d.mount(null, { dock }));
+    // (the owner's switchboard can turn him off for everyone: H.switches.daemon)
+    const meetHim = () => (H.swOn?.('daemon') === false ? null : H.loadDaemon().then((d) => d.mount(null, { dock })));
     const camp = dock.parentElement;
     if (navigator.connection?.saveData) {
       const hint = el('button', { class: 'btn ghost small wake', onclick: () => { hint.remove(); meetHim(); } }, 'להעיר את רַאבַּ"ע');

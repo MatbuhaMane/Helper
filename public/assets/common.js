@@ -100,12 +100,39 @@
     toastTimer = setTimeout(t._hide, actionLabel ? 5000 : 2600);
   }
 
+  /* ---------- The owner's switchboard (server/switches.ts; set in /admin/, read with /api/me) ----------
+   * H.switches: { exp: 'hide'|'only'|'all', mood: 'normal'|'party'|'mourning', kodesh, daemon, push, messages, dm, reports,
+   *   music, capture, eggs } – this device's copy before the first paint, then the server's; a change fires 'h:switches'.
+   * The marks on <html> (design styles them): data-mood="party|mourning", data-kodesh="1", data-exp="hide|only".
+   * apps.js hides by exp and kodesh; the moods' effects are ai-features' /assets/switches.js. */
+  const SW_KEY = 'helper.switches';
+  const switches = (() => { try { const s = JSON.parse(localStorage.getItem(SW_KEY) || 'null'); return s && typeof s === 'object' ? s : {}; } catch (_) { return {}; } })();
+  const swOn = (k) => switches[k] !== false;
+  function markSwitches() {
+    const root = document.documentElement, s = switches;
+    if (s.mood === 'party' || s.mood === 'mourning') root.dataset.mood = s.mood; else delete root.dataset.mood;
+    if (s.kodesh === true) root.dataset.kodesh = '1'; else delete root.dataset.kodesh;
+    if (s.exp === 'hide' || s.exp === 'only') root.dataset.exp = s.exp; else delete root.dataset.exp;
+  }
+  function setSwitches(s) {
+    if (!s || typeof s !== 'object') return;
+    const before = JSON.stringify(switches);
+    for (const k of Object.keys(switches)) delete switches[k];
+    Object.assign(switches, s);
+    if (JSON.stringify(switches) === before) return;
+    try { localStorage.setItem(SW_KEY, JSON.stringify(switches)); } catch (_) { /* no storage */ }
+    markSwitches();
+    window.dispatchEvent(new CustomEvent('h:switches'));
+  }
+  markSwitches();
+
   let mePromise;
   function me() {
     mePromise = mePromise || api('/api/me', { noRedirect: true }).catch((e) => (e.offline ? { user: JSON.parse(localStorage.getItem('helper.me') || 'null'), offline: true } : { user: null }));
     return mePromise.then((r) => {
       try { if (r.user) localStorage.setItem('helper.me', JSON.stringify(r.user)); } catch (_) { /* ignore */ }
       if (r.user && !r.offline) applyServerPrefs(r.user.email, r.prefs || {});
+      if (r.user && !r.offline) setSwitches(r.switches);
       grants = r.grants || [];
       ancientUi();
       return r;
@@ -441,12 +468,14 @@
       }
       // the family vault (data-vault): no player, no capture – nothing from outside runs next to the documents
       const vault = document.body.dataset.vault === '1';
-      if (!r.offline && !embedded && !vault) loadMusic();
-      if (!r.offline && !vault) loadCapture();
-      if (!r.offline && !vault && !embedded) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
-      if (!r.offline && !vault && !embedded) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
-      if (!r.offline && !vault && !embedded) loadOnce('/assets/dm.js').catch(() => {});         // messages between members: the dot and the menu entry (server/dm.ts)
-      if (!r.offline && !vault && !embedded) loadOnce('/assets/eggs.js').catch(() => {});       // the owner's surprise eggs on this page, if any (server/layout.ts)
+      if (!r.offline && !embedded && !vault && swOn('music')) loadMusic();
+      if (!r.offline && !vault && swOn('capture')) loadCapture();
+      if (!r.offline && !vault && !embedded && swOn('messages')) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
+      if (!r.offline && !vault && !embedded && swOn('reports')) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
+      if (!r.offline && !vault && !embedded && swOn('dm')) loadOnce('/assets/dm.js').catch(() => {});         // messages between members: the dot and the menu entry (server/dm.ts)
+      if (!r.offline && !vault && !embedded && swOn('eggs')) loadOnce('/assets/eggs.js').catch(() => {});
+      // the switchboard's moods: confetti and balloons (חגיגה) or candles (אבל), ai-features' /assets/switches.js
+      if (!vault && !embedded && (switches.mood === 'party' || switches.mood === 'mourning')) loadOnce('/assets/switches.js').catch(() => {});       // the owner's surprise eggs on this page, if any (server/layout.ts)
       // the back door, opened on this device (ai-features' /assets/admin-tab.js): a tab back to it while the room is still open
       let room = null; try { room = localStorage.getItem('helper.adminRoom'); } catch (_) { /* no storage */ }
       if (room && !r.offline && !vault && !embedded && !location.pathname.startsWith('/admin/')) loadOnce('/assets/admin-tab.js').catch(() => {});
@@ -668,6 +697,7 @@
     if (embedded || document.body.dataset.daemon === 'hero' || document.body.dataset.daemon === 'off') return;
     me().then((r) => {
       if (!r.user || r.offline) return;
+      if (!swOn('daemon') || switches.kodesh === true) return;   // the switchboard: the companion off, or calm in קודש (he stays in his tent)
       if (prefs('daemon', DAEMON_DEFAULTS, 'helper.daemon.prefs').follow) loadDaemon().then((d) => d.mount());
     });
   }
@@ -790,7 +820,7 @@
     modal(...[el('h2', {}, 'התראות במכשיר הזה'), out, say ? null : go].filter(Boolean));
   });
 
-  window.H = { api, el, toast, me, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  window.H = { api, el, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

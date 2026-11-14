@@ -108,6 +108,7 @@ route('GET', '/api/me', async (ctx) => {
   // child: under 12 by the birth year the owner set (the year itself stays private)
   return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
     shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
+    switches: await switches.publicSwitches(ctx.env).catch(() => null),   // the owner's switchboard (server/switches.ts): exp, mood, kodesh, daemon…
     grants: await grants.grantsFor(ctx.env, ctx.user.email),   // the person's own secret grants only (server/grants.ts)
     owner: ctx.user.role === 'owner', apps: await appAccess.leavesFor(ctx.env, ctx.user),   // beta and secret apps: the person's own leaves (server/app-access.ts)
     ...(await lock.meLock(ctx.env, ctx.req)) });   // appLock: off | pin | bio (the padlock in the bar); locked: the lock screen   // shop: the owner's switch for prices and buying

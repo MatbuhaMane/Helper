@@ -9,6 +9,12 @@ _Updated 2026-11-14 (the new chat, round 15)._
 
 ## Queued
 - Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
+- Vision batch 28 (vision a54fe0c), goals part 2, waiting for the CEO's order:
+  - a consultation panel on a goal's page (AI chat), with a "שמור מסקנה" button that pins a conclusion to the goal;
+  - "עזור לי להגדיר" when creating a goal;
+  - a shared goal on the person's profile in the tree, using the four-level picker (`.priv-pick`, round 15);
+  - a "גם כהודעה לטלפון" switch per notification kind in the settings;
+  - later, a "connect your storage" screen (Google Drive or a NAS).
 
 ## Round 15: batch 27, the privacy picker and the friends page (look only; the logic is ai-features')
 - **Four levels** (`data-level` all / friends / family / me): a full picker (2×2 on a phone, 4 across on a PC), a chip and a tag. They live in base.css and use four new icons in `assets/priv-icons/`.

@@ -20,7 +20,7 @@ import { z } from 'zod';
 import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 import {
   CATS, ParnasaError, addMonths, aiSummary, cleanHolding, cleanTx, dueDates, dupKey, feedSymbol, frequent, isMonth,
-  kupaName, line, monthRange, parsePriceCsv, sums,
+  inShekels, kupaName, line, monthRange, parseQuote, sums,
 } from './parnasa-rules';
 
 const bad = (e: unknown): never => { if (e instanceof ParnasaError) throw new HttpError(400, e.code); throw e; };
@@ -59,7 +59,7 @@ export async function dashboard(ctx: Ctx): Promise<Response> {
     DB.prepare(`SELECT date, amount, cat FROM pr_tx WHERE ${w} AND date BETWEEN ? AND ?`).bind(...args, from, to).all<{ date: string; amount: number; cat: string }>(),
     // (in a קופה, whether a row is mine, never the others' addresses)
     DB.prepare(`SELECT id, date, amount, what, cat, recur_id, owner_email = ? AS mine FROM pr_tx WHERE ${w} AND date <= ? ORDER BY date DESC, created_at DESC LIMIT 15`).bind(s.email, ...args, to).all(),
-    DB.prepare(`SELECT date, amount, what, cat, learn_key AS key FROM pr_tx WHERE ${w} AND date >= ? AND owner_email = ?`).bind(...args, since90, s.email).all<{ date: string; amount: number; what: string; cat: string; key: string }>(),
+    DB.prepare(`SELECT date, amount, what, cat, learn_key AS key FROM pr_tx WHERE ${w} AND date >= ? AND owner_email = ? AND recur_id IS NULL`).bind(...args, since90, s.email).all<{ date: string; amount: number; what: string; cat: string; key: string }>(),
     DB.prepare(`SELECT id, what, amount, cat, every, day, next_date FROM pr_recur WHERE ${w} AND active = 1 ORDER BY day`).bind(...args).all<{ amount: number; every: number }>(),
     DB.prepare(`SELECT id, symbol, name, qty, cost FROM pr_holdings WHERE ${w} ORDER BY created_at`).bind(...args).all<{ id: string; symbol: string; name: string; qty: number; cost: number }>(),
     DB.prepare('SELECT key, cat FROM pr_learn WHERE email = ? ORDER BY at DESC LIMIT 500').bind(s.email).all<{ key: string; cat: string }>(),
@@ -199,32 +199,33 @@ export async function deleteHolding(ctx: Ctx): Promise<Response> {
   return json({ ok: true });
 }
 
-/** a public quote (stooq.com, delayed), cached for an hour; the symbol is the only thing that leaves */
-async function quote(ctx: Ctx, sym: string): Promise<number | null> {
+/** a public, delayed quote (Yahoo's chart), cached for an hour; the symbol is the only thing that leaves */
+async function quote(ctx: Ctx, sym: string): Promise<{ price: number; currency: string } | null> {
   const key = `${ctx.url.origin}/__px/${encodeURIComponent(sym)}`;
   try {
     const hit = await caches.default.match(key);
-    if (hit) return ((await hit.json()) as { p: number | null }).p;
+    if (hit) return ((await hit.json()) as { q: { price: number; currency: string } | null }).q;
   } catch { /* no cache here */ }
-  let p: number | null = null;
+  let q: { price: number; currency: string } | null = null;
   try {
-    const r = await fetch(`https://stooq.com/q/l/?s=${encodeURIComponent(sym)}&f=sd2t2ohlcv&h&e=csv`, { signal: AbortSignal.timeout(4000) });
-    if (r.ok) p = parsePriceCsv(await r.text());
-  } catch { p = null; }
+    const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=1d`,
+      { headers: { 'user-agent': 'Mozilla/5.0 (compatible; family-app)' }, signal: AbortSignal.timeout(4000) });
+    if (r.ok) q = parseQuote(await r.json());
+  } catch { q = null; }
   try {
-    ctx.waitUntil(caches.default.put(key, new Response(JSON.stringify({ p }), { headers: { 'content-type': 'application/json', 'cache-control': `public, max-age=${p ? 3600 : 600}` } })).catch(() => {}));
+    ctx.waitUntil(caches.default.put(key, new Response(JSON.stringify({ q }), { headers: { 'content-type': 'application/json', 'cache-control': `public, max-age=${q ? 3600 : 600}` } })).catch(() => {}));
   } catch { /* no cache here */ }
-  return p;
+  return q;
 }
 
 async function priced(ctx: Ctx, holds: { id: string; symbol: string; name: string; qty: number; cost: number }[]) {
   if (!holds.length) return { items: [], value: 0, cost: 0 };
-  const usdils = await quote(ctx, 'usdils');
-  const items = await Promise.all(holds.map(async (h) => {
-    const sym = feedSymbol(h.symbol);
-    const usd = sym ? await quote(ctx, sym) : null;
-    const value = usd && usdils ? Math.round(usd * usdils * h.qty * 100) / 100 : null;
-    return { ...h, price: usd, value, change: value != null && h.cost > 0 ? Math.round(((value - h.cost) / h.cost) * 1000) / 10 : null };
+  const syms = holds.map((h) => feedSymbol(h.symbol));
+  const usdils = syms.some((x) => x && !x.endsWith('.TA')) ? (await quote(ctx, 'ILS=X'))?.price ?? null : null;
+  const items = await Promise.all(holds.map(async (h, i) => {
+    const each = syms[i] ? inShekels(await quote(ctx, syms[i]!), usdils) : null;
+    const value = each != null ? Math.round(each * h.qty * 100) / 100 : null;
+    return { ...h, price: each != null ? Math.round(each * 100) / 100 : null, value, change: value != null && h.cost > 0 ? Math.round(((value - h.cost) / h.cost) * 1000) / 10 : null };
   }));
   const value = items.reduce((a, h) => a + (h.value ?? h.cost), 0), cost = items.reduce((a, h) => a + h.cost, 0);
   return { items, value: Math.round(value * 100) / 100, cost: Math.round(cost * 100) / 100 };

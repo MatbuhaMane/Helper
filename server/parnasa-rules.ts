@@ -137,15 +137,26 @@ export function cleanHolding(input: unknown): CleanHolding {
   if (!Number.isFinite(cost) || cost < 0 || cost > MAX_AMOUNT * 10) throw new ParnasaError('bad_amount');
   return { symbol, name: line(r.name, 60) || symbol, qty, cost: Math.round(cost * 100) / 100 };
 }
-/** the price feed's symbol: a US ticker (letters) is asked as "voo.us"; anything else is not priced (valued at cost) */
-export const feedSymbol = (symbol: string) => (/^[A-Z]{1,6}(\.[A-Z])?$/.test(symbol) ? symbol.toLowerCase().replace('.', '-') + '.us' : null);
-/** one line of the price feed's CSV (Symbol,Date,Time,Open,High,Low,Close,Volume) → the close, or null */
-export function parsePriceCsv(csv: string): number | null {
-  const rows = csv.trim().split(/\r?\n/);
-  if (rows.length < 2) return null;
-  const head = rows[0].toLowerCase().split(','), vals = rows[1].split(',');
-  const close = Number(vals[head.indexOf('close')]);
-  return Number.isFinite(close) && close > 0 ? close : null;
+/** the price feed's symbol (Yahoo's public chart, delayed): a US ticker as it is ("BRK.B" → "BRK-B"), a Tel Aviv one
+    with ".TA" ("TEVA.TA"); anything else (an Israeli fund's number) is not priced and is valued at its cost */
+export function feedSymbol(symbol: string): string | null {
+  if (/^[A-Z0-9][A-Z0-9-]{0,11}\.TA$/.test(symbol)) return symbol;
+  if (/^[A-Z]{1,6}(\.[A-Z])?$/.test(symbol)) return symbol.replace('.', '-');
+  return null;
+}
+/** the feed's answer → the price and its currency, or null */
+export function parseQuote(body: unknown): { price: number; currency: string } | null {
+  const meta = (body as { chart?: { result?: { meta?: { regularMarketPrice?: unknown; currency?: unknown } }[] } })?.chart?.result?.[0]?.meta;
+  const price = Number(meta?.regularMarketPrice);
+  return Number.isFinite(price) && price > 0 && typeof meta?.currency === 'string' ? { price, currency: meta.currency } : null;
+}
+/** a price in shekels: dollars by the day's rate, agorot (Tel Aviv's "ILA") divided by 100; another currency is not priced */
+export function inShekels(q: { price: number; currency: string } | null, usdils: number | null): number | null {
+  if (!q) return null;
+  if (q.currency === 'ILS') return q.price;
+  if (q.currency === 'ILA') return q.price / 100;
+  if (q.currency === 'USD' && usdils) return q.price * usdils;
+  return null;
 }
 
 /* ---------- the shared קופה ---------- */

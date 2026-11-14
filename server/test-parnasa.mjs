@@ -60,10 +60,15 @@ eq('never a description', JSON.stringify(ai).includes('שופרסל') || JSON.st
 eq('a holding', R.cleanHolding({ symbol: ' voo ', qty: '3', cost: 5000.555 }), { symbol: 'VOO', name: 'VOO', qty: 3, cost: 5000.56 });
 throws('a bad symbol', () => R.cleanHolding({ symbol: 'V O O', qty: 1 }), 'bad_symbol');
 throws('no units', () => R.cleanHolding({ symbol: 'VOO', qty: 0 }), 'bad_qty');
-eq('a US ticker', R.feedSymbol('BRK.B'), 'brk-b.us');
+eq('a US ticker', R.feedSymbol('BRK.B'), 'BRK-B');
+eq('a Tel Aviv ticker', R.feedSymbol('TEVA.TA'), 'TEVA.TA');
 eq('an Israeli fund number is not priced', R.feedSymbol('1159250'), null);
-eq('the price feed', R.parsePriceCsv('Symbol,Date,Time,Open,High,Low,Close,Volume\r\nVOO.US,2026-11-13,22:00:19,560.1,565,559,563.27,4000000\r\n'), 563.27);
-eq('no price', R.parsePriceCsv('Symbol,Date,Time,Open,High,Low,Close,Volume\nX.US,N/D,N/D,N/D,N/D,N/D,N/D,N/D'), null);
+const yq = (price, currency) => ({ chart: { result: [{ meta: { currency, regularMarketPrice: price } }] } });
+eq('the feed', R.parseQuote(yq(693.38, 'USD')), { price: 693.38, currency: 'USD' });
+eq('no price', R.parseQuote({ chart: { result: null, error: { code: 'Not Found' } } }), null);
+eq('dollars to shekels', R.inShekels(R.parseQuote(yq(100, 'USD')), 3.2), 320);
+eq('agorot to shekels', R.inShekels(R.parseQuote(yq(14030, 'ILA')), null), 140.3);
+eq('no rate, no price', R.inShekels(R.parseQuote(yq(100, 'USD')), null), null);
 eq('a קופה name', R.kupaName('  '), 'קופת הבית');
 
 /* ---- the page: the category guess ---- */
@@ -74,6 +79,8 @@ eq('a remembered choice wins', C.guess('שופרסל דיל רעננה', 'out', 
 eq('remembered by the first word', C.guess('שופרסל אקספרס', 'out', { 'שופרסל דיל': 'fun' }).best, 'fun');
 eq('salary', C.guess('משכורת נובמבר', 'in', {}).best, 'salary');
 eq('an unknown business', C.guess('אבגד הוז', 'out', {}).known, false);
+eq('an unknown business is שונות', C.guess('אבגד הוז', 'out', {}).offer, ['other', 'food', 'fun']);
+eq('unknown income', C.guess('', 'in', {}).best, 'in_other');
 eq('the key: no numbers or branches', C.learnKey('שופרסל דיל 123 ת"א, רעננה'), 'שופרסל דיל רעננה');
 
 /* ---- the page: reading files ---- */

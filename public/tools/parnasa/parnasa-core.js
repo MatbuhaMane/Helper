@@ -44,9 +44,12 @@
       if (hit) found.push(learned[hit]);
     }
     for (const c of pool) if ((WORDS[c] || []).some((w) => text.includes(w)) && !found.includes(c)) found.push(c);
+    // nothing known: "שונות" (or "הכנסה אחרת"), with the most common ones offered beside it
+    const known = found.length > 0, best = found[0] || (kind === 'in' ? 'in_other' : 'other');
+    if (!known) found.push(best);
     const rest = kind === 'in' ? IN : ['food', 'fun', 'bills', 'car', 'home', 'health', 'kids'];
     for (const c of rest) { if (found.length >= 3) break; if (!found.includes(c)) found.push(c); }
-    return { best: found[0] || (kind === 'in' ? 'in_other' : 'other'), known: found.length > 0 && (!!(k && learned && learned[k]) || pool.some((c) => (WORDS[c] || []).some((w) => text.includes(w)))), offer: found.slice(0, 3) };
+    return { best, known, offer: found.slice(0, 3) };
   }
 
   /* ---------- reading a file ---------- */

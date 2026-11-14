@@ -61,8 +61,8 @@ Under מצב האוהל. One card per category, in a responsive grid: one column
           <div class="sb-txt"><b id="sw-mood">מצב רוח</b><small>חגיגה: קונפטי בפתיחה. אבל: נרות וצבעים שקטים.</small></div>
           <div class="sb-seg sb-mood" role="radiogroup" aria-labelledby="sw-mood">
             <button type="button" role="radio" aria-checked="true" data-v="normal">רגיל</button>
-            <button type="button" role="radio" aria-checked="false" data-v="celebrate">חגיגה</button>
-            <button type="button" role="radio" aria-checked="false" data-v="mourn">אבל</button>
+            <button type="button" role="radio" aria-checked="false" data-v="party">חגיגה</button>
+            <button type="button" role="radio" aria-checked="false" data-v="mourning">אבל</button>
           </div>
         </li>
       </ul>
@@ -84,28 +84,23 @@ Under מצב האוהל. One card per category, in a responsive grid: one column
 
 | Attribute | What it does |
 |---|---|
-| `data-mood="celebrate"` | A warm, festive tint (gold accent). On opening, the burst below. |
-| `data-mood="mourn"` | A faded, quiet palette (greys, the vine turned slate), pictures desaturated, and a candle note if the JS adds one. |
-| `data-kodesh` (no value) | A calm Shabbat look: cream and a deep blue by day, a night blue and soft gold at night. Modest, tokens only. |
+| `data-mood="party"` | A warm, festive tint (gold accent). On opening, the confetti and balloons below. |
+| `data-mood="mourning"` | A faded, quiet palette (greys, the vine turned slate), pictures desaturated, and a candle note if the JS adds one. |
+| `data-kodesh` (any value, e.g. `"1"`) | A calm Shabbat look: cream and a deep blue by day, a night blue and soft gold at night. Modest, tokens only. |
 
 - Each one works in light and dark, and with the person's own palette (`data-palette`); the mood wins over the palette.
-- When both are set, `data-mood="mourn"` wins over `data-kodesh`. That is only a look default: what קודש means, and whether
+- When both are set, `data-mood="mourning"` wins over `data-kodesh`. That is only a look default: what קודש means, and whether
   mourning shows on Shabbat, is for the owner to decide.
 
-### The celebration burst
+### The effects layer (ai-features' `switches.js` draws and animates it)
 
-Append it to `<body>` once per opening (for example once per session per page), and remove it after 4.5 s. The CSS places,
-colours and times every piece by its position, so the JS adds only empty elements:
+`<div class="mood-fx" aria-hidden="true">`: a fixed layer over the page that nothing can click (`pointer-events: none`).
 
-```html
-<div class="cel-burst" aria-hidden="true">
-  <i></i> × 28       <!-- confetti -->
-  <b></b> × 5        <!-- balloons -->
-</div>
-```
-
-- The confetti falls for about 3 seconds, and the balloons rise for about 4.5. Nothing can be clicked: `pointer-events: none`.
-- With `prefers-reduced-motion` it is not shown at all.
+- **The JS:** it sets `--x` (the inline start), `--c` (the colour) and, for confetti, `--r` (a rotation) on each piece, and it animates them with transform and opacity. Under reduced motion it draws nothing.
+- **The CSS:** it gives the shapes.
+  - `i.mood-confetti`: an 8×12 rectangle.
+  - `i.mood-balloon` > `i.mood-string`: a 38×48 balloon with a highlight, a knot and a string. It starts just below the window.
+  - `div.mood-candles` > `span.mood-candle` × 2 > `i.mood-flame`: they rest in the bottom inline-end corner, above the tab bar on a phone. The flame flickers in CSS (transform and opacity) and stands still under reduced motion.
 
 ### The candle note (mourning, optional)
 
@@ -128,6 +123,6 @@ colours and times every piece by its position, so the JS adds only empty element
 | `sb-switch[role=switch][aria-checked]` | on/off | `aria-disabled` |
 | `sb-row-seg`, `sb-seg[role=radiogroup]` > `button[role=radio][aria-checked]` | three states | |
 | `sb-mood` + `data-v` | the mood's segment | coloured per mood |
-| `html[data-mood="celebrate"\|"mourn"]`, `html[data-kodesh]` | every page | token overrides |
-| `cel-burst` > `i` × 28, `b` × 5 | the celebration | on opening |
+| `html[data-mood="party"\|"mourning"]`, `html[data-kodesh]` | every page | token overrides |
+| `mood-fx` > `mood-confetti`, `mood-balloon` > `mood-string`, `mood-candles` > `mood-candle` > `mood-flame` | the effects | ai-features draws them |
 | `mood-note`, `mood-candle` | the mourning note | optional |

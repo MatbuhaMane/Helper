@@ -689,8 +689,8 @@ details.bd-state[open] > :not(summary) { animation: sb-in var(--dur-draw) var(--
   box-shadow: 0 1px 3px color-mix(in srgb, var(--text) 18%, transparent), inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent); }
 .sb-seg > button:active { transform: scale(.96); }
 .sb-seg > button:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 1px; }
-.sb-mood > button[data-v="celebrate"][aria-checked="true"] { background: color-mix(in srgb, #e0a12a 22%, var(--card)); box-shadow: inset 0 0 0 1px #c9891a; }
-.sb-mood > button[data-v="mourn"][aria-checked="true"] { background: color-mix(in srgb, #6b6f78 20%, var(--card)); box-shadow: inset 0 0 0 1px #6b6f78; }
+.sb-mood > button[data-v="party"][aria-checked="true"] { background: color-mix(in srgb, #e0a12a 22%, var(--card)); box-shadow: inset 0 0 0 1px #c9891a; }
+.sb-mood > button[data-v="mourning"][aria-checked="true"] { background: color-mix(in srgb, #6b6f78 20%, var(--card)); box-shadow: inset 0 0 0 1px #6b6f78; }
 
 /* a row's life: saving, saved, failed */
 .sb-row.saving :is(.sb-switch, .sb-seg) { opacity: .6; pointer-events: none; }

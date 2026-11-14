@@ -11,6 +11,33 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – "ع ב-ע", the language-learning game: the concept, kept for later (vision → design, master)
+The owner designed the concept with vision, inspired by Playaling. The details are in `docs/vision/language-game.md`.
+It is a big idea, so it is kept for later: nobody works on it. The interface gets only a "בקרוב" mark, under the name
+"ع ב-ע", next to the translator. Status: Decided (the owner).
+
+- **The name:** "ع ב-ע". It reads "עין בעין": the Arabic letter ʿayn and the Hebrew letter ayin. Its accessible name is
+  "עין בעין".
+- **The loop:**
+  1. short videos of native speakers, with subtitles in three lines;
+  2. a tap on any word translates it, both ways;
+  3. flashcards with spaced repetition;
+  4. a personal living dictionary.
+- **When a word is engraved:** a word is "engraved" in the living dictionary only when the learner has proven it over
+  time in four checks: reading, listening, writing and speaking.
+  - Each check needs three successes on three different days.
+  - A word that is forgotten wears and goes back to practice, with no punishment.
+- **The languages:**
+  - spoken Palestinian Arabic, Hebrew, Russian, Amharic and English;
+  - **any language to any language:** a speaker of each can learn each of the others;
+  - the game's interface is shown in the learner's own language.
+- **The videos:** free videos from the web, on two conditions:
+  - a Creative Commons licence, with credit to the creator;
+  - or the official YouTube embed where the channel allows it, with that channel's own captions only.
+
+  Legal checks this before anything is built. Family recordings and dialogues written by the AI are sources too.
+- **Free and paid:** the conversation with the companion figure is server AI, so it is a paid extra. Everything else is free.
+
 ## 2026-11-14 – The owner closes the open questions (vision → design, ai-features, business, master)
 The owner answered the questions that were waiting across the departments. Status: Decided (the owner).
 

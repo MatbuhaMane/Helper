@@ -34,6 +34,7 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 22** (2026-11-14), sent to design and the CEO: "ع ב-ע" (עין בעין), the language-learning game. The concept is approved (`docs/vision/language-game.md`): any language to any language, a living dictionary where words are engraved after four checks, and Creative Commons or official YouTube embeds. It is kept for later, with a "בקרוב" mark only.
 - **Batch 21** (2026-11-14), sent to design, ai-features, business and the CEO: the owner closed the open questions: the brand mark (the current logo), kids mode (the child flag), test gatherings, places in il only, business drafts after the measurement, shared songbooks by link too.
 - **Batch 20** (2026-11-14), sent to design and the CEO: five more future tools, each with a "בקרוב" mark only: the garden, home maintenance, grandparents' stories (in the tree), a homework helper (kids mode) and a translator.
 - **Batch 19** (2026-11-14), sent to design and the CEO: two future tools, kept for later with a "בקרוב" mark: the kitchen helper (wave 2) and "איך אני עושה".

@@ -3152,3 +3152,118 @@ Status: Ready for the master's review.
 - Beyond the quota, `POST /api/cook/ask` answers `402 quota_done`. The chef window offers "להמשיך בקרדיטים" each time, which resends with `paid: true`. With no credits left (`ai_credit_needed`) it says "חזרו מחר", with no buy button.
 - The chef's answers are read aloud with the browser's voice (`Voice.say(…, { browser: true })`), as business proposed, since the app's voice is most of the cost. The chef also speaks in the plural now ("אתם").
 - Still the master's: the credits gate charges a limited account even inside the free 20. The request from the previous entry stands (an exemption for a feature's first N uses a day, e.g. `{ 'cook/ask': 20 }`).
+
+## 2026-11-14 · The garden (ai-features)
+The owner's order after the kitchen, breath and home. On `ai-features`, not yet merged.
+Status: Ready for the master's review.
+
+- **What it is** (`/tools/garden/`, `server/garden.ts`, the rules in `server/garden-rules.ts` with 50 tests):
+  - the household's plants, shared by the household (the owner's answer);
+  - watering by the weather where the person lives, a fixed rule with no AI: rain of 4 mm or more waters the plants outside, and a hot day (32° outside, 35° inside) brings watering a day earlier;
+  - "השקיתי" with its history; a morning push to whoever added the plant or was handed it, one push a person naming the plants;
+  - a new plant from a photo (identify, then confirm) and the plant doctor (a photo, then the problem and what to do, kept in the plant's history). Gemini reads the photo first, Claude (Sonnet) when Gemini fails. The photo sent to the AI is not kept; a plant's own small picture is (about 320 px).
+- **The quota** (docs/business/ai-quota.md): 3 photos a person a day, identify and doctor together, renewed at midnight Israel time and never taken from a limited account's credits (`freeOfCredits`); then 402 `quota_done` and "להמשיך בקרדיטים".
+- **Appended:** tables `garden_plants` and `garden_log`; routes `/api/garden` (list, save, identify, doctor, water, photo, remove).
+- **For the master** (patches in the CEO's notes folder): `src/worker.ts` runs `garden.remind` with the home reminders in the morning; `package.json` adds test-garden to `npm test`.
+- **For design:** the page uses shared classes; the few sizes held inline (the plant's picture, the grid of common plants) wait for `garden.css`. The kit pictures in `/assets/kit/garden/` are used as they are.
+- **In passing:** `H.modal` shows a `null` part as the text "null". home.js and garden.js filter their parts. A fix in `common.js` (skip null, as `el()` does) would be the master's.
+
+## 2026-11-14 · The inbox's מהאוהל tab (ai-features, the master's task)
+On `ai-features`, not yet merged. Status: ready for the master's review.
+
+- **What it is:** /messages gets a second tab, מהאוהל, beside the conversations (still the first tab). It is read only, with no reply.
+  - The tab shows the "האוהל התעדכן" notices from /whats-new.json, the current one and `past`, newest first. The one-time popup (whatsnew.js) is unchanged.
+  - System notes (by_email 'system') and the owner's messages to this member alone (to_email).
+  - Messages to everyone (to_email NULL) appear only if the owner ticked "לשמור בתיבת ההודעות" in /admin. The box is unchecked by default and hidden when sending to one member. Unticked messages keep today's behaviour: the banner only.
+  - Unread count on the tab, from `message_reads`. A notice is read as `wn:<v>`. Only the current notice can be new, and it counts as read once the popup was seen (`H.prefs('whatsnew').seen`).
+  - `#haohel` opens the tab directly, for a link from a push or a toast.
+- **Who sees what** is checked in the route (`server/inbox.ts`, the SQL plus `sees()` in `server/inbox-rules.ts`), with 13 tests in `server/test-inbox.mjs`:
+  - a system row with no address, or with another member's, is never shown;
+  - POST /api/inbox/read marks only the person's own ids and `wn:` notices; another member's id is ignored.
+  - Checked locally as the owner and as a second member.
+- **Appended:**
+  - COLUMNS `['admin_messages', 'keep', 'INTEGER']`;
+  - routes `GET /api/inbox` and `POST /api/inbox/read`.
+  - `server/admin.ts` messageSend takes `keep` (only when to everyone).
+- **For the master** (patches in the CEO's notes folder):
+  - the router and schema appends (657f33f);
+  - package.json: npm test runs test-inbox, and test:inbox (2b7581c and the fix 599ad1e: apply both).
+- **For design, if wanted:** the tab uses `.tabs`, `.card` and the existing list styles.
+  - `.dm` sets `display: grid`, which beats `[hidden]`. So messages.js hides the conversations panel with an inline `display: none`. A `.dm[hidden] { display: none }` rule in messages.css would make that line unneeded.
+
+## 2026-11-14 · The companion answers faster (ai-features, the master's batch 14 §7)
+On `ai-features` (32d5a7c), not yet merged. No master file is touched: the stream is on the same route.
+
+- **Streaming.** POST /api/daemon/chat streams server-sent events when the client sends `Accept: text/event-stream`:
+  - `text` {t}: the words as they come;
+  - `status` {t}: "בודק…" between tool rounds, and "מחפש…" during a web search;
+  - one `done` at the end, the JSON answer's shape ({reply, events, sources, daemon}, plus model), or `error` {error}.
+  - Other clients get JSON as before. An error before the first byte (credit 402, 429, a bad request) is an ordinary JSON error, and the client then retries on JSON.
+- **Models** (`modelFor` in server/daemon.ts): claude-sonnet-5-5 for everyday chat; claude-opus-5-5 for research, comparison, analysis, planning, the mailbox, more than 400 characters, or three question marks. Both use effort low, fallbacks 'default' and the same beta. The meter records the model.
+- **Caching:** a breakpoint on the system prompt's block and on the last tool, plus top-level automatic caching for the conversation. The system prompt was already stable (the time and state ride in the user turn).
+  - Measured locally: the uncached input fell from about 12,000 tokens a turn to 2–4, and the rest is read from the cache.
+- **A shorter context, cut in steps:** past 16 turns of the person, the last 8 are kept, with the memory notes in front. That is about 12 turns on average.
+  - A fixed window of 12 would change the start of the history every turn. That would break the cache and invalidate Claude's thinking, which is bound to its history.
+  - At a cut, the old thinking blocks are dropped once.
+- **PROMPT_VERSION 15:** stored conversations start fresh, keeping the memory notes.
+- **Time to the first word** (locally, 5 questions):
+  - before: 3.1–5.8 s, average 4.0, on Opus with no cache and no stream;
+  - after: 1.0–1.3 s for chat, 2.3 s on a fresh conversation, 3.4–5.0 s when a tool runs first. The figure shows "thinking" at once (4 ms).
+
+## 2026-11-14 · The guitar strum, and where the companion rests (ai-features, the master's queue)
+
+- **The strum** (public/index.html, a master file: commit 88e2795 on `ai-features`, patch in the CEO's notes folder).
+  - Every direction has its own sound, all of them soft (the owner):
+    - down: an open G, low to high;
+    - up: the same G, high to low;
+    - left to right: an open A minor, picked low to high;
+    - right to left: an open C, picked high to low.
+  - All at the same quiet level (gain 0.06, lowpass 1300 Hz), with a short release.
+- **Where ראב"ע rests** (public/assets/daemon.js, 06c18c8), following docs/design/no-overlap.md:
+  - When he comes to rest, a 3 × 3 grid of points in the middle 60% of his frame is checked with `elementsFromPoint`, skipping his own parts.
+    - A button, link, field or `[role=button]` under any point means the spot is taken.
+  - The fallbacks, in order:
+    1. the inline-end corner above the tab bar;
+    2. the inline-start corner;
+    3. under the app bar at the inline-end;
+    4. otherwise he folds into the side tab for this screen only (not saved).
+  - A spot the person dragged or threw him to stays theirs, and is never moved.
+  - If the person opens him from the tab after an automatic fold, he stays out on that screen.
+  - It runs on load, after a walk, after a resize, on hashchange or popstate, and after a click on the page. It never runs while he is held, walking, flying, pointing or talking.
+  - Checked on the real pages:
+    - the calculator at 375: everything is taken, so he folds;
+    - the calendar at 375: he goes under the app bar;
+    - the calculator at 1280: the end corner;
+    - the calendar at 1280: he folds.
+
+## 2026-11-14 · Arranging the family tree ("סידור") (ai-features, the owner's request via the master)
+
+On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; patch in the CEO's notes folder).
+
+- **What it does.** In the המשפחה and כל הדורות views, an editor presses "סידור". Edit mode starts, with a banner and a "סיום" button.
+  - Moving a card is done with a mouse drag, a touch long-press (450 ms), or the keyboard (Space, then the arrows, or the "העבר…" menu).
+- **A drop on another generation's row** changes relationships.
+  - `kin.movePlan` works out which parent links to remove and which to add: as a sibling of, a parent of, a child of, or a generation up or down.
+  - It refuses a circle (`circular_family`) and more than two parents (`too_many_parents`).
+  - A dry run returns one sentence, and the page asks with that sentence before anything is saved.
+  - If the move touches another user's card, it waits for their yes. That is a new change kind `move` in family_changes, applied whole.
+  - Otherwise the move is applied at once, with "בטל".
+- **A drop within a row** changes only the order. It is stored in the new column `family_people.ord` (INTEGER, null means by creation), and has "בטל" too.
+- **Master files** (append-only):
+  - a COLUMNS line `['family_people','ord','INTEGER']`;
+  - two routes: `POST /api/vault/move` and `PUT /api/vault/order`;
+  - `ACCESS.linkMove` and `ACCESS.orderSave` (both 'tree') in `server/vault/access.ts`.
+- **Design.** The classes follow docs/design/tree-edit.md on `design`. The CSS is design's and is not on this branch, so the look must be checked after both are merged.
+
+## 2026-11-14 · Relationships in the profile edit, pick before create (ai-features, the owner's urgent fix)
+
+- "עריכה" of a person (from their card, the panel, or my own profile) now shows their relationships, so the documents don't need opening. The vault panel keeps the same box.
+- Each add button ("+ הורה", "+ בן/בת זוג", "+ ילד/ה", and the new "+ אח/אחות") opens one picker:
+  - a search over people already in the tree, relatives first;
+  - "אדם חדש שעוד לא בעץ" last.
+  - The separate "חיבור לאדם קיים" button is gone.
+- "+ אח/אחות" goes through `kin.siblingSide`: the one without parents takes the other's.
+  - It runs through `POST /api/vault/move` with `to: {join: id}`, the same move as "סידור". So it brings the confirm sentence, approval when it touches another user, and "בטל".
+  - It also drops a wrong parent link between the two, which is the עברי case.
+  - When neither has parents, it returns `no_parents`.
+- No master file is touched.

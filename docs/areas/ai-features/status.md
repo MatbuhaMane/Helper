@@ -1,7 +1,15 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the owner's answers applied: kitchen, breath, home).
+Last update: 2026-11-14 (arranging the family tree).
+
+## Latest: relationships in the profile edit, pick before create, "+ אח/אחות" (the עברי fix)
+
+## Before: the family tree's "סידור" (2fde072, 953a273)
+
+Editors can drag a card to another generation (with a confirm, approval when it touches a user, and undo) or along its row (`ord`).
+- Untested: approving a move as the other user, and a real touch long-press.
+- The look waits for design's CSS.
 
 ## Handover to the next ai-features chat (2026-11-14)
 
@@ -36,6 +44,17 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 
 ### Not merged into main (on `ai-features`, after 1ca3564)
 
+- **The guitar strum** (88e2795, **a master file**, public/index.html; patch in the CEO's notes): a soft sound for each direction (G down and up, A minor left to right, C right to left).
+- **Where the companion rests** (06c18c8): he does not rest on a control; corner fallbacks, then the side tab (no-overlap.md).
+- **The companion answers faster** (batch 14 §7), ready for review: 32d5a7c, no master files.
+  - It streams (SSE on the same route, with JSON as the fallback), uses Sonnet for chat and Opus for heavy work, caches the prompt, and cuts the context in steps.
+  - First word: 4.0 s before, about 1.1 s after (chat). Tests and the audit pass at 375 and 1280, light and dark.
+- **The inbox's מהאוהל tab**, ready for the master's review:
+  - c10ecd5 the feature (/messages tab, /api/inbox, the /admin keep box, test-inbox 13);
+  - 657f33f router and COLUMNS (master, patch);
+  - 2b7581c and 599ad1e package.json (master, patches, apply both).
+  - Checked: the owner and a second member each see only their own; the audit is clean at 375 and 1280, light and dark.
+  - Not checked in a browser: the /admin checkbox, which sits behind the biometric door. Its code path and the server rule are checked.
 - **פרנסה phase 1**, waiting for the CEO's server review:
   - 41e5af3 the server (6 tables, 14 routes, test-parnasa);
   - ed6d47d Yahoo prices and fixes;
@@ -79,7 +98,11 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - **Checked:** typecheck, npm test, the audit at 375 and 1280, light and dark (clean); in the browser: the chef answered in Hebrew, timers stored (past ones dropped), the reminder handed to Noa and back, the habit ticked and undone.
   - **Not checked:** a real push from the cron (needs a deployed preview), listening by voice (the pane has no microphone), the chef window and the cook view in the audit (it checks first screens).
   - **Waiting for the master:** the free-quota exemption in the credits gate; the push.ts regex.
-- **Next, by the owner's order:** garden (shared by the household), then translate. Tree skins first when the art arrives.
+- **Tree** d2486c1: on the pine people sit on the seats nearest the middle; the season by the date (snow on the pine Jan 10 – Feb 10) or the person's choice.
+- **Garden** (f3c7756, f67a089, plus worker and package.json for the master): the household's plants, watering by the weather, השקיתי, a new plant from a photo and the plant doctor, 3 free photos a day. test-garden 50.
+  - **Checked:** typecheck, npm test, the audit at 375 and 1280, light and dark (garden, home, family: clean); in the browser: a real identify (Gemini knew the basil, recorded as free), the quota's 402 after three, the weather from open-meteo, the plant's own picture.
+  - **Not checked:** the morning push (needs a deployed preview), a real photo from a phone camera, the doctor on a sick plant.
+- **Next, by the owner's order:** translate.
 
 ### Open
 

@@ -264,7 +264,7 @@ export async function messagesList(ctx: Ctx) {
 }
 export async function messageSend(ctx: Ctx) {
   const a = await requireAdmin(ctx, 'own');            // never from someone else's device: a message to all goes out in the owner's name
-  const b = await body<{ text?: string; level?: string; link?: string; days?: number; to?: string }>(ctx.req);
+  const b = await body<{ text?: string; level?: string; link?: string; days?: number; to?: string; keep?: boolean }>(ctx.req);
   const text = String(b.text || '').replace(/[\u0000-\u0009\u000b-\u001f]/g, ' ').trim().slice(0, 500);
   if (!text) throw new HttpError(400, 'text_required');
   let link = String(b.link || '').trim();
@@ -277,8 +277,10 @@ export async function messageSend(ctx: Ctx) {
     if (!(await ctx.env.DB.prepare('SELECT 1 FROM members WHERE email = ?').bind(to).first())) throw new HttpError(400, 'not_member');
   }
   const id = uid(), now = Date.now();
-  await ctx.env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)')
-    .bind(id, text, LEVELS.has(String(b.level)) ? b.level : 'info', link.slice(0, 300) || null, a.by, now, now + days * 864e5, to).run();
+  // keep (the owner, 2026-11-14): a message to everyone also stays in each member's inbox (the מהאוהל tab, server/inbox.ts)
+  const keep = !to && b.keep === true ? 1 : null;
+  await ctx.env.DB.prepare('INSERT INTO admin_messages (id, text, level, link, by_email, created_at, ends_at, active, to_email, keep) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)')
+    .bind(id, text, LEVELS.has(String(b.level)) ? b.level : 'info', link.slice(0, 300) || null, a.by, now, now + days * 864e5, to, keep).run();
   await log(ctx, a, to ? 'message:one' : 'message', (to ? to + ': ' : '') + text.slice(0, 80));
   return json({ id });
 }

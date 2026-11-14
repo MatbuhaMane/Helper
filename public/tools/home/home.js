@@ -8,6 +8,7 @@
   H.header('תחזוקת הבית');
   const root = document.querySelector('main');
   let data = null;
+  const modal = (...parts) => H.modal(...parts.filter(Boolean));   // (H.modal shows a null as text)
 
   const fmt = (d) => (d ? new Date(d + 'T12:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) : '');
   const days = (n) => (n === 1 ? 'יום' : n === 2 ? 'יומיים' : `${n} ימים`);
@@ -80,7 +81,7 @@
       if (!confirm(`למחוק את "${it.name}" ואת ההיסטוריה שלו?`)) return;
       try { await api(`/api/home/${it.id}`, { method: 'DELETE' }); H.closeModal(); await load(); toast('נמחק'); } catch (x) { err.textContent = why(x); }
     };
-    H.modal(el('h2', {}, isNew ? 'משהו חדש לתחזק' : 'עריכה'),
+    modal(el('h2', {}, isNew ? 'משהו חדש לתחזק' : 'עריכה'),
       el('label', { class: 'field' }, el('span', {}, 'מה'), name),
       el('label', { class: 'field' }, el('span', {}, 'כל כמה זמן'), every), custom,
       el('label', { class: 'field' }, el('span', {}, 'מתי נעשה לאחרונה'), last),

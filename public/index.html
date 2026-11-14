@@ -1059,7 +1059,7 @@
         const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y;
         if (Math.hypot(dx, dy) < 18) return;
         swipe.done = true; touched = Date.now();
-        play(Math.abs(dx) > Math.abs(dy) ? 'side' : dy < 0);   // up: from the high string; sideways (batch 14): a gentle picked A minor, as loud
+        play(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'ltr' : 'rtl') : dy < 0);   // up: from the high string; sideways: a picked chord of its own each way
       });
       const endSwipe = () => { swipe = null; };
       guitar.addEventListener('pointerup', endSwipe); guitar.addEventListener('pointercancel', endSwipe);
@@ -1068,9 +1068,14 @@
       return corner;
     }
 
-    /** A gentle strum of an open G chord, made on the spot (plucked strings, Karplus-Strong): no sound file to load. */
-    let strumCtx = null, strumBufs = null;
-    let sideBufs;
+    /** A gentle strum, made on the spot (plucked strings, Karplus-Strong): no sound file to load. All of them soft, as loud
+        as each other, with a short release (the owner, batch 14):
+        - down (false) / up (true): an open G, from the low string / from the high one;
+        - sideways, left to right ('ltr'): an open A minor picked low to high;
+        - sideways, right to left ('rtl'): an open C picked high to low. */
+    let strumCtx = null;
+    const strumBufs = {};
+    const CHORDS = { g: [98, 123.47, 146.83, 196, 246.94, 392], am: [110, 164.81, 220, 261.63, 329.63, 440], c: [130.81, 164.81, 196, 261.63, 329.63, 392] };
     function strum(up = false) {
       try {
         strumCtx ||= new (window.AudioContext || window.webkitAudioContext)();
@@ -1084,15 +1089,16 @@
           for (let i = 0, j = 0; i < n; i++, j = (j + 1) % p) { const next = line[(j + 1) % p]; d[i] = line[j]; line[j] = 0.4985 * (line[j] + next); }
           return buf;
         };
-        if (!strumBufs) strumBufs = [98, 123.47, 146.83, 196, 246.94, 392].map(pluck);
-        if (up === 'side' && !sideBufs) sideBufs = [110, 164.81, 220, 261.63, 329.63, 440].map(pluck);   // A minor, open
-        const out = ac.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 1500; out.Q.value = 0.5;
+        const side = up === 'ltr' || up === 'rtl';
+        const name = up === 'ltr' ? 'am' : up === 'rtl' ? 'c' : 'g';
+        const bufs = (strumBufs[name] ||= CHORDS[name].map(pluck));
+        const order = up === true || up === 'rtl' ? [...bufs].reverse() : bufs;   // up and right-to-left: from the high string
+        const out = ac.createBiquadFilter(); out.type = 'lowpass'; out.frequency.value = 1300; out.Q.value = 0.5;   // soft: no bright edge
         const vol = ac.createGain(), t = ac.currentTime;
-        vol.gain.setValueAtTime(0.0001, t); vol.gain.exponentialRampToValueAtTime(0.07, t + 0.03); vol.gain.setTargetAtTime(0.0001, t + 1.2, 0.5);
+        vol.gain.setValueAtTime(0.0001, t); vol.gain.exponentialRampToValueAtTime(0.06, t + 0.03); vol.gain.setTargetAtTime(0.0001, t + (side ? 1 : 0.8), 0.3);   // a short release
         out.connect(vol).connect(ac.destination);
-        const t0 = ac.currentTime + 0.01;
-        const side = up === 'side', gap = side ? 0.11 : 0.05;   // sideways: picked one by one, slower
-        (side ? sideBufs : up ? [...strumBufs].reverse() : strumBufs).forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * gap); });
+        const t0 = ac.currentTime + 0.01, gap = side ? 0.1 : 0.05;   // sideways: picked one by one, slower
+        order.forEach((b, i) => { const s = ac.createBufferSource(); s.buffer = b; s.connect(out); s.start(t0 + i * gap); });
       } catch { /* no sound here */ }
     }
 

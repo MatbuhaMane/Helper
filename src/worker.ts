@@ -7,6 +7,7 @@ import { ensureSchema } from '../server/schema';
 import * as push from '../server/push';
 import * as cook from '../server/cook';
 import * as home from '../server/home';
+import * as garden from '../server/garden';
 const MORNING = '0 5 * * *';
 const MINUTE = '* * * * *';
 
@@ -55,6 +56,7 @@ export default {
     if (event.cron === MORNING) {
       ctx.waitUntil(ensureSchema(env).then(() => push.morning(env)).then((n) => console.log('morning notes', n)).catch((e) => console.error('morning failed', e)));
       ctx.waitUntil(ensureSchema(env).then(() => home.remind(env)).then((n) => console.log('home reminders', n)).catch((e) => console.error('home reminders failed', e)));
+      ctx.waitUntil(ensureSchema(env).then(() => garden.remind(env)).then((n) => console.log('garden reminders', n)).catch((e) => console.error('garden reminders failed', e)));
       return;
     }
     if (!env.VAULT_KEY) return;

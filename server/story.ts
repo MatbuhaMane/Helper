@@ -111,8 +111,8 @@ export async function add(ctx: Ctx) {
     await st.put(objectKey, await encryptFile(k.key, bytes, 'story:' + id));
     dek = k.wrapped;
     bytes.fill(0);
-  } else if (inp.kind !== 'story' && !inp.text) throw new HttpError(400, 'file_required');
-  if (inp.kind === 'story' && !inp.text && !inp.title) throw new HttpError(400, 'nothing_to_save');
+  } else if (!R.TEXT_ONLY.includes(inp.kind) && !inp.text) throw new HttpError(400, 'file_required');
+  if (R.TEXT_ONLY.includes(inp.kind) && !inp.text && !inp.title) throw new HttpError(400, 'nothing_to_save');
   await ctx.env.DB.prepare(`INSERT INTO story_items (id, household, kind, level, owner_email, title_enc, text_enc, when_text, year, place_enc, people, mime, size, store, object_key, dek, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(id, u.household, inp.kind, level, u.email, await seal(ctx.env, inp.title || '', `story:${id}:title`), await seal(ctx.env, inp.text || '', `story:${id}:text`),

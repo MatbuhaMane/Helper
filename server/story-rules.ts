@@ -12,7 +12,9 @@
 import { Distance } from './vault/kin';
 import * as A from './audience-rules';
 
-export const KINDS = ['story', 'recording', 'reading', 'doc', 'photo'] as const;
+export const KINDS = ['story', 'recording', 'reading', 'doc', 'photo', 'event'] as const;
+/** the kinds that are words alone, no file: a story, and an event from one's own life (batch 27, the museum as the hub) */
+export const TEXT_ONLY: readonly Kind[] = ['story', 'event'];
 export type Kind = (typeof KINDS)[number];
 export const LEVELS = ['me', 'family', 'friends', 'all', 'household', 'private', 'tribe'] as const;   // the four, then the old ones
 export type Level = (typeof LEVELS)[number];
@@ -126,7 +128,7 @@ export function cleanInput(b: any): Input {
 const AUDIO = ['audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/wav'];
 const IMAGE = ['image/webp', 'image/jpeg', 'image/png'];
 export const ACCEPTS: Record<Kind, string[]> = {
-  story: [], recording: AUDIO, reading: AUDIO, photo: IMAGE, doc: [...IMAGE, 'application/pdf'],
+  story: [], event: [], recording: AUDIO, reading: AUDIO, photo: IMAGE, doc: [...IMAGE, 'application/pdf'],
 };
 /** what the bytes are, whatever the file says it is */
 export function sniff(b: Uint8Array): string | null {

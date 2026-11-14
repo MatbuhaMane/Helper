@@ -8,7 +8,7 @@
   const params = new URLSearchParams(location.search);
   const friend = params.get('f');
   const other = params.get('h') || friend;
-  const KIND = { story: 'סיפור', recording: 'הקלטה', reading: 'הקראה', doc: 'מסמך', photo: 'תמונה' };
+  const KIND = { event: 'אירוע מהחיים', story: 'סיפור', recording: 'הקלטה', reading: 'הקראה', doc: 'מסמך', photo: 'תמונה' };
   // the four levels (batch 27; the look in docs/design/friends.md). Old values show as their new names, never widened:
   // 'household' (the household only) shows as family, and stays as it is until the one who added it picks another level
   const LEVEL = { all: ['כולם', 'כל מי שבאוהל'], friends: ['חברים ומשפחה', 'המשפחה והחברים שלי'], family: ['רק משפחה', 'מי שבעץ המשפחה'], me: ['רק אני', 'רק אני'] };
@@ -147,7 +147,7 @@
   function addForm(kind, preset = {}) {
     let file = null;
     const title = el('input', { type: 'text', maxlength: 160, value: preset.title || '' });
-    const text = el('textarea', { rows: kind === 'story' ? 8 : 3, maxlength: 20000 });
+    const text = el('textarea', { rows: kind === 'story' || kind === 'event' ? 8 : 3, maxlength: 20000 });
     const when = el('input', { type: 'text', maxlength: 40, placeholder: 'למשל 1952, או שנות ה-50' });
     const place = el('input', { type: 'text', maxlength: 80, placeholder: 'למשל בגדד, או קיבוץ דגניה' });
     const people = peoplePicker(preset.people || (S.person ? [S.person] : []));
@@ -179,7 +179,7 @@
     el('h2', {}, 'הוספת ' + KIND[kind]),
     media, got,
     field('כותרת', title),
-    field(kind === 'story' ? 'הסיפור' : kind === 'reading' ? 'מה מוקרא (אפשר להעתיק את הטקסט)' : 'מה רואים או שומעים כאן', text),
+    field(kind === 'story' ? 'הסיפור' : kind === 'event' ? 'מה קרה (לידה, חתונה, עלייה, מעבר דירה, סיום לימודים…)' : kind === 'reading' ? 'מה מוקרא (אפשר להעתיק את הטקסט)' : 'מה רואים או שומעים כאן', text),
     el('div', { class: 'st-two' }, field('מתי', when), field('איפה', place)),
     el('div', { class: 'field' }, el('span', {}, 'מי בסיפור'), people),
     level,
@@ -317,10 +317,10 @@
     main.append(head);
     if (S.mine) {
       const full = S.storage && S.storage.used >= S.storage.quota;
-      const add = (k) => el('button', { type: 'button', class: 'btn', 'data-kind': k, disabled: full && k !== 'story' ? '' : null, onclick: () => addForm(k) }, KIND[k]);
+      const add = (k) => el('button', { type: 'button', class: 'btn', 'data-kind': k, disabled: full && k !== 'story' && k !== 'event' ? '' : null, onclick: () => addForm(k) }, KIND[k]);
       main.append(el('div', { class: 'st-add', role: 'group', 'aria-label': 'הוספה' },
         el('button', { type: 'button', class: 'btn primary', disabled: full ? '' : null, onclick: interview }, 'ראיון מודרך'),
-        add('story'), add('recording'), add('reading'), add('photo'), add('doc')));
+        add('story'), add('event'), add('recording'), add('reading'), add('photo'), add('doc')));
       if (S.storage) {
         const gb = (n) => (n / 1024 ** 3).toFixed(n < 1024 ** 3 ? 2 : 1);
         main.append(el('p', { class: 'st-storage' + (full ? ' full' : '') },

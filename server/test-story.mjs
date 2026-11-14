@@ -85,7 +85,9 @@ eq(S.nextLevel(item(), 'savta@x', 'everyone'), 'household', 'no unknown level');
 // --- the input is cleaned ---
 const c = S.cleanInput({ kind: 'photo', title: ' שם\u0000 ', level: 'public', people: ['p1', 'p1', '', 'p2'], extra: 1 });
 eq(c, { kind: 'photo', title: 'שם', people: ['p1', 'p2'] }, 'cleaned: no unknown level, no repeats, no extras');
-eq(S.cleanInput({ kind: 'video' }), {}, 'no unknown kind');
+eq(S.cleanInput({ kind: 'video' }), {}, 'no unknown kind (no video yet: its storage cost waits for business)');
+eq(S.cleanInput({ kind: 'event' }), { kind: 'event' }, 'an event from a life');
+eq([S.TEXT_ONLY.includes('event'), S.ACCEPTS.event.length], [true, 0], 'an event is words alone: no file');
 
 // --- storage: 2 GB, only new uploads stop ---
 ok(S.roomFor(0, 1000), 'room in an empty household');

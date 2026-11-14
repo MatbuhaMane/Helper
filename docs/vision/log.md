@@ -87,3 +87,5 @@
 - 2026-11-14: הבעלים אישר את הקונספט של המשחק ללימוד שפות. השם "ع ב-ע". הוא עובד מכל שפה לכל שפה, והממשק בשפת הלומד. הסרטונים חינמיים מהרשת: Creative Commons, או הטמעה של YouTube. batch 22 נשלח לעיצוב ולמנכ"ל.
 - 2026-11-14: המנכ"ל: batch 22 בוצע (main 217b86d). "ع ב-ע" נכנס ל-H.FUTURE מיד אחרי המתורגמן, עם השם הנגיש "עין בעין". העיצוב מצייר את התמונה.
 - 2026-11-14: הבעלים יכין בעצמו את התמונות לעץ (1–6) ולכלים העתידיים (15–23). הרשימה ב-assets.md. תמונות ה"בקרוב" (7–14) נשארות אצל העיצוב.
+
+- 2026-11-14: image-generator prompts for the owner's assets in docs/vision/asset-prompts.md (design's style block, white background that design cuts out); assets.md switched from a transparent to a white background.

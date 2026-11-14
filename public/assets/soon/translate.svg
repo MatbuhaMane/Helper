@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>מתורגמן</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- a globe behind -->
+<circle cx="160" cy="118" r="62" fill="#cfe7ff" stroke-width="3.5"/>
+<path d="M98 118h124M160 56q-30 62 0 124M160 56q30 62 0 124M108 88h104M108 148h104" stroke="#6f9ccc" stroke-width="2.5"/>
+<!-- two speech bubbles: Hebrew and another tongue -->
+<path d="M26 72h92a14 14 0 0 1 14 14v40a14 14 0 0 1-14 14H74l-18 18v-18H40a14 14 0 0 1-14-14V86a14 14 0 0 1 14-14Z" fill="#fff"/>
+<path d="M64 88l28 36M66 104q-2 14 4 20M90 88q2 14-4 18" stroke="#2f5c7a" stroke-width="5"/>
+<path d="M202 96h92a14 14 0 0 1 14 14v40a14 14 0 0 1-14 14h-16v18l-18-18h-58a14 14 0 0 1-14-14v-40a14 14 0 0 1 14-14Z" fill="#ffe6bf"/>
+<path d="M236 148l14-38l14 38M242 134h16" stroke="#c9782a" stroke-width="5"/>
+<!-- two arrows round between them -->
+<path d="M126 176q34 22 68 0" stroke="#5e8a3a" stroke-width="4"/><path d="M186 170l8 6-6 8" stroke="#5e8a3a" stroke-width="4"/>
+<!-- the language game to come: a little die -->
+<rect x="136" y="190" width="30" height="30" rx="6" fill="#fff3c4" stroke-width="3.5" transform="rotate(-10 151 205)"/>
+<circle cx="144" cy="198" r="2.6" fill="#3b2416" stroke="none"/><circle cx="152" cy="206" r="2.6" fill="#3b2416" stroke="none"/><circle cx="160" cy="212" r="2.6" fill="#3b2416" stroke="none"/>
+</svg>

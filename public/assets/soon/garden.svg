@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>הגינה והעציצים</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- the big pot and its plant -->
+<path d="M160 150V96" stroke="#2f4f22" stroke-width="4"/>
+<path d="M160 120c-24 0-36-14-38-32c22 0 36 12 38 32Z" fill="#7aa64e" stroke="#2f4f22" stroke-width="3"/>
+<path d="M160 108c22-2 34-16 34-34c-22 2-34 14-34 34Z" fill="#8fbf5e" stroke="#2f4f22" stroke-width="3"/>
+<path d="M160 96c-8-10-6-24 2-32c8 8 8 22-2 32Z" fill="#7aa64e" stroke="#2f4f22" stroke-width="3"/>
+<circle cx="146" cy="138" r="5" fill="#ff9ab8" stroke-width="2.5"/>
+<path d="M116 150h88l-10 64h-68Z" fill="#c9784a"/>
+<path d="M112 142h96v14h-96Z" fill="#d98b5c"/>
+<path d="M132 176q28 8 56 0" stroke="#e8a77a" stroke-width="3"/>
+<!-- the watering can, pouring -->
+<path d="M30 128h52v40q0 8-8 8H38q-8 0-8-8Z" fill="#8cc4f5" transform="rotate(-14 56 150)"/>
+<path d="M78 136l30-22" stroke-width="6" transform="rotate(-14 56 150)"/>
+<path d="M36 126q20-26 40 0" stroke-width="4" transform="rotate(-14 56 150)"/>
+<path d="M112 116l4 8M120 108l5 8M118 126l3 7" stroke="#6f9ccc" stroke-width="3.5"/>
+<!-- a seedling in a small pot and a trowel -->
+<path d="M246 214l-6-34h44l-6 34Z" fill="#c9784a" stroke-width="3.5"/>
+<path d="M262 180v-14" stroke="#2f4f22" stroke-width="3"/><path d="M262 172c-7-1-10-6-10-10c6 0 10 4 10 10ZM262 170c6-1 9-5 9-9c-6 0-9 4-9 9Z" fill="#7aa64e" stroke="#2f4f22" stroke-width="2"/>
+<path d="M214 214l12-22" stroke-width="7"/><path d="M214 214l12-22" stroke="#b98a52" stroke-width="3"/>
+<path d="M226 192l8-14q4 8-2 16Z" fill="#c9ccd3" stroke-width="3"/>
+<!-- the sun -->
+<circle cx="268" cy="56" r="16" fill="#f6e6b4"/><path d="M268 30v-6M294 56h6M287 37l4-4" stroke="#e3a12b" stroke-width="3"/>
+</svg>

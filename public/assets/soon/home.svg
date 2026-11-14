@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>תחזוקת הבית</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- the house -->
+<path d="M84 214V118H236V214" fill="#eadcbc"/>
+<path d="M70 124L160 56L250 124Z" fill="#c2332b"/>
+<path d="M92 118L160 68L228 118" stroke="#e05a4c" stroke-width="3"/>
+<rect x="206" y="66" width="16" height="30" fill="#a8752a" stroke-width="3.5"/>
+<rect x="142" y="160" width="36" height="54" rx="3" fill="#a8752a"/><circle cx="170" cy="188" r="2.5" fill="#3b2416" stroke="none"/>
+<rect x="100" y="138" width="30" height="30" rx="3" fill="#cfe7ff" stroke-width="3.5"/><path d="M115 138v30M100 153h30" stroke-width="2.5"/>
+<rect x="192" y="138" width="30" height="30" rx="3" fill="#fff3c4" stroke-width="3.5"/><path d="M207 138v30M192 153h30" stroke-width="2.5"/>
+<!-- the wrench leaning on the wall -->
+<path d="M262 214L290 128" stroke-width="12"/><path d="M262 214L290 128" stroke="#8a8f99" stroke-width="6"/>
+<path d="M284 120a14 14 0 1 0 18 14l-8-3-3-8Z" fill="#c9ccd3" stroke-width="3.5"/>
+<!-- a lightbulb and a drop: the things that need a look -->
+<path d="M44 100a18 18 0 1 1 26 16v8h-16v-8a18 18 0 0 1-10-16Z" fill="#ffd36b" stroke-width="3.5"/>
+<path d="M54 132h16" stroke-width="3.5"/><path d="M58 94l4 8 4-8" stroke-width="2.5"/>
+<path d="M50 176q10-16 12-22q2 6 12 22a12 12 0 1 1-24 0Z" fill="#8cc4f5" stroke-width="3.5"/>
+<!-- a check badge on the roof: looked after -->
+<circle cx="232" cy="48" r="16" fill="#5e8a3a" stroke-width="3.5"/><path d="M224 48l6 6 10-12" stroke="#fff" stroke-width="3.5"/>
+</svg>

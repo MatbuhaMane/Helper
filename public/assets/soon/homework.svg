@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#3b2416" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"><title>עוזר שיעורי בית</title>
+<ellipse cx="160" cy="224" rx="146" ry="11" fill="#2e2a1e" fill-opacity=".16" stroke="none"/>
+<!-- the desk -->
+<rect x="22" y="196" width="276" height="14" rx="4" fill="#b98a52"/>
+<!-- the open exercise book, squared like a maths notebook -->
+<path d="M58 196Q108 182 158 196V114Q108 100 58 114Z" fill="#f3efe4"/>
+<path d="M158 196Q208 182 258 196V114Q208 100 158 114Z" fill="#f3efe4"/>
+<path d="M158 114V196" stroke-width="3"/>
+<path d="M72 130h72M72 146h72M72 162h72M72 178h60M172 130h72M172 146h72M172 162h72M172 178h60" stroke="#8cc4f5" stroke-width="2"/>
+<path d="M226 136l-14 0M219 129v14M200 154h22M200 160h22" stroke="#c2332b" stroke-width="3"/>
+<path d="M86 150l12-22l12 22Z" stroke="#5e8a3a" stroke-width="3"/><circle cx="130" cy="140" r="10" stroke="#e3a12b" stroke-width="3"/>
+<!-- the pencil and the eraser -->
+<path d="M196 186L264 152" stroke-width="12"/><path d="M196 186L264 152" stroke="#ffd65c" stroke-width="7"/>
+<path d="M196 186l-12 6l4-12Z" fill="#f3d3a8" stroke-width="3"/>
+<path d="M264 152l8-4" stroke="#ff9ab8" stroke-width="9"/>
+<rect x="38" y="182" width="22" height="12" rx="3" fill="#ff9ab8" stroke-width="3"/>
+<!-- the helper's idea: it explains, it doesn't solve -->
+<path d="M146 56a20 20 0 1 1 28 18v8h-16v-8a20 20 0 0 1-12-18Z" fill="#ffd36b" stroke-width="3.5"/>
+<path d="M158 92h16" stroke-width="3.5"/>
+<path d="M126 40l-10-8M194 40l10-8M120 62h-12M200 62h12" stroke="#e3a12b" stroke-width="3"/>
+<path d="M262 64l3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#f0b62e" stroke-width="2.5"/>
+<path d="M58 70l2 6 6 2-6 2-2 6-2-6-6-2 6-2Z" fill="#f6e6b4" stroke-width="2"/>
+</svg>

@@ -116,6 +116,18 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
       - the banner background must be light and calm;
       - the profile head keeps a safe middle of 1000×500 for the phone.
 
+11. **Vision batch 23 (2026-11-14): tree skins.** Noted; nothing to do until the art arrives. The decision is "Tree skins" in
+    `docs/decisions.md` on `vision`, and the prompts are in `docs/vision/asset-prompts.md` there.
+    - **The skins:** the pine (an Aleppo pine) is the default and the olive is there from the start; the maple and the African
+      juniper come later.
+    - **The art:** the owner makes it with an image generator. Each tree comes as a whole image on white, plus three seasons.
+      - Portrait 2:3, five tiers, four open places per tier at about 15, 35, 65 and 85% of the width, and an open spot at the
+        bottom centre for the candle.
+    - **Design's part when it arrives:**
+      - cut each tree into its layers, the way `cut-tree-canopy.mjs` does (white background, not transparent, so the cut needs a key);
+      - measure a `slots.json` for each tree;
+      - check that the current canopy stays the fallback.
+
 ---
 
 ## History (newest first)

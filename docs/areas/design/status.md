@@ -7,6 +7,12 @@ _Updated 2026-11-14 (the new chat, round 14)._
 
 
 
+## Queued (not started; timing follows the CEO's social layer order)
+- Vision batch 27 (vision de4dd19):
+  - a friends page inside the family tree, with one-to-one and group chats;
+  - a four-level privacy chooser on every published item: everyone / friends and family / family only / only me;
+  - later, the living museum as the hub for photos, videos, recordings and life events.
+
 ## Round 14: v158 checked after merging main
 - /admin: its switchboard markup, run in the real page, is clean at 375 and 1280, light and dark. The page itself is behind the biometric sign-in, so the switchboard was built there from admin.js's own markup.
 - The moods: party (confetti and balloons from switches.js), mourning (the candles above the tab bar; the palette and pictures faded) and kodesh.

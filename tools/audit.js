@@ -117,7 +117,10 @@ async function telegram(fr, w, d, W, H) {
   const vis = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < H * 2; };
   const els = [...d.querySelectorAll('body *')].filter(vis);
   // T2–T4: what each visible element really transitions and animates (pseudo-elements too: the sky, the moods)
+  // art, not UI (the master's call, 2026-11-14): a scene nobody presses (pointer-events none, or inside aria-hidden) may breathe slowly; T3/T4 hold for every control
+  const art = (e) => w.getComputedStyle(e).pointerEvents === 'none' || !!e.closest('[aria-hidden="true"]');
   for (const e of els) for (const pseudo of [null, '::before', '::after']) {
+    if (art(e)) continue;
     const cs = w.getComputedStyle(e, pseudo);
     if (pseudo && cs.content === 'none') continue;
     const props = cs.transitionProperty.split(',').map((x) => x.trim()), dur = ms(cs.transitionDuration);
@@ -178,7 +181,7 @@ async function telegram(fr, w, d, W, H) {
     html.dataset.motion = 'reduce';
     w.H.modal(d.createTextNode('בדיקה'));
     await frame(2);
-    const moving = d.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));
+    const moving = d.getAnimations().filter((a) => a.playState === 'running' && (a.effect?.getComputedTiming?.().duration ?? 1) >= 1 && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));
     if (moving.length) must.add(`T11 reduced motion still moves: ${moving.slice(0, 4).map((a) => a.animationName || a.transitionProperty || 'script').join(', ')}`);
     w.H.closeModal?.();
     if (was == null) delete html.dataset.motion; else html.dataset.motion = was;

@@ -49,7 +49,7 @@
      sorts by the person's choice: by hand, by name, or by category. access: 'beta' (in development, for the owner's testers)
      or 'secret' (not for everyone): shown only to whom the back door allowed it. 'soon:x' is a FUTURE item, drawn only. */
   const CATS = [
-    { id: 'work', name: 'כלי עבודה', apps: ['/tools/calc/', '/tools/research/', '/parasha/', '/tools/notes/', '/tools/weather/'] },
+    { id: 'work', name: 'כלי עבודה', apps: ['/tools/calc/', '/tools/research/', '/parasha/', '/tools/notes/', '/tools/weather/', 'soon:howto'] },
     { id: 'arts', name: 'אומנות או נמות', apps: ['/songs/', '/fun/', '/news/'] },
     { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', 'soon:breath'] },
     { id: 'food', name: 'אוכל', apps: ['/food/', 'soon:kitchen', '/groceries/#book', '/food/restaurants/'] },
@@ -58,7 +58,8 @@
   ];
   // still to come, shown inside their category (like SOON: a tap tells one sentence)
   const FUTURE = [
-    { id: 'kitchen', name: 'עוזר מטבח', ic: 'food', note: 'בעתיד', line: 'עוזר שמבשל איתך, צעד אחר צעד.' },
+    { id: 'kitchen', name: 'עוזר מטבח', ic: 'food', note: 'בעתיד', line: 'עוזר שמבשל איתך: המרת מידות, טיימרים, הדרכה ועצות.' },
+    { id: 'howto', name: 'איך אני עושה', ic: 'lens', note: 'בעתיד', line: 'מדריך לכל דבר, צעד אחר צעד.' },
     { id: 'breath', name: 'מדיטציה ונשימה', ic: 'habits', note: 'בעתיד', line: 'כמה דקות של שקט ונשימה, כל יום.' },
   ];
   for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }

@@ -89,3 +89,15 @@
 .fr-av > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
 .fr-av.sm { inline-size: 36px; block-size: 36px; font-size: .85rem; }
 
+/* ---------- a new group: pick friends (and family) with checkboxes (moved from family.css; the dm names keep clear of the fridge's .fr-pick) ---------- */
+.dm-grp-pick { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-block-size: 50vh; overflow-y: auto; overscroll-behavior: contain; }
+.dm-grp-pick label { display: flex; align-items: center; gap: 10px; min-block-size: 52px; padding: 6px 10px; border-radius: 12px; cursor: pointer; }
+.dm-grp-pick label:hover { background: color-mix(in srgb, var(--muted) 8%, transparent); }
+.dm-grp-pick label > span { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dm-grp-pick input[type="checkbox"] { inline-size: 22px; block-size: 22px; accent-color: var(--primary); flex: none; }
+.dm-grp-pick label:has(input:checked) { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.dm-grp-pick label:has(input:disabled) { opacity: .65; cursor: not-allowed; }   /* a child under 12 who is not family */
+.dm-grp-name { inline-size: 100%; min-block-size: 44px; margin-block-end: 8px; }
+/* the children's rule, said plainly where it applies */
+.dm-kid-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 12px; font-size: .85rem;
+  background: color-mix(in srgb, var(--olive) 10%, var(--card)); color: var(--text); }

@@ -1114,7 +1114,7 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
 :where(a, button, [role="button"], [role="tab"], [role="switch"], [role="radio"], summary, label, .chip, .btn) { touch-action: manipulation; }
 /* smooth scrolling for jumps inside a page; panes that scroll keep the page still behind them */
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
-:where(.dm-msgs, .gl-ask-log, .fr-pick, .dm-pick, #modalBody) { overscroll-behavior: contain; }
+:where(.dm-msgs, .gl-ask-log, .dm-grp-pick, .dm-pick, #modalBody) { overscroll-behavior: contain; }
 /* no spinner for a fast answer: the spinner waits 400 ms in silence, then fades in */
 .spinner { animation: spin .8s linear infinite, wait-show var(--dur-quick) ease 400ms both; }
 .loading > :not(.spinner) { animation: wait-show var(--dur-quick) ease 400ms both; }

@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 17)._
+_Updated 2026-11-14 (the new chat, round 18)._
 
 
 
@@ -17,6 +17,11 @@ _Updated 2026-11-14 (the new chat, round 17)._
   - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
   - Exercise illustrations come later.
 - Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 18: ai-features' four requests on batch 27 (the build)
+- The group picker moved to messages.css as `.dm-grp-pick`, `.dm-grp-name` and `.dm-kid-note`. The page doesn't load family.css, and `.fr-pick` clashed with the fridge.
+- A new museum kind, "אירוע מהחיים" (`data-kind="event"`): a calendar-and-star icon (`assets/story/event.svg`) and a blue-olive `--k`.
+- The friends page: an email invite in `.fr-invite`, the card's museum link and "הסרה" on a second row, `a.fr-talk`, and an invite that came by link with no avatar.
+- The audit is clean at 375 and 1280 px, light and dark. `friends.md` is updated.
 ## Round 17: batch 30, the motion for the whole tent (the Telegram test)
 - The "Motion" section of base.css:
   - instant taps (`touch-action`), smooth scrolling, and a spinner only after 400 ms;

@@ -11,6 +11,51 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The internal economy: the "יד" token, "תועלת אישית על ידי עשייה ציבורית" (vision → design, master, business, legal)
+Status: Decided (the owner). A big idea: it waits, and the interface shows it only as "בקרוב". Nothing is built now.
+The full spec is in `docs/vision/later.md` ("כלכלה פנימית").
+
+- **The principle, in the owner's words:** "תועלת אישית על ידי עשייה ציבורית". People give each other real-life services
+  and do deeds for the community, and earn tokens that buy other people's services.
+- **The token is named "יד"** ("לתת יד ולקבל יד"; plural ידיים).
+  - It is an internal token of the Ohel. There is no crypto.
+  - One יד is one easy hour, and it divides into tenths.
+  - **A closed loop:** ידיים cannot be bought with money, sold or cashed out. They are separate from credits.
+- **How people earn:**
+  - **A deed for the community:** the owner approves each deed, and it earns ידיים.
+  - **A service between people:** the ידיים move from the receiver to the giver.
+  - **Only by doing:** no join grant and no negative balance. Whoever wants to buy a service gives to the community first.
+- **What an hour is worth:**
+  - The owner keeps a list of service types, each with a tier. A new service asks for a tier, and the owner approves.
+  - The tier belongs to the service, not to the person. Two scores, 0 to 2 each:
+    - difficulty: easy 0, regular 1, hard or complex 2;
+    - expertise: none 0, skill or experience 1, a certified expert 2.
+  - The sum sets the tier:
+    - 0: שעה קלה, 1 יד an hour (babysitting);
+    - 1: שעת עבודה, 2 (a ride);
+    - 2 or 3: שעה ארוכה, 4 (moving furniture; a recommendation a doctor writes);
+    - 4: איש השעה, 8 (a complex operation).
+- **The tithe and the public fund:**
+  - A tenth of every יד earned goes to the public fund, from services and from community deeds alike. Example: a
+    one-hour ride is worth 2; the receiver pays 2, the giver gets 1.8, and 0.2 goes to the fund.
+  - The fund pays for community deeds first; new ידיים are created only when the fund is empty.
+  - The fund pays for services for those who cannot give (the elderly, the sick, a new mother).
+  - Every payout from the fund needs the owner's approval.
+- **Who trades:** every user of the Ohel, with three trust rules:
+  1. the ידיים move only after both sides confirm the service was given;
+  2. the receiver leaves a short recommendation, shown on the giver's profile;
+  3. either side can report a problem, and the report reaches the owner.
+- **Children and youth:**
+  - they earn only on community deeds and on services to family and friends;
+  - a parent approves each service;
+  - trade with strangers only from age 18.
+- **When:** trade with everyone is a public layer, like "גבעה ביער", so it waits for enough users.
+- **Who does what:**
+  - design: the "בקרוב" representation;
+  - the master: the item in `apps.js` (`H.FUTURE`);
+  - business: how ידיים relate to credits and to the existing 30/30/30/10 split (they stay separate);
+  - legal: before anything is built, whether trading services for ידיים is taxable income.
+
 ## 2026-11-14 – Notification settings: "רמת הניג'וס" per tool (vision → ai-features, design, master)
 Status: Decided (the owner). The setting is named **"רמת הניג'וס"** (the owner's name; keep it). It replaces batch 28's
 "גם כהודעה לטלפון" switch. Details in `docs/vision/shabbat-notifications.md`.

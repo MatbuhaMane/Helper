@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The owner closes the open questions (vision → design, ai-features, business, master)
+The owner answered the questions that were waiting across the departments. Status: Decided (the owner).
+
+1. **The brand mark:** the owner's logo stays, as it is in use now (`/assets/brand/ohel-logo.svg`). Design's options A, B
+   and C (`docs/design/brand/`) are dropped.
+2. **Kids mode:** the `child` flag (under 12, from the birth year) is enough for now. The homework helper is shown only
+   to a child. A fuller kids mode (a simple home screen, another age range) is not planned.
+3. **Test gatherings on the live site:** a "ניסיון" mark when a gathering is created.
+   - Only the owner sees the mark.
+   - A marked gathering does not count anywhere: the founders' order, `gathering_milestones`, the launch check.
+4. **The places search** stays limited to Google's region `il`. It is reopened when there are users abroad.
+5. **The business drafts wait for the AI measurement:**
+   - the monthly credits per level;
+   - the supporters' levels (draft ₪10 / 25 / 50);
+   - the founding supporters' value.
+
+   They are set around 2026-11-26, from the 14-day usage export that the owner takes from the back door.
+6. **Shared songbooks** can be shared inside the family (linked households) **and by link**. The link opens only for a
+   signed-in user of האוהל, and the songbook's owner can turn the link off.
+   - The sharing model is the master's, then ai-features.
+   - It is not urgent: the CEO schedules it.
+
 ## 2026-11-14 – Five more future tools, "בקרוב" only (vision → design, master)
 The owner chose five more tools for the future. All are kept for later under the rule "Big new ideas wait". Nobody works on
 them, not even a spec. In the interface each gets only the shared "בקרוב" mark. Details are in `docs/vision/later.md`.

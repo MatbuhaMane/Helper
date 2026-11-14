@@ -7,6 +7,8 @@
      await __auditDesk(['/', '/food/', '/news/', ...], 375, 812)    // a phone
      await __auditDesk([...], 1280, 800)                             // a desktop
 
+   The Telegram test (batch 30, docs/design/motion.md T1–T12) is in each page's result as telegram (defects) and telegramWarn.
+   Run it with the pane shown: a hidden pane runs no frames, so T9 is then skipped.
    Known false alarms: text over pictures and gradients is skipped; colours in oklab/oklch are skipped. */
 // Desktop audit: each page in a 1280x800 iframe, in light and in dark.
 // Checks sideways overflow, broken images, nameless controls, and text that is hard to read (contrast < 3).
@@ -41,6 +43,9 @@ window.__auditDesk = async function (pages, W = 1280, H = 800) {
     };
     for (const sh of d.styleSheets) { try { walk(sh.cssRules, (sh.href || 'inline').split('/').pop()); } catch (_) { /* another origin */ } }
     if (motion.size) res.motion = [...motion];
+    const tg = await telegram(fr, w, d, W, H);
+    if (tg.must.length) res.telegram = tg.must;
+    if (tg.should.length) res.telegramWarn = tg.should;
     for (const theme of ['light', 'dark']) {
       if (!d.getElementById('__nt')) { const st = d.createElement('style'); st.id = '__nt'; st.textContent = '*,*::before,*::after{transition:none!important;animation-duration:0s!important}'; d.head.append(st); }
       d.documentElement.dataset.theme = theme;
@@ -95,3 +100,92 @@ window.__auditDesk = async function (pages, W = 1280, H = 800) {
   }
   return out;
 };
+
+/* The Telegram test (design, docs/design/motion.md, T1–T12), on a page that is loaded and still has its own motion.
+   "must" is a defect, "should" a warning. T1 is the `motion` list above, and T12's contrast is the light/dark pass.
+   Not measured here: T5's "the DOM answers within 100 ms" (it needs the page's own actions), and T9 in a pane that runs no frames
+   (it then says so instead of passing). */
+async function telegram(fr, w, d, W, H) {
+  const must = new Set(), should = new Set();
+  const ms = (s) => s.split(',').map((x) => (x = x.trim(), x.endsWith('ms') ? parseFloat(x) : parseFloat(x) * 1000));
+  const at = (list, i) => list[i % list.length];
+  const tag = (e) => `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}`;
+  const PAINT = /^(color|background(-color)?|border(-.+)?-color|box-shadow|filter|outline-color|fill|stroke)$/;
+  const MOVE = /^(transform|opacity|translate|scale|rotate|all)$/;
+  const ENDLESS = /^(spin|skel-sheen|sky-twinkle|mood-flicker|gl-dot|gl-rec|st-ring)$/;   // T4's allowlist (the recording rings)
+  const frame = (n = 1) => new Promise((r) => { const go = (k) => (k ? w.requestAnimationFrame(() => go(k - 1)) : r()); go(n); setTimeout(r, 60 * n); });   // a hidden pane runs no frames
+  const vis = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < H * 2; };
+  const els = [...d.querySelectorAll('body *')].filter(vis);
+  // T2–T4: what each visible element really transitions and animates (pseudo-elements too: the sky, the moods)
+  for (const e of els) for (const pseudo of [null, '::before', '::after']) {
+    const cs = w.getComputedStyle(e, pseudo);
+    if (pseudo && cs.content === 'none') continue;
+    const props = cs.transitionProperty.split(',').map((x) => x.trim()), dur = ms(cs.transitionDuration);
+    props.forEach((p, i) => {
+      const t = at(dur, i); if (!t) return;
+      if (PAINT.test(p) && t > 200) should.add(`T2 ${p} ${t}ms on ${tag(e)}${pseudo || ''}`);
+      else if (MOVE.test(p) && t > 340) must.add(`T3 transition ${p} ${t}ms on ${tag(e)}${pseudo || ''}`);
+    });
+    if (cs.animationName === 'none') continue;
+    const names = cs.animationName.split(',').map((x) => x.trim()), adur = ms(cs.animationDuration), it = cs.animationIterationCount.split(',').map((x) => x.trim());
+    names.forEach((n, i) => {
+      if (at(it, i) === 'infinite') { if (!ENDLESS.test(n)) must.add(`T4 endless @keyframes ${n} on ${tag(e)}${pseudo || ''}`); }
+      else if (at(adur, i) > 2600) must.add(`T3 ${n} ${at(adur, i)}ms on ${tag(e)}${pseudo || ''}`);
+      else if (at(adur, i) > 400) should.add(`T3 one-time ${n} ${at(adur, i)}ms on ${tag(e)}${pseudo || ''} (fine only for a mood, the egg or gk-ok)`);
+    });
+  }
+  // T6: no 300 ms wait on a tap
+  for (const b of d.querySelectorAll('button, a[href], [role=button], [role=switch], [role=radio], [role=tab], summary, label')) {
+    if (!vis(b)) continue;
+    const ta = w.getComputedStyle(b).touchAction;
+    if (!/manipulation|none|pan-y/.test(ta)) must.add(`T6 touch-action ${ta} on ${tag(b)}`);
+  }
+  // T7: every picture and video keeps its box before it loads; the page's layout shifts so far
+  for (const m of d.querySelectorAll('img, video')) {
+    if (!vis(m)) continue;
+    if (!(m.getAttribute('width') && m.getAttribute('height')) && w.getComputedStyle(m).aspectRatio === 'auto') should.add(`T7 no size on ${tag(m)} ${(m.currentSrc || m.src || '').split('/').pop().slice(0, 30)}`);
+  }
+  const cls = await new Promise((res) => { let s = 0; try { new w.PerformanceObserver((l) => { for (const x of l.getEntries()) if (!x.hadRecentInput) s += x.value; }).observe({ type: 'layout-shift', buffered: true }); } catch (_) { return res(null); } setTimeout(() => res(s), 100); });
+  if (cls != null && cls > 0.02) must.add(`T7 CLS ${cls.toFixed(3)} (over 0.02)`);
+  // T8: a spinner stays silent for its first 400 ms
+  if (w.H) {
+    const sp = d.createElement('span'); sp.className = 'spinner'; d.body.append(sp);
+    await frame();
+    if (+w.getComputedStyle(sp).opacity > 0.05) must.add('T8 a .spinner shows before 400 ms');
+    sp.remove();
+  }
+  // T10: a scroll pane with real content keeps the page still behind it
+  for (const e of els) {
+    const cs = w.getComputedStyle(e);
+    if (/(auto|scroll)/.test(cs.overflowY) && e.scrollHeight - e.clientHeight > 300 && cs.overscrollBehaviorY !== 'contain' && e !== d.documentElement && e !== d.body) should.add(`T10 overscroll ${cs.overscrollBehaviorY} on ${tag(e)}`);
+  }
+  // T9: frames while scrolling and while a sheet opens and closes
+  const frames = [], longs = [];
+  let lo; try { lo = new w.PerformanceObserver((l) => l.getEntries().forEach((x) => x.duration > 50 && longs.push(Math.round(x.duration)))); lo.observe({ type: 'longtask' }); } catch (_) { /* not in this browser */ }
+  let last = 0, run = true;
+  const tick = (t) => { if (last) frames.push(t - last); last = t; if (run) w.requestAnimationFrame(tick); };
+  w.requestAnimationFrame(tick);
+  w.scrollBy({ top: 1200, behavior: 'smooth' });
+  await new Promise((r) => setTimeout(r, 700));
+  if (w.H?.modal) { w.H.modal(d.createTextNode('בדיקה')); await new Promise((r) => setTimeout(r, 450)); w.H.closeModal?.(); await new Promise((r) => setTimeout(r, 350)); }
+  run = false; lo?.disconnect(); w.scrollTo(0, 0);
+  if (frames.length < 10) should.add('T9 not measured: the frame ran no frames (a hidden pane)');
+  else { const slow = frames.filter((x) => x > 32).length / frames.length; if (slow > 0.05) should.add(`T9 ${Math.round(slow * 100)}% of frames over 32 ms`); }
+  if (longs.length) should.add(`T9 long tasks: ${longs.slice(0, 5).join(', ')} ms`);
+  // T11: with reduced motion, an open sheet moves nothing
+  if (w.H?.modal) {
+    const html = d.documentElement, was = html.dataset.motion;
+    html.dataset.motion = 'reduce';
+    w.H.modal(d.createTextNode('בדיקה'));
+    await frame(2);
+    const moving = d.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));
+    if (moving.length) must.add(`T11 reduced motion still moves: ${moving.slice(0, 4).map((a) => a.animationName || a.transitionProperty || 'script').join(', ')}`);
+    w.H.closeModal?.();
+    if (was == null) delete html.dataset.motion; else html.dataset.motion = was;
+  }
+  // T12: no pure black page in dark
+  const bgWas = d.documentElement.dataset.theme; d.documentElement.dataset.theme = 'dark';
+  for (const e of [d.documentElement, d.body]) if (/^rgba?\(0, 0, 0(, 1)?\)$/.test(w.getComputedStyle(e).backgroundColor)) must.add(`T12 pure black background on ${e.tagName.toLowerCase()}`);
+  if (bgWas == null) delete d.documentElement.dataset.theme; else d.documentElement.dataset.theme = bgWas;
+  return { must: [...must].slice(0, 25), should: [...should].slice(0, 25) };
+}

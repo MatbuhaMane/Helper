@@ -611,14 +611,17 @@
       m = el('div', { id: 'modal', class: 'modal', hidden: true },
         el('div', { class: 'modal-backdrop', 'data-close': true }),
         el('div', { class: 'modal-glass', role: 'dialog', 'aria-modal': 'true' },
+          el('div', { class: 'sheet-grip', 'aria-hidden': 'true' }),
           el('button', { class: 'modal-close', 'data-close': true, 'aria-label': 'סגור' }, '✕'),
           el('div', { id: 'modalBody' })));
+      sheetDrag(m);
       m.addEventListener('click', (e) => { if (e.target.closest('[data-close]')) closeModal(); });
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !m.hidden) closeModal(); });
       document.body.append(m);
     }
     m.querySelector('.modal-glass').getAnimations().forEach((a) => a.cancel());   // a window still shrinking away opens again at once
-    m.classList.remove('grow', 'shrinking'); modalOrigin = null;
+    m.classList.remove('grow', 'shrinking', 'dragging'); modalOrigin = null;
+    m.style.removeProperty('--drag'); m.style.removeProperty('--drag-p');
     const b = document.getElementById('modalBody');
     b.textContent = '';
     b.append(...content);
@@ -626,6 +629,34 @@
     m.hidden = false;
     document.body.classList.add('modal-open');
     b.scrollTop = 0;
+  }
+  /** The phone's sheet follows the finger down from its grip and closes past a third of its height or on a fast flick (design's CSS, ≤520 px). */
+  function sheetDrag(m) {
+    const grip = m.querySelector('.sheet-grip'), g = m.querySelector('.modal-glass');
+    grip.addEventListener('pointerdown', (e) => {
+      if (e.button || !matchMedia('(max-width: 520px)').matches) return;
+      const h = g.offsetHeight || 1, y0 = e.clientY;
+      let dy = 0, v = 0, lastY = y0, lastT = e.timeStamp;
+      try { grip.setPointerCapture(e.pointerId); } catch (_) { /* the pointer is gone already */ }
+      m.classList.add('dragging');
+      const move = (ev) => {
+        dy = Math.max(0, ev.clientY - y0);
+        const dt = ev.timeStamp - lastT;
+        if (dt > 0) v = (ev.clientY - lastY) / dt;
+        lastY = ev.clientY; lastT = ev.timeStamp;
+        m.style.setProperty('--drag', `${dy}px`); m.style.setProperty('--drag-p', Math.min(1, dy / h).toFixed(3));
+      };
+      const up = (ev) => {
+        grip.removeEventListener('pointermove', move); grip.removeEventListener('pointerup', up); grip.removeEventListener('pointercancel', up);
+        m.classList.remove('dragging');
+        if (ev.type === 'pointerup' && (dy > h / 3 || (v > 0.6 && dy > 24))) {   // past a third, or a flick (px/ms)
+          m.style.setProperty('--drag', `${h}px`);   // slides the rest of the way on the CSS spring, then closes
+          modalOrigin = null;
+          setTimeout(() => { if (!m.hidden) closeModal(); m.style.removeProperty('--drag'); m.style.removeProperty('--drag-p'); }, 200);
+        } else { m.style.removeProperty('--drag'); m.style.removeProperty('--drag-p'); }   // springs back
+      };
+      grip.addEventListener('pointermove', move); grip.addEventListener('pointerup', up); grip.addEventListener('pointercancel', up);
+    });
   }
   /** The modal, grown out of the thing it was opened from (a pie, a card) and shrunk back into it when it closes. */
   let modalOrigin = null;

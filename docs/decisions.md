@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Priority after Ibn Ezra: a Telegram-smooth interface (owner → design, ai-features, master)
+
+The owner's most urgent goal once Ibn Ezra's onboarding ships: the interface must feel as smooth and comfortable as
+Telegram. Not new features — the things a person feels: menus and sheets opening and closing, an animated passage
+between the items of the main menu, press feedback, and every small motion. Targets (design leads, master and
+ai-features apply their files):
+- Sheets and dialogs (`H.modal`): rise with `transform` + `opacity` on a soft spring-like curve (~220 ms in, ~170 ms out),
+  backdrop fades, drag to dismiss follows the finger and honours velocity.
+- Menus and popovers: grow from their trigger (`transform-origin`, scale .96→1 + fade).
+- Between the main menu's items and pages: cross-document View Transitions (`@view-transition { navigation: auto; }`,
+  shared-axis slide, the tab bar and header stay put), with a plain fade where unsupported.
+- Press feedback on every tappable thing (short scale on `:active`), a sliding active-tab indicator, no tap delay
+  (`touch-action: manipulation`), instant-feeling navigation (prefetch/speculation rules in `index.html`, master).
+- Only `transform`/`opacity` (principle 4), `prefers-reduced-motion` honoured, checked at 375 px and desktop, light and dark,
+  and by the owner on a real phone for frame smoothness.
+Status: accepted (owner). Design writes the motion spec and the CSS first; changes to `common.js`/`index.html` come to
+the master as a patch; page JS goes to ai-features after its Ibn Ezra and group-privacy work.
+
 ## 2026-11-14 – the switchboard in the back door: app-wide on/offs, experimental content, moods, קודש (ai-features → master, design)
 
 - **Appended:** the table `app_switches` at the end of `schema.sql`; GET and PUT `/api/admin/switches` and one import line in

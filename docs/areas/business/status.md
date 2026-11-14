@@ -26,6 +26,16 @@ Updated by the department at the end of every meaningful round of work. Short: t
   - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
+- **Investor deck (2026-11-14, from the CEO):** a private Slides Artifact, 15 Hebrew slides, shared with no one:
+  https://claude.ai/artifact/EtQnfQgitX4ysvcjEfCaD6
+  - It covers the problem, the product, the market, the model, honest metrics (family stage, no revenue), the
+    three-scenario forecast, six paths forward, the funding roadmap with its triggers, the ask, the team and the risks.
+  - Built from `business-plan.md` only, with no private research files. Assumptions are marked [הנחה] and legal
+    points ⚖.
+  - It is presented as a ready tool, not a decision to raise now.
+  - Not yet checked slide by slide on screen.
+  - Update the metrics slide once the beta brings real numbers.
+
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.
   - The trial is about ₪1–2.

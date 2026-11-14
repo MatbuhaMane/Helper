@@ -809,3 +809,5 @@ _Updated 2026-11-14 (round 23)._
 - Nothing open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)
 
 - Round 25: silhouettes (sil-m/f/x, `.sil[data-sil]`) for people not yet signed in; see docs/design/silhouettes.md.
+
+- Round 26: `app-icons/yad.webp`, the icon of "יד ביד" (an open hand with a sprout on the palm; no coin). Script `docs/design/art/draw-yad-icon.py`. No screens yet, waiting for the vision spec.

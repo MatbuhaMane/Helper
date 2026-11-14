@@ -365,3 +365,91 @@ li.gl-step.small { background: var(--gl-ember-soft); }
 /* the research thread of the day, at the foot of "היום" (research step 2) */
 .gl-thread { display: block; text-decoration: none; color: inherit; border-block-start: 1px dashed var(--line); padding-block-start: 8px; border-radius: 0 0 10px 10px; transition: color var(--dur-quick); }
 .gl-thread:hover { color: var(--primary); }
+
+/* ---------- part 2 (vision batch 28, docs/design/goals-2.md): the advice window, "שמור מסקנה", "עזור לי להגדיר", sharing ---------- */
+/* a goal's page with the advice beside it: one column on a phone (the advice under the processes, or in H.modal),
+   from 1000 px the advice is a sticky column at the inline end */
+.gl-split { display: grid; gap: 18px; align-items: start; min-inline-size: 0; }
+.gl-split > * { min-inline-size: 0; }
+@media (min-width: 1000px) {
+  .gl-split { grid-template-columns: minmax(0, 1fr) 380px; }
+  .gl-split > .gl-ask { position: sticky; inset-block-start: calc(var(--appbar-h, 0px) + 12px); }
+}
+
+/* the conclusions pinned to the goal: what was decided stays in sight */
+.gl-pins { display: grid; gap: 8px; padding: 16px 18px; border-inline-start: 4px solid var(--primary); }
+.gl-pins > h2 { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+.gl-pins > h2::before, .gl-keep::before { content: ""; inline-size: 18px; block-size: 18px; flex: none; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/pin.svg) center / contain no-repeat; mask: url(/assets/bd-icons/pin.svg) center / contain no-repeat; }
+.gl-pins > h2::before { background: var(--primary); }
+.gl-pins > ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gl-pin { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; align-items: start; padding: 8px 10px; border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 7%, var(--card)); }
+.gl-pin > p { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.gl-pin > small { grid-column: 1; color: var(--muted); font-size: .78rem; }
+.gl-pin > button { grid-column: 2; grid-row: 1 / span 2; inline-size: 44px; block-size: 44px; margin-block: -6px; margin-inline-end: -6px; border: 0; border-radius: 50%;
+  background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.gl-pin > button::before { content: ""; inline-size: 16px; block-size: 16px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/x.svg) center / contain no-repeat; mask: url(/assets/bd-icons/x.svg) center / contain no-repeat; }
+.gl-pin > button:hover { color: var(--danger); }
+
+/* the advice window: a calm chat about this goal and its steps */
+.gl-ask { display: grid; gap: 10px; padding: 16px; }
+.gl-ask-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gl-ask-head h2 { flex: 1 1 auto; margin: 0; font-size: 1.05rem; }
+.gl-quota { font-size: .78rem; color: var(--muted); padding: 2px 9px; border-radius: 999px; background: color-mix(in srgb, var(--text) 5%, transparent); white-space: nowrap; }
+.gl-quota.low { color: var(--text); background: var(--gl-ember-soft); }
+.gl-ask-log { display: flex; flex-direction: column; gap: 8px; min-block-size: 120px; max-block-size: min(52vh, 520px); overflow-y: auto; overscroll-behavior: contain;
+  padding: 4px 2px; }
+.gl-ask-empty { margin: auto 0; color: var(--muted); font-size: .92rem; line-height: 1.5; text-align: center; }
+.gl-say { max-inline-size: 88%; margin: 0; padding: 9px 12px; border-radius: 16px; line-height: 1.55; overflow-wrap: anywhere; white-space: pre-wrap; }
+.gl-say.me { align-self: flex-start; background: var(--primary); color: var(--primary-ink); border-end-start-radius: 5px; }
+.gl-say.ai { align-self: flex-end; display: grid; gap: 6px; background: color-mix(in srgb, var(--olive) 11%, var(--card)); border: 1px solid var(--line);
+  border-end-end-radius: 5px; color: var(--text); }
+/* "שמור מסקנה": under an answer of the AI; once kept it says so and stands still */
+.gl-keep { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-block-size: 36px; padding: 0 12px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--line)); background: var(--card); color: var(--primary); font: inherit; font-size: .84rem; font-weight: 500;
+  cursor: pointer; transition: transform var(--dur-press, .12s) var(--ease-river, ease); }
+.gl-keep::before { inline-size: 15px; block-size: 15px; }
+.gl-keep:active { transform: scale(.96); }
+.gl-keep[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); cursor: default; }
+@media (pointer: coarse) { .gl-keep { min-block-size: 44px; } }
+/* the AI is thinking: three dots that breathe (opacity) */
+.gl-say.typing { display: inline-flex; gap: 5px; padding: 14px 16px; }
+.gl-say.typing > i { inline-size: 7px; block-size: 7px; border-radius: 50%; background: var(--muted); animation: gl-dot 1.2s ease-in-out infinite; }
+.gl-say.typing > i:nth-child(2) { animation-delay: .2s; }
+.gl-say.typing > i:nth-child(3) { animation-delay: .4s; }
+@keyframes gl-dot { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .gl-say.typing > i { animation: none; opacity: .6; } }
+/* quick questions to start with */
+.gl-ask-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.gl-ask-chips > button { font: inherit; font-size: .84rem; min-block-size: 36px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--line-strong);
+  background: none; color: var(--text); cursor: pointer; }
+.gl-ask-chips > button:hover { border-style: solid; border-color: var(--primary); }
+@media (pointer: coarse) { .gl-ask-chips > button { min-block-size: 44px; } }
+.gl-ask-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.gl-ask-form textarea { inline-size: 100%; min-block-size: 46px; max-block-size: 160px; resize: vertical; line-height: 1.5; }
+.gl-ask-send { inline-size: 46px; block-size: 46px; border-radius: 50%; border: 0; background: var(--primary); color: var(--primary-ink); cursor: pointer;
+  display: grid; place-items: center; transition: transform var(--dur-press, .12s) var(--ease-river, ease), opacity var(--dur-quick, .2s); }
+.gl-ask-send::before { content: ""; inline-size: 18px; block-size: 18px; border-block-start: 2.4px solid currentColor; border-inline-start: 2.4px solid currentColor;
+  transform: translateX(3px) rotate(-135deg); }   /* a chevron pointing to the inline end (RTL: left) */
+.gl-ask-send:active { transform: scale(.94); }
+.gl-ask-send:disabled { opacity: .45; cursor: not-allowed; }
+.gl-ask-note { margin: 0; font-size: .78rem; color: var(--muted); }
+
+/* "עזור לי להגדיר": beside the first field of a new goal; it opens .gl-ask inside the step, and the AI's wording comes back as a draft */
+.gl-helpdef { justify-self: start; display: inline-flex; align-items: center; gap: 6px; min-block-size: 44px; padding: 0 16px; border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--gl-ember) 45%, var(--line)); background: var(--gl-ember-soft); color: var(--text); font: inherit; font-weight: 500; cursor: pointer;
+  transition: transform var(--dur-press, .12s) var(--ease-river, ease); }
+.gl-helpdef:active { transform: scale(.97); }
+.gl-new .gl-ask { padding: 0; box-shadow: none; border: 0; background: none; }
+.gl-draft { display: grid; gap: 8px; padding: 14px 16px; border-radius: 18px; border: 1.5px dashed color-mix(in srgb, var(--primary) 55%, var(--line));
+  background: color-mix(in srgb, var(--primary) 6%, var(--card)); }
+.gl-draft > small { color: var(--muted); font-size: .8rem; font-weight: 600; }
+.gl-draft > b { font-size: 1.1rem; line-height: 1.4; }
+.gl-draft > p { margin: 0; color: var(--muted); line-height: 1.5; }
+.gl-draft-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* sharing a goal: private by default; the chip (.priv-chip, base.css) opens the four levels (.priv-pick) */
+.gl-share { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.gl-share > span { color: var(--muted); font-size: .9rem; }

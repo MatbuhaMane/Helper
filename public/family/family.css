@@ -644,3 +644,15 @@
 /* the children's rule, said plainly where it applies */
 .fr-kid-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 12px; font-size: .85rem;
   background: color-mix(in srgb, var(--olive) 10%, var(--card)); color: var(--text); }
+
+/* ---------- shared goals on a person's profile (goals part 2, docs/design/goals-2.md): only those shared at a level the viewer may see ---------- */
+.fv-goals { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+.fv-goal { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 12px; align-items: center; padding: 12px 14px; border-radius: 16px;
+  border: 1px solid var(--line); background: var(--card); color: inherit; text-decoration: none; }
+a.fv-goal:hover { border-color: var(--line-strong); }
+.fv-goal-ring { --p: 0; grid-row: 1 / span 3; position: relative; inline-size: 48px; block-size: 48px; border-radius: 50%;
+  background: conic-gradient(var(--primary) calc(var(--p) * 1%), color-mix(in srgb, var(--text) 10%, transparent) 0);
+  -webkit-mask: radial-gradient(circle, transparent 17px, #000 18px); mask: radial-gradient(circle, transparent 17px, #000 18px); }
+.fv-goal > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fv-goal > small { color: var(--muted); font-size: .84rem; }
+.fv-goal > .priv-tag { justify-self: start; }

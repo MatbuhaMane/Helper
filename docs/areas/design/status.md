@@ -2,19 +2,20 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 15)._
+_Updated 2026-11-14 (the new chat, round 16)._
 
 
 
 
 ## Queued
 - Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
-- Vision batch 28 (vision a54fe0c), goals part 2, waiting for the CEO's order:
-  - a consultation panel on a goal's page (AI chat), with a "שמור מסקנה" button that pins a conclusion to the goal;
-  - "עזור לי להגדיר" when creating a goal;
-  - a shared goal on the person's profile in the tree, using the four-level picker (`.priv-pick`, round 15);
-  - a "גם כהודעה לטלפון" switch per notification kind in the settings;
-  - later, a "connect your storage" screen (Google Drive or a NAS).
+## Round 16: batch 28, the look of goals part 2 (the logic is ai-features')
+- The advice window on a goal's page (`.gl-ask`), with "שמור מסקנה" (`.gl-keep`) pinning to `.gl-pins`. From 1000 px it is a sticky column (`.gl-split`).
+- "עזור לי להגדיר" (`.gl-helpdef`) and the AI's wording as a draft (`.gl-draft`).
+- A shared goal: `.gl-share` with `.priv-chip`; on the profile in the tree, `.fv-goals` / `.fv-goal` with a ring and a `.priv-tag`.
+- The settings: `.st-ntfs` / `.st-ntf` with a "גם כהודעה לטלפון" switch per kind, and `.st-quiet`.
+- The storage screen (`.st-store`, reusing `.st-service`): designed now, connected last, because the Drive permission waits for the CEO's review.
+- The spec is `docs/design/goals-2.md`, sent to ai-features (local_4953355f). Checked on a mock at 375 and 1280 px, light and dark, with the audit clean.
 
 ## Round 15: batch 27, the privacy picker and the friends page (look only; the logic is ai-features')
 - **Four levels** (`data-level` all / friends / family / me): a full picker (2×2 on a phone, 4 across on a PC), a chip and a tag. They live in base.css and use four new icons in `assets/priv-icons/`.

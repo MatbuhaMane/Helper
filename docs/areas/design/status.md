@@ -281,11 +281,9 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
     - with reduced motion.
   - **The family profile's look.** It is `public/family/profile.css` with five covers, `/assets/covers/*.svg`.
 - **Live in main (v93, v95): the covers at night** (e83f5ed) and **הרגלי אכילה's own icon** (d7b8192 and its common.js patch).
-- **Waiting for the owner: the new brand mark** (1a32930, `docs/design/brand/`, the sheet `options.jpg`). Three options join the tent and the old script:
-  - A: the script with the tent at its start; the app icon stays the tent.
-  - B: the shin glowing in the tent's doorway, one mark for the bar and the icon (recommended). The letter reads only from ~32 px.
-  - C: the shin turned over as a two-peaked roof; at small sizes it looks a little like mountains.
-  - Once the owner chooses, the `--bm-*` tokens go into base.css and the SVG goes to the CEO for BRAND in common.js.
+- **Closed by the owner (vision batch 21, 2026-11-14): the brand mark.** The current logo stays (`/assets/brand/ohel-logo.svg`).
+  Options A, B and C in `docs/design/brand/` (1a32930) are dropped; the folder is kept only as history. Details: "The owner closes
+  the open questions" in `docs/decisions.md` on `vision`.
 - **Ready to merge:** the profile faces' initial is darker (≥ 4.5:1 in light, it was 2.9:1, from ai-features' audit), and the tree prototype names עץ ב׳ (canopy) first and the olive עץ א׳ (v97).
 - **Ready to merge: the app icon from the owner's logo** (`public/assets/icons/ohel-*`, `docs/design/make-ohel-icons.mjs`): limestone tile, basalt ink,
   any + maskable, 16/32/48/180/192/512, `ohel-favicon.ico`, `ohel-apple-touch-icon.png`; looked at on a light and a dark ground. The master wires manifest.json and index.html.

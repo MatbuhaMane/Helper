@@ -2695,3 +2695,13 @@ Status: Ready for the master's review.
 - **For design:** `kitchen.css` and `home.css`. The pages use the shared classes, and a few sizes are held inline until then:
   - the step's big text, the timer clock, the recipe rows;
   - the item cards, and the state line (late / soon in bold).
+- **After vision's spec** (vision:docs/vision/future-specs.md, 3b8e700):
+  - °F ↔ °C moved into `measure.js` (`Measure.temp`), so the book and the kitchen share it;
+  - the usual diners and "the screen stays on" (a switch) join the units in `H.prefs('kitchen')`;
+  - a **"🍳 לבשל" button in the recipe book** opens `/food/kitchen/?recipe=<id>`. Once merged it exposes the kitchen from the book even before the tile moves; the master may hold that line in `public/groceries/app.js` until the kitchen goes live.
+- **נשימה** at `/tools/breath/` (66a29ff, no server, no AI):
+  - 2, 5 or 10 minutes; three ways (4/6 calm, box 4-4-4-4, 4-7-8 for sleep), `H.prefs('breath')`;
+  - a circle that grows on the in-breath and shrinks on the out-breath by `transform` and `opacity` only, still under prefers-reduced-motion; the screen stays on; an end screen;
+  - open with vision: ש4 (recorded meditations), ש5 (silence for now), ש6 (habits);
+  - patch `0001-package.json-test-breath-in-npm-test-master-file-sen.patch`; on merge `soon:breath` → `/tools/breath/`;
+  - for design: `breath.css` with the night scene (the circle and its sizes are inline until then).

@@ -68,7 +68,10 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - a real phone: the screen staying on, a buzz, a notification while in the back;
   - the edit window at 375 by eye.
 - **Not in the toolbox** until the master moves them.
-- **Next, by readiness:** breath (no server, a breathing circle and a few minutes' timer), then translate.
+- 3b8e700 kitchen after vision's spec: °F/°C in measure.js, diners and the screen switch in H.prefs, a "לבשל" button in the book (the master may hold it until the kitchen is live).
+- 66a29ff **נשימה** `/tools/breath/`: 2/5/10 minutes, three ways, a circle by transform only. test-breath 17; patch for package.json in the CEO's notes folder.
+- **Not checked:** the circle's motion by eye (the pane was hidden: the transition was set and running, the frames were not drawn).
+- **Next, by vision's order:** garden, then translate. Tree skins first when the art arrives.
 
 ### Open
 

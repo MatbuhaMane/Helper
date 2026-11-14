@@ -385,8 +385,9 @@
 .st-node.away { opacity: .38; }
 .st-node.away > .st-row { border-style: dashed; box-shadow: none; }
 .st-ph { block-size: var(--h, 58px); border: 2px dashed color-mix(in srgb, var(--primary) 70%, transparent); border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--primary) 8%, transparent); animation: st-ph .16s var(--ease-river) both; }
-@keyframes st-ph { from { block-size: 0; opacity: 0; } }
+  background: color-mix(in srgb, var(--primary) 8%, transparent); transform-origin: top; animation: st-ph .16s var(--ease-river) both; }
+/* the drop spot fades and unfolds from its top (scale only, the motion rule); the rows make room at once */
+@keyframes st-ph { from { opacity: 0; scale: 1 .6; } }
 .st-node.into > .st-row { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, var(--card)); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent); }
 .st-node.into > .st-kids { border-inline-start-color: var(--primary); }
 .st-node.no > .st-row { border-color: var(--alert); background: color-mix(in srgb, var(--alert) 10%, var(--card)); }

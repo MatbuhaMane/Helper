@@ -2,7 +2,23 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 2)._
+_Updated 2026-11-14 (the new chat, round 3)._
+
+## Round 3 (2026-11-14): the olive (24, 25), not cleanable: a re-roll is needed
+
+- **24 and 25 are not the same drawing.** The crown, the trunk and the band heights differ, so 24's circles can't be filled
+  from 25 the way the pine's were from 16 (those were aligned to the pixel).
+- **The bands were drawn separately, in both.** In 25 the top two lines frame a white slice (rows 421–447 and 789–814).
+  Cutting the slices and lines out closes the crown seam acceptably, but the trunk steps sideways at the lower seams and keeps
+  a dark edge stroke there, and the second seam leaves clumps cut flat. In 24 the trunk jumps ~100 px at rows 1112 and 1448.
+  Repainting that by hand would show. Nothing shipped; the originals are in `data/art/owner-2026-11-14/`.
+- **The re-roll (for the owner):**
+  - "one continuous drawing, no horizontal lines, bands or gaps anywhere";
+  - the clean tree first, then the circles added **by editing that same image** (not a new generation), so the two line up
+    to the pixel;
+  - the candle spot at the bottom centre (25 has it, 24 does not).
+- **Seats:** I recommend 4 on the top tier too, as on the pine (20 seats, `perRow: 4`). With 2, a third child or grandchild
+  falls back to spreading along the line. If the owner wants 2, `slots.json` can carry seats per tier.
 
 ## Round 2 (2026-11-14): the owner's images 22 and 23, merge-ready
 

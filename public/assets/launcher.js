@@ -118,11 +118,23 @@
 
     // a long press (a finger, or a held mouse button) opens the mode; a right click on a computer too
     let finger = false;                 // the last press was a finger or a pen (its long press also fires a contextmenu)
-    grid.addEventListener('pointerdown', (e) => { finger = e.pointerType === 'touch' || e.pointerType === 'pen'; }, true);
+    let lastX = 0, lastY = 0;
+    grid.addEventListener('pointerdown', (e) => { finger = e.pointerType === 'touch' || e.pointerType === 'pen'; lastX = e.clientX; lastY = e.clientY; }, true);
+    grid.addEventListener('pointermove', (e) => { lastX = e.clientX; lastY = e.clientY; }, true);
+    // an image or a link is not dragged by the browser itself (it would cancel our drag)
+    // a finger dragging a tile does not scroll the page (the press that opened the mode began before touch-action: none applied)
+    grid.addEventListener('touchmove', (e) => { if (drag && e.cancelable) e.preventDefault(); }, { passive: false });
+    grid.addEventListener('dragstart', (e) => { if (on) e.preventDefault(); });
     grid.addEventListener('pointerdown', (e) => {
       if (on || P.locked || e.button > 0) return;
       const t = e.target.closest('.app'); if (!t) return;
-      press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => { press = null; grid.dataset.justEntered = '1'; enter(); }, 520) };
+      const id = e.pointerId;
+      press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => {
+        press = null; grid.dataset.justEntered = '1'; enter();
+        // the same finger, still down: it may drag this tile at once (no lifting and pressing again)
+        const r0 = t.getBoundingClientRect(); drag = { t, id, sx: lastX, sy: lastY, gx: lastX - r0.left, gy: lastY - r0.top, moved: false };
+        try { t.setPointerCapture(id); } catch (_) { /* gone */ }
+      }, 520) };
     });
     const cancelPress = (e) => { if (press && (!e || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8)) { clearTimeout(press.timer); press = null; } };
     grid.addEventListener('pointermove', cancelPress);

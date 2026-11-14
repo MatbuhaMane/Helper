@@ -55,7 +55,7 @@
     { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', 'soon:breath'] },
     { id: 'food', name: 'אוכל', apps: ['/food/', 'soon:kitchen', '/groceries/#book', '/food/restaurants/'] },
     { id: 'routine', name: 'שוטף', apps: ['/tools/calendar/', '/tools/parnasa/', '/food/fridge/', '/groceries/', '/pc/', '/mail/', 'soon:garden', 'soon:home'] },
-    { id: 'social', name: 'חברתי', apps: ['/family/', '/gather/', '/messages/'] },
+    { id: 'social', name: 'חברתי', apps: ['/family/', '/gather/', '/messages/', 'soon:yad'] },
   ];
   // still to come, shown inside their category (like SOON: a tap tells one sentence)
   const FUTURE = [
@@ -69,6 +69,8 @@
     // only: 'child': shown only to a child (H.me().child: under 12 by the birth year the owner set)
     { id: 'homework', name: 'עוזר שיעורי בית', ic: 'note', note: 'בעתיד', line: 'עזרה בשיעורים: מסבירים, לא פותרים במקומך.', only: 'child' },
     { id: 'breath', name: 'מדיטציה ונשימה', ic: 'habits', note: 'בעתיד', line: 'כמה דקות של שקט ונשימה, כל יום.' },
+    // vision batch 32 (2026-11-14): the Ohel's inner economy, the token יד; drawn only, nothing built yet
+    { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בעתיד', line: 'לתת יד ולקבל יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה בתמורה.' },
   ];
   for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }
   /** may this person open the app? r is what H.me() resolves to; beta and secret apps need the back door's leave (r.apps: ['beta', '/x/']) */

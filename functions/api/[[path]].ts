@@ -464,6 +464,8 @@ route('POST', '/api/gather/:id/cancel', gather.cancel);
 route('POST', '/api/gather/:id/reopen', gather.reopen);
 route('POST', '/api/gather/:id/items', gather.itemAdd);
 route('DELETE', '/api/gather/:id/items/:item', gather.itemDelete);
+route('POST', '/api/gather/:id/calc', gather.calc);                 // the food calculator (ai-features, 2026-11-14)
+route('POST', '/api/gather/:id/items/many', gather.itemsMany);
 route('DELETE', '/api/gather/:id/comments/:comment', gather.commentDelete);
 route('GET', '/api/gather/invite/:token', gather.invite);
 route('POST', '/api/gather/invite/:token/rsvp', gather.rsvp);

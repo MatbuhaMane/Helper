@@ -104,6 +104,7 @@ route('GET', '/api/me', async (ctx) => {
   return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
     shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
     grants: await grants.grantsFor(ctx.env, ctx.user.email),   // the person's own secret grants only (server/grants.ts)
+    owner: ctx.user.role === 'owner', apps: await appAccess.leavesFor(ctx.env, ctx.user),   // beta and secret apps: the person's own leaves (server/app-access.ts)
     ...(await lock.meLock(ctx.env, ctx.req)) });   // appLock: off | pin | bio (the padlock in the bar); locked: the lock screen   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);

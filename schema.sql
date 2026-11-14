@@ -1369,7 +1369,7 @@ CREATE TABLE IF NOT EXISTS home_items (
   warranty_until TEXT,               -- YYYY-MM-DD
   note           TEXT,
   created_by     TEXT,
-  remind_to      TEXT,               -- who gets the reminder (the owner's answer ש7); null: whoever added it
+  remind_to      TEXT,               -- who gets the reminder (the owner's answer ש7), null for whoever added it
   reminded       TEXT,               -- the due date last reminded, so a reminder goes once
   created_at     INTEGER NOT NULL,
   updated_at     INTEGER NOT NULL,

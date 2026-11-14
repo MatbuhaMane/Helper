@@ -57,7 +57,20 @@
   const addTime = (t, sec, now = Date.now()) => (t.rest != null ? { ...t, rest: t.rest + sec, sec: t.sec + sec }
     : { ...t, end: Math.max(t.end, now) + sec * 1000, sec: t.sec + sec });
 
-  const api = { times, label, clock, left, start, pause, resume, addTime };
+  /** a phrase heard while cooking → { do: 'next'|'prev'|'again'|'timer'|'ask', q } or null. "שף, …" / "שאלה …" asks the chef. */
+  function command(text) {
+    const w = String(text || '').replace(/[.,!?״"]/g, ' ').replace(/\s+/g, ' ').trim();
+    const q = w.match(/^(?:שף|שאלה)\s+(.+)/);
+    if (q) return { do: 'ask', q: q[1] };
+    const has = (re) => new RegExp(`(^|\\s)(${re})(\\s|$)`).test(w);
+    if (has('הבא|קדימה|הלאה')) return { do: 'next' };
+    if (has('הקודם|אחורה|חזור')) return { do: 'prev' };
+    if (has('שוב|תקריא|תקרא|קרא')) return { do: 'again' };
+    if (/טיימר/.test(w)) return { do: 'timer' };
+    return null;
+  }
+
+  const api = { times, label, clock, left, start, pause, resume, addTime, command };
   if (typeof window !== 'undefined') window.Kitchen = api;
   if (typeof globalThis !== 'undefined') globalThis.Kitchen = api;
 })();

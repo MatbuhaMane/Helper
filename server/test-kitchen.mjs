@@ -48,5 +48,15 @@ eq(K.left(t, 999999), 0, 'done is zero');
 eq(K.left(K.addTime(t, 60, 2000000), 2000000), 60, 'a minute more on a timer that rang counts from now');
 eq(K.start('', 600, 1).name, '10 דק׳', 'a timer with no name is named by its time');
 
+// voice commands while cooking
+const cmd = (t) => K.command(t);
+eq(cmd('הבא'), { do: 'next' }, 'next');
+eq(cmd('טוב, הבא.'), { do: 'next' }, 'next inside a phrase');
+eq(cmd('חזור'), { do: 'prev' }, 'back');
+eq(cmd('תקריא שוב'), { do: 'again' }, 'again');
+eq(cmd('תפעיל טיימר'), { do: 'timer' }, 'timer');
+eq(cmd('שף, במה מחליפים שמנת?'), { do: 'ask', q: 'במה מחליפים שמנת' }, 'a question to the chef');
+eq(cmd('הבאתי את הקמח'), null, 'הבאתי is not הבא');
+eq(cmd(''), null, 'nothing');
 console.log(fail ? `${fail} of ${n} kitchen tests failed` : `kitchen: all ${n} tests passed`);
 process.exit(fail ? 1 : 0);

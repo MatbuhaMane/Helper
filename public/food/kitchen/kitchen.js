@@ -1,14 +1,14 @@
 /* עוזר מטבח (docs/vision/later.md, "עוזר מטבח"; H.FUTURE 'kitchen'): cooking beside the recipe book.
    Three tabs:
    - מבשלים: a recipe from the household's book (/api/recipes), one step at a time in big letters, the quantities
-     scaled by the number of diners (Measure, as in the book), the screen kept on while cooking, and a timer button
-     for every time a step names ("10 דקות").
+     scaled by the number of diners (Measure, as in the book), and a timer button for every time a step names ("10 דקות").
+     By voice (the owner's answer ש1): "הבא", "הקודם", "שוב", "טיימר", and a question to the chef ("שף, …"), answered
+     aloud by AI (/api/cook/ask; free with a daily quota, ש3). The screen is not kept on (ש1).
    - טיימרים: several named timers at once. They live on this device (localStorage: a timer belongs to the stove it
-     is next to), survive a reload, ring with a sound, a buzz and a notification when the page is open or in the back.
+     is next to), survive a reload, ring with a sound, a buzz and a notification when the page is open or in the back,
+     and by push when the app is closed: the running ones are sent to the server (/api/cook/timers, the minute cron).
    - המרות: cups, spoons and grams by the ingredient (Measure.convert), and °F ↔ °C.
-   Later (the spec): "הבא" by voice with the companion reading the step, AI tips while cooking, a timer that rings
-   when the app is closed (push). The units, the usual diners and the screen kept on are the person's (H.prefs 'kitchen');
-   the screen kept on and the timers' ringing are vision's suggestions (ש1), so each is a small piece that can be switched off.
+   The units, the usual diners and listening by voice are the person's (H.prefs 'kitchen').
    A recipe opens straight from the book with /food/kitchen/?recipe=<id> (the book's "לבשל" button). The look is design's: the
    page uses the shared classes only, and the few sizes held inline here wait for kitchen.css (docs/decisions.md). */
 (async () => {
@@ -17,13 +17,20 @@
   await H.requireLogin();
   H.header('עוזר מטבח');
   const root = document.querySelector('main');
-  // the person's: the units, the usual number of diners (0: as the recipe says), and the screen kept on while cooking
-  const P = H.prefs('kitchen', { units: 'orig', diners: 0, awake: true });
+  // the person's: the units, the usual number of diners (0: as the recipe says), and listening by voice while cooking
+  const P = H.prefs('kitchen', { units: 'orig', diners: 0, listen: false });
+  const V = window.Voice;
   const TKEY = 'helper.kitchen.timers';
 
   /* ---------- timers (on this device) ---------- */
   let timers = (() => { try { const t = JSON.parse(localStorage.getItem(TKEY) || '[]'); return Array.isArray(t) ? t : []; } catch (_) { return []; } })();
-  const saveTimers = () => { try { localStorage.setItem(TKEY, JSON.stringify(timers)); } catch (_) { /* private mode */ } };
+  let syncing = 0;
+  const saveTimers = () => {
+    try { localStorage.setItem(TKEY, JSON.stringify(timers)); } catch (_) { /* private mode */ }
+    // the running ones to the server, so they ring by push with the app closed (a moment later, all at once)
+    clearTimeout(syncing);
+    syncing = setTimeout(() => api('/api/cook/timers', { method: 'PUT', body: { timers: timers.filter((t) => t.rest == null && !t.rang).map((t) => ({ id: t.id, name: t.name, end: Math.round(t.end) })) } }).catch(() => {}), 800);
+  };
   const ringing = new Set();   // ids that reached zero and were not yet silenced
   let audio = null, beepAt = 0;
 
@@ -41,7 +48,7 @@
   async function notify(t) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
     const body = `הטיימר "${t.name}" הסתיים`;
-    try { const reg = await navigator.serviceWorker?.getRegistration(); if (reg) return reg.showNotification('עוזר מטבח', { body, tag: 'kitchen-' + t.id, renotify: true }); } catch (_) { /* fall through */ }
+    try { const reg = await navigator.serviceWorker?.getRegistration(); if (reg) return reg.showNotification('עוזר מטבח', { body, tag: 'kt' + t.id, renotify: true }); } catch (_) { /* fall through */ }
     try { new Notification('עוזר מטבח', { body }); } catch (_) { /* not allowed here */ }
   }
   function ring(t) {
@@ -53,7 +60,8 @@
   function addTimer(name, sec) {
     timers.push(K.start(name, sec));
     saveTimers();
-    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {});
+    // notifications on this device, so the timer rings with the app closed (asked once, on this tap)
+    H.push.state().then((st) => (st === 'off' && Notification.permission === 'default' ? H.push.enable() : st === 'not-installed' ? H.toast('באייפון הטיימר מצלצל כשהאפליקציה סגורה רק מהאוהל שבמסך הבית.') : null)).catch(() => {});
     try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); audio.resume?.(); } catch (_) { /* later */ }   // unlocked by this tap
     drawTimers();
     H.toast(`טיימר ${K.label(sec)} התחיל`);
@@ -112,7 +120,7 @@
     for (const b of tabBar.children) b.setAttribute('aria-selected', String(b.id === 'tab-' + tab));
     body.setAttribute('aria-labelledby', 'tab-' + tab);
     body.textContent = '';
-    if (tab !== 'cook') wake(false);
+    if (tab !== 'cook') stopVoice();
     body.append(tab === 'timers' ? timersTab() : tab === 'convert' ? convertTab() : cookTab());
   }
 
@@ -178,15 +186,8 @@
   }
 
   /* ---------- מבשלים ---------- */
-  let recipes = null, lock = null;
-  async function wake(on) {
-    try {
-      if (on && !P.awake) on = false;
-      if (on && !lock && 'wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); }
-      if (!on && lock) { await lock.release(); lock = null; }
-    } catch (_) { /* not allowed (battery saver); the page still works */ }
-  }
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && cooking) wake(true); });
+  let recipes = null, unlisten = null;
+  const stopVoice = () => { if (unlisten) { unlisten(); unlisten = null; } V.stop(); };
 
   let cooking = null;   // { recipe, step, n }   n = diners
   const cookFromHash = () => { const m = location.hash.match(/^#cook=([^&]+)(?:&s=(\d+))?/); return m ? { id: decodeURIComponent(m[1]), step: +(m[2] || 0) } : null; };
@@ -206,7 +207,7 @@
   }
 
   function pickView() {
-    cooking = null; wake(false);
+    cooking = null; stopVoice();
     if (!recipes.length) return el('div', { class: 'card', style: 'padding:14px' },
       el('p', {}, 'עוד אין מתכונים בספר של הבית.'), el('a', { class: 'btn primary', href: '/groceries/#book' }, 'לספר המתכונים'));
     const q = el('input', { type: 'search', dir: 'auto', placeholder: 'חיפוש מתכון', 'aria-label': 'חיפוש מתכון' });
@@ -224,7 +225,7 @@
     };
     q.addEventListener('input', draw);
     draw();
-    return el('div', {}, el('p', { class: 'muted' }, 'בוחרים מתכון מהספר של הבית, ומבשלים צעד אחרי צעד. המסך נשאר דלוק.'),
+    return el('div', {}, el('p', { class: 'muted' }, 'בוחרים מתכון מהספר של הבית, ומבשלים צעד אחרי צעד. אפשר גם בקול: "הבא", ושאלות לשף.'),
       el('label', { class: 'field' }, el('span', {}, 'איזה מתכון?'), q), list);
   }
 
@@ -233,7 +234,6 @@
     const base = M.servings(r.meta);
     cooking = cooking?.recipe?.id === r.id ? cooking : { recipe: r, step: 0, n: (base && P.diners) || base || 1 };
     cooking.step = Math.min(Math.max(0, step0 || 0), Math.max(0, steps.length - 1));
-    wake(true);
     const factor = () => (base ? cooking.n / base : cooking.n);
     const view = el('div');
 
@@ -278,7 +278,7 @@
             ? el('button', { class: 'btn primary', type: 'button', style: 'flex:1', onclick: () => go(1) }, 'הצעד הבא')
             : el('button', { class: 'btn primary', type: 'button', style: 'flex:1', onclick: () => { H.toast('בתיאבון!'); location.hash = 'cook'; } }, 'סיימנו')));
     }
-    const go = (d) => { cooking.step = Math.min(Math.max(0, cooking.step + d), steps.length - 1); drawStep(); stepBox.scrollIntoView({ block: 'nearest' }); };
+    const go = (d, aloud) => { cooking.step = Math.min(Math.max(0, cooking.step + d), steps.length - 1); drawStep(); stepBox.scrollIntoView({ block: 'nearest' }); if (aloud) V.say(steps[cooking.step]); };
     const keys = (e) => {
       if (!view.isConnected) return document.removeEventListener('keydown', keys);
       if (e.target.closest('input, select, textarea') || e.altKey || e.ctrlKey || e.metaKey) return;
@@ -291,10 +291,51 @@
     stepBox.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') x0 = e.clientX; });
     stepBox.addEventListener('pointerup', (e) => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1); });
 
-    function awakeToggle() {
-      const box = el('input', { type: 'checkbox', checked: P.awake !== false });
-      box.addEventListener('change', () => { P.awake = box.checked; H.savePrefs('kitchen'); wake(box.checked); });
-      return el('label', { class: 'toggle', style: 'margin:6px 0' }, box, 'המסך נשאר דלוק כל עוד המתכון פתוח');
+    /* by voice: "הבא" / "הקודם" / "שוב" / "טיימר", and "שף, …" asks the chef */
+    function heard(text) {
+      const c = K.command(text);
+      if (!c || !view.isConnected) return;
+      if (c.do === 'ask') return askChef(c.q);
+      if (c.do === 'next') return go(1, true);
+      if (c.do === 'prev') return go(-1, true);
+      if (c.do === 'again') return V.say(steps[cooking.step]);
+      if (c.do === 'timer') { const t = K.times(steps[cooking.step] || '')[0]; if (t) addTimer(r.title.slice(0, 24) + ', צעד ' + (cooking.step + 1), t.sec); else H.toast('בצעד הזה אין זמן.'); }
+    }
+    const listenBtn = el('button', { class: 'btn small', type: 'button', 'aria-pressed': 'false', onclick: () => setListen(!unlisten) }, '🎤 הבא בקול');
+    function setListen(on) {
+      if (unlisten) { unlisten(); unlisten = null; }
+      if (on) unlisten = V.listen(heard);
+      listenBtn.setAttribute('aria-pressed', String(!!unlisten));
+      listenBtn.textContent = unlisten ? '🎤 מקשיב: "הבא", "שוב", "שף…"' : '🎤 הבא בקול';
+      if (P.listen !== !!unlisten) { P.listen = !!unlisten; H.savePrefs('kitchen'); }
+    }
+
+    /* the chef: a question about this recipe and this step, answered aloud */
+    function askChef(first) {
+      const input = el('input', { type: 'text', dir: 'auto', placeholder: 'למשל: במה אפשר להחליף שמנת?', 'aria-label': 'השאלה לשף', value: first || '' });
+      const answer = el('p', { 'aria-live': 'polite', style: 'min-block-size:1.5em;font-size:1.1rem;line-height:1.6' });
+      const quota = el('p', { class: 'muted', style: 'margin:0' });
+      const showQuota = (x) => { quota.textContent = x.used >= x.free ? 'השאלות החינמיות להיום נגמרו (' + x.free + '). מעבר להן, מהקרדיטים.' : (x.free - x.used) + ' שאלות חינם נשארו היום.'; };
+      api('/api/cook/ask').then(showQuota).catch(() => {});
+      const send = async () => {
+        const qtext = input.value.trim();
+        if (!qtext) return input.focus();
+        answer.textContent = 'השף חושב…';
+        try {
+          const x = await api('/api/cook/ask', { method: 'POST', body: { title: r.title, ingredients: (r.ingredients || []).map((i) => [i.measure, i.name].filter(Boolean).join(' ')), steps, step: cooking.step, q: qtext } });
+          answer.textContent = x.answer; showQuota(x); V.say(x.answer);
+        } catch (e) { answer.textContent = e.message === 'ai_credit_needed' ? 'נגמרו הקרדיטים. אפשר להוסיף בהגדרות.' : (e.message || 'השף לא ענה. נסו שוב.'); }
+      };
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+      const mic = V.canListen ? el('button', { class: 'btn', type: 'button', 'aria-label': 'לשאול בקול', onclick: () => {
+        const was = !!unlisten; if (was) setListen(false);
+        answer.textContent = 'מקשיב…';
+        V.listen((t) => { input.value = t; send(); if (was) setListen(true); }, { once: true });
+      } }, '🎤') : null;
+      H.modal(el('div', {}, el('h2', { style: 'margin-top:0' }, '👨‍🍳 שאלה לשף'),
+        el('div', { style: 'display:flex;gap:8px' }, input, mic, el('button', { class: 'btn primary', type: 'button', onclick: send }, 'לשאול')),
+        answer, quota));
+      if (first) send(); else input.focus();
     }
 
     drawStep();
@@ -303,7 +344,11 @@
         el('button', { class: 'btn ghost small', type: 'button', onclick: () => { location.hash = 'cook'; } }, 'מתכון אחר'),
         el('h2', { style: 'margin:0;flex:1' }, r.title)),
       ingredientsCard(), stepBox,
-      'wakeLock' in navigator ? awakeToggle() : null);
+      el('div', { style: 'display:flex;flex-wrap:wrap;gap:8px;margin:12px 0' },
+        V.canListen ? listenBtn : null,
+        el('button', { class: 'btn small', type: 'button', onclick: () => V.say(steps[cooking.step]) }, '🔊 להקריא'),
+        el('button', { class: 'btn small', type: 'button', onclick: () => askChef() }, '👨‍🍳 שאלה לשף')));
+    if (P.listen && V.canListen) setListen(true);
     return view;
   }
 

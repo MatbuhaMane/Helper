@@ -53,7 +53,8 @@ A 2×2 grid on a phone, four across from 640 px. The chosen option gets its leve
 <section class="fr">
   <header class="fr-head"><h2>חברים</h2><input class="fr-search" type="search" aria-label="חיפוש חברים"><p class="muted">…</p></header>
 
-  <div class="fr-invite"><p>…both sides approve…</p><code>https://…/f/…</code><button class="btn">העתקה</button></div>
+  <div class="fr-invite"><p>…both sides approve…</p><code>https://…/f/…</code><button class="btn">העתקה</button>
+    <input type="email" aria-label="מייל של חבר"><button class="btn">שליחת בקשה</button></div>
 
   <div class="fr-found"><span class="fr-av" style="--c:…">דל</span><div><b>גילינו שאתם קרובים!</b><small>…</small></div><button class="btn">לעץ</button></div>
 
@@ -68,7 +69,8 @@ A 2×2 grid on a phone, four across from 640 px. The chosen option gets its leve
     <ul class="fr-grid">
       <li class="fr-card"><span class="fr-av" style="--c:…"><img alt=""> or initials</span>
         <b>name<span class="fr-kin">גם משפחה</span></b><small>how we know each other</small>
-        <button class="fr-talk" aria-label="שיחה עם …"></button></li>
+        <a class="fr-talk" href="…" aria-label="שיחה עם …"></a>
+        <a class="btn ghost small" href="…">המוזיאון</a><button type="button">הסרה</button></li>
     </ul>
     <!-- none yet: <p class="fr-empty">…</p> -->
   </div>
@@ -76,6 +78,8 @@ A 2×2 grid on a phone, four across from 640 px. The chosen option gets its leve
 ```
 
 - **The avatar** `.fr-av` shows a picture, or initials on the person's colour (`--c`). It is 48 px; `.fr-av.sm` is 36 px.
+- **An invite that came by link** is a `li.fr-req` with no `.fr-av`; the row then drops the avatar column.
+- **The card's second row:** the museum link at the start, "הסרה" (quiet, red on hover) at the end.
 - **The grid** is one column on a phone and auto-fills from 640 px (cards of at least 240 px).
 
 ## 3. Chats: one to one and groups
@@ -86,9 +90,9 @@ The chats use the `.dm` component from the messages page as it is: the list, the
 - **The group's head:** `<span class="dm-members">5 חברים</span>` after the `h2`.
 - **The sender's name** above each run of their messages: `<p class="dm-msg theirs" style="--c:…"><b class="dm-who">מיכל</b>…</p>`. Show it only on the first message of a run.
 - **A new group:**
-  - `<input class="fr-group-name" aria-label="שם הקבוצה">`;
-  - `<ul class="fr-pick">` of `<label><input type="checkbox"><span class="fr-av sm"></span><span>name</span></label>`.
-- **The children's rule:** a child under 12 who is not family is shown with `disabled` (dimmed). The page says why with `<p class="fr-kid-note">ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה.</p>`.
+  - `<input class="dm-grp-name" aria-label="שם הקבוצה">`;
+  - `<ul class="dm-grp-pick">` of `<label><input type="checkbox"><span class="fr-av sm"></span><span>name</span></label>`.
+- **The children's rule:** a child under 12 who is not family is shown with `disabled` (dimmed). The page says why with `<p class="dm-kid-note">ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה.</p>`.
 
 ## Class list
 
@@ -103,4 +107,4 @@ The chats use the `.dm` component from the messages page as it is: the list, the
 | `fr-grid` > `fr-card`, `fr-kin`, `fr-talk`, `fr-empty` | the friends grid |
 | `fr-av` (`.sm`, `--c`), `fr-av-stack`, `fr-more` | avatars (in messages.css) |
 | `dm-row.group`, `dm-who`, `dm-members` | group chats (in messages.css) |
-| `fr-pick`, `fr-group-name`, `fr-kid-note` | a new group |
+| `dm-grp-pick`, `dm-grp-name`, `dm-kid-note` (in messages.css) | a new group |

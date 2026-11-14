@@ -58,11 +58,11 @@
 .tree.moving .tr-p { rotate: .7deg; transition-duration: 1s; }
 .tr-leaf { position: relative; display: grid; place-items: center; inline-size: var(--leaf); aspect-ratio: var(--leaf-ar, 120 / 152);
   background: url("/assets/tree/leaf.svg") center / contain no-repeat;
-  transition: transform 320ms var(--settle), filter 320ms var(--settle); }
+  transition: transform 320ms var(--settle), filter var(--dur-quick) ease; }
 .tr-face { inline-size: var(--face-w, 62%); aspect-ratio: 1; margin-block-end: var(--face-y, 22%); border-radius: 50%; overflow: hidden; display: grid; place-items: center;
   background: #f6efe0; border: 2.5px solid #2a1c12; color: #3b2a1a; font-weight: 700; font-size: calc(var(--leaf) * .22); line-height: 1; }
 .tr-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
-.tr-tag { position: relative; display: grid; transition: translate 320ms var(--settle), filter 320ms var(--settle); justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
+.tr-tag { position: relative; display: grid; transition: translate 320ms var(--settle), filter var(--dur-quick) ease; justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
   border: 2px solid #2a1c12; border-radius: 10px; color: #3a2614; line-height: 1.2; text-align: center; direction: rtl;
   background: repeating-linear-gradient(176deg, transparent 0 7px, rgba(122, 82, 40, .12) 7px 8.5px), linear-gradient(#e2bf88, #d3a86e);
   box-shadow: inset 0 0 0 2px rgba(255, 240, 210, .45), 0 3px 0 -1px rgba(42, 28, 18, .35); }
@@ -113,7 +113,7 @@
 .tr-bud { position: absolute; inset-inline-start: calc(var(--x) * 1%); inset-block-start: calc(var(--y) * 1%); translate: -50% -50%;
   inline-size: 44px; block-size: 44px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; z-index: 2;
   background: url("/assets/tree/bud.svg") center / 34px no-repeat; -webkit-tap-highlight-color: transparent;
-  animation: tr-bud-in 600ms var(--settle) 200ms backwards; transition: transform 300ms var(--settle), filter 300ms var(--settle); }
+  animation: tr-bud-in 600ms var(--settle) 200ms backwards; transition: transform 300ms var(--settle), filter var(--dur-quick) ease; }
 @keyframes tr-bud-in { from { opacity: 0; transform: scale(.7); } }
 @media (hover: hover) { .tr-bud:hover { transform: scale(1.08); filter: drop-shadow(0 0 6px rgba(140, 190, 90, .55)); } }
 .tr-bud:active { transform: scale(.92); transition-duration: 90ms; }

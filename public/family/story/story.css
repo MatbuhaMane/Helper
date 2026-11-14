@@ -17,6 +17,7 @@ main.st { --rail: 2px; padding-block-start: 8px; }
 .st-item[data-kind="reading"]   { --k: color-mix(in srgb, var(--olive) 70%, var(--soil)); --ki: url(/assets/story/reading.svg); }
 .st-item[data-kind="photo"]     { --k: color-mix(in srgb, var(--soil) 55%, #b4532c); --ki: url(/assets/story/photo.svg); }
 .st-item[data-kind="doc"]       { --k: var(--muted); --ki: url(/assets/story/doc.svg); }
+.st-item[data-kind="event"]     { --k: color-mix(in srgb, #3d7ea6 62%, var(--olive)); --ki: url(/assets/story/event.svg); }   /* "אירוע מהחיים" */
 
 /* ── the door: the plaque ── */
 .st-head { display: grid; gap: 4px; justify-items: start; padding-block: 18px 16px; margin-block-end: 6px;
@@ -44,6 +45,7 @@ main.st { --rail: 2px; padding-block-start: 8px; }
 .st-add .btn[data-kind="reading"] { --k: color-mix(in srgb, var(--olive) 70%, var(--soil)); --ki: url(/assets/story/reading.svg); }
 .st-add .btn[data-kind="photo"] { --k: color-mix(in srgb, var(--soil) 55%, #b4532c); --ki: url(/assets/story/photo.svg); }
 .st-add .btn[data-kind="doc"] { --k: var(--muted); --ki: url(/assets/story/doc.svg); }
+.st-add .btn[data-kind="event"] { --k: color-mix(in srgb, #3d7ea6 62%, var(--olive)); --ki: url(/assets/story/event.svg); }
 @media (hover: hover) { .st-add .btn:not(.primary):not(:disabled):hover { border-color: var(--k); color: var(--text); background: color-mix(in srgb, var(--k) 7%, var(--card)); } }
 .st-add .btn:focus-visible, .st-view:focus-visible, .st-item :is(.btn, .chip, .mini):focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 45%, transparent); outline-offset: 2px; }
 @media (max-width: 520px) { .st-add .btn:not(.primary) { min-block-size: 66px; padding: 8px 2px; font-size: .84rem; } }

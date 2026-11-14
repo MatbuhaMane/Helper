@@ -2,7 +2,7 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 17)._
+_Updated 2026-11-14 (the new chat, round 18)._
 
 
 
@@ -17,6 +17,12 @@ _Updated 2026-11-14 (the new chat, round 17)._
   - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
   - Exercise illustrations come later.
 - Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 18: ai-features' four requests on batch 27 (the build)
+- The group picker moved to messages.css as `.dm-grp-pick`, `.dm-grp-name` and `.dm-kid-note`. The page doesn't load family.css, and `.fr-pick` clashed with the fridge.
+- A new museum kind, "אירוע מהחיים" (`data-kind="event"`): a calendar-and-star icon (`assets/story/event.svg`) and a blue-olive `--k`.
+- The friends page: an email invite in `.fr-invite`, the card's museum link and "הסרה" on a second row, `a.fr-talk`, and an invite that came by link with no avatar.
+- The audit is clean at 375 and 1280 px, light and dark. `friends.md` is updated.
+- After the v159 merge, the new Telegram audit was run on 5 pages. Fixed: the user chip icon, the tab pebble (240 ms), the settings card shadow, and the tree's filters. Messages, tasks and settings are clean. Waiting for the CEO: an allowlist for the ambient scenes (the home sky and sun, the tree's leaves and swaying), and the T11 false positive.
 ## Round 17: batch 30, the motion for the whole tent (the Telegram test)
 - The "Motion" section of base.css:
   - instant taps (`touch-action`), smooth scrolling, and a spinner only after 400 ms;
@@ -24,6 +30,7 @@ _Updated 2026-11-14 (the new chat, round 17)._
   - hold-to-speed on videos (`.vid-speed`), plus the tokens `--ease-spring` and `--dur-settle`.
 - The rules for every department are in `docs/design/motion.md`. The gestures' JS belongs to ai-features and the master (`common.js` for the sheet).
 - Checked with the audit at 375 and 1280 px, light and dark, on a mock and on the home, messages, goals and settings pages: clean.
+- **The Telegram test:** 12 measurable checks (T1–T12) in motion.md, for the master to build into `tools/audit.js`. `--dur-settle` is now 340 ms. Motion comes first, before the rest of batch 28 (the CEO).
 
 ## Round 16: batch 28, the look of goals part 2 (the logic is ai-features')
 - The advice window on a goal's page (`.gl-ask`), with "שמור מסקנה" (`.gl-keep`) pinning to `.gl-pins`. From 1000 px it is a sticky column (`.gl-split`).

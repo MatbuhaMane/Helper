@@ -1101,3 +1101,95 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
   font-size: .76rem; font-weight: 500; line-height: 1.5; white-space: nowrap; }
 .priv-tag > .priv-ic { inline-size: 14px; block-size: 14px; }
 .priv-tag.bare { padding: 3px; }
+
+/* ---------- Motion: the "Telegram test" across the whole tent (vision batch 30, docs/design/motion.md) ----------
+   Instant feedback, nothing jumps, nothing spins for a fast answer. Only transform and opacity move. The JS of the
+   gestures (swipe, long-press, the sheet's drag, hold-to-speed) sets the variables; the CSS gives the look and the settle. */
+:root {
+  --ease-spring: linear(0, .009, .035 2.1%, .141 4.4%, .723 12.9%, .938 16.7%, 1.017 19.4%, 1.067, 1.099 24.3%, 1.108 26%, 1.103, 1.085 30.5%,
+    1.024 37.5%, 1.003 41.4%, .992 45.5%, .996 55.4%, 1.001 66%, 1);   /* a soft spring: a sheet or a row that settles */
+  --dur-settle: 420ms;
+}
+/* instant: no 300 ms double-tap wait on anything pressable, and no grey flash */
+:where(a, button, [role="button"], [role="tab"], [role="switch"], [role="radio"], summary, label, .chip, .btn) { touch-action: manipulation; }
+/* smooth scrolling for jumps inside a page; panes that scroll keep the page still behind them */
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+:where(.dm-msgs, .gl-ask-log, .fr-pick, .dm-pick, #modalBody) { overscroll-behavior: contain; }
+/* no spinner for a fast answer: the spinner waits 400 ms in silence, then fades in */
+.spinner { animation: spin .8s linear infinite, wait-show var(--dur-quick) ease 400ms both; }
+.loading > :not(.spinner) { animation: wait-show var(--dur-quick) ease 400ms both; }
+@keyframes wait-show { from { opacity: 0; } }
+
+/* the shape of what is coming: skeleton lines and blocks with a slow sheen (transform) */
+.skel { position: relative; overflow: hidden; border-radius: 10px; background: color-mix(in srgb, var(--text) 7%, transparent); color: transparent; user-select: none; }
+.skel::after { content: ""; position: absolute; inset: 0; transform: translateX(100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--card) 55%, transparent), transparent); animation: skel-sheen 1.4s ease-in-out infinite; }
+.skel.line { block-size: .9em; margin-block: .35em; inline-size: var(--w, 100%); }
+.skel.round { border-radius: 50%; }
+@keyframes skel-sheen { to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .skel::after { animation: none; opacity: 0; } }
+
+/* anything that arrives: a list, new content after a fetch. --i on each item staggers it (cap it at ~8 in the JS) */
+.arrive > * { animation: arrive var(--dur-draw) var(--ease-river) both; animation-delay: calc(min(var(--i, 0), 8) * 28ms); }
+.swap-in { animation: fade var(--dur-quick) ease both; }
+
+/* pressable cards and rows: a small give under the finger */
+:where(a.card, button.card, .tap, .dm-row, .fr-card, .gl-goal, .result) { transition: transform var(--dur-press) var(--ease-river); }
+:where(a.card, button.card, .tap, .dm-row, .result):active { transform: scale(.985); }
+
+/* swipe a row: to reply (a message) or to act (a list row). The JS sets --dx in px while dragging and adds .dragging;
+   on release it removes .dragging (the row springs back or away) and fires the action past the threshold. */
+.swipe { position: relative; overflow: hidden; touch-action: pan-y; }
+.swipe-body { position: relative; z-index: 1; transform: translateX(var(--dx, 0px)); transition: transform var(--dur-settle) var(--ease-spring); background: inherit; }
+.swipe.dragging .swipe-body { transition: none; }
+.swipe-acts { position: absolute; inset: 0; display: flex; align-items: stretch; justify-content: flex-end; }
+.swipe-acts > button { min-inline-size: 76px; border: 0; font: inherit; font-size: .84rem; font-weight: 600; color: var(--act-ink, var(--primary-ink)); background: var(--act, var(--primary));
+  display: grid; place-items: center; gap: 2px; cursor: pointer; }
+.swipe-acts > button.danger { --act: color-mix(in srgb, var(--danger) 78%, #000); --act-ink: #fff; }
+/* swipe to reply: the reply arrow grows in as the drag nears the threshold (--p: 0–1) */
+.swipe-reply { position: absolute; inset-block: 0; inset-inline-start: 8px; margin-block: auto; inline-size: 32px; block-size: 32px; border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 10%, var(--card)); opacity: var(--p, 0); transform: scale(calc(.5 + var(--p, 0) * .5)); }
+.swipe-reply::before { content: ""; position: absolute; inset: 9px; border-block-start: 2px solid var(--text); border-inline-start: 2px solid var(--text);
+  transform: rotate(-45deg); border-start-start-radius: 2px; }
+.swipe.armed .swipe-reply { background: var(--primary); }
+.swipe.armed .swipe-reply::before { border-color: var(--primary-ink); }
+
+/* long-press: the pressed thing lifts, the page dims, the menu grows from the finger (--ox/--oy set by the JS) */
+.lp-lift { position: relative; z-index: calc(var(--z-sheet, 80) + 1); transform: scale(1.03); transition: transform var(--dur-quick) var(--ease-spring); }
+.lp-dim { position: fixed; inset: 0; z-index: var(--z-sheet, 80); background: rgba(10, 12, 20, .32); animation: fade var(--dur-quick) ease both; }
+.lp-menu { position: fixed; z-index: calc(var(--z-sheet, 80) + 2); min-inline-size: 200px; max-inline-size: min(280px, calc(100vw - 32px)); padding: 6px;
+  border-radius: 16px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--lift); transform-origin: var(--ox, 50%) var(--oy, 0%);
+  animation: lp-in var(--dur-quick) var(--ease-spring) both; display: grid; }
+.lp-menu > button { display: flex; align-items: center; gap: 12px; min-block-size: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: none;
+  color: var(--text); font: inherit; text-align: start; cursor: pointer; }
+.lp-menu > button:hover, .lp-menu > button:focus-visible { background: color-mix(in srgb, var(--text) 6%, transparent); outline: none; }
+.lp-menu > button.danger { color: var(--danger); }
+.lp-menu > hr { margin: 4px 8px; border: 0; border-block-start: 1px solid var(--line); }
+@keyframes lp-in { from { opacity: 0; transform: scale(.86); } }
+
+/* the phone's sheet (.modal on ≤520 px) follows the finger down and closes past a third: the JS sets --drag (px) and .dragging */
+.sheet-grip { display: none; }
+@media (max-width: 520px) {
+  .sheet-grip { display: block; position: absolute; inset-block-start: 0; inset-inline: 0; block-size: 22px; z-index: 2; touch-action: none; cursor: grab; }
+  .sheet-grip::before { content: ""; position: absolute; inset-block-start: 8px; inset-inline-start: calc(50% - 18px); inline-size: 36px; block-size: 4px; border-radius: 4px;
+    background: var(--line-strong); }
+  .modal-glass { animation: sheet-up var(--dur-settle) var(--ease-spring) both; transform: translateY(var(--drag, 0px)); transition: transform var(--dur-settle) var(--ease-spring); }
+  .modal.dragging .modal-glass { transition: none; }
+  .modal.dragging .modal-backdrop { opacity: calc(1 - var(--drag-p, 0)); }
+  @keyframes sheet-up { from { transform: translateY(100%); } }
+}
+
+/* every video: hold to speed up, slide to go faster. The JS sets the rate and the label; the pill shows while held */
+.vid-speed { position: absolute; inset-block-start: 12px; inset-inline-start: 50%; translate: -50% 0; z-index: 2; pointer-events: none;
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: rgba(10, 12, 20, .62); color: #fff;
+  font-size: .86rem; font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(-6px);
+  transition: opacity var(--dur-quick) ease, transform var(--dur-quick) var(--ease-river); }
+.vid-speed::before { content: "»"; font-size: 1.1em; }
+.vid-speed.on { opacity: 1; transform: none; }
+:root[dir="rtl"] .vid-speed { translate: 50% 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .arrive > *, .lp-menu, .lp-dim { animation: none; }
+  .swipe-body, .lp-lift, .modal-glass { transition: none; }
+  .lp-lift { transform: none; }
+}

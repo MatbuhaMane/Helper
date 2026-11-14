@@ -1193,3 +1193,46 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
   .swipe-body, .lp-lift, .modal-glass { transition: none; }
   .lp-lift { transform: none; }
 }
+
+/* ---------- "רמת הניג'וס": the notification level of a tool or an item (vision batch 31, docs/design/nag-level.md) ----------
+   Four levels: off, quiet (only in the daily summary), normal, nag (repeats until handled). [data-nag] sets the colour and the bell. */
+[data-nag="off"]    { --nv: var(--muted); --nv-ic: url(/assets/nag-icons/off.svg); }
+[data-nag="quiet"]  { --nv: color-mix(in srgb, var(--olive) 55%, var(--text)); --nv-ic: url(/assets/nag-icons/quiet.svg); }
+[data-nag="normal"] { --nv: var(--primary); --nv-ic: url(/assets/nag-icons/normal.svg); }
+[data-nag="nag"]    { --nv: #b5542a; --nv-ic: url(/assets/nag-icons/nag.svg); }
+:root[data-theme="dark"] [data-nag="nag"] { --nv: #e98a5c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) [data-nag="nag"] { --nv: #e98a5c; } }
+.nag-ic { display: inline-block; flex: none; inline-size: 20px; block-size: 20px; background: var(--nv, currentColor);
+  -webkit-mask: var(--nv-ic, url(/assets/nag-icons/normal.svg)) center / contain no-repeat; mask: var(--nv-ic, url(/assets/nag-icons/normal.svg)) center / contain no-repeat; }
+
+/* the picker: four segments in one row (fieldset > legend + label.nag-opt[data-nag] > input[type=radio] + .nag-ic + span) */
+.nag { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; margin: 0; padding: 3px; border: 1px solid var(--line); border-radius: 14px;
+  background: color-mix(in srgb, var(--text) 4%, var(--card)); min-inline-size: 0; }
+.nag > legend { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.nag-opt { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-block-size: 50px; padding: 4px 2px;
+  border-radius: 11px; cursor: pointer; font-size: .8rem; color: var(--muted); text-align: center; }
+.nag-opt > input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.nag-opt > .nag-ic { inline-size: 18px; block-size: 18px; background: currentColor; }
+.nag-opt:hover { color: var(--text); }
+.nag-opt:has(input:checked) { background: var(--card); color: var(--nv); font-weight: 600; box-shadow: 0 1px 3px rgba(20, 18, 12, .14), inset 0 0 0 1.5px color-mix(in srgb, var(--nv) 55%, transparent); }
+.nag-opt:has(input:focus-visible) { outline: 2px solid var(--primary); outline-offset: 1px; }
+.nag-opt:has(input:disabled) { cursor: not-allowed; opacity: .6; }
+.nag-opt:active { transform: scale(.96); }
+.nag-opt { transition: background-color var(--dur-quick) ease, color var(--dur-quick) ease, transform var(--dur-press) var(--ease-river); }
+.nag-note { margin: 6px 0 0; font-size: .8rem; color: var(--muted); }   /* one line on the chosen level: "רק בסיכום היומי" */
+
+/* the bell in a tool's head: shows the tool's level, opens the picker (in H.modal or a .lp-menu).
+   .own: this tool or item differs from the general setting, a small dot says so */
+.nag-bell { position: relative; display: inline-grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--card); color: var(--nv, var(--text)); cursor: pointer; transition: transform var(--dur-press) var(--ease-river); }
+.nag-bell > .nag-ic { background: currentColor; }
+.nag-bell:active { transform: scale(.94); }
+.nag-bell.own::after { content: ""; position: absolute; inset-block-start: 6px; inset-inline-end: 6px; inline-size: 9px; block-size: 9px; border-radius: 50%;
+  background: var(--nv, var(--primary)); box-shadow: 0 0 0 2px var(--card); }
+/* an item that differs from its tool (one goal on "נודניק"): a small tag beside its name */
+.nag-mark { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px 1px 6px; border-radius: 999px; vertical-align: middle; white-space: nowrap;
+  font-size: .74rem; font-weight: 500; color: var(--nv); background: color-mix(in srgb, var(--nv) 12%, transparent); }
+.nag-mark > .nag-ic { inline-size: 14px; block-size: 14px; background: currentColor; }
+/* in the picker of an item: "כמו הממשק (רגיל)" to go back to the tool's level */
+.nag-inherit { display: flex; align-items: center; gap: 8px; min-block-size: 44px; margin-block-start: 6px; font-size: .86rem; color: var(--muted); cursor: pointer; }
+.nag-inherit input { inline-size: 20px; block-size: 20px; accent-color: var(--primary); }

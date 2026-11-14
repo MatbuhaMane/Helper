@@ -249,3 +249,25 @@ details.st-sec[open] > .st-body { animation: st-open .3s var(--ease-river) both;
 .st-store-state[data-s="error"] { background: color-mix(in srgb, var(--danger) 14%, var(--card)); }
 .st-nas-form { display: grid; gap: 10px; }
 .st-nas-form input { inline-size: 100%; direction: ltr; text-align: start; }
+
+/* ---------- "התראות": רמת הניג'וס per tool, and the quiet hours (vision batch 31, docs/design/nag-level.md; replaces the batch 28 phone switch) ---------- */
+.st-nags { list-style: none; margin: 0; padding: 0; display: grid; }
+.st-nag { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px 0; border-block-end: 1px solid var(--line); }
+.st-nag:last-child { border-block-end: 0; }
+.st-nag > .nag-ic { inline-size: 22px; block-size: 22px; }
+.st-nag > div > b { display: block; font-weight: 500; }
+.st-nag > div > small { color: var(--muted); font-size: .82rem; }
+.st-nag > .nag { grid-column: 1 / -1; }
+.st-nag > .st-nag-own { grid-column: 1 / -1; margin: 0; font-size: .8rem; color: var(--muted); }   /* "2 פריטים בהגדרה משלהם" */
+.st-nag.fixed > .nag { opacity: .75; }   /* emergency: always through; the reason in small */
+@media (min-width: 720px) {
+  .st-nag { grid-template-columns: auto minmax(0, 1fr) minmax(320px, 360px); }
+  .st-nag > .nag { grid-column: 3; }
+  .st-nag > .st-nag-own { grid-column: 2 / -1; }
+}
+/* the quiet hours: from–to, plus shabbat */
+.st-quiet-hours { display: grid; gap: 10px; padding: 14px; border-radius: 14px; background: color-mix(in srgb, var(--olive) 12%, var(--card)); }
+.st-quiet-hours > b { font-weight: 600; }
+.st-quiet-hours > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.st-quiet-hours input[type="time"] { min-block-size: 44px; inline-size: 7.5em; direction: ltr; text-align: center; font-variant-numeric: tabular-nums; }
+.st-quiet-hours small { color: var(--muted); font-size: .82rem; line-height: 1.5; }

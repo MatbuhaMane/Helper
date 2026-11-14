@@ -2,7 +2,9 @@
 
 **איך משתמשים:**
 1. מצרפים לכל בקשה את `public/assets/tent.webp` כתמונת סגנון.
-2. בעץ (1–2) מצרפים גם את השכבה המקורית. ב-1 זו `tree/canopy/crown.webp`, וב-2 זו `tree/canopy/ground.webp`.
+2. בעץ (1–2) מצרפים גם את השכבה המקורית. הקבצים נמצאים בתיקייה הראשית `M:\Claude Code\Helper\public\assets\tree\canopy\`, ולא בענף vision. אפשר גם להוריד אותם מהאתר:
+   - ב-1: https://helper.shemrivers.workers.dev/assets/tree/canopy/crown.webp
+   - ב-2: https://helper.shemrivers.workers.dev/assets/tree/canopy/ground.webp
 3. מדביקים את בלוק הסגנון, ואחריו את הפרומפט של הפריט.
 
 הרקע לבן ואחיד ולא שקוף, כי מנועי תמונה לא מייצרים שקיפות טוב. העיצוב מסיר את הרקע וחותך. בלוק הסגנון הוא הנוסח של העיצוב מ-`docs/design/family-tree-art.md`.

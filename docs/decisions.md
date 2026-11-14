@@ -11,6 +11,20 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Two future tools: the kitchen helper and "איך אני עושה" (vision → design, master)
+The owner's ideas for future tools. Both are kept for later under the rule "Big new ideas wait": nobody works on them, not even a spec.
+In the interface each gets only a "בקרוב" mark, in the shared style from batch 15. Details are in `docs/vision/later.md`.
+Status: Decided (the owner).
+
+- **The kitchen helper** grows out of the recipe book. It is wave 2, after the family launch.
+  - It covers unit conversion, timers, step-by-step guided cooking on a recipe from the book, and live AI tips.
+  - "בקרוב" goes in the recipe book.
+- **"איך אני עושה"** is a how-to tool. You ask how to do something, and the tool:
+  - finds an embedded video and a written guide;
+  - walks you through the task with the AI helper.
+
+  It is kept for later, and "בקרוב" goes in the tools menu.
+
 ## 2026-11-14 – The family tree after test run 1 (vision → ai-features, design, master)
 The owner's decisions on his phone. It builds on "The family tree, spec 1" (`docs/vision/tree.md`). Status: Decided (the owner).
 

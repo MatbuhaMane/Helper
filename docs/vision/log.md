@@ -118,3 +118,4 @@
 - 2026-11-14: the owner approved the whole internal economy spec (the "יד" token); decisions.md entry written; batch 32 sent to design, the CEO, business and legal as a "בקרוב" item.
 - 2026-11-14: batch 32 replies: the CEO placed the "בקרוב" item as "יד ביד" (main c74f826); business recommends no link between ידיים and credits, only discretionary gift credits. Both wait for the owner.
 - 2026-11-14: the owner approved the tool name "יד ביד", gave a new line for it, and approved business's rule (no link between ידיים and credits); batch 33 sent to the CEO and business.
+- 2026-11-15: the owner asked to start "יד ביד" now as a social interface; staged plan approved (stage 1: spec and design for family and friends; legal check and scope estimate in parallel; build after the family's two weeks); batch 34 sent; yad-beyad.md opened.

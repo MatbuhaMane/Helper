@@ -34,6 +34,8 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 34** (2026-11-15), sent to design, ai-features, legal and the CEO: "יד ביד" starts in stages. Stage 1 now is the spec and design of the social interface for family and friends only (`docs/vision/yad-beyad.md`); legal starts the tax check; ai-features estimates the scope; building waits for the end of the family's two weeks.
+- **In progress with the owner:** the screen spec of "יד ביד" (`docs/vision/yad-beyad.md`).
 - **Batch 33** (2026-11-14), sent to the CEO and business: the tool is named "יד ביד" with the owner's line, and ידיים stay unlinked from credits (only discretionary gift credits).
 - **Batch 32** (2026-11-14), sent to design, the CEO, business and legal: the internal economy and the "יד" token (closed loop, earned only by doing, four hour tiers, a 10% tithe to a public fund, trade with everyone under three trust rules, youth inside the family). A big idea: "בקרוב" only.
 - **Batch 31** (2026-11-14), sent to ai-features, design and the CEO: "רמת הניג'וס", phone notifications per tool with four levels (off, quiet, normal, nag), main settings plus per-tool and per-item overrides.

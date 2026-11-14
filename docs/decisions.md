@@ -11,6 +11,32 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד" starts in stages, as a social interface (vision → design, ai-features, legal, master)
+Status: Decided (the owner). New information: the owner wants to start working on "יד ביד" now, as a social
+interface. This updates the "בקרוב only" status of the 2026-11-14 entry; the rules of the economy do not change.
+
+- **Stage 1, now: the spec and the design of the social interface, for family and friends only.**
+  - Vision writes the screen spec with the owner (`docs/vision/yad-beyad.md`), and design follows it.
+  - Nothing is built yet, so the two-week focus on the family's daily use (from 2026-11-13) is not touched.
+- **In parallel:**
+  - legal starts the tax check now (the questions of batch 32), beginning with trade inside family and friends;
+  - ai-features gives a scope estimate for stage 1, without building.
+- **Building stage 1** starts after the family's two weeks, or earlier if the owner decides.
+- **Later stages:**
+  - youth with a parent's approval, after kids mode;
+  - trade with everyone, when there are enough users and legal has answered.
+- **What stage 1 holds** (the vision's estimate; ai-features confirms):
+  - a board of requests and offers;
+  - the list of services and tiers, with the owner's approval;
+  - the ledger of ידיים: balances, transfers, the tithe, the fund. It must be exact, so the master reviews it like money;
+  - both sides confirm, then a recommendation;
+  - deeds for the community and payouts from the fund, in an approval queue for the owner.
+- **Flags:**
+  - the owner approves a lot (deeds, new services, payouts, reports), so the approval queue must be comfortable;
+  - a cold start: with no join grant, the first ידיים come only from community deeds the owner approves;
+  - trade with friends depends on the friends page and the fourth privacy level (batch 27).
+- **In the app** the item stays "בקרוב" until stage 1 is built.
+
 ## 2026-11-14 – The tool is named "יד ביד"; ידיים and credits stay unlinked (vision → master, business)
 Status: Decided (the owner). It completes the internal economy entry below.
 

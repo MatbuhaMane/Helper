@@ -68,3 +68,7 @@
 @media (prefers-reduced-motion: reduce) { .f2.curl { animation: none; } }
 /* only the head (mountHead): no ground shadow under it */
 .f2.f2-headonly::after { display: none; }
+
+/* reduced motion: the twinkles stand still (the person's own setting or the app's) */
+@media (prefers-reduced-motion: reduce) { .f2-stars i { animation: none; } }
+:root[data-motion="reduce"] :is(.f2-stars i, .f2-glow) { animation: none; }

@@ -1307,3 +1307,21 @@ html { -webkit-tap-highlight-color: transparent; }
 /* press feedback on what had none: chips, tabs, the window's close, menu rows, bar links (a short give, 120 ms, on transform) */
 :where(.tabs button, .modal-close, .topnav a, .nav-menu, .lp-menu > button, .tr-menu button):not(:disabled) { transition: transform var(--dur-press) var(--ease-river); }   /* (.chip and .navmenu a carry transform in their own transition) */
 :where(.chip, .tabs button, .modal-close, .navmenu a, .topnav a, .nav-menu, .lp-menu > button, .tr-menu button):not(:disabled):active { transform: scale(.96); }
+
+/* the pillows: each picture keeps its own shape before it loads (so nothing jumps, and the audit sees a size) */
+img[src$="/pillows/p01.webp"] { aspect-ratio: 270 / 250; }
+img[src$="/pillows/p02.webp"] { aspect-ratio: 351 / 250; }
+img[src$="/pillows/p03.webp"] { aspect-ratio: 331 / 250; }
+img[src$="/pillows/p04.webp"] { aspect-ratio: 420 / 247; }
+img[src$="/pillows/p05.webp"] { aspect-ratio: 303 / 250; }
+img[src$="/pillows/p06.webp"] { aspect-ratio: 349 / 250; }
+img[src$="/pillows/p07.webp"] { aspect-ratio: 340 / 250; }
+img[src$="/pillows/p08.webp"] { aspect-ratio: 420 / 216; }
+img[src$="/pillows/p09.webp"] { aspect-ratio: 304 / 250; }
+img[src$="/pillows/p10.webp"] { aspect-ratio: 331 / 250; }
+img[src$="/pillows/p11.webp"] { aspect-ratio: 357 / 250; }
+img[src$="/pillows/p12.webp"] { aspect-ratio: 380 / 250; }
+img[src$="/pillows/p13.webp"] { aspect-ratio: 348 / 250; }
+img[src$="/pillows/p14.webp"] { aspect-ratio: 348 / 250; }
+img[src$="/pillows/p15.webp"] { aspect-ratio: 420 / 190; }
+img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }

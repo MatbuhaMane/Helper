@@ -280,9 +280,9 @@
     /* folded to one line by default (the owner, 2026-11-14); a tap opens and closes it, kept on this device */
     let opened = false; try { opened = localStorage.getItem('helper.admin.stateOpen') === '1'; } catch (_) { /* no storage */ }
     const line = [d.alerts.length ? `${d.alerts.length} התראות` : null, m ? `נטו ${ils(m.total.net)}` : null, `AI החודש ${usd(d.ai.month)}`, `${s.active} נכנסו השבוע`].filter(Boolean).join(' · ');
-    const fold = el('details', { class: 'card ad-fold bd-state', open: opened,
+    const fold = el('details', { class: 'card ad-fold bd-state' + (d.alerts.length ? ' has-alert' : ''), open: opened,
       ontoggle: () => { try { localStorage.setItem('helper.admin.stateOpen', fold.open ? '1' : '0'); } catch (_) { /* no storage */ } } },
-      el('summary', {}, el('h2', {}, 'מצב האוהל'), ' ', el('span', { class: 'muted small' }, line)),
+      el('summary', { class: 'bd-state-sum' }, el('h2', {}, 'מצב האוהל'), el('span', { class: 'bd-state-line' }, line), el('i', { class: 'bd-state-chev', 'aria-hidden': 'true' })),
       ...d.alerts.map((a) => el('p', { class: 'notice ad-alert' }, a)),
       m ? el('div', { class: 'ad-tiles' },
         tile('הכנסות עד היום', ils(m.total.income), 'good'),
@@ -301,40 +301,71 @@
   async function switchboard(box) {
     let d;
     try { d = await call('/api/admin/switches'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
-    const put = async (sw, value, row) => {
-      row.setAttribute('aria-busy', 'true');
+    /* design's markup and states (docs/design/switchboard.md): .saving while the server answers, .saved for a second,
+       .failed with the reason in the row's small (the control stays as it was), .danger where "on" stops something for everyone */
+    const LOOK = { view: ['smile', '#9a5fa8'], kodesh: ['torah', '#3557a8'], ai: ['compass', '#3d7ea6'], notify: ['mail', '#c8553d'],
+      tools: ['tools', '#5b8c5a'], family: ['family', '#d97a9b'], money: ['parnasa', '#b8862b'] };
+    const DANGER = new Set(['kodesh']);
+    const LOCKED = 'רק בעל האוהל משנה את המתגים.';
+    const id = (sw) => 'sw-' + sw.key.replace(/[^\w-]/g, '-');
+    let flash = null;   // { key, cls, why } drawn once after a save
+    const put = async (sw, value, li) => {
+      if (li.classList.contains('saving')) return;
+      li.classList.remove('saved', 'failed');
+      li.classList.add('saving');
       try {
         const r = await call('/api/admin/switches', { method: 'PUT', body: { key: sw.key, value } });
         sw.value = value;
         if (sw.key === 'kodesh' || sw.key === 'kodesh_auto') d.kodeshNow = r.now?.kodesh;
+        flash = { key: sw.key, cls: 'saved' };
         toast('נשמר. אצל כולם בכניסה הבאה לדף');
-      } catch (e) { say(e); }
-      row.removeAttribute('aria-busy');
+      } catch (e) { flash = { key: sw.key, cls: 'failed', why: ERR[e?.code] || e?.message || 'לא נשמר' }; }
+      const focused = document.activeElement?.closest?.('.sb-row')?.dataset.key === sw.key;
       draw();
+      if (focused) sec.querySelector(`.sb-row[data-key="${CSS.escape(sw.key)}"] [aria-checked="true"], .sb-row[data-key="${CSS.escape(sw.key)}"] .sb-switch`)?.focus();
     };
-    const control = (sw, row) => {
-      const off = !d.may;
-      if (sw.kind === 'choice') return el('div', { class: 'sb-seg', role: 'radiogroup', 'aria-label': sw.label, 'data-key': sw.key },
-        sw.options.map(([v, t]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(sw.value === v), 'data-v': v, disabled: off,
-          onclick: () => { if (sw.value !== v) put(sw, v, row); } }, t)));
-      return el('button', { type: 'button', class: 'sb-switch', role: 'switch', 'aria-checked': String(sw.value === true), 'aria-label': sw.label, disabled: off,
-        onclick: () => put(sw, !(sw.value === true), row) }, el('span', { class: 'sb-knob' }));
+    const control = (sw, li) => {
+      const lock = d.may ? null : 'true';
+      if (sw.kind === 'choice') {
+        const pick = (v) => { if (!d.may || sw.value === v) return; put(sw, v, li); };
+        const seg = el('div', { class: 'sb-seg' + (sw.key === 'mood' ? ' sb-mood' : ''), role: 'radiogroup', 'aria-labelledby': id(sw), 'aria-disabled': lock,
+          onkeydown: (e) => {   // the arrows move the choice (in RTL, ← is next)
+            const step = { ArrowLeft: 1, ArrowDown: 1, ArrowRight: -1, ArrowUp: -1 }[e.key];
+            if (!step) return;
+            e.preventDefault();
+            const vs = sw.options.map(([v]) => v), i = vs.indexOf(sw.value);
+            pick(vs[(i + step + vs.length) % vs.length]);
+          } },
+          sw.options.map(([v, t]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(sw.value === v), 'data-v': v,
+            tabindex: sw.value === v ? '0' : '-1', 'aria-disabled': lock, onclick: () => pick(v) }, t)));
+        return seg;
+      }
+      return el('button', { type: 'button', class: 'sb-switch', role: 'switch', 'aria-checked': String(sw.value === true), 'aria-label': sw.label, 'aria-disabled': lock,
+        onclick: () => { if (d.may) put(sw, !(sw.value === true), li); } });
     };
     const row = (sw) => {
-      const r = el('div', { class: 'sb-row' + (sw.value !== sw.def ? ' changed' : ''), 'aria-disabled': d.may ? null : 'true' },
-        el('div', { class: 'sb-text' }, el('span', { class: 'sb-label' }, sw.label), el('small', { class: 'sb-help muted' }, sw.help)));
-      r.append(control(sw, r));
-      return r;
+      const f = flash?.key === sw.key ? flash : null;
+      const cls = ['sb-row', sw.kind === 'choice' ? 'sb-row-seg' : '', DANGER.has(sw.key) ? 'danger' : '', sw.value !== sw.def ? 'changed' : '', f ? f.cls : ''].filter(Boolean).join(' ');
+      const li = el('li', { class: cls, 'data-key': sw.key },
+        el('div', { class: 'sb-txt' }, el('b', { id: id(sw) }, sw.label), el('small', {}, f?.why || (d.may ? sw.help : `${sw.help} ${LOCKED}`))));
+      li.append(control(sw, li));
+      if (f?.cls === 'saved') setTimeout(() => li.classList.remove('saved'), 1000);
+      return li;
     };
-    const sec = el('section', { class: 'card sb', id: 'switchboard', 'aria-label': 'לוח מתגים' });
+    const sec = el('section', { class: 'sb', id: 'switchboard', 'aria-labelledby': 'sb-h' });
     function draw() {
       const changed = d.switches.filter((x) => x.value !== x.def).length;
-      sec.replaceChildren(el('h2', {}, 'לוח מתגים'),
-        el('p', { class: 'muted small' }, (d.may ? 'מה שמשנים כאן חל על כל האוהל, אצל כולם.' : 'רק בעל האוהל משנה את המתגים.') + (changed ? ` · ${changed} שונו מהרגיל` : '') + (d.kodeshNow ? ' · עכשיו קודש' : '')),
-        ...d.cats.map(([cat, name]) => {
+      sec.replaceChildren(
+        el('header', { class: 'sb-head' }, el('h2', { id: 'sb-h' }, 'לוח המתגים'),
+          el('p', { class: 'muted' }, (d.may ? 'כל המתגים של האוהל, לפי נושא. שינוי חל על כולם.' : LOCKED) + (changed ? ` · ${changed} שונו מהרגיל` : '') + (d.kodeshNow ? ' · עכשיו קודש' : ''))),
+        el('div', { class: 'sb-cats' }, ...d.cats.map(([cat, name]) => {
           const list = d.switches.filter((x) => x.cat === cat);
-          return list.length ? el('fieldset', { class: 'sb-group', 'data-cat': cat }, el('legend', { class: 'sb-title' }, name), ...list.map(row)) : null;
-        }));
+          const [ic, c] = LOOK[cat] || ['settings', '#6b6b6b'];
+          return list.length ? el('section', { class: 'sb-cat', style: `--c:${c}`, 'data-cat': cat },
+            el('h3', { class: 'sb-cat-h' }, el('span', { class: 'sb-cat-ic', 'aria-hidden': 'true' }, H.icon(ic)), name),
+            el('ul', { class: 'sb-list' }, ...list.map(row))) : null;
+        })));
+      flash = null;
     }
     draw();
     box.replaceChildren(sec);

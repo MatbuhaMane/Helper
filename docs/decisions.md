@@ -26,9 +26,10 @@ What was decided, why, and what other areas must do. Status: proposed | accepted
   `/api/me` gains `switches`; common.js (H.switches, H.swOn, the marks on `<html>`, the loads gated by their switch); apps.js
   (the exp and קודש filter, FUTURE/SOON); index.html (the companion not mounted when off); `test-switches` in `npm test`.
   Perhaps `/assets/switches.js` in sw.js's precache.
-- **For design** (class names sent to design): `.sb`, `.sb-group[data-cat]`, `.sb-title`, `.sb-row(.changed)`, `.sb-text`, `.sb-label`,
-  `.sb-help`, `.sb-switch[role=switch][aria-checked]` + `.sb-knob`, `.sb-seg[role=radiogroup]` with `button[role=radio][aria-checked]`;
-  "מצב האוהל" is now `details.card.ad-fold.bd-state`. In the app: `html[data-mood=party|mourning]` (the faded palette is yours),
+- **For design:** /admin uses design's markup from `docs/design/switchboard.md` (design 998e862): `details.bd-state(.has-alert)` >
+  `summary.bd-state-sum`; `section.sb` > `header.sb-head`, `div.sb-cats` > `section.sb-cat[--c]` > `h3.sb-cat-h` + `ul.sb-list` >
+  `li.sb-row(.sb-row-seg, .saving, .saved, .failed, .danger on קודש, .changed)`; `.sb-switch`, `.sb-seg(.sb-mood)` with arrow keys;
+  locked controls carry `aria-disabled`. In the app: `html[data-mood=party|mourning]` (the faded palette is yours),
   `html[data-kodesh="1"]` (a Shabbat look), `html[data-exp]`; the effects layer `.mood-fx` with `.mood-confetti`, `.mood-balloon`
   > `.mood-string`, `.mood-candles` > `.mood-candle` > `.mood-flame` (place `--x`, colour `--c`; motion is in JS).
 Status: done on ai-features; the master files wait for the merge.

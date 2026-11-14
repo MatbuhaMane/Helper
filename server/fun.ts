@@ -159,8 +159,15 @@ export async function logo(ctx: Ctx) {
    Each upstream page is kept at the edge for an hour. */
 type Viral =
   | { type: 'video'; id: string; title: string; channel: string; thumb: string; views: number; region: 'il' | 'world'; url: string }
-  | { type: 'image'; src: string; title: string; link: string; source: string; region: 'world'; video?: string };
+  | { type: 'image'; src: string; title: string; link: string; source: string; region: 'world'; video?: string; clip?: string };   // clip: a plain video file (Lemmy), played in a <video>
 const SUBS = 'MadeMeSmile+wholesomememes+AnimalsBeingDerps+aww+funny';
+/* "מצחיק ואמיתי" (the users' feedback, 2026-11-13): funny moments that really happened, filmed, not made by AI and not
+   staged: communities of real clips (laughing people, derpy animals, kind people), their hot list (it moves through the
+   day), and titles that say AI, a skit or a prank left out. */
+export const REAL_SUBS = 'ContagiousLaughter+AnimalsBeingDerps+AnimalsBeingBros+HumansBeingBros+funnyanimals+Zoomies+MadeMeSmile';
+export const NOT_REAL = /\ba\.i\.|\b(ai|sora|veo|midjourney|runway|kling|generated|deepfake|cgi|vfx|staged|scripted|skit|sketch|parody|prank|satire|edited|rendered)\b|בינה מלאכותית|מבוים|מערכון|מתיחה/i;
+/** a first page (no cursor) is kept at the edge for ten minutes, so a refresh soon brings what is new; later pages an hour */
+export const firstTtl = (cur: string | null | undefined) => (cur ? 3600 : 600);
 // politics is left out of a family's funny feed (the late-night shows lead the comedy charts)
 const POLITICS = /trump|biden|harris|vance|obama|election|congress|senate|republican|democrat|maga|netanyahu|נתניהו|ביבי|בחירות|הכנסת|ממשלה|לפיד|בן גביר|סמוטריץ/i;
 
@@ -178,7 +185,7 @@ async function edgeJson<T>(ctx: Ctx, key: string, ttl: number, make: () => Promi
 async function youtubePage(ctx: Ctx, region: 'IL' | 'US', token: string | null) {
   const key = ctx.env.YOUTUBE_API_KEY;
   if (!key) return { items: [] as Viral[], next: null as string | null };
-  return edgeJson(ctx, `yt|${region}|${token || ''}`, 3600, async () => {
+  return edgeJson(ctx, `yt|${region}|${token || ''}`, firstTtl(token), async () => {
     for (const cat of ['23', '24']) {
       const u = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,status&chart=mostPopular&regionCode=${region}&videoCategoryId=${cat}&maxResults=10${token ? '&pageToken=' + encodeURIComponent(token) : ''}&key=${key}`;
       const r = await fetch(u);
@@ -196,9 +203,10 @@ async function youtubePage(ctx: Ctx, region: 'IL' | 'US', token: string | null) 
 }
 
 /** Reddit's top of the day in kind, funny communities (its RSS – the JSON API refuses servers) */
-async function redditPage(ctx: Ctx, after: string | null) {
-  return edgeJson(ctx, `rd|${after || ''}`, 3600, async () => {
-    const r = await fetch(`https://www.reddit.com/r/${SUBS}/top/.rss?t=day&limit=15${after ? '&after=' + encodeURIComponent(after) : ''}`, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; HelperFamilyApp/1.0)' } });
+async function redditPage(ctx: Ctx, after: string | null, real = false) {
+  const list = real ? `${REAL_SUBS}/hot/.rss?limit=25` : `${SUBS}/top/.rss?t=day&limit=15`;
+  return edgeJson(ctx, `rd|${real ? 'real|' : ''}${after || ''}`, firstTtl(after), async () => {
+    const r = await fetch(`https://www.reddit.com/r/${list}${after ? '&after=' + encodeURIComponent(after) : ''}`, { headers: { 'user-agent': 'Mozilla/5.0 (compatible; HelperFamilyApp/1.0)' } });
     if (!r.ok) throw new Error('reddit ' + r.status);   // not kept: the next visitor tries again
     const xml = await r.text();
     const unesc = (x: string) => x.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#32;/g, ' ');
@@ -214,22 +222,24 @@ async function redditPage(ctx: Ctx, after: string | null) {
       const content = unesc(/<content type="html">([\s\S]*?)<\/content>/.exec(e)?.[1] || '');
       const target = /<a href="([^"]+)">\[link\]<\/a>/.exec(content)?.[1] || '';
       const thumb = unesc(/<media:thumbnail url="([^"]+)"/.exec(e)?.[1] || '');
-      if (/nsfw|porn|sex/i.test(title) || POLITICS.test(title)) continue;
+      if (/nsfw|porn|sex/i.test(title) || POLITICS.test(title) || (real && NOT_REAL.test(title))) continue;
+      if (real && /^https:\/\/v\.redd\.it\//.test(target) && thumb) { items.push({ type: 'image', src: thumb, title, link, source, region: 'world', video: link }); continue; }
       if (/^https:\/\/i\.redd\.it\/.+\.(jpe?g|png|gif|webp)$/i.test(target)) items.push({ type: 'image', src: target, title, link, source, region: 'world' });
       else if (/^https:\/\/v\.redd\.it\//.test(target) && thumb) items.push({ type: 'image', src: thumb, title, link, source, region: 'world', video: link });
       else if (/^https:\/\/i\.imgur\.com\/.+\.(jpe?g|png|gif)$/i.test(target)) items.push({ type: 'image', src: target, title, link, source, region: 'world' });
     }
     if (!entries.length && !after) throw new Error('reddit empty');
+    if (real) items.sort((a, b) => Number(!!(b as any).video) - Number(!!(a as any).video));   // the clips first, then the real moments in pictures
     return { items, next: entries.length ? last : null };
   });
 }
 
 /** When Reddit turns servers away: kind pictures from Lemmy (an open network with a public API), page by page */
-const LEMMY = ['aww', 'dogs', 'funny'];
-async function lemmyPage(ctx: Ctx, page: number) {
-  return edgeJson(ctx, `lm|${page}`, 3600, async () => {
-    const lists = await Promise.all(LEMMY.map((c) =>
-      fetch(`https://lemmy.world/api/v3/post/list?community_name=${c}&sort=TopWeek&limit=10&page=${page}`, { headers: { 'user-agent': 'HelperFamilyApp/1.0' } })
+const LEMMY = ['aww', 'dogs', 'funny'], LEMMY_REAL = ['animalsbeingderps', 'kidsbeingderps', 'animalsbeingjerks', 'animalsbeingbros'];
+async function lemmyPage(ctx: Ctx, page: number, real = false) {
+  return edgeJson(ctx, `lm|${real ? 'real|' : ''}${page}`, page > 1 ? 3600 : 600, async () => {
+    const lists = await Promise.all((real ? LEMMY_REAL : LEMMY).map((c) =>
+      fetch(`https://lemmy.world/api/v3/post/list?community_name=${c}&sort=${real ? 'Hot' : 'TopWeek'}&limit=10&page=${page}`, { headers: { 'user-agent': 'HelperFamilyApp/1.0' } })
         .then((r) => (r.ok ? r.json() : { posts: [] })).catch(() => ({ posts: [] })) as Promise<any>));
     const items: Viral[] = [];
     let any = false;
@@ -238,22 +248,36 @@ async function lemmyPage(ctx: Ctx, page: number) {
       any = true;
       const post = p.post || {};
       const src = String(post.url || '');
-      if (post.nsfw || p.community?.nsfw || POLITICS.test(post.name || '') || /nsfw|porn|sex/i.test(post.name || '')) continue;
+      if (post.nsfw || p.community?.nsfw || POLITICS.test(post.name || '') || /nsfw|porn|sex/i.test(post.name || '') || (real && NOT_REAL.test(post.name || ''))) continue;
+      const thumb = String(post.thumbnail_url || '');
+      if (real && /^https:\/\/[^\s]+\.(mp4|webm)(\?.*)?$/i.test(src)) {
+        items.push({ type: 'image', src: /^https:\/\//.test(thumb) ? thumb : '', clip: src, title: post.name || '', link: post.ap_id || `https://lemmy.world/post/${post.id}`, source: 'Lemmy · ' + (p.community?.title || p.community?.name || ''), region: 'world' });
+        continue;
+      }
       if (!/^https:\/\/[^\s]+\.(jpe?g|png|gif|webp)(\?.*)?$/i.test(src)) continue;
       items.push({ type: 'image', src, title: post.name || '', link: post.ap_id || `https://lemmy.world/post/${post.id}`, source: 'Lemmy · ' + (p.community?.title || p.community?.name || ''), region: 'world' });
     }
-    return { items, next: any && page < 20 ? 'lm:' + (page + 1) : null };
+    if (real) items.sort((a, b) => Number(!!(b as any).clip) - Number(!!(a as any).clip));
+    return { items, next: any && page < 20 ? (real ? 'lmr:' : 'lm:') + (page + 1) : null };
   });
 }
 /** a page of pictures: Reddit, or Lemmy once Reddit has refused (its cursor then reads "lm:<page>") */
-function picturesPage(ctx: Ctx, cur: string | null) {
+function picturesPage(ctx: Ctx, cur: string | null, real = false) {
+  if (cur?.startsWith('lmr:')) return lemmyPage(ctx, +cur.slice(4) || 1, true);
   if (cur?.startsWith('lm:')) return lemmyPage(ctx, +cur.slice(3) || 1);
-  return redditPage(ctx, cur).catch(() => (cur ? null : lemmyPage(ctx, 1)));
+  return redditPage(ctx, cur, real).catch(() => (cur ? null : lemmyPage(ctx, 1, real)));
 }
 
-/** GET /api/fun/viral?cursor=… → { items, cursor } (cursor: null at the very end) */
+/** GET /api/fun/viral?cursor=…&kind=real → { items, cursor } (cursor: null at the very end).
+    kind=real: "מצחיק ואמיתי", real clips only (no YouTube chart: the comedy chart is skits and shows). */
 export async function viral(ctx: Ctx) {
   requireUser(ctx);
+  if (ctx.url.searchParams.get('kind') === 'real') {
+    let cur: string | null = null;
+    try { const c = ctx.url.searchParams.get('cursor'); if (c) cur = JSON.parse(atob(c)).rd ?? null; } catch (_) { throw new HttpError(400, 'Bad cursor'); }
+    const rd = await picturesPage(ctx, cur, true).catch(() => null);
+    return json({ items: rd?.items || [], cursor: rd?.next ? btoa(JSON.stringify({ rd: rd.next })) : null });
+  }
   let cur: { il: string | null | false; us: string | null | false; rd: string | null | false } = { il: null, us: null, rd: null };
   try { const c = ctx.url.searchParams.get('cursor'); if (c) cur = JSON.parse(atob(c)); } catch (_) { throw new HttpError(400, 'Bad cursor'); }
   const [il, us, rd] = await Promise.all([

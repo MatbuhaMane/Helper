@@ -12,7 +12,7 @@
     ['tv', 'טלוויזיה', 'tv', '#cfe7ff'], ['film', 'קולנוע', 'clapper', '#ffd6e0'], ['live', 'הופעות', 'mic', '#ffe0cc'], ['music', 'מוזיקה', 'music', '#e3d9ff'],
     ['games', 'משחקים', 'gamepad', '#d4f2dc'], ['funny', 'מצחיק', 'smile', '#fff0b3'], ['books', 'ספרים', 'book', '#f4d9c4'],
   ];
-  const P = H.prefs('fun', { cat: 'tv' });
+  const P = H.prefs('fun', { cat: 'tv', funny: 'viral' });
   const root = document.querySelector('main');
   const tabs = el('nav', { class: 'fun-tabs', role: 'tablist', 'aria-label': 'סוגי הבידור' });
   const board = el('section', { class: 'fun-board', 'aria-live': 'polite' });
@@ -20,13 +20,19 @@
   // a fresh choice on request (the server allows one every ten minutes per tab, since it costs a search-backed AI call)
   const refresh = el('button', { class: 'btn ghost small fun-refresh', type: 'button', title: 'לבחור מחדש עכשיו', onclick: () => open(S.cat, true) },
     el('span', { 'aria-hidden': 'true' }, '↻'), ' רענון');
+  /* מצחיק has two kinds (the users' feedback, 2026-11-13): what goes round the web (the charts), and "מצחיק ואמיתי", real
+     funny clips (not AI, not staged). Kept per person (H.prefs). The look is design's (.fun-sub, its buttons [aria-pressed]). */
+  const KINDS = [['viral', 'ויראלי עכשיו'], ['real', 'מצחיק ואמיתי']];
+  const sub = el('div', { class: 'fun-sub', role: 'group', 'aria-label': 'איזה מצחיק', hidden: true },
+    ...KINDS.map(([k, name]) => el('button', { type: 'button', class: 'fun-sub-b', 'data-kind': k, 'aria-pressed': 'false',
+      onclick: () => { if (P.funny === k) return; P.funny = k; H.savePrefs('fun'); open('funny'); } }, name)));
   const stampRow = el('div', { class: 'fun-stamp muted' }, stamp, refresh);
   const foot = el('div', { class: 'fun-foot' });   // the end of the board: when it comes into view, the next page loads
   root.append(el('div', { class: 'fun' },
     el('header', { class: 'fun-head' },
       el('span', { class: 'fun-logo', 'aria-hidden': 'true' }, H.icon('fun')),
       el('div', {}, el('small', {}, 'בידור'), el('h1', {}, 'מה שווה לראות, לשמוע ולשחק'), el('p', { class: 'muted' }, 'רק המלצות – ואיפה אפשר למצוא אותן בישראל'))),
-    tabs, stampRow, board, foot));
+    tabs, sub, stampRow, board, foot));
 
   /* a recommendation */
   const logo = (w) => (w.domain ? el('img', { class: 'fun-svc-logo', src: `/api/fun/logo/${w.domain}`, alt: '', loading: 'lazy', onerror: (e) => e.target.replaceWith(el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1))) }) : el('span', { class: 'fun-svc-dot', 'aria-hidden': 'true' }, (w.name || '?').slice(0, 1)));
@@ -92,10 +98,16 @@
         media.replaceWith(el('div', { class: 'fun-frame tall' }, el('iframe', { src: `https://www.redditmedia.com${path}?ref_source=embed&ref=share&embed=true&theme=${H.isDark?.() ? 'dark' : 'light'}`, title: v.title, allow: 'autoplay; encrypted-media; fullscreen', allowfullscreen: true, loading: 'lazy', sandbox: 'allow-scripts allow-same-origin allow-popups' })));
       } }, img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'));
     }
+    if (v.clip) {    // a plain video file (מצחיק ואמיתי from Lemmy): its picture, and a tap plays it here
+      const play = () => el('video', { class: 'fun-clip', src: v.clip, controls: true, autoplay: true, playsinline: true, preload: 'metadata', 'aria-label': v.title });
+      media = v.src ? el('button', { class: 'fun-play pic', type: 'button', 'aria-label': 'ניגון: ' + v.title, onclick: () => media.replaceWith(el('div', { class: 'fun-frame tall' }, play())) },
+        img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'))
+        : el('div', { class: 'fun-frame tall' }, el('video', { class: 'fun-clip', src: v.clip, controls: true, playsinline: true, preload: 'metadata', 'aria-label': v.title }));
+    }
     const src = () => el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, /^Lemmy/.test(v.source) ? ' ↗' : ' · Reddit ↗');
-    const art = el('article', { class: 'fun-card fun-i' + (v.video ? '' : ' fun-pick') }, media, el('div', { class: 'fun-body' },
+    const art = el('article', { class: 'fun-card fun-i' + (v.video || v.clip ? '' : ' fun-pick') }, media, el('div', { class: 'fun-body' },
       el('div', { class: 'fun-tags' }, flag), el('h3', { dir: 'auto' }, v.title), src()));
-    if (!v.video) art.addEventListener('click', (e) => {
+    if (!v.video && !v.clip) art.addEventListener('click', (e) => {
       if (e.target.closest('a') || getSelection().toString()) return;
       H.sheet.open(art, el('figure', { class: 'fun-big' },
         el('img', { src: v.src, alt: v.title, referrerpolicy: 'no-referrer' }),
@@ -106,7 +118,21 @@
   }
 
   const keep = (cat, d) => { try { localStorage.setItem('fun-' + cat, JSON.stringify(d)); } catch (_) { /* full */ } };
+  try { localStorage.removeItem('fun-funny'); } catch (_) { /* the old kept page of מצחיק, no longer used */ }
   const kept = (cat) => { try { return JSON.parse(localStorage.getItem('fun-' + cat) || 'null'); } catch (_) { return null; } };
+  /* what this device already showed in מצחיק (a card counts once half of it was on the screen): a load or a refresh brings
+     only what was not seen yet, so the top of the feed is new each time. Per device (it is a screen's memory, like a
+     cache), three days, at most 800. */
+  const SEEN_DAYS = 3, seenKey = 'fun-seen';
+  let seenMap = {};
+  try { seenMap = JSON.parse(localStorage.getItem(seenKey) || '{}') || {}; } catch (_) { seenMap = {}; }
+  { const old = Date.now() - SEEN_DAYS * 864e5; for (const k in seenMap) if (!(seenMap[k] > old)) delete seenMap[k]; }
+  let seenTimer = 0;
+  const saveSeen = () => { clearTimeout(seenTimer); seenTimer = setTimeout(() => {
+    const keys = Object.keys(seenMap); if (keys.length > 800) keys.sort((a, b) => seenMap[a] - seenMap[b]).slice(0, keys.length - 800).forEach((k) => delete seenMap[k]);
+    try { localStorage.setItem(seenKey, JSON.stringify(seenMap)); } catch (_) { /* full */ } }, 500); };
+  const watched = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) { seenMap[e.target.dataset.vid] = Date.now(); watched.unobserve(e.target); saveSeen(); } }, { threshold: 0.5 });
+  const showViral = (v) => { const c = viralCard(v); c.dataset.vid = v.id || v.src; watched.observe(c); return c; };
   const ago = (t) => { const h = Math.round((Date.now() - t) / 36e5); return h < 1 ? 'עכשיו' : h === 1 ? 'לפני שעה' : h < 24 ? `לפני ${h} שעות` : `לפני ${Math.round(h / 24)} ימים`; };
   const spinner = (text) => el('p', { class: 'fun-wait muted' }, el('span', { class: 'fun-spin', 'aria-hidden': 'true' }), text);
 
@@ -119,12 +145,16 @@
     foot.replaceChildren(spinner(S.cat === 'funny' ? 'מביא עוד…' : `בוחר עוד המלצות ב${name}…`));
     try {
       if (S.cat === 'funny') {
-        const d = await H.api('/api/fun/viral' + (S.cursor ? '?cursor=' + encodeURIComponent(S.cursor) : S.fresh ? '?fresh=1' : ''));
+        const q = new URLSearchParams(); if (S.kind === 'real') q.set('kind', 'real'); if (S.cursor) q.set('cursor', S.cursor);
+        const d = await H.api('/api/fun/viral' + (q.size ? '?' + q : ''));
         if (mine !== token) return;
-        const fresh = d.items.filter((v) => !S.seen.has(v.id || v.src) && S.seen.add(v.id || v.src));
-        board.append(...fresh.map(viralCard));
+        // not what this page shows already, nor what this device showed before
+        const fresh = d.items.filter((v) => { const id = v.id || v.src; if (S.seen.has(id)) return false; S.seen.add(id); if (seenMap[id]) { S.skipped++; return false; } return true; });
+        if (S.page === 0) board.querySelector('.fun-wait')?.remove();
+        board.append(...fresh.map(showViral));
         S.cursor = d.cursor; S.done = !d.cursor;
-        if (S.page === 0) { keep('funny', { items: fresh, cursor: d.cursor, at: Date.now() }); stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
+        if (S.page === 0) stamp.textContent = S.kind === 'real' ? 'רגעים מצחיקים שקרו באמת – בלי בינה מלאכותית ובלי בימוי' : 'מה שמסתובב ברשת עכשיו – בארץ ובעולם';
+        if (S.fresh && S.page === 0 && !fresh.length && S.skipped) toast('עוד אין כאן חדש מאז הפעם הקודמת. ממשיך לחפש למטה.');
       } else {
         const d = await H.api(`/api/fun/picks?cat=${S.cat}&page=${S.page}${S.fresh && S.page === 0 ? '&fresh=1' : ''}`);
         if (S.fresh && S.page === 0 && Date.now() - (d.at || 0) > 60e3) H.toast('הבחירה כאן עודכנה לפני רגע – אפשר לבחור שוב בעוד כמה דקות');
@@ -146,7 +176,7 @@
     } finally {
       if (mine === token) {
         S.busy = false;
-        foot.replaceChildren(S.done ? el('p', { class: 'muted fun-end' }, board.childElementCount ? 'זה הכל לעכשיו. בעוד כמה שעות יהיו כאן דברים חדשים.' : '') : '');
+        foot.replaceChildren(S.done ? el('p', { class: 'muted fun-end' }, board.childElementCount || S.skipped ? (board.childElementCount ? '' : 'ראיתם כבר את כל מה שיש כאן. ') + 'בעוד כמה שעות יהיו כאן דברים חדשים.' : '') : '');
         // still room on the screen: the next page at once
         if (!S.done && foot.getBoundingClientRect().top < innerHeight + 400) more();
       }
@@ -158,16 +188,18 @@
     P.cat = cat; H.savePrefs('fun');
     const [, name, , tint] = CATS.find((c) => c[0] === cat);
     tabs.querySelectorAll('[role=tab]').forEach((t) => { const on = t.dataset.cat === cat; t.classList.toggle('on', on); t.setAttribute('aria-selected', String(on)); });
+    tabs.querySelector('.fun-tab.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });   // a remembered tab off the edge (375) comes into the row
     token++;
-    S = { cat, page: 0, seen: new Set(), busy: false, done: false, cursor: null, fresh };
+    S = { cat, kind: P.funny === 'real' ? 'real' : 'viral', page: 0, seen: new Set(), skipped: 0, busy: false, done: false, cursor: null, fresh };
+    sub.hidden = cat !== 'funny';
+    sub.querySelectorAll('[data-kind]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.kind === S.kind)));
     refresh.disabled = false;
     board.classList.toggle('viral', cat === 'funny');
     stamp.textContent = '';
     // what this device kept from last time, while the fresh first page comes
-    const old = fresh ? null : kept(cat);
+    const old = fresh || cat === 'funny' ? null : kept(cat);   // (מצחיק: always from the web, never the same page again)
     if (fresh) scrollTo({ top: 0, behavior: 'smooth' });
-    if (old && cat === 'funny' && old.items?.length) { board.replaceChildren(...old.items.map(viralCard)); old.items.forEach((v) => S.seen.add(v.id || v.src)); S.cursor = old.cursor; S.page = 1; stamp.textContent = 'מה שמסתובב ברשת עכשיו – בארץ ובעולם'; }
-    else if (old && old.picks?.length) { board.replaceChildren(...old.picks.map((p) => card(p, tint, cat))); old.picks.forEach((p) => { S.seen.add(p.link); S.seen.add((p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')); }); S.page = 1; stamp.textContent = `נבחרו ${ago(old.at)}`; }
+    if (old && old.picks?.length) { board.replaceChildren(...old.picks.map((p) => card(p, tint, cat))); old.picks.forEach((p) => { S.seen.add(p.link); S.seen.add((p.original || p.title || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')); }); S.page = 1; stamp.textContent = `נבחרו ${ago(old.at)}`; }
     else board.replaceChildren(spinner(cat === 'funny' ? 'מחפש מה הכי ויראלי עכשיו…' : `בוחר את המומלצים ב${name} ובודק איפה אפשר לראות אותם… (עד דקה)`));
     if (!old) { const first = board.firstElementChild; S.page = 0; more().then(() => first?.classList.contains('fun-wait') && first.remove()); }
     else more();

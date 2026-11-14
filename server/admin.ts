@@ -14,7 +14,7 @@
 // Who is "the owner": the emails in OWNER_EMAIL (never written in the code). Every action is written to admin_audit.
 
 import { Ctx, Env, HttpError, Member, body, getCookie, json, requireUser, uid } from './core';
-import { newChallenge, rateLimit, takeChallenge } from './vault';
+import { newChallenge, rateLimit, takeChallenge, trashList, trashRestore } from './vault';
 import { verifyAssertion } from './vault/webauthn';
 import { costOf, UsageRow } from './prices';
 import { saveSetting, settingsNow } from './settings';
@@ -475,3 +475,13 @@ export async function gifts(ctx: Ctx) {
     used, confirm_above: C.GIFT_CONFIRM_ILS,
   });
 }
+
+/* ---------------- the family tree's deleted cards (the owner only; the vault checks its own level too) ---------------- */
+async function ownerOnly(ctx: Ctx) {
+  const a = await requireAdmin(ctx, 'own');
+  if (a.level !== 'owner') throw new HttpError(403, 'owner_only');
+}
+/** GET /api/admin/tree-trash */
+export async function treeTrash(ctx: Ctx) { await ownerOnly(ctx); return trashList(ctx); }
+/** POST /api/admin/tree-trash/:id/restore */
+export async function treeTrashRestore(ctx: Ctx) { await ownerOnly(ctx); return trashRestore(ctx); }

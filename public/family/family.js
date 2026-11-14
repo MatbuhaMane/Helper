@@ -22,6 +22,8 @@
     bad_email: 'כתובת המייל לא נראית תקינה.', same_household: 'הכתובת הזו שייכת למשק הבית שלנו.', note_required: 'כתבו לצד השני מי זה או זו.',
     already_asked: 'כבר נשלחה בקשה כזו, והיא עוד מחכה.', already_linked: 'השניים כבר מקושרים.', two_in_one_tree: 'אותו אדם כבר מופיע בעץ הזה בכרטיס אחר.',
     different_people: 'לשני הכרטיסים כתובות מייל שונות – אלה שני אנשים.', gone: 'הכרטיס בצד השני כבר לא קיים.', not_member: 'אין משתמש בכתובת הזו.', title_required: 'צריך שם למשפחה.',
+    // changes that wait for a user's yes, a delete and its undo
+    changed_since: 'הכרטיס השתנה בינתיים, ולכן הבקשה בוטלה. אפשר להציע שוב.', decided: 'כבר ענית על הבקשה הזו.', restore_closed: 'עבר הזמן לביטול. בעל האוהל יכול לשחזר מהדלת האחורית.',
   };
   const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
   const call = async (path, opts = {}) => {
@@ -136,6 +138,7 @@
     // the tree is open to the household (Locks and privacy: no trusted device any more); documents, privacy, linking and a
     // delete still ask for a fresh unlock – the page's "trusted" path, which asks only for that step
     S.people = t.people; S.links = t.links || []; S.me = t.me; S.until = st.until || 0; S.roles = t.roles || {}; S.trusted = true;
+    S.pending = t.pending || []; S.asks = t.asks || 0;
     // what waits for me in the links between trees (a request to approve, my own consent)
     const inbox = await call('/api/vault/bridges').catch(() => null);
     const waiting = inbox ? inbox.incoming.length + inbox.consent.length : 0;
@@ -163,7 +166,9 @@
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
     const tools = el('div', { class: 'fv-tools' }, views, find);
     const board = el('div', { class: 'fv-tree' });
-    root.replaceChildren(el('section', { class: 'fv' }, bar, S.people.length ? tools : null, board));
+    const asks = el('div', { class: 'fv-asks-slot' });
+    root.replaceChildren(el('section', { class: 'fv' }, bar, asks, S.people.length ? tools : null, board));
+    if (S.asks) asksBox(asks).catch(say);
     tickTimer = setInterval(() => {
       const s = Math.max(0, Math.round((S.until - Date.now()) / 1000)), mm = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
       // on a trusted device the tree does not lock; only the documents' unlock runs out
@@ -182,6 +187,101 @@
 
   /* ---------- who is whose: the relationships ---------- */
   const byId = (id) => S.people.find((p) => p.id === id);
+  const pendingOf = (k, id) => (S.pending || []).find((c) => c[k] === id);
+  const waitsWord = (c) => [...new Set((S.pending || []).filter((x) => x.id === c.id || (x.kind === c.kind && x.person === c.person && x.link === c.link)).map((x) => x.waitsFor))].join(' ו') || 'בן המשפחה';
+  /** design's "ממתין לאישור" tag (.fv-pend), beside a name or on a relationship's row */
+  const pendTag = (c) => c ? el('span', { class: 'fv-pend', title: `מחכה לאישור של ${waitsWord(c)}` }, 'ממתין לאישור') : null;
+  const cancelAsk = async (c, after) => { try { await call(`/api/vault/changes/${c.id}/cancel`, { method: 'POST' }); toast('הבקשה בוטלה'); await after(); } catch (e) { say(e); } };
+  /** what was / what it would be (.fv-diff); a detail that was empty leaves its <s> empty */
+  const diffList = (changes) => el('dl', { class: 'fv-diff' }, changes.map((x) => el('div', {}, el('dt', {}, FIELD[x.k] || x.k),
+    el('dd', {}, el('s', {}, x.from == null || x.from === '' ? '' : shown(x.from)), ' ', el('b', {}, shown(x.to))))));
+  /** in the panel of whoever asked: what waits, for whom, and taking it back (.fv-pendbox) */
+  function pendBox(c, after) {
+    if (!c) return null;
+    const box = el('div', { class: 'fv-pendbox' }, el('span', { class: 'fv-pend' }, 'ממתין לאישור'),
+      el('p', {}, c.kind === 'delete' ? `המחיקה תקרה רק אחרי ש${waitsWord(c)} יאשר/תאשר.` : `השינוי יופיע אחרי ש${waitsWord(c)} יאשר/תאשר.`),
+      el('div', { class: 'fv-ask-acts' }, el('button', { type: 'button', class: 'btn ghost', onclick: () => cancelAsk(c, after) }, 'ביטול הבקשה')));
+    // an edit: which details, and to what (my own words, from /api/vault/changes)
+    if (c.kind === 'edit') call('/api/vault/changes').then((d) => {
+      const mine = d.mine.find((m) => m.id === c.id || (m.person === c.person && m.kind === 'edit' && m.status === 'pending'));
+      if (mine?.changes?.length) box.querySelector('p').after(diffList(mine.changes));
+    }).catch(() => {});
+    return box;
+  }
+  /** what the server said about a change to someone else's card: done, or waiting for them */
+  const proposedSay = (r, who) => toast(r.waiting > 1 ? 'נשלח לאישור. כשכולם יאשרו, העץ יתעדכן.' : `נשלח לאישור של ${who || 'בן המשפחה'}. עד שיאשר/תאשר, שום דבר לא משתנה.`);
+  /** ten seconds to take a delete back (design's .fv-undo, with its draining bar); then onEnd */
+  function undoBar(text, undo, onEnd) {
+    document.querySelector('.fv-undo')?.remove();
+    let t = 0;
+    const bar = el('div', { class: 'fv-undo', role: 'status', style: '--t:10s' }, el('span', {}, text),
+      el('button', { class: 'btn fv-undo-btn', type: 'button', onclick: async () => { clearTimeout(t); bar.remove(); try { await undo(); toast('בוטל'); } catch (e) { say(e); onEnd?.(); } } }, 'בטל'),
+      el('i', { class: 'fv-undo-bar', 'aria-hidden': 'true' }));
+    document.body.append(bar);
+    t = setTimeout(() => { bar.remove(); onEnd?.(); }, 10e3);
+  }
+  async function refreshAll() { const t = await call('/api/vault/tree'); S.people = t.people; S.links = t.links || []; S.pending = t.pending || []; S.asks = t.asks || 0; }
+  /** the person just deleted stays on the tree, faded (.going), for the ten seconds of "בטל" */
+  const markGoing = (id, on) => document.querySelectorAll(`.tr-p[data-id="${id}"], .fv-card[data-id="${id}"]`).forEach((n) => n.classList.toggle('going', on));
+
+  /* ---------- the requests that wait for my answer (a change to my card, or to a relationship of mine) ---------- */
+  const FIELD = { name: 'שם', sex: 'מין', born: 'תאריך לידה', bornAfterSunset: 'נולד/ה אחרי השקיעה', died: 'תאריך פטירה', diedAfterSunset: 'נפטר/ה אחרי השקיעה',
+    place: 'מקום לידה', notes: 'הערות', birthdayBy: 'יום ההולדת לפי', calendar: 'בלוח השנה המשפחתי', kind: 'הקשר', status: 'מצב' };
+  const VALUE = { m: 'זכר', f: 'נקבה', gregorian: 'התאריך הלועזי', hebrew: 'התאריך העברי' };
+  const shown = (v) => v === true ? 'כן' : v === false ? 'לא' : v === '' || v == null ? '—' : VALUE[v] || String(v);
+  async function asksBox(slot) {
+    const d = await call('/api/vault/changes');
+    if (!d.forMe.length) return slot.replaceChildren();
+    const linkWords = (l) => l.type === 'parent' ? `${l.a} הורה של ${l.b}` : `${l.a} ו${l.b}`;
+    const kindWord = (k) => PARENT_KIND[k] || PARTNER_KIND[k] || '';
+    const asking = (c) => c.kind === 'edit' ? ['מבקש/ת לשנות את הפרטים של ', el('b', {}, c.person.name)]
+      : c.kind === 'delete' ? ['מבקש/ת למחוק את ', el('b', {}, c.person.name), ' מהעץ']
+      : c.kind === 'unlink' ? ['מבקש/ת להסיר קשר: ', el('b', {}, linkWords(c.link))]
+      : ['מבקש/ת לשנות קשר: ', el('b', {}, linkWords(c.link))];
+    const what = (c) => c.kind === 'edit' ? diffList(c.changes)
+      : c.kind === 'delete' ? el('p', { class: 'fv-ask-del' }, `${c.person.name} יימחק/תימחק מהעץ`)
+      : c.kind === 'unlink' ? el('p', { class: 'fv-ask-del' }, `הקשר ${linkWords(c.link)} יוסר מהעץ`)
+      : diffList([c.link.to?.kind !== c.link.kind ? { k: 'kind', from: kindWord(c.link.kind), to: kindWord(c.link.to?.kind) } : null,
+        c.link.to?.status !== c.link.status ? { k: 'status', from: PARTNER_STATUS[c.link.status] || '', to: PARTNER_STATUS[c.link.to?.status] || '' } : null].filter(Boolean));
+    const answer = async (c, yes, card) => {
+      const btns = card.querySelectorAll('.fv-ask-acts button');
+      btns.forEach((b) => { b.disabled = true; });
+      let said = yes ? 'אושר' : 'נדחה. שום דבר לא השתנה.';
+      try {
+        const r = await call(`/api/vault/changes/${c.id}/${yes ? 'approve' : 'decline'}`, { method: 'POST' });
+        if (yes && r.status === 'waiting') said = 'אושר. מחכה עוד לאישור של בן משפחה נוסף.';
+      } catch (e) { say(e); btns.forEach((b) => { b.disabled = false; }); return; }
+      card.classList.add('done');
+      card.querySelector('.fv-ask-acts').replaceWith(el('p', { class: 'fv-ask-said' }, said));
+      setTimeout(() => open(), 1500);
+    };
+    slot.replaceChildren(el('div', { class: 'fv-asks', role: 'region', 'aria-label': `מחכה לאישור שלך · ${d.forMe.length}` }, d.forMe.map((c) => {
+      const card = el('section', { class: 'card fv-ask', 'data-kind': c.kind },
+        el('header', { class: 'fv-ask-h' }, el('span', { class: 'fv-pic', 'aria-hidden': 'true' }, initials(c.by)),
+          el('div', {}, el('b', {}, c.by), el('small', {}, ...asking(c))),
+          el('time', { class: 'muted', datetime: new Date(c.at).toISOString() }, H.timeAgo(c.at))),
+        what(c),
+        el('div', { class: 'fv-ask-acts' },
+          el('button', { type: 'button', class: 'btn primary fv-ok', onclick: () => answer(c, true, card) }, 'אשר'),
+          el('button', { type: 'button', class: 'btn fv-no', onclick: () => answer(c, false, card) }, 'דחה')));
+      return card;
+    })));
+  }
+  /** delete a card: someone who is not a user (or my own) goes at once, with "בטל" for ten seconds (faded on the tree
+      meanwhile); another user's waits for them */
+  async function deletePerson(p) {
+    let r;
+    try { r = await call(`/api/vault/people/${p.id}`, { method: 'DELETE' }); } catch (e) { return say(e); }
+    H.sheet?.close?.();
+    if (r.proposed) { proposedSay(r, p.name); await refreshAll(); draw(); return; }
+    S.going = p.id; markGoing(p.id, true);
+    const gone = async () => { if (S.going !== p.id) return; S.going = null; if (S.focus === p.id) S.focus = null; await open(); };
+    undoBar(`${p.name} נמחק/ה מהעץ`, async () => {
+      await call(`/api/vault/people/${p.id}/restore`, { method: 'POST' });
+      S.going = null; markGoing(p.id, false); await refreshAll(); draw();
+    }, gone);
+  }
+
   const parentLinks = (id) => S.links.filter((l) => l.type === 'parent' && l.b === id);
   const parentsOf = (id) => parentLinks(id).map((l) => l.a);
   const childrenOf = (id) => S.links.filter((l) => l.type === 'parent' && l.a === id).map((l) => l.b);
@@ -389,14 +489,23 @@
       // the vault's documents and photos stay one step away (they ask for a fresh unlock, as before)
       el('button', { type: 'button', class: 'btn small ghost', onclick: () => { H.closeModal(); panel(c.id); } }, 'מסמכים ותמונות'),
     ] : [];
+    // someone else's card in our tree: edit and delete right here (another user's waits for their yes; the server decides)
+    const other = c.mine && !c.self ? byId(c.id) : null;
+    const manage = other ? el('div', { class: 'fv-pacts' },
+      el('button', { type: 'button', class: 'btn fv-pact', 'data-act': 'edit', onclick: async () => {
+        try { const p = await call(`/api/vault/people/${encodeURIComponent(c.id)}`); H.closeModal(); personForm(p); } catch (e) { say(e); }
+      } }, 'עריכה'),
+      el('button', { type: 'button', class: 'btn fv-pact danger', 'data-act': 'delete', onclick: () => { H.closeModal(); deletePerson(other); },
+        title: c.user ? 'הכרטיס של משתמש/ת באוהל: הבקשה תחכה לאישור שלו/ה' : 'אפשר לבטל במשך 10 שניות' }, 'מחיקה')) : null;
     H.modal(el('article', { class: 'mc' + (c.self ? ' mine' : ''), 'aria-label': 'הכרטיס של ' + c.name },
       el('div', { class: 'mc-banner' }, cover ? el('img', { src: cover, alt: '' }) : null),
       el('div', { class: 'mc-head' }, face,
-        el('div', { class: 'mc-who' }, el('h2', { class: 'mc-name' }, c.name), rel ? el('p', { class: 'mc-rel' }, rel) : null),
+        el('div', { class: 'mc-who' }, el('h2', { class: 'mc-name' }, c.name, ' ', c.mine ? pendTag(pendingOf('person', c.id)) : null), rel ? el('p', { class: 'mc-rel' }, rel) : null),
         edit),
       list.length ? el('dl', { class: 'mc-facts' }, list.map(([k, v]) => el('div', { class: 'mc-fact' }, el('dt', {}, k), el('dd', {}, v)))) : null,
       about ? el('p', { class: 'mc-about' }, about) : null,
-      acts.length ? el('div', { class: 'mc-actions' }, acts) : null));
+      acts.length ? el('div', { class: 'mc-actions' }, acts) : null,
+      manage));
   }
 
   /* ---------- drawing: the family around one person, or the whole tree ---------- */
@@ -615,7 +724,7 @@
       const years = passed ? [life.born, life.died].map((d) => String(d || '').slice(0, 4)).filter(Boolean).join('–') : '';
       const bday = !passed && onToday(life.born, life.bornAfterSunset, life.birthdayBy);
       if (passed && onToday(life.died, life.diedAfterSunset, 'hebrew')) candles.push(p);
-      const b = el('button', { type: 'button', class: 'tr-p' + (p.id === center ? ' me' : '') + (bday ? ' bday' : '') + (passed ? ' passed' : ''),
+      const b = el('button', { type: 'button', class: 'tr-p' + (p.id === center ? ' me' : '') + (p.id === S.going ? ' going' : '') + (pendingOf('person', p.id) ? ' pending' : '') + (bday ? ' bday' : '') + (passed ? ' passed' : ''),
         style: `--x:${x.toFixed(1)}; --y:${y.toFixed(1)}`, 'data-id': p.id,
         'aria-label': [p.name, rel, bday ? 'יום הולדת היום' : '', passed ? 'זיכרונו לברכה' : ''].filter(Boolean).join(', '),
         onclick: () => {
@@ -707,7 +816,7 @@
     if (p.photo) photoInto(p.photo, pic);
     const rel = S.mine && S.mine !== p.id ? relationName(S.mine, p.id) : S.mine === p.id ? 'אני' : null;
     const isFocus = role === 'focus';
-    return el('button', { class: 'fv-card' + (role ? ' r-' + role : ''), 'data-id': p.id, title: isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
+    return el('button', { class: 'fv-card' + (role ? ' r-' + role : '') + (p.id === S.going ? ' going' : '') + (pendingOf('person', p.id) ? ' pending' : ''), 'data-id': p.id, title: isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
       onclick: () => (isFocus ? memberCard(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
       pic, el('b', {}, p.name),
       rel ? el('small', { class: 'fv-relname' }, rel) : null,
@@ -779,6 +888,7 @@
       try {
         const r = await call(p ? `/api/vault/people/${p.id}` : '/api/vault/people', { method: p ? 'PUT' : 'POST', body });
         H.closeModal(); touched();
+        if (r.proposed) proposedSay(r, p.name);
         if (!p && !rel) S.focus = r.id;
         await open();
         if (p || rel) panel(p ? r.id : rel.of);
@@ -808,10 +918,20 @@
     const line = (label, id, linkObj, extra) => el('li', { class: 'fv-relrow' },
       el('button', { class: 'fv-rel-who', onclick: () => { H.sheet.close(); setView('family'); setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
       el('small', { class: 'muted' }, label), extra || null,
-      linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: async () => { if (!confirm('להסיר את הקשר? האנשים עצמם נשארים בעץ.')) return; await call('/api/vault/links/' + linkObj.id, { method: 'DELETE' }); await reload(); } }, '✕') : null);
+      linkObj ? pendTag(pendingOf('link', linkObj.id)) : null,
+      linkObj && pendingOf('link', linkObj.id) ? el('button', { type: 'button', class: 'btn small ghost', onclick: () => cancelAsk(pendingOf('link', linkObj.id), reload) }, 'ביטול הבקשה') : null,
+      linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: () => unlink(linkObj) }, '✕') : null);
+    // a relationship goes at once, with "בטל" (the same relationship added again); one of another user's waits for them
+    const unlink = async (l) => {
+      let r;
+      try { r = await call('/api/vault/links/' + l.id, { method: 'DELETE' }); } catch (e) { return say(e); }
+      if (r.proposed) proposedSay(r);
+      await reload();
+      if (r.link) undoBar('הקשר הוסר. האנשים עצמם נשארים בעץ.', async () => { await call('/api/vault/links', { body: r.link }); await reload(); });
+    };
     const sel = (map, value, onchange) => { const s = el('select', { class: 'fv-mini' }, Object.entries(map).map(([v, t]) => el('option', { value: v, selected: v === value }, t))); s.addEventListener('change', () => onchange(s.value)); return s; };
-    const save = async (l, patch) => { await call('/api/vault/links/' + l.id, { method: 'PUT', body: patch }); await reload(); };
-    const reload = async () => { const t = await call('/api/vault/tree'); S.people = t.people; S.links = t.links; touched(); refresh(); };
+    const save = async (l, patch) => { try { const r = await call('/api/vault/links/' + l.id, { method: 'PUT', body: patch }); if (r.proposed) proposedSay(r); } catch (e) { say(e); } await reload(); };
+    const reload = async () => { await refreshAll(); touched(); refresh(); };
     const items = [];
     for (const l of parentLinks(p.id)) items.push(line(g(l.a, 'אבא', 'אמא', 'הורה'), l.a, l, sel(PARENT_KIND, l.kind, (v) => save(l, { kind: v }))));
     for (const l of partnerLinks(p.id)) {
@@ -886,9 +1006,14 @@
       tab = t;
       const items = list.items.filter((x) => x.kind === t);
       body.replaceChildren(...[
-        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
+        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name, pendingOf('person', p.id) ? ' ' : null, pendTag(pendingOf('person', p.id))), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
             el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת באוהל – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת באוהל – ראש משק הבית מנהל את הפרטים')),
-          el('span', { class: 'spacer' }), el('button', { class: 'btn small ghost', onclick: () => personForm(p) }, 'עריכה')),
+          el('span', { class: 'spacer' }),
+          el('div', { class: 'fv-pacts' },
+            el('button', { type: 'button', class: 'btn fv-pact', 'data-act': 'edit', onclick: () => personForm(p) }, 'עריכה'),
+            el('button', { type: 'button', class: 'btn fv-pact danger', 'data-act': 'delete', onclick: () => deletePerson(p),
+              title: p.user && S.mine !== p.id ? 'הכרטיס של משתמש/ת באוהל: הבקשה תחכה לאישור שלו/ה' : 'אפשר לבטל במשך 10 שניות' }, 'מחיקה'))),
+        pendBox(pendingOf('person', p.id), async () => { await refreshAll(); draw(tab); }),
         relationsBox(p, () => draw(tab)),
         treesBox(p),
         privacyBox(p),
@@ -958,13 +1083,20 @@
       return fig;
     }
     async function show(it, known) {
+      // a document: a phone blocks a window opened after the file's fetch (no longer the tap's), silently, and the
+      // home-screen app cannot hand a blob to the browser; so on a phone it is saved, which the phone opens in its own
+      // viewer, and on a computer the window opens now, in the tap, and gets the file when it is here (else saved)
+      const doc = it.mime === 'application/pdf' || it.mime === 'text/plain';
+      const phone = matchMedia('(pointer: coarse)').matches || matchMedia('(display-mode: standalone)').matches;
+      let w = null;
+      if (doc && !phone) { try { w = window.open('', '_blank'); if (w) w.opener = null; } catch (_) { w = null; } }
       try {
         const u = known || await blobUrl(it.id);
         panelBlobs.add(u);
         if (it.mime?.startsWith('image/')) H.modal(el('img', { class: 'fv-full', src: u, alt: it.title || '' }));
-        else if (it.mime === 'application/pdf' || it.mime === 'text/plain') window.open(u, '_blank', 'noopener');
+        else if (doc && w && !w.closed) w.location.href = u;
         else save(it, u);
-      } catch (e) { if (e.message !== 'locked') toast('לא הצלחתי לפתוח'); }
+      } catch (e) { try { w?.close(); } catch (_) { /* gone */ } if (e.message !== 'locked') toast('לא הצלחתי לפתוח'); }
     }
     async function save(it, known) {
       try { const u = known || await blobUrl(it.id); panelBlobs.add(u); const a = el('a', { href: u, download: it.title || 'מסמך' }); document.body.append(a); a.click(); a.remove(); }
@@ -986,7 +1118,8 @@
     }
     draw(tab);
     H.sheet.open(document.querySelector(`.fv-card[data-id="${CSS.escape(id)}"]`), body, { size: 'large', className: 'fv-sheet',
-      onLeave: () => { for (const u of panelBlobs) { URL.revokeObjectURL(u); blobs.delete(u); } } });
+      // (a little later: a document's window or download may still be reading its file)
+      onLeave: () => { const gone = [...panelBlobs]; panelBlobs.clear(); setTimeout(() => { for (const u of gone) { URL.revokeObjectURL(u); blobs.delete(u); } }, 10000); } });
   }
   async function refreshTree() {
     const board = root.querySelector('.fv-tree');

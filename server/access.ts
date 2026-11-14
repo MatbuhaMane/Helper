@@ -88,3 +88,18 @@ export async function list(ctx: Ctx): Promise<Response> {
     .bind(Date.now() - 30 * DAY).all();
   return json({ requests: results });
 }
+
+/** POST /api/admin/access-requests/decide {email, status: invited|declined} — the owner's answer to a request (the back door's
+    הזמנות: "הזמן" first makes the invitation for that email, then marks it invited; "דחה" marks it declined). Nothing is
+    sent to the person here: an invitation's link is sent by the owner. */
+export async function decide(ctx: Ctx): Promise<Response> {
+  requireOwner(ctx);
+  await requireAdmin(ctx, 'own');
+  const b = await body<{ email?: unknown; status?: unknown }>(ctx.req);
+  const email = String(b.email || '').trim().toLowerCase();
+  const status = b.status === 'invited' || b.status === 'declined' ? b.status : null;
+  if (!email || !status) throw new HttpError(400, 'bad_value');
+  const r = await ctx.env.DB.prepare("UPDATE access_requests SET status = ? WHERE email = ? AND status IN ('asked', 'denied', 'declined', 'invited')").bind(status, email).run();
+  if (!r.meta.changes) throw new HttpError(404, 'not_found');
+  return json({ ok: true, status });
+}

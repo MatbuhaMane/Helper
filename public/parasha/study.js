@@ -67,6 +67,12 @@
     if (steps.panel) { const s = steps.panel; steps.panel = 0; await H.back.done(s); }
     document.querySelector('.rs')?.remove();
     const S = { ref, verses: [], sel: -1, word: null, tab: 'links', talk: [] };
+    // the chapter bar follows the reading: the topmost verse in view (declared before the text loads)
+    const inView = new Set();
+    const chapterWatch = new IntersectionObserver((es) => {
+      for (const e of es) { const i = +e.target.dataset.i; if (e.isIntersecting) inView.add(i); else inView.delete(i); }
+      if (inView.size) showChapter(S.verses[Math.min(...inView)]?.ch);
+    }, { rootMargin: '-15% 0px -55% 0px' });
     const url = new URL(location.href); url.searchParams.set('study', ref);
     if (!steps.room && H.back) {
       const base = new URL(location.href); base.searchParams.delete('study');
@@ -86,7 +92,7 @@
       el('div', { class: 'rs-tools-head' }, tabsBar,
         el('button', { class: 'rs-min', 'aria-label': 'מזעור הכלים', title: 'מזעור', onclick: minimize }, el('span', { 'aria-hidden': 'true' }, '–'))),
       pane);
-    const shut = () => { root.remove(); document.body.classList.remove('modal-open'); document.removeEventListener('selectionchange', onMark); };
+    const shut = () => { chapterWatch.disconnect(); root.remove(); document.body.classList.remove('modal-open'); document.removeEventListener('selectionchange', onMark); };
     Object.assign(now, { shut, minimize });
     const close = async () => {
       shut();
@@ -154,7 +160,7 @@
       // a verse to mark (from the search): mark it and bring it into view, the tools still closed
       const at = opts.select ? S.verses.findIndex((v) => v.ref === opts.select) : -1;
       if (at >= 0) { S.sel = at; mark(true); drawFab(); }
-    } catch (_) {
+    } catch (e) { console.warn('study: text', e);
       textBox.replaceChildren(el('p', {}, 'לא הצלחתי לטעון את הפסוקים מספריא. נסו שוב בעוד רגע.'));
     }
 
@@ -173,13 +179,23 @@
         ? el('select', { class: 'rs-chsel', 'aria-label': 'בחירת פרק', onchange: (e) => go(+e.target.value) },
             Array.from({ length: n }, (_, k) => el('option', { value: k + 1, selected: k + 1 === first }, 'פרק ' + heNum(k + 1))))
         : el('span', { class: 'rs-chlist' }, Array.from({ length: n }, (_, k) => k + 1).map((c) =>
-            el('button', { class: 'rs-chn' + (open.has(c) ? ' on' : ''), 'aria-current': open.has(c) ? 'true' : null, onclick: () => go(c) }, heNum(c))));
+            el('button', { class: 'rs-chn' + (open.has(c) ? ' on' : ''), 'data-ch': c, onclick: () => go(c) }, heNum(c))));
       const page = root.querySelector('.rs-page');
       page.prepend(el('nav', { class: 'rs-chs', 'aria-label': 'פרקי ' + b[2] },
         el('b', {}, b[2]), arrow(first - 1, '›', 'הפרק הקודם'), picker, arrow(last + 1, '‹', 'הפרק הבא')));
       page.append(el('nav', { class: 'rs-next', 'aria-label': 'פרק קודם ופרק הבא' },
         first > 1 ? el('button', { class: 'rs-next-b', onclick: () => go(first - 1) }, el('small', {}, '› הפרק הקודם'), el('b', {}, `${b[2]} ${heNum(first - 1)}`)) : el('span'),
         last < n ? el('button', { class: 'rs-next-b end', onclick: () => go(last + 1) }, el('small', {}, 'הפרק הבא ‹'), el('b', {}, `${b[2]} ${heNum(last + 1)}`)) : el('span')));
+      showChapter(S.now || first);
+    }
+    /* The chapter on the screen (the users' feedback, 2026-11-13): while reading through a parasha of several chapters,
+       the chapters bar follows the text: the chapter of the first verse in the upper part of the screen is .now (and
+       aria-current), and the list's picker shows it. The look is design's (.rs-chn.now). */
+    function showChapter(ch) {
+      if (!ch) return;
+      S.now = ch;
+      root.querySelectorAll('.rs-chn').forEach((b) => { const on = +b.dataset.ch === ch; b.classList.toggle('now', on); if (on) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current'); });
+      const sel = root.querySelector('.rs-chsel'); if (sel && +sel.value !== ch) sel.value = String(ch);
     }
 
     function drawText() {
@@ -195,14 +211,16 @@
           P.en && v.en ? el('span', { class: 'rs-en', lang: 'en', dir: 'ltr' }, v.en) : null));
       });
       textBox.replaceChildren(...out);
+      chapterWatch.disconnect(); inView.clear();
+      textBox.querySelectorAll('.rs-v').forEach((p) => chapterWatch.observe(p));
+      paintVerseMark();
     }
     textBox.addEventListener('click', (e) => {
       const n = e.target.closest('.rs-n');
       if (n) { tapNumber(+n.dataset.i); return; }
       const w = e.target.closest('.w');
-      if (w) { pickWord(+w.dataset.i, +w.dataset.wi, w.textContent); return; }
-      const v = e.target.closest('[data-i]');
-      if (v) pickVerse(+v.dataset.i);
+      if (w) pickWord(+w.dataset.i, +w.dataset.wi, w.textContent);
+      // (a tap elsewhere on the text marks nothing and opens nothing: reading is not interrupted)
     });
     textBox.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('w')) { e.preventDefault(); e.target.click(); } });
 
@@ -212,33 +230,53 @@
     const markBar = el('div', { class: 'rs-markbar', role: 'toolbar', 'aria-label': 'הטקסט המסומן', hidden: true });
     root.append(markBar);
     let marked = null;      // { text, from, to, verse } – the verses' indexes; verse: marked whole by its number
-    let verseMark = null;   // { from, to }: the verses the numbers marked, until the reader marks something else
-    let snap;               // what was marked when a finger touched a verse number (the touch itself may clear it)
     let barTouch = 0;
     markBar.addEventListener('pointerdown', (e) => { barTouch = Date.now(); if (e.pointerType === 'mouse') e.preventDefault(); });
-    const hideMark = () => { marked = null; verseMark = null; markBar.hidden = true; };
+    const hideMark = () => { marked = null; S.vm = null; paintVerseMark(); markBar.hidden = true; };
     const versesText = (a, b) => S.verses.slice(a, b + 1).map((v) => (P.teamim ? v.he : v.he.replace(TEAMIM, ''))).join('\n');
-    /* a verse number (the owner, 2026-11-14): a tap marks the whole verse; another tap on it, or on the next or the
-       previous number, stretches the marking a verse further. A tap on a word still opens the dictionary. */
-    textBox.addEventListener('pointerdown', (e) => { if (e.target.closest('.rs-n')) snap = marked; }, true);
-    function tapNumber(i) {
-      const prev = snap !== undefined ? snap : marked;
-      snap = undefined;
-      let a = i, b = i;
-      if (prev?.verse) {
-        if (i >= prev.from && i <= prev.to) { a = prev.from; b = Math.min(prev.to + 1, S.verses.length - 1); }
-        else if (i === prev.to + 1) { a = prev.from; b = i; }
-        else if (i === prev.from - 1) { a = i; b = prev.to; }
+    /* A verse number (the users' feedback, 2026-11-13; it was the browser's own selection, a verse further on each tap):
+       - the first tap marks its verse, softly;
+       - a second tap on the same number stretches the marking to the end of the chapter;
+       - a third marks the whole chapter, from its first verse to its last;
+       - a fourth takes the marking away.
+       The marking is a class on the verses (.rs-v.rs-mark, the first .rs-mark-first, the last .rs-mark-last; design's look),
+       not the browser's selection. A tap on the words themselves marks nothing (a word still opens the dictionary). */
+    function chapterOf(i) {
+      const ch = S.verses[i]?.ch; let a = i, b = i;
+      while (a > 0 && S.verses[a - 1].ch === ch) a--;
+      while (b < S.verses.length - 1 && S.verses[b + 1].ch === ch) b++;
+      return [a, b];
+    }
+    function paintVerseMark() {
+      textBox.querySelectorAll('.rs-v.rs-mark').forEach((n) => n.classList.remove('mk', 'rs-mark', 'rs-mark-first', 'rs-mark-last'));
+      const m = S.vm;
+      // design's .rs-v.mk is the look (study.css); data-mk on the text box says which step: a verse, to the chapter's end, the chapter
+      const step = m && ['', 'verse', 'rest', 'chapter'][m.step];
+      if (step) textBox.dataset.mk = step; else delete textBox.dataset.mk;
+      if (!m) return;
+      for (let k = m.from; k <= m.to; k++) {
+        const p = textBox.querySelector(`.rs-v[data-i="${k}"]`); if (!p) continue;
+        p.classList.add('mk', 'rs-mark'); if (k === m.from) p.classList.add('rs-mark-first'); if (k === m.to) p.classList.add('rs-mark-last');
       }
-      S.sel = i; S.word = null; mark();
-      if (root.classList.contains('open')) openTab(S.tab === 'word' ? 'links' : S.tab);   // the open tools follow the verse
-      markVerses(a, b);
+    }
+    function tapNumber(i) {
+      const [a, b] = chapterOf(i), m = S.vm, again = m && m.at === i;
+      if (again && m.step === 1) S.vm = { at: i, step: 2, from: i, to: b };
+      else if (again && m.step === 2) S.vm = { at: i, step: 3, from: a, to: b };
+      else if (again && m.step === 3) { hideMark(); return; }
+      else S.vm = { at: i, step: 1, from: i, to: i };
+      getSelection().removeAllRanges();
+      S.sel = i; S.word = null;
+      if (root.classList.contains('open')) { mark(); openTab(S.tab === 'word' ? 'links' : S.tab); }   // the open tools follow the verse
+      else textBox.querySelectorAll('.rs-v.on, .w.on').forEach((n) => n.classList.remove('on'));
+      drawFab();
+      markVerses(S.vm.from, S.vm.to);
     }
     function markVerses(a, b) {
-      const ha = textBox.querySelector(`.rs-v[data-i="${a}"] .rs-he`), hb = textBox.querySelector(`.rs-v[data-i="${b}"] .rs-he`);
-      if (!ha || !hb) return;
-      verseMark = { from: a, to: b };
-      getSelection().setBaseAndExtent(ha, 0, hb, hb.childNodes.length);
+      if (!S.verses[a] || !S.verses[b]) return;
+      S.vm = S.vm && S.vm.from === a && S.vm.to === b ? S.vm : { at: -1, step: 0, from: a, to: b };
+      paintVerseMark();
+      drawBar({ text: versesText(a, b), from: a, to: b, verse: true });
     }
     const verseAt = (node) => (node?.nodeType === 1 ? node : node?.parentElement)?.closest('.rs-v');
     const rangeName = (a, b) => {
@@ -252,17 +290,19 @@
       const inside = sel.rangeCount && !sel.isCollapsed && textBox.contains(sel.anchorNode) && textBox.contains(sel.focusNode);
       let text = inside ? sel.toString().replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim() : '';
       if (!text) {
-        if (!marked) return;
+        if (!marked || marked.verse) return;     // (verses marked by their numbers stay until another marking or ✕)
         // a tap on the bar may clear the selection before its click arrives: keep the marking a moment longer
         if (Date.now() - barTouch < 700) { setTimeout(onMark, 750); return; }
         hideMark(); return;
       }
       const ia = +(verseAt(sel.anchorNode)?.dataset.i ?? -1), ib = +(verseAt(sel.focusNode)?.dataset.i ?? -1);
       const from = Math.max(0, Math.min(ia, ib)), to = Math.max(ia, ib, from);
-      const verse = !!verseMark && verseMark.from === from && verseMark.to === to;
-      if (verse) text = versesText(from, to); else verseMark = null;   // whole verses: their text, without the numbers
-      marked = { text, from, to, verse };
-      const more = to < S.verses.length - 1;
+      if (S.vm) { S.vm = null; paintVerseMark(); }              // the reader's own selection replaces the verses' marking
+      drawBar({ text, from, to, verse: false });
+    }
+    function drawBar(m) {
+      marked = m;
+      const { from, to } = m, more = to < S.verses.length - 1;
       markBar.replaceChildren(
         el('span', { class: 'rs-mark-ref' }, rangeName(from, to)),
         more ? el('button', { type: 'button', class: 'btn small ghost rs-mark-more', onclick: () => markVerses(from, to + 1) }, '＋ הפסוק הבא') : '',
@@ -305,7 +345,6 @@
       n.scrollIntoView({ block: 'center', behavior: 'smooth' });
       n.classList.remove('flash'); void n.offsetWidth; n.classList.add('flash');
     }
-    function pickVerse(i) { S.sel = i; S.word = null; mark(); openTab(S.tab === 'word' ? 'links' : S.tab); }
     // the word as the dictionary wants it: letters and vowels only (no cantillation, maqaf or sof pasuq)
     function pickWord(i, wi, text) { S.sel = i; S.word = { i, wi, text: text.replace(TEAMIM, '').replace(/[^ְ-ׇּׁׂא-ת]/g, '') }; mark(); openTab('word'); }
 

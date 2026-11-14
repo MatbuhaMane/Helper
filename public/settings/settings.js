@@ -13,9 +13,10 @@
   const root = document.querySelector('main');
   const ERR = { bad_key: 'המפתח לא נראה נכון. בדקו שהעתקתם את כולו.', key_refused: 'הספק לא קיבל את המפתח. בדקו שהוא פעיל.' };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
+  // Gemini first: free, with the three-step guide (ai-invite.js); Claude is the advanced option
   const PROVIDERS = [
-    { id: 'claude', name: 'Claude (Anthropic)', where: 'console.anthropic.com → API Keys', placeholder: 'sk-ant-…' },
-    { id: 'gemini', name: 'Gemini (Google)', where: 'aistudio.google.com → Get API key', placeholder: 'AIza…' },
+    { id: 'gemini', name: 'עוזר חינמי מ־Google (Gemini)', where: 'aistudio.google.com → Get API key', placeholder: 'AIza…', guide: true },
+    { id: 'claude', name: 'Claude (Anthropic) · למתקדמים', where: 'console.anthropic.com → API Keys', placeholder: 'sk-ant-…' },
   ];
   const D = H.SETTINGS_DEFAULTS;
   const access = H.prefs('access', D.access), look = H.prefs('look', D.look), me = H.prefs('me', D.me);
@@ -148,14 +149,22 @@
       const key = el('input', { type: 'password', autocomplete: 'off', spellcheck: 'false', dir: 'ltr', placeholder: p.placeholder, 'aria-label': 'המפתח של ' + p.name });
       return el('div', { class: 'card st-service' },
         el('h3', {}, p.name),
-        has ? [el('p', {}, `מחובר (מפתח שמסתיים ב־${has.hint.replace('…', '')})`),
+        has ? [p.guide ? el('p', {}, el('span', { class: 'gk-ok small' }, 'Gemini מחובר ✓')) : el('p', {}, `מחובר (מפתח שמסתיים ב־${has.hint.replace('…', '')})`),
           el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { if (!confirm('לנתק את ' + p.name + '?')) return; try { await api('/api/me/ai/keys/' + p.id, { method: 'DELETE' }); toast('נותק'); drawServices(); } catch (e) { say(e); } } }, 'ניתוק')]
-          : el('form', { class: 'st-key', onsubmit: async (e) => {
-            e.preventDefault();
-            const b = e.target.querySelector('button'); b.disabled = true;
-            try { await api('/api/me/ai/keys', { method: 'PUT', body: { provider: p.id, key: key.value } }); toast('מחובר'); drawServices(); } catch (err) { say(err); b.disabled = false; }
-          } }, el('label', {}, 'מפתח API', key), el('button', { class: 'btn small primary' }, 'חיבור'),
-            el('p', { class: 'muted small' }, 'את המפתח מקבלים ב־', el('bdi', { dir: 'ltr' }, p.where), '. הוא נשמר מוצפן, ומשמש רק לבקשות שלך.')));
+          : p.guide ? [el('p', { class: 'muted small' }, 'בחינם, דרך החשבון שלך ב־Google. מחברים פעם אחת, בדקה.'),
+            el('button', { class: 'btn small primary', type: 'button', onclick: async () => {
+              try { await H.loadOnce('/assets/ai-invite.js'); H.geminiGuide(() => { toast('Gemini מחובר ✓'); drawServices(); }); } catch (e) { say(e); }
+            } }, 'חבר עוזר חינמי'),
+            el('details', { class: 'st-key-manual' }, el('summary', {}, 'יש לי כבר קוד מ־Google'), form())]
+          : form());
+      function form() {
+        return el('form', { class: 'st-key', onsubmit: async (e) => {
+          e.preventDefault();
+          const b = e.target.querySelector('button'); b.disabled = true;
+          try { await api('/api/me/ai/keys', { method: 'PUT', body: { provider: p.id, key: key.value } }); toast('מחובר'); drawServices(); } catch (err) { say(err); b.disabled = false; }
+        } }, el('label', {}, p.guide ? 'הקוד מ־Google' : 'מפתח API', key), el('button', { class: 'btn small primary' }, 'חיבור'),
+          el('p', { class: 'muted small' }, p.guide ? 'הוא נשמר מוצפן, ומשמש רק לבקשות שלך.' : ['את המפתח מקבלים ב־', el('bdi', { dir: 'ltr' }, p.where), '. הוא נשמר מוצפן, ומשמש רק לבקשות שלך.']));
+      }
     };
     /** a service connected elsewhere in the tent: its state here, and a link to where it is managed */
     // (connected: a plain line, which settings.css marks green with ✓; not connected: a muted one)
@@ -339,6 +348,9 @@
       choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); apply(); drawOwn(); }),
       own,
       choices('הגופן', FONTS.map(([id, name]) => [id, name, { font: id || null }]), look.font || '', (v) => { look.font = v; keep('look'); apply(); }),
+      // the side pages beside the tent on the home page (main 0102aae reads look.devTools; on unless turned off)
+      toggle('הצג כלים בפיתוח', look.devTools !== false, (v) => { look.devTools = v; keep('look'); apply(); },
+        'המסכים של המוסך וגבעה ביער ליד האוהל, וקבוצת "בקרוב".'),
       el('p', { class: 'muted small' }, 'התאמת הצבעים והגופן חינמית לכולם. גופן קריא במיוחד נמצא בנגישות.'));
   }
 

@@ -1,9 +1,44 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (לשונית הדלת האחורית, שימוש מקופל, הודעה לחבר אחד).
+Last update: 2026-11-13 (the structure tree, ready to merge).
 
 ## Done
+
+- 2026-11-14: family tree documents open on a phone (saved, so the phone opens them in its own viewer; on a computer the window opens in the tap); the welcome wizard change reverted (the owner: not a bug, רַאבַּ"ע stays in the settings).
+- **עץ מבנה (2026-11-13), on `ai-features`, ready to merge:** e5547a8 server (site_layout versions, eggs, egg_finds, routes,
+  pure layout-rules + test-layout 74), 6acb646 the back door's tab (tree drag by pointer/touch and keyboard, edit panel,
+  the fire, versions, preview) + eggs.js (eggs on pages, the preview bar), and 6144659 the master's commit (apps.js merge layer,
+  common.js H.PARTS + eggs.js load, test-layout in npm test; patch in the shared notes). Checked: API end to end, the tab
+  at 375 and desktop, light and dark, the preview on /food/, an egg found and gone. Needs design's styles (decisions.md).
+- **The free helper (2026-11-13), on `ai-features`, ready to merge:** 80daff4 the three-step Gemini guide (402 invitation +
+  settings, paste on coming back, one field if the clipboard is blocked); 2f31551 the welcome's gift line + a test that
+  invite joiners start limited (test-credits 54). Checked at 375 and desktop with a stubbed "connected" (a real key
+  was not tried). c3518e1 moves it to design's `.gk` (db03b95); needs a style for `form.gk-paste`.
+- **Third round (2026-11-13): the family tree (Ivri could not delete), on `ai-features`, ready to merge:**
+  faa5744 rules + tests, 5f9f12d `vault/access.ts` (the master's, patch in the shared notes), b59e54b server/table/routes,
+  c0151e5 the pages. A non-user goes at once with "בטל" (10 s); another user's card or relationship waits for their
+  "אשר"/"דחה" (a message is sent; the proposer sees "ממתין לאישור"); the owner restores from the back door
+  ("שחזור מהעץ"). Delete and edit are now also on the tree's own card. Tests: kin 95, access 204, e2e 30. Checked at
+  375 and desktop. de3f97e moves it to design's `fv-*` markup (f35a140), with whom a request waits for.
+- **Second round (2026-11-13), on `ai-features`, ready to merge:**
+  - **The record** (6f7760b, `music.js`): on the home page it is on the stump from the start, with no player connected,
+    also for someone whose saved place is the menu or whose prefs arrive late; a tap with nothing loaded opens the player.
+  - **Invitations + access requests** (09c214b panel in design's `.bd-inv`; 778aec5 "נפתחה" and 285e61a `access.decide`,
+    both the master's files, for review): pending requests on top with "הזמן" / "דחה"; filters with counts. Tests: join 48.
+  - **Design's classes**: study's marked verses carry `.mk` (+ `data-mk` verse/rest/chapter); fun's remembered tab
+    scrolls into the row. The look needs design's 2802a9f merged too.
+- **The first user feedback, 4 tasks (the CEO, 2026-11-13), on `ai-features`, ready to merge:**
+  - **בידור** (68468e7): a "מצחיק ואמיתי" filter (real clips from Reddit/Lemmy, AI and staged words filtered out), infinite
+    scroll; a load or refresh brings only what this device has not seen (3 days). Tests: test-fun 17.
+  - **הקפדה** (a4da0a6): weight and height can be changed from the weight card ("עריכה"); a new weight is logged for today.
+  - **פרשת השבוע** (0accd99): the chapter bar follows the reading; a tap on a verse's number marks it, then to the
+    chapter's end, then the whole chapter, then clears; a tap on the text marks nothing (a word still opens the dictionary).
+  - **הזמנות מבחוץ** (d35cf2b server, for the master's review – sign-in; 8642513 the panel and /join/): the owner makes a
+    personal link, used once, into a household of its own; status, cancel, search in invitations and members. Tests:
+    test-join 44 (27 new). The whole flow was checked locally with the dev sign-in (wrong address 403, one use, a replayed
+    cookie 403, a guest cannot reach the back door).
+  - **"האוהל התעדכן"** (9377b3a): public/assets/whatsnew.js; needs the master's loader line in common.js.
 - **"איפה הבית?" from Google (2026-11-13):** while typing in the welcome's city step, up to 5 towns in Israel (Places
   Autocomplete, key on the server); a pick saves me.city and me.place {id, name, lat, lng, at}; the weather uses the point
   (30 days, then again by the ID); free text when not found or with no key. Tests: test-places 37. Checked at 375 with a

@@ -254,3 +254,41 @@ export function kin(links: KinLink[], sexOf: (id: string) => string) {
   }
   return { parentsOf, childrenOf, partnersOf, siblingsOf, pathBetween, pathWords, relationName };
 }
+
+/* ---------------- changes to the tree: who must say yes (the owner, 2026-11-13) ----------------
+   - a card of someone who is not a user of the helper: whoever may edit the tree changes or deletes it at once;
+   - a card of another user, or a relationship that touches one: a proposal that waits for that user (each of them);
+     nothing changes until they approve, and only they can approve it;
+   - one's own card: at once.
+   A delete is soft: the one who deleted it can undo it for a while, the owner can restore it from the back door. */
+export interface Party { member: string | null; user: boolean }
+export type ChangeKind = 'edit' | 'delete' | 'unlink' | 'relink';
+export const CHANGE_KINDS: ChangeKind[] = ['edit', 'delete', 'unlink', 'relink'];
+/** the users (other than me) who must approve a change that touches these cards; none = it is done at once */
+export function approversFor(me: string, parties: Party[]): string[] {
+  const out = new Set<string>();
+  for (const p of parties) if (p.user && p.member && p.member !== me) out.add(p.member);
+  return [...out];
+}
+/** only the user it waits for decides, and only while it waits */
+export const mayDecide = (c: { for_email: string; status: string }, email: string | null | undefined) =>
+  c.status === 'pending' && !!email && c.for_email === email;
+/** a change that needs several users is applied once every one of them said yes; one no ends it */
+export function groupOutcome(rows: { status: string }[]): 'apply' | 'wait' | 'declined' {
+  if (!rows.length || rows.some((r) => r.status === 'declined' || r.status === 'cancelled')) return 'declined';
+  return rows.every((r) => r.status === 'approved') ? 'apply' : 'wait';
+}
+/** the one who deleted a card may bring it back for ten minutes (the page offers it for ten seconds); the owner always */
+export const RESTORE_MS = 10 * 60e3;
+export const mayRestore = (row: { deleted_at: number | null; deleted_by: string | null }, email: string, owner: boolean, now = Date.now()) =>
+  !!row.deleted_at && (owner || (!!row.deleted_by && row.deleted_by === email && now - row.deleted_at < RESTORE_MS));
+/** what an edit would change, for the one asked to approve it (the keys only, never the values of what is hidden) */
+export function changedKeys(before: { name: string; details: Record<string, unknown> }, after: { name: string; details: Record<string, unknown> }): string[] {
+  const out: string[] = [];
+  if (before.name !== after.name) out.push('name');
+  for (const k of new Set([...Object.keys(before.details || {}), ...Object.keys(after.details || {})])) {
+    const a = before.details?.[k] ?? '', b = after.details?.[k] ?? '';
+    if (JSON.stringify(a) !== JSON.stringify(b)) out.push(k);
+  }
+  return out;
+}

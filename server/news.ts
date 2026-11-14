@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, HttpError, body, json, requireUser, sha1Hex, uid } from './core';
-import { lead } from './news-plain';
+import { feedMedia, lead, smallImage } from './news-plain';
 import { fetchText, readable, sanitize } from './web';
 
 /**
@@ -58,6 +58,7 @@ const HISTORY_DAYS = 120;
 
 export interface NewsItem {
   id: string; feedId: string; feed: string; title: string; link: string; date: number; summary: string; image: string | null;
+  image_full?: string | null;   // the feed's largest picture (the article's hero); image is the smallest fit for the list
   body?: string; lang?: string; kind?: string; quality?: number; country?: string;
   read?: boolean; starred?: boolean; hidden?: boolean;
   rating?: number | null;                                  // the person's own rating for this article
@@ -285,8 +286,8 @@ async function remember(ctx: Ctx, f: Feed, items: NewsItem[]) {
   const now = Date.now();
   try {
     await db.batch(items.slice(0, 60).map((it) => db.prepare(
-      'INSERT OR IGNORE INTO news_items (id, feed_url, feed_title, title, link, date, summary, image, body, lang, seen_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    ).bind(it.id, f.url, f.title, it.title.slice(0, 400), it.link, it.date || now, (it.summary || '').slice(0, 600), it.image, it.body ? it.body.slice(0, 5000) : null, it.lang || null, now)));
+      'INSERT OR IGNORE INTO news_items (id, feed_url, feed_title, title, link, date, summary, image, body, lang, seen_at, image_full) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    ).bind(it.id, f.url, f.title, it.title.slice(0, 400), it.link, it.date || now, (it.summary || '').slice(0, 600), it.image, it.body ? it.body.slice(0, 5000) : null, it.lang || null, now, it.image_full || null)));
     if (Math.random() < 0.02) await db.prepare('DELETE FROM news_items WHERE date < ?').bind(now - HISTORY_DAYS * 86400e3).run();
   } catch (err) {
     console.error('news history', err instanceof Error ? err.message : err);
@@ -358,7 +359,7 @@ export async function olderItems(ctx: Ctx) {
 }
 
 function historyItem(r: any, f: Feed): NewsItem {
-  return { id: r.id, feedId: f.id, feed: f.title, title: r.title, link: r.link, date: r.date, summary: r.summary || '', image: r.image, body: r.body || undefined,
+  return { id: r.id, feedId: f.id, feed: f.title, title: r.title, link: r.link, date: r.date, summary: r.summary || '', image: r.image, image_full: r.image_full || undefined, body: r.body || undefined,
     lang: r.lang || f.lang || undefined, kind: f.kind, quality: f.quality, country: f.country || undefined };
 }
 
@@ -488,8 +489,9 @@ export function parseFeed(xml: string): Parsed {
     const desc = tag(b, 'content:encoded') || tag(b, 'description') || tag(b, 'summary') || tag(b, 'content') || '';
     const dateStr = text(tag(b, 'pubDate') || tag(b, 'published') || tag(b, 'updated') || tag(b, 'dc:date'));
     const date = Date.parse(dateStr) || 0;
+    const media = feedMedia(b);
     const image =
-      attr(b, /<media:(?:content|thumbnail)[^>]*>/i, 'url') ||
+      media.small ||
       (/<enclosure[^>]*type=["']image/i.test(b) ? attr(b, /<enclosure[^>]*>/i, 'url') : null) ||
       /<img[^>]+src=["']([^"']+)/i.exec(unescapeXml(desc))?.[1] || null;
     return {
@@ -497,10 +499,17 @@ export function parseFeed(xml: string): Parsed {
       link: link.trim(),
       date,
       summary: text(desc).slice(0, 400),
-      image: image ? unescapeXml(image) : null,
+      ...pictures(image ? unescapeXml(image) : null, media.full ? unescapeXml(media.full) : null),
     };
   }).filter((i) => i.link);
   return { title: channelTitle, items };
+}
+
+/** the list's picture (made smaller where the address says its size) and the hero's, when it is another one */
+function pictures(image: string | null, full: string | null): { image: string | null; image_full?: string } {
+  const small = image ? smallImage(image) : null;
+  const big = full || image;
+  return big && big !== small ? { image: small, image_full: big } : { image: small };
 }
 
 function tag(s: string, name: string): string {

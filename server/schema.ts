@@ -38,6 +38,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['notes', 'drive_at', 'INTEGER'],             // when it was last saved there
   ['notes', 'inbox', 'INTEGER'],                // 1: captured from anywhere (/capture/), waiting to be sorted into a research
   ['notes', 'rich', 'TEXT'],                    // the note with its formatting (allowlist HTML, notes-rich.ts); null: plain text
+  ['news_items', 'image_full', 'TEXT'],         // the feed's largest picture, for the article's hero (image is the list's small one)
   ['grocery_items', 'list', 'TEXT'],            // a named list (grocery_lists); null: the household's main list
   ['researches', 'goal_id', 'TEXT'],           // the goal it became (the goals engine: its steps come to "היום")
   ['researches', 'done_at', 'INTEGER'],         // finished ("גשש")
@@ -57,6 +58,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['goals', 'repeat', 'TEXT'],                  // a recurring goal: JSON {every: day|week|month|days, n?} (goals-logic.ts)
   ['fridges', 'owner', 'TEXT'],                 // one fridge per person: its owner's email (fridge.ts myFridge); empty: an old shared one, hidden
   ['reports', 'kind', "TEXT NOT NULL DEFAULT 'bug'"],   // bug | idea (הצעה לשיפור), server/reports-rules.ts KINDS (ai-features)
+  ['family_people', 'deleted_by', 'TEXT'],     // who deleted the card (the "בטל" is theirs for ten minutes; vault/index.ts)
+  ['family_people', 'deleted_snap', 'TEXT'],   // JSON {links, bridges} it had, so that a restore brings them back
 ];
 
 let ready: Promise<void> | null = null;

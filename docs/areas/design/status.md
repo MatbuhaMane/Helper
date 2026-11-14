@@ -39,7 +39,7 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
 - 868cfb9, 90bd6a4, 9ced735: batch 18, the tree after test run 1. CSS plus the contract `docs/design/tree-18.md`.
 - 17bdc33, 0089d21, 5274c04: the side pages beside the tent (`sides.css`, `soon/garage-scene.svg`).
 - 892a1d6, 3fc1a5c: the toolbox's new look (`launcher.css` `tb-`, contract `docs/design/toolbox.md`).
-- The batch 19 pictures for the future items (the commit after 20abc5f).
+- The batch 19 pictures for the future items (a49ae07).
 - All of it is inert until its markup arrives, so it is safe to merge now.
 
 **Open:**

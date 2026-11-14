@@ -52,6 +52,7 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - 78fc8c2 the back door's "כלים בבדיקה" column;
   - b78b55c the polite page (H.gate);
   - 1878f63 decisions and status.
+  - 1884a83 the toolbox hides a FUTURE item with `only: 'child'` (homework) from anyone not a child (checked locally both ways); e41437a merged main (299b135, the 7 FUTURE items; apps.js conflict in שוטף: kept פרנסה and main's soon:garden, soon:home).
 
 ### Open
 

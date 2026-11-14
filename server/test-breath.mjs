@@ -27,5 +27,18 @@ eq(B.rounds(P('box'), 0), 1, 'at least one round');
 eq(B.PATTERNS.every((p) => p.steps[0][0] === 'in' && p.steps.some(([x]) => x === 'out')), true, 'every pattern starts in and has an out');
 eq(new Set(B.PATTERNS.map((p) => p.id)).size, B.PATTERNS.length, 'ids are unique');
 
-console.log(fail ? `${fail} of ${n} breath tests failed` : `breath: all ${n} tests passed`);
+// the habit a session ticks
+const S = (id, text, done = false) => ({ id, text, done });
+const G = (id, title, steps, extra = {}) => ({ id, title, status: 'active', processes: [{ id: 'p' + id, steps }], ...extra });
+eq(B.habit([]), null, 'no goals, no habit');
+eq(B.habit(null), null, 'no answer, no habit');
+eq(B.habit([G('a', 'לרוץ', [S('1', 'ריצה')])]), null, 'nothing about breathing');
+eq(B.habit([G('a', 'שגרת בוקר', [S('1', 'קפה'), S('2', '5 דקות נשימה')])])?.step, '2', 'a step that names breathing');
+eq(B.habit([G('a', 'מדיטציה כל יום', [S('1', 'לשבת בשקט', true), S('2', 'לשבת שוב')])])?.step, '2', 'a breathing goal: its first undone step');
+eq(B.habit([G('a', 'מדיטציה', [S('1', 'לשבת', true)])]), null, 'all done: nothing to tick');
+eq(B.habit([G('a', 'נשימות', [S('1', 'x')], { status: 'done' })]), null, 'a finished goal is left alone');
+eq(B.habit([G('a', 'נשימות', [S('1', 'x')]), G('b', 'נשימות יומיות', [S('2', 'y')], { repeat: { every: 'day' } })])?.goal, 'b', 'a recurring goal (a habit) first');
+eq(B.habit([G('a', 'לנשום עמוק', [S('1', 'x')])])?.title, 'לנשום עמוק', 'the title comes back for the end screen');
+
+console.log(fail ?`${fail} of ${n} breath tests failed` : `breath: all ${n} tests passed`);
 process.exit(fail ? 1 : 0);

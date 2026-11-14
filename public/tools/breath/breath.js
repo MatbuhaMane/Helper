@@ -1,7 +1,7 @@
 /* מדיטציה ונשימה (docs/vision/future-specs.md; H.FUTURE 'breath'): choose 2, 5 or 10 minutes and a way of breathing, then
    breathe with a circle that grows on the in-breath and shrinks on the out-breath, and an end screen. No server and no AI;
    the length and the way are the person's (H.prefs 'breath'). Open with vision (ש4–ש6): recorded meditations, a voice or
-   background sound (silence for now), and marking the practice in the habits.
+   background sound later. Now (the owner): a guiding voice that can be switched off, and a session ticks the habit (the goals).
    Motion: the circle moves by transform and opacity only; with prefers-reduced-motion it stays still and only the words change.
    The look (the night scene) is design's: shared classes and tokens only; the few sizes inline here wait for breath.css. */
 (async () => {
@@ -10,7 +10,8 @@
   await H.requireLogin();
   H.header('נשימה');
   const root = document.querySelector('main');
-  const P = H.prefs('breath', { mins: 5, kind: 'calm' });
+  const P = H.prefs('breath', { mins: 5, kind: 'calm', voice: true });
+  const V = window.Voice;
   const MINS = [2, 5, 10];
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let run = null; // the practice under way: { p, total, start, paused (ms when paused, or 0), off (ms paused so far), … }
@@ -39,7 +40,10 @@
         group('אורך התרגול', MINS, (m) => m === P.mins, (m) => { P.mins = m; }),
         el('h2', { style: 'margin:0 0 4px' }, 'איך נושמים?'),
         group('סוג הנשימה', B.PATTERNS, (x) => x.id === p.id, (x) => { P.kind = x.id; }),
-        el('p', { class: 'muted', style: 'margin:0 0 16px' }, p.line),
+        el('p', { class: 'muted', style: 'margin:0 0 12px' }, p.line),
+        el('label', { class: 'toggle', style: 'margin:0 0 16px' },
+          el('input', { type: 'checkbox', checked: P.voice !== false, onchange: (e) => { P.voice = e.target.checked; H.savePrefs('breath'); } }),
+          'קול מנחה ("שאיפה", "נשיפה")'),
         el('button', { type: 'button', class: 'btn primary', onclick: begin }, `להתחיל · ${minsText(P.mins)}`)),
       el('p', { class: 'muted' }, 'שבו בנוח. נושמים פנימה כשהעיגול גדל, החוצה כשהוא קטן.'));
   }
@@ -82,6 +86,7 @@
   /** a new phase: the word, and the circle grows (in), stays (hold, rest) or shrinks (out) over the phase */
   function move(a) {
     run.word.textContent = a.word;
+    if (P.voice !== false) V.say(a.word, { keep: true });   // the same few words again and again: fetched once
     if (still) return;
     const big = a.phase === 'in' || a.phase === 'hold';
     void run.ring.offsetWidth; // a fresh circle has no style yet, and would jump instead of growing
@@ -95,22 +100,43 @@
     if (run.paused) {
       run.off += Date.now() - run.paused; run.paused = 0; run.last = -1; run.pauseBtn.textContent = 'השהיה'; wake(true); tick();
     } else {
+      V.stop();
       run.paused = Date.now(); run.pauseBtn.textContent = 'להמשיך'; run.word.textContent = 'בהשהיה';
       const now = getComputedStyle(run.ring).transform; run.ring.style.transition = 'none'; run.ring.style.transform = now;
       wake(false);
     }
   }
 
-  function stop() { if (run) { clearInterval(run.tick); run = null; } wake(false); }
+  function stop() { if (run) { clearInterval(run.tick); run = null; } wake(false); V.stop(); }
+
+  /** a session ticks the habit: the matching step in the person's goals (Breath.habit), or a way to add one */
+  async function tickHabit(box) {
+    try {
+      const h = B.habit((await H.api('/api/goals')).goals);
+      if (!h) {
+        box.replaceChildren(el('a', { href: '/tools/tasks/' }, 'להוסיף נשימה כהרגל קבוע'), ' במטרות, וכל תרגול יסומן שם.');
+        return;
+      }
+      await H.api(`/api/goals/steps/${h.step}`, { method: 'PUT', body: { done: true } });
+      box.replaceChildren('✓ סומן בהרגל: ', el('b', {}, h.title), h.text && h.text !== h.title ? ` (${h.text})` : '', ' ',
+        el('button', { type: 'button', class: 'btn ghost small', onclick: async () => {
+          try { await H.api(`/api/goals/steps/${h.step}`, { method: 'PUT', body: { done: false } }); box.textContent = 'הסימון בוטל.'; } catch { H.toast('לא הצלחנו לבטל. נסו מהמטרות.'); }
+        } }, 'לבטל'));
+    } catch { box.textContent = ''; }
+  }
 
   /** the end screen */
   function done(early) {
-    const sec = run ? elapsed() : 0;
+    const sec = run ? Math.min(elapsed(), run.total) : 0;   // (a phone asleep in the middle: never more than the session)
     stop();
     const m = Math.max(1, Math.round(sec / 60));
+    // a session counts for the habit when it ran to the end, or for at least a minute
+    const habitBox = el('p', { 'aria-live': 'polite', style: 'margin:0 0 16px' });
+    if (!early || sec >= 60) tickHabit(habitBox);
     root.replaceChildren(el('section', { class: 'card', style: 'padding:24px 16px;margin:12px 0;text-align:center' },
       el('h2', { style: 'margin:0 0 8px' }, early && sec < 60 ? 'עצרתם באמצע' : `סיימתם ${minsText(m)}`),
       el('p', { class: 'muted', style: 'margin:0 0 16px' }, early ? 'גם כמה נשימות עושות טוב.' : 'קחו עוד רגע בשקט לפני שחוזרים.'),
+      habitBox,
       el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;justify-content:center' },
         el('button', { type: 'button', class: 'btn primary', onclick: begin }, 'עוד פעם'),
         el('button', { type: 'button', class: 'btn ghost', onclick: choose }, 'לבחור אחרת'))));

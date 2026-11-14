@@ -28,7 +28,20 @@
     return { phase, word: WORD[phase], left: 0, i: p.steps.length - 1, round };
   }
 
-  const api = { PATTERNS, WORD, at, rounds, length };
+  /** the habit a session ticks (the owner's answer: "סשן מסמן את ההרגל"): in the person's goals (GET /api/goals), an active
+      goal about breathing or meditation, and the step to tick in it: a step that names breathing first, else the goal's
+      first undone step. Recurring goals (the habits) come first. → { goal, step } (ids and texts) or null */
+  const ABOUT = /נשימ|לנשום|נושמ|מדיטצי|מדט|להירגע|רוגע/;
+  function habit(goals) {
+    const live = (goals || []).filter((g) => g && g.status === 'active');
+    live.sort((a, b) => (b.repeat ? 1 : 0) - (a.repeat ? 1 : 0));
+    const stepsOf = (g) => (g.processes || []).flatMap((p) => p.steps || []).filter((s) => !s.done);
+    for (const g of live) { const s = stepsOf(g).find((x) => ABOUT.test(x.text || '')); if (s) return { goal: g.id, title: g.title, step: s.id, text: s.text }; }
+    for (const g of live) { if (!ABOUT.test(g.title || '')) continue; const s = stepsOf(g)[0]; if (s) return { goal: g.id, title: g.title, step: s.id, text: s.text }; }
+    return null;
+  }
+
+  const api = { PATTERNS, WORD, at, rounds, length, habit };
   if (typeof window !== 'undefined') window.Breath = api;
   if (typeof globalThis !== 'undefined') globalThis.Breath = api;
 })();

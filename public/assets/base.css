@@ -1003,3 +1003,49 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
   .cel-burst { display: none; }
   .mood-candle::before { animation: none; }
 }
+
+/* ---------- The sky: one global layer behind every scene (docs/design/sky.md) ----------
+   Full-bleed: fixed over the whole window at any width and height, so it never ends in a box. A scene (the tent now; the
+   garage and the hill later) turns it on with .sky inside it or data-scene on <html>, and only places its own picture on it.
+   By day a soft blue at the top; at night a deep navy with stars that twinkle by opacity only. A season or a mood changes
+   only the tokens (--sky-top, --sky-mid, --sky-stars). */
+:root { --sky-top: rgba(130, 178, 222, .16); --sky-mid: rgba(130, 178, 222, 0); --sky-stars: 0; }
+:root[data-theme="dark"] { --sky-top: rgba(4, 8, 22, .55); --sky-mid: rgba(20, 30, 70, .12); --sky-stars: 1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --sky-top: rgba(4, 8, 22, .55); --sky-mid: rgba(20, 30, 70, .12); --sky-stars: 1; } }
+:root:is(:has(.sky), [data-scene]) body { background: transparent; }   /* (html keeps --bg; the layer sits between them) */
+:root:is(:has(.sky), [data-scene]) body::before,
+:root:is(:has(.sky), [data-scene]) body::after { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; }
+:root:is(:has(.sky), [data-scene]) body::before {
+  background: linear-gradient(to bottom, var(--sky-top), var(--sky-mid) 55%, transparent 85%); }
+/* the stars: two tiled fields of small dots at sizes that do not repeat together, so no pattern shows at any width;
+   the second field breathes (opacity) so the sky twinkles. Fewer, fainter towards the bottom. */
+:root:is(:has(.sky), [data-scene]) body::after {
+  --st: #f3f0e4;
+  background:
+    radial-gradient(1.4px 1.4px at 12% 18%, var(--st), transparent), radial-gradient(1px 1px at 47% 9%, var(--st), transparent),
+    radial-gradient(1.6px 1.6px at 78% 31%, #dce8ff, transparent), radial-gradient(1px 1px at 29% 57%, var(--st), transparent),
+    radial-gradient(1.2px 1.2px at 63% 74%, var(--st), transparent), radial-gradient(1px 1px at 91% 83%, var(--st), transparent);
+  background-size: 331px 263px;
+  opacity: calc(var(--sky-stars) * .85); transition: opacity 1.6s;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, rgba(0, 0, 0, .25) 80%, transparent); mask-image: linear-gradient(to bottom, #000 30%, rgba(0, 0, 0, .25) 80%, transparent); }
+:root:is(:has(.sky), [data-scene]) main::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(1.8px 1.8px at 22% 26%, #dce8ff, transparent), radial-gradient(1.2px 1.2px at 71% 12%, #f3f0e4, transparent),
+    radial-gradient(1px 1px at 54% 48%, #f3f0e4, transparent), radial-gradient(1.4px 1.4px at 8% 66%, #f3f0e4, transparent);
+  background-size: 457px 389px; opacity: 0; transition: opacity 1.6s;
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, rgba(0, 0, 0, .2) 75%, transparent); mask-image: linear-gradient(to bottom, #000 30%, rgba(0, 0, 0, .2) 75%, transparent); }
+:root[data-theme="dark"]:is(:has(.sky), [data-scene]) main::before { animation: sky-twinkle 6s ease-in-out infinite; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):is(:has(.sky), [data-scene]) main::before { animation: sky-twinkle 6s ease-in-out infinite; } }
+@keyframes sky-twinkle { 0%, 100% { opacity: .25; } 50% { opacity: .9; } }
+
+/* the tent's own sky box (index.html) keeps only the sun, the moon and their glow: its tint and its stars are the global
+   layer's now, and on a wide window its sides and its low hills fade out, so no edge or strip shows */
+:root .sky { background: radial-gradient(60% 55% at var(--sun-x, 50%) var(--sun-y, 100%), var(--sky-glow, transparent), transparent 70%); }
+:root .sky .stars { display: none; }
+@media (min-width: 700px) {
+  :root .sky { background: radial-gradient(560px 360px at var(--sun-x, 50%) var(--sun-y, 100%), var(--sky-glow, transparent), transparent 70%);
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 3px), transparent), linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+    -webkit-mask-composite: source-in; mask-image: linear-gradient(to bottom, #000 calc(100% - 3px), transparent), linear-gradient(to right, transparent, #000 14%, #000 86%, transparent);
+    mask-composite: intersect; }
+}
+@media (prefers-reduced-motion: reduce) { :root:is(:has(.sky), [data-scene]) main::before { animation: none !important; opacity: calc(var(--sky-stars) * .6); } }

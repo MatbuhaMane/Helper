@@ -2,10 +2,16 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 12)._
+_Updated 2026-11-14 (the new chat, round 13)._
 
 
 
+
+## Round 13: the night sky is full-bleed and global (the owner's image 39)
+- One fixed sky layer for the whole window, in base.css, with tokens for day and night (`--sky-top`, `--sky-mid`, `--sky-stars`). The stars twinkle by opacity only. Spec: `docs/design/sky.md`.
+- The tent turns it on through `.sky`; the future scenes (the garage, the hill) turn it on with `data-scene` on `<html>`.
+- The tent's box keeps only the sun and the moon. On a wide window its sides and hills fade out, so no edge or strip shows.
+- Checked at 375, 1280 and 1920, light and dark. The audit on the home page is clean.
 
 ## Round 12: the back door's switchboard and the tent's moods (look only; the logic is ai-features')
 - Spec and class names: `docs/design/switchboard.md`.

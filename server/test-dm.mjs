@@ -26,6 +26,14 @@ eq('oneself', D.mayMessage(R({ self: true, sameHousehold: true })), 'self');
 eq('I blocked them', D.mayMessage(R({ sameHousehold: true, iBlocked: true })), 'blocked');
 eq('they blocked me', D.mayMessage(R({ sameTribe: true, theyBlocked: true })), 'blocked');
 eq('a stranger who also blocked: still just out of reach', D.mayMessage(R({ theyBlocked: true })), 'not_reachable');
+// batch 27: friends, and the children's rule
+eq('a friend', D.mayMessage(R({ friend: true })), null);
+eq('a friend who blocked me', D.mayMessage(R({ friend: true, theyBlocked: true })), 'blocked');
+eq('a friend, when either side is a child under 12', D.mayMessage(R({ friend: true, child: true })), 'not_reachable');
+eq('a child within the household', D.mayMessage(R({ sameHousehold: true, child: true })), null);
+eq('a child within the tribe', D.mayMessage(R({ sameTribe: true, child: true })), null);
+eq('a child and a stranger', D.mayMessage(R({ child: true })), 'not_reachable');
+eq('contacts: home, tribe, then friends', D.contacts([{ id: 'h1', name: 'ב', where: 'home' }], [{ id: 'p1', name: 'א', where: 'tribe' }], [{ id: 'f1', name: 'א', where: 'friend' }, { id: 'h1', name: 'ב', where: 'friend' }]).map((c) => c.id), ['h1', 'p1', 'f1']);
 
 /* ---- one conversation per pair ---- */
 eq('pair is ordered', D.pair('Zed@x.com', 'amy@x.com'), ['amy@x.com', 'zed@x.com']);

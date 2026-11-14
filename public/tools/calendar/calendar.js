@@ -259,7 +259,7 @@
 
   async function drawDay() {
     const k = iso(sel);
-    dayBox.replaceChildren(el('p', { class: 'muted' }, 'טוען…'));
+    dayBox.replaceChildren(H.skel(3));
     let list = [];
     try { list = await itemsBetween(sel, sel); } catch (_) { /* below */ }
     const ev = list.filter((i) => i.category === 'holiday' || i.category === 'roshchodesh' || i.category === 'mevarchim');
@@ -343,7 +343,7 @@
   let yearFilter = 'all';
   async function drawYear() {
     const hy = heb(sel).year;
-    yearBox.replaceChildren(el('h2', {}, `אירועי השנה ${gem(hy % 1000)}`), el('p', { class: 'muted' }, 'טוען…'));
+    yearBox.replaceChildren(el('h2', {}, `אירועי השנה ${gem(hy % 1000)}`), H.skel(4));
     let groups = [];
     try { groups = await yearGroups(hy); } catch (_) { yearBox.replaceChildren(el('h2', {}, 'אירועי השנה'), el('p', {}, 'לא הצלחתי לטעון את לוח השנה. נסו שוב בעוד רגע.')); return; }
     const shown = groups.filter((g) => { const k = kindOf(g.items[0]); return yearFilter === 'all' ? k !== 'roshchodesh' || P.kinds.includes('roshchodesh') : k === yearFilter; });

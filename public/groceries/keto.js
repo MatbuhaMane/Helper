@@ -519,7 +519,7 @@
       el('button', { class: 'chip', onclick: jump('ketoLog') }, 'יומן'),
       el('button', { class: 'chip primary', onclick: () => { jump('ketoCalc')(); setTimeout(() => document.querySelector('#ketoCalc input[list]')?.focus({ preventScroll: true }), 350); } }, '+ ארוחה'));
     root.append(nav, toggleCard(), todayCard(), progressCard(), logCard(), calcCard());
-    if (!loaded) root.prepend(el('p', { class: 'muted' }, 'טוען…'));
+    if (!loaded) root.prepend(H.skel(3));
     window.scrollTo(0, y);
   }
   // New data from the server never redraws under someone's fingers: wait until they leave the field.

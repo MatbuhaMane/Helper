@@ -7,7 +7,7 @@
   const P = H.prefs('parasha', { city: '281184' });
   const CITIES = [['281184', 'ירושלים'], ['293397', 'תל אביב'], ['294801', 'חיפה'], ['295530', 'באר שבע']];
   const root = document.querySelector('main');
-  const box = el('div', { class: 'pr' }, el('p', { class: 'muted' }, 'טוען את הפרשה…'));
+  const box = el('div', { class: 'pr' }, H.skel(4, 'טוען את הפרשה'));
   root.append(box);
 
   const BOOKS = { Genesis: 'בראשית', Exodus: 'שמות', Leviticus: 'ויקרא', Numbers: 'במדבר', Deuteronomy: 'דברים' };

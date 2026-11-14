@@ -252,7 +252,7 @@
 
   /* ---------- a new conversation: only who one may write to ---------- */
   async function pickPerson() {
-    const box = el('div', {}, el('p', { class: 'dm-note' }, 'טוען…'));
+    const box = el('div', {}, H.skel(3));
     H.modal(el('h2', {}, 'שיחה חדשה'), box);
     let d;
     try { d = await api('/api/dm/people'); } catch (e) { box.replaceChildren(el('p', { class: 'dm-note' }, e.message || 'לא הצלחנו לטעון')); return; }

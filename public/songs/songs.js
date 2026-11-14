@@ -211,7 +211,7 @@
     const q = query;
     if (tab === 'dict') { out.append(dictionary()); return; }
     if (tab === 'zemirot' || (tab === 'all' && !q)) {
-      if (!zemirot) { out.append(el('p', { class: 'muted' }, 'טוען…')); return; }
+      if (!zemirot) { out.append(H.skel(3)); return; }
       if (tab === 'all') {
         out.append(section('השירון שלנו', mine.slice(0, 8).map(mineCard), el('div', { class: 'secacts' }, el('button', { class: 'btn small', onclick: () => editOwn() }, '+ שיר חדש עם אקורדים'))));
       }
@@ -283,7 +283,7 @@
   const head = (title, sub) => el('div', {}, el('b', {}, title), sub ? el('small', {}, sub) : null);
 
   async function openRemote(hit, versions = null, from) {
-    openReader(head(hit.title, hit.artist), el('p', { class: 'muted' }, 'טוען את השיר…'), [], from);
+    openReader(head(hit.title, hit.artist), H.skel(5, 'טוען את השיר'), [], from);
     let song;
     try { song = await api(`/api/songs/page?url=${encodeURIComponent(hit.url)}`); }
     catch (e) {

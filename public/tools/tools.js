@@ -37,6 +37,12 @@
     const t = a.label && tiles.get(a.href);
     if (t) t.setAttribute('aria-label', a.soon ? `${a.label}, ${a.note || 'בעתיד'}` : a.label);
   }
+  // arranging is the hand order's own: a long press in the name or category view brings the tiles back to the grid first
+  folderEl.addEventListener('arrange:before', () => {
+    if (view.sort === 'hand') return;
+    view.sort = 'hand'; H.savePrefs('toolsView'); order();
+    H.toast("הסידור הוא של 'הסדר שלי'");
+  });
   let hand = [...tiles.keys()];      // the person's own order, as H.folder drew it (and as the arrange mode leaves it)
   let groups = [];                   // the category sections, while they are shown
   let drawn = null;                  // the order on screen now

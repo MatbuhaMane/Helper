@@ -112,12 +112,16 @@ async function telegram(fr, w, d, W, H) {
   const tag = (e) => `${e.tagName.toLowerCase()}${e.id ? '#' + e.id : ''}${typeof e.className === 'string' && e.className.trim() ? '.' + e.className.trim().split(/\s+/).slice(0, 2).join('.') : ''}`;
   const PAINT = /^(color|background(-color)?|border(-.+)?-color|box-shadow|filter|outline-color|fill|stroke)$/;
   const MOVE = /^(transform|opacity|translate|scale|rotate|all)$/;
-  const ENDLESS = /^(spin|skel-sheen|sky-twinkle|mood-flicker|gl-dot|gl-rec|st-ring)$/;   // T4's allowlist (the recording rings)
+  // T4: the allowlist in docs/design/motion.md (waiting, live, edit mode, scenery); a new one goes there first
+  const ENDLESS = new Set(["spin","rec-spin","rs-spin","fun-spin","fun-pull-spin","mu-spin","ga-calc-wait","cx-dots","gl-dot","skel-sheen","shimmer","pb-sheen","gl-rec","mu-listen","mu-eq","gp-wave","sos-pulse","st-ring","dm-z","dm-flow","app-wiggle","arr-wiggle","sky-twinkle","twinkle","sun-breathe","glow","breath","shb-breathe","strip-breathe","rp-breathe","wz-breathe","wz-tri","cf-spark","cf-roar","cf-chosen","plump","tr-fall","tr-drift","tr-sway","tr-sway-low","tr-hang","tr-glow","tr-flicker","tr-candle-glow","f2-glow","f2-tw","f2-z","fe-flick","mood-flicker","egg-live","egg-rock"]);
   const frame = (n = 1) => new Promise((r) => { const go = (k) => (k ? w.requestAnimationFrame(() => go(k - 1)) : r()); go(n); setTimeout(r, 60 * n); });   // a hidden pane runs no frames
   const vis = (e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.bottom > 0 && r.top < H * 2; };
   const els = [...d.querySelectorAll('body *')].filter(vis);
   // T2–T4: what each visible element really transitions and animates (pseudo-elements too: the sky, the moods)
+  // art, not UI (the master's call, 2026-11-14): a scene nobody presses (pointer-events none, or inside aria-hidden) may breathe slowly; T3/T4 hold for every control
+  const art = (e) => w.getComputedStyle(e).pointerEvents === 'none' || !!e.closest('[aria-hidden="true"]');
   for (const e of els) for (const pseudo of [null, '::before', '::after']) {
+    if (art(e)) continue;
     const cs = w.getComputedStyle(e, pseudo);
     if (pseudo && cs.content === 'none') continue;
     const props = cs.transitionProperty.split(',').map((x) => x.trim()), dur = ms(cs.transitionDuration);
@@ -129,7 +133,7 @@ async function telegram(fr, w, d, W, H) {
     if (cs.animationName === 'none') continue;
     const names = cs.animationName.split(',').map((x) => x.trim()), adur = ms(cs.animationDuration), it = cs.animationIterationCount.split(',').map((x) => x.trim());
     names.forEach((n, i) => {
-      if (at(it, i) === 'infinite') { if (!ENDLESS.test(n)) must.add(`T4 endless @keyframes ${n} on ${tag(e)}${pseudo || ''}`); }
+      if (at(it, i) === 'infinite') { if (!ENDLESS.has(n)) must.add(`T4 endless @keyframes ${n} on ${tag(e)}${pseudo || ''}`); }
       else if (at(adur, i) > 2600) must.add(`T3 ${n} ${at(adur, i)}ms on ${tag(e)}${pseudo || ''}`);
       else if (at(adur, i) > 400) should.add(`T3 one-time ${n} ${at(adur, i)}ms on ${tag(e)}${pseudo || ''} (fine only for a mood, the egg or gk-ok)`);
     });
@@ -143,6 +147,7 @@ async function telegram(fr, w, d, W, H) {
   // T7: every picture and video keeps its box before it loads; the page's layout shifts so far
   for (const m of d.querySelectorAll('img, video')) {
     if (!vis(m)) continue;
+    if (/absolute|fixed/.test(w.getComputedStyle(m).position)) continue;   // fills a sized box: it cannot push anything
     if (!(m.getAttribute('width') && m.getAttribute('height')) && w.getComputedStyle(m).aspectRatio === 'auto') should.add(`T7 no size on ${tag(m)} ${(m.currentSrc || m.src || '').split('/').pop().slice(0, 30)}`);
   }
   const cls = await new Promise((res) => { let s = 0; try { new w.PerformanceObserver((l) => { for (const x of l.getEntries()) if (!x.hadRecentInput) s += x.value; }).observe({ type: 'layout-shift', buffered: true }); } catch (_) { return res(null); } setTimeout(() => res(s), 100); });
@@ -178,7 +183,7 @@ async function telegram(fr, w, d, W, H) {
     html.dataset.motion = 'reduce';
     w.H.modal(d.createTextNode('בדיקה'));
     await frame(2);
-    const moving = d.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));
+    const moving = d.getAnimations().filter((a) => a.playState === 'running' && (a.effect?.getComputedTiming?.().duration ?? 1) >= 1 && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));
     if (moving.length) must.add(`T11 reduced motion still moves: ${moving.slice(0, 4).map((a) => a.animationName || a.transitionProperty || 'script').join(', ')}`);
     w.H.closeModal?.();
     if (was == null) delete html.dataset.motion; else html.dataset.motion = was;

@@ -3167,3 +3167,26 @@ Status: Ready for the master's review.
 - **For the master** (patches in the CEO's notes folder): `src/worker.ts` runs `garden.remind` with the home reminders in the morning; `package.json` adds test-garden to `npm test`.
 - **For design:** the page uses shared classes; the few sizes held inline (the plant's picture, the grid of common plants) wait for `garden.css`. The kit pictures in `/assets/kit/garden/` are used as they are.
 - **In passing:** `H.modal` shows a `null` part as the text "null". home.js and garden.js filter their parts. A fix in `common.js` (skip null, as `el()` does) would be the master's.
+
+## 2026-11-14 · The inbox's מהאוהל tab (ai-features, the master's task)
+On `ai-features`, not yet merged. Status: ready for the master's review.
+
+- **What it is:** /messages gets a second tab, מהאוהל, beside the conversations (still the first tab). It is read only, with no reply.
+  - The tab shows the "האוהל התעדכן" notices from /whats-new.json, the current one and `past`, newest first. The one-time popup (whatsnew.js) is unchanged.
+  - System notes (by_email 'system') and the owner's messages to this member alone (to_email).
+  - Messages to everyone (to_email NULL) appear only if the owner ticked "לשמור בתיבת ההודעות" in /admin. The box is unchecked by default and hidden when sending to one member. Unticked messages keep today's behaviour: the banner only.
+  - Unread count on the tab, from `message_reads`. A notice is read as `wn:<v>`. Only the current notice can be new, and it counts as read once the popup was seen (`H.prefs('whatsnew').seen`).
+  - `#haohel` opens the tab directly, for a link from a push or a toast.
+- **Who sees what** is checked in the route (`server/inbox.ts`, the SQL plus `sees()` in `server/inbox-rules.ts`), with 13 tests in `server/test-inbox.mjs`:
+  - a system row with no address, or with another member's, is never shown;
+  - POST /api/inbox/read marks only the person's own ids and `wn:` notices; another member's id is ignored.
+  - Checked locally as the owner and as a second member.
+- **Appended:**
+  - COLUMNS `['admin_messages', 'keep', 'INTEGER']`;
+  - routes `GET /api/inbox` and `POST /api/inbox/read`.
+  - `server/admin.ts` messageSend takes `keep` (only when to everyone).
+- **For the master** (patches in the CEO's notes folder):
+  - the router and schema appends (657f33f);
+  - package.json: npm test runs test-inbox, and test:inbox (2b7581c and the fix 599ad1e: apply both).
+- **For design, if wanted:** the tab uses `.tabs`, `.card` and the existing list styles.
+  - `.dm` sets `display: grid`, which beats `[hidden]`. So messages.js hides the conversations panel with an inline `display: none`. A `.dm[hidden] { display: none }` rule in messages.css would make that line unneeded.

@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the garden).
+Last update: 2026-11-14 (the inbox's מהאוהל tab).
 
 ## Handover to the next ai-features chat (2026-11-14)
 
@@ -36,6 +36,12 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 
 ### Not merged into main (on `ai-features`, after 1ca3564)
 
+- **The inbox's מהאוהל tab**, ready for the master's review:
+  - c10ecd5 the feature (/messages tab, /api/inbox, the /admin keep box, test-inbox 13);
+  - 657f33f router and COLUMNS (master, patch);
+  - 2b7581c and 599ad1e package.json (master, patches, apply both).
+  - Checked: the owner and a second member each see only their own; the audit is clean at 375 and 1280, light and dark.
+  - Not checked in a browser: the /admin checkbox, which sits behind the biometric door. Its code path and the server rule are checked.
 - **פרנסה phase 1**, waiting for the CEO's server review:
   - 41e5af3 the server (6 tables, 14 routes, test-parnasa);
   - ed6d47d Yahoo prices and fixes;

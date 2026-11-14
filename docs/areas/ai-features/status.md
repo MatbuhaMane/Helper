@@ -3,6 +3,18 @@
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum's first hub step).
 
+## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - WORDING FOR THE OWNER'S OK
+
+- `public/assets/raba-intro.js`: 5 cards on design's `raba-intro.css` (the same class names), spoken in his voice (`/api/voice/say`) with the
+  words lighting as he speaks; mute, "דלג", Esc, dots, swipe; silent and reduced-motion work. Seen once per person: `H.prefs('raba').seen`.
+  It opens from the settings when רַאבַּ"ע is picked for the first time (`window.RabaIntro.maybe()`; `.open()` shows it again).
+- The persona (`server/daemon.ts`): "Golden Age of Spain" became "תור הזהב הנצחי", and he may say that only this family has a helper like him.
+  PROMPT_VERSION was NOT bumped (it would wipe everyone's chat history); the persona is sent fresh on every call.
+- The wording (cards 1-5): שלום, אני רַאבַּ"ע / רק אצלכם / מה אני יודע לעשות / והאוהל כולו / מה שאני אוהב. In the file's CARDS.
+- Not checked: the look at 375/1280 (the browser pane had a 0-size viewport; only the logic was checked), the voice itself, a real swipe.
+- Not done: the family who keep him by default never see the intro (it opens only on a pick); `sw.js` should precache the two new files (master).
+- The css was copied from the design branch (same content, so the merge is clean). `.claude/skills/historic-figures` still says "Spain" (design's file).
+
 ## Latest: batch 27 and the gathering's food calculator
 
 - **The food calculator** (0fc50c0; master files 48857ce): rules in gather-rules.ts with tests; the RSVP's diet ticks.

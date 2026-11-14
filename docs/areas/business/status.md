@@ -40,6 +40,13 @@ Updated by the department at the end of every meaningful round of work. Short: t
 - **The הקפדה coach (vision batch 29, wave 2):** proposal in `ai-quota.md` section 6. Per person per day: 15 coach
   messages (Haiku) and 1 AI plan build (a stronger model). The live workout mode is not counted. **Decided (the owner, 2026-11-14).**
 
+- **The internal economy and the "hand" token (vision batch 32, "coming soon", not built now):** added to
+  `business-plan.md` section 4ה and to the risks table, with no price change.
+  - Hands and credits are two separate currencies. A hand cannot be bought, sold or redeemed, so it is no revenue and
+    no liability; the cost is the owner's time for approvals.
+  - The open question, any link between hands and credits: business recommends none, in either direction. It sent that
+    to vision for the owner. The tax and licensing question is with legal ⚖.
+
 - **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
   with a ceiling of about ₪120,000 a year.
   - Added to `business-plan.md` (sections 8 and 9) and to the deck's forecast slide, as a threshold to plan for and not

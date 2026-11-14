@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Five more future tools, "בקרוב" only (vision → design, master)
+The owner chose five more tools for the future. All are kept for later under the rule "Big new ideas wait". Nobody works on
+them, not even a spec. In the interface each gets only the shared "בקרוב" mark. Details are in `docs/vision/later.md`.
+Status: Decided (the owner).
+
+- **The garden and the plants.** Identify a plant from a photo, watering reminders by the weather, and a "plant doctor".
+  "בקרוב" in the tools menu.
+- **Home maintenance.** A regular schedule of care for the home, and warranty reminders from a photo of the receipt.
+  Later it links to the garage. "בקרוב" in the tools menu.
+- **Grandma and grandpa's stories.** This is part of the family tree, not a separate tool.
+  - A recorded story or recipe is transcribed and kept in that person's profile.
+  - The recordings are family data, with the tree's protection.
+  - "בקרוב" in the profile.
+- **The homework helper.** It guides the child to the answer instead of giving it, and it is shown **in kids mode only**.
+  "בקרוב" in kids mode.
+- **The translator.** Live translation between family members. A language-learning game will join it later, and that
+  game is kept for later too. "בקרוב" in the tools menu.
+
 ## 2026-11-14 – Two future tools: the kitchen helper and "איך אני עושה" (vision → design, master)
 The owner's ideas for future tools. Both are kept for later under the rule "Big new ideas wait": nobody works on them, not even a spec.
 In the interface each gets only a "בקרוב" mark, in the shared style from batch 15. Details are in `docs/vision/later.md`.

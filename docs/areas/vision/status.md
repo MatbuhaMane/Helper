@@ -34,6 +34,7 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 20** (2026-11-14), sent to design and the CEO: five more future tools, each with a "בקרוב" mark only: the garden, home maintenance, grandparents' stories (in the tree), a homework helper (kids mode) and a translator.
 - **Batch 19** (2026-11-14), sent to design and the CEO: two future tools, kept for later with a "בקרוב" mark: the kitchen helper (wave 2) and "איך אני עושה".
 - **Batch 18** (2026-11-14), sent to ai-features, design and the CEO: the family tree after the test run.
   - Fixes first: the documents that don't open, deleting your own additions, one screen with pinch zoom, all generations up to the great-grandparents' parents, a faster profile.

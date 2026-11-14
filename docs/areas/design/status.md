@@ -95,6 +95,15 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
      picture was asked for, and it has no `H.FUTURE` id.
    - **Checked:** 375 and 1280, light and dark, as tiles in the prototype. The audit is clean on the prototype and `/tools/`.
 
+9. **Vision batch 22 (2026-11-14), noted, waiting for the master to schedule it:** a "בקרוב" note for the language game
+   "ع ב-ע" (read "עין בעין"; the accessible name is "עין בעין"). See '"ع ב-ע", the language-learning game' in `docs/decisions.md`
+   on `vision`.
+   - **Its place:** beside מתורגמן in the toolbox, as the uniform "בקרוב" note (`.tb-future` with `.tb-pic`).
+   - **The picture, as an idea only:** two eyes, or the two letters ayin (Arabic ع and Hebrew ע), looking at each other. The game's
+     own look is a word carved in stone (limestone and basalt).
+   - **A proposed id,** for the master to fix in `H.FUTURE`: `ayin`, giving `/assets/soon/ayin.svg`.
+   - **Not started:** the master said nothing new before the handover, and the master schedules. The game itself is not built.
+
 ---
 
 ## History (newest first)

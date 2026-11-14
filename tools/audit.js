@@ -181,6 +181,7 @@ async function telegram(fr, w, d, W, H) {
   if (w.H?.modal) {
     const html = d.documentElement, was = html.dataset.motion;
     html.dataset.motion = 'reduce';
+    void w.getComputedStyle(html).color; void html.offsetHeight;   // flush the style, or getAnimations still sees the old timing
     w.H.modal(d.createTextNode('בדיקה'));
     await frame(2);
     const moving = d.getAnimations().filter((a) => a.playState === 'running' && (a.effect?.getComputedTiming?.().duration ?? 1) >= 1 && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));

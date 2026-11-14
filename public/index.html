@@ -230,7 +230,8 @@
     /* The moon: the drawing of tonight's real phase (one of eight). It crosses the
        night sky on the sun's path (rising on the right, setting behind the tent's left side). */
     .moon { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--moon-size, 100px); block-size: var(--moon-size, 100px); margin: calc(var(--moon-size, 100px) / -2) 0 0 calc(var(--moon-size, 100px) / -2);
-      padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .92; -webkit-tap-highlight-color: transparent; transition: opacity 1.2s; }
+      padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; -webkit-tap-highlight-color: transparent; }
+    .moon > img, .moon > svg { opacity: .92; transition: opacity 1.2s; }   /* the slow fade on the picture, which no tap touches: the button itself answers at once */
     .moon:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
     /* the moon's secret: a beat of the sky, and the eclipse rising */
     .sun.egg-beat > img, .moon.egg-beat > img { animation: egg-beat .26s ease-out; }
@@ -268,7 +269,7 @@
     .sky-acts .btn { display: inline-flex; align-items: center; gap: 6px; }
     .sky-acts img { inline-size: 18px; block-size: 18px; }
     @media (prefers-reduced-motion: reduce) { .stars i { animation: none; } }
-    :root[data-theme="light"] .moon { opacity: .75; --mhalo: .08; }
+    :root[data-theme="light"] .moon { --mhalo: .08; } :root[data-theme="light"] .moon > img, :root[data-theme="light"] .moon > svg { opacity: .75; }
 
     /* what the sun opens: the day's sun times, and (soon) the weather */
     .sun-card { position: fixed; z-index: var(--z-bubble); inline-size: min(300px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: var(--radius-lg); background: var(--glass); border: 1px solid var(--glass-border);
@@ -518,9 +519,9 @@
        its left (and so on, alternately). The switch "הצג כלים בפיתוח" in the settings (look.devTools === false) hides them. */
     const sidePage = (x) => {
       const pic = x.id === 'garage'
-        ? el('img', { src: '/assets/soon/garage-scene.svg', alt: 'סככה עם כלי עבודה, עמוד טעינה לרכב חשמלי ושולחן עבודה', decoding: 'async',
+        ? el('img', { src: '/assets/soon/garage-scene.svg', width: 320, height: 240, alt: 'סככה עם כלי עבודה, עמוד טעינה לרכב חשמלי ושולחן עבודה', decoding: 'async',
             onerror: (e) => { e.target.onerror = null; e.target.src = '/assets/soon/garage.svg'; e.target.alt = ''; } })
-        : el('img', { src: `/assets/soon/${x.id}.svg`, alt: '', decoding: 'async' });
+        : el('img', { src: `/assets/soon/${x.id}.svg`, width: 320, height: 240, alt: '', decoding: 'async' });
       const kids = [el('div', { class: 'side-pic' }, pic), el('h2', { id: `side-${x.id}-h` }, x.name), soonTag(x), el('p', { class: 'side-line' }, x.line)];
       kids.forEach((k, i) => k.style.setProperty('--i', i));
       return el('div', { class: 'pager-page', 'data-name': x.name }, el('section', { class: `side side-${x.id}`, 'data-side': x.id, 'aria-labelledby': `side-${x.id}-h` }, ...kids));

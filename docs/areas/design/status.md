@@ -2,7 +2,23 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 3)._
+_Updated 2026-11-14 (the new chat, round 4)._
+
+## Round 4 (2026-11-14): the olive with seats (image 27), set `olea` "זית"
+
+- **Placed in code, like the pine.** `docs/design/cut-tree-olive-seats.py` cuts 27 into `public/assets/tree/olea/tree-summer.webp`
+  (1000 × 1500, 196 KB) and writes `slots.json` (20 seats, 5 tiers × 4, `perRow` 4, seat 10.04%, the same spot every season).
+  No circles in the shipped picture: as in the pine, the ring is CSS, drawn only round a person (tree.css, shared rules).
+  `--preview` writes `docs/design/art/olive-seats-preview.webp` with the 20 seats drawn white with a thin ink ring, for the owner.
+  Added to `sets.json` and to the prototype (tree-18). The old SVG olive (`olive`, "עץ א׳") is untouched.
+- **Zone 2 (the trunk) does not fit 4.** It is ~25% of the width wide: two seats fit on it (at 43.5/57.5%, y 62%). The other
+  two of that tier hang just under the crown's lower lobes (21/80%, y 53.5%), in the open air like the pine's. Alternative:
+  a tier of 2 there (18 seats), if the owner prefers.
+- **Tiers 13.5% apart** (12.5, 26, 39.5, 53.5/62, 86.5% of the height): a face with its two-line tag takes 13%, so tags never
+  cover the face below (checked in code at 375 and 1280; the pine's own spacing is 16.5%). With dates (17%) a tag may touch.
+- Checked at 375 and 1280, light and dark; audit clean. Not done: the seasons (they wait for the owner's edits of 27; each one
+  goes into `SEASONS` in the script and gets a `--olea-pic` line in tree.css). Spring meanwhile is a light filter.
+
 
 ## Round 3 (2026-11-14): the olive (24, 25), not cleanable: a re-roll is needed
 

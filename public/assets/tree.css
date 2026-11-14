@@ -36,7 +36,7 @@
 .tree[data-kind="canopy"] { aspect-ratio: 1000 / 1500; }
 .tree[data-kind="canopy"] .tree-boughs { transform-origin: 50% 45%; }
 /* the pine (אורן, the default after vision batch 23): the same 2:3 box; one still picture per season, with seats (below) */
-.tree[data-kind="pine"] { aspect-ratio: 1000 / 1500; }
+.tree:is([data-kind="pine"], [data-kind="olea"]) { aspect-ratio: 1000 / 1500; }
 @keyframes tr-sway { from { transform: rotate(-.3deg); } to { transform: rotate(.3deg); } }
 @keyframes tr-sway-low { from { transform: rotate(-.15deg); } to { transform: rotate(.15deg); } }
 /* off screen (the JS adds .off from an IntersectionObserver) the tree holds still, so it costs nothing while you read elsewhere */
@@ -156,7 +156,7 @@
 /* ---- one screen: the tree fits the height left between the bars (ai-features sets .fit; --tree-chrome is what the page
    keeps above and below it). Pinch and pan move the tree inside .tree-stage by --z, --px and --py (scale and translate). */
 .tree.fit { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1800)); }
-.tree.fit:is([data-kind="canopy"], [data-kind="pine"]) { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1500)); }
+.tree.fit:is([data-kind="canopy"], [data-kind="pine"], [data-kind="olea"]) { inline-size: min(100%, 760px, calc((100dvh - var(--tree-chrome, 190px)) * 1000 / 1500)); }
 .tree-stage { position: relative; overflow: hidden; touch-action: none; overscroll-behavior: contain; border-radius: 18px; }
 .tree-stage > .tree { transform-origin: 0 0; translate: var(--px, 0px) var(--py, 0px); scale: var(--z, 1); }
 .tree-stage.zooming > .tree, .tree-stage.zooming .tr-p { transition: none; }
@@ -395,13 +395,19 @@
 .tree[data-kind="pine"][data-season="winter"] { --pine-pic: url("/assets/tree/pine/tree-winter.webp"); }
 .tree[data-kind="pine"][data-season="snow"] { --pine-pic: url("/assets/tree/pine/tree-snow.webp"); }
 .tree[data-kind="pine"][data-season="spring"] { --pine-f: hue-rotate(8deg) saturate(1.12) brightness(1.03); }
-.tree[data-kind="pine"][data-season] .tree-dress { display: none; }
-.tree[data-kind="pine"]:not([data-look="frame"]) { --leaf-ar: 1; --face-w: 100%; --face-y: 0%; }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p { --leaf: 10.04cqi; translate: -50% calc(var(--leaf) / -2); animation: none; rotate: 0deg; }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-leaf,
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.passed .tr-leaf { background: none; }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-face { box-sizing: border-box; border: max(2px, .32cqi) solid #31231f; font-size: max(11px, calc(var(--leaf) * .3)); }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.empty .tr-face { border-style: dashed; background: #f3ecdc; color: #5f5242; }
+/* the olive with seats (זית, image 27, docs/design/cut-tree-olive-seats.py): the same seats and rings as the pine; one picture
+   until the owner's seasons arrive (then a --olea-pic per season, as the pine's) */
+.tree[data-kind="olea"]::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--olea-pic, url("/assets/tree/olea/tree-summer.webp")) center / 100% 100% no-repeat;
+  filter: var(--pine-f, saturate(1)) var(--night-f, brightness(1)); }
+.tree[data-kind="olea"][data-season="spring"] { --pine-f: hue-rotate(6deg) saturate(1.1) brightness(1.03); }
+.tree:is([data-kind="pine"], [data-kind="olea"])[data-season] .tree-dress { display: none; }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) { --leaf-ar: 1; --face-w: 100%; --face-y: 0%; }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-p { --leaf: 10.04cqi; translate: -50% calc(var(--leaf) / -2); animation: none; rotate: 0deg; }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-leaf,
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-p.passed .tr-leaf { background: none; }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-face { box-sizing: border-box; border: max(2px, .32cqi) solid #31231f; font-size: max(11px, calc(var(--leaf) * .3)); }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-p.empty .tr-face { border-style: dashed; background: #f3ecdc; color: #5f5242; }
 /* the closest seats are 13.8 % of the width apart: the tag stays inside that, the dates may wrap */
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-tag { max-inline-size: 13.4cqi; padding-inline: 4px; }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-tag small { white-space: normal; }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-tag { max-inline-size: 13.4cqi; padding-inline: 4px; }
+.tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-tag small { white-space: normal; }

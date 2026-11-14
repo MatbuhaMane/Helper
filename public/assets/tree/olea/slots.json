@@ -1,0 +1,131 @@
+{
+ "box": [
+  1000,
+  1500
+ ],
+ "ext": "webp",
+ "layers": [],
+ "seat": 10.04,
+ "perRow": 4,
+ "crownPivot": [
+  50,
+  30
+ ],
+ "trunkPivot": [
+  50.0,
+  64.97
+ ],
+ "candleY": 94.5,
+ "tiers": [
+  {
+   "name": "roots",
+   "note": "the eldest, the forebears: on the roots and the earth",
+   "line": [
+    [
+     26.01,
+     86.46
+    ],
+    [
+     41.0,
+     86.46
+    ],
+    [
+     59.0,
+     86.46
+    ],
+    [
+     73.99,
+     86.46
+    ]
+   ]
+  },
+  {
+   "name": "low",
+   "note": "grandparents: two on the trunk where it splits, two at the crown's lower lobes",
+   "line": [
+    [
+     20.99,
+     53.47
+    ],
+    [
+     43.48,
+     61.97
+    ],
+    [
+     57.5,
+     61.97
+    ],
+    [
+     79.99,
+     53.47
+    ]
+   ]
+  },
+  {
+   "name": "mid",
+   "note": "parents: the crown's lower half",
+   "line": [
+    [
+     21.96,
+     39.48
+    ],
+    [
+     40.03,
+     39.48
+    ],
+    [
+     59.97,
+     39.48
+    ],
+    [
+     78.04,
+     39.48
+    ]
+   ]
+  },
+  {
+   "name": "crown",
+   "note": "you, your siblings and cousins: the middle of the crown",
+   "line": [
+    [
+     23.99,
+     25.99
+    ],
+    [
+     41.0,
+     25.99
+    ],
+    [
+     59.0,
+     25.99
+    ],
+    [
+     76.01,
+     25.99
+    ]
+   ]
+  },
+  {
+   "name": "top",
+   "note": "children and grandchildren: the top of the crown",
+   "line": [
+    [
+     29.01,
+     12.49
+    ],
+    [
+     43.03,
+     12.49
+    ],
+    [
+     56.97,
+     12.49
+    ],
+    [
+     70.99,
+     12.49
+    ]
+   ]
+  }
+ ]
+}

@@ -7,7 +7,9 @@
      is next to), survive a reload, ring with a sound, a buzz and a notification when the page is open or in the back.
    - המרות: cups, spoons and grams by the ingredient (Measure.convert), and °F ↔ °C.
    Later (the spec): "הבא" by voice with the companion reading the step, AI tips while cooking, a timer that rings
-   when the app is closed (push). The units choice is the person's (H.prefs 'kitchen'). The look is design's: the
+   when the app is closed (push). The units, the usual diners and the screen kept on are the person's (H.prefs 'kitchen');
+   the screen kept on and the timers' ringing are vision's suggestions (ש1), so each is a small piece that can be switched off.
+   A recipe opens straight from the book with /food/kitchen/?recipe=<id> (the book's "לבשל" button). The look is design's: the
    page uses the shared classes only, and the few sizes held inline here wait for kitchen.css (docs/decisions.md). */
 (async () => {
   const { el, api } = H;
@@ -15,7 +17,8 @@
   await H.requireLogin();
   H.header('עוזר מטבח');
   const root = document.querySelector('main');
-  const P = H.prefs('kitchen', { units: 'orig' });
+  // the person's: the units, the usual number of diners (0: as the recipe says), and the screen kept on while cooking
+  const P = H.prefs('kitchen', { units: 'orig', diners: 0, awake: true });
   const TKEY = 'helper.kitchen.timers';
 
   /* ---------- timers (on this device) ---------- */
@@ -155,7 +158,7 @@
     const deg = el('input', { type: 'number', inputmode: 'numeric', value: '180', 'aria-label': 'מעלות', dir: 'ltr', style: 'text-align:center' });
     const from = el('select', { 'aria-label': 'מאיזו סקאלה' }, el('option', { value: 'c' }, '°C צלזיוס'), el('option', { value: 'f' }, '°F פרנהייט'));
     const dOut = el('output', { 'aria-live': 'polite', style: 'display:block;font-size:1.25rem;margin-top:8px' });
-    const dSum = () => { const n = +deg.value; if (!deg.value || !isFinite(n)) { dOut.textContent = ''; return; } const t = K.temp(n, from.value); dOut.textContent = from.value === 'c' ? `= ${t.f}°F` : `= ${t.c}°C`; };
+    const dSum = () => { const n = +deg.value; if (!deg.value || !isFinite(n)) { dOut.textContent = ''; return; } const t = M.temp(n, from.value); dOut.textContent = from.value === 'c' ? `= ${t.f}°F` : `= ${t.c}°C`; };
     deg.addEventListener('input', dSum); from.addEventListener('change', dSum);
     setTimeout(() => { sum(); dSum(); });
 
@@ -178,6 +181,7 @@
   let recipes = null, lock = null;
   async function wake(on) {
     try {
+      if (on && !P.awake) on = false;
       if (on && !lock && 'wakeLock' in navigator) { lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', () => { lock = null; }); }
       if (!on && lock) { await lock.release(); lock = null; }
     } catch (_) { /* not allowed (battery saver); the page still works */ }
@@ -227,7 +231,7 @@
   function cookView(r, step0) {
     const steps = (r.steps || []).map(String).filter((s) => s.trim());
     const base = M.servings(r.meta);
-    cooking = cooking?.recipe?.id === r.id ? cooking : { recipe: r, step: 0, n: base || 1 };
+    cooking = cooking?.recipe?.id === r.id ? cooking : { recipe: r, step: 0, n: (base && P.diners) || base || 1 };
     cooking.step = Math.min(Math.max(0, step0 || 0), Math.max(0, steps.length - 1));
     wake(true);
     const factor = () => (base ? cooking.n / base : cooking.n);
@@ -242,7 +246,7 @@
         list.append(...(r.ingredients || []).map((i) => el('li', {}, el('label', {}, el('input', { type: 'checkbox' }),
           el('span', {}, i.name), el('span', { class: 'muted' }, M.show(i.measure, i.name, factor(), P.units || 'orig'))))));
       };
-      const by = (d) => () => { const step = base ? 1 : 0.5; cooking.n = Math.max(step, Math.min(base ? 100 : 8, cooking.n + d * step)); fill(); };
+      const by = (d) => () => { const step = base ? 1 : 0.5; cooking.n = Math.max(step, Math.min(base ? 100 : 8, cooking.n + d * step)); if (base) { P.diners = cooking.n; H.savePrefs('kitchen'); } fill(); };
       const units = el('select', { 'aria-label': 'יחידות מידה' }, [['orig', 'כמו במתכון'], ['grams', 'בגרמים'], ['cups', 'בכוסות וכפות']].map(([v, t]) => el('option', { value: v, selected: (P.units || 'orig') === v }, t)));
       units.addEventListener('change', () => { P.units = units.value; H.savePrefs('kitchen'); fill(); });
       fill();
@@ -287,13 +291,19 @@
     stepBox.addEventListener('pointerdown', (e) => { if (e.pointerType !== 'mouse') x0 = e.clientX; });
     stepBox.addEventListener('pointerup', (e) => { if (x0 == null) return; const dx = e.clientX - x0; x0 = null; if (Math.abs(dx) > 60) go(dx < 0 ? 1 : -1); });
 
+    function awakeToggle() {
+      const box = el('input', { type: 'checkbox', checked: P.awake !== false });
+      box.addEventListener('change', () => { P.awake = box.checked; H.savePrefs('kitchen'); wake(box.checked); });
+      return el('label', { class: 'toggle', style: 'margin:6px 0' }, box, 'המסך נשאר דלוק כל עוד המתכון פתוח');
+    }
+
     drawStep();
     view.append(
       el('div', { style: 'display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:12px 0' },
         el('button', { class: 'btn ghost small', type: 'button', onclick: () => { location.hash = 'cook'; } }, 'מתכון אחר'),
         el('h2', { style: 'margin:0;flex:1' }, r.title)),
       ingredientsCard(), stepBox,
-      'wakeLock' in navigator ? el('p', { class: 'muted', style: 'font-size:.85rem' }, 'המסך יישאר דלוק כל עוד המתכון פתוח.') : null);
+      'wakeLock' in navigator ? awakeToggle() : null);
     return view;
   }
 
@@ -301,6 +311,10 @@
     const m = location.hash.match(/^#(cook|timers|convert)/);
     if (m) { tab = m[1]; drawTab(); }
   });
+
+  // from the book: /food/kitchen/?recipe=<id> becomes #cook=<id>
+  const fromBook = new URLSearchParams(location.search).get('recipe');
+  if (fromBook) { history.replaceState(null, '', location.pathname + '#cook=' + encodeURIComponent(fromBook)); tab = 'cook'; }
 
   drawTimers();
   drawTab();

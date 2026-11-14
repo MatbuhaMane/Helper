@@ -6,6 +6,7 @@
  *   Measure.convert(measure, name, to)        → to: 'grams' | 'cups' ('orig' leaves it); null when there is nothing to convert
  *   Measure.show(measure, name, factor, to)   → both, for the screen
  *   Measure.servings(meta)                    → the recipe's number of servings, or null
+ *   Measure.temp(n, from)                     → { c, f } from 'c' or 'f' (the oven)
  */
 (function () {
   const FRAC = { '½': 0.5, '¼': 0.25, '¾': 0.75, '⅓': 1 / 3, '⅔': 2 / 3, '⅛': 0.125 };
@@ -171,7 +172,10 @@
     return n > 0 && n <= 100 ? n : null;
   }
 
-  const api = { parse, scale, convert, show, servings, fmtQty };
+  /** the oven's heat both ways, rounded to a degree */
+  const temp = (n, from) => (from === 'f' ? { c: Math.round(((n - 32) * 5) / 9), f: n } : { c: n, f: Math.round((n * 9) / 5 + 32) });
+
+  const api = { parse, scale, convert, show, servings, fmtQty, temp };
   if (typeof window !== 'undefined') window.Measure = api;
   if (typeof globalThis !== 'undefined') globalThis.Measure = api;
 })();

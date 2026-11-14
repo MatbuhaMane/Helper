@@ -1187,6 +1187,8 @@
         el('label', { class: 'field' }, el('span', {}, 'קישור למתכון המקורי'), source)),
       el('div', { class: 'row', style: 'margin-top:14px' }, shop,
         el('button', { class: 'btn ghost', onclick: () => shop.click() }, '⚖ כמויות ומידות'),   // the same sheet: servings and units on top
+        // עוזר מטבח: cook this recipe step by step (saved first, so the kitchen reads what is on the screen)
+        el('button', { class: 'btn ghost', type: 'button', onclick: async () => { dirty = true; await save(); if (draft.id) location.href = '/food/kitchen/?recipe=' + encodeURIComponent(draft.id); } }, '🍳 לבשל'),
         draft.source_url ? el('a', { class: 'btn ghost', href: draft.source_url, target: '_blank', rel: 'noopener' }, '🔗 המקור') : null, del),
     ], { onLeave: () => save().then(renderBook) }); // closing (or moving on) saves whatever is still waiting
     requestAnimationFrame(() => autosize(notes));

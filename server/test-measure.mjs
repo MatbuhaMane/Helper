@@ -60,5 +60,10 @@ eq(M.servings({ servings: '4' }), 4, 'servings from meta');
 eq(M.servings({ servings: '4-6 מנות' }), 4, 'the first number');
 eq(M.servings({}), null, 'no servings');
 
+// the oven
+eq(M.temp(350, 'f').c, 177, '350°F');
+eq(M.temp(180, 'c').f, 356, '180°C');
+eq(M.temp(200, 'f').c, 93, '200°F');
+
 console.log(fail ? `${fail} of ${n} failed` : `all ${n} passed`);
 process.exit(fail ? 1 : 0);

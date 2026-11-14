@@ -48,9 +48,5 @@ eq(K.left(t, 999999), 0, 'done is zero');
 eq(K.left(K.addTime(t, 60, 2000000), 2000000), 60, 'a minute more on a timer that rang counts from now');
 eq(K.start('', 600, 1).name, '10 דק׳', 'a timer with no name is named by its time');
 
-// temperatures
-eq(K.temp(350, 'f').c, 177, '350°F');
-eq(K.temp(180, 'c').f, 356, '180°C');
-
 console.log(fail ? `${fail} of ${n} kitchen tests failed` : `kitchen: all ${n} tests passed`);
 process.exit(fail ? 1 : 0);

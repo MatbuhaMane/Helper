@@ -1,11 +1,11 @@
 /**
  * עוזר מטבח, the pure part (no page, no storage): reading times out of a recipe step, the timers' arithmetic, and the
- * converter's sums. Tested in server/test-kitchen.mjs.
+ * timers' storage is the page's (kept on this device for now, so it can move to the server later).
+ * (Conversions are Measure's, public/groceries/measure.js.) Tested in server/test-kitchen.mjs.
  *   Kitchen.times(step)              → [{ sec, label }] every time the step names ("10 דקות", "שעה וחצי", "5-7 דקות")
  *   Kitchen.clock(sec)               → "4:05", "1:02:30"
  *   Kitchen.left(timer, now)         → seconds left (a paused timer keeps what it had)
  *   Kitchen.pause / resume / addTime → a new timer object
- *   Kitchen.temp(n, from)            → { c, f } from 'c' or 'f'
  */
 (function () {
   const NUM = { 'דקה': 1, 'שעה': 1, 'שנייה': 1, 'שניה': 1, 'שעתיים': 2, 'דקותיים': 2 };
@@ -57,10 +57,7 @@
   const addTime = (t, sec, now = Date.now()) => (t.rest != null ? { ...t, rest: t.rest + sec, sec: t.sec + sec }
     : { ...t, end: Math.max(t.end, now) + sec * 1000, sec: t.sec + sec });
 
-  const round1 = (n) => Math.round(n * 10) / 10;
-  const temp = (n, from) => (from === 'f' ? { c: Math.round(((n - 32) * 5) / 9), f: n } : { c: n, f: Math.round((n * 9) / 5 + 32) });
-
-  const api = { times, label, clock, left, start, pause, resume, addTime, temp, round1 };
+  const api = { times, label, clock, left, start, pause, resume, addTime };
   if (typeof window !== 'undefined') window.Kitchen = api;
   if (typeof globalThis !== 'undefined') globalThis.Kitchen = api;
 })();

@@ -36,6 +36,8 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 
 ### Not merged into main (on `ai-features`, after 1ca3564)
 
+- **The guitar strum** (88e2795, **a master file**, public/index.html; patch in the CEO's notes): a soft sound for each direction (G down and up, A minor left to right, C right to left).
+- **Where the companion rests** (06c18c8): he does not rest on a control; corner fallbacks, then the side tab (no-overlap.md).
 - **The companion answers faster** (batch 14 §7), ready for review: 32d5a7c, no master files.
   - It streams (SSE on the same route, with JSON as the fallback), uses Sonnet for chat and Opus for heavy work, caches the prompt, and cuts the context in steps.
   - First word: 4.0 s before, about 1.1 s after (chat). Tests and the audit pass at 375 and 1280, light and dark.

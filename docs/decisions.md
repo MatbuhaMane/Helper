@@ -3209,3 +3209,29 @@ On `ai-features` (32d5a7c), not yet merged. No master file is touched: the strea
 - **Time to the first word** (locally, 5 questions):
   - before: 3.1–5.8 s, average 4.0, on Opus with no cache and no stream;
   - after: 1.0–1.3 s for chat, 2.3 s on a fresh conversation, 3.4–5.0 s when a tool runs first. The figure shows "thinking" at once (4 ms).
+
+## 2026-11-14 · The guitar strum, and where the companion rests (ai-features, the master's queue)
+
+- **The strum** (public/index.html, a master file: commit 88e2795 on `ai-features`, patch in the CEO's notes folder).
+  - Every direction has its own sound, all of them soft (the owner):
+    - down: an open G, low to high;
+    - up: the same G, high to low;
+    - left to right: an open A minor, picked low to high;
+    - right to left: an open C, picked high to low.
+  - All at the same quiet level (gain 0.06, lowpass 1300 Hz), with a short release.
+- **Where ראב"ע rests** (public/assets/daemon.js, 06c18c8), following docs/design/no-overlap.md:
+  - When he comes to rest, a 3 × 3 grid of points in the middle 60% of his frame is checked with `elementsFromPoint`, skipping his own parts.
+    - A button, link, field or `[role=button]` under any point means the spot is taken.
+  - The fallbacks, in order:
+    1. the inline-end corner above the tab bar;
+    2. the inline-start corner;
+    3. under the app bar at the inline-end;
+    4. otherwise he folds into the side tab for this screen only (not saved).
+  - A spot the person dragged or threw him to stays theirs, and is never moved.
+  - If the person opens him from the tab after an automatic fold, he stays out on that screen.
+  - It runs on load, after a walk, after a resize, on hashchange or popstate, and after a click on the page. It never runs while he is held, walking, flying, pointing or talking.
+  - Checked on the real pages:
+    - the calculator at 375: everything is taken, so he folds;
+    - the calendar at 375: he goes under the app bar;
+    - the calculator at 1280: the end corner;
+    - the calendar at 1280: he folds.

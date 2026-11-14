@@ -46,7 +46,9 @@ async function claudeJson<T extends z.ZodType>(env: Env, task: JsonTask<T>): Pro
       max_tokens: 16000,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
-      system: task.system,
+      // the system prompt is the same for every call of a task: cached, so a repeat call reads it at a tenth of the price and starts sooner
+      // (a prompt shorter than the model's minimum simply isn't cached; nothing breaks)
+      system: [{ type: 'text', text: task.system, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: task.prompt }],
       output_config: { effort: task.effort || 'medium', format: betaZodOutputFormat(task.schema) },
     });

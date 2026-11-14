@@ -5,7 +5,10 @@ import type { Env } from '../server/core';
 import { nightly } from '../server/vault/backup';
 import { ensureSchema } from '../server/schema';
 import * as push from '../server/push';
+import * as cook from '../server/cook';
+import * as home from '../server/home';
 const MORNING = '0 5 * * *';
+const MINUTE = '* * * * *';
 
 /** The family vault's page: only our own scripts (none inline), nothing framed, nothing from outside but the font. */
 const VAULT_CSP = [
@@ -47,7 +50,13 @@ export default {
   /** 05:00 UTC (07:00 in winter, 08:00 in summer): the morning note (server/push.ts). Otherwise the nightly job: */
   /** the nightly job: the vault's backups (only where the vault is configured) */
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-    if (event.cron === MORNING) { ctx.waitUntil(ensureSchema(env).then(() => push.morning(env)).then((n) => console.log('morning notes', n)).catch((e) => console.error('morning failed', e))); return; }
+    // every minute: the kitchen timers that end within it ring at their second, with the app closed (server/cook.ts)
+    if (event.cron === MINUTE) { ctx.waitUntil(ensureSchema(env).then(() => cook.tick(env)).catch((e) => console.error('kitchen timers failed', e))); return; }
+    if (event.cron === MORNING) {
+      ctx.waitUntil(ensureSchema(env).then(() => push.morning(env)).then((n) => console.log('morning notes', n)).catch((e) => console.error('morning failed', e)));
+      ctx.waitUntil(ensureSchema(env).then(() => home.remind(env)).then((n) => console.log('home reminders', n)).catch((e) => console.error('home reminders failed', e)));
+      return;
+    }
     if (!env.VAULT_KEY) return;
     ctx.waitUntil(ensureSchema(env).then(() => nightly(env)).then((r) => console.log('vault backup', JSON.stringify(r))).catch((e) => console.error('vault backup failed', e instanceof Error ? e.stack : e)));
   },

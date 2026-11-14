@@ -99,10 +99,16 @@
       } }, img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'));
     }
     if (v.clip) {    // a plain video file (מצחיק ואמיתי from Lemmy): its picture, and a tap plays it here
-      const play = () => el('video', { class: 'fun-clip', src: v.clip, controls: true, autoplay: true, playsinline: true, preload: 'metadata', 'aria-label': v.title });
-      media = v.src ? el('button', { class: 'fun-play pic', type: 'button', 'aria-label': 'ניגון: ' + v.title, onclick: () => media.replaceWith(el('div', { class: 'fun-frame tall' }, play())) },
+      // the player box: hold for 2×, slide sideways for 2.5× and 3× (gestures.js, loaded when a clip is first drawn)
+      const frame = (auto) => {
+        const vid = el('video', { class: 'fun-clip', src: v.clip, controls: true, autoplay: auto, playsinline: true, preload: 'metadata', 'aria-label': v.title });
+        const box = el('div', { class: 'fun-frame tall' }, vid);
+        H.loadOnce('/assets/gestures.js').then(() => window.Gestures.vidSpeed(box, vid)).catch((e) => console.warn('gestures did not load', e));
+        return box;
+      };
+      media = v.src ? el('button', { class: 'fun-play pic', type: 'button', 'aria-label': 'ניגון: ' + v.title, onclick: () => media.replaceWith(frame(true)) },
         img, el('span', { class: 'fun-play-ic', 'aria-hidden': 'true' }, '▶'))
-        : el('div', { class: 'fun-frame tall' }, el('video', { class: 'fun-clip', src: v.clip, controls: true, playsinline: true, preload: 'metadata', 'aria-label': v.title }));
+        : frame(false);
     }
     const src = () => el('a', { class: 'fun-src', href: v.link, target: '_blank', rel: 'noopener' }, v.source, /^Lemmy/.test(v.source) ? ' ↗' : ' · Reddit ↗');
     const art = el('article', { class: 'fun-card fun-i' + (v.video || v.clip ? '' : ' fun-pick') }, media, el('div', { class: 'fun-body' },

@@ -53,17 +53,25 @@ AFRICAN JUNIPER (later): an old African juniper (Juniperus procera): a tall flut
 crown in dense blue-green scaly tufts, a few small blue-black berries.
 ```
 
-**1–2. העץ השלם בשלוש עונות:** הצמרת, הענפים, הגזע והקרקע. אותו יחס ואותו גודל כמו המקור. שלוש בקשות, ובכל אחת משנים רק את העונה.
+**1–2. העץ השלם בשלוש עונות.** מצרפים את `tent.webp` ראשונה, ואת העץ שנבחר שנייה. כל עונה היא בקשה נפרדת, עם שורת העונה של העץ.
 
-צריך את כל העץ ולא רק את הצמרת והקרקע, כי גם בענפים ובראש הגזע יש עלים ירוקים.
+צריך את כל העץ ולא רק את הצמרת והקרקע, כי גם בענפים ובראש הגזע יש עלווה.
 ```
 The same tree as the second attached image: exactly the same trunk, branches, crown outline, ground, size, position
-and composition, same canvas size. Only the season changes:
-[AUTUMN: all foliage, including the leafy tips of the side branches, in amber, rust and ochre, a few leaves falling;
-fallen leaves on the ground | WINTER: bare dark branches with a light dusting of snow on top, no leaves on the side
-branches, a few small evergreen tufts; soft patches of snow on the ground | SPRING: fresh light-green leaves with small
-white and pink blossoms, also on the side branches; green grass with small wildflowers on the ground].
-Keep every branch and every empty space between the branches exactly where it is in the original.
+and composition, same canvas size. Keep every branch and every empty space exactly where it is. Only the season changes:
+```
+שורות העונה, לפי העץ:
+```
+PINE AUTUMN: the older inner needles turn yellow and rust-brown while the outer tips stay green, a few needles falling,
+a carpet of brown fallen needles and a few cones on the ground.
+PINE WINTER: dark green needles, a light dusting of snow on top of the boughs and the crown, soft patches of snow on the ground.
+PINE SPRING: bright light-green new shoots ("candles") at the tips of the branches, small yellow pollen cones, green grass
+and small wildflowers on the ground.
+
+OLIVE AUTUMN: silver-green foliage, ripe dark purple and black olives, a few yellowed leaves falling, fallen leaves and
+olives on the ground.
+OLIVE WINTER: silver-green foliage, a light dusting of snow on top of the crown, soft patches of snow on the ground.
+OLIVE SPRING: fresh light-green new leaves, clusters of tiny creamy-white olive blossoms, green grass and wildflowers.
 ```
 
 **3. העלה בשלוש עונות.** יחס 1:1, ובקשה נפרדת לכל עונה.

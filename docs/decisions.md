@@ -11,6 +11,29 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – the switchboard in the back door: app-wide on/offs, experimental content, moods, קודש (ai-features → master, design)
+
+- **Appended:** the table `app_switches` at the end of `schema.sql`; GET and PUT `/api/admin/switches` and one import line in
+  `functions/api/[[path]].ts`. No existing line edited there in 9c7d7e7.
+- **Who:** the board is behind `requireAdmin(ctx, 'own')`; changing a switch needs the owner level (a super sees it, cannot change).
+  Every member reads the state in `/api/me` (`switches`), with `kodesh` already worked out from the auto switch.
+- **The switches** (`server/switches-rules.ts`): exp hide/only/all, mood normal/party/mourning, kodesh, kodesh_auto (Hebcal's
+  candle lighting to havdalah, Jerusalem), daemon, push, messages, dm, reports, music, capture, eggs. The board also shows the
+  four bool app settings (gather.enabled, gather.guest_signup, calendar.feed, money.shop_open); they keep `app_settings` and left
+  the settings panel, so they are changed in one place.
+- **Pushes:** off, or קודש (by hand or auto), hold everything but emergency and test; they go to the summary.
+- **For the master** (daa0474, patch `0001-master-files-the-switchboard-s-apply-side-common.js-.patch` in its notes):
+  `/api/me` gains `switches`; common.js (H.switches, H.swOn, the marks on `<html>`, the loads gated by their switch); apps.js
+  (the exp and קודש filter, FUTURE/SOON); index.html (the companion not mounted when off); `test-switches` in `npm test`.
+  Perhaps `/assets/switches.js` in sw.js's precache.
+- **For design:** /admin uses design's markup from `docs/design/switchboard.md` (design 998e862): `details.bd-state(.has-alert)` >
+  `summary.bd-state-sum`; `section.sb` > `header.sb-head`, `div.sb-cats` > `section.sb-cat[--c]` > `h3.sb-cat-h` + `ul.sb-list` >
+  `li.sb-row(.sb-row-seg, .saving, .saved, .failed, .danger on קודש, .changed)`; `.sb-switch`, `.sb-seg(.sb-mood)` with arrow keys;
+  locked controls carry `aria-disabled`. In the app: `html[data-mood=party|mourning]` (the faded palette is yours),
+  `html[data-kodesh="1"]` (a Shabbat look), `html[data-exp]`; the effects layer `.mood-fx` with `.mood-confetti`, `.mood-balloon`
+  > `.mood-string`, `.mood-candles` > `.mood-candle` > `.mood-flame` (place `--x`, colour `--c`; motion is in JS).
+Status: done on ai-features; the master files wait for the merge.
+
 ## 2026-11-14 – תיבת פניות: reports from any page, the owner's inbox, private answers (ai-features → master, design)
 
 - **Appended:** the tables `reports` and `report_messages` at the end of `schema.sql`. Nine routes at the end of

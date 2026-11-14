@@ -1402,7 +1402,8 @@
     try { speechSynthesis?.cancel(); } catch (_) { /* ignore */ }
   }
   /** 'always' · 'mirror' (aloud when spoken to, in writing when written to) · 'silent'; older prefs had speak on/off */
-  const voiceMode = () => prefs.voice || (prefs.speak === false ? 'silent' : 'always');
+  // קודש (the owner's switchboard, H.switches.kodesh): he stays calm, without speaking aloud
+  const voiceMode = () => (H.switches?.kodesh === true ? 'silent' : prefs.voice || (prefs.speak === false ? 'silent' : 'always'));
   let heardByVoice = false, answerByVoice = false;
   /* Each figure has its own voice (server/voice-figures.ts): רַאבַּ"ע the deep old sage, each animal a light one. The person's
      choice is kept per figure (prefs.voices); for רַאבַּ"ע the server also keeps the old single choice (voice_prefs). */

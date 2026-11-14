@@ -6,7 +6,8 @@
 import type { Ctx, Env } from './core';
 import { HttpError, json, body, requireUser } from './core';
 import { prefsFor } from './prefs';
-import { decide, windowsFrom, type Kind, type NotifyPrefs, type Window } from './push-gate';
+import { decide, inShabbat, windowsFrom, type Kind, type NotifyPrefs, type Window } from './push-gate';
+import { switchesNow } from './switches';
 
 type PushEnv = Env & { VAPID_PUBLIC?: string; VAPID_PRIVATE?: string };
 const enc = new TextEncoder();
@@ -71,7 +72,7 @@ async function sendOne(env: PushEnv, s: Sub, m: PushMsg): Promise<boolean> {
 
 /* Shabbat and Yom Tov windows per city, from Hebcal, kept for 6 hours in this isolate */
 const shabbatCache = new Map<string, { at: number; w: Window[] }>();
-async function windowsFor(geo: string): Promise<Window[]> {
+export async function windowsFor(geo: string): Promise<Window[]> {
   const c = shabbatCache.get(geo);
   if (c && Date.now() - c.at < 6 * 3600_000) return c.w;
   try {
@@ -86,10 +87,14 @@ async function windowsFor(geo: string): Promise<Window[]> {
 async function gate(env: Env, email: string, m: PushMsg): Promise<'send' | 'hold'> {
   const kind: Kind = m.urgent ? 'emergency' : m.kind || 'other';
   if (kind === 'emergency' || kind === 'test') return 'send';
+  // the owner's switchboard: pushes off for everyone, or קודש (set, or auto inside a Shabbat/Yom Tov window)
+  const sw = await switchesNow(env);
+  if (sw.push === false || sw.kodesh === true) return 'hold';
+  if (sw.kodesh_auto === true && inShabbat(Date.now(), await windowsFor('281184'))) return 'hold';
   const p = await prefsFor(env, email);
   const n = (p.notify?.data || {}) as NotifyPrefs;
   const city = String(p.calendar?.data?.city || p.parasha?.data?.city || '281184');
-  const w = n.shabbat ? await windowsFor(/^d{3,9}$/.test(city) ? city : '281184') : [];
+  const w = n.shabbat ? await windowsFor(/^\d{3,9}$/.test(city) ? city : '281184') : [];
   return decide(kind, Date.now(), n, w);
 }
 

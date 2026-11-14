@@ -133,13 +133,27 @@
 
   /* the layout in use: the owner's preview on this tab (sessionStorage), else the last one this device got, refreshed
      from the server every few minutes; a change is applied in place (H.APPS keeps its identity) and announced */
+  /* the owner's switchboard (H.switches; the same rules as server/switches-rules.ts, and test-switches checks they agree):
+     exp 'hide' drops the experimental apps (a tag or beta) and the בעתיד/בקרוב items, 'only' keeps only the experimental
+     apps (and the fixed items); קודש tucks away the weekday tools. Only what is drawn: the pages stay at their address. */
+  const WEEKDAY = ['/groceries/', '/mail/', '/tools/parnasa/', '/pc/'];
+  const isExp = (a) => !!a.tag || a.access === 'beta';
+  function shows(a, s) {
+    if (!a || a.fixed) return true;
+    if (s.kodesh === true && WEEKDAY.includes(a.href)) return false;
+    if (s.exp === 'hide') return !isExp(a);
+    if (s.exp === 'only') return isExp(a);
+    return true;
+  }
   const PARTS = [], PINS = [];
-  let TREE = [], HIDDEN = [];
+  let TREE = [], HIDDEN = [], LAYOUT = null;
   function use(layout) {
+    LAYOUT = layout;
     const m = mergeLayout(CODE, { parts: DEFAULT_PINS, pins: DEFAULT_PINS }, layout);
-    APPS.splice(0, APPS.length, ...m.apps);
-    PARTS.splice(0, PARTS.length, ...m.parts);
-    PINS.splice(0, PINS.length, ...m.pins);
+    const s = H.switches || {}, code = (h) => CODE.find((a) => a.href === h);
+    APPS.splice(0, APPS.length, ...m.apps.filter((a) => shows(a, s)));
+    PARTS.splice(0, PARTS.length, ...m.parts.filter((h) => shows(code(h), s)));
+    PINS.splice(0, PINS.length, ...m.pins.filter((h) => shows(code(h), s)));
     TREE = m.tree; HIDDEN = m.hidden;
   }
   const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* no storage */ } };
@@ -193,6 +207,15 @@
     { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
     { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' },
   ];
-  Object.assign(H, { APPS, PARTS, SOON, CATS, FUTURE, mayOpen, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
+  // what is still to come (בעתיד, בקרוב): hidden when the switchboard hides the experimental; a change redraws the menus
+  const FUTURE_ALL = FUTURE.slice(), SOON_ALL = SOON.slice();
+  function future() {
+    const on = (H.switches || {}).exp !== 'hide';
+    FUTURE.splice(0, FUTURE.length, ...(on ? FUTURE_ALL : []));
+    SOON.splice(0, SOON.length, ...(on ? SOON_ALL : []));
+  }
+  future();
+  addEventListener('h:switches', () => { use(LAYOUT); future(); dispatchEvent(new CustomEvent('h:layout')); });
+  Object.assign(H, { APPS, PARTS, SOON, CATS, FUTURE, isExp, showsApp: (a) => shows(a, H.switches || {}), mayOpen, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
     layout: () => ({ code: CODE, tree: TREE, hidden: HIDDEN, pins: PINS.slice(), defaultPins: DEFAULT_PINS.slice() }) });
 })();

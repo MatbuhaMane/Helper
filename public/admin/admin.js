@@ -104,6 +104,7 @@
       el('span', { class: 'spacer' }), stay, lock);
     /* on top, the board: how the tent is doing, who uses what, and the family's feedback (own account only) */
     const top = { dash: el('div', { class: 'bd-part', id: 'dash', style: 'grid-column:1/-1' }) };   // the state spans the width
+    if (st.own) top.switches = el('div', { class: 'bd-part', 'data-part': 'switches', style: 'grid-column:1/-1' });   // the switchboard, under it
     let dashP;
     if (st.own) { top.usage = el('div', { class: 'bd-part', 'data-part': 'usage' }); top.inbox = el('div', { class: 'bd-part', 'data-part': 'inbox' }); }
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
@@ -142,7 +143,7 @@
       el('nav', { class: 'apps-grid bd-apps', 'aria-label': 'חלקי הדלת' }, tiles),
       ...Object.values(panels)));
     dashP = dash(top.dash);
-    if (st.own) { usage(top.usage); inbox(top.inbox); }
+    if (st.own) { switchboard(top.switches); usage(top.usage); inbox(top.inbox); }
     show(location.hash.slice(1), !!location.hash);
   }
 
@@ -276,8 +277,12 @@
     const s = d.stats, m = d.money;
     const tile = (label, value, cls = '') => el('div', { class: 'ad-tile ' + cls }, el('small', {}, label), el('b', {}, value));
     const mb = (n) => (n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : (n / 1e6).toFixed(1) + ' MB');
-    box.replaceChildren(el('section', { class: 'card bd-state' },
-      el('h2', {}, 'מצב האוהל'),
+    /* folded to one line by default (the owner, 2026-11-14); a tap opens and closes it, kept on this device */
+    let opened = false; try { opened = localStorage.getItem('helper.admin.stateOpen') === '1'; } catch (_) { /* no storage */ }
+    const line = [d.alerts.length ? `${d.alerts.length} התראות` : null, m ? `נטו ${ils(m.total.net)}` : null, `AI החודש ${usd(d.ai.month)}`, `${s.active} נכנסו השבוע`].filter(Boolean).join(' · ');
+    const fold = el('details', { class: 'card ad-fold bd-state' + (d.alerts.length ? ' has-alert' : ''), open: opened,
+      ontoggle: () => { try { localStorage.setItem('helper.admin.stateOpen', fold.open ? '1' : '0'); } catch (_) { /* no storage */ } } },
+      el('summary', { class: 'bd-state-sum' }, el('h2', {}, 'מצב האוהל'), el('span', { class: 'bd-state-line' }, line), el('i', { class: 'bd-state-chev', 'aria-hidden': 'true' })),
       ...d.alerts.map((a) => el('p', { class: 'notice ad-alert' }, a)),
       m ? el('div', { class: 'ad-tiles' },
         tile('הכנסות עד היום', ils(m.total.income), 'good'),
@@ -287,8 +292,83 @@
       el('div', { class: 'ad-tiles', style: 'margin-top:10px' },
         tile('AI החודש', usd(d.ai.month)), tile('AI היום', usd(d.ai.today)), tile('AI מאז ההתחלה', usd(d.ai.total)),
         tile('חברים', s.members), tile('משקי בית', s.households), tile('נכנסו השבוע', s.active),
-        tile('אנשים בעצים', s.people), tile('קבצים בכספת', `${s.files} · ${mb(s.bytes)}`), tile('מפגשים', `${s.gatherings} · ${s.answers} תשובות`), tile('קישורים ליומן', s.feeds))));
+        tile('אנשים בעצים', s.people), tile('קבצים בכספת', `${s.files} · ${mb(s.bytes)}`), tile('מפגשים', `${s.gatherings} · ${s.answers} תשובות`), tile('קישורים ליומן', s.feeds)));
+    box.replaceChildren(fold);
     return d;
+  }
+
+  /* ---------- the switchboard: every app-wide on/off, by category (server/switches.ts; the look is design's .sb) ---------- */
+  async function switchboard(box) {
+    let d;
+    try { d = await call('/api/admin/switches'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
+    /* design's markup and states (docs/design/switchboard.md): .saving while the server answers, .saved for a second,
+       .failed with the reason in the row's small (the control stays as it was), .danger where "on" stops something for everyone */
+    const LOOK = { view: ['smile', '#9a5fa8'], kodesh: ['torah', '#3557a8'], ai: ['compass', '#3d7ea6'], notify: ['mail', '#c8553d'],
+      tools: ['tools', '#5b8c5a'], family: ['family', '#d97a9b'], money: ['parnasa', '#b8862b'] };
+    const DANGER = new Set(['kodesh']);
+    const LOCKED = 'רק בעל האוהל משנה את המתגים.';
+    const id = (sw) => 'sw-' + sw.key.replace(/[^\w-]/g, '-');
+    let flash = null;   // { key, cls, why } drawn once after a save
+    const put = async (sw, value, li) => {
+      if (li.classList.contains('saving')) return;
+      li.classList.remove('saved', 'failed');
+      li.classList.add('saving');
+      try {
+        const r = await call('/api/admin/switches', { method: 'PUT', body: { key: sw.key, value } });
+        sw.value = value;
+        if (sw.key === 'kodesh' || sw.key === 'kodesh_auto') d.kodeshNow = r.now?.kodesh;
+        flash = { key: sw.key, cls: 'saved' };
+        toast('נשמר. אצל כולם בכניסה הבאה לדף');
+      } catch (e) { flash = { key: sw.key, cls: 'failed', why: ERR[e?.code] || e?.message || 'לא נשמר' }; }
+      const focused = document.activeElement?.closest?.('.sb-row')?.dataset.key === sw.key;
+      draw();
+      if (focused) sec.querySelector(`.sb-row[data-key="${CSS.escape(sw.key)}"] [aria-checked="true"], .sb-row[data-key="${CSS.escape(sw.key)}"] .sb-switch`)?.focus();
+    };
+    const control = (sw, li) => {
+      const lock = d.may ? null : 'true';
+      if (sw.kind === 'choice') {
+        const pick = (v) => { if (!d.may || sw.value === v) return; put(sw, v, li); };
+        const seg = el('div', { class: 'sb-seg' + (sw.key === 'mood' ? ' sb-mood' : ''), role: 'radiogroup', 'aria-labelledby': id(sw), 'aria-disabled': lock,
+          onkeydown: (e) => {   // the arrows move the choice (in RTL, ← is next)
+            const step = { ArrowLeft: 1, ArrowDown: 1, ArrowRight: -1, ArrowUp: -1 }[e.key];
+            if (!step) return;
+            e.preventDefault();
+            const vs = sw.options.map(([v]) => v), i = vs.indexOf(sw.value);
+            pick(vs[(i + step + vs.length) % vs.length]);
+          } },
+          sw.options.map(([v, t]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(sw.value === v), 'data-v': v,
+            tabindex: sw.value === v ? '0' : '-1', 'aria-disabled': lock, onclick: () => pick(v) }, t)));
+        return seg;
+      }
+      return el('button', { type: 'button', class: 'sb-switch', role: 'switch', 'aria-checked': String(sw.value === true), 'aria-label': sw.label, 'aria-disabled': lock,
+        onclick: () => { if (d.may) put(sw, !(sw.value === true), li); } });
+    };
+    const row = (sw) => {
+      const f = flash?.key === sw.key ? flash : null;
+      const cls = ['sb-row', sw.kind === 'choice' ? 'sb-row-seg' : '', DANGER.has(sw.key) ? 'danger' : '', sw.value !== sw.def ? 'changed' : '', f ? f.cls : ''].filter(Boolean).join(' ');
+      const li = el('li', { class: cls, 'data-key': sw.key },
+        el('div', { class: 'sb-txt' }, el('b', { id: id(sw) }, sw.label), el('small', {}, f?.why || (d.may ? sw.help : `${sw.help} ${LOCKED}`))));
+      li.append(control(sw, li));
+      if (f?.cls === 'saved') setTimeout(() => li.classList.remove('saved'), 1000);
+      return li;
+    };
+    const sec = el('section', { class: 'sb', id: 'switchboard', 'aria-labelledby': 'sb-h' });
+    function draw() {
+      const changed = d.switches.filter((x) => x.value !== x.def).length;
+      sec.replaceChildren(
+        el('header', { class: 'sb-head' }, el('h2', { id: 'sb-h' }, 'לוח המתגים'),
+          el('p', { class: 'muted' }, (d.may ? 'כל המתגים של האוהל, לפי נושא. שינוי חל על כולם.' : LOCKED) + (changed ? ` · ${changed} שונו מהרגיל` : '') + (d.kodeshNow ? ' · עכשיו קודש' : ''))),
+        el('div', { class: 'sb-cats' }, ...d.cats.map(([cat, name]) => {
+          const list = d.switches.filter((x) => x.cat === cat);
+          const [ic, c] = LOOK[cat] || ['settings', '#6b6b6b'];
+          return list.length ? el('section', { class: 'sb-cat', style: `--c:${c}`, 'data-cat': cat },
+            el('h3', { class: 'sb-cat-h' }, el('span', { class: 'sb-cat-ic', 'aria-hidden': 'true' }, H.icon(ic)), name),
+            el('ul', { class: 'sb-list' }, ...list.map(row))) : null;
+        })));
+      flash = null;
+    }
+    draw();
+    box.replaceChildren(sec);
   }
   function money(box, m) {
     const kind = el('select', { 'aria-label': 'סוג' }, [['expense', 'הוצאה'], ['income', 'הכנסה']].map(([v, t]) => el('option', { value: v }, t)));
@@ -318,7 +398,9 @@
 
   /* ---------- settings ---------- */
   async function settings(box) {
-    const { settings: list } = await call('/api/admin/settings');
+    // the on/offs that are on the switchboard (server/switches-rules.ts SETTING_CATS) are changed there, not twice
+    const ON_BOARD = new Set(['gather.enabled', 'gather.guest_signup', 'calendar.feed', 'money.shop_open']);
+    const list = (await call('/api/admin/settings')).settings.filter((s) => !ON_BOARD.has(s.key));
     const groups = [...new Set(list.map((s) => s.group))];
     const control = (s) => {
       const save = async (value) => { try { await call('/api/admin/settings', { method: 'PUT', body: { key: s.key, value } }); toast('נשמר'); } catch (e) { say(e); } };

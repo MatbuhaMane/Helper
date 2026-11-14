@@ -251,3 +251,21 @@ button.pr-cat, .pr-cat > button { font: inherit; color: inherit; text-align: sta
 
 @media (prefers-reduced-motion: reduce) { .pr-meter i { transition: none; } }
 :root[data-motion="reduce"] .pr-meter i { transition: none; }
+
+/* ---------- asked by ai-features (status 2026-11-14): the קופה invite and foot, the review's flip, the manage lists' buttons ---------- */
+/* an invitation to a shared קופה: a quiet vine card above the month, the two answers as the quick buttons */
+.pr-invite { display: grid; gap: 14px; border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--line));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--primary) 12%, var(--card)), var(--card) 75%); }
+.pr-invite > p { margin: 0; line-height: 1.6; }
+.pr-invite > p b { font-weight: 600; }
+.pr-invite .pr-quick-btns .btn { min-block-size: 48px; }
+/* the קופה's foot: invite / leave (or open one), centred under the page, wrapping on a phone */
+.pr-foot { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 10px; margin: 6px 0 0; }
+.pr-foot .btn { min-block-size: 44px; }
+/* the flip in the import review, and any toggle on the page: a full line, 44px to press, the text in ink */
+.pr-review-sum ~ .toggle, .pr-entry-more .toggle { margin: 0; min-block-size: 44px; color: var(--text); cursor: pointer; }
+.pr-review-sum ~ .toggle { justify-self: start; line-height: 1.4; }
+/* the rows in the manage lists (H.modal) end with a button: it takes the end column, centred, 44px high */
+:is(.pr-recur-list, .pr-tx-list, .pr-holds) li > .btn { grid-column: -2; grid-row: 1 / span 2; align-self: center; min-block-size: 44px; white-space: nowrap; }
+/* the tx manage row has no icon: the line and the button only */
+.pr-tx-list li:has(> .pr-line:first-child) { grid-template-columns: minmax(0, 1fr) auto; }

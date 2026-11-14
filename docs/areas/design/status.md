@@ -2,7 +2,16 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 6)._
+_Updated 2026-11-14 (the new chat, round 7)._
+
+## Round 7 (2026-11-14): the olive's faces smaller (the owner's choice)
+
+- In olea the face is 7.6% of the tree's width (was 10.04%): 27 px at 375, 58 px on desktop; one size in every season and on
+  empty seats, the seats unchanged. Measured from the frames' own pixels at every seat: no two frames' leaves touch, with a
+  gap of at least 2 px at 375, 380 and 760 (8% still touched at 375). Initials 11 px, names 17 px.
+- The frames are re-exported for the new size (264 px, 12 and 17 KB, the same hole). Checked at 375 and 1280, light and dark;
+  audit clean.
+
 
 ## Round 6 (2026-11-14): the olive's head frames (33 winter, 34 summer)
 
@@ -12,8 +21,7 @@ _Updated 2026-11-14 (the new chat, round 6)._
 - tree.css: a frame round every seated person in olea, in place of the CSS ring (empty seats have none). Winter and snow wear
   33; summer, autumn and spring wear 34. Seats unchanged. Checked at 375 and 1280, light and dark; audit clean; no tag is
   covered by another seat's frame.
-- **Weak spot:** the summer ring is thick (the ring itself 1.7× the face, with leaves 2.3×), so neighbours' leaves touch
-  and the tree looks busy at 375. If the owner finds it too heavy: a thinner summer frame, or the face smaller in olea.
+- The summer ring is thick (1.7× the face, 2.3× with leaves): round 7 made the face smaller.
 
 
 ## Round 5 (2026-11-14): the olive's seasons (29-31), the olive share frame (28)

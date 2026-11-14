@@ -422,3 +422,7 @@
 /* the closest seats are 13.8 % of the width apart: the tag stays inside that, the dates may wrap */
 .tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-tag { max-inline-size: 13.4cqi; padding-inline: 4px; }
 .tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-tag small { white-space: normal; }
+/* the face is smaller in the olive (the owner, for the thick summer frame): 7.6% of the width, so no two frames' leaves touch,
+   with a 2 px gap at 375 and on desktop; one size in every season and for empty seats, so nothing jumps. The seats stay. (After the shared
+   rule above, which has the same specificity.) */
+.tree[data-kind="olea"]:not([data-look="frame"]) .tr-p { --leaf: 7.6cqi; }

@@ -2,12 +2,12 @@
 # The white outside, the hole and the gaps between the twigs go; edges un-multiplied from white.
 # Normalised: each is scaled so its hole (the largest circle inside it) has radius HOLE px, centred on the canvas, so the face
 # sits the same in every season. The face's radius is HOLE * TUCK (it tucks under the ring a little), so in tree.css the frame
-# is SIDE / (2 * HOLE * TUCK) times the face's width. Sized for the seat at 2x on desktop (the tree at most 760 px, the seat
-# 10.04% of it: a 76 px face).   python docs/design/art/cut-olive-head-frames.py   (numpy, scipy, Pillow)
+# is SIDE / (2 * HOLE * TUCK) times the face's width. Sized for the seat at 2x on desktop (the tree at most 760 px, the olive's
+# framed face 7.6% of it, so the neighbours' leaves don't touch at 375: a 58 px face).   python docs/design/art/cut-olive-head-frames.py   (numpy, scipy, Pillow)
 import numpy as np
 from PIL import Image
 from scipy import ndimage as ndi
-SIDE, HOLE, TUCK = 352, 74, 1.04
+SIDE, HOLE, TUCK = 264, 55.5, 1.04
 for n, name in (('33', 'winter'), ('34', 'summer')):
     a = np.asarray(Image.open(f'data/art/owner-2026-11-14/{n}.webp').convert('RGB')).astype(np.float32)
     mn, mx = a.min(-1), a.max(-1)

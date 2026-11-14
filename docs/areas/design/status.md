@@ -811,3 +811,5 @@ _Updated 2026-11-14 (round 23)._
 - Round 25: silhouettes (sil-m/f/x, `.sil[data-sil]`) for people not yet signed in; see docs/design/silhouettes.md.
 
 - Round 26: `app-icons/yad.webp`, the icon of "יד ביד" (an open hand with a sprout on the palm; no coin). Script `docs/design/art/draw-yad-icon.py`. No screens yet, waiting for the vision spec.
+
+- Round 27: יד ביד stage 1 screens: `public/tools/yad/yad.css`, prototype `docs/design/prototype/yad.html`, spec `docs/design/yad.md`. Waiting for ai-features to build; the owner approval queue is not designed (separate spec).

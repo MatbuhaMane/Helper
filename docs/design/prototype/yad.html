@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>יד ביד – אב טיפוס</title>
+  <!-- The design prototype of יד ביד, stage 1 (docs/design/yad.md). It uses the real styles: copy it to public/ for a moment so
+       /assets/base.css and /tools/yad/yad.css load. The data is invented. The JS only opens and closes the sheets and toggles states. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/tools/yad/yad.css">
+  <style>
+    body { padding: 0 16px 90px; }
+    .proto-nav { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; background: var(--bg); scrollbar-width: none; }
+    .proto-nav button { flex: none; }
+    .proto-nav button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    [data-screen][hidden] { display: none; }
+  </style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="yd-hand" viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V13M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.8-2.4L4.5 14.5a1.6 1.6 0 0 1 2.6-1.9L8 14"/></symbol>
+  <symbol id="yd-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></symbol>
+  <symbol id="yd-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="yd-board" viewBox="0 0 24 24"><rect x="4" y="4.5" width="16" height="15" rx="2.5"/><path d="M8 9h8M8 12.5h8M8 16h5"/></symbol>
+  <symbol id="yd-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="yd-tent" viewBox="0 0 24 24"><path d="M3.5 19.5 12 5l8.5 14.5ZM12 19.5l-2.5-5h5Z"/></symbol>
+  <symbol id="yd-leaf" viewBox="0 0 24 24"><path d="M12 20.5v-8M12 12.5C12 8.6 9.2 6.5 5 6.5c0 3.9 2.8 6 7 6ZM12 14.5c0-3.2 2.4-5.2 6.5-5.2 0 3.2-2.4 5.2-6.5 5.2Z"/></symbol>
+</svg>
+
+<nav class="proto-nav" aria-label="מסכי אב הטיפוס">
+  <button class="chip" data-go="home" aria-pressed="true">המסך הראשון</button>
+  <button class="chip" data-sheet="board">לוח הדרושים</button>
+  <button class="chip" data-sheet="create">יצירת צורך</button>
+  <button class="chip" data-go="profile">בפרופיל</button>
+  <button class="chip" data-go="pot">הקופה</button>
+  <button class="chip" data-sheet="pub">בקשה לטובת הציבור</button>
+</nav>
+
+<!-- ============ 1. the first screen ============ -->
+<main class="yd" data-screen="home">
+  <a class="yd-back" href="#">‹ כלים</a>
+
+  <section class="card yd-banner" aria-label="אני">
+    <span class="yd-face"><span class="sil" data-sil="f" aria-hidden="true"></span></span>
+    <div class="grow">
+      <h1>יד ביד</h1>
+      <p>לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בתמורה</p>
+      <span class="yd-area"><svg aria-hidden="true"><use href="#yd-pin"/></svg>מבשרת ציון · <button class="yd-link" type="button" data-go="profile">שינוי</button></span>
+    </div>
+  </section>
+
+  <section class="yd-dash" aria-label="הנתונים שלי">
+    <div class="card yd-fig bal"><small>היתרה שלי</small><b><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>12 <small>ידיים</small></b></div>
+    <div class="card yd-fig ex"><small>נתתי וקיבלתי</small>
+      <div class="yd-pair">
+        <div><span>בחודש האחרון</span><p class="gr"><em>נתתי</em><b>5</b></p><p class="gr"><em>קיבלתי</em><b>3</b></p></div>
+        <div><span>בסך הכול</span><p class="gr"><em>נתתי</em><b>31</b></p><p class="gr"><em>קיבלתי</em><b>24</b></p></div>
+      </div>
+    </div>
+    <a class="card yd-fig" href="#" data-go="pot"><small>התרומה שלי לקופה</small><b><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</b><span class="yd-more">לדף הקופה ‹</span></a>
+    <button class="card yd-fig wait has" type="button"><small>מחכה לי</small><b>2</b><span class="yd-more">אישור שירות · המלצה</span></button>
+  </section>
+
+  <div class="yd-acts">
+    <button class="btn primary" type="button" data-sheet="board"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#yd-board"/></svg>לוח הדרושים</button>
+    <button class="btn" type="button" data-sheet="create"><svg aria-hidden="true" viewBox="0 0 24 24"><use href="#yd-plus"/></svg>יצירת צורך</button>
+  </div>
+
+  <div class="yd-lists">
+    <section class="card yd-list" aria-labelledby="l1">
+      <header><h2 id="l1">הצרכים שמילאתי</h2>
+        <div class="yd-seg" role="group" aria-label="הצרכים שמילאתי"><button type="button" aria-pressed="true" data-pane="l1a">פעילים</button><button type="button" aria-pressed="false" data-pane="l1b">מהעבר</button></div></header>
+      <ul class="yd-rows" data-panel="l1a">
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/kitchen.webp" alt="" width="26" height="26"></span><div class="tx"><b>עזרה בהכנות לשבת</b><small>אצל נועה · מחר 10:00</small><span class="yd-tags"><span class="yd-tag act">ממתין לאישור שלה</span></span></div><span class="yd-amt in"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>2</span></div></li>
+        <li><div class="yd-row"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>סידור הכסאות בקהילה</b><small>לטובת הציבור</small><span class="yd-tags"><span class="yd-tag pub">לטובת הציבור</span></span></div><span class="yd-amt in"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>1</span></div></li>
+      </ul>
+      <ul class="yd-rows" data-panel="l1b" hidden>
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/garage.webp" alt="" width="26" height="26"></span><div class="tx"><b>החלפת נורה בגינה</b><small>אצל דוד · לפני שבוע</small></div><span class="yd-amt in"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>1</span></div></li>
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/homework.webp" alt="" width="26" height="26"></span><div class="tx"><b>עזרה בשיעורי מתמטיקה</b><small>אצל רות · לפני שלושה שבועות</small><span class="yd-tags"><span class="yd-tag">המלצה נכתבה</span></span></div><span class="yd-amt in"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</span></div></li>
+      </ul>
+    </section>
+
+    <section class="card yd-list" aria-labelledby="l2">
+      <header><h2 id="l2">הצרכים שלי</h2>
+        <div class="yd-seg" role="group" aria-label="הצרכים שלי"><button type="button" aria-pressed="true" data-pane="l2a">פעילים</button><button type="button" aria-pressed="false" data-pane="l2b">מהעבר</button></div></header>
+      <ul class="yd-rows" data-panel="l2a">
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/translate.webp" alt="" width="26" height="26"></span><div class="tx"><b>תרגום מכתב מרוסית</b><small>פורסם אתמול · אף אחד עוד לא נרשם</small><span class="yd-tags"><span class="yd-tag pend">הרמה ממתינה לאישור</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>כ-4</span></div></li>
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/pc.webp" alt="" width="26" height="26"></span><div class="tx"><b>התקנת מדפסת</b><small>יוסי בדרך אליי · היום 17:00</small><span class="yd-tags"><span class="yd-tag act">צריך לאשר אחרי</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>2</span></div></li>
+      </ul>
+      <ul class="yd-rows" data-panel="l2b" hidden>
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/garden.webp" alt="" width="26" height="26"></span><div class="tx"><b>גזם בגינה</b><small>ליאור · לפני חודש</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</span></div></li>
+      </ul>
+    </section>
+  </div>
+</main>
+
+<!-- ============ 2. the profile: what I am willing to give, and my area ============ -->
+<main class="yd" data-screen="profile" hidden>
+  <a class="yd-back" href="#" data-go="home">‹ יד ביד</a>
+  <h1 style="font-size:1.6rem">מה אני מוכן לתת</h1>
+  <p style="margin:-8px 0 0;color:var(--muted)">מסמנים סוגי שירות מהרשימה של הבעלים. כשמתפרסם צורך מתאים תקבלו התראה, לפי רמת הניג'וס שלכם. אין לוח הצעות.</p>
+  <section class="card yd-give">
+    <details open><summary>בית וגינה <small>2 מסומנים</small></summary><div class="yd-checks">
+      <label class="yd-check"><input type="checkbox" checked><span>תיקון קטן בבית</span><small>רמה 2</small></label>
+      <label class="yd-check"><input type="checkbox"><span>גינון וגזם</span><small>רמה 3</small></label>
+      <label class="yd-check"><input type="checkbox" checked><span>הובלה קטנה</span><small>רמה 3</small></label></div></details>
+    <details><summary>מחשבים וטכנולוגיה <small>עוד לא סימנתי</small></summary><div class="yd-checks">
+      <label class="yd-check"><input type="checkbox"><span>התקנה ועזרה במחשב</span><small>רמה 2</small></label>
+      <label class="yd-check"><input type="checkbox"><span>עזרה בטלפון</span><small>רמה 1</small></label></div></details>
+    <details><summary>למידה ושפות <small>1 מסומן</small></summary><div class="yd-checks">
+      <label class="yd-check"><input type="checkbox" checked><span>עזרה בשיעורי בית</span><small>רמה 2</small></label>
+      <label class="yd-check"><input type="checkbox"><span>תרגום</span><small>רמה 3</small></label></div></details>
+  </section>
+  <section class="card yd-give" aria-labelledby="ar">
+    <h2 id="ar">האזור שלי</h2>
+    <label class="field"><span>יישוב או שכונה</span><input type="text" value="מבשרת ציון"></label>
+    <div class="yd-switch"><div><b>לדייק לפי ה-GPS</b><small>רשות. הנקודה לא נשמרת בשרת, ואחרים רואים רק מרחק משוער.</small></div><label class="yd-check" style="flex:none"><input type="checkbox" aria-label="לדייק לפי ה-GPS"></label></div>
+    <p class="yd-note">אחרים רואים רק מרחק משוער, כמו "כ-3 ק"מ". הכתובת המדויקת עוברת רק בין שני הצדדים, אחרי שהסכימו על השירות.</p>
+  </section>
+</main>
+
+<!-- ============ 3. the treasury ============ -->
+<main class="yd" data-screen="pot" hidden>
+  <a class="yd-back" href="#" data-go="home">‹ יד ביד</a>
+  <section class="card yd-pot"><small>הקופה הציבורית</small><b><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>148</b><p>עשירית מכל יד נכנסת לכאן, ועוזרת למי שלא יכול לתת.</p></section>
+  <section class="card yd-pub-ask" aria-labelledby="pa">
+    <h2 id="pa">התרומה שלי לקופה</h2>
+    <div class="row"><span><b style="font-size:1.6rem">3</b> ידיים עד עכשיו</span><button class="btn" type="button" data-sheet="pub" disabled aria-describedby="pa-why">בקשה לטובת הציבור</button></div>
+    <div class="yd-bar-fill" aria-hidden="true"><i style="--p:.6"></i></div>
+    <small id="pa-why" class="yd-anon">עוד 2 ידיים של מעשר, ואפשר לבקש. הסף הוא 5.</small>
+  </section>
+  <section class="card yd-list" aria-labelledby="ex"><h2 id="ex">ההוצאות האחרונות</h2>
+    <ul class="yd-rows">
+      <li><div class="yd-row"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span><div class="tx"><b>עזרה בהובלה</b><small>לפני יומיים · בלי שם</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>4</span></div></li>
+      <li><div class="yd-row"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span><div class="tx"><b>עזרה בקניות</b><small>לפני שבוע · מרים (הסכימה לפרסם)</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>2</span></div></li>
+      <li><div class="yd-row"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>סידור הכסאות בקהילה</b><small>לפני שבועיים · מעשה לטובת הציבור</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>1</span></div></li>
+    </ul>
+    <p class="yd-anon" style="margin:0 0 12px">כשהקופה עוזרת למי שלא יכול לתת, רואים כאן רק את הסכום ואת סוג העזרה. השם מופיע רק אם האדם הסכים.</p>
+  </section>
+</main>
+
+<!-- ============ the sheets (H.modal): the real .modal markup ============ -->
+<div class="modal" data-sheet-id="board" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="sb">
+    <button class="modal-close" type="button" aria-label="סגירה" data-close>×</button>
+    <div class="yd-sheet yd">
+      <h2 id="sb">לוח הדרושים</h2>
+      <div class="yd-bar">
+        <div class="yd-seg" role="group" aria-label="מיון"><button type="button" aria-pressed="true">לפי מרחק</button><button type="button" aria-pressed="false">לפי סוג</button></div>
+      </div>
+      <div class="yd-chips" role="group" aria-label="סינון מהיר">
+        <button class="chip" type="button" aria-pressed="false">לטובת הציבור</button><button class="chip" type="button" aria-pressed="false">עד שעה</button><button class="chip" type="button" aria-pressed="false">שאני יכול לתת</button>
+      </div>
+      <details class="yd-adv"><summary>סינון מתקדם</summary>
+        <div class="grid">
+          <label class="field"><span>סוג</span><select><option>הכול</option><option>בית וגינה</option><option>מחשבים</option><option>למידה</option></select></label>
+          <label class="field"><span>עד מרחק</span><select><option>בלי הגבלה</option><option>5 ק"מ</option><option>15 ק"מ</option></select></label>
+          <label class="field"><span>זמן מוערך</span><select><option>כל זמן</option><option>עד שעה</option><option>עד שלוש שעות</option></select></label>
+          <label class="field"><span>רמה</span><select><option>כל רמה</option><option>1</option><option>2</option><option>3 ומעלה</option></select></label>
+        </div>
+      </details>
+      <ul class="yd-needs">
+        <li class="card yd-need pub"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>הכנת מקום לקבלת שבת בקהילה</b><small>הבעלים</small><span class="yd-tags"><span class="yd-tag pub">לטובת הציבור</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>2</span></div>
+          <div class="meta"><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-pin"/></svg>כ-1 ק"מ</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-clock"/></svg>כשעה</span></div>
+          <div class="go"><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+        <li class="card yd-need"><div class="top"><span class="yd-ic"><img src="/assets/app-icons/pc.webp" alt="" width="26" height="26"></span><div class="tx"><b>המחשב לא נדלק אחרי עדכון</b><small>רות</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</span></div>
+          <div class="meta"><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-pin"/></svg>כ-3 ק"מ</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-clock"/></svg>כשעתיים</span></div>
+          <div class="go"><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+        <li class="card yd-need"><div class="top"><span class="yd-ic"><img src="/assets/app-icons/garden.webp" alt="" width="26" height="26"></span><div class="tx"><b>עזרה בהעברת עציצים</b><small>אורי</small><span class="yd-tags"><span class="yd-tag pend">הרמה ממתינה לאישור</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>כ-2</span></div>
+          <div class="meta"><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-pin"/></svg>כ-8 ק"מ</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-clock"/></svg>כשעה</span></div>
+          <div class="go"><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+        <li class="card yd-need pub"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span><div class="tx"><b>עזרה לקשיש בקניות לחג</b><small>בקשה לטובת הציבור</small><span class="yd-tags"><span class="yd-tag pub">לטובת הציבור, משולם מהקופה</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</span></div>
+          <div class="meta"><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-pin"/></svg>כ-12 ק"מ</span><span><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-clock"/></svg>כשעה וחצי</span></div>
+          <div class="go"><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="modal" data-sheet-id="create" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="sc">
+    <button class="modal-close" type="button" aria-label="סגירה" data-close>×</button>
+    <div class="yd-sheet yd">
+      <h2 id="sc">יצירת צורך</h2>
+      <label class="field"><span>תיאור הצורך</span><textarea placeholder="מה צריך, ומתי נוח"></textarea></label>
+      <div class="yd-seg" role="group" aria-label="סוג הצורך" style="justify-self:start"><button type="button" aria-pressed="true" data-pane="c1">מהרשימה</button><button type="button" aria-pressed="false" data-pane="c2">לא ברשימה</button></div>
+
+      <div data-panel="c1" class="yd-sheet" style="padding:0;gap:12px">
+        <div class="yd-kinds" role="group" aria-label="סוג מהרשימה">
+          <button class="yd-kind" type="button" aria-pressed="true"><span class="yd-ic"><img src="/assets/app-icons/pc.webp" alt="" width="26" height="26"></span><span>עזרה במחשב<small>רמה 2</small></span></button>
+          <button class="yd-kind" type="button" aria-pressed="false"><span class="yd-ic"><img src="/assets/app-icons/garden.webp" alt="" width="26" height="26"></span><span>גינון<small>רמה 3</small></span></button>
+          <button class="yd-kind" type="button" aria-pressed="false"><span class="yd-ic"><img src="/assets/app-icons/translate.webp" alt="" width="26" height="26"></span><span>תרגום<small>רמה 3</small></span></button>
+          <button class="yd-kind" type="button" aria-pressed="false"><span class="yd-ic"><img src="/assets/app-icons/homework.webp" alt="" width="26" height="26"></span><span>שיעורי בית<small>רמה 2</small></span></button>
+        </div>
+        <div class="yd-level"><span>הרמה באה עם הסוג: <b>2</b></span></div>
+        <div class="yd-scale"><span class="q">כמה זמן זה ייקח, בערך?</span>
+          <div class="row" role="group" aria-label="זמן"><button type="button" aria-pressed="false">חצי שעה</button><button type="button" aria-pressed="true">שעה</button><button type="button" aria-pressed="false">שעתיים</button><button type="button" aria-pressed="false">3 שעות</button><button type="button" aria-pressed="false">יום</button></div></div>
+      </div>
+
+      <div data-panel="c2" class="yd-sheet" style="padding:0;gap:12px" hidden>
+        <div class="yd-scale"><span class="q">כמה זה קשה? <small>פיזית או מחשבתית</small></span>
+          <div class="row" role="group" aria-label="קושי"><button type="button" aria-pressed="false">1</button><button type="button" aria-pressed="false">2</button><button type="button" aria-pressed="true">3</button><button type="button" aria-pressed="false">4</button><button type="button" aria-pressed="false">5</button></div>
+          <div class="ends"><span>קל</span><span>קשה מאוד</span></div></div>
+        <div class="yd-scale"><span class="q">כמה בקיאות זה דורש? <small>האם צריך מי שמבין בזה</small></span>
+          <div class="row" role="group" aria-label="בקיאות"><button type="button" aria-pressed="false">1</button><button type="button" aria-pressed="false">2</button><button type="button" aria-pressed="true">3</button><button type="button" aria-pressed="false">4</button><button type="button" aria-pressed="false">5</button></div>
+          <div class="ends"><span>כל אחד יכול</span><span>מומחה</span></div></div>
+        <p class="yd-note pend"><span>הצורך מתפרסם מיד, עם הסימון "הרמה ממתינה לאישור". הידיים עוברות רק אחרי שהבעלים אישר את הרמה.</span></p>
+      </div>
+
+      <div class="yd-est"><span>הערכה</span><b><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>כ-2 ידיים</b></div>
+      <div class="yd-foot"><button class="yd-link" type="button" data-sheet="done">עשיתי מעשה</button><button class="btn primary" type="button">פרסום הצורך</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" data-sheet-id="done" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="sd">
+    <button class="modal-close" type="button" aria-label="סגירה" data-close>×</button>
+    <div class="yd-sheet yd">
+      <h2 id="sd">עשיתי מעשה</h2>
+      <p class="sub">דיווח על מעשה למען הקהילה שכבר נעשה. הבעלים מאשר.</p>
+      <label class="field"><span>מה עשיתי</span><textarea placeholder="מה, מתי, ובשביל מי"></textarea></label>
+      <div class="yd-foot"><span></span><button class="btn primary" type="button">שליחה לאישור</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" data-sheet-id="pub" hidden>
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="sp">
+    <button class="modal-close" type="button" aria-label="סגירה" data-close>×</button>
+    <div class="yd-sheet yd">
+      <h2 id="sp">בקשה לטובת הציבור</h2>
+      <p class="sub">הבקשה משולמת מהקופה. מי שממלא אותה מקבל את הידיים מהקופה, לא מהיתרה שלכם.</p>
+      <div class="yd-level"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg><span>אפשר לבקש עד <b>7</b> ידיים של מעשר שעוד לא נפדו</span></div>
+      <label class="field"><span>מה הבקשה, ולמי היא מועילה</span><textarea placeholder="למשל: עזרה לקשיש בקניות לחג"></textarea></label>
+      <p class="yd-note pend"><span>הבעלים מאשר שהבקשה באמת לטובת הציבור, כמו כל הוצאה מהקופה. אחרי האישור היא מופיעה בלוח הדרושים.</span></p>
+      <div class="yd-foot"><span></span><button class="btn primary" type="button">שליחה לאישור</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const open = (id) => { $$('.modal').forEach((m) => { m.hidden = m.dataset.sheetId !== id; }); };
+  const closeAll = () => $$('.modal').forEach((m) => { m.hidden = true; });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAll(); });
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]')) return closeAll();
+    const sh = e.target.closest('[data-sheet]'); if (sh && !sh.disabled) { e.preventDefault(); return open(sh.dataset.sheet); }
+    const go = e.target.closest('[data-go]');
+    if (go) { e.preventDefault(); closeAll(); $$('[data-screen]').forEach((s) => { s.hidden = s.dataset.screen !== go.dataset.go; });
+      $$('.proto-nav button[data-go]').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.go === go.dataset.go))); scrollTo(0, 0); return; }
+    const pane = e.target.closest('[data-pane]');
+    if (pane) { const seg = pane.parentElement; $$('button', seg).forEach((b) => { b.setAttribute('aria-pressed', String(b === pane)); const p = $(`[data-panel="${b.dataset.pane}"]`); if (p) p.hidden = b !== pane; }); return; }
+    const t = e.target.closest('.yd-seg button, .yd-chips .chip, .yd-kind, .yd-scale .row button');
+    if (t) {
+      const multi = t.matches('.chip');
+      if (multi) t.setAttribute('aria-pressed', String(t.getAttribute('aria-pressed') !== 'true'));
+      else $$('button', t.parentElement).forEach((b) => b.setAttribute('aria-pressed', String(b === t)));
+    }
+  });
+</script>
+</body>
+</html>

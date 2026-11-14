@@ -661,6 +661,21 @@
       return [line[i][0] + (line[i + 1][0] - line[i][0]) * t, line[i][1] + (line[i + 1][1] - line[i][1]) * t];
     });
   }
+  /** a set with seats (slots.seat, the pine): up to as many people as the tier has seats sit on the seats nearest its middle,
+      in their order; more than that spread along the line (docs/design/tree-pine-seats.md) */
+  function seats(line, n) {
+    if (n > line.length) return spread(line, n);
+    const mid = (line.length - 1) / 2;
+    return line.map((_, i) => i).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid) || a - b).slice(0, n).sort((a, b) => a - b).map((i) => line[i]);
+  }
+  /** the season on the tree by today's date (Israel): autumn Sep–Nov, winter Dec–Feb (heavy snow on the pine only in the
+      coldest weeks, Jan 10 – Feb 10), spring Mar–May, summer the rest. A set without a snow picture gets winter. */
+  function treeSeason(set, now = new Date()) {
+    const m = now.getMonth(), d = now.getDate();
+    const cold = (m === 0 && d >= 10) || (m === 1 && d <= 10);
+    return m >= 8 && m <= 10 ? 'autumn' : m === 11 || m <= 1 ? (cold && set === 'pine' ? 'snow' : 'winter') : m <= 4 ? 'spring' : 'summer';
+  }
+  const SEASONS = [['auto', 'לפי התאריך'], ['summer', 'קיץ'], ['autumn', 'סתיו'], ['winter', 'חורף'], ['snow', 'שלג'], ['spring', 'אביב']];
   /** each person's place: their generation from mine picks the tier (the eldest at the bottom), the family order its spot */
   function treePlaces(slots, center) {
     const avgY = (t) => t.line.reduce((a, p) => a + p[1], 0) / t.line.length;
@@ -680,7 +695,7 @@
       for (let r = 0; r < rows; r++) {
         const row = ps.slice(r * per, (r + 1) * per);
         const dy = (r % 2 ? 1 : -1) * Math.ceil(r / 2) * gap;                       // more than fit: rows below and above, in turn
-        spread(tiers[t].line, row.length).forEach(([x, y], k) => out.push({ p: row[k], x, y: Math.min(97, Math.max(3, y + dy)) }));
+        (slots.seat && rows === 1 ? seats : spread)(tiers[t].line, row.length).forEach(([x, y], k) => out.push({ p: row[k], x, y: Math.min(97, Math.max(3, y + dy)) }));
       }
     });
     return out;
@@ -698,7 +713,7 @@
   async function drawTree(board) {
     const run = ++TREE.run;
     const styled = treeAssets();
-    const pref = H.prefs('family', { treeSet: null, treeLook: 'leaf' });
+    const pref = H.prefs('family', { treeSet: null, treeLook: 'leaf', treeSeason: 'auto' });
     let sets, set, slots;
     try {
       sets = await treeSets();
@@ -712,8 +727,16 @@
     if (run !== TREE.run || !board.isConnected || !S.people?.length) return;
     const center = S.mine || S.focus || S.people[0].id;
     const look = LOOKS.some(([v]) => v === pref.treeLook) ? pref.treeLook : LOOKS[0][0];
-    const tree = el('div', { class: 'tree', 'data-kind': set, 'data-look': look === 'leaf' ? null : look, style: `--crown-x:${slots.crownPivot?.[0] ?? 50}%; --crown-y:${slots.crownPivot?.[1] ?? 42}%` },
-      (slots.layers || ['ground', 'boughs', 'trunk', 'crown']).map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${set}/${l}.${/^\w+$/.test(slots.ext || '') ? slots.ext : 'svg'}`, alt: '', decoding: 'async' })));
+    // the season: by the date, or the person's choice (a pref); snow is the pine's own picture, winter elsewhere
+    const seasonPick = SEASONS.some(([v]) => v === pref.treeSeason) ? pref.treeSeason : 'auto';
+    let season = seasonPick === 'auto' ? treeSeason(set) : seasonPick;
+    if (season === 'snow' && set !== 'pine') season = 'winter';
+    const tree = el('div', { class: 'tree', 'data-kind': set, 'data-look': look === 'leaf' ? null : look, 'data-season': season, style: `--crown-x:${slots.crownPivot?.[0] ?? 50}%; --crown-y:${slots.crownPivot?.[1] ?? 42}%` },
+      (slots.layers || ['ground', 'boughs', 'trunk', 'crown']).flatMap((l) => [el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${set}/${l}.${/^\w+$/.test(slots.ext || '') ? slots.ext : 'svg'}`, alt: '', decoding: 'async' }),
+        // the season's dress, masked by the crown (tree.css), right after it
+        l === 'crown' ? el('span', { class: 'tree-l tree-dress', 'aria-hidden': 'true' }) : null]),
+      // something falls slowly (leaves, snow, blossom), behind the people
+      el('span', { class: 'tree-l tree-fall', 'aria-hidden': 'true' }));
     let me = null;
     const candles = [];
     for (const { p, x, y } of treePlaces(slots, center)) {
@@ -749,7 +772,8 @@
         onclick: () => { if (v !== on) { H.savePrefs('family', { [key]: v }); draw(); } } }, name)));
     const pickers = el('div', { class: 'fv-tools tr-pick' },
       sets.length > 1 ? choice('איזה עץ', sets.map((x) => [x.id, x.name || x.id]), set, 'treeSet') : null,
-      choice('איך נראים האנשים', LOOKS, look, 'treeLook'));
+      choice('איך נראים האנשים', LOOKS, look, 'treeLook'),
+      choice('עונה', SEASONS.filter(([v]) => v !== 'snow' || set === 'pine'), seasonPick === 'snow' && set !== 'pine' ? 'winter' : seasonPick, 'treeSeason'));
     board.replaceChildren(pickers, tree);
     setTimeout(() => {                                                              // (a timer, not a frame: it runs in a hidden tab too)
       if (!tree.isConnected) return;

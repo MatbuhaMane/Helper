@@ -18,6 +18,23 @@ no letters, no people, no animals, no frame.
 
 ## א. עץ המשפחה
 
+**0. עץ שורשים חדש (במקום העץ הנוכחי).** יחס 2:3 לאורך, כמו המקור, באיכות גבוהה ככל האפשר. מצרפים רק את `tent.webp`. אחרי שבוחרים עץ, מייצרים ממנו את העונות בפרומפט של 1–2, ומצרפים אותו בתור "העץ המקורי". העיצוב מודד מחדש את מקומות העלים (`slots.json`).
+```
+A single ancient olive tree as a family tree of roots, portrait 2:3, centred, filling the image from the roots to the top
+of the crown. It is drawn as a calm, warm, dignified symbol of a family across generations.
+From bottom to top, in five clear bands of equal height:
+1. Wide visible roots spreading left and right over a low mound of warm earth, with a few stones and tufts of grass;
+   the roots form four open, gently curved pockets where small name plaques could sit.
+2. A thick, gnarled, twisting olive trunk with a broad root flare; one low bough on each side, leaving open space
+   beside the trunk.
+3. Two strong boughs reaching left and right, with a few silver-green olive twigs at their tips.
+4. The lower crown: silver-green olive foliage in soft rounded clusters, with open gaps between the clusters.
+5. The top of the crown: lighter, airy foliage with a few small olives, open gaps across the top.
+The tree is symmetrical in balance but organic, not mirrored. Leave clear empty spaces in each band, spread across the
+width, for small round portraits to be placed later: nothing important is drawn in those spaces.
+No fruit baskets, no swings, no birds, no ornaments hanging on the tree.
+```
+
 **1–2. העץ השלם בשלוש עונות:** הצמרת, הענפים, הגזע והקרקע. אותו יחס ואותו גודל כמו המקור. שלוש בקשות, ובכל אחת משנים רק את העונה.
 
 צריך את כל העץ ולא רק את הצמרת והקרקע, כי גם בענפים ובראש הגזע יש עלים ירוקים.

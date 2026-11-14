@@ -89,6 +89,7 @@ The previous chat grew too long. The master asked for a fresh one with the same 
     - the `child` flag is enough, no children's mode;
     - a shared songbook within linked households and by a link (signed-in users only, the owner can turn it off); the CEO sets the sharing model first, not urgent.
   - Vision, batch 23 ("Tree skins" in `docs/decisions.md` on `vision`): when design delivers each tree's cut layers and `slots.json` (its own canopy folder, the same five tiers), the tree page gets a choice of tree kept in `H.prefs`, with the pine as the default and the olive from the start; the maple and the African juniper later. Until the art arrives, nothing to build.
+  - Vision, batch 24 ("How a person is shown on each tree skin"): with the choice of tree, a person's token comes from the chosen tree instead of the one leaf (pine: a pine cone; olive: a frame of olive branches), each with three seasons and a pale empty form for a person with no record. Waits for the owner's art and design's cut.
 - **Seen in passing, not ours:** `figure2d.js` logs negative `ellipse rx` errors in the console (the companion figure).
 
 ### Decisions held (details in docs/decisions.md)

@@ -1,6 +1,7 @@
 // Shared backend pieces: environment, HTTP helpers, sessions, Google sign-in, token encryption.
 
 import { deniedTicket } from './access';
+import { RATE_HIT_SQL } from './rate-sql';
 
 export interface Env {
   DB: D1Database;
@@ -65,6 +66,14 @@ export async function body<T = any>(req: Request): Promise<T> {
   } catch {
     throw new HttpError(400, 'Invalid JSON body');
   }
+}
+
+/** At most `max` hits per window for this key (rate_hits, rate-sql.ts). One statement, so parallel requests cannot all read the
+    same count and slip through together: each one counts itself and sees its own number. */
+export async function rateHit(env: Env, key: string, max: number, windowMs: number, error = 'too_many_tries'): Promise<void> {
+  const now = Date.now();
+  const row = await env.DB.prepare(RATE_HIT_SQL).bind(key, now + windowMs, now, now).first<{ count: number }>();
+  if ((row?.count ?? 1) > max) throw new HttpError(429, error);
 }
 
 export function uid(): string {

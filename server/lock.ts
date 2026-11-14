@@ -15,9 +15,10 @@
 // The code is kept as PBKDF2-SHA256 (100,000 rounds, the most Workers allow) over an HMAC of the code with a pepper derived
 // from VAULT_KEY, with a salt per person: the database alone is not enough to guess a 4-digit code.
 
-import { Ctx, Env, HttpError, body, createSession, getCookie, json, requireUser, uid } from './core';
+import { Ctx, Env, HttpError, body, createSession, getCookie, json, rateHit, requireUser, uid } from './core';
 import { challenge as newChallengeValue, verifyAssertion } from './vault/webauthn';
 import * as L from './lock-rules';
+import { PIN_TRY_SQL } from './rate-sql';
 
 interface LockRow { email: string; app: string | null; tree: string | null; autolock: number | null; pin_hash: string | null; pin_salt: string | null; fails: number | null; pause_until: number | null; closed: number | null; tip_hidden: number | null }
 interface SessionLock { app_locked: number | null; last_active: number | null; tree_open_until: number | null; lock_proof_at: number | null }
@@ -122,17 +123,23 @@ export async function save(ctx: Ctx) {
   return status(ctx);
 }
 
-/** a wrong code: counted, paused every 5, closed at 10 (until a new Google sign-in) */
-async function wrong(env: Env, l: LockRow) {
-  const f = L.afterFail(l.fails || 0, Date.now());
-  await env.DB.prepare('UPDATE user_locks SET fails = ?, pause_until = ?, closed = ? WHERE email = ?').bind(f.fails, f.pauseUntil, f.closed ? 1 : 0, l.email).run();
-  throw new HttpError(403, f.closed ? 'pin_closed' : f.pauseUntil ? 'pin_paused' : 'pin_wrong');
-}
+/** A try at the code, counted before it is checked and in one statement, so parallel tries cannot all read the same count:
+    each try takes its own number, and the pause (every 5) and the close (at 10) are set by the try that reaches them,
+    before any later try can start. A right code then forgets the count. */
 async function checkPin(env: Env, l: LockRow | null, pin: unknown) {
   if (!l?.pin_hash || !l.pin_salt) throw new HttpError(409, 'no_pin');
-  if (l.closed) throw new HttpError(403, 'pin_closed');
-  if (l.pause_until && l.pause_until > Date.now()) throw new HttpError(429, 'pin_paused');
-  if (!L.validPin(pin) || !same(await hashPin(env, pin, l.pin_salt), l.pin_hash)) await wrong(env, l);
+  const now = Date.now();
+  const t = await env.DB.prepare(PIN_TRY_SQL)
+    .bind(L.PAUSE_EVERY, now + L.PAUSE_MS, L.CLOSE_AT, l.email, now).first<{ fails: number; pause_until: number | null; closed: number | null }>();
+  if (!t) {
+    const cur = await lockOf(env, l.email);
+    throw cur?.closed ? new HttpError(403, 'pin_closed') : new HttpError(429, 'pin_paused');
+  }
+  if (L.validPin(pin) && same(await hashPin(env, pin, l.pin_salt), l.pin_hash)) {
+    await env.DB.prepare('UPDATE user_locks SET fails = 0, pause_until = 0, closed = 0 WHERE email = ?').bind(l.email).run();
+    return;
+  }
+  throw new HttpError(403, t.closed ? 'pin_closed' : t.pause_until && t.pause_until > now ? 'pin_paused' : 'pin_wrong');
 }
 
 export async function setPin(ctx: Ctx) {
@@ -183,11 +190,7 @@ async function takeChallenge(env: Env, id: unknown, email: string, kind: string)
 }
 /** at most `max` tries per window (rate_hits, as the vault's) */
 async function limit(env: Env, key: string, max: number, windowMs: number) {
-  const now = Date.now();
-  const row = await env.DB.prepare('SELECT count, reset_at FROM rate_hits WHERE key = ?').bind(key).first<{ count: number; reset_at: number }>();
-  if (!row || row.reset_at < now) { await env.DB.prepare('INSERT INTO rate_hits (key, count, reset_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = 1, reset_at = excluded.reset_at').bind(key, now + windowMs).run(); return; }
-  if (row.count >= max) throw new HttpError(429, 'too_many');
-  await env.DB.prepare('UPDATE rate_hits SET count = count + 1 WHERE key = ?').bind(key).run();
+  await rateHit(env, key, max, windowMs, 'too_many');   // atomic (core.ts)
 }
 type Assertion = { challengeId?: unknown; id?: unknown; response?: { clientDataJSON: string; authenticatorData: string; signature: string } };
 async function checkPasskey(ctx: Ctx, b: Assertion, c: string, email: string | null) {

@@ -1,7 +1,7 @@
 // Single entry point for /api/*: a tiny router over the server modules.
 
 import { aiStatus } from '../../server/ai';
-import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
+import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopConfirm, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
 import * as daemon from '../../server/daemon';
 import * as access from '../../server/access';
 import * as grants from '../../server/grants';
@@ -103,6 +103,7 @@ route('GET', '/api/auth/handoff', previewHandoff);
 route('POST', '/api/auth/logout', logout);
 route('POST', '/api/auth/desktop/start', desktopStart);
 route('GET', '/api/auth/desktop/approve', desktopApprove);
+route('POST', '/api/auth/desktop/approve', desktopConfirm);
 route('GET', '/api/auth/desktop/poll', desktopPoll);
 route('GET', '/api/me', async (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });

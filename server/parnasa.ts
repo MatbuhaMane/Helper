@@ -281,6 +281,7 @@ export async function kupaOpen(ctx: Ctx): Promise<Response> {
 
 export async function kupaInvite(ctx: Ctx): Promise<Response> {
   const s = await scopeOf(ctx, ctx.params.id);   // only a member invites
+  if (!s.kupa) throw new HttpError(404, 'not_found');   // "me" is no קופה to invite into
   const b = await body<{ email?: string }>(ctx.req);
   const mate = await householdMate(ctx, b.email);
   if (!mate) throw new HttpError(400, 'not_household');

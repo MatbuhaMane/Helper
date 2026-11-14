@@ -27,7 +27,7 @@ async function ownKey(env: Env, email: string, provider: 'claude' | 'gemini'): P
 export async function balance(env: Env, email: string, since: number) {
   const [{ results: grants }, { results: used }, figures] = await Promise.all([
     env.DB.prepare('SELECT source, usd, created_at AS at FROM ai_credits WHERE email = ?').bind(email).all<R.Grant>(),
-    env.DB.prepare('SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE email = ? AND at >= ? AND COALESCE(own_key, 0) = 0').bind(email, since).all<UsageRow & { at: number }>(),
+    env.DB.prepare('SELECT at, model, provider, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out FROM ai_usage WHERE email = ? AND at >= ? AND COALESCE(own_key, 0) = 0 AND COALESCE(free, 0) = 0').bind(email, since).all<UsageRow & { at: number }>(),
     // paid companion figures bought with credits (server/figures.ts)
     env.DB.prepare('SELECT COALESCE(SUM(usd), 0) AS usd FROM figure_owned WHERE email = ?').bind(email).first<{ usd: number }>().catch(() => null),
   ]);
@@ -36,19 +36,20 @@ export async function balance(env: Env, email: string, since: number) {
 }
 
 /** the meter's gate, before a request to Claude or Gemini: their own key to use (if any), or a refusal when nothing is left */
-export async function gate(env: Env, email: string | null, provider: 'claude' | 'gemini'): Promise<{ key: string | null }> {
+export async function gate(env: Env, email: string | null, provider: 'claude' | 'gemini', free = false): Promise<{ key: string | null }> {
   if (!email) return { key: null };                                          // the system's own jobs
   let key: string | null = null, a: Allowance | null = null, left = 0;
   try {
     key = await ownKey(env, email, provider).catch(() => null);
     a = await env.DB.prepare('SELECT email, limited, since FROM ai_allowance WHERE email = ?').bind(email).first<Allowance>();
-    if (a?.limited && !key) left = (await balance(env, email, a.since)).total;
+    if (a?.limited && !key && !free) left = (await balance(env, email, a.since)).total;
   } catch (e) {
     // the allowance could not be read: the AI stays open (as for the family) rather than failing everyone
     console.error('credits gate', e instanceof Error ? e.message : e);
     return { key };
   }
-  if (!R.mayUse(!!a?.limited, left, !!key)) throw new HttpError(402, 'ai_credit_needed');
+  // within a tool's free daily quota (meter.ts freeOfCredits) nothing is taken from the credits, so nothing is refused
+  if (!free && !R.mayUse(!!a?.limited, left, !!key)) throw new HttpError(402, 'ai_credit_needed');
   return { key };
 }
 

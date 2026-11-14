@@ -3,8 +3,7 @@
 //     and this step. AI inside a tool is "free with a quota" (ש3; the owner's numbers via business, cd600e2): FREE_A_DAY
 //     questions a person a day, renewed at midnight Israel time. Beyond them the server answers 402 quota_done, and the
 //     person chooses each time to go on in credits ({ paid: true }). The meter and the credits gate (meter.ts, credits.ts)
-//     apply as for every AI call; exempting the free questions from a limited account's credits needs the master's gate
-//     (requested in docs/decisions.md).
+//     apply as for every AI call; the free questions are exempt from a limited account's credits (freeOfCredits, meter.ts).
 //   * timers that ring with the app closed: the page tells the server when each timer ends; the minute cron
 //     (src/worker.ts) calls tick(), which waits for the exact second and sends a push to the person's devices.
 // Each person's own: a timer belongs to whoever set it.
@@ -13,6 +12,7 @@ import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
 import { pushTo } from './push';
+import { freeOfCredits } from './meter';
 
 export const FREE_A_DAY = 20;   // the owner (docs/business/ai-quota.md): 20 chef answers a person a day
 
@@ -45,6 +45,7 @@ export async function ask(ctx: Ctx) {
   const b = p.data;
   const used = await usedToday(ctx.env, u.email);
   if (used >= FREE_A_DAY && !b.paid) throw new HttpError(402, 'quota_done');
+  if (used < FREE_A_DAY) freeOfCredits();   // the free answers are never taken from a limited account's credits (meter.ts)
   const steps = b.steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
   const out = await aiJson(ctx.env, {
     prefer: 'gemini',

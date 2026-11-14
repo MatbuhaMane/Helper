@@ -24,7 +24,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['fridges', 'household', 'TEXT'],       // whose fridge (older rows: the family's)
   ['family_people', 'privacy', 'TEXT'],      // JSON {identity, dates, notes, files}: private | household | linked | forest
   ['family_people', 'anonymous', 'INTEGER'], // 1: outside the household only "קרוב/ת משפחה"
-  ['ai_usage', 'own_key', 'INTEGER'],        // 1: sent with the person's own key (costs the owner nothing, needs no credit)
+  ['ai_usage', 'own_key', 'INTEGER'],
+  ['ai_usage', 'free', 'INTEGER'],           // 1: within a tool's free daily quota (cook.ts): counted as usage, never taken from credits        // 1: sent with the person's own key (costs the owner nothing, needs no credit)
   ['admin_entries', 'stay', 'INTEGER'],      // 1: "stay unlocked" – the room's idle limit lifted (own account only)
   ['admin_messages', 'to_email', 'TEXT'],    // a message for one person (a gift's note); empty: for everyone
   ['design_images', 'usd', 'REAL'],          // what this picture cost (from Gemini's answer, priced as the meter prices it)

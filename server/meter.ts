@@ -12,13 +12,21 @@ import type { Env } from './core';
 import { gate } from './credits';
 import { providerOf, requestWithKey, withKey } from './credits-rules';
 
-interface Scope { env: Env; email: string | null; feature: string; waitUntil: (p: Promise<unknown>) => void }
+interface Scope { env: Env; email: string | null; feature: string; waitUntil: (p: Promise<unknown>) => void; free?: boolean }
 const store = new AsyncLocalStorage<Scope>();
 
 /** Run fn as `feature` for `email` (each API request, and the nightly job). */
 export function metered<T>(scope: Scope, fn: () => T): T {
   install();
   return store.run(scope, fn);
+}
+
+/** The rest of this request is within a tool's free daily quota (the owner, 2026-11-14; e.g. the voice chef, server/cook.ts):
+ *  a limited account with no credit left is not refused, and the calls are recorded as free, so they are never taken from
+ *  its credits. The tool itself counts and enforces its quota before calling this. */
+export function freeOfCredits() {
+  const s = store.getStore();
+  if (s) s.free = true;
 }
 
 /** "/api/vault/items/0h051f56681l4c20/file" → "vault/items/:id/file" */
@@ -31,9 +39,9 @@ interface Usage { provider: 'claude' | 'gemini'; model: string; input: number; o
 function record(u: Usage, own = false) {
   const s = store.getStore();
   if (!s || !(u.input || u.output || u.cacheRead || u.cacheWrite)) return;
-  s.waitUntil(s.env.DB.prepare(`INSERT INTO ai_usage (at, email, feature, provider, model, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out, own_key)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(Date.now(), s.email, s.feature, u.provider, u.model.slice(0, 80), u.input, u.output, u.cacheWrite, u.cacheRead, u.searches, u.grounded, u.audioOut, u.imageOut, own ? 1 : null).run()
+  s.waitUntil(s.env.DB.prepare(`INSERT INTO ai_usage (at, email, feature, provider, model, input, output, cache_write, cache_read, searches, grounded, audio_out, image_out, own_key, free)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(Date.now(), s.email, s.feature, u.provider, u.model.slice(0, 80), u.input, u.output, u.cacheWrite, u.cacheRead, u.searches, u.grounded, u.audioOut, u.imageOut, own ? 1 : null, s.free && !own ? 1 : null).run()
     .catch((e: unknown) => console.error('meter', e instanceof Error ? e.message : e)));
 }
 
@@ -104,7 +112,7 @@ function install() {
       const target = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       const provider = providerOf(target);
       if (provider) {
-        const g = await gate(scope.env, scope.email, provider);
+        const g = await gate(scope.env, scope.email, provider, !!scope.free);
         if (g.key) {
           if (input instanceof Request) input = requestWithKey(provider, input, g.key);
           else [input, init] = withKey(provider, target, init, g.key);

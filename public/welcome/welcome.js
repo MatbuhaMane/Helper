@@ -206,6 +206,11 @@
     ended = true;
     clearTimeout(typing);
     me.welcomed = Date.now(); keep('me');   // (shown once; settings can run it again)
+    // "האוהל התעדכן" (/assets/whatsnew.js): whatever is new now is not news to someone who just came in
+    const seenNow = fetch('/whats-new.json', { cache: 'no-store', credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).then((j) => {
+      const v = typeof j?.v === 'string' ? j.v.trim().slice(0, 100) : '';
+      if (v) { H.prefs('whatsnew', { seen: '' }).seen = v; H.savePrefs('whatsnew'); }
+    }).catch(() => {});
     // finished (not skipped): the first achievement, "נטית את האוהל"
     if (!skipped) fetch('/api/welcome/done', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
     if (!dp.figure) { dp.figure = A.figure; keep('daemon'); }
@@ -225,9 +230,16 @@
     const box = document.createElement('section'); box.className = 'wz-step wz-done in';
     box.innerHTML = `<img src="/assets/tent-700.webp" alt=""><h1 class="wz-q">ברוכים הבאים לאוהל${A.name ? ', ' + esc(A.name) : ''}!</h1><p class="wz-hint">הכול מוכן. בואו נסתכל מסביב</p>`;
     stage.append(box);
+    // only for someone on a limited allowance (came from an invitation): the gift, and that a free helper can come later
+    if (!skipped) fetch('/api/me/ai', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).then((ai) => {
+      if (!ai?.limited || ai.out || !box.isConnected) return;
+      const p = document.createElement('p'); p.className = 'wz-hint wz-gift';
+      p.textContent = 'יש לך מתנת פתיחה, ואפשר לחבר עוזר חינמי בהמשך';
+      box.append(p);
+    }).catch(() => {});
     $('back').style.visibility = 'hidden';
     go.textContent = 'לאוהל'; go.disabled = false; go.onclick = () => { location.href = '/'; };
-    if (skipped) location.href = '/';
+    if (skipped) Promise.race([seenNow, new Promise((ok) => setTimeout(ok, 1500))]).finally(() => { location.href = '/'; });
     friend?.happy?.();
   }
   await meet(A.figure);

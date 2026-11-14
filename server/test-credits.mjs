@@ -92,5 +92,26 @@ eq('used of the gifts: never more than the gifts', C.giftUsed(gifted, 3), 1.5);
 eq('used of the gifts: nothing spent', C.giftUsed(gifted, 0), 0);
 eq('no gifts', C.giftUsed([{ source: 'trial', usd: 1, at: 1 }], 0.5), 0);
 
+/* ---- whoever joins from an invitation starts limited, with the trial (the CEO, 2026-11-13) ----
+   read from the source: every path in join.ts that makes a member calls startTrial for them before letting them in,
+   and startTrial makes the allowance row limited (1) with the one-time gift */
+{
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(join(process.cwd(), 'server/join.ts'), 'utf8');
+  const fns = [...src.matchAll(/(?:export )?async function (\w+)\([^)]*\)[^{]*\{([\s\S]*?)\n\}/g)].map((m) => ({ name: m[1], body: m[2] }));
+  const makers = fns.filter((f) => /INSERT INTO members/.test(f.body));
+  ok('join.ts has the two ways in (a gathering\'s ticket, the owner\'s invitation)', makers.length === 2);
+  for (const f of makers) {
+    const made = f.body.search(/INSERT INTO members/), trial = f.body.search(/await startTrial\(env, email\)/), back = f.body.lastIndexOf('return { email');
+    ok(`${f.name}: a new member starts the trial`, trial > made);
+    ok(`${f.name}: before being let in`, back > trial);
+  }
+  const credits = readFileSync(join(process.cwd(), 'server/credits.ts'), 'utf8');
+  const st = credits.match(/export async function startTrial[\s\S]*?\n\}/)?.[0] || '';
+  ok('startTrial: limited (1)', /INSERT INTO ai_allowance \(email, limited[^)]*\) VALUES \(\?, 1,/.test(st));
+  ok('startTrial: with the one-time gift', /'trial'/.test(st) && /ai_credits/.test(st));
+  ok('startTrial: twice changes nothing', /if \(had\) return/.test(st));
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

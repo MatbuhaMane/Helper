@@ -2451,6 +2451,85 @@ Status: on the side session's branch, waiting for the CEO's review and the owner
 - **Open for the owner:** the search is limited to Google's region `il`; places Google files under another region are not
   suggested, and they stay free text.
 
+## 2026-11-13 – Invitations from outside the family, from the back door (ai-features → master; sign-in, for review)
+
+The owner asked for invitations to people outside the family, made by the owner only, with tracking. **Critical (sign-in):
+the server part is in the master's `server/join.ts` and `join-rules.ts`, in one separate commit for review.**
+
+- **The flow.** In the back door, the "הזמנות" panel makes a personal link `/join/#key` (the key after the #, out of logs).
+  The page `/join/` shows who it was made for and "כניסה עם Google". The key goes into this device's `join` cookie with
+  the mark `o.` for twenty minutes; `admitFromInvite` (the hook core.ts already calls) sees the mark and admits a new member
+  **once**, into a household of their own (`g-…`, never `family`), with the trial credits, like a guest from a gathering.
+  The owner who made it gets a message for them alone. A member who is already in signs in as before; the invitation stays open.
+- **Tied to an address (optional).** An invitation that names an email admits only that address; the page shows it masked
+  (`r***@gmail.com`). An email that is already a member is refused when making it (`already_member`).
+- **Status** is computed, never stored: cancelled, then redeemed, then expired (the time), else sent. Cancel works only
+  on an open one, and its link stops at once. 1 to 30 days, a week by default.
+- **Owner only**: `requireAdmin('own')` and `level === 'owner'` (a super, or the owner visiting someone's account, cannot).
+  The page's two calls are rate limited (30 an hour per address).
+- **Stored**: only the key's hash, and a sealed copy (`seal`, aad `invite:<id>:key`) so the owner can copy the link
+  again while it is open. New table `owner_invites` (appended to schema.sql). Routes appended: `GET/POST /api/admin/invites`,
+  `POST /api/admin/invites/:id/cancel`, `POST /api/join/check`, `POST /api/join/start`.
+- **Tests**: 27 new in `server/test-join.mjs` (one use, expiry, an address, the key, only the owner, never the family).
+- **Not changed**: `core.ts`, the gathering's tickets (a cookie without the mark goes the old way), the setting
+  `gather.guest_signup` (it closes only the gathering's sign-ups, not the owner's invitations).
+- **For design**: the page `/join/` (`.jn-card`, `.jn-who`, `.jn-fine`); the panel now uses design's `.bd-inv` (2802a9f):
+  `li.bd-inv-row[data-st]` with `sent | opened | joined | expired | cancelled`, and `asked` for an access request;
+  a row's buttons sit in `.bd-inv-acts`; the requests' list is `ul.bd-inv-list.bd-req-list` under an `h3`.
+- **Opened (778aec5, the master's files).** `owner_invites.opened_at` is set the first time someone not signed in opens
+  the page; the list shows "נפתחה". The page itself still sees `sent` while the invitation is open. 4 tests (48 in all).
+- **Access requests answered from the panel (285e61a, a patch to the master's `server/access.ts`).** `decide()`:
+  owner only (`requireOwner` + `requireAdmin('own')`), sets a request to `invited` or `declined`; route appended
+  `POST /api/admin/access-requests/decide`. In the panel, the requests with status `asked` are on top: "הזמן" makes an
+  invitation for that email (the name it gave, else the Google name) and then marks it invited; "דחה" marks it declined
+  (no message is sent). The patch file is in the shared notes folder.
+
+## 2026-11-13 – ai-features: the family tree's changes (who may change what, delete with undo)
+
+The owner's rule: someone who is not a user is changed or deleted at once by anyone who may edit the tree; another
+user's card or relationship is a proposal that waits for their "אשר"; my own card is mine to change. A delete is soft,
+with "בטל" for 10 seconds, and the owner can restore from the back door.
+- **Appended (ai-features' feature):** table `family_changes` in `schema.sql`; columns `family_people.deleted_by` and
+  `deleted_snap` in `COLUMNS`; routes `GET /api/vault/changes`, `POST /api/vault/changes/:id/approve|decline|cancel`,
+  `POST /api/vault/people/:id/restore`, `GET /api/admin/tree-trash`, `POST /api/admin/tree-trash/:id/restore` (owner only).
+- **The master's file `server/vault/access.ts` (5f9f12d, patch `vault-access-tree-delete.patch` in the shared notes):**
+  `personDelete` and `linkDelete` move from a fresh unlock to `tree` (that was why Ivri could not delete), and the new
+  handlers are at `tree`. Deleting a file stays at a fresh unlock. test-access 204.
+- **Rules in `kin.ts`** (`approversFor`, `mayDecide`, `groupOutcome`, `mayRestore`, `changedKeys`), 24 new tests; an
+  end-to-end check with two test users: 30 passed (nobody approves for someone else; a decline changes nothing).
+- **For design (no CSS yet):** `.fm-undo` (the 10-second bar, appended to `body`; needs to float at the bottom, it is now
+  static at the page's end), `.fm-acts` with `.fm-del` (in the panel's header and on the tree's card `.mc`), `.fm-pending`
+  ("ממתין לאישור" + "ביטול הבקשה"), `.fm-asks-slot` > `section.card.fm-asks` > `ul.fm-ask-list` > `li.fm-ask[data-kind]`
+  with `.fm-ask-what`, `ul.fm-ask-diff` (b, s → span), `.fm-ask-acts`; back door `section.bd-trash` > `ul.bd-trash-list` >
+  `li.bd-trash-row` (`.bd-trash-who`), `p.bd-trash-empty`.
+
+## 2026-11-13 – ai-features: the free helper (Gemini) in three steps
+
+- `H.geminiGuide(onDone)` in `public/assets/ai-invite.js`: the 402 invitation's main button is "חבר עוזר חינמי", and so is
+  the Gemini card in settings ← חיבור לשירותים (first, "עוזר חינמי מ־Google"; Claude is second, "למתקדמים"). Google's
+  page opens in a new tab; on `visibilitychange` back: "להדביק את המפתח?" – a tap reads the clipboard, checks it with
+  Google through the existing `PUT /api/me/ai/keys`, and connects ("Gemini מחובר ✓"). If the clipboard is blocked, or
+  holds something else, one paste field. No "API key" in the main text. No server change.
+- Welcome: "יש לך מתנת פתיחה, ואפשר לחבר עוזר חינמי בהמשך" at the end, only for a limited account with credit left.
+- test-credits: both ways in from an invitation (`join.ts`) call `startTrial` (limited, the gift) before letting the
+  person in.
+- **For design (no CSS yet):** `.ai-invite`; `section.gm-guide` > `.gm-body` > `ol.gm-steps` > `li.gm-step` (`span.gm-art`
+  with an inline SVG, 96×64, currentColor; `.gm-text` b + span); `.gm-back` (`p.gm-q`), `form.gm-paste`, `.gm-done`
+  (`p.gm-ok`); settings: `details.st-key-manual`; welcome: `p.wz-hint.wz-gift`.
+
+## 2026-11-13 – ai-features: the tree and the free helper in design's markup
+
+- **The family tree** (de3f97e, design's f35a140): the `.fm-*` names above are replaced by design's `fv-*`:
+  `.fv-pacts` > `button.fv-pact[data-act=edit|delete]`, `.fv-undo` (`--t:10s`, `.fv-undo-btn`, `.fv-undo-bar`), `.going`
+  and `.pending` on `.tr-p` / `.fv-card`, `span.fv-pend[title]`, `.fv-pendbox` (with `dl.fv-diff` and `.fv-ask-acts`),
+  `.fv-asks` > `section.card.fv-ask[data-kind]` (`.fv-ask-h`, `.fv-pic`, `time`, `p.fv-ask-del`, `.fv-ok` / `.fv-no`,
+  then `.done` + `p.fv-ask-said`). The server now says whom a request waits for (`waitsFor`) and, to the one who asked,
+  which details and to what (`changes`, without the old value: the proposer's `<s>` stays empty).
+- **The free helper** (c3518e1, design's db03b95): the `.gm-*` names above are replaced by design's `.gk`. One addition
+  outside design's example: when the clipboard is blocked or holds something else, `form.gk-paste` (label + input +
+  "חיבור") appears between `ol.gk-steps` and `.gk-err`. Step 2 says "לוחצים על הכפתור הכחול ליצירת מפתח" (no
+  "API key", per the CEO's rule), so `.gk-en` is not used. Settings: `span.gk-ok.small` "Gemini מחובר ✓".
+
 ## 2026-11-13 – Serious mode on the home screen, secret grants and the ancient script (master; vision batch 11)
 - **Serious mode** (design's contract, base.css): `H.prefs('look').style = 'serious'` sets `html[data-style=serious]` before paint (common.js),
   and the home builds design's `.sr-home` from H.APPS (places and tools, a search, grid or list kept in `look.srView`) instead of
@@ -2492,6 +2571,23 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - Client: `H.push.state()`, `H.push.enable()`, `H.push.disable()`, `H.push.test()`.
 - Inert until the secret `VAPID_PRIVATE` is set (`/api/push/key` returns `ready:false`). On iPhone it works only from the home-screen app; a web notification never breaks silent mode.
 
+## 2026-11-13 · עץ מבנה, the owner's layer over the menus, and surprise eggs (ai-features)
+- **Tables** (appended to `schema.sql`): `site_layout` (one row per published version: json, by_email, at, note),
+  `eggs` (page, text, kind text/surprise/link, link, starts/ends, active, x/y 8..92) and `egg_finds` (egg_id, email, at; one per person).
+- **Routes** (appended): `GET /api/layout` (public, menu names only, cached 60 s), `GET|PUT /api/admin/layout`,
+  `POST /api/admin/layout/restore/:id`, `GET /api/eggs?page=`, `POST /api/eggs/:id/found`, `GET|POST /api/admin/eggs`,
+  `PUT|DELETE /api/admin/eggs/:id`. Writing is the owner's only, in the opened back door (`requireOwner` + `requireAdmin('own')`).
+- **The layout** is `{parts:[{href,kids}], hidden:[], edits:{href:{name,sub,ic,pillow,c2}}, ring:[]}`, sanitized on the
+  server (`server/layout-rules.ts`). The code stays the default: a tool the layout does not know goes where the code puts it,
+  a gone one is skipped, a fixed item stays on top and visible.
+- **Contract for other areas (apps.js, the master's):** `H.APPS` is the merged list (same array, changed in place, event
+  `h:layout`), `H.PARTS` the parts in use (common.js's menu reads it), `H.mergeLayout(code, dflt, layout)` pure,
+  `H.layout()` → `{code, tree, hidden, pins, defaultPins}`. The ring default (`ring`) applies only to someone who never pinned.
+- **Preview:** sessionStorage `helper.layoutPreview` on that tab only; `eggs.js` shows the bar `div.layout-pv[role=status]`.
+- **For design (styles needed):** `.layout-pv` (the preview bar; now unstyled, static), `details.st-ver`, the egg form's
+  x/y ranges and kind select (`form.egg-form`), `button.egg.float` / `.egg.found` / `.egg-note` on pages, and the tree's
+  bottom sheet height at 375 (it reaches slightly past the screen's foot).
+
 ## 2026-11-13 · The notification gate and the daily summary (master, batch 13)
 - Every push passes `server/push-gate.ts` (tests: `tools/test-push-gate.mjs`).
   - An emergency (`urgent: true`) always goes.
@@ -2527,3 +2623,12 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
   - master: the pager in `public/index.html` (`.pager`, `.pager-page`, `.pager-dots`). The page in view gets `.is-here`, and each part of a side page carries `--i` for a stagger.
   - design: the look and the staggered motion (transform and opacity only), plus `public/assets/soon/garage-scene.svg`. Until it exists, the page falls back to `garage.svg`.
   - ai-features: the switch in `public/settings/settings.js`.
+
+## 2026-11-14 · Lighter pictures: news sizes and cached recipe images (ai-features, the CEO's request)
+
+- New column (appended to COLUMNS in server/schema.ts): `news_items.image_full TEXT`. Holds the feed's widest picture, for the article's hero.
+- `image` is now the smallest media:content or media:thumbnail that is at least 300 wide (`feedMedia` in server/news-plain.ts, with tests in test-news-plain).
+- Older rows have no image_full, so the hero falls back to image.
+- World recipes: og:image is cached per page in the Cloudflare Cache API. The key is under `<origin>/__og/`. A found picture is kept a week; none found, a day.
+- A plain search waits at most 1.5 s for the pictures.
+- A saved search fills its missing pictures from the cache.

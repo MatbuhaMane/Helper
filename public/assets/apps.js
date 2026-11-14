@@ -8,7 +8,10 @@
      H.isPinned(href)          H.togglePin(href) → pinned or not (saved)
      H.appIcon(name)           the icon of a menu (H.icon)
      H.setRing(hrefs)          the home's arrange tray: the ring's cushions in this order (saved: pins + order)
-     H.expTag(app)             the "ניסיוני" tag (design's .tag-exp) for an app with tag, else null */
+     H.expTag(app)             the "ניסיוני" tag (design's .tag-exp) for an app with tag, else null
+     H.PARTS                   the parts of the tent (the top menu), in order
+   The owner's עץ מבנה (the back door, server/layout.ts) is a layer over this list: order, the tools under each part,
+   hidden items, names, icons, cushions, colours and the ring's default (H.mergeLayout; H.layout() for the editor). */
 (() => {
   if (!window.H || H.APPS) return;
   const APPS = [
@@ -42,8 +45,89 @@
     { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a', tag: 'ניסיוני' },
   ];
   const DEFAULT_PINS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];   // the parts the ring always had
-  const byHref = (href) => APPS.find((a) => a.href === href);
-  const prefs = () => H.prefs('home', { pins: DEFAULT_PINS.slice() });
+  const CODE = APPS.slice();                    // the code's own catalogue; APPS itself is what the layout makes of it
+
+  /* ---------- עץ מבנה: the owner's layer (server/layout.ts), merged over the code ---------- */
+  /** the code's tree: the fixed items and the parts on top, every tool under the part its address starts with
+      (else under כלים) */
+  function defaultTree(code, parts) {
+    const top = code.filter((a) => a.fixed || parts.includes(a.href)).map((a) => ({ href: a.href, kids: [] }));
+    for (const a of code) {
+      if (top.some((t) => t.href === a.href)) continue;
+      const home = top.filter((t) => a.href.split('#')[0].startsWith(t.href) && t.href !== '/').sort((x, y) => y.href.length - x.href.length)[0]
+        || top.find((t) => t.href === '/tools/') || top[0];
+      home?.kids.push(a.href);
+    }
+    return top;
+  }
+  /** the code + the owner's layout → { apps (flat, in the tree's order, without the hidden), tree, parts, pins }.
+      Anything the layout names that is gone from the code is skipped; anything new in the code that the layout does
+      not know goes where the code's tree puts it; a fixed item stays on top and visible; a layout that is not a
+      layout is the code's own. Pure: tested by server/test-layout.mjs. */
+  function mergeLayout(code, dflt, layout) {
+    const by = new Map(code.map((a) => [a.href, a]));
+    const L = layout && typeof layout === 'object' && !Array.isArray(layout) ? layout : {};
+    const list = (v) => (Array.isArray(v) ? v : []);
+    const hidden = new Set(list(L.hidden).filter((h) => by.has(h) && !by.get(h).fixed));
+    const edits = L.edits && typeof L.edits === 'object' ? L.edits : {};
+    const look = (a, part) => {
+      const o = { ...a, part }, e = edits[a.href];
+      if (e && typeof e === 'object') for (const k of ['name', 'sub', 'ic', 'pillow', 'c2']) if (typeof e[k] === 'string' && e[k]) o[k] = e[k];
+      return o;
+    };
+    const used = new Set(), tree = [];
+    for (const p of list(L.parts)) {
+      if (!p || !by.has(p.href) || used.has(p.href)) continue;
+      used.add(p.href);
+      const t = { href: p.href, kids: [] };
+      for (const k of list(p.kids)) if (by.has(k) && !used.has(k) && !by.get(k).fixed) { used.add(k); t.kids.push(k); }
+      tree.push(t);
+    }
+    // a fixed item that was put under a part comes back on top (it was skipped there)
+    const base = defaultTree(code, dflt.parts);
+    for (const t of base) if (!used.has(t.href)) { used.add(t.href); tree.push({ href: t.href, kids: [] }); }
+    for (const t of base) for (const k of t.kids) {
+      if (used.has(k)) continue;
+      used.add(k);
+      (tree.find((x) => x.href === t.href) || tree.find((x) => x.href === '/tools/') || tree[0]).kids.push(k);
+    }
+    const apps = [];
+    for (const t of tree) {
+      if (!hidden.has(t.href)) apps.push(look(by.get(t.href), null));
+      for (const k of t.kids) if (!hidden.has(k)) apps.push(look(by.get(k), t.href));
+    }
+    const shown = (h) => by.has(h) && !by.get(h).fixed && !hidden.has(h);
+    const ring = [...new Set(list(L.ring))].filter(shown);
+    return { apps, tree, hidden: [...hidden], parts: tree.map((t) => t.href).filter(shown),
+      pins: ring.length ? ring : dflt.pins.filter(shown) };
+  }
+
+  /* the layout in use: the owner's preview on this tab (sessionStorage), else the last one this device got, refreshed
+     from the server every few minutes; a change is applied in place (H.APPS keeps its identity) and announced */
+  const PARTS = [], PINS = [];
+  let TREE = [], HIDDEN = [];
+  function use(layout) {
+    const m = mergeLayout(CODE, { parts: DEFAULT_PINS, pins: DEFAULT_PINS }, layout);
+    APPS.splice(0, APPS.length, ...m.apps);
+    PARTS.splice(0, PARTS.length, ...m.parts);
+    PINS.splice(0, PINS.length, ...m.pins);
+    TREE = m.tree; HIDDEN = m.hidden;
+  }
+  const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* no storage */ } };
+  const read = (s, k) => { try { return JSON.parse(s.getItem(k) || 'null'); } catch (_) { return null; } };
+  const preview = (() => { try { return read(sessionStorage, 'helper.layoutPreview'); } catch (_) { return null; } })();
+  const cached = read(localStorage, 'helper.layout');
+  use(preview || cached?.layout);
+  if (!preview && (!cached || Date.now() - (cached.at || 0) > 5 * 60e3)) {
+    fetch('/api/layout', { credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d) return;
+      store('helper.layout', { v: d.v, at: Date.now(), layout: d.layout });
+      if ((d.v || 0) !== (cached?.v || 0)) { use(d.layout); dispatchEvent(new CustomEvent('h:layout')); }
+    }).catch(() => {});
+  }
+
+  const byHref = (href) => APPS.find((a) => a.href === href) || CODE.find((a) => a.fixed && a.href === href);
+  const prefs = () => H.prefs('home', { pins: PINS.slice() });
   const isPinned = (href) => prefs().pins.includes(href);
   function togglePin(href) {
     const p = prefs(), a = byHref(href);
@@ -80,5 +164,6 @@
     { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
     { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' },
   ];
-  Object.assign(H, { APPS, SOON, ringApps, isPinned, togglePin, setRing, expTag, appIcon });
+  Object.assign(H, { APPS, PARTS, SOON, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
+    layout: () => ({ code: CODE, tree: TREE, hidden: HIDDEN, pins: PINS.slice(), defaultPins: DEFAULT_PINS.slice() }) });
 })();

@@ -2,7 +2,8 @@
 //   * 'tree'  – a trusted session (one that once unlocked the vault, for 30 days from its last use) opens these freely,
 //              with no idle lock: the tree, its people and links, relationships, roles, the forest, the non-private details.
 //   * 'fresh' – always a fresh unlock (a passkey, or a Google sign-in from the last 10 minutes; then 15 minutes idle,
-//              2 hours at most): documents and files, private items, privacy, linking trees, every delete, export.
+//              2 hours at most): documents and files, private items, privacy, linking trees, deleting a file, export.
+//              (Deleting from the tree is soft since 2026-11-13: it opens like an edit.)
 // An untrusted session needs a fresh unlock for everything, as before. The table below is the only place a route's
 // level is decided; server/vault/test-access.mjs checks it and that every handler reads it.
 
@@ -15,8 +16,12 @@ export const ACCESS: Record<string, Level> = {
   tree: 'tree', personGet: 'tree', personSave: 'tree', linkAdd: 'tree', linkSave: 'tree',
   roles: 'tree', householdSave: 'tree', bridges: 'tree', forest: 'tree', related: 'tree',
   forestFor: 'tree',                                                                  // the forest search and the member card (server/family-find.ts): the forest's own level
+  // deleting from the tree is soft now, with an undo and the owner's restore (the owner's rule of 2026-11-13), so it opens
+  // like an edit; a change to another user's card waits for their yes, answered on their own trusted device
+  personDelete: 'tree', linkDelete: 'tree', personRestore: 'tree',
+  changesList: 'tree', changeApprove: 'tree', changeDecline: 'tree', changeCancel: 'tree',
+  trashList: 'tree', trashRestore: 'tree',                                            // the owner, from the back door (its own biometric entry)
   // always a fresh unlock
-  personDelete: 'fresh', linkDelete: 'fresh',                                         // any delete
   items: 'fresh', itemAdd: 'fresh', itemFile: 'fresh', itemSave: 'fresh', itemDelete: 'fresh', itemRestore: 'fresh',   // documents and files
   privacySave: 'fresh',                                                               // privacy
   bridgeAsk: 'fresh', bridgeApprove: 'fresh', bridgeConsent: 'fresh', bridgeDecline: 'fresh', bridgeRevoke: 'fresh',   // linking trees

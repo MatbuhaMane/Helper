@@ -1160,6 +1160,25 @@ CREATE TABLE IF NOT EXISTS story_items (
 );
 CREATE INDEX IF NOT EXISTS story_items_house ON story_items(household, created_at);
 
+-- the owner's invitations from outside the family (server/join.ts, the back door's "הזמנות"): a personal link, used once,
+-- into a household of its own. Only the link key's hash (to find it) and a sealed copy (for the owner) are kept. Its
+-- status is computed: cancelled_at, then used_at, then exp (join-rules inviteStatus). email: only that address may use it.
+CREATE TABLE IF NOT EXISTS owner_invites (
+  id           TEXT PRIMARY KEY,
+  key_hash     TEXT NOT NULL UNIQUE,
+  key_enc      TEXT NOT NULL,
+  name         TEXT NOT NULL,
+  email        TEXT,
+  created_by   TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  exp          INTEGER NOT NULL,
+  used_by      TEXT,
+  used_at      INTEGER,
+  cancelled_at INTEGER,
+  opened_at    INTEGER                       -- the first time its page was opened ("נפתחה")
+);
+CREATE INDEX IF NOT EXISTS owner_invites_made ON owner_invites(created_at);
+
 -- a request for access (server/access.ts, master): someone who signed in with Google, not a member and not invited.
 -- The sign-in leaves a one-hour ticket (its hash only); the form sends it back with a name and a note; the owner is told.
 CREATE TABLE IF NOT EXISTS access_requests (
@@ -1176,6 +1195,26 @@ CREATE TABLE IF NOT EXISTS access_requests (
 );
 CREATE INDEX IF NOT EXISTS access_requests_ticket ON access_requests (ticket_hash);
 
+-- a change to the family tree that waits for a user's yes (server/vault/index.ts, the owner's rule of 2026-11-13):
+-- a card of another user, or a relationship that touches one. One row for each user it waits for (one grp);
+-- what it would change is sealed (payload_enc). Nothing in the tree changes until every one of them approves.
+CREATE TABLE IF NOT EXISTS family_changes (
+  id          TEXT PRIMARY KEY,
+  household   TEXT NOT NULL,
+  person_id   TEXT,                            -- edit | delete: the card
+  kind        TEXT NOT NULL,                   -- edit | delete | unlink | relink
+  target_id   TEXT,                            -- unlink | relink: the family_links id
+  payload_enc TEXT,
+  grp         TEXT NOT NULL,
+  by_email    TEXT NOT NULL,
+  for_email   TEXT NOT NULL,
+  status      TEXT NOT NULL DEFAULT 'pending', -- pending | approved | declined | cancelled
+  created_at  INTEGER NOT NULL,
+  decided_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS family_changes_for ON family_changes(for_email, status);
+CREATE INDEX IF NOT EXISTS family_changes_by ON family_changes(by_email, status);
+CREATE INDEX IF NOT EXISTS family_changes_grp ON family_changes(grp);
 -- secret grants the owner gives one member from the owner's room (server/grants.ts): frames, bio_ancient, name_ancient
 CREATE TABLE IF NOT EXISTS user_grants (
   email      TEXT NOT NULL,
@@ -1194,6 +1233,39 @@ CREATE TABLE IF NOT EXISTS push_subs (
   created_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS push_subs_email ON push_subs (email);
+
+-- עץ מבנה (server/layout.ts, ai-features 2026-11-13): the owner's layer over the hub's menus (H.APPS), one row a
+-- version; the newest is the one in use. json is the cleaned layout (server/layout-rules.ts).
+CREATE TABLE IF NOT EXISTS site_layout (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  json     TEXT NOT NULL,
+  by_email TEXT,
+  at       INTEGER NOT NULL,
+  note     TEXT
+);
+
+-- the surprise eggs the owner hides on a page, for a time, and who found each
+CREATE TABLE IF NOT EXISTS eggs (
+  id         TEXT PRIMARY KEY,
+  page       TEXT NOT NULL,                     -- the path, with its last slash ('/' is the home page)
+  text       TEXT NOT NULL,
+  kind       TEXT NOT NULL DEFAULT 'text',      -- text | surprise | link
+  link       TEXT,
+  starts     INTEGER,                           -- ms, null = from now
+  ends       INTEGER,                           -- ms, the last day, null = no end
+  active     INTEGER NOT NULL DEFAULT 1,
+  x          REAL NOT NULL DEFAULT 50,          -- where it sits on the page, % of the width and height
+  y          REAL NOT NULL DEFAULT 50,
+  created_at INTEGER NOT NULL,
+  by_email   TEXT
+);
+CREATE INDEX IF NOT EXISTS eggs_page ON eggs(page, active);
+CREATE TABLE IF NOT EXISTS egg_finds (
+  egg_id TEXT NOT NULL,
+  email  TEXT NOT NULL,
+  at     INTEGER NOT NULL,
+  PRIMARY KEY (egg_id, email)
+);
 
 -- notifications held by the gate (quiet hours, quiet Shabbat, not urgent) for the daily summary (server/push.ts)
 CREATE TABLE IF NOT EXISTS push_digest (

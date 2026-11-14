@@ -285,7 +285,7 @@
     redraw(it); renderSide();
     if (scope.type === 'starred') resetList();
   }
-  const snapshot = (it) => ({ title: it.title, link: it.link, feed: it.feed, feedId: it.feedId, date: it.date, image: it.image, summary: it.summary, body: it.body, lang: it.lang, kind: it.kind, quality: it.quality });
+  const snapshot = (it) => ({ title: it.title, link: it.link, feed: it.feed, feedId: it.feedId, date: it.date, image: it.image, image_full: it.image_full, summary: it.summary, body: it.body, lang: it.lang, kind: it.kind, quality: it.quality });
 
   /* ---- the person's own feeds: chosen sources and a filter, under a name ---- */
   function editCustomFeed(c) {
@@ -749,7 +749,9 @@
         : el('button', { class: 'btn primary tool-main', onclick: () => showFull(false) }, `${ICON.full} לכתבה המלאה`);
       const gist = isPost ? textOf() : (it.summary && it.summary !== it.title ? it.summary : '');
       return [
-        it.image ? el('div', { class: 'a-hero' }, el('img', { src: it.image, alt: '', referrerpolicy: 'no-referrer', onerror: (e) => e.target.parentElement.remove() })) : null,
+        // the hero takes the feed's widest picture (the list has the small one); if it does not load, the small one
+        it.image ? el('div', { class: 'a-hero' }, el('img', { src: it.image_full || it.image, alt: '', referrerpolicy: 'no-referrer',
+          onerror: (e) => { if (it.image_full && e.target.src !== it.image) e.target.src = it.image; else e.target.parentElement.remove(); } })) : null,
         ...head(),
         gist ? el('div', { class: 'a-gist', dir: 'auto' }, gist.split(/\n+/).map((p) => el('p', {}, p))) : el('p', { class: 'muted' }, 'אין תקציר לכתבה הזו. אפשר לפתוח את הכתבה המלאה, או לבקש אמלק.'),
         boxes.tachles, boxes.amlek, boxes.ivrut,

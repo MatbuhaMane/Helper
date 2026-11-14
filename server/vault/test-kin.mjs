@@ -135,5 +135,33 @@ eq('a link between two records of one person is dropped', K.mergeLinks([M('danaA
 const k3 = K.kin(merged, (id) => (id === 'rina' ? '' : sex2[id] || ''));
 eq('hidden sex → the neutral form', k3.relationName('me', 'rina'), 'חותן/חותנת');
 
+/* ---- changes to the tree: who must say yes ---- */
+const me = 'me@x', ruth = 'ruth@x', dan = 'dan@x';
+eq('a card of someone who is not a user: at once', K.approversFor(me, [{ member: null, user: false }]), []);
+eq('an email that is not a member is not a user: at once', K.approversFor(me, [{ member: 'nobody@x', user: false }]), []);
+eq('my own card: at once', K.approversFor(me, [{ member: me, user: true }]), []);
+eq('another user: waits for them', K.approversFor(me, [{ member: ruth, user: true }]), [ruth]);
+eq('a link between me and another user: waits for them', K.approversFor(me, [{ member: me, user: true }, { member: ruth, user: true }]), [ruth]);
+eq('a link between two other users: waits for both', K.approversFor(me, [{ member: ruth, user: true }, { member: dan, user: true }]), [ruth, dan]);
+eq('the same user twice: asked once', K.approversFor(me, [{ member: ruth, user: true }, { member: ruth, user: true }]), [ruth]);
+ok('the one it waits for decides', K.mayDecide({ for_email: ruth, status: 'pending' }, ruth));
+ok('nobody decides for another', !K.mayDecide({ for_email: ruth, status: 'pending' }, me));
+ok('the one who proposed cannot approve it', !K.mayDecide({ for_email: ruth, status: 'pending' }, dan));
+ok('no email, no decision', !K.mayDecide({ for_email: ruth, status: 'pending' }, ''));
+ok('a decided change is not decided again', !K.mayDecide({ for_email: ruth, status: 'approved' }, ruth) && !K.mayDecide({ for_email: ruth, status: 'declined' }, ruth));
+eq('one yes of one: applied', K.groupOutcome([{ status: 'approved' }]), 'apply');
+eq('one yes of two: waits', K.groupOutcome([{ status: 'approved' }, { status: 'pending' }]), 'wait');
+eq('one no: nothing changes', K.groupOutcome([{ status: 'approved' }, { status: 'declined' }]), 'declined');
+eq('a decline alone: nothing changes', K.groupOutcome([{ status: 'declined' }]), 'declined');
+eq('cancelled by the one who asked: nothing changes', K.groupOutcome([{ status: 'cancelled' }]), 'declined');
+const t0 = 1_000_000;
+ok('the deleter undoes at once', K.mayRestore({ deleted_at: t0, deleted_by: me }, me, false, t0 + 10e3));
+ok('the deleter, after ten minutes: no', !K.mayRestore({ deleted_at: t0, deleted_by: me }, me, false, t0 + 11 * 60e3));
+ok('someone else: no', !K.mayRestore({ deleted_at: t0, deleted_by: me }, ruth, false, t0 + 1e3));
+ok('the owner: always', K.mayRestore({ deleted_at: t0, deleted_by: me }, ruth, true, t0 + 365 * 864e5));
+ok('a card that was not deleted: nothing to restore', !K.mayRestore({ deleted_at: null, deleted_by: null }, me, true, t0));
+eq('changed keys', K.changedKeys({ name: 'רות', details: { born: '1980-01-01', place: 'חיפה' } }, { name: 'רותי', details: { born: '1980-01-01', place: '' , notes: 'x' } }), ['name', 'place', 'notes']);
+eq('nothing changed', K.changedKeys({ name: 'a', details: { born: '1' } }, { name: 'a', details: { born: '1' } }), []);
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

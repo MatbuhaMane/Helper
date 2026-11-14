@@ -77,10 +77,15 @@
   const currentWeight = () => weights().at(-1)?.kg || P.profile?.weight;
 
   /* ===================== first run: who, and what for ===================== */
-  function wizard(edit) {
+  /* Editing (the users' feedback, 2026-11-13: "after the first time weight and height cannot be changed"): the form opens
+     with today's weight (the log's last entry, which is what the dashboard shows), and a changed weight is written to the
+     log for today, so it shows at once (here and in ketosis). The first weight stays as the start (profile.start). */
+  function wizard(edit, focus) {
     const p = { sex: 'f', age: 35, height: 168, weight: 70, activity: 1.375, goal: 'lose', pace: 0.5, target: null, ...(P.profile || {}) };
+    if (edit) { p.start ??= P.profile?.weight; p.weight = currentWeight() || p.weight; }
+    const was = p.weight;
     const field = (label, input, hint) => el('label', { class: 'hk-field' }, el('span', {}, label), input, hint ? el('small', {}, hint) : null);
-    const numIn = (key, min, max, step = 1) => { const i = el('input', { type: 'number', inputmode: 'decimal', min, max, step, value: p[key] ?? '', required: true }); i.addEventListener('input', () => { p[key] = i.value === '' ? null : +i.value; draw(); }); return i; };
+    const numIn = (key, min, max, step = 1) => { const i = el('input', { type: 'number', inputmode: 'decimal', min, max, step, value: p[key] ?? '', required: true, name: key }); i.addEventListener('input', () => { p[key] = i.value === '' ? null : +i.value; draw(); }); return i; };
     const choice = (key, opts, cls = '') => el('div', { class: 'hk-choice ' + cls, role: 'radiogroup' }, opts.map(([v, label, sub]) => {
       const b = el('button', { type: 'button', role: 'radio', 'aria-checked': String(p[key] === v), onclick: () => { p[key] = v; if (key === 'goal') p.pace = (PACE[v] || [[0]])[1]?.[0] ?? 0; paint(); draw(); } }, el('b', {}, label), sub ? el('small', {}, sub) : null);
       b.dataset.v = v; return b;
@@ -125,15 +130,18 @@
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!(p.age > 12 && p.height > 120 && p.weight > 30)) return toast('חסרים גובה, משקל או גיל');
+      if (!edit) p.start = p.weight;
       P.profile = { ...p }; P.plan = plan(p); P.startedAt ||= Date.now(); save();
-      // the first weight goes into the shared weight log (ketosis shows it too)
-      if (!weights().some((w) => w.day === dayKey())) await api('/api/keto/weights', { method: 'PUT', body: { day: dayKey(), kg: p.weight } }).catch(() => {});
+      // the weight goes into the shared weight log (ketosis shows it too): the first one, or a changed one (today's entry)
+      if (edit ? Math.abs(p.weight - (was || 0)) >= 0.05 : !weights().some((w) => w.day === dayKey()))
+        await api('/api/keto/weights', { method: 'PUT', body: { day: dayKey(), kg: p.weight } }).catch(() => toast('המשקל לא נשמר ביומן, נסו שוב'));
       await loadKeto();
       render();
       toast(edit ? 'הפרטים עודכנו' : 'התוכנית מוכנה');
     });
     draw();
     root.replaceChildren(el('div', { class: 'hk' }, form));
+    if (edit) { const f = focus && form.querySelector(`input[name=${focus}]`); if (f) { f.scrollIntoView({ block: 'center' }); f.focus({ preventScroll: true }); f.select?.(); } else scrollTo(0, 0); }
   }
 
   /* ===================== the dashboard ===================== */
@@ -164,7 +172,7 @@
   function dashboard() {
     const p = P.profile, q = P.plan || plan(p);
     const t = today();
-    const w = currentWeight(), start = p.weight, list = weights();
+    const w = currentWeight(), start = p.start ?? p.weight, list = weights();
     const sessions = weekDone(), goalSessions = p.goal === 'gain' ? 3 : p.goal === 'lose' ? 3 : 2;
     // weight: today's entry
     const wIn = el('input', { type: 'number', step: 0.1, inputmode: 'decimal', placeholder: String(w || ''), 'aria-label': 'המשקל היום (ק״ג)' });
@@ -188,7 +196,9 @@
             ring(t.protein, q.protein, 'ג׳ חלבון', `היעד: ${q.protein} ג׳`)),
           el('p', { class: 'hk-src' }, t.meals ? `לפי ${t.meals} ארוחות ביומן הקטוזיס.` : 'הארוחות נרשמות ביומן הקטוזיס.', ' ', el('a', { href: '/groceries/#keto' }, 'לרשום ארוחה ←'))),
         el('div', { class: 'card hk-card' },
-          el('h3', {}, 'המשקל'),
+          el('div', { class: 'hk-card-head' }, el('h3', {}, 'המשקל'),
+            el('button', { class: 'btn small ghost hk-edit', type: 'button', 'aria-label': 'עריכת המשקל והגובה', onclick: () => wizard(true, 'weight') }, 'עריכה')),
+          el('p', { class: 'hk-src' }, `גובה ${p.height} ס״מ`, q.bmi ? ` · BMI ${q.bmi.toFixed(1)}` : ''),
           el('div', { class: 'hk-weight' }, el('b', {}, w ? `${w} ק״ג` : '—'),
             el('small', {}, start && w ? `${w - start <= 0 ? '' : '+'}${(Math.round((w - start) * 10) / 10)} ק״ג מההתחלה` : ''),
             toGoal != null ? el('small', {}, Math.abs(toGoal) < 0.2 ? 'הגעת ליעד! 🎉' : `עוד ${Math.abs(toGoal)} ק״ג ליעד`) : null),

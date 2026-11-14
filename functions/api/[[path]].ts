@@ -56,6 +56,7 @@ import * as discovery from '../../server/discover';
 import * as goalSocial from '../../server/goal-social';
 import * as reports from '../../server/reports';
 import * as dm from '../../server/dm';
+import * as layout from '../../server/layout';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -71,6 +72,7 @@ route('GET', '/api/auth/callback', googleCallback);
 route('GET', '/api/auth/dev', devLogin);
 route('POST', '/api/access/request', access.request);              // asking the owner for access, no session (server/access.ts)
 route('GET', '/api/admin/access-requests', access.list);
+route('POST', '/api/admin/access-requests/decide', access.decide);   // the owner: invited / declined (ai-features, for the master)
 route('GET', '/api/admin/grants', grants.list);
 route('GET', '/api/push/key', push.key);
 route('POST', '/api/push/subscribe', push.subscribe);
@@ -567,6 +569,32 @@ route('PUT', '/api/story/:id', story.save);                                    /
 route('DELETE', '/api/story/:id', story.remove);
 route('POST', '/api/story/:id/restore', story.restore);
 route('GET', '/api/story/:id/file', story.file);
+/* the owner's invitations from outside the family (master's server/join.ts; the panel is the back door's "הזמנות"): owner only, from their own account */
+route('GET', '/api/admin/invites', join.invitesList);
+route('POST', '/api/admin/invites', join.inviteCreate);
+route('POST', '/api/admin/invites/:id/cancel', join.inviteCancel);
+route('POST', '/api/join/check', join.ownerInviteCheck);             // the link's page (/join/#key): no sign-in; rate limited
+route('POST', '/api/join/start', join.ownerInviteStart);
+
+/* the family tree: changes that wait for a user's yes, a soft delete and its undo, the owner's restore (ai-features) */
+route('GET', '/api/vault/changes', vault.changesList);
+route('POST', '/api/vault/changes/:id/approve', vault.changeApprove);
+route('POST', '/api/vault/changes/:id/decline', vault.changeDecline);
+route('POST', '/api/vault/changes/:id/cancel', vault.changeCancel);
+route('POST', '/api/vault/people/:id/restore', vault.personRestore);
+route('GET', '/api/admin/tree-trash', admin.treeTrash);
+route('POST', '/api/admin/tree-trash/:id/restore', admin.treeTrashRestore);
+/* עץ מבנה: the owner's layer over the menus, and the surprise eggs (ai-features, server/layout.ts) */
+route('GET', '/api/layout', layout.get);
+route('GET', '/api/admin/layout', layout.adminGet);
+route('PUT', '/api/admin/layout', layout.put);
+route('POST', '/api/admin/layout/restore/:id', layout.restore);
+route('GET', '/api/eggs', layout.eggsHere);
+route('POST', '/api/eggs/:id/found', layout.found);
+route('GET', '/api/admin/eggs', layout.adminEggs);
+route('POST', '/api/admin/eggs', layout.eggAdd);
+route('PUT', '/api/admin/eggs/:id', layout.eggPut);
+route('DELETE', '/api/admin/eggs/:id', layout.eggDelete);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

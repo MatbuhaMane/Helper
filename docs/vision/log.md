@@ -95,3 +95,4 @@
 - 2026-11-14: at the CEO's request (the owner asked idle departments to start on the future interfaces), wrote docs/vision/future-specs.md: short specs for the 8 H.FUTURE tools by priority, 21 open questions for the owner; batch 25 sent to ai-features-2 and ceo-2.
 - 2026-11-14: the owner answered the 21 future-tool questions (via the CEO); written into future-specs.md, decisions.md and language-game.md (Arabic first, legal later); AI inside a tool is free with a quota; batch 26 sent to ai-features-2, business and ceo-2.
 - 2026-11-14: business reported the owner-approved quota numbers (20 chef answers, 3 plant photos, 5 howto questions a day; renews at midnight Israel time); pointer added to future-specs.md and forwarded to ai-features-2.
+- 2026-11-14: ai-features-2 reports batch 26 and the quota numbers applied on branch ai-features (kitchen voice and timers, breathing voice and habits, home reminders), not yet merged; next the garden, then the translator.

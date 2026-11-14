@@ -70,7 +70,7 @@
     { id: 'homework', name: 'עוזר שיעורי בית', ic: 'note', note: 'בעתיד', line: 'עזרה בשיעורים: מסבירים, לא פותרים במקומך.', only: 'child' },
     { id: 'breath', name: 'מדיטציה ונשימה', ic: 'habits', note: 'בעתיד', line: 'כמה דקות של שקט ונשימה, כל יום.' },
     // vision batch 32 (2026-11-14): the Ohel's inner economy, the token יד; drawn only, nothing built yet
-    { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בעתיד', line: 'לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בתמורה' },
+    { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בעתיד', line: 'לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה' },
   ];
   for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }
   /** may this person open the app? r is what H.me() resolves to; beta and secret apps need the back door's leave (r.apps: ['beta', '/x/']) */

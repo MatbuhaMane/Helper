@@ -80,6 +80,13 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - **For later:**
     - in the back door, a secret app shows its address when H.APPS is not loaded there; there is no secret app yet;
     - the server's `GATED` list must be updated with every new beta or secret app (the test catches a mismatch with apps.js).
+- **Received, not started (waiting for the CEO to assign them):**
+  - The CEO: the grandparents' stories show as "בקרוב" in a person's profile in the tree, with batch 18 (the recordings get the tree's protection).
+  - Vision, batch 21 (`docs/decisions.md` on `vision`, "The owner closes the open questions"):
+    - a trial gathering, marked and seen only by the owner, counted nowhere (founders, `gathering_milestones`, the launch check);
+    - place search stays in `il`;
+    - the `child` flag is enough, no children's mode;
+    - a shared songbook within linked households and by a link (signed-in users only, the owner can turn it off); the CEO sets the sharing model first, not urgent.
 - **Seen in passing, not ours:** `figure2d.js` logs negative `ellipse rx` errors in the console (the companion figure).
 
 ### Decisions held (details in docs/decisions.md)

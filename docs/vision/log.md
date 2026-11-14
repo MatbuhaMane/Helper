@@ -111,3 +111,4 @@
 - 2026-11-14: internal economy ש4 decided: first tokens come only through approved community deeds (no join grant, no negative balance).
 - 2026-11-14: internal economy: the owner wants a 10% tithe of every token kept in a public fund; what it applies to and what the fund does are open; ש5 (who can trade) still open.
 - 2026-11-14: internal economy: the owner approved the tithe rules (10% of every earned token to the public fund; the fund pays community deeds first and helps those who cannot give; every payout needs the owner).
+- 2026-11-14: internal economy ש5: the owner decided trade is open to everyone in the Ohel; trust rules proposed, waiting for the owner.

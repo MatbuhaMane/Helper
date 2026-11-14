@@ -69,7 +69,7 @@
     const h = el('span', { class: 'heart-burst', 'aria-hidden': 'true' }, '❤');
     if (getComputedStyle(node).position === 'static') node.style.position = 'relative';
     node.append(h);
-    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { setTimeout(() => h.remove(), 500); return; }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce') { setTimeout(() => h.remove(), 500); return; }
     h.animate([{ transform: 'scale(.3)', opacity: 0 }, { transform: 'scale(1.1)', opacity: 1, offset: 0.35 }, { transform: 'scale(1)', opacity: 1, offset: 0.6 }, { transform: 'scale(1.25)', opacity: 0 }],
       { duration: 800, easing: 'ease-out' }).onfinish = () => h.remove();
   }

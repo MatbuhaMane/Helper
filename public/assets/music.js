@@ -785,7 +785,7 @@
   let peekEl = null;
   function peek(text, label, act) {
     peekEl?.remove();
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce';
     // it sits at the inline end (the left in Hebrew), and comes in from that edge
     const side = getComputedStyle(document.documentElement).direction === 'rtl' ? -1 : 1;
     let gone = false, timer = 0;

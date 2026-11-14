@@ -379,11 +379,12 @@
   /** a menu of the tent's parts or of its tools, under its button (PC) or above the tab bar (phone) */
   let openMenuEl = null;
   // closes the open menu; resolves once its history step is gone too (fromBack: back already took it)
-  function closeMenu(fromBack) {
+  function closeMenu(fromBack, instant) {
     if (!openMenuEl) return Promise.resolve();
     const { btn, box, step } = openMenuEl;
     btn.setAttribute('aria-expanded', 'false');
-    box.remove();
+    if (instant || stillMotion()) box.remove();
+    else { box.classList.add('closing'); setTimeout(() => box.remove(), 120); }
     openMenuEl = null;
     return fromBack || !step ? Promise.resolve() : back.done(step);
   }
@@ -395,7 +396,7 @@
     const parts = window.H.PARTS || PARTS;   // the owner's עץ מבנה may change the parts (apps.js)
     const items = (window.H.APPS || []).filter((a) => (kind === 'parts' ? parts.includes(a.href) : !a.fixed && !parts.includes(a.href)));
     // a link leaves through the menu's own step, so back on the next page comes to this page, not to its open menu
-    const go = (e) => { if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; e.preventDefault(); const to = e.currentTarget.href; closeMenu().then(() => location.assign(to)); };
+    const go = (e) => { if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; e.preventDefault(); const to = e.currentTarget.href; closeMenu(false, true).then(() => location.assign(to)); };
     const link = (a) => el('li', {}, el('a', { href: a.href, onclick: go, 'aria-current': here.startsWith(a.href.split('#')[0]) && a.href !== '/' ? 'page' : null }, icon(a.ic), el('span', {}, a.name)));
     const cats = kind === 'tools' && window.H.CATS ? catGroups(items, link) : null;
     const box = el('div', { class: 'navmenu' + (phone ? ' navmenu-phone' : ''), id: 'navmenu-' + kind },
@@ -407,6 +408,9 @@
       box.style.insetInlineStart = Math.round(document.documentElement.dir === 'rtl' || getComputedStyle(document.documentElement).direction === 'rtl' ? innerWidth - r.right : r.left) + 'px';
     }
     document.body.append(box);
+    const tr = btn.getBoundingClientRect(), br = box.getBoundingClientRect();   // it grows from its trigger (design's --ox / --oy)
+    box.style.setProperty('--ox', Math.round(tr.left + tr.width / 2 - br.left) + 'px');
+    box.style.setProperty('--oy', Math.round(tr.top + tr.height / 2 - br.top) + 'px');
     btn.setAttribute('aria-expanded', 'true');
     openMenuEl = { btn, box };
     openMenuEl.step = back.push(() => { if (openMenuEl) openMenuEl.step = 0; closeMenu(true); });
@@ -659,6 +663,29 @@
     } catch (_) { /* no referrer */ }
   });
 
+  /* The page turn's direction (design's shared axis): an earlier tab in the bar, or the browser's back/forward, slides the other way.
+     Both snapshots read the same rule; browsers without cross-document view transitions never fire these. */
+  const tabSlot = (path) => NAV.findIndex((n, i) => (i === 0 ? path === '/' : [n.href, ...(n.also || [])].some((h) => h && path.startsWith(h))));
+  const turnDir = (from, to, type) => (type === 'traverse' || (tabSlot(from) >= 0 && tabSlot(to) >= 0 && tabSlot(to) < tabSlot(from)) ? 'back' : '');
+  addEventListener('pageswap', (e) => {
+    if (!e.viewTransition || !e.activation) return;
+    document.documentElement.dataset.vt = turnDir(new URL(e.activation.from.url).pathname, new URL(e.activation.entry.url).pathname, e.activation.navigationType);
+  });
+  addEventListener('pagereveal', (e) => {
+    const a = window.navigation?.activation;
+    if (!e.viewTransition || !a?.from) return;
+    document.documentElement.dataset.vt = turnDir(new URL(a.from.url).pathname, new URL(a.entry.url).pathname, a.navigationType);
+    e.viewTransition.finished.finally(() => { delete document.documentElement.dataset.vt; });
+  });
+
+  /* A tap feels instant: the next page is fetched on hover (mouse) or pointerdown (touch), 'prefetch' not 'prerender' (a prerendered
+     page would run its scripts early: the daemon, the first-meeting cards). Not the vault (no-store, strict CSP), the API or sign-out. */
+  if (window.HTMLScriptElement?.supports?.('speculationrules') && !location.pathname.startsWith('/family/')) {
+    try {
+      document.head.append(el('script', { type: 'speculationrules' }, JSON.stringify({ prefetch: [{ where: { and: [{ href_matches: '/*' }, { not: { href_matches: ['/api/*', '/admin*', '/logout*', '/family/*'] } }] }, eagerness: 'moderate' }] })));
+    } catch (_) { /* no speculation */ }
+  }
+
   /* Glass modal shared by apps */
   let modalStep = 0;
   function modal(...content) {
@@ -676,7 +703,7 @@
       document.body.append(m);
     }
     m.querySelector('.modal-glass').getAnimations().forEach((a) => a.cancel());   // a window still shrinking away opens again at once
-    m.classList.remove('grow', 'shrinking', 'dragging'); modalOrigin = null;
+    m.classList.remove('grow', 'shrinking', 'dragging', 'closing'); modalOrigin = null;
     m.style.removeProperty('--drag'); m.style.removeProperty('--drag-p');
     const b = document.getElementById('modalBody');
     b.textContent = '';
@@ -743,7 +770,13 @@
       const gone = () => { if (!m.classList.contains('shrinking')) return; shrink.cancel(); m.hidden = true; m.classList.remove('grow', 'shrinking'); };
       shrink.onfinish = gone; setTimeout(gone, 400);
     }
-    else if (m) { m.hidden = true; m.classList.remove('grow', 'shrinking'); }
+    else if (m && !m.hidden) {   // the plain leave: .closing runs design's sheet-down / pop-out (170 ms), then it hides
+      if (stillMotion()) { m.hidden = true; m.classList.remove('grow', 'shrinking', 'closing'); }
+      else {
+        m.classList.add('closing');
+        setTimeout(() => { if (!m.classList.contains('closing')) return; m.hidden = true; m.classList.remove('grow', 'shrinking', 'closing'); }, 170);   // a timer, not animationend: a background tab runs no frames
+      }
+    }
     document.body.classList.remove('modal-open');
     if (modalStep) { const s = modalStep; modalStep = 0; back.done(s); }
   }
@@ -907,7 +940,12 @@
     modal(...[el('h2', {}, 'התראות במכשיר הזה'), out, say ? null : go].filter(Boolean));
   });
 
-  window.H = { api, el, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  /** A skeleton of a few text lines (design's .skel): what a list or card shows while it loads, in the size it will have, so nothing jumps. */
+  function skel(n = 3, label = 'טוען') {
+    const w = [72, 54, 63, 45];
+    return el('div', { class: 'skel-block', role: 'status', 'aria-label': label }, ...Array.from({ length: n }, (_, i) => el('div', { class: 'skel line', style: `--w:${w[i % 4]}%`, 'aria-hidden': 'true' })));
+  }
+  window.H = { skel, api, el, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

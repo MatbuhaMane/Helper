@@ -9,6 +9,23 @@ Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum
 - The fix (second version, after the master's review): `prune()` in `server/groups.ts` applies the creation rule on every read and write, as the pure `staleGroup` in `friends-rules.ts` (64 test-friends checks): I am reachable from the maker (or, the maker gone, from a remaining member); a member I blocked goes, a member who blocked me puts me out; a friendship ended between two ordinary members drops nobody; a child under 12 stays only among family. One query for the blocks, one `check` (the maker) per visit. A block (`dm.ts block`) also removes the blocked person from shared groups at once.
 - Not covered: the list/unread of a person who was not opened yet still counts the group until someone opens it; no UI test with two accounts.
 
+## Latest: batch 30, third stop (2026-11-14) - design merged in, audited, skeletons (835cabe, 3ee5f84, 6896e69)
+- `git merge design` was clean. Audit at 375/1280, light+dark on home, groceries, messages, settings: nothing of ours; the list for design is in the master's notes (ai-features-batch30-audit.md).
+- `H.skel(n)` (common.js, master's patch) replaces the plain "טוען" text on 11 screens (keto, messages, parasha, study, songs, calendar, garden, home, research, voices); the spinner screens (news, mail, groceries' recipe) keep the spinner (it waits 400 ms). Groceries categories arrive once.
+- NOT done: swipe in messages (no real action to bind), `.swap-in` on content that replaces a skeleton, news/mail skeletons, real frames (owner's phone).
+
+## Latest: batch 30, second stop (2026-11-14) - common.js patch (master) + messages
+- `common.js` (the master's file; its own commit + format-patch in the master's notes): a sheet leaves with `.closing` (170 ms, reopens at once if still leaving), a menu grows from its trigger (`--ox/--oy`) and leaves in 120 ms (a link inside it leaves at once so the page turn isn't delayed), the page turn's direction (`pageswap`/`pagereveal` set `data-vt=back` by the bar's order or on back/forward), and prefetch on hover/pointerdown (not prerender: it would run the daemon and the cards early; not the vault). The sheet's finger-drag was already there.
+- messages: a skeleton while the list loads, rows arrive once (not on each 20 s refresh), the inbox's "טוען" is a skeleton. A swipe in the messages list has no real action yet (no archive/mute API; reply is wave 2), so it is not added.
+- Checked in the pane (design's CSS injected from its branch, not yet on main): sheet-down runs and hides after 170 ms, menu origin set, closing and removal. NOT checked: real frames, the page turn between two documents, prefetch actually firing.
+- Still open: `.skel` in the other ~12 "טוען" screens, `.arrive`/`.swap-in` on the rest of the lists, the audit run at 375/1280 light+dark.
+
+## Latest: batch 30, the JS side, first stop (2026-11-14) - 37ac8dd, c2de2d4, plus the music/songs reduced-motion fix
+- `public/assets/gestures.js` (ours): `Gestures.swipe` (reply at 64 px, cap 88; acts with 76 px buttons, snap at half, full past 60%), `Gestures.longPress` (450 ms / 8 px, lift, dim, menu from the finger), `Gestures.vidSpeed` (hold 300 ms = 2x, slide 40 px steps to 2.5x/3x, back to 1x). Pointer Events only, passive, axis lock at 8 px.
+- Used: the fun.js clips (hold-to-speed) and the grocery rows (a long press: edit, bought, delete). The groceries were already optimistic (local first, undo toast).
+- Checked with synthetic pointer events in the pane: reply arms and fires, the other direction is ignored, 2x then 3x then 1x, the menu opens and an item acts. NOT tested: a real finger (feel, the browser's own long-press menu), reduced motion on the gestures.
+- Waiting: swipe in the messages list (needs the markup of a row), `.skel` instead of "טוען" in the 15 screens, `.arrive`/`.swap-in`; `sw.js` should precache `gestures.js` (master).
+
 ## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - the owner approved the wording (b6b6006); checked at 375 and 1280, light and dark (no overflow, buttons 44px+)
 
 - `public/assets/raba-intro.js`: 5 cards on design's `raba-intro.css` (the same class names), spoken in his voice (`/api/voice/say`) with the

@@ -1488,7 +1488,7 @@
 
   /* Choosing his voice: the trained Hebrew voices, each with a sample; the choice is saved to the person's account. */
     async function openVoicePicker() {
-    const list = el('div', { class: 'dm-voices' }, el('p', { class: 'muted' }, 'טוען קולות…'));
+    const list = el('div', { class: 'dm-voices' }, H.skel(3, 'טוען קולות'));
     H.modal(el('h2', {}, `הקול של ${whoName()}`), el('p', { class: 'muted' }, 'קולות מאומנים שמדברים עברית. לחצו ▶ כדי לשמוע (הדוגמה הראשונה לוקחת כמה שניות), ו״בחירה״ כדי שזה יהיה הקול שלו.'), list);
     let data, mine;
     try {

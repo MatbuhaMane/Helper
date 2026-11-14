@@ -175,6 +175,7 @@
     return CATEGORIES.map((c) => el('option', { value: c.id, selected: c.id === selected }, `${c.icon} ${c.name}`));
   }
 
+  let firstRender = true;   // the categories arrive once (.arrive), not on every tick
   function render() {
     renderLists();
     const list = $('#list');
@@ -187,16 +188,18 @@
       const remaining = catItems.filter((i) => !i.checked).length;
       if (listPrefs.hideChecked) catItems = catItems.filter((i) => !i.checked);
       catItems.sort((a, b) => (a.checked - b.checked) || a.name.localeCompare(b.name, 'he'));
-      list.append(el('div', { class: 'card category' },
+      list.append(el('div', { class: 'card category', style: firstRender ? `--i:${list.children.length}` : null },
         el('h2', {}, el('span', {}, `${cat.icon} ${cat.name}`), el('span', { class: 'count' }, remaining ? `${remaining} נותרו` : '✓ הכל נקנה')),
         el('ul', {}, catItems.map(renderItem))));
     }
     if (!all.length) list.append(el('p', { class: 'empty card' }, cur ? 'הרשימה הזאת ריקה. הוסיפו לה פריטים 🙂' : 'הרשימה ריקה. הוסף פריטים או חפש מתכון 🙂'));
     renderDupBanner();
+    if (firstRender && list.children.length) { firstRender = false; list.classList.add('arrive'); setTimeout(() => list.classList.remove('arrive'), 700); }
   }
 
   function renderItem(it) {
     const li = el('li', { class: 'item' + (it.checked ? ' checked' : ''), 'data-id': it.id });
+    const del = () => { remove(it.id); toast(`"${it.name}" נמחק`, 'בטל', () => upsert(it)); };
     const cb = el('input', { type: 'checkbox', checked: !!it.checked, 'aria-label': `סמן ${it.name}`, onchange: () => upsert({ ...it, checked: cb.checked }) });
     const nameEl = el('span', { class: 'name', title: 'לחיצה כפולה לעריכה', ondblclick: () => startEdit(li, it) }, it.name);
     const qty = el('span', { class: 'qty' },
@@ -213,10 +216,13 @@
       el('label', { class: 'main' }, cb, nameEl, it.from ? el('small', { class: 'tag' }, `🍳 ${it.from}`) : null, Keto.annotate(it)),
       qty, catSel,
       el('button', { class: 'mini', title: 'עריכה', 'aria-label': 'ערוך', onclick: () => startEdit(li, it) }, '✎'),
-      el('button', { class: 'mini danger', title: 'מחיקה', 'aria-label': `מחק ${it.name}`, onclick: () => {
-        remove(it.id);
-        toast(`"${it.name}" נמחק`, 'בטל', () => upsert(it));
-      } }, '✕'));
+      el('button', { class: 'mini danger', title: 'מחיקה', 'aria-label': `מחק ${it.name}`, onclick: del }, '✕'));
+    // a long press: the row's own actions in a menu (the dim and the lift are gestures.js's, batch 30)
+    H.loadOnce('/assets/gestures.js').then(() => window.Gestures.longPress(li, () => [
+      { label: '✎ ערוך שם', run: () => startEdit(li, it) },
+      { label: it.checked ? '↩ החזר לרשימה' : '✓ סמן כנקנה', run: () => upsert({ ...it, checked: !it.checked }) },
+      '-',
+      { label: '✕ מחק', danger: true, run: del }])).catch(() => {});
     return li;
   }
 

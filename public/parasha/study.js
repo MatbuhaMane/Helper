@@ -80,7 +80,7 @@
       steps.room = H.back.push(() => { steps.room = 0; now.shut(); }, url);
     } else history.replaceState(history.state, '', url);
 
-    const textBox = el('div', { class: 'rs-text', 'aria-live': 'polite' }, el('p', { class: 'muted' }, 'טוען את הפסוקים…'));
+    const textBox = el('div', { class: 'rs-text', 'aria-live': 'polite' }, H.skel(4, 'טוען את הפסוקים'));
     const tabsBar = el('div', { class: 'rs-tabs', role: 'tablist' });
     const pane = el('div', { class: 'rs-pane' });
     let applySize = () => {};   // set by sizer() below

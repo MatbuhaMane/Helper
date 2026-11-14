@@ -233,6 +233,6 @@
     try { data = await api('/api/garden'); draw(); }
     catch (e) { root.textContent = ''; root.append(el('p', { class: 'notice' }, why(e))); }
   }
-  root.append(el('p', { class: 'muted' }, 'טוען…'));
+  root.append(H.skel(4));
   await load();
 })();

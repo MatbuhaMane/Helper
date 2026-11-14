@@ -252,7 +252,7 @@
 
   /* ---------- drafts: an outline from the notes, an empty one, or ✨ a draft ---------- */
   function draftsSection() {
-    const r = R.research, box = el('div', { style: 'display:grid;gap:8px' }, el('p', { class: 'muted', style: 'margin:0' }, 'טוען…'));
+    const r = R.research, box = el('div', { style: 'display:grid;gap:8px' }, H.skel(3));
     api(`/api/research/r/${r.id}/drafts`).then((d) => box.replaceChildren(...(d.drafts.length ? d.drafts.map((x) => el('button', { type: 'button', class: 'card rx-draft-item', onclick: () => openDraft(x.id) },
       el('b', { dir: 'auto' }, x.title), el('small', { class: 'muted' }, `${new Date(x.updatedAt).toLocaleDateString('he-IL')} · ${(x.size || 0).toLocaleString('he-IL')} תווים`)))
       : [el('p', { class: 'muted', style: 'margin:0' }, 'עוד אין טיוטות. שלד מהפתקים בונה כותרת לכל פתק, והציטוטים והביבליוגרפיה נכנסים לבד.')])));

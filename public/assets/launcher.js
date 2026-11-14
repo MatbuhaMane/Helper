@@ -179,9 +179,15 @@
       if (!drag.moved) { if (Math.hypot(x - drag.sx, y - drag.sy) < 4) return; drag.moved = true; t.classList.add('dragging'); }
       follow(t, e);
       // the tile under the finger's point gives up its place
-      let best = -1, bd = Infinity;
-      tiles().forEach((o, i) => { if (o === t) return; const b = o.getBoundingClientRect(); const d = Math.hypot(b.left + b.width / 2 - x, b.top + b.height / 2 - y); if (d < bd) { bd = d; best = i; } });
-      if (best >= 0 && bd < 56 && moveTo(t, best)) follow(t, e);
+      // the tile whose own place (its layout box: a gliding neighbour's animated offset is taken off) holds the finger gives up its place
+      let best = -1;
+      tiles().forEach((o, i) => {
+        if (o === t || best >= 0) return;
+        const m = new DOMMatrix(getComputedStyle(o).transform), b = o.getBoundingClientRect();
+        const l = b.left - m.e, tp = b.top - m.f;
+        if (x >= l && x <= l + b.width && y >= tp && y <= tp + b.height) best = i;
+      });
+      if (best >= 0 && moveTo(t, best)) follow(t, e);
     };
     grid.addEventListener('pointermove', (e) => { if (drag && e.pointerId === drag.id) moveAt(e.clientX, e.clientY); });
     const drop = (e) => {

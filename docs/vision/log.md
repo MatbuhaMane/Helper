@@ -113,3 +113,4 @@
 - 2026-11-14: internal economy: the owner approved the tithe rules (10% of every earned token to the public fund; the fund pays community deeds first and helps those who cannot give; every payout needs the owner).
 - 2026-11-14: internal economy ש5: the owner decided trade is open to everyone in the Ohel; trust rules proposed, waiting for the owner.
 - 2026-11-14: internal economy: the owner approved three trust rules for trade with strangers (both sides confirm, a recommendation after each service, reports reach the owner).
+- 2026-11-14: internal economy ש6: youth earn tokens only inside family and friends and on community deeds, a parent approves each service; trade with strangers from 18.

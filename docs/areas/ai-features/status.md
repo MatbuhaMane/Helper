@@ -9,7 +9,7 @@ Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum
 - The fix (second version, after the master's review): `prune()` in `server/groups.ts` applies the creation rule on every read and write, as the pure `staleGroup` in `friends-rules.ts` (64 test-friends checks): I am reachable from the maker (or, the maker gone, from a remaining member); a member I blocked goes, a member who blocked me puts me out; a friendship ended between two ordinary members drops nobody; a child under 12 stays only among family. One query for the blocks, one `check` (the maker) per visit. A block (`dm.ts block`) also removes the blocked person from shared groups at once.
 - Not covered: the list/unread of a person who was not opened yet still counts the group until someone opens it; no UI test with two accounts.
 
-## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - WORDING FOR THE OWNER'S OK
+## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - the owner approved the wording (b6b6006); checked at 375 and 1280, light and dark (no overflow, buttons 44px+)
 
 - `public/assets/raba-intro.js`: 5 cards on design's `raba-intro.css` (the same class names), spoken in his voice (`/api/voice/say`) with the
   words lighting as he speaks; mute, "דלג", Esc, dots, swipe; silent and reduced-motion work. Seen once per person: `H.prefs('raba').seen`.

@@ -1625,12 +1625,42 @@
     speak(say);
   }
 
+  /** The answer streamed (server-sent events from /api/daemon/chat): on.text(words) as they arrive, on.status(t) while
+      tools run; resolves with the same object as the JSON answer. Anything wrong before the stream opens falls back to JSON. */
+  async function chatStream(payload, on) {
+    let res;
+    try {
+      res = await fetch('/api/daemon/chat', { method: 'POST', headers: { 'content-type': 'application/json', accept: 'text/event-stream' }, body: JSON.stringify(payload) });
+    } catch (_) { res = null; }
+    if (!res?.ok || !res.body || !(res.headers.get('content-type') || '').includes('text/event-stream') || !window.TextDecoderStream) return api('/api/daemon/chat', { body: payload });
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const ev = /^event: (.*)$/m.exec(chunk)?.[1], data = /^data: (.*)$/m.exec(chunk)?.[1];
+        if (!ev || data == null) continue;
+        const d = JSON.parse(data);
+        if (ev === 'text') on.text(d.t);
+        else if (ev === 'status') on.status(d.t);
+        else if (ev === 'done') return d;
+        else if (ev === 'error') throw Object.assign(new Error(d.error === 'ai_busy' ? 'יש עומס כרגע, נסו שוב בעוד רגע.' : d.error), { code: d.error });
+      }
+    }
+    throw new Error('החיבור נקטע באמצע התשובה');
+  }
+
   async function send(text, event) {
     text = (text || '').trim();
     if ((!text && !event) || busy) return;
     answerByVoice = heardByVoice; heardByVoice = false;
     if (!state?.ai) { input.value = ''; if (text) addMsg('me', text); return plainReply(text); }
     busy = true;
+    let live = null;   // (the bubble being filled)
     wake();
     if (parts) parts.thinkStyle = Math.random() < 0.35 ? 'phone' : 'think';
     input.value = '';
@@ -1639,7 +1669,20 @@
     canvasBox.classList.add('thinking');
     setMood('curious', 30);
     try {
-      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out', figure: flat ? flatFigure : 'ibn_ezra' } });
+      const payload = { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out', figure: flat ? flatFigure : 'ibn_ezra' };
+      // his bubble appears with the first word and fills as the rest arrives ("בודק…" while he works with his tools)
+      let words = '';
+      const show = (t) => {
+        if (!live) { live = el('div', { class: 'dm-msg daemon', dir: 'auto' }); log.append(live); }
+        live.textContent = t;
+        log.scrollTop = log.scrollHeight;
+        if (panel.hidden) speakBalloon(t);
+      };
+      const r = await chatStream(payload, {
+        text: (t) => { words += t; show(words.trimStart()); },
+        status: (t) => { if (!words) show(t); },
+      });
+      live?.remove(); live = null;
       state.daemon = r.daemon;
       mood = null;
       const actions = [];
@@ -1676,6 +1719,7 @@
         setTimeout(() => showElement(document.querySelector('[data-guide="list"]'), null), 500);
       }
     } catch (e) {
+      live?.remove(); live = null;
       mood = null;
       // no AI (none connected, or no credit left): what he can do without it
       if (e.status === 402 || e.status === 503) { busy = false; canvasBox.classList.remove('thinking'); return plainReply(text); }

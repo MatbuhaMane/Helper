@@ -4,11 +4,12 @@
 // (which only the person can approve). Other figures and animals are set aside for now.
 //
 // Conversation memory is append-only (the system prompt and tools never change mid-conversation; per-turn
-// state goes into the user turn), so Claude's thinking stays valid across turns. When the history grows
-// too large it is replaced by a summary ("simple compaction").
+// state goes into the user turn), so Claude's thinking stays valid across turns and the prompt cache hits. The
+// context is cut in steps (trimmed), and when the history grows too large it is replaced by a summary ("simple compaction").
+// Answers stream to the screen (chat: server-sent events), with Sonnet for everyday chat and Opus for heavy work.
 
 import Anthropic from '@anthropic-ai/sdk';
-import type { BetaContentBlock, BetaMessageParam, BetaToolResultBlockParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages/messages';
+import type { BetaContentBlock, BetaMessageParam, BetaTextBlockParam, BetaToolResultBlockParam, BetaToolUnion } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 import { z } from 'zod';
 import { aiJson } from './ai';
 import { Ctx, Env, HttpError, Member, body, json, requireUser } from './core';
@@ -20,7 +21,8 @@ import { collectItems } from './news';
 import { prefsFor } from './prefs';
 import { addFeedback } from './admin';
 
-const MODEL = 'claude-opus-5-5';
+const MODEL_CHAT = 'claude-sonnet-5-5';   // everyday chat (fast)
+const MODEL_HEAVY = 'claude-opus-5-5';   // research and long or complex questions (modelFor)
 const MAX_ROUNDS = 8;
 const MAX_HISTORY_BYTES = 700_000;
 const MAX_HISTORY_MESSAGES = 120;
@@ -148,7 +150,7 @@ What you never do: act behind their back on anything important. You cannot send,
 Each message from the person starts with a <state> note (time, page, how to address them); it's for you, not something they said. A message in square brackets is an event from the app, not their words. You are quiet: you never introduce yourself unasked. On the first tap the app offers the person a question like "נעים להכיר! מה אפשר לעשות איתך?"; then introduce yourself as described above, and what you can help with is: the shopping list, recipes, news, the web, tidying the mailbox.`;
 
 /** Bump when SYSTEM or TOOLS change: stored conversations from an older version start fresh (keeping the memory notes). */
-const PROMPT_VERSION = 14;   // 14: fridge_list, open_app fridge; 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked; 13: send_feedback
+const PROMPT_VERSION = 15;   // 15: Sonnet for everyday chat, the cached prompt, the context cut in steps; 14: fridge_list, open_app fridge; 10: no rename tool, the name is רַאבַּ"ע only; 11: the name always with its niqqud; 12: a persona per figure, introductions only when asked; 13: send_feedback
 
 const tool = (name: string, description: string, properties: Record<string, unknown>, required = Object.keys(properties)): BetaToolUnion => ({
   name, description, strict: true,
@@ -342,7 +344,62 @@ async function compactIfNeeded(env: Env, d: DaemonRow, messages: BetaMessagePara
   return []; // simple compaction: start a fresh conversation carrying only the notes
 }
 
-export async function chat(ctx: Ctx) {
+/* ---------------- the model, the prompt cache and the context ---------------- */
+
+/** Sonnet for everyday chat; Opus only for heavy work: research, a long or many-sided question, or the mailbox (a plan
+    that sorts someone's mail). A cheap rule on the length and the words, with no extra call. */
+const HEAVY = /(חקור|חקירה|מחקר|תחקיר|להשוות|השווה|השוואה|תשווה|נתח|ניתוח|לעומק|מעמיק|מפורט|תכנן|תכנית|תוכנית|אסטרטגי|יתרונות וחסרונות|תיבת ה?דואר|מיילים|הדואר שלי|ג'?ימייל|research|compare|analy[sz]|in depth|detailed|pros and cons|gmail|e-?mails?)/i;
+export function modelFor(text: string) {
+  return text.length > 400 || (text.match(/\?/g) || []).length >= 3 || HEAVY.test(text) ? MODEL_HEAVY : MODEL_CHAT;
+}
+
+/** The system prompt and the tools never change (the time and the person's state ride in the user turn), so both are
+    cached: a breakpoint on the system prompt's block and one on the last tool; the conversation itself is cached by the
+    top-level (automatic) cache_control on each request. */
+const systemBlocks = (figure: string): BetaTextBlockParam[] => [{ type: 'text', text: systemFor(figure), cache_control: { type: 'ephemeral' } }];
+const CACHED_TOOLS = TOOLS.map((t, i) => (i === TOOLS.length - 1 ? { ...t, cache_control: { type: 'ephemeral' } } : t)) as BetaToolUnion[];
+
+/** A shorter context, cut in steps: when the person has spoken more than TRIM_AT times, only their last KEEP_TURNS
+    turns are kept (with the memory notes in front), and that becomes the conversation's new beginning. Between cuts the
+    history only grows, so the cache keeps hitting and Claude's thinking stays valid; at a cut the old thinking is dropped
+    once (thinking is bound to the history it was made in). On average about 12 turns are sent. */
+const KEEP_TURNS = 8;
+const TRIM_AT = 16;
+const isPersonTurn = (m: BetaMessageParam) => m.role === 'user' && (typeof m.content === 'string' || m.content.some((b) => b.type === 'text'));
+function trimmed(messages: BetaMessageParam[], memory: string | null): BetaMessageParam[] {
+  const starts = messages.flatMap((m, i) => (isPersonTurn(m) ? [i] : []));
+  if (starts.length <= TRIM_AT) return messages;
+  const kept = messages.slice(starts[starts.length - KEEP_TURNS]).map((m): BetaMessageParam => {
+    if (m.role !== 'assistant' || typeof m.content === 'string') return m;
+    const content = m.content.filter((b) => b.type !== 'thinking' && b.type !== 'redacted_thinking');
+    return { ...m, content: content.length ? content : [{ type: 'text', text: '…' }] };
+  });
+  if (memory) {
+    const first = kept[0];
+    const blocks = typeof first.content === 'string' ? [{ type: 'text' as const, text: first.content }] : first.content;
+    kept[0] = { ...first, content: [{ type: 'text', text: `<memory>${memory}</memory>` }, ...(blocks || [])] } as BetaMessageParam;
+  }
+  return kept;
+}
+
+/** a Claude error → what the person's screen gets (an allowance refused inside the meter's fetch keeps its 402) */
+function apiError(err: unknown): unknown {
+  const cause = (err as { cause?: unknown })?.cause;
+  if (cause instanceof HttpError) return cause;
+  if (err instanceof Anthropic.AuthenticationError) return new HttpError(503, 'claude_key_invalid');
+  if (err instanceof Anthropic.RateLimitError) return new HttpError(429, 'ai_busy');
+  if (err instanceof Anthropic.APIError) {
+    console.error('Claude API error', err.status, err.message);
+    return new HttpError(502, `claude_error_${err.status}: ${String(err.message).slice(0, 300)}`);
+  }
+  return err;
+}
+
+type Emit = (event: 'text' | 'status', data: { t: string }) => void;
+
+/** One turn of the conversation. With `emit` the answer is streamed: its words as they come, and a short status
+    while tools run between rounds. */
+async function turn(ctx: Ctx, emit?: Emit) {
   const u = requireUser(ctx);
   if (!ctx.env.ANTHROPIC_API_KEY) throw new HttpError(503, 'ai_not_configured');
   const b = await body<{ text?: string; event?: string; page?: string; where?: string; figure?: string; landmarks?: { key: string; label: string }[] }>(ctx.req);
@@ -356,7 +413,7 @@ export async function chat(ctx: Ctx) {
   if (!said && !event) throw new HttpError(400, 'Empty message');
 
   const d = await loadDaemon(ctx.env, u.email);
-  let messages: BetaMessageParam[] = await compactIfNeeded(ctx.env, d, storedMessages(d, figure));
+  let messages: BetaMessageParam[] = trimmed(await compactIfNeeded(ctx.env, d, storedMessages(d, figure)), d.memory);
   const fresh = messages.length === 0;
   // how to address them: the settings' choice when made (me.address), else what they told the companion, else neutral
   const mine = (await prefsFor(ctx.env, u.email)).me?.data || {};
@@ -368,30 +425,44 @@ export async function chat(ctx: Ctx) {
   messages.push({ role: 'user', content: [{ type: 'text', text: `${note}\n\n${said || `[${event}]`}` }] });
 
   const client = new Anthropic({ apiKey: ctx.env.ANTHROPIC_API_KEY, maxRetries: 1, ...(ctx.env.DEV_MODE === '1' && ctx.env.ANTHROPIC_BASE_URL ? { baseURL: ctx.env.ANTHROPIC_BASE_URL } : {}) });
+  const model = modelFor(said);
   const events: DaemonEvent[] = [];
   let reply = '';
   let sources: { title: string; url: string }[] = [];
+  let spoke = false;   // (streamed text so far: a later text block starts on a new line, as in the joined reply)
   for (let round = 0; round < MAX_ROUNDS; round++) {
+    const params = {
+      model,
+      max_tokens: 16000,
+      betas: ['server-side-fallback-2026-07-01'],
+      fallbacks: 'default' as const,
+      output_config: { effort: 'low' as const },
+      cache_control: { type: 'ephemeral' as const },
+      system: systemBlocks(figure),
+      tools: CACHED_TOOLS,
+      messages,
+    };
     let res;
     try {
-      res = await client.beta.messages.create({
-        model: MODEL,
-        max_tokens: 16000,
-        betas: ['server-side-fallback-2026-07-01'],
-        fallbacks: 'default',
-        output_config: { effort: 'low' },
-        system: systemFor(figure),
-        tools: TOOLS,
-        messages,
-      });
-    } catch (err) {
-      if (err instanceof Anthropic.AuthenticationError) throw new HttpError(503, 'claude_key_invalid');
-      if (err instanceof Anthropic.RateLimitError) throw new HttpError(429, 'ai_busy');
-      if (err instanceof Anthropic.APIError) {
-        console.error('Claude API error', err.status, err.message);
-        throw new HttpError(502, `claude_error_${err.status}: ${String(err.message).slice(0, 300)}`);
+      if (emit) {
+        const s = client.beta.messages.stream(params);
+        let newBlock = false;
+        s.on('streamEvent', (ev) => {
+          if (ev.type !== 'content_block_start') return;
+          if (ev.content_block.type === 'text') newBlock = spoke;
+          if (ev.content_block.type === 'server_tool_use') emit('status', { t: ev.content_block.name === 'web_search' ? 'מחפש…' : 'קורא…' });
+        });
+        s.on('text', (t) => {
+          if (newBlock) { emit('text', { t: '\n' }); newBlock = false; }
+          spoke = true;
+          emit('text', { t });
+        });
+        res = await s.finalMessage();
+      } else {
+        res = await client.beta.messages.create(params);
       }
-      throw err;
+    } catch (err) {
+      throw apiError(err);
     }
     messages.push({ role: 'assistant', content: res.content as BetaContentBlock[] as any });
     for (const block of res.content) {
@@ -407,6 +478,7 @@ export async function chat(ctx: Ctx) {
     if (res.stop_reason === 'pause_turn') continue;
     if (res.stop_reason !== 'tool_use') break;
 
+    emit?.('status', { t: 'בודק…' });
     const results: BetaToolResultBlockParam[] = [];
     for (const block of res.content) {
       if (block.type !== 'tool_use') continue;
@@ -427,7 +499,37 @@ export async function chat(ctx: Ctx) {
   await saveDaemon(ctx.env, d);
   const seen = new Set<string>();
   sources = sources.filter((s) => !seen.has(s.url) && seen.add(s.url)).slice(0, 4);
-  return json({ reply: reply.trim(), events, sources, daemon: publicState(d) });
+  return { reply: reply.trim(), events, sources, daemon: publicState(d), model };
+}
+
+/** POST /api/daemon/chat. A client that accepts text/event-stream gets the answer streamed as server-sent events:
+    `text` {t} (the words as they come), `status` {t} (a short "בודק…" while tools run), and at the end one `done` with
+    the same shape as the JSON answer ({reply, events, sources, daemon}), or `error` {error}. Any other client gets the
+    JSON answer, as before. An error before the first byte is an ordinary JSON error (the client falls back to JSON). */
+export async function chat(ctx: Ctx) {
+  if (!(ctx.req.headers.get('accept') || '').includes('text/event-stream')) return json(await turn(ctx));
+  const enc = new TextEncoder();
+  let out!: ReadableStreamDefaultController<Uint8Array>;
+  const stream = new ReadableStream<Uint8Array>({ start(c) { out = c; } });
+  let started = false;
+  let open!: () => void, fail!: (e: unknown) => void;
+  const first = new Promise<void>((res, rej) => { open = res; fail = rej; });
+  const send = (event: string, data: unknown) => {
+    try { out.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)); } catch { /* the person left; the turn is still saved */ }
+    if (!started) { started = true; open(); }
+  };
+  const close = () => { try { out.close(); } catch { /* already closed */ } };
+  ctx.waitUntil(turn(ctx, send).then(
+    (r) => { send('done', r); close(); },
+    (e) => {
+      if (!started) return fail(e);
+      if (!(e instanceof HttpError)) console.error('daemon stream', e instanceof Error ? e.stack || e.message : e);
+      send('error', { error: e instanceof HttpError ? e.message : 'server_error' });
+      close();
+    },
+  ));
+  await first;
+  return new Response(stream, { headers: { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' } });
 }
 
 export async function getDaemon(ctx: Ctx) {

@@ -2633,6 +2633,19 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - A plain search waits at most 1.5 s for the pictures.
 - A saved search fills its missing pictures from the cache.
 
+## 2026-11-14 · פרנסה, phase 1 (ai-features, the CEO's request, the owner's approval)
+
+- New tables (appended to schema.sql): `pr_tx`, `pr_recur`, `pr_learn`, `pr_kupa`, `pr_kupa_members`, `pr_holdings`.
+- New routes (appended to `functions/api/[[path]].ts`), all under `/api/parnasa`: the dashboard, `tx`, `import/check`, `import`, `recur/:id`, `holdings`, `people`, `kupa` (open, invite, accept, leave) and `tips`.
+- Every query is limited to the row's owner, or to a member (status `member`) of that row's קופה; anything else is 404.
+  - A קופה invitation goes only to someone in the same household.
+  - Members' emails never reach the page; only their names.
+- The AI tips: Claude only (no fallback to Gemini), seeing the month's sums by category only. Cached a day by the hash of those sums.
+- Prices: Yahoo's public chart (unofficial, delayed), cached an hour; only the symbol leaves. A US ticker in dollars × the day's ILS=X rate, a Tel Aviv one (`.TA`) in agorot ÷ 100. An Israeli fund's number is valued at its cost.
+- The page says it gives general guidance, not investment advice.
+- For the master: the hub entry in `public/assets/apps.js` (patch in the shared notes), and `node server/test-parnasa.mjs` to be added to `npm test`.
+- For design: `public/tools/parnasa/parnasa.css` is still missing some parts (listed in ai-features' status).
+
 ## 2026-11-14 · The toolbox in categories, beta and secret apps
 
 The owner: the toolbox shows every app, sorted by hand, by name or by category. `public/assets/apps.js` now holds `H.CATS`
@@ -2641,3 +2654,78 @@ The owner: the toolbox shows every app, sorted by hand, by name or by category. 
 and `access: 'beta' | 'secret'` (mail and pc are beta). `H.mayOpen(app, me)` reads `me.owner` and `me.apps` (['beta', '/x/'])
 from `/api/me`. ai-features: the tools page from `H.APPS` with the sort switch, the "בודק בטא" and per-app grants in the back door,
 `/api/me` fields, and server-side gating of beta and secret APIs. design: the category headers and the sort switch.
+
+## 2026-11-14 · Beta and secret apps, the server and the toolbox (ai-features, the CEO's request)
+
+- New table (appended to schema.sql): `app_access (email, app, by_email, created_at)`. `app` is `'beta'` (a beta tester: every beta app) or a secret app's address (one at a time). The owner needs none.
+- `server/app-access-rules.ts`: the server's own list of gated apps (`GATED`: `/mail/` and `/pc/`, both beta). `test-app-access.mjs` checks that it matches the `access` flags in apps.js, so the two cannot drift apart.
+- `server/app-access.ts`:
+  - `requireApp(ctx, href)` refuses with 403 `app_closed`. Every mail API calls it, and so does the companion's `propose_mail_plan`, through `mayUse`.
+  - `/pc/` has no API: it is a static guide, so its gate is the page only, and the guide's text is public anyway.
+- Routes (appended): `GET /api/admin/app-access` and `PUT /api/admin/app-access/:email {app, on}`. Both are owner-only, behind the owner's room, and logged.
+- `/api/me` now carries `owner` and `apps` (the person's own leaves). This is the master's line, sent as a patch.
+- `public/assets/gate.js` (`H.gate(href)`): a page without the leave shows "הכלי עדיין בבדיקה". It reads the code's catalogue, so an app the owner's layout hides is still gated.
+- The toolbox is drawn from `H.APPS`, with a sort in `H.prefs('toolsView').sort`: `hand`, `name` or `category`.
+- apps.js (patch for the master):
+  - each app's `tint`, moved from the old tools list;
+  - פרנסה under שוטף.
+- For the master: add `node server/test-app-access.mjs` and `node server/test-parnasa.mjs` to `npm test`.
+- For design: `.tools-sort` (the sort chips; an inline style holds it for now), `.tools-cat` and `.tools-cat-h` (the category headers), and `.gate-closed` (the polite page; inline style for now).
+
+## 2026-11-14 · Two future tools built ahead: the kitchen helper and home maintenance (ai-features, the owner's task through the master)
+While the tree art is not ready, ai-features built two items of H.FUTURE as pages of their own, on its branch only.
+Neither is in the toolbox: the "בקרוב" tile stays until the master merges and moves it (apps.js is the master's).
+Status: Ready for the master's review.
+
+- **עוזר מטבח** at `/food/kitchen/` (no server of its own; it reads `/api/recipes`):
+  - cooking a recipe from the household's book one step at a time, with the quantities scaled by diners and the units as in the book (`measure.js`);
+  - the screen stays on (Wake Lock), and a timer button for every time a step names;
+  - named timers on this device (`localStorage`, since a timer belongs to the stove beside it), ringing with a sound, a buzz and a notification;
+  - cups, spoons and grams by the ingredient, and °F ↔ °C;
+  - the units choice is the person's (`H.prefs('kitchen')`).
+  - Not yet: "הבא" by voice, AI tips, a timer that rings when the app is closed (push).
+- **תחזוקת הבית** at `/tools/home/`, shared by the household:
+  - appended tables `home_items` and `home_log` in `schema.sql`;
+  - appended routes `GET/POST /api/home`, `PUT/DELETE /api/home/:id`, `POST /api/home/:id/done`;
+  - ten ready-made things with intervals (`server/home-rules.ts`); a warranty warns 60 days ahead.
+  - Not yet: a warranty from a receipt photo, a push reminder, the link to the garage.
+- **For the master:**
+  - the patch `0001-package.json-test-kitchen-and-test-home-in-npm-test-.patch` (the CEO's notes folder);
+  - on merge, move `soon:kitchen` → `/food/kitchen/` and `soon:home` → `/tools/home/` in apps.js (or as beta first).
+- **For design:** `kitchen.css` and `home.css`. The pages use the shared classes, and a few sizes are held inline until then:
+  - the step's big text, the timer clock, the recipe rows;
+  - the item cards, and the state line (late / soon in bold).
+- **After vision's spec** (vision:docs/vision/future-specs.md, 3b8e700):
+  - °F ↔ °C moved into `measure.js` (`Measure.temp`), so the book and the kitchen share it;
+  - the usual diners and "the screen stays on" (a switch) join the units in `H.prefs('kitchen')`;
+  - a **"🍳 לבשל" button in the recipe book** opens `/food/kitchen/?recipe=<id>`. Once merged it exposes the kitchen from the book even before the tile moves; the master may hold that line in `public/groceries/app.js` until the kitchen goes live.
+- **נשימה** at `/tools/breath/` (66a29ff, no server, no AI):
+  - 2, 5 or 10 minutes; three ways (4/6 calm, box 4-4-4-4, 4-7-8 for sleep), `H.prefs('breath')`;
+  - a circle that grows on the in-breath and shrinks on the out-breath by `transform` and `opacity` only, still under prefers-reduced-motion; the screen stays on; an end screen;
+  - open with vision: ש4 (recorded meditations), ש5 (silence for now), ש6 (habits);
+  - patch `0001-package.json-test-breath-in-npm-test-master-file-sen.patch`; on merge `soon:breath` → `/tools/breath/`;
+  - for design: `breath.css` with the night scene (the circle and its sizes are inline until then).
+
+## 2026-11-14 · The kitchen, breath and home after the owner's answers (ai-features, vision's batch 26)
+The owner answered vision's questions (ש1–ש8, via the CEO and vision 8cf8e4a). Applied on `ai-features`, not yet merged.
+Status: Ready for the master's review.
+
+- **Kitchen** (10a1b78, 190fa08):
+  - the screen is no longer kept on (Wake Lock and its switch removed);
+  - "הבא", "הקודם", "שוב" and "טיימר" by voice, and "שף, …" asks a chef (`Kitchen.command`, tested);
+  - **the chef**: appended routes `GET/POST /api/cook/ask` (`server/cook.ts`, Gemini first, two or three spoken sentences), answered aloud;
+  - **timers that ring with the app closed**: appended table `cook_timers` and route `PUT /api/cook/timers`; the page sends its running timers, and a minute cron pushes each at its second (kind `reminder`, urgent). The page's and the push's notifications share a tag, so one replaces the other.
+  - `public/tools/voice/voice.js` (`Voice.say/stop/listen`): one place for the tools' voice, `/api/voice/say` with the browser's voice as the fallback.
+- **Breath** (2ddebde): a guiding voice ("שאיפה", "נשיפה"), on by default with a switch in `H.prefs('breath')`; a finished session (or one of at least a minute) ticks the habit: the matching step in the person's goals (recurring first, `Breath.habit`, tested), with "לבטל"; with no such goal, a link to add one in the goals.
+- **Home** (190fa08, 0ff6a17): appended `home_items.remind_to` and `reminded` (in `COLUMNS` too); on the morning an item is due a push goes to whoever added it, or to the member it was handed to (a select in the edit window, shown on the card).
+- **For the master** (patches in the CEO's notes folder):
+  - 718d071 `src/worker.ts` and `wrangler.toml`: the minute cron `* * * * *` → `cook.tick`, and `home.remind` with the morning note (`0001-worker-a-minute-cron-…patch`);
+  - **the free quota** (ש3, "free with a quota"): `cook.ts` counts 5 free questions a day (`FREE_A_DAY`, until business sets the number) and shows it, but `server/credits.ts`'s gate still charges a limited account for each one. Request: an exemption in the gate for a feature's first N uses a day (a list such as `{ 'cook/ask': 5 }`), so the quota is real;
+  - noticed in passing: in `server/push.ts` the regex `/^d{3,9}$/` lacks a backslash (`\d`), so the city for the Shabbat quiet window always falls back to the default.
+- **Not yet:** a receipt photo for the warranty (now allowed, ש8), the garden (shared by the household), the translator.
+
+## 2026-11-14 · The chef's quota, by the owner's numbers (ai-features, business cd600e2)
+- `server/cook.ts`: 20 free answers a person a day (`FREE_A_DAY`), renewed at midnight Israel time (`dayStart`, checked in winter and summer). Calls on the person's own AI key (`ai_usage.own_key`) are not counted.
+- Beyond the quota, `POST /api/cook/ask` answers `402 quota_done`. The chef window offers "להמשיך בקרדיטים" each time, which resends with `paid: true`. With no credits left (`ai_credit_needed`) it says "חזרו מחר", with no buy button.
+- The chef's answers are read aloud with the browser's voice (`Voice.say(…, { browser: true })`), as business proposed, since the app's voice is most of the cost. The chef also speaks in the plural now ("אתם").
+- Still the master's: the credits gate charges a limited account even inside the free 20. The request from the previous entry stands (an exemption for a feature's first N uses a day, e.g. `{ 'cook/ask': 20 }`).

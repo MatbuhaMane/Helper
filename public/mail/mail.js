@@ -5,6 +5,7 @@
   const { el, api, toast } = H;
   H.header('סידור המייל', '📬');
   await H.requireLogin();
+  if (!(await H.gate('/mail/'))) return;   // a beta app: only for whom the back door opened it (assets/gate.js)
   const root = document.getElementById('root');
   const ACTION_HE = { label: 'תווית', unlabel: 'הסרת תווית', archive: 'ארכיון', mark_read: 'סימון כנקרא', star: 'כוכב', review_delete: 'לבדיקה לפני מחיקה' };
   const IDEAS = [

@@ -57,6 +57,10 @@ import * as goalSocial from '../../server/goal-social';
 import * as reports from '../../server/reports';
 import * as dm from '../../server/dm';
 import * as layout from '../../server/layout';
+import * as parnasa from '../../server/parnasa';
+import * as appAccess from '../../server/app-access';
+import * as home from '../../server/home';
+import * as cook from '../../server/cook';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
 const routes: [string, RegExp, string[], Handler][] = [];
@@ -102,6 +106,7 @@ route('GET', '/api/me', async (ctx) => {
   return json({ user: ctx.user, ai: aiStatus(ctx.env), prefs: await prefs.prefsFor(ctx.env, ctx.user.email), child: await childOf(ctx.env, ctx.user.email),
     shop: await setting<boolean>(ctx.env, 'money.shop_open').catch(() => false),
     grants: await grants.grantsFor(ctx.env, ctx.user.email),   // the person's own secret grants only (server/grants.ts)
+    owner: ctx.user.role === 'owner', apps: await appAccess.leavesFor(ctx.env, ctx.user),   // beta and secret apps: the person's own leaves (server/app-access.ts)
     ...(await lock.meLock(ctx.env, ctx.req)) });   // appLock: off | pin | bio (the padlock in the bar); locked: the lock screen   // shop: the owner's switch for prices and buying
 });
 route('GET', '/api/prefs', prefs.getPrefs);
@@ -595,6 +600,35 @@ route('GET', '/api/admin/eggs', layout.adminEggs);
 route('POST', '/api/admin/eggs', layout.eggAdd);
 route('PUT', '/api/admin/eggs/:id', layout.eggPut);
 route('DELETE', '/api/admin/eggs/:id', layout.eggDelete);
+// פרנסה, the household's money (server/parnasa.ts): every row only for its owner or its קופה's members
+route('GET', '/api/parnasa', parnasa.dashboard);
+route('POST', '/api/parnasa/tx', parnasa.addTx);
+route('DELETE', '/api/parnasa/tx/:id', parnasa.deleteTx);
+route('POST', '/api/parnasa/import/check', parnasa.importCheck);
+route('POST', '/api/parnasa/import', parnasa.importSave);
+route('DELETE', '/api/parnasa/recur/:id', parnasa.stopRecur);
+route('POST', '/api/parnasa/holdings', parnasa.addHolding);
+route('DELETE', '/api/parnasa/holdings/:id', parnasa.deleteHolding);
+route('GET', '/api/parnasa/people', parnasa.kupaPeople);
+route('POST', '/api/parnasa/kupa', parnasa.kupaOpen);
+route('POST', '/api/parnasa/kupa/:id/invite', parnasa.kupaInvite);
+route('POST', '/api/parnasa/kupa/:id/accept', parnasa.kupaAccept);
+route('POST', '/api/parnasa/kupa/:id/leave', parnasa.kupaLeave);
+route('POST', '/api/parnasa/tips', parnasa.tips);
+/* beta and secret apps: the back door's leave (ai-features, server/app-access.ts) */
+route('GET', '/api/admin/app-access', appAccess.list);
+route('PUT', '/api/admin/app-access/:email', appAccess.put);
+
+/* תחזוקת הבית (ai-features) */
+route('GET', '/api/home', home.list);
+route('POST', '/api/home', home.save);
+route('PUT', '/api/home/:id', home.save);
+route('DELETE', '/api/home/:id', home.remove);
+route('POST', '/api/home/:id/done', home.done);
+/* עוזר מטבח (ai-features, server/cook.ts): the voice chef, and the timers that ring with the app closed */
+route('GET', '/api/cook/ask', cook.quota);
+route('POST', '/api/cook/ask', cook.ask);
+route('PUT', '/api/cook/timers', cook.setTimers);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

@@ -1279,3 +1279,117 @@ CREATE TABLE IF NOT EXISTS push_digest (
   seen_at    INTEGER
 );
 CREATE INDEX IF NOT EXISTS push_digest_email ON push_digest (email, seen_at);
+
+-- פרנסה, the household's money (server/parnasa.ts). A row is personal (kupa_id NULL, seen by owner_email only) or in a
+-- shared קופה (seen by that קופה's members). Amounts are shekels, an expense negative. Nothing here goes to the logs.
+CREATE TABLE IF NOT EXISTS pr_tx (
+  id          TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  kupa_id     TEXT,
+  date        TEXT NOT NULL,
+  amount      REAL NOT NULL,
+  what        TEXT NOT NULL,
+  cat         TEXT NOT NULL,
+  learn_key   TEXT,
+  dup_key     TEXT NOT NULL,
+  recur_id    TEXT,
+  source      TEXT NOT NULL DEFAULT 'manual',
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_tx_owner ON pr_tx (owner_email, kupa_id, date);
+CREATE INDEX IF NOT EXISTS pr_tx_kupa ON pr_tx (kupa_id, date);
+CREATE TABLE IF NOT EXISTS pr_recur (
+  id          TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  kupa_id     TEXT,
+  what        TEXT NOT NULL,
+  amount      REAL NOT NULL,
+  cat         TEXT NOT NULL,
+  every       INTEGER NOT NULL DEFAULT 1,
+  day         INTEGER NOT NULL,
+  next_date   TEXT NOT NULL,
+  active      INTEGER NOT NULL DEFAULT 1,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_recur_owner ON pr_recur (owner_email, kupa_id);
+-- the categories a person chose for a business, remembered for the next guess
+CREATE TABLE IF NOT EXISTS pr_learn (
+  email TEXT NOT NULL,
+  key   TEXT NOT NULL,
+  cat   TEXT NOT NULL,
+  at    INTEGER NOT NULL,
+  PRIMARY KEY (email, key)
+);
+CREATE TABLE IF NOT EXISTS pr_kupa (
+  id         TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  created_by TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+-- status: 'invited' until the person accepts, then 'member'
+CREATE TABLE IF NOT EXISTS pr_kupa_members (
+  kupa_id    TEXT NOT NULL,
+  email      TEXT NOT NULL,
+  status     TEXT NOT NULL,
+  invited_by TEXT,
+  at         INTEGER NOT NULL,
+  PRIMARY KEY (kupa_id, email)
+);
+CREATE INDEX IF NOT EXISTS pr_kupa_members_email ON pr_kupa_members (email, status);
+CREATE TABLE IF NOT EXISTS pr_holdings (
+  id          TEXT PRIMARY KEY,
+  owner_email TEXT NOT NULL,
+  kupa_id     TEXT,
+  symbol      TEXT NOT NULL,
+  name        TEXT NOT NULL,
+  qty         REAL NOT NULL,
+  cost        REAL NOT NULL,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS pr_holdings_owner ON pr_holdings (owner_email, kupa_id);
+
+-- the back door's leave to open beta and secret apps (server/app-access.ts): app is 'beta' for a beta tester, or a
+-- secret app's address. The owner needs none
+CREATE TABLE IF NOT EXISTS app_access (
+  email       TEXT NOT NULL,
+  app         TEXT NOT NULL,
+  by_email    TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, app)
+);
+
+-- תחזוקת הבית (ai-features, server/home.ts): the household's things that need regular care
+CREATE TABLE IF NOT EXISTS home_items (
+  household      TEXT NOT NULL,
+  id             TEXT NOT NULL,
+  name           TEXT NOT NULL,
+  kind           TEXT NOT NULL,      -- a preset's kind (home-rules.ts PRESETS) or 'custom'
+  every_days     INTEGER,            -- null: no regular care (a warranty only)
+  last_done      TEXT,               -- YYYY-MM-DD
+  warranty_until TEXT,               -- YYYY-MM-DD
+  note           TEXT,
+  created_by     TEXT,
+  remind_to      TEXT,               -- who gets the reminder (the owner's answer ש7), null for whoever added it
+  reminded       TEXT,               -- the due date last reminded, so a reminder goes once
+  created_at     INTEGER NOT NULL,
+  updated_at     INTEGER NOT NULL,
+  PRIMARY KEY (household, id)
+);
+CREATE TABLE IF NOT EXISTS home_log (
+  household  TEXT NOT NULL,
+  item       TEXT NOT NULL,
+  done_on    TEXT NOT NULL,
+  by_email   TEXT NOT NULL,
+  at         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS home_log_hh ON home_log (household, at);
+
+-- עוזר מטבח (ai-features, server/cook.ts): the running kitchen timers, so they ring with the app closed (the minute cron)
+CREATE TABLE IF NOT EXISTS cook_timers (
+  email   TEXT NOT NULL,
+  id      TEXT NOT NULL,
+  name    TEXT NOT NULL,
+  end_at  INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE INDEX IF NOT EXISTS cook_timers_end ON cook_timers (end_at);

@@ -396,7 +396,8 @@
     el('small', { class: 'muted' }, el('span', { dir: 'ltr' }, m.email), ' · ', houseName(m.household))];
 
   async function members(box) {
-    const [{ members: list, households, owners }, { allowances: ai }] = await Promise.all([call('/api/admin/people'), call('/api/admin/allowances')]);
+    const [{ members: list, households, owners }, { allowances: ai }, acc] = await Promise.all([call('/api/admin/people'), call('/api/admin/allowances'),
+      call('/api/admin/app-access').catch(() => ({ access: [], leaves: [] }))]);
     const houseName = (id) => households.find((h) => h.id === id)?.title || id;
     const save = async (m, body) => {
       const r = await call('/api/admin/people/' + encodeURIComponent(m.email), { method: 'PUT', body });
@@ -432,6 +433,22 @@
         btn('אישור', async () => { await call('/api/members/' + encodeURIComponent(m.email) + '/approve', { method: 'POST', body: {} }); toast(`${m.he_name || m.name || m.email} אושר/ה`); members(box); }, 'btn small primary'))
       : null);
     const who = (m) => m.he_name || m.name || m.email;
+    /* beta and secret apps (server/app-access.ts): 'בודק בטא' opens every beta app (mail, pc…); a secret app is opened one by
+       one. The owner has them all. The server refuses the app's API without it; the toolbox hides it. */
+    const appName = (href) => (H.APPS || []).find((a) => a.href === href)?.name || href;
+    const accessCell = (m) => {
+      if (owners.includes(m.email)) return el('td', {}, el('small', { class: 'muted' }, 'הכול'));
+      const has = new Set(acc.access.filter((x) => x.email === m.email).map((x) => x.app));
+      return el('td', {}, acc.leaves.map((app) => el('label', { style: 'display:block;white-space:nowrap' },
+        el('input', { type: 'checkbox', checked: has.has(app), 'aria-label': (app === 'beta' ? 'בודק בטא: ' : appName(app) + ': ') + who(m),
+          onchange: async (e) => {
+            try {
+              await call('/api/admin/app-access/' + encodeURIComponent(m.email), { method: 'PUT', body: { app, on: e.target.checked } });
+              if (e.target.checked) acc.access.push({ email: m.email, app }); else acc.access = acc.access.filter((x) => !(x.email === m.email && x.app === app));
+              toast(e.target.checked ? 'נפתח' : 'נסגר');
+            } catch (err) { say(err); e.target.checked = !e.target.checked; }
+          } }), app === 'beta' ? ' בודק בטא' : ' ' + appName(app))));
+    };
     // the two names: the Hebrew one the helper calls them by, and the name others see
     const nameCell = (m) => el('td', { class: 'ad-names' },
       el('input', { type: 'text', value: m.he_name || '', placeholder: 'שם בעברית', 'aria-label': 'השם בעברית של ' + (m.name || m.email), style: 'inline-size:9em',
@@ -469,9 +486,9 @@
       return el('td', {}, sel, firstSignIn(m));
     };
     const row = (m, redraw) => el('tr', {},
-      nameCell(m), el('td', { dir: 'ltr' }, m.email), houseCell(m, redraw), roleCell(m, redraw), yearCell(m), aiCell(m),
+      nameCell(m), el('td', { dir: 'ltr' }, m.email), houseCell(m, redraw), roleCell(m, redraw), yearCell(m), aiCell(m), accessCell(m),
       el('td', {}, m.email === st.as.email || owners.includes(m.email) ? '' : btn('✕', async () => { await call('/api/members/' + encodeURIComponent(m.email), { method: 'DELETE' }); redraw(); }, 'btn small ghost', `להסיר את ${m.email}?`)));
-    const HEAD = ['שם', 'אימייל', 'בית', 'תפקיד', 'שנת לידה', 'AI', ''];
+    const HEAD = ['שם', 'אימייל', 'בית', 'תפקיד', 'שנת לידה', 'AI', 'כלים בבדיקה', ''];
     const table = (rows, redraw) => el('div', { class: 'ad-scroll' }, el('table', {}, el('thead', {}, el('tr', {}, HEAD.map((h) => el('th', {}, h)))),
       el('tbody', {}, rows.map((m) => row(m, redraw)))));
 

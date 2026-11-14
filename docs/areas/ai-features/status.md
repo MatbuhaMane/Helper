@@ -1,10 +1,149 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-13 (the structure tree, ready to merge).
+Last update: 2026-11-14 (the owner's answers applied: kitchen, breath, home).
+
+## Handover to the next ai-features chat (2026-11-14)
+
+The previous chat grew too long. The master asked for a fresh one with the same name. Start here.
+
+### The rules this department keeps
+
+- Work only in `M:\Claude Code\Helper-ai` on `ai-features`. Answer in Hebrew.
+- Small commits with tests. Never merge into main, push or bump CACHE.
+- Before asking for a merge, `git merge main`.
+- Ownership:
+  - **Ours:** the server feature modules, each page's JS, ai-features' JS in `public/assets` (`gate.js`), `docs/ai/` and this file.
+  - **Append-only:** route lines in `functions/api/[[path]].ts`, tables in `schema.sql`, `COLUMNS`. Each one gets an entry in decisions.md.
+  - **Design's:** all CSS. Ask it for styles; never write it.
+  - **The master's:** common.js, apps.js, launcher.js, sw.js, package.json, core.ts, ai.ts, join*.ts, whats-new.json, index.html, an existing route line (such as `/api/me`) and the vault's security files. A change to these goes in a commit of its own, plus `git format-patch -1` into the shared notes folder `C:\Users\User\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_3881a822-d914-4942-9f9b-ad4115b620c5`.
+- Secrets and data:
+  - Never read or print `.dev.vars`.
+  - Never write to the production database.
+  - Never send secrets, family data or the owner's email to Gemini.
+  - Never put the owner's email in code.
+  - Ask before installing tools.
+- Checks: text checks first; screenshots only at scale ≤0.5.
+  - A feature is done only after 375 and 1280, light and dark, and `tools/audit.js`.
+  - To run the audit: copy it to `public/__audit.js`, eval it from the page, then delete the copy.
+- Files are CRLF. Edit with small node scripts that keep the line endings.
+- Dev server: port 8790.
+  - Users: owner@example.test, noa@example.test (same household), dana@example.test (another household).
+  - Switch users: `fetch('/api/auth/dev?email=…&next=/', {redirect:'manual'})`.
+  - The local DB: `npx wrangler d1 execute helper-db --local --command "…"`. Noa has the beta leave there.
+  - The local layout hides `/pc/`, from layout tests.
+- The back door's room needs the owner's passkey, so admin routes answer `admin_locked` in dev. Say so instead of claiming they were tested.
+
+### Not merged into main (on `ai-features`, after 1ca3564)
+
+- **פרנסה phase 1**, waiting for the CEO's server review:
+  - 41e5af3 the server (6 tables, 14 routes, test-parnasa);
+  - ed6d47d Yahoo prices and fixes;
+  - 249b577 the page;
+  - 1343463 apps.js entry (master, patch `0001-apps.js-in-the-hub-master-file-sent-as-a-patch.patch`);
+  - 945198f decisions;
+  - 765fe3f status.
+- dd5b501: main merged in (conflicts in apps.js and decisions.md resolved, both sides kept).
+- **The toolbox and beta/secret apps**, waiting for the CEO's access review:
+  - 9d10742 the server: `app_access`, `server/app-access.ts` and `-rules.ts`, requireApp on every mail API and on the companion's mail plan, test-app-access 18;
+  - f81a850 `/api/me` gains owner and apps (master, patch `0001-api-me-owner-and-apps-…patch`);
+  - 0dd5dc8 apps.js gains tints and פרנסה under שוטף (master, patch `0001-apps.js-each-app-s-pastel-tint-…patch`);
+  - 1619158 the toolbox page;
+  - 78fc8c2 the back door's "כלים בבדיקה" column;
+  - b78b55c the polite page (H.gate);
+  - 1878f63 decisions and status.
+  - 1884a83 the toolbox hides a FUTURE item with `only: 'child'` (homework) from anyone not a child (checked locally both ways); e41437a merged main (299b135, the 7 FUTURE items; apps.js conflict in שוטף: kept פרנסה and main's soon:garden, soon:home).
+  - Then main merged again (217b86d, the eye item), and the toolbox gives a tile with a `label` (עין בעין for ع ב-ע) that label as its aria-label.
+
+### Future interfaces, built ahead (2026-11-14, ready for the master's review)
+
+- c18a16c **עוזר מטבח** `/food/kitchen/`: cooking step by step from the book, timers, conversions. test-kitchen 32.
+- c964ae6 **תחזוקת הבית** `/tools/home/`: a server (2 tables, 5 routes, household only) and the page. test-home 33.
+- The package.json patch for both tests is in the CEO's notes folder.
+- **Checked:**
+  - npm test and typecheck;
+  - the audit at 375 and 1280, light and dark (clean);
+  - the home API as another household's member: 404 on read, done and edit; delete does nothing.
+- **Not checked:**
+  - a real phone: the screen staying on, a buzz, a notification while in the back;
+  - the edit window at 375 by eye.
+- **Not in the toolbox** until the master moves them.
+- 3b8e700 kitchen after vision's spec: °F/°C in measure.js, diners and the screen switch in H.prefs, a "לבשל" button in the book (the master may hold it until the kitchen is live).
+- 66a29ff **נשימה** `/tools/breath/`: 2/5/10 minutes, three ways, a circle by transform only. test-breath 17; patch for package.json in the CEO's notes folder.
+- **Not checked:** the circle's motion by eye (the pane was hidden: the transition was set and running, the frames were not drawn).
+- **After the owner's answers (vision's batch 26):**
+  - 10a1b78 kitchen: the chef by voice (`/api/cook/ask`, 20 free a day from Israel midnight, then 'להמשיך בקרדיטים', the browser's voice), "הבא" by voice, timers that ring with the app closed (`cook_timers`, a minute cron), no screen kept on; `public/tools/voice/voice.js`;
+  - 2ddebde breath: a guiding voice with a switch, a session ticks the habit in the goals (with undo); test-breath 26;
+  - 190fa08 + 0ff6a17 home: the morning push to whoever added it or was handed it; test-home 40;
+  - 718d071 worker and wrangler (master files, patch in the CEO's notes folder).
+  - **Checked:** typecheck, npm test, the audit at 375 and 1280, light and dark (clean); in the browser: the chef answered in Hebrew, timers stored (past ones dropped), the reminder handed to Noa and back, the habit ticked and undone.
+  - **Not checked:** a real push from the cron (needs a deployed preview), listening by voice (the pane has no microphone), the chef window and the cook view in the audit (it checks first screens).
+  - **Waiting for the master:** the free-quota exemption in the credits gate; the push.ts regex.
+- **Next, by the owner's order:** garden (shared by the household), then translate. Tree skins first when the art arrives.
+
+### Open
+
+- **פרנסה:**
+  - **Waiting on:**
+    - the CEO's review of `server/parnasa.ts`. Every query is limited to the owner, or to a member (status `member`) of that row's קופה; the AI is Claude only, on sums by category;
+    - `test-parnasa.mjs` in npm test (the master);
+    - design's styles for `.pr-invite`, `.pr-foot`, the review's flip toggle (`label.toggle`), and the rows with buttons in `.pr-recur-list`, `.pr-tx-list` and `.pr-holds`.
+  - **Risks:**
+    - the Yahoo chart endpoint is unofficial. If it fails, holdings are valued at cost;
+    - the API catch-all in `[[path]].ts` logs the stack of an unexpected D1 error.
+  - **Not tested:**
+    - real bank and card files;
+    - old `.xls` (BIFF): the page only says so, it does not read it;
+    - a manual look in dark mode beyond the audit.
+  - **Phase 2 ideas:** a budget per category with a gentle alert, a six-month chart, importing several accounts at once.
+- **The toolbox and beta apps:**
+  - **Waiting on:**
+    - the CEO's access review;
+    - `test-app-access.mjs` in npm test;
+    - design's styles for `.tools-sort`, `.tools-cat` / `.tools-cat-h` and `.gate-closed` (inline styles hold them for now).
+  - **Not tested:**
+    - the back door's column and `PUT /api/admin/app-access` (they need the passkey);
+    - `/pc/` shows its guide for a moment before the polite page.
+  - **For later:**
+    - in the back door, a secret app shows its address when H.APPS is not loaded there; there is no secret app yet;
+    - the server's `GATED` list must be updated with every new beta or secret app (the test catches a mismatch with apps.js).
+- **Received, not started (waiting for the CEO to assign them):**
+  - The CEO: the grandparents' stories show as "בקרוב" in a person's profile in the tree, with batch 18 (the recordings get the tree's protection).
+  - Vision, batch 21 (`docs/decisions.md` on `vision`, "The owner closes the open questions"):
+    - a trial gathering, marked and seen only by the owner, counted nowhere (founders, `gathering_milestones`, the launch check);
+    - place search stays in `il`;
+    - the `child` flag is enough, no children's mode;
+    - a shared songbook within linked households and by a link (signed-in users only, the owner can turn it off); the CEO sets the sharing model first, not urgent.
+  - Vision, batch 23 ("Tree skins" in `docs/decisions.md` on `vision`): when design delivers each tree's cut layers and `slots.json` (its own canopy folder, the same five tiers), the tree page gets a choice of tree kept in `H.prefs`, with the pine as the default and the olive from the start; the maple and the African juniper later. Until the art arrives, nothing to build.
+  - Vision, batch 24 ("How a person is shown on each tree skin"): with the choice of tree, a person's token comes from the chosen tree instead of the one leaf (pine: a pine cone; olive: a frame of olive branches), each with three seasons and a pale empty form for a person with no record. Waits for the owner's art and design's cut.
+- **Seen in passing, not ours:** `figure2d.js` logs negative `ellipse rx` errors in the console (the companion figure).
+
+### Decisions held (details in docs/decisions.md)
+
+- **פרנסה:**
+  - the general-guidance note, not investment advice;
+  - a קופה invitation only within the household;
+  - members' emails never reach the page;
+  - tips are cached a day by the hash of the sums;
+  - an unknown business is guessed as שונות.
+- **Gated apps:**
+  - beta is opened by the leave `'beta'`, a secret app by its address;
+  - the owner (role `owner`) has everything;
+  - the server is the judge (403 `app_closed`); the page only hides.
 
 ## Done
 
+- **The toolbox and beta/secret apps (2026-11-14), on `ai-features`, for the CEO's access review:** server (app_access, requireApp on every
+  mail API and the companion's mail plan, test-app-access 18), /api/me owner+apps and apps.js tints + פרנסה's category (master's, patches
+  in the shared notes), the toolbox from H.APPS with three sorts, the back door's "כלים בבדיקה" column, the polite page (H.gate).
+  Checked: 403/200 by API for three people, the pages for four cases, the audit at 375 and 1280 in light and dark. Not checked: the
+  back door's column (needs the owner's passkey).
+- **פרנסה, phase 1 (2026-11-14), on `ai-features`, ready for the CEO's review of the server:** 41e5af3 server (6 tables, 14 routes, rules + test-parnasa 68),
+  ed6d47d prices from Yahoo + fixes, 249b577 the page (dashboard, one-tap entry with a guessed category, recurring, the shared קופה
+  by invitation within the household, bank/card import with review, investments, Claude-only tips on sums by category), 945198f decisions,
+  and the master's apps.js entry (patch in the shared notes). Checked: isolation by API with three users (another household 404 everywhere,
+  no emails reach the page), import of a card file, the audit at 375 and 1280 in light and dark (clean). Needs: test-parnasa in npm test
+  (master), and design's styles for .pr-invite, .pr-foot, the review's flip toggle and the manage lists' rows.
 - 2026-11-14: family tree documents open on a phone (saved, so the phone opens them in its own viewer; on a computer the window opens in the tap); the welcome wizard change reverted (the owner: not a bug, רַאבַּ"ע stays in the settings).
 - **עץ מבנה (2026-11-13), on `ai-features`, ready to merge:** e5547a8 server (site_layout versions, eggs, egg_finds, routes,
   pure layout-rules + test-layout 74), 6acb646 the back door's tab (tree drag by pointer/touch and keyboard, edit panel,

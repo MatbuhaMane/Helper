@@ -15,6 +15,7 @@ import { Ctx, Env, HttpError, Member, body, json, requireUser } from './core';
 import { myFridge } from './fridge';
 import { GROCERY_CATEGORIES, addGroceries, checkGroceries, currentGroceries, findRecipes, insertRecipe } from './kitchen';
 import { buildPlan } from './mail';
+import { mayUse } from './app-access';
 import { collectItems } from './news';
 import { prefsFor } from './prefs';
 import { addFeedback } from './admin';
@@ -295,6 +296,8 @@ async function runTool(ctx: Ctx, u: Member, d: DaemonRow, name: string, input: a
       return { headlines: r.items.slice(0, n).map((i) => ({ title: i.title, source: i.feed, link: i.link, when: new Date(i.date).toISOString() })), folders: r.folders };
     }
     case 'propose_mail_plan': {
+      // the mail organiser is a beta app: only for whom the back door opened it (server/app-access.ts)
+      if (!(await mayUse(env, u, '/mail/'))) return { error: 'The mail organiser is still being tested and is not open to this person yet. Say so kindly.' };
       try {
         const plan = await buildPlan(env, u.email, String(input.request));
         events.push({ type: 'mail_plan', id: plan.id, summary: plan.reply });

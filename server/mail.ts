@@ -8,7 +8,8 @@
 
 import { z } from 'zod';
 import { aiJson } from './ai';
-import { Ctx, Env, GMAIL_SCOPE, HttpError, body, googleAccessToken, json, requireUser, uid } from './core';
+import { Ctx, Env, GMAIL_SCOPE, HttpError, body, googleAccessToken, json, uid } from './core';
+import { requireApp } from './app-access';
 
 const API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 export const REVIEW_LABEL = 'Helper/לבדיקה לפני מחיקה';
@@ -93,14 +94,14 @@ async function batchModify(token: string, ids: string[], add: string[], remove: 
 /* ---------------- status & overview ---------------- */
 
 export async function mailStatus(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   // (the same row may hold only a Drive grant – for notes – so Gmail counts only with its own scope)
   const row = await ctx.env.DB.prepare('SELECT scope FROM google_tokens WHERE email = ?').bind(u.email).first<{ scope: string | null }>();
   return json({ connected: !!row && (!row.scope || row.scope.includes(GMAIL_SCOPE)), reviewLabel: REVIEW_LABEL });
 }
 
 export async function disconnect(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   await ctx.env.DB.prepare('DELETE FROM google_tokens WHERE email = ?').bind(u.email).run();
   return json({ ok: true });
 }
@@ -126,7 +127,7 @@ async function overviewData(token: string) {
 }
 
 export async function overview(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   const token = await googleAccessToken(ctx.env, u.email);
   return json(await overviewData(token));
 }
@@ -197,7 +198,7 @@ export async function buildPlan(env: Env, email: string, request: string, histor
 }
 
 export async function plan(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   const { request, history } = await body<{ request: string; history?: { role: 'user' | 'assistant'; text: string }[] }>(ctx.req);
   if (!request?.trim()) throw new HttpError(400, 'Empty request');
   return json(await buildPlan(ctx.env, u.email, request, history || []));
@@ -205,7 +206,7 @@ export async function plan(ctx: Ctx) {
 
 /** A plan made elsewhere (e.g. by the daemon), so the mail app can show it for approval. */
 export async function getPlan(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   const p = await loadPlan(ctx, u.email);
   return json({ id: p.id, request: p.request, status: p.status, ...p.plan });
 }
@@ -241,7 +242,7 @@ async function loadPlan(ctx: Ctx, email: string) {
  * until `done` is true, showing progress. Body: { enabled: number[], cursor?: {op, pageToken, pass, changedInPass, batch} }
  */
 export async function applyStep(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   const p = await loadPlan(ctx, u.email);
   if (!['proposed', 'applying'].includes(p.status)) throw new HttpError(409, 'Plan already ' + p.status);
   const b = await body<{ enabled: number[]; cursor?: any }>(ctx.req);
@@ -298,7 +299,7 @@ export async function applyStep(ctx: Ctx) {
 }
 
 export async function undo(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   const p = await loadPlan(ctx, u.email);
   if (!['applied', 'applying'].includes(p.status)) throw new HttpError(409, 'Nothing to undo');
   const token = await googleAccessToken(ctx.env, u.email);
@@ -315,13 +316,13 @@ export async function undo(ctx: Ctx) {
 }
 
 export async function cancelPlan(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   await ctx.env.DB.prepare("UPDATE mail_plans SET status = 'cancelled' WHERE id = ? AND email = ? AND status = 'proposed'").bind(ctx.params.id, u.email).run();
   return json({ ok: true });
 }
 
 export async function history(ctx: Ctx) {
-  const u = requireUser(ctx);
+  const u = await requireApp(ctx, '/mail/');   // a beta app: only with the back door's leave
   const { results } = await ctx.env.DB.prepare(
     `SELECT p.id, p.request, p.status, p.created_at, p.applied_at, p.plan,
        (SELECT COUNT(*) FROM mail_changes c WHERE c.plan_id = p.id) AS batches

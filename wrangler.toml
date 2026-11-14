@@ -64,4 +64,4 @@ PRODUCTION_ORIGIN = "https://helper.shemrivers.workers.dev"
 
 # The vault's nightly backups (server/vault/backup.ts): missing Drive copies, and an encrypted snapshot. 01:30 UTC.
 [triggers]
-crons = ["30 1 * * *", "0 5 * * *"]   # the vault backup; the morning note (server/push.ts)
+crons = ["30 1 * * *", "0 5 * * *", "* * * * *"]   # the vault backup; the morning note (server/push.ts); the kitchen timers (server/cook.ts)

@@ -1,14 +1,19 @@
 // הסיפור המשפחתי, "המוזיאון החי" (docs/vision/story.md). The server sends only what this viewer may see
 // (server/story.ts, through server/story-rules.ts): outside the household a people tag arrives as { gap: true }.
 // ?person=<tree id> opens the story of one person (the tree's card links here); ?h=<household> another household's
-// tribe items. Recordings are made here in Opus (~40 kbps) and photos are made WebP of at most 2560 px before upload.
+// tribe items; ?f=<friend id> a friend's items shared with friends or everyone (batch 27). Recordings are made here in Opus (~40 kbps) and photos are made WebP of at most 2560 px before upload.
 (() => {
   const { el, api, toast, modal, closeModal } = H;
   const main = document.querySelector('main.st');
   const params = new URLSearchParams(location.search);
-  const other = params.get('h');
+  const friend = params.get('f');
+  const other = params.get('h') || friend;
   const KIND = { story: 'סיפור', recording: 'הקלטה', reading: 'הקראה', doc: 'מסמך', photo: 'תמונה' };
-  const LEVEL = { household: 'בני הבית', tribe: 'כל השבט', private: 'רק אני' };
+  // the four levels (batch 27; the look in docs/design/friends.md). Old values show as their new names, never widened:
+  // 'household' (the household only) shows as family, and stays as it is until the one who added it picks another level
+  const LEVEL = { all: ['כולם', 'כל מי שבאוהל'], friends: ['חברים ומשפחה', 'המשפחה והחברים שלי'], family: ['רק משפחה', 'מי שבעץ המשפחה'], me: ['רק אני', 'רק אני'] };
+  const OLD = { household: 'family', tribe: 'family', private: 'me' };
+  const levelOf = (v) => (LEVEL[v] ? v : OLD[v] || 'me');
   const ERR = {
     storage_full: 'המקום של הבית מלא (2GB). כל מה שכבר נשמר נשאר, ואפשר לצפות בו ולהוריד אותו.',
     file_too_large: 'הקובץ גדול מדי (עד 25MB).', file_type_not_allowed: 'אי אפשר לשמור קובץ מהסוג הזה כאן.',
@@ -22,10 +27,10 @@
 
   async function load() {
     const [r, t] = await Promise.all([
-      api('/api/story' + (other ? '?h=' + encodeURIComponent(other) : '')),
+      api('/api/story' + (friend ? '?f=' + encodeURIComponent(friend) : other ? '?h=' + encodeURIComponent(other) : '')),
       other ? Promise.resolve(null) : api('/api/vault/tree').catch(() => null),   // the names of our tree, for the tags
     ]);
-    Object.assign(S, { items: r.items, mine: r.mine, questions: r.questions || [], storage: r.storage || null });
+    Object.assign(S, { items: r.items, mine: r.mine, child: !!r.child, who: r.who || '', questions: r.questions || [], storage: r.storage || null });
     if (t) for (const p of t.people) { S.names.set(p.id, p.name || 'בלי שם'); if (p.life?.died) S.dead.add(p.id); }
     render();
   }
@@ -122,7 +127,22 @@
     return box;
   }
   const field = (label, input) => el('label', { class: 'field' }, el('span', {}, label), input);
-  const levelSelect = (v = 'household') => el('select', {}, ...Object.entries(LEVEL).map(([k, t]) => el('option', { value: k, selected: k === v ? '' : null }, t)));
+  /** the full picker; .value() is what was picked, or the stored value as it is when nothing was touched (so an old
+   *  'household' item is not widened by saving it). A child under 12 may pick only family or me (the server checks too) */
+  function levelPick(stored = 'family') {
+    let picked = null;
+    const shownAs = levelOf(stored);
+    const box = el('fieldset', { class: 'priv-pick' }, el('legend', {}, 'מי יראה את זה?'),
+      ...Object.entries(LEVEL).map(([k, [name, who]]) => {
+        const off = S.child && (k === 'all' || k === 'friends');
+        return el('label', { class: 'priv-opt', 'data-level': k },
+          el('input', { type: 'radio', name: 'level', value: k, 'aria-label': name, checked: k === shownAs ? '' : null, disabled: off ? '' : null, onchange: () => { picked = k; } }),
+          el('span', { class: 'priv-ic' }), el('b', {}, name), el('small', {}, who));
+      }),
+      S.child ? el('p', { class: 'priv-note' }, 'עד גיל 12 משתפים רק עם המשפחה.') : el('p', { class: 'priv-note' }, 'חברים רואים רק מה שפרסמתם לחברים או לכולם. קבצים (הקלטות, תמונות, מסמכים) נשארים בבית.'));
+    Object.defineProperty(box, 'value', { get: () => (picked === null ? stored : picked) });
+    return box;
+  }
 
   function addForm(kind, preset = {}) {
     let file = null;
@@ -131,7 +151,7 @@
     const when = el('input', { type: 'text', maxlength: 40, placeholder: 'למשל 1952, או שנות ה-50' });
     const place = el('input', { type: 'text', maxlength: 80, placeholder: 'למשל בגדד, או קיבוץ דגניה' });
     const people = peoplePicker(preset.people || (S.person ? [S.person] : []));
-    const level = levelSelect();
+    const level = levelPick();
     const got = el('p', { class: 'hint', 'aria-live': 'polite' });
     let media = null;
     if (kind === 'recording' || kind === 'reading') {
@@ -162,7 +182,7 @@
     field(kind === 'story' ? 'הסיפור' : kind === 'reading' ? 'מה מוקרא (אפשר להעתיק את הטקסט)' : 'מה רואים או שומעים כאן', text),
     el('div', { class: 'st-two' }, field('מתי', when), field('איפה', place)),
     el('div', { class: 'field' }, el('span', {}, 'מי בסיפור'), people),
-    field('מי רואה', level),
+    level,
     el('div', { class: 'row' }, save));
     modal(form);
     (media ? title : text).focus?.();
@@ -188,7 +208,7 @@
       if (!file) return toast('הקליטו תשובה, או דלגו.');
       next.disabled = true;
       try {
-        await upload({ kind: 'recording', title: S.questions[i], text: '', when: '', place: '', people: [who.value], level: 'household' }, file);
+        await upload({ kind: 'recording', title: S.questions[i], text: '', when: '', place: '', people: [who.value], level: 'family' }, file);
         saved++; i++; show();
       } catch (err) { say(err); } finally { next.disabled = false; }
     };
@@ -215,7 +235,7 @@
     const text = el('textarea', { rows: 6, maxlength: 20000 }); text.value = it.text;
     const when = el('input', { type: 'text', maxlength: 40, value: it.when });
     const place = el('input', { type: 'text', maxlength: 80, value: it.place });
-    const people = peoplePicker(it.people), level = levelSelect(it.level);
+    const people = peoplePicker(it.people), level = levelPick(it.level);
     modal(el('form', { class: 'st-form', onsubmit: async (e) => {
       e.preventDefault();
       try {
@@ -223,7 +243,7 @@
         closeModal(); await load();
       } catch (err) { say(err); }
     } }, el('h2', {}, 'עריכה'), field('כותרת', title), field('הטקסט', text), el('div', { class: 'st-two' }, field('מתי', when), field('איפה', place)),
-    el('div', { class: 'field' }, el('span', {}, 'מי בסיפור'), people), field('מי רואה', level),
+    el('div', { class: 'field' }, el('span', {}, 'מי בסיפור'), people), level,
     el('div', { class: 'row' }, el('button', { type: 'submit', class: 'btn primary' }, 'שמירה'), el('span', { class: 'spacer' }),
       el('button', { type: 'button', class: 'btn ghost', onclick: async () => {
         try {
@@ -246,7 +266,7 @@
         el('span', { class: 'st-kind' }, KIND[it.kind]),
         it.when ? el('span', { class: 'muted' }, it.when) : null,
         it.place ? el('span', { class: 'muted' }, '· ' + it.place) : null,
-        it.level && it.level !== 'household' ? el('span', { class: 'st-level' }, LEVEL[it.level]) : null,
+        it.level ? el('span', { class: 'priv-tag', 'data-level': levelOf(it.level) }, el('span', { class: 'priv-ic' }), it.level === 'household' ? 'בני הבית' : LEVEL[levelOf(it.level)][0]) : null,
         it.mine ? el('button', { type: 'button', class: 'mini', 'aria-label': 'עריכה', onclick: () => editForm(it) }, el('span', { 'aria-hidden': 'true' }, '✎')) : null),
       it.title ? el('h3', {}, it.title) : null,
       it.text ? el('p', { class: 'st-text' }, it.text) : null,
@@ -275,7 +295,7 @@
     const shown = S.items.filter(matches);
     const box = el('section', { class: 'st-list', 'aria-live': 'polite' });
     if (!S.items.length) {
-      box.append(el('div', { class: 'notice' }, S.mine ? 'עוד אין כאן כלום. אפשר להתחיל בסיפור קצר, בתמונה, או בראיון עם סבא או סבתא.' : 'המשפחה הזו לא פתחה עדיין פריטים לשבט.'));
+      box.append(el('div', { class: 'notice' }, S.mine ? 'עוד אין כאן כלום. אפשר להתחיל בסיפור קצר, בתמונה, או בראיון עם סבא או סבתא.' : friend ? 'עוד לא שותפו כאן פריטים עם חברים.' : 'המשפחה הזו לא פתחה עדיין פריטים לשבט.'));
       return box;
     }
     if (!shown.length) { box.append(el('p', { class: 'muted' }, 'לא נמצא פריט מתאים.')); return box; }
@@ -288,12 +308,12 @@
 
   function render() {
     main.textContent = ''; main.removeAttribute('aria-busy');
-    const who = S.person && S.names.get(S.person);
+    const who = (S.person && S.names.get(S.person)) || (friend && S.who) || '';
     document.title = (who ? 'הסיפור של ' + who : 'הסיפור המשפחתי') + ' – האוהל';
     const head = el('div', { class: 'st-head' },
       el('h1', {}, who ? 'הסיפור של ' + who : 'הסיפור המשפחתי'),
-      el('p', { class: 'muted' }, other ? 'פריטים שמשפחה מקושרת פתחה לשבט.' : 'המוזיאון החי של המשפחה: סיפורים, הקלטות, מסמכים ותמונות.'));
-    if (who) head.append(el('a', { href: '/family/story/', class: 'btn ghost' }, 'כל הסיפור המשפחתי'));
+      el('p', { class: 'muted' }, friend ? 'מה ששותף עם חברים ועם כולם.' : other ? 'פריטים שמשפחה מקושרת פתחה לשבט.' : 'המוזיאון החי של המשפחה: סיפורים, הקלטות, מסמכים ותמונות.'));
+    if (who) head.append(el('a', { href: friend ? '/family/friends/' : '/family/story/', class: 'btn ghost' }, friend ? 'לחברים' : 'כל הסיפור המשפחתי'));
     main.append(head);
     if (S.mine) {
       const full = S.storage && S.storage.used >= S.storage.quota;

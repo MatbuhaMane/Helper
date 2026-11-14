@@ -698,6 +698,12 @@ details.bd-state[open] > :not(summary) { animation: sb-in var(--dur-draw) var(--
   opacity: 0; pointer-events: none; transition: opacity .6s var(--ease-river); }
 .sb-row.saved::after { opacity: 1; transition-duration: .15s; }
 .sb-row.failed small { color: var(--danger, #b42318); }
+/* a row that differs from the default: a small dot before its title (ai-features' .changed) */
+.sb-row.changed .sb-txt b::before { content: ""; display: inline-block; inline-size: 7px; block-size: 7px; margin-inline-end: 6px; vertical-align: .15em;
+  border-radius: 50%; background: var(--c, var(--primary)); }
+/* not the owner: every control is shown but cannot be pressed */
+.sb-seg > button[aria-disabled="true"] { opacity: .55; cursor: not-allowed; }
+.sb-seg > button[aria-disabled="true"]:active { transform: none; }
 
 @media (max-width: 599px) {
   .sb-cat { padding-inline: 12px; }

@@ -78,6 +78,7 @@ Under מצב האוהל. One card per category, in a responsive grid: one column
   - `.sb-row.saved` for one second after it is saved: a soft tint washes over the row.
   - `.sb-row.failed` when saving failed: the JS puts the control back, and the row's `small` says why in `--danger`.
 - **A switch that cannot be changed now:** `aria-disabled="true"` on the switch, with the reason in its row's `small`.
+- **A row that differs from the default:** `.sb-row.changed` gets a small dot in the category's colour before its title.
 - **A dangerous switch** (one that stops something for everyone): add `.sb-row.danger`. Its "on" state is drawn in `--danger`, not the vine.
 
 ## 3. The moods, on `<html>` (every page)

@@ -27,7 +27,7 @@ Updated by the department at the end of every meaningful round of work. Short: t
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
 - **AI inside a tool, free with a quota (2026-11-14, from vision batch 26):** `docs/business/ai-quota.md`.
-  Proposal, waiting for the owner:
+  **Decided (the owner, 2026-11-14), all of it.** Recorded in `docs/decisions.md`, sent to vision and ai-features:
   - A daily free quota per person: 20 answers from the voice chef, 3 plant photos, 5 "איך אני עושה" questions.
   - Beyond the quota: credits at the real cost, by the existing rule in pricing.md 6א.
   - Until there is a payment provider, only trial and gift credits beyond the quota; after that, "come back tomorrow".

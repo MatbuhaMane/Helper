@@ -34,9 +34,12 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 26** (2026-11-14), sent to ai-features-2, business and the CEO: the owner answered all 21 future-tool questions.
+  - The answers are in `docs/vision/future-specs.md` and in `docs/decisions.md`.
+  - AI inside a tool is free with a quota; business sets the quota and the price.
 - **Batch 25** (2026-11-14), sent to ai-features-2 and the CEO, at the CEO's request:
   - `docs/vision/future-specs.md` holds short specs for the eight `H.FUTURE` tools, by priority;
-  - 21 open questions for the owner are collected in one table at its end.
+  - the 21 questions for the owner were answered in batch 26.
 - **Batch 24** (2026-11-14): how a person is shown on each tree. On the pine it is a pine cone; on the olive, a frame of olive branches.
 - **Batch 23** (2026-11-14): tree skins. The pine is the default and the olive is available too; the maple and the African juniper come later. The owner makes the art from `docs/vision/asset-prompts-full.md`.
 - **Batch 22** (2026-11-14), sent to design and the CEO: "ع ב-ע" (עין בעין), the language-learning game. The concept is approved (`docs/vision/language-game.md`): any language to any language, a living dictionary where words are engraved after four checks, and Creative Commons or official YouTube embeds. It is kept for later, with a "בקרוב" mark only.

@@ -11,6 +11,44 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – The owner answers the 21 future-tool questions; AI inside a tool is free with a quota (vision → ai-features, business, design, master)
+The owner answered all 21 questions in `docs/vision/future-specs.md` (relayed by the CEO). The answers are written into
+each spec and into the table at the end of that file. Status: Decided (the owner).
+
+- **The rule for AI inside a tool: free with a quota.** A few uses a day are free; beyond that they cost credits.
+  This holds for the kitchen (ש3), the garden's plant photo (ש10), "איך אני עושה" (ש19) and every later tool.
+  Business sets the quota and the price.
+- **Kitchen, v1:**
+  - a voice chef assistant (the owner's own addition);
+  - "הבא" by voice;
+  - a background timer that rings even when the app is closed.
+  - The always-on screen was not chosen.
+  - Two ways in: a "לבשל" button in every recipe, and a kitchen screen of its own.
+- **Breath:**
+  - guided breathing only, with no meditations for now;
+  - a guiding voice that can be turned off;
+  - linked to habits: a breathing session ticks the habit off.
+- **Home:**
+  - a reminder goes to whoever added the appliance, and can be handed to someone else;
+  - receipts and warranties are ordinary family data, not vault data, so photos may be stored.
+- **Garden:** the plants are shared by the household.
+- **Translator:**
+  - conversations are not saved by default, and a button saves a single conversation;
+  - Amharic and Tigrinya go through Gemini, with a notice that the recording goes out for processing and nothing is saved.
+- **Homework:**
+  - English and Arabic only in v1;
+  - it starts on the `child` flag, and kids mode comes later;
+  - the parent sees the topics only, not the conversation;
+  - up to age 12.
+- **איך אני עושה:**
+  - embedded YouTube only, from channels that allow embedding;
+  - the PC guide is merged into it later.
+- **ع ב-ע:**
+  - it starts with Arabic;
+  - the legal check waits until we build it.
+- **Who does what:** ai-features builds by priority; business sets the quota and the credit price; changes to
+  `apps.js` go through the master.
+
 ## 2026-11-14 – How a person is shown on each tree skin (vision → design, ai-features, master)
 On each tree skin a person is shown in a form that belongs to that tree, instead of one leaf for every tree.
 Status: Decided (the owner).

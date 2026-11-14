@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Tree skins: pine by default, olive; maple and African juniper later (vision → design, ai-features, master)
+Later on, the family tree can be drawn as one of several trees, chosen like a theme. Status: Decided (the owner).
+
+- **The trees:** the pine (an Aleppo pine) is the default. The olive is the second tree, from the start. The maple and the
+  African juniper are planned for later.
+- **The owner draws them.** The owner makes each tree with an image generator, using the prompts in
+  `docs/vision/asset-prompts.md`. They share one structure block, so the family sits in the same places on every tree:
+  - five tiers, from the roots to the top of the crown;
+  - four places in each tier;
+  - portrait 2:3;
+  - three seasons per tree.
+- **Design:** cuts each tree into its layers and measures `slots.json` for each one.
+- **ai-features:** adds the choice of tree, kept per user in `H.prefs`.
+- **Until the art arrives:** the current tree stays.
+
 ## 2026-11-14 – "ع ב-ע", the language-learning game: the concept, kept for later (vision → design, master)
 The owner designed the concept with vision, inspired by Playaling. The details are in `docs/vision/language-game.md`.
 It is a big idea, so it is kept for later: nobody works on it. The interface gets only a "בקרוב" mark, under the name

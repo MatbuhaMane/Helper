@@ -89,3 +89,4 @@
 - 2026-11-14: הבעלים יכין בעצמו את התמונות לעץ (1–6) ולכלים העתידיים (15–23). הרשימה ב-assets.md. תמונות ה"בקרוב" (7–14) נשארות אצל העיצוב.
 
 - 2026-11-14: image-generator prompts for the owner's assets in docs/vision/asset-prompts.md (design's style block, white background that design cuts out); assets.md switched from a transparent to a white background.
+- 2026-11-14: the owner confirmed tree skins (pine default, olive; maple and African juniper later); batch 23 sent to design, ai-features and ceo-2.

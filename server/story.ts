@@ -11,6 +11,9 @@ import { distance, Distance } from './vault/kin';
 import { auditProfile, profilePeople, rateLimit } from './vault';
 import { treeOpen } from './lock';
 import * as R from './story-rules';
+import { childOf } from './members';
+import { friendById, friendEmails } from './friends';
+import { nameOf } from './dm-rules';
 
 interface Row {
   id: string; household: string; kind: string; level: string; owner_email: string;
@@ -32,17 +35,28 @@ async function stored(ctx: Ctx, r: Row): Promise<R.Stored> {
   };
 }
 
-/** the household's own story opens like its tree; another household's only by its items' levels (no lock of ours on it) */
-async function viewer(ctx: Ctx): Promise<{ u: Member; house: string; d: Distance }> {
+/** the household's own story opens like its tree; another household's only by its items' levels (no lock of ours on it).
+ *  ?f=<friend id> opens a friend's household (batch 27): only what is shared with friends or everyone shows there */
+async function viewer(ctx: Ctx): Promise<{ u: Member; house: string; d: Distance; who?: string }> {
   const u = requireUser(ctx);
-  const h = (ctx.url.searchParams.get('h') || '').slice(0, 40);
+  const f = (ctx.url.searchParams.get('f') || '').slice(0, 40);
+  if (f) {
+    const m = await friendById(ctx, u, f);
+    if (!m) throw new HttpError(404, 'not_found');
+    if (m.household === u.household) return { ...(await viewerOf(ctx, u, '')), who: nameOf(m) };
+    const { bridges } = await profilePeople(ctx, m.household);
+    return { u, house: m.household, d: distance(u.household, m.household, bridges), who: nameOf(m) };
+  }
+  return viewerOf(ctx, u, (ctx.url.searchParams.get('h') || '').slice(0, 40));
+}
+async function viewerOf(ctx: Ctx, u: Member, h: string): Promise<{ u: Member; house: string; d: Distance }> {
   if (!h || h === u.household) {
     if (!(await treeOpen(ctx, u.email))) throw new HttpError(423, 'tree_locked');
     return { u, house: u.household, d: 'household' };
   }
   const { bridges } = await profilePeople(ctx, h);
   const d = distance(u.household, h, bridges);
-  if (d === 'none') throw new HttpError(404, 'not_found');
+  if (d === 'none') throw new HttpError(404, 'not_found');               // a household outside the family: only through a friend
   return { u, house: h, d };
 }
 const used = async (ctx: Ctx, house: string) =>
@@ -56,12 +70,15 @@ async function treeIds(ctx: Ctx, house: string): Promise<Set<string>> {
 
 /** GET /api/story[?h=household]: the collection as this viewer may see it, the questions, and (at home) the storage */
 export async function list(ctx: Ctx) {
-  const { u, house, d } = await viewer(ctx);
-  const { results } = await ctx.env.DB.prepare(`SELECT * FROM story_items WHERE household = ? AND deleted_at IS NULL ${d === 'household' ? '' : "AND level = 'tribe'"} ORDER BY created_at`)
+  const { u, house, d, who } = await viewer(ctx);
+  // the database narrows first; R.itemShows (tests: server/test-story.mjs) decides each item
+  const only = d === 'household' ? '' : d === 'none' ? "AND level IN ('friends', 'all')" : "AND level IN ('tribe', 'family', 'friends', 'all')";
+  const { results } = await ctx.env.DB.prepare(`SELECT * FROM story_items WHERE household = ? AND deleted_at IS NULL ${only} ORDER BY created_at`)
     .bind(house).all<Row>();
-  const items = R.shapeAll(await Promise.all(results.map((r) => stored(ctx, r))), d, u.email);
-  if (d !== 'household') { await auditProfile(ctx, house, u, 'story:' + d); return json({ items, mine: false }); }
-  return json({ items, mine: true, questions: R.QUESTIONS, storage: { used: await used(ctx, house), quota: R.QUOTA } });
+  const friends = d === 'household' ? new Set<string>() : new Set(await friendEmails(ctx, u.email));
+  const items = R.shapeAll(await Promise.all(results.map((r) => stored(ctx, r))), d, u.email, friends);
+  if (d !== 'household') { await auditProfile(ctx, house, u, 'story:' + d); return json({ items, mine: false, who }); }
+  return json({ items, mine: true, child: await childOf(ctx.env, u.email), questions: R.QUESTIONS, storage: { used: await used(ctx, house), quota: R.QUOTA } });
 }
 
 /** POST /api/story (multipart: kind, title, text, when, place, people (JSON), level, file?): a new item of this household */
@@ -72,8 +89,9 @@ export async function add(ctx: Ctx) {
   const form = await ctx.req.formData();
   const inp = R.cleanInput({
     kind: form.get('kind'), title: form.get('title') ?? '', text: form.get('text') ?? '', when: form.get('when') ?? '',
-    place: form.get('place') ?? '', people: parse(String(form.get('people') || '[]'), []), level: form.get('level') || 'household',
+    place: form.get('place') ?? '', people: parse(String(form.get('people') || '[]'), []), level: form.get('level') || undefined,
   });
+  const level = R.newLevel(inp.level, await childOf(ctx.env, u.email));   // a child under 12: family or me only
   if (!inp.kind) throw new HttpError(400, 'bad_kind');
   const ids = await treeIds(ctx, u.household);
   const people = (inp.people || []).filter((p) => ids.has(p));
@@ -93,11 +111,11 @@ export async function add(ctx: Ctx) {
     await st.put(objectKey, await encryptFile(k.key, bytes, 'story:' + id));
     dek = k.wrapped;
     bytes.fill(0);
-  } else if (inp.kind !== 'story' && !inp.text) throw new HttpError(400, 'file_required');
-  if (inp.kind === 'story' && !inp.text && !inp.title) throw new HttpError(400, 'nothing_to_save');
+  } else if (!R.TEXT_ONLY.includes(inp.kind) && !inp.text) throw new HttpError(400, 'file_required');
+  if (R.TEXT_ONLY.includes(inp.kind) && !inp.text && !inp.title) throw new HttpError(400, 'nothing_to_save');
   await ctx.env.DB.prepare(`INSERT INTO story_items (id, household, kind, level, owner_email, title_enc, text_enc, when_text, year, place_enc, people, mime, size, store, object_key, dek, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, u.household, inp.kind, inp.level || 'household', u.email, await seal(ctx.env, inp.title || '', `story:${id}:title`), await seal(ctx.env, inp.text || '', `story:${id}:text`),
+    .bind(id, u.household, inp.kind, level, u.email, await seal(ctx.env, inp.title || '', `story:${id}:title`), await seal(ctx.env, inp.text || '', `story:${id}:text`),
       inp.when || '', R.yearOf(inp.when || ''), await seal(ctx.env, inp.place || '', `story:${id}:place`), JSON.stringify(people), mime, size, storeName, objectKey, dek, now, now).run();
   return json({ id });
 }
@@ -108,7 +126,7 @@ async function own(ctx: Ctx): Promise<{ u: Member; row: Row; it: R.Stored }> {
   const row = await ctx.env.DB.prepare('SELECT * FROM story_items WHERE id = ? AND household = ?').bind(ctx.params.id, u.household).first<Row>();
   const it = row && (await stored(ctx, row));
   // someone else's private item, or a deleted one: as if it were not there
-  if (!row || !it || (it.level === 'private' && it.owner !== u.email)) throw new HttpError(404, 'not_found');
+  if (!row || !it || ((it.level === 'private' || it.level === 'me') && it.owner !== u.email)) throw new HttpError(404, 'not_found');
   return { u, row, it };
 }
 
@@ -120,7 +138,7 @@ export async function save(ctx: Ctx) {
   const ids = inp.people ? await treeIds(ctx, u.household) : null;
   const next = {
     title: inp.title ?? it.title, text: inp.text ?? it.text, when: inp.when ?? it.when, place: inp.place ?? it.place,
-    people: inp.people ? inp.people.filter((p) => ids!.has(p)) : it.people, level: R.nextLevel(it, u.email, inp.level ?? it.level),
+    people: inp.people ? inp.people.filter((p) => ids!.has(p)) : it.people, level: R.nextLevel(it, u.email, inp.level ?? it.level, await childOf(ctx.env, u.email)),
   };
   await ctx.env.DB.prepare('UPDATE story_items SET title_enc = ?, text_enc = ?, when_text = ?, year = ?, place_enc = ?, people = ?, level = ?, updated_at = ? WHERE id = ?')
     .bind(await seal(ctx.env, next.title, `story:${row.id}:title`), await seal(ctx.env, next.text, `story:${row.id}:text`), next.when, R.yearOf(next.when),

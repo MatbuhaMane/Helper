@@ -5,6 +5,8 @@
 // The rule (the CEO's default, 2026-11-13; the owner may change it): a member may write to the members of their own
 // household, and to users of the app in the trees joined to theirs by confirmed bridges (the same tribe the forest
 // search shows), and to no one else. Blocking works both ways: neither side can write once one has blocked the other.
+// Batch 27 (2026-11-14, for the master's review): also to a friend (both sides approved, server/friends-rules.ts), and a
+// child under 12 writes and is written to only within the family (the household and the tribe), friend or not.
 
 import { HttpError } from './core';
 
@@ -38,11 +40,14 @@ export interface Reach {
   sameTribe: boolean;           // the other's household is in the writer's tribe (confirmed bridges)
   iBlocked: boolean;            // the writer blocked the other
   theyBlocked: boolean;         // the other blocked the writer
+  friend?: boolean;             // an accepted friendship (both sides approved)
+  child?: boolean;              // either side is a child under 12
 }
 /** may the writer write to the other: null, or why not. Being out of reach and being blocked answer alike to the page */
 export function mayMessage(r: Reach): null | 'self' | 'not_reachable' | 'blocked' {
   if (r.self) return 'self';
-  if (!r.sameHousehold && !r.sameTribe) return 'not_reachable';
+  const family = r.sameHousehold || r.sameTribe;
+  if (!family && (!r.friend || r.child)) return 'not_reachable';
   if (r.iBlocked || r.theyBlocked) return 'blocked';
   return null;
 }
@@ -86,12 +91,13 @@ export const nameOf = (m: { name?: string | null; he_name?: string | null } | nu
 
 /* ---------------- the contact list ---------------- */
 
-export interface Contact { id: string; name: string; where: 'home' | 'tribe'; title?: string | null; relation?: string | null }
-/** household members first, then the joined trees; one entry per id, never oneself, by name */
-export function contacts(home: Contact[], tribe: Contact[]): Contact[] {
+export interface Contact { id: string; name: string; where: 'home' | 'tribe' | 'friend'; title?: string | null; relation?: string | null; kid?: boolean }   // kid: under 12 (family only; a group with a friend leaves them out)
+const WHERE = { home: 0, tribe: 1, friend: 2 };
+/** household members first, then the joined trees, then friends; one entry per id, never oneself, by name */
+export function contacts(home: Contact[], tribe: Contact[], friends: Contact[] = []): Contact[] {
   const seen = new Set<string>(), out: Contact[] = [];
-  for (const c of [...home, ...tribe]) if (!seen.has(c.id)) { seen.add(c.id); out.push(c); }
-  const by = (x: Contact, y: Contact) => (x.where === y.where ? x.name.localeCompare(y.name, 'he') : x.where === 'home' ? -1 : 1);
+  for (const c of [...home, ...tribe, ...friends]) if (!seen.has(c.id)) { seen.add(c.id); out.push(c); }
+  const by = (x: Contact, y: Contact) => (x.where === y.where ? x.name.localeCompare(y.name, 'he') : WHERE[x.where] - WHERE[y.where]);
   return out.sort(by);
 }
 

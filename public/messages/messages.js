@@ -93,38 +93,44 @@
     }
   }
 
-  let threads = [], open = null;            // open: { id, name, blocked, canSend, messages, seenByOther }
-  const idFromHash = () => (location.hash.match(/^#t=([\w-]{1,40})$/) || [])[1] || null;
+  // threads: one-to-one ({ id, name, … }) and groups ({ id, name, group: true, faces, more, count, … }), newest first
+  let threads = [], open = null;            // open: { id, name, blocked, canSend, messages, seenByOther, group, count }
+  // a conversation's hash: #t=<id> one to one, #g=<id> a group (batch 27)
+  const keyFromHash = () => { const m = location.hash.match(/^#([tg])=([\w-]{1,40})$/); return m ? { group: m[1] === 'g', id: m[2] } : null; };
+  const idFromHash = () => keyFromHash()?.id || null;
+  const urlOf = (o) => (o.group ? '/api/groups/' : '/api/dm/') + encodeURIComponent(o.id);
 
   /* ---------- the list ---------- */
   async function loadList() {
     try {
-      const d = await api('/api/dm');
-      threads = d.threads;
-      H.dmUnread?.(d.unread);
+      const [d, g] = await Promise.all([api('/api/dm'), api('/api/groups').catch(() => ({ groups: [] }))]);
+      threads = [...d.threads, ...g.groups.map((x) => ({ ...x, group: true }))].sort((a, b) => b.at - a.at);
+      H.dmUnread?.(threads.filter((t) => t.unread).length);
       drawList();
     } catch (e) { if (!threads.length) { listEmpty.hidden = false; listEmpty.textContent = e.message || 'לא הצלחנו לטעון את השיחות'; } }
   }
+  const av = (f, sm) => el('span', { class: 'fr-av' + (sm ? ' sm' : ''), style: `--c:${f.c}`, 'aria-hidden': 'true' }, f.ini);
   function drawList() {
     listEmpty.hidden = threads.length > 0;
     rows.replaceChildren(...threads.map((t) => el('li', {}, el('button', {
-      class: 'dm-row' + (t.unread ? ' unread' : ''), type: 'button', 'aria-current': open?.id === t.id ? 'true' : 'false',
-      onclick: () => go(t.id),
-    }, el('b', { dir: 'auto' }, t.name), el('time', {}, when(t.at)),
-      el('small', { dir: 'auto' }, t.blocked ? 'חסום' : t.last ? (t.last.mine ? 'את/ה: ' : '') + t.last.text : '')))));
+      class: 'dm-row' + (t.group ? ' group' : '') + (t.unread ? ' unread' : ''), type: 'button', 'aria-current': open?.id === t.id ? 'true' : 'false',
+      onclick: () => go(t.id, t.group),
+    }, t.group ? el('span', { class: 'fr-av-stack', 'aria-hidden': 'true' }, ...t.faces.map((f) => av(f, true)), t.more ? el('span', { class: 'fr-more' }, '+' + t.more) : null) : null,
+      el('b', { dir: 'auto' }, t.name), el('time', {}, when(t.at)),
+      el('small', { dir: 'auto' }, t.blocked ? 'חסום' : t.last ? (t.last.mine ? 'את/ה: ' : '') + t.last.text : t.group ? `קבוצה · ${t.count} משתתפים` : '')))));
   }
 
   /* ---------- one conversation ---------- */
-  function go(id) { if (location.hash !== '#t=' + id) location.hash = 't=' + id; else show(id); }
-  addEventListener('hashchange', () => { if (location.hash === '#haohel') return tab('haohel', true); if (inboxBox && !inboxBox.hidden) tab('dm', true); show(idFromHash()); });
+  function go(id, group = false) { const h = (group ? 'g=' : 't=') + id; if (location.hash !== '#' + h) location.hash = h; else show(id, group); }
+  addEventListener('hashchange', () => { if (location.hash === '#haohel') return tab('haohel', true); if (inboxBox && !inboxBox.hidden) tab('dm', true); const k = keyFromHash(); show(k?.id || null, !!k?.group); });
 
-  async function show(id) {
+  async function show(id, group = false) {
     if (!id) { open = null; frame.removeAttribute('data-open'); drawEmptyThread(); drawList(); return; }
     frame.setAttribute('data-open', '');
-    if (open?.id !== id) { open = { id, name: threads.find((t) => t.id === id)?.name || '', messages: [], canSend: false }; drawThread(true); }
+    if (open?.id !== id) { open = { id, group, name: threads.find((t) => t.id === id)?.name || '', messages: [], canSend: false }; drawThread(true); }
     try {
-      const d = await api('/api/dm/' + encodeURIComponent(id));
-      open = { ...d };
+      const d = await api(urlOf({ id, group }));
+      open = { ...d, group };
       drawThread(true);
       const t = threads.find((x) => x.id === id);
       if (t?.unread) { t.unread = false; H.dmUnread?.(threads.filter((x) => x.unread).length); }
@@ -143,7 +149,9 @@
   let msgsBox = null, input = null;
   function drawThread(scroll) {
     const o = open;
-    const menu = el('button', { class: 'btn ghost small', type: 'button', onclick: () => toggleBlock() }, o.blocked ? 'בטל חסימה' : 'חסום');
+    const menu = o.group
+      ? el('button', { class: 'btn ghost small', type: 'button', onclick: () => leaveGroup() }, 'יציאה מהקבוצה')
+      : el('button', { class: 'btn ghost small', type: 'button', onclick: () => toggleBlock() }, o.blocked ? 'בטל חסימה' : 'חסום');
     msgsBox = el('div', { class: 'dm-msgs', role: 'log', 'aria-live': 'polite', 'aria-label': 'ההודעות' });
     drawMessages();
     input = el('textarea', { rows: 1, maxlength: MAX, dir: 'auto', placeholder: 'כתבו הודעה…', 'aria-label': 'הודעה ל' + o.name,
@@ -153,18 +161,22 @@
       ? el('div', { class: 'dm-compose' }, input, sendBtn)
       : el('p', { class: 'dm-note' }, o.blocked ? 'חסמת את השיחה הזו. אפשר לבטל את החסימה למעלה.' : o.messages ? 'אי אפשר לכתוב כאן כרגע.' : '');
     thread.replaceChildren(
-      el('div', { class: 'dm-thread-head' }, backBtn(), el('h2', { dir: 'auto' }, o.name || '…'), o.messages ? menu : null),
+      el('div', { class: 'dm-thread-head' }, backBtn(), el('h2', { dir: 'auto' }, o.name || '…'),
+        o.group && o.count ? el('span', { class: 'dm-members', title: (o.members || []).join(', ') }, `${o.count} משתתפים`) : null, o.messages ? menu : null),
       msgsBox, compose,
-      el('p', { class: 'dm-note' }, 'רק שניכם רואים את השיחה הזו.'));
+      el('p', { class: 'dm-note' }, o.group ? 'רק מי שבקבוצה רואה את השיחה הזו.' : 'רק שניכם רואים את השיחה הזו.'));
     if (scroll) msgsBox.scrollTop = msgsBox.scrollHeight;
   }
   function drawMessages() {
     const kids = [];
-    let day = '';
+    let day = '', prev = null;
     for (const m of open.messages || []) {
       const d = dayName(m.at);
-      if (d !== day) { day = d; kids.push(el('div', { class: 'dm-day' }, d)); }
-      kids.push(el('div', { class: 'dm-msg ' + (m.mine ? 'mine' : 'theirs'), dir: 'auto' }, m.text, el('time', {}, hm(m.at))));
+      if (d !== day) { day = d; prev = null; kids.push(el('div', { class: 'dm-day' }, d)); }
+      // in a group: the sender's name over the first message of each run
+      const who = open.group && !m.mine && prev !== m.who ? el('b', { class: 'dm-who' }, m.who) : null;
+      prev = m.mine ? null : m.who;
+      kids.push(el('div', { class: 'dm-msg ' + (m.mine ? 'mine' : 'theirs'), dir: 'auto', ...(m.c ? { style: `--c:${m.c}` } : {}) }, who, m.text, el('time', {}, hm(m.at))));
     }
     const lastMine = [...(open.messages || [])].reverse().find((m) => m.mine);
     if (lastMine && open.seenByOther && open.seenByOther >= lastMine.at) kids.push(el('div', { class: 'dm-day' }, 'נקרא'));
@@ -179,7 +191,7 @@
     if (!text || sending || !open) return;
     sending = true;
     try {
-      const d = await api('/api/dm/' + encodeURIComponent(open.id), { body: { text } });
+      const d = await api(urlOf(open), { body: { text } });
       open.messages.push(d.message);
       input.value = ''; grow();
       drawMessages(); msgsBox.scrollTop = msgsBox.scrollHeight;
@@ -198,13 +210,23 @@
       await show(o.id); loadList();
     } catch (e) { toast(e.message || 'לא הצלחנו'); }
   }
+  async function leaveGroup() {
+    const o = open;
+    if (!confirm(`לצאת מהקבוצה "${o.name}"? ההודעות שלה לא יופיעו אצלך יותר.`)) return;
+    try {
+      await api(urlOf(o), { method: 'DELETE' });
+      threads = threads.filter((t) => t.id !== o.id);
+      toast('יצאת מהקבוצה');
+      location.hash = '';
+    } catch (e) { toast(e.message || 'לא הצלחנו'); }
+  }
 
   /* ---------- polling while in front ---------- */
   async function pollThread() {
     if (!open?.messages || document.visibilityState !== 'visible') return;
     const last = open.messages.at(-1)?.at || 0, id = open.id;
     try {
-      const d = await api(`/api/dm/${encodeURIComponent(id)}?after=${last}`, { noRedirect: true });
+      const d = await api(`${urlOf(open)}?after=${last}`, { noRedirect: true });
       if (open?.id !== id) return;
       const fresh = d.messages.filter((m) => !open.messages.some((x) => x.id === m.id));
       const changed = fresh.length || d.seenByOther !== open.seenByOther || d.canSend !== open.canSend;
@@ -238,15 +260,48 @@
         return ps.length ? [el('li', {}, el('h3', {}, title)), ...ps.map((p) => el('li', {}, el('button', { class: 'dm-row', type: 'button', onclick: () => startWith(p) },
           el('b', { dir: 'auto' }, p.name), el('small', {}, [p.relation, p.where === 'tribe' ? p.title : null].filter(Boolean).join(' · ')))))] : [];
       };
-      const items = [...part('home', 'מהבית'), ...part('tribe', 'מהעצים המחוברים')];
+      const items = [...part('home', 'מהבית'), ...part('tribe', 'מהעצים המחוברים'), ...part('friend', 'חברים')];
       ul.replaceChildren(...(items.length ? items : [el('li', { class: 'dm-empty' }, s ? 'אין מישהו בשם הזה.' : 'עוד אין למי לכתוב: אף אחד נוסף מהבית לא משתמש באוהל.')]));
     };
     q.addEventListener('input', draw);
     draw();
-    box.replaceChildren(q, ul,
+    box.replaceChildren(q,
+      d.people.length > 1 ? el('button', { class: 'btn small', type: 'button', onclick: () => newGroup(d.people) }, 'קבוצה חדשה') : null,
+      ul,
       d.forest === 'locked' ? el('p', { class: 'dm-note' }, 'כדי לכתוב גם לבני משפחה מהעצים המחוברים, פתחו את העץ במכשיר הזה (עץ המשפחה).') : null,
-      el('p', { class: 'dm-note' }, 'אפשר לכתוב רק לבני הבית ולמי שמשתמש באוהל בעצים שחוברו לעץ שלכם.'));
+      el('p', { class: 'dm-note' }, 'אפשר לכתוב לבני הבית, למי שמשתמש באוהל בעצים שחוברו לעץ שלכם, ולחברים.'),
+      el('a', { href: '/family/friends/', class: 'dm-note' }, 'החברים שלי'));
     q.focus();
+  }
+
+  /* ---------- a new group: a name and two or more people one may write to ---------- */
+  function newGroup(people) {
+    const name = el('input', { class: 'dm-grp-name', 'aria-label': 'שם הקבוצה', placeholder: 'שם הקבוצה', maxlength: 40, dir: 'auto' });
+    const note = el('p', { class: 'dm-kid-note', hidden: true }, 'ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה.');
+    const boxes = people.map((p) => ({ p, input: el('input', { type: 'checkbox', value: p.id, onchange: rule }) }));
+    // the children's rule, as the page can see it: a child and a friend (not family) are never in one group. The server checks it too
+    function rule() {
+      const friend = boxes.some((b) => b.input.checked && b.p.where === 'friend'), kid = boxes.some((b) => b.input.checked && b.p.kid);
+      for (const b of boxes) b.input.disabled = !b.input.checked && ((b.p.kid && friend) || (b.p.where === 'friend' && kid));
+      note.hidden = !boxes.some((b) => b.input.disabled);
+      make.disabled = boxes.filter((b) => b.input.checked).length < 2;
+    }
+    const make = el('button', { class: 'btn primary', type: 'button', disabled: true, onclick: async () => {
+      if (!name.value.trim()) { toast('תנו לקבוצה שם'); name.focus(); return; }
+      make.disabled = true;
+      try {
+        const d = await api('/api/groups', { body: { name: name.value, people: boxes.filter((b) => b.input.checked).map((b) => b.p.id) } });
+        H.closeModal();
+        await loadList();
+        go(d.id, true);
+      } catch (e) { toast(e.status === 403 ? 'ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה.' : e.message || 'לא הצלחנו ליצור את הקבוצה'); rule(); }
+    } }, 'יצירת הקבוצה');
+    const ini = (n) => { const w = n.trim().split(/\s+/); return (w.length > 1 ? w[0][0] + w[1][0] : n.slice(0, 2)) || '?'; };
+    H.closeModal();
+    H.modal(el('h2', {}, 'קבוצה חדשה'), name,
+      el('ul', { class: 'dm-grp-pick' }, boxes.map((b) => el('li', {}, el('label', {}, b.input, el('span', { class: 'fr-av sm', 'aria-hidden': 'true' }, ini(b.p.name)), el('span', { dir: 'auto' }, b.p.name))))),
+      note, make);
+    name.focus();
   }
   async function startWith(p) {
     try {
@@ -261,6 +316,8 @@
   if (location.hash === '#haohel') { tab('haohel', true); drawEmptyThread(); return; }
   loadInbox().catch(() => {});   // for the count on the tab
   tab('dm', true);
-  const first = idFromHash();
-  if (first) show(first); else { drawEmptyThread(); if (new URLSearchParams(location.search).has('new')) pickPerson(); }
+  const first = keyFromHash(), to = new URLSearchParams(location.search).get('to');
+  if (first) show(first.id, first.group);
+  else if (to && /^f[\w-]{4,40}$/.test(to)) { drawEmptyThread(); history.replaceState(null, '', location.pathname); startWith({ id: to }); }   // from the friends page
+  else { drawEmptyThread(); if (new URLSearchParams(location.search).has('new')) pickPerson(); }
 })();

@@ -91,5 +91,41 @@ eq('the organiser\'s own answer does not count', G.confirmedGuests([yes('HOST@x'
 eq('no and maybe do not count', G.confirmedGuests([yes(), { coming: 'no', email: null }, { coming: 'maybe', email: null }], 'host@x'), 1);
 eq('answers, not heads', G.reachedFounding([yes(), yes(), yes(), yes()], 'host@x'), false);
 
+/* ---- the food calculator ---- */
+const plan = (o) => G.foodPlan(G.calcInput(o));
+const find = (list, re) => list.find((i) => re.test(i.title));
+eq("nobody, nothing", plan({ adults: 0, kids: 0 }), []);
+eq("input: whole numbers in range", G.calcInput({ adults: "12.4", kids: -3, meal: "x", kosher: "evil" }), { adults: 12, kids: 0, meal: "lunch", veg: 0, vegan: 0, gf: 0, kosher: "" });
+eq("input: diets never more than the people", G.calcInput({ adults: 3, vegan: 2, veg: 5, gf: 9 }), { adults: 3, kids: 0, meal: "lunch", veg: 1, vegan: 2, gf: 3, kosher: "" });
+const lunch = plan({ adults: 10, kids: 0, meal: "lunch" });
+eq("lunch for 10: two loaves", find(lunch, /^לחם/).qty, "2 כיכרות");
+eq("lunch for 10: 3 kilos of meat", find(lunch, /עוף או בשר/).qty, "3 ק\"ג");
+eq("lunch for 10: 20 plates", find(lunch, /צלחות/).qty, "20");
+ok("no vegetarians, no vegetarian dish", !find(lunch, /צמחונית|טבעונית|ללא גלוטן/));
+const mixed = plan({ adults: 10, kids: 5, meal: "lunch", veg: 2, vegan: 1, gf: 1 });
+ok("children eat less, and meat only for meat eaters: 10.4 adult portions", find(mixed, /עוף או בשר/).qty === "3.5 ק\"ג");
+eq("a vegetarian main dish, tagged", [find(mixed, /צמחונית/).qty, find(mixed, /צמחונית/).diet], ["תבנית", "veg"]);
+eq("a vegan main dish, tagged", find(mixed, /טבעונית/).diet, "vegan");
+eq("gluten-free bread", find(mixed, /ללא גלוטן/).diet, "gf");
+const kMeat = plan({ adults: 10, meal: "lunch", veg: 2, kosher: "meat" });
+ok("kosher meat meal: no dairy at all", kMeat.every((i) => i.kind !== "dairy"));
+ok("kosher meat meal: the vegetarians keep a parve dish", find(kMeat, /צמחונית/).kind === "parve");
+ok("kosher meat meal: no lasagna", !find(kMeat, /לזניה/));
+const kDairy = plan({ adults: 10, meal: "lunch", kosher: "dairy" });
+ok("kosher dairy meal: no meat", kDairy.every((i) => i.kind !== "meat") && !!find(kDairy, /לזניה/));
+const kParve = plan({ adults: 10, meal: "snacks", kosher: "parve" });
+ok("parve snacks: only parve, cakes become parve", kParve.every((i) => i.kind === "parve") && !!find(kParve, /עוגות פרווה/));
+const bf = plan({ adults: 6, kids: 2, meal: "breakfast", kosher: "meat" });
+ok("a meat breakfast: plant milk instead of milk, no cheese", !!find(bf, /חלב צמחי לקפה/) && !find(bf, /גבינות/));
+ok("snacks with kids: something for the kids", !!find(plan({ adults: 4, kids: 3, meal: "snacks" }), /לילדים/));
+ok("every item has a title and a quantity", [...lunch, ...mixed, ...bf].every((i) => i.title && i.qty));
+ok("big gathering: kilos round up to half a kilo", /^\d+(\.5)? ק"ג$/.test(find(plan({ adults: 77, meal: "dinner" }), /עוף או בשר/).qty));
+eq("the line on the list", G.calcTitle({ title: "לחם", qty: "3 כיכרות" }), "לחם (3 כיכרות)");
+eq("the line, no quantity", G.calcTitle({ title: " לחם " }), "לחם");
+eq("the line, no title", G.calcTitle({ qty: "3" }), "");
+eq("defaults from the answers", G.calcDefaults([{ coming: "yes", count: 3, diets: "veg,gf" }, { coming: "yes", count: 2, diets: "vegan" }, { coming: "no", count: 0, diets: "veg" }], "kosher"), { adults: 5, kids: 0, veg: 1, vegan: 1, gf: 1, kosher: "meat" });
+eq("diet ticks: only the known ones", G.dietsOf(["gf", "x", "veg"]), "veg,gf");
+eq("diet ticks: nothing", G.dietsOf("veg"), "");
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

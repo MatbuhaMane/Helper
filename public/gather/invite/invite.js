@@ -39,10 +39,14 @@
     const num = el('output', { 'aria-live': 'polite' }, String(n));
     const step = (d) => { n = Math.max(1, Math.min(30, n + d)); num.textContent = String(n); };
     const note = el('input', { type: 'text', maxlength: 300, value: me?.note || '', 'aria-label': 'הערה (לא חובה)', placeholder: 'הערה (לא חובה): צמחוני, נאחר קצת…' });
+    // the diet ticks (optional): the host's food calculator counts them, one per answer
+    const had = new Set(String(me?.diets || '').split(',').filter(Boolean));
+    const diets = el('fieldset', { class: 'ga-diets' }, el('legend', {}, 'מישהו מכם…'),
+      [['veg', 'צמחוני'], ['vegan', 'טבעוני'], ['gf', 'ללא גלוטן']].map(([v, t]) => el('label', { class: 'ga-tick' }, el('input', { type: 'checkbox', value: v, checked: had.has(v) }), el('span', {}, t))));
     const answer = async (coming) => {
       if (!name.value.trim()) { name.focus(); return toast('איך קוראים לך?'); }
       try {
-        const r = await call('/rsvp', { body: { name: name.value, coming, count: n, note: note.value } });
+        const r = await call('/rsvp', { body: { name: name.value, coming, count: n, note: note.value, diets: [...diets.querySelectorAll('input:checked')].map((x) => x.value) } });
         if (r.guest) { guest = r.guest; store.set(KEY, guest); }
         toast(coming === 'yes' ? 'מעולה, נתראה!' : coming === 'maybe' ? 'רשמנו "אולי"' : 'תודה שעדכנת');
         draw();
@@ -55,6 +59,7 @@
       el('div', { class: 'ga-count' }, el('span', {}, 'כמה תגיעו (איתך)'),
         el('button', { class: 'btn small', type: 'button', 'aria-label': 'פחות', onclick: () => step(-1) }, '−'), num,
         el('button', { class: 'btn small', type: 'button', 'aria-label': 'יותר', onclick: () => step(1) }, '+')),
+      diets,
       note,
       el('div', { class: 'ga-acts' },
         el('button', { class: 'btn primary', type: 'button', onclick: () => answer('yes') }, 'מגיע/ה'),

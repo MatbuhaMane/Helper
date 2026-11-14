@@ -1,17 +1,22 @@
 // הסיפור המשפחתי (docs/vision/story.md, "a living museum"): the pure rules, with no database, so they can be tested alone
 // (server/test-story.mjs). The rule that matters: an item is seen only as far as its own level reaches, and it never
 // carries more of the tree out of the household than the tree itself lets out.
-//   * levels: 'private' (only the one who added it), 'household' (the default), 'tribe' (the linked households too)
-//   * only the one who added an item may change its level; nobody else may widen it
+//   * levels (batch 27, server/audience-rules.ts): 'me', 'family' (the household and the linked households), 'friends'
+//     (the family and the publisher's own friends), 'all' (everyone signed in). The old values stay readable and are never
+//     widened: 'private' is 'me', 'tribe' is 'family', and 'household' keeps reaching the household only
+//   * only the one who added an item may change its level; nobody else may widen it; a child under 12 only family or me
 //   * outside the household: no people tags (a tag would name someone of our tree; each is an empty spot), no uploader's
 //     email, and no file (files never leave their household in stage 2, as kin.sees says for the tree's files)
 //   * a deleted item is seen by nobody (it waits in the trash of the one who added it)
 
 import { Distance } from './vault/kin';
+import * as A from './audience-rules';
 
-export const KINDS = ['story', 'recording', 'reading', 'doc', 'photo'] as const;
+export const KINDS = ['story', 'recording', 'reading', 'doc', 'photo', 'event'] as const;
+/** the kinds that are words alone, no file: a story, and an event from one's own life (batch 27, the museum as the hub) */
+export const TEXT_ONLY: readonly Kind[] = ['story', 'event'];
 export type Kind = (typeof KINDS)[number];
-export const LEVELS = ['private', 'household', 'tribe'] as const;
+export const LEVELS = ['me', 'family', 'friends', 'all', 'household', 'private', 'tribe'] as const;   // the four, then the old ones
 export type Level = (typeof LEVELS)[number];
 
 /** 2 GB a household (docs/decisions.md 2026-11-14 "Family story storage"); over it only new uploads stop */
@@ -32,18 +37,21 @@ export interface Shown {
   mine: boolean; level?: Level; by?: string;
 }
 
-/** may this viewer, at this distance from the item's household, see the item at all? */
-export function itemShows(it: Pick<Stored, 'level' | 'owner' | 'deleted'>, d: Distance, viewer: string): boolean {
-  if (it.deleted || d === 'none') return false;
-  if (it.level === 'private') return d === 'household' && it.owner === viewer;
-  if (it.level === 'household') return d === 'household';
-  if (it.level === 'tribe') return d === 'household' || d === 'linked' || d === 'forest';
-  return false;                                                        // an unknown level opens to nobody
+/** the viewer's relation to the one who added the item: by the distance between the households, then friendship */
+export function relFor(owner: string, d: Distance, viewer: string, friendOfOwner = false): A.Rel {
+  if (d === 'household') return owner === viewer ? 'self' : 'household';
+  if (d === 'linked' || d === 'forest') return 'tribe';
+  return friendOfOwner ? 'friend' : 'member';
+}
+/** may this viewer, at this distance from the item's household (and a friend of the one who added it, or not), see it at all? */
+export function itemShows(it: Pick<Stored, 'level' | 'owner' | 'deleted'>, d: Distance, viewer: string, friendOfOwner = false): boolean {
+  if (it.deleted) return false;
+  return A.reaches(it.level, relFor(it.owner, d, viewer, friendOfOwner));   // an unknown level opens to nobody else
 }
 
 /** the item as this viewer may see it (null: as if it were not there) */
-export function shapeItem(it: Stored, d: Distance, viewer: string): Shown | null {
-  if (!itemShows(it, d, viewer)) return null;
+export function shapeItem(it: Stored, d: Distance, viewer: string, friends: Set<string> = new Set()): Shown | null {
+  if (!itemShows(it, d, viewer, friends.has(it.owner.toLowerCase()))) return null;
   const home = d === 'household', mine = home && it.owner === viewer;
   return {
     id: it.id, kind: it.kind, title: it.title, text: it.text, when: it.when, year: it.year, place: it.place,
@@ -53,17 +61,26 @@ export function shapeItem(it: Stored, d: Distance, viewer: string): Shown | null
   };
 }
 /** a list, filtered and in the museum's order (the timeline: by year, the undated last, then by when they were added) */
-export function shapeAll(items: Stored[], d: Distance, viewer: string): Shown[] {
-  return items.map((it) => shapeItem(it, d, viewer)).filter((x): x is Shown => !!x)
+export function shapeAll(items: Stored[], d: Distance, viewer: string, friends: Set<string> = new Set()): Shown[] {
+  return items.map((it) => shapeItem(it, d, viewer, friends)).filter((x): x is Shown => !!x)
     .sort((a, b) => (a.year ?? 1e5) - (b.year ?? 1e5) || a.created - b.created);
 }
 /** may the viewer have the item's file? only at home, and only an item they may see */
 export const fileShows = (it: Stored, d: Distance, viewer: string) => it.hasFile && d === 'household' && itemShows(it, d, viewer);
 
-/** a level change: only the one who added it, and only to a known level */
-export function nextLevel(it: Pick<Stored, 'level' | 'owner'>, viewer: string, wanted: unknown): Level {
-  if (it.owner !== viewer || !(LEVELS as readonly string[]).includes(wanted as string)) return it.level;
-  return wanted as Level;
+/** a level change: only the one who added it, only to a level they may choose (a child: family or me); else it stays */
+export function nextLevel(it: Pick<Stored, 'level' | 'owner'>, viewer: string, wanted: unknown, child = false): Level {
+  if (it.owner !== viewer || wanted === it.level) return it.level;
+  const n = A.normalize(wanted);
+  if (n === 'household') return n;                                     // the old 'household only', narrower than family
+  if (!n || !A.choosable({ child }).includes(n)) return it.level;
+  return n;
+}
+/** the level of a new item: what was chosen if this person may choose it, else the family (the household's old default
+ *  'household' is kept as it is when an old page sends it) */
+export function newLevel(wanted: unknown, child = false): Level {
+  if (wanted === 'household') return 'household';
+  return A.pick(wanted, { child }, 'family');
 }
 
 /** is there room for this upload? (what is already in is never touched) */
@@ -103,7 +120,7 @@ export function cleanInput(b: any): Input {
   if ('when' in b) out.when = str(b.when, 40);
   if ('place' in b) out.place = str(b.place, 80);
   if ('people' in b && Array.isArray(b.people)) out.people = [...new Set(b.people.map((p: unknown) => str(p, 40)).filter(Boolean) as string[])].slice(0, 30);
-  if ((LEVELS as readonly string[]).includes(b.level)) out.level = b.level;
+  if ((LEVELS as readonly string[]).includes(b.level)) out.level = b.level;   // checked against who chooses it by newLevel / nextLevel
   return out;
 }
 
@@ -111,7 +128,7 @@ export function cleanInput(b: any): Input {
 const AUDIO = ['audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/mp4', 'audio/wav'];
 const IMAGE = ['image/webp', 'image/jpeg', 'image/png'];
 export const ACCEPTS: Record<Kind, string[]> = {
-  story: [], recording: AUDIO, reading: AUDIO, photo: IMAGE, doc: [...IMAGE, 'application/pdf'],
+  story: [], event: [], recording: AUDIO, reading: AUDIO, photo: IMAGE, doc: [...IMAGE, 'application/pdf'],
 };
 /** what the bytes are, whatever the file says it is */
 export function sniff(b: Uint8Array): string | null {

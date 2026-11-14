@@ -1,9 +1,28 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the switchboard).
+Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum's first hub step).
 
-## Latest: the switchboard in the back door (9c7d7e7; master daa0474, patch in the master's notes)
+## Latest: batch 27 and the gathering's food calculator
+
+- **The food calculator** (0fc50c0; master files 48857ce): rules in gather-rules.ts with tests; the RSVP's diet ticks.
+- **Privacy, four levels: FOR REVIEW. The master reviews it and the owner approves it before it goes live.**
+  - 94bd9b1: the rules in audience-rules.ts with a who-sees-what matrix (test-audience, 130 checks);
+  - 2b0f7aa: friends may message; a child under 12 only within the family;
+  - 33a9e7f: the museum's items. A friend sees only friends/all; files never leave the household; an old 'household' is never widened.
+- **Friends and group chats** (13c0587, f8101c6; master files 4aa226b, patch in the master's notes):
+  - requests by email with no probing, and a one-time 7-day link;
+  - the friends page in the tree; groups in /messages (test-friends 51, test-dm 66).
+- **The museum hub, first step** (ea51706): an "אירוע מהחיים" kind, words and a date with no file. No video until business prices its storage.
+- **Checked** on 8791 (the local DB): who sees what as a friend, as the household, and after the friendship ends (404). The audit is clean at 375 and 1280, light and dark (/family/story/, /family/friends/, /messages/).
+- **Not checked:**
+  - a real child account in the UI (rules tests only);
+  - what a linked household sees in the UI at the new levels.
+- **Open:**
+  - design should move .fr-pick, .fr-group-name and .fr-kid-note to messages.css (.fr-pick also clashes with fridge.css), and style the event kind;
+  - a friend link can't bring in someone who is not a member yet (that needs a join.ts hook, the master's call).
+
+## Before: the switchboard in the back door (9c7d7e7; master daa0474, patch in the master's notes)
 
 "מצב האוהל" folds to one line (per device); under it, every app-wide on/off by category, the three-state experimental switch,
 רגיל/חגיגה/אבל and קודש/חול (with auto by Shabbat times). test-switches 37, npm test and typecheck pass.

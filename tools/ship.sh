@@ -31,10 +31,23 @@ echo "committed $(git log -1 --format=%h) as $next"
 [ $PUSH = 0 ] && { echo "not pushed (--no-push)"; exit 0; }
 
 git push -q origin main 2>&1 | grep -v "^warning" || true
-npx wrangler deploy 2>&1 | grep -i "version id" || { echo "deploy failed"; exit 1; }
+ours=$(npx wrangler deploy 2>&1 | grep -io "version id: *[0-9a-f-]*" | grep -o "[0-9a-f-]\{36\}") || true
+[ -n "$ours" ] || { echo "deploy failed"; exit 1; }
+echo "deployed $ours"
 for i in 1 2 3 4 5 6; do
   live=$(curl -s "https://helper.shemrivers.workers.dev/sw.js?z=$RANDOM$RANDOM" | grep -o "helper-v[0-9]*" || true)
-  [ "$live" = "$next" ] && { echo "live: $live"; exit 0; }
+  [ "$live" = "$next" ] && break
   sleep 10
 done
-echo "live still says $live (edge may be stale; recheck)"
+echo "live: $live"
+# Cloudflare's Git build may upload its own version after the push (2026-11-14 it hung the whole app): wait for it,
+# and if the version serving traffic is not ours, roll back to ours. Then the API must answer.
+sleep 45
+last=$(npx wrangler deployments list 2>&1 | grep -o "(100%) [0-9a-f-]\{36\}" | tail -1 | grep -o "[0-9a-f-]\{36\}")
+if [ "$last" != "$ours" ]; then
+  echo "another version ($last) replaced ours: rolling back to $ours"
+  npx wrangler rollback "$ours" --message "ship.sh: our build, not the Git build" -y 2>&1 | tail -1
+  sleep 8
+fi
+code=$(curl -s -m 25 -o /dev/null -w '%{http_code}' "https://helper.shemrivers.workers.dev/api/me?z=$RANDOM")
+[ "$code" = "200" ] && echo "api ok" || { echo "API NOT ANSWERING (/api/me $code): check now"; exit 1; }

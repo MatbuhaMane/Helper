@@ -2,9 +2,18 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the side pages beside the tent; vision batch 18: the family tree after test run 1; batch 17b merged as v149 and v150)._
+_Updated 2026-11-14 (the toolbox's new look; the side pages beside the tent; vision batch 18: the family tree after test run 1; batch 17b merged as v149 and v150)._
 
 **Where we stand (a brief for the next round):**
+- **Ready: the toolbox's new look (the owner, 2026-11-14), CSS only, waiting for ai-features' markup.** Commit 892a1d6.
+  - In `launcher.css`, with the `tb-` prefix:
+    - the sort switch `.tb-sort`: three ways, a vine stone, and a trail that slides by `:has`;
+    - the category headers `.tb-cat`;
+    - the "בעתיד" items `.app.tb-future`, with a `.tag-soon` in the corner;
+    - the beta badge reuses `.tag-exp`.
+  - The folder takes `.tb`, so the tool rack stays.
+  - **The contract for ai-features:** `docs/design/toolbox.md`, with the prototype `docs/design/prototype/toolbox.html`.
+  - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and on `/tools/`.
 - **Ready: the side pages beside the tent (the owner, 2026-11-14), for the master to link and merge.**
   - `public/assets/sides.css`. **The master adds** `<link rel="stylesheet" href="/assets/sides.css">` in index.html after campfire.css.
     - The page is centred in the first screen, over the tent's own sky and limestone.

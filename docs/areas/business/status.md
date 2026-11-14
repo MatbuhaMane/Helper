@@ -26,6 +26,25 @@ Updated by the department at the end of every meaningful round of work. Short: t
   - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
 
+- **AI inside a tool, free with a quota (2026-11-14, from vision batch 26):** `docs/business/ai-quota.md`.
+  **Decided (the owner, 2026-11-14), all of it.** Recorded in `docs/decisions.md`, sent to vision and ai-features:
+  - A daily free quota per person: 20 answers from the voice chef, 3 plant photos, 5 "איך אני עושה" questions.
+  - Beyond the quota: credits at the real cost, by the existing rule in pricing.md 6א.
+  - Until there is a payment provider, only trial and gift credits beyond the quota; after that, "come back tomorrow".
+  - It proposes cheaper defaults to ai-features: the browser's voice for the chef, and Gemini grounding (free under
+    5,000 a month) for the search.
+  - The numbers are revised after the 2026-11-26 measurement.
+
+- **Investor deck (2026-11-14, from the CEO):** a private Slides Artifact, 15 Hebrew slides, shared with no one:
+  https://claude.ai/artifact/EtQnfQgitX4ysvcjEfCaD6
+  - It covers the problem, the product, the market, the model, honest metrics (family stage, no revenue), the
+    three-scenario forecast, six paths forward, the funding roadmap with its triggers, the ask, the team and the risks.
+  - Built from `business-plan.md` only, with no private research files. Assumptions are marked [הנחה] and legal
+    points ⚖.
+  - It is presented as a ready tool, not a decision to raise now.
+  - Not yet checked slide by slide on screen.
+  - Update the metrics slide once the beta brings real numbers.
+
 ## Done
 - **The model:** free core, paid extras. Every price splits 30/30/30/10 after VAT and fees. Credits never expire.
   - The trial is about ₪1–2.
@@ -54,15 +73,16 @@ Updated by the department at the end of every meaningful round of work. Short: t
 
 ## In progress
 - Nothing active. Waiting for the AI cost measurement, around 2026-11-26. The checklist is in `cost-model.md` section 6.
+- **Three drafts wait for that measurement** (the owner, 2026-11-14, via vision batch 21). They are settled from the
+  owner's 14-day usage export:
+  - the monthly credits per founder level;
+  - the regular supporters' levels (draft ₪10 / 25 / 50);
+  - what founding supporters get.
 
 ## Blockers
 - The cost per user needs the owner's export of `/api/usage?days=14`. This department doesn't read live data.
 
 ## Needs the owner
-- **Drafts to settle:**
-  - the exact monthly credits per level;
-  - the regular supporters' levels (draft: ₪10 / 25 / 50);
-  - the founding supporters' value.
 - **The payment provider:** parked by the owner ("not now"). The Sumit recommendation waits in `payment-providers.md` section 9.
 - **Before the first payment:** a tax file, terms of use and a privacy policy, and a meeting with an accountant and a
   lawyer (`monetization.md` section 4, `risks-and-rights.md` section 6).

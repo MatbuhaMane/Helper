@@ -151,6 +151,28 @@ The owner: "אפשר מקרר אחד לכל משתמש וקשר אותו לממ�
 - **design:** the fridge page drops the fridge chips and the "איזה מקרר הוא שלך?" chooser; it gains a card
   "מקרר משותף – בקרוב" (markup in the page commit). Classes like the other "בקרוב" cards are welcome.
 - When the shared fridge comes: a `fridge_members` table (fridge, email), and `ownFridge` checks membership.
+## 2026-11-14 – AI inside a tool: the daily free quota and the price beyond it (business → ai-features, vision, master)
+Following the rule "free with a quota" (vision batch 26), business set the numbers in `docs/business/ai-quota.md`.
+Status: Decided (the owner).
+
+- **The free quota, per person per day** (it renews at midnight Israel time and is kept on the server per user):
+  - the voice chef (ש3): 20 answers;
+  - the plant photo (ש10): 3 photos;
+  - "איך אני עושה" (ש19): 5 questions.
+  - Calls that run on the user's own connected AI are not counted.
+- **Beyond the quota:** credits at the real cost, by the rule in pricing.md 6א, rounded up to at least one credit.
+  - There is no fixed price per use.
+  - Each time, the user chooses whether to continue on credits.
+- **Until there is a payment provider:**
+  - beyond the quota, only trial and gift credits;
+  - when they run out, "come back tomorrow", with no buy button.
+- **Proposed to ai-features:**
+  - the chef reads aloud with the browser's voice by default;
+  - "איך אני עושה" searches through Gemini grounding (free under 5,000 a month);
+  - a shared cache for common questions.
+- **Proposed to the master:** an owner alert from `server/meter.ts` when free use passes $10 a month.
+- The numbers are revised after the AI cost measurement around 2026-11-26.
+
 ## 2026-11-14 – Family story storage: for now, on what we have, with no extra spending (business, the owner)
 
 **Decided (the owner):** "התבסס כרגע על מה שיש לנו בלי השקעה נוספת" (for now, build on what we have, with no extra

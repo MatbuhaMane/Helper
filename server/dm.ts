@@ -9,7 +9,7 @@
 // contact list never shows more than the tree does. Tests: server/test-dm.mjs.
 
 import { Ctx, HttpError, Member, body, json, requireUser, uid } from './core';
-import { forestFor, rateLimit } from './vault';
+import { asksFor, forestFor, rateLimit } from './vault';
 import { fingerprint } from './vault/crypto';
 import { tribe } from './vault/kin';
 import { requireAdmin } from './admin';
@@ -88,8 +88,9 @@ export async function unread(ctx: Ctx) {
     AND ((a = ?1 AND (a_seen IS NULL OR a_seen < last_at)) OR (b = ?1 AND (b_seen IS NULL OR b_seen < last_at)))`).bind(me).first<{ n: number }>();
   // requests waiting for my yes or no (a change to my card, a relationship of mine): they count in the dot too, so they are not missed
   let asks = 0;
-  try { asks = (await ctx.env.DB.prepare("SELECT COUNT(*) AS n FROM family_changes WHERE for_email = ? AND status = 'pending'").bind(u.email).first<{ n: number }>())?.n || 0; } catch { /* the table is made on first use */ }
-  return json({ unread: (r?.n || 0) + (await groupsUnread(ctx, u)) + asks, asks });
+  try { asks = await asksFor(ctx, u.email); } catch { /* the table is made on first use */ }
+  const threads = r?.n || 0, groups = await groupsUnread(ctx, u);
+  return json({ unread: threads + groups + asks, threads, groups, asks });   // (the parts, so a dot can be traced to its source)
 }
 
 /** GET /api/dm/people: who I may write to – the household, then (on a device the tree is open on) the joined trees' users */

@@ -1,7 +1,98 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (the toolbox and beta apps, for the CEO's access review; פרנסה phase 1 waiting for review).
+Last update: 2026-11-14 (handover to a fresh chat; see the next section).
+
+## Handover to the next ai-features chat (2026-11-14)
+
+The previous chat grew too long. The master asked for a fresh one with the same name. Start here.
+
+### The rules this department keeps
+
+- Work only in `M:\Claude Code\Helper-ai` on `ai-features`. Answer in Hebrew.
+- Small commits with tests. Never merge into main, push or bump CACHE.
+- Before asking for a merge, `git merge main`.
+- Ownership:
+  - **Ours:** the server feature modules, each page's JS, ai-features' JS in `public/assets` (`gate.js`), `docs/ai/` and this file.
+  - **Append-only:** route lines in `functions/api/[[path]].ts`, tables in `schema.sql`, `COLUMNS`. Each one gets an entry in decisions.md.
+  - **Design's:** all CSS. Ask it for styles; never write it.
+  - **The master's:** common.js, apps.js, launcher.js, sw.js, package.json, core.ts, ai.ts, join*.ts, whats-new.json, index.html, an existing route line (such as `/api/me`) and the vault's security files. A change to these goes in a commit of its own, plus `git format-patch -1` into the shared notes folder `C:\Users\User\AppData\Local\Claude-Data\claude_pzs8sxrjxfjjc\side-session-notes\local_3881a822-d914-4942-9f9b-ad4115b620c5`.
+- Secrets and data:
+  - Never read or print `.dev.vars`.
+  - Never write to the production database.
+  - Never send secrets, family data or the owner's email to Gemini.
+  - Never put the owner's email in code.
+  - Ask before installing tools.
+- Checks: text checks first; screenshots only at scale ≤0.5.
+  - A feature is done only after 375 and 1280, light and dark, and `tools/audit.js`.
+  - To run the audit: copy it to `public/__audit.js`, eval it from the page, then delete the copy.
+- Files are CRLF. Edit with small node scripts that keep the line endings.
+- Dev server: port 8790.
+  - Users: owner@example.test, noa@example.test (same household), dana@example.test (another household).
+  - Switch users: `fetch('/api/auth/dev?email=…&next=/', {redirect:'manual'})`.
+  - The local DB: `npx wrangler d1 execute helper-db --local --command "…"`. Noa has the beta leave there.
+  - The local layout hides `/pc/`, from layout tests.
+- The back door's room needs the owner's passkey, so admin routes answer `admin_locked` in dev. Say so instead of claiming they were tested.
+
+### Not merged into main (on `ai-features`, after 1ca3564)
+
+- **פרנסה phase 1**, waiting for the CEO's server review:
+  - 41e5af3 the server (6 tables, 14 routes, test-parnasa);
+  - ed6d47d Yahoo prices and fixes;
+  - 249b577 the page;
+  - 1343463 apps.js entry (master, patch `0001-apps.js-in-the-hub-master-file-sent-as-a-patch.patch`);
+  - 945198f decisions;
+  - 765fe3f status.
+- dd5b501: main merged in (conflicts in apps.js and decisions.md resolved, both sides kept).
+- **The toolbox and beta/secret apps**, waiting for the CEO's access review:
+  - 9d10742 the server: `app_access`, `server/app-access.ts` and `-rules.ts`, requireApp on every mail API and on the companion's mail plan, test-app-access 18;
+  - f81a850 `/api/me` gains owner and apps (master, patch `0001-api-me-owner-and-apps-…patch`);
+  - 0dd5dc8 apps.js gains tints and פרנסה under שוטף (master, patch `0001-apps.js-each-app-s-pastel-tint-…patch`);
+  - 1619158 the toolbox page;
+  - 78fc8c2 the back door's "כלים בבדיקה" column;
+  - b78b55c the polite page (H.gate);
+  - 1878f63 decisions and status.
+
+### Open
+
+- **פרנסה:**
+  - **Waiting on:**
+    - the CEO's review of `server/parnasa.ts`. Every query is limited to the owner, or to a member (status `member`) of that row's קופה; the AI is Claude only, on sums by category;
+    - `test-parnasa.mjs` in npm test (the master);
+    - design's styles for `.pr-invite`, `.pr-foot`, the review's flip toggle (`label.toggle`), and the rows with buttons in `.pr-recur-list`, `.pr-tx-list` and `.pr-holds`.
+  - **Risks:**
+    - the Yahoo chart endpoint is unofficial. If it fails, holdings are valued at cost;
+    - the API catch-all in `[[path]].ts` logs the stack of an unexpected D1 error.
+  - **Not tested:**
+    - real bank and card files;
+    - old `.xls` (BIFF): the page only says so, it does not read it;
+    - a manual look in dark mode beyond the audit.
+  - **Phase 2 ideas:** a budget per category with a gentle alert, a six-month chart, importing several accounts at once.
+- **The toolbox and beta apps:**
+  - **Waiting on:**
+    - the CEO's access review;
+    - `test-app-access.mjs` in npm test;
+    - design's styles for `.tools-sort`, `.tools-cat` / `.tools-cat-h` and `.gate-closed` (inline styles hold them for now).
+  - **Not tested:**
+    - the back door's column and `PUT /api/admin/app-access` (they need the passkey);
+    - `/pc/` shows its guide for a moment before the polite page.
+  - **For later:**
+    - in the back door, a secret app shows its address when H.APPS is not loaded there; there is no secret app yet;
+    - the server's `GATED` list must be updated with every new beta or secret app (the test catches a mismatch with apps.js).
+- **Seen in passing, not ours:** `figure2d.js` logs negative `ellipse rx` errors in the console (the companion figure).
+
+### Decisions held (details in docs/decisions.md)
+
+- **פרנסה:**
+  - the general-guidance note, not investment advice;
+  - a קופה invitation only within the household;
+  - members' emails never reach the page;
+  - tips are cached a day by the hash of the sums;
+  - an unknown business is guessed as שונות.
+- **Gated apps:**
+  - beta is opened by the leave `'beta'`, a secret app by its address;
+  - the owner (role `owner`) has everything;
+  - the server is the judge (403 `app_closed`); the page only hides.
 
 ## Done
 

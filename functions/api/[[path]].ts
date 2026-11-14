@@ -15,6 +15,7 @@ import * as credits from '../../server/credits';
 import * as figures from '../../server/figures';
 import * as lock from '../../server/lock';
 import { setting } from '../../server/settings';
+import * as switches from '../../server/switches';
 import { childOf } from '../../server/members';
 import { birthYear } from '../../server/figures-rules';
 import * as designImages from '../../server/design-images';
@@ -488,6 +489,8 @@ route('PUT', '/api/admin/ledger/:id', admin.ledgerSave);
 route('DELETE', '/api/admin/ledger/:id', admin.ledgerDelete);
 route('GET', '/api/admin/settings', admin.settingsList);
 route('PUT', '/api/admin/settings', admin.settingsSave);
+route('GET', '/api/admin/switches', switches.board);   // the switchboard (server/switches.ts)
+route('PUT', '/api/admin/switches', switches.save);
 route('GET', '/api/admin/supers', admin.supersList);
 route('PUT', '/api/admin/supers', admin.supersSave);
 route('GET', '/api/admin/messages', admin.messagesList);

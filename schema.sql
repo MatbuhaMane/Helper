@@ -1423,3 +1423,11 @@ CREATE TABLE IF NOT EXISTS garden_log (
 );
 CREATE INDEX IF NOT EXISTS garden_log_hh ON garden_log (household, at);
 CREATE INDEX IF NOT EXISTS garden_log_by ON garden_log (by_email, at);
+
+-- the switchboard (/admin/): app-wide on/offs set by the owner, read by members through /api/me (server/switches.ts)
+CREATE TABLE IF NOT EXISTS app_switches (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,                   -- JSON
+  updated_by TEXT,
+  updated_at INTEGER NOT NULL
+);

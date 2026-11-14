@@ -104,6 +104,7 @@
       el('span', { class: 'spacer' }), stay, lock);
     /* on top, the board: how the tent is doing, who uses what, and the family's feedback (own account only) */
     const top = { dash: el('div', { class: 'bd-part', id: 'dash', style: 'grid-column:1/-1' }) };   // the state spans the width
+    if (st.own) top.switches = el('div', { class: 'bd-part', 'data-part': 'switches', style: 'grid-column:1/-1' });   // the switchboard, under it
     let dashP;
     if (st.own) { top.usage = el('div', { class: 'bd-part', 'data-part': 'usage' }); top.inbox = el('div', { class: 'bd-part', 'data-part': 'inbox' }); }
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
@@ -142,7 +143,7 @@
       el('nav', { class: 'apps-grid bd-apps', 'aria-label': 'חלקי הדלת' }, tiles),
       ...Object.values(panels)));
     dashP = dash(top.dash);
-    if (st.own) { usage(top.usage); inbox(top.inbox); }
+    if (st.own) { switchboard(top.switches); usage(top.usage); inbox(top.inbox); }
     show(location.hash.slice(1), !!location.hash);
   }
 
@@ -276,8 +277,12 @@
     const s = d.stats, m = d.money;
     const tile = (label, value, cls = '') => el('div', { class: 'ad-tile ' + cls }, el('small', {}, label), el('b', {}, value));
     const mb = (n) => (n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : (n / 1e6).toFixed(1) + ' MB');
-    box.replaceChildren(el('section', { class: 'card bd-state' },
-      el('h2', {}, 'מצב האוהל'),
+    /* folded to one line by default (the owner, 2026-11-14); a tap opens and closes it, kept on this device */
+    let opened = false; try { opened = localStorage.getItem('helper.admin.stateOpen') === '1'; } catch (_) { /* no storage */ }
+    const line = [d.alerts.length ? `${d.alerts.length} התראות` : null, m ? `נטו ${ils(m.total.net)}` : null, `AI החודש ${usd(d.ai.month)}`, `${s.active} נכנסו השבוע`].filter(Boolean).join(' · ');
+    const fold = el('details', { class: 'card ad-fold bd-state', open: opened,
+      ontoggle: () => { try { localStorage.setItem('helper.admin.stateOpen', fold.open ? '1' : '0'); } catch (_) { /* no storage */ } } },
+      el('summary', {}, el('h2', {}, 'מצב האוהל'), ' ', el('span', { class: 'muted small' }, line)),
       ...d.alerts.map((a) => el('p', { class: 'notice ad-alert' }, a)),
       m ? el('div', { class: 'ad-tiles' },
         tile('הכנסות עד היום', ils(m.total.income), 'good'),
@@ -287,8 +292,52 @@
       el('div', { class: 'ad-tiles', style: 'margin-top:10px' },
         tile('AI החודש', usd(d.ai.month)), tile('AI היום', usd(d.ai.today)), tile('AI מאז ההתחלה', usd(d.ai.total)),
         tile('חברים', s.members), tile('משקי בית', s.households), tile('נכנסו השבוע', s.active),
-        tile('אנשים בעצים', s.people), tile('קבצים בכספת', `${s.files} · ${mb(s.bytes)}`), tile('מפגשים', `${s.gatherings} · ${s.answers} תשובות`), tile('קישורים ליומן', s.feeds))));
+        tile('אנשים בעצים', s.people), tile('קבצים בכספת', `${s.files} · ${mb(s.bytes)}`), tile('מפגשים', `${s.gatherings} · ${s.answers} תשובות`), tile('קישורים ליומן', s.feeds)));
+    box.replaceChildren(fold);
     return d;
+  }
+
+  /* ---------- the switchboard: every app-wide on/off, by category (server/switches.ts; the look is design's .sb) ---------- */
+  async function switchboard(box) {
+    let d;
+    try { d = await call('/api/admin/switches'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }
+    const put = async (sw, value, row) => {
+      row.setAttribute('aria-busy', 'true');
+      try {
+        const r = await call('/api/admin/switches', { method: 'PUT', body: { key: sw.key, value } });
+        sw.value = value;
+        if (sw.key === 'kodesh' || sw.key === 'kodesh_auto') d.kodeshNow = r.now?.kodesh;
+        toast('נשמר. אצל כולם בכניסה הבאה לדף');
+      } catch (e) { say(e); }
+      row.removeAttribute('aria-busy');
+      draw();
+    };
+    const control = (sw, row) => {
+      const off = !d.may;
+      if (sw.kind === 'choice') return el('div', { class: 'sb-seg', role: 'radiogroup', 'aria-label': sw.label, 'data-key': sw.key },
+        sw.options.map(([v, t]) => el('button', { type: 'button', role: 'radio', 'aria-checked': String(sw.value === v), 'data-v': v, disabled: off,
+          onclick: () => { if (sw.value !== v) put(sw, v, row); } }, t)));
+      return el('button', { type: 'button', class: 'sb-switch', role: 'switch', 'aria-checked': String(sw.value === true), 'aria-label': sw.label, disabled: off,
+        onclick: () => put(sw, !(sw.value === true), row) }, el('span', { class: 'sb-knob' }));
+    };
+    const row = (sw) => {
+      const r = el('div', { class: 'sb-row' + (sw.value !== sw.def ? ' changed' : ''), 'aria-disabled': d.may ? null : 'true' },
+        el('div', { class: 'sb-text' }, el('span', { class: 'sb-label' }, sw.label), el('small', { class: 'sb-help muted' }, sw.help)));
+      r.append(control(sw, r));
+      return r;
+    };
+    const sec = el('section', { class: 'card sb', id: 'switchboard', 'aria-label': 'לוח מתגים' });
+    function draw() {
+      const changed = d.switches.filter((x) => x.value !== x.def).length;
+      sec.replaceChildren(el('h2', {}, 'לוח מתגים'),
+        el('p', { class: 'muted small' }, (d.may ? 'מה שמשנים כאן חל על כל האוהל, אצל כולם.' : 'רק בעל האוהל משנה את המתגים.') + (changed ? ` · ${changed} שונו מהרגיל` : '') + (d.kodeshNow ? ' · עכשיו קודש' : '')),
+        ...d.cats.map(([cat, name]) => {
+          const list = d.switches.filter((x) => x.cat === cat);
+          return list.length ? el('fieldset', { class: 'sb-group', 'data-cat': cat }, el('legend', { class: 'sb-title' }, name), ...list.map(row)) : null;
+        }));
+    }
+    draw();
+    box.replaceChildren(sec);
   }
   function money(box, m) {
     const kind = el('select', { 'aria-label': 'סוג' }, [['expense', 'הוצאה'], ['income', 'הכנסה']].map(([v, t]) => el('option', { value: v }, t)));
@@ -318,7 +367,9 @@
 
   /* ---------- settings ---------- */
   async function settings(box) {
-    const { settings: list } = await call('/api/admin/settings');
+    // the on/offs that are on the switchboard (server/switches-rules.ts SETTING_CATS) are changed there, not twice
+    const ON_BOARD = new Set(['gather.enabled', 'gather.guest_signup', 'calendar.feed', 'money.shop_open']);
+    const list = (await call('/api/admin/settings')).settings.filter((s) => !ON_BOARD.has(s.key));
     const groups = [...new Set(list.map((s) => s.group))];
     const control = (s) => {
       const save = async (value) => { try { await call('/api/admin/settings', { method: 'PUT', body: { key: s.key, value } }); toast('נשמר'); } catch (e) { say(e); } };

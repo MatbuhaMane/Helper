@@ -75,6 +75,14 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
    - contrast over pseudo-element backgrounds;
    - hit areas made of pseudo-elements.
 
+7. **Vision batch 19 (2026-11-14), for the record:** two future tools ("Two future tools" in `docs/decisions.md` on `vision`).
+   - **עוזר מטבח:** its note goes in the recipe book.
+   - **איך אני עושה:** its note goes in the tools menu.
+   - **Design's part:** only the uniform "בקרוב" note from batch 15 (`.tag-soon` or `.soon-card`).
+     - In the toolbox, `button.app.tb-future` with "בעתיד" already fits.
+     - No new CSS is needed.
+     - The tools themselves are not ours to build. The master schedules.
+
 ---
 
 ## History (newest first)

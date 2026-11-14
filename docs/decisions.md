@@ -11,6 +11,49 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד", stage 1: the screen spec (vision → design, ai-features, master)
+Status: Decided (the owner). The full spec, in Hebrew, is in `docs/vision/yad-beyad.md`. Nothing is built yet; design
+designs the screens, and ai-features refines its estimate.
+
+- **The home screen:**
+  - the user's banner on top;
+  - a dashboard with four figures: my balance; given and received (last month and in total); my contribution to the
+    fund (it opens the fund page); waiting for me (what needs my action). No ranking between people.
+  - two buttons side by side: "לוח הדרושים" and "יצירת צורך";
+  - two lists below: "הצרכים שמילאתי" and "הצרכים שלי", each with active and past needs.
+- **"לוח הדרושים"** (a floating panel): other people's needs, sorted by distance or by type, with advanced filtering.
+  Deeds for the community appear here too, marked "לטובת הציבור".
+- **"יצירת צורך"** (a floating panel):
+  - a description of the need;
+  - **a need from the list:** the person picks a type from the owner's list, the tier comes with it, and they estimate
+    only the time;
+  - **a need outside the list:** the person answers the two questions (difficulty, expertise). The need is published
+    at once, marked "הרמה ממתינה לאישור", and the ידיים move only after the owner approves the tier;
+  - a small link, "עשיתי מעשה": reporting a deed for the community already done, for the owner's approval.
+- **What I can give:** each person marks in their profile the service types they are willing to give, from the owner's
+  list. There is no offers board. A matching need sends a notification, by the person's "רמת הניג'וס".
+- **Location:**
+  - each person sets an area (a town or a neighbourhood) once; GPS only for whoever allows it;
+  - others see only an approximate distance, such as "כ-3 ק"מ";
+  - no exact address is stored, and the GPS point is not kept on the server;
+  - the exact address passes between the two sides only after they agreed on the service.
+- **The fund and redeeming the tithe:**
+  - **the fund page:** its balance and the latest payouts. When the fund pays for someone who cannot give, the page
+    shows the amount and the kind of help without the name, unless the person agrees;
+  - **"בקשה לטובת הציבור"** (the owner's addition): a person who paid a lot of tithe may post a need for the public's
+    benefit, paid from the fund and not from their own balance.
+    - It opens from 5 ידיים of tithe paid.
+    - The ceiling is the tithe the person paid and has not yet redeemed.
+    - The owner approves each request, and decides how much may be redeemed, so that the fund keeps enough for those
+      who cannot give. A fixed share is set only if the fund runs dry.
+    - The redeemer gets no ידיים, and the right does not pass to anyone else.
+- **Not in this spec:** the owner's approval queue (a separate spec, on top of the existing "ממתין לאישור" page), youth,
+  and trade with strangers.
+- **Who does what:**
+  - design: the screens;
+  - ai-features: a refined scope estimate, without building;
+  - the master: the location is sensitive data, so it is in the security check before merging (batch 35).
+
 ## 2026-11-15 – Strengthening the Ohel's cyber security (vision → master)
 Status: Decided (the owner). In the owner's words: "צריך לחזק את פרוייקט האהל מבחינת אבטחת סייבר."
 

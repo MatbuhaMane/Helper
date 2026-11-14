@@ -105,3 +105,4 @@
 - 2026-11-14: business reports the owner approved the storage package prices, the goals consultation quota (10/day) and the coach quota (15 messages + 1 plan/day); pointers added to goals.md, later.md and story.md; forwarded to ai-features.
 - 2026-11-14: the owner approved notification settings, named "רמת הניג'וס" (four levels per tool, main settings plus overrides); batch 31 sent.
 - 2026-11-14: new big idea from the owner: an internal economy ("personal benefit through public doing"), an internal token, no crypto (the owner dropped it); ש1 decided (the owner approves community deeds; people trade services); recorded in later.md, in progress, not sent.
+- 2026-11-14: internal economy ש2 decided: four hour tiers (שעה קלה, שעת עבודה, שעה ארוכה, איש השעה); values and who assigns a tier still open.

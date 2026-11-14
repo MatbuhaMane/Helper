@@ -2632,3 +2632,12 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - World recipes: og:image is cached per page in the Cloudflare Cache API. The key is under `<origin>/__og/`. A found picture is kept a week; none found, a day.
 - A plain search waits at most 1.5 s for the pictures.
 - A saved search fills its missing pictures from the cache.
+
+## 2026-11-14 · The toolbox in categories, beta and secret apps
+
+The owner: the toolbox shows every app, sorted by hand, by name or by category. `public/assets/apps.js` now holds `H.CATS`
+(six categories in the owner's order: כלי עבודה, אומנות או נמות, שומרים על בריאות, אוכל, שוטף, חברתי), a `cat` on each app,
+`H.FUTURE` (עוזר מטבח, מדיטציה ונשימה: drawn only), "אוכלים בחוץ" (`/food/restaurants/`, was "מסעדות שלנו") in the catalogue,
+and `access: 'beta' | 'secret'` (mail and pc are beta). `H.mayOpen(app, me)` reads `me.owner` and `me.apps` (['beta', '/x/'])
+from `/api/me`. ai-features: the tools page from `H.APPS` with the sort switch, the "בודק בטא" and per-app grants in the back door,
+`/api/me` fields, and server-side gating of beta and secret APIs. design: the category headers and the sort switch.

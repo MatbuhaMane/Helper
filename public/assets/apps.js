@@ -40,10 +40,30 @@
     { href: '/food/diet/', ic: 'diet', name: 'תנועה ותזונה', sub: 'הקפדה, הדרך שבה אוכלים, ומה מתאים לה', pillow: 'p10', c2: '#9c2a2a' },
     { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', sub: 'מה שהחלטתם לשמור עליו, יום אחר יום', pillow: 'p12', c2: '#c4501e' },
     { href: '/food/diet/habits/', ic: 'habits', name: 'הרגלי אכילה', sub: 'קטו, אטקינס, פליאו ועוד – מתג לכל דרך אכילה', pillow: 'p13', c2: '#1f8f8a' },
+    { href: '/food/restaurants/', ic: 'restaurant', name: 'אוכלים בחוץ', sub: 'המסעדות שלנו, ומה הזמנו בכל אחת', pillow: 'p05', c2: '#c4501e' },
     { href: '/tools/research/', ic: 'lens', name: 'עוזר מחקר', sub: 'פתקים, שאלות פתוחות, מקורות וכתיבה', pillow: 'p11', c2: '#3557a8' },
-    { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c', tag: 'ניסיוני' },
-    { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a', tag: 'ניסיוני' },
+    { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c', tag: 'ניסיוני', access: 'beta' },
+    { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a', tag: 'ניסיוני', access: 'beta' },
   ];
+  /* The toolbox's categories (the owner, 2026-11-14), in this order. Every app has one (cat); the toolbox shows them all and
+     sorts by the person's choice: by hand, by name, or by category. access: 'beta' (in development, for the owner's testers)
+     or 'secret' (not for everyone): shown only to whom the back door allowed it. 'soon:x' is a FUTURE item, drawn only. */
+  const CATS = [
+    { id: 'work', name: 'כלי עבודה', apps: ['/tools/calc/', '/tools/research/', '/parasha/', '/tools/notes/', '/tools/weather/'] },
+    { id: 'arts', name: 'אומנות או נמות', apps: ['/songs/', '/fun/', '/news/'] },
+    { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', 'soon:breath'] },
+    { id: 'food', name: 'אוכל', apps: ['/food/', 'soon:kitchen', '/groceries/#book', '/food/restaurants/'] },
+    { id: 'routine', name: 'שוטף', apps: ['/tools/calendar/', '/food/fridge/', '/groceries/', '/pc/', '/mail/'] },
+    { id: 'social', name: 'חברתי', apps: ['/family/', '/gather/', '/messages/'] },
+  ];
+  // still to come, shown inside their category (like SOON: a tap tells one sentence)
+  const FUTURE = [
+    { id: 'kitchen', name: 'עוזר מטבח', ic: 'food', note: 'בעתיד', line: 'עוזר שמבשל איתך, צעד אחר צעד.' },
+    { id: 'breath', name: 'מדיטציה ונשימה', ic: 'habits', note: 'בעתיד', line: 'כמה דקות של שקט ונשימה, כל יום.' },
+  ];
+  for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }
+  /** may this person open the app? r is what H.me() resolves to; beta and secret apps need the back door's leave (r.apps: ['beta', '/x/']) */
+  const mayOpen = (a, r) => !a?.access || !!r?.owner || !!r?.apps?.includes(a.access === 'beta' ? 'beta' : a.href);
   const DEFAULT_PINS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];   // the parts the ring always had
   const CODE = APPS.slice();                    // the code's own catalogue; APPS itself is what the layout makes of it
 
@@ -164,6 +184,6 @@
     { id: 'hill', name: 'גבעה ביער', note: 'בקרוב', line: 'מקום משותף לחברים, ליד האוהל של המשפחה.' },
     { id: 'garage', name: 'המוסך', note: 'בקרוב', line: 'הבית החכם במסך אחד: האורות, המזגן והמכשירים, ליד האוהל.' },
   ];
-  Object.assign(H, { APPS, PARTS, SOON, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
+  Object.assign(H, { APPS, PARTS, SOON, CATS, FUTURE, mayOpen, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
     layout: () => ({ code: CODE, tree: TREE, hidden: HIDDEN, pins: PINS.slice(), defaultPins: DEFAULT_PINS.slice() }) });
 })();

@@ -8,7 +8,6 @@ _Updated 2026-11-14 (the new chat, round 18)._
 
 
 ## Queued
-- Vision batch 31 (vision d5472bf): "רמת הניג׳וס", the notification settings. Each tool gets four levels (כבוי/שקט/רגיל/נודניק), plus quiet hours, a bell in each tool, and a mark on an item that differs from its tool. It comes next, after the motion round.
 - Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
 - Vision batch 29 (vision dfd8ce9), the הקפדה coach, wave 2 after the family launch, planning only:
   - a live workout screen (the exercise, a rest timer, voice, logging sets, reps and weight);
@@ -18,6 +17,17 @@ _Updated 2026-11-14 (the new chat, round 18)._
   - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
   - Exercise illustrations come later.
 - Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 21: the tools menu as an accordion of categories (the owner's urgent ask, through the CEO)
+- In base.css: `.nm-cats`, `.nm-cat(.open)`, `.nm-cat-btn` (48 px, 50 on the phone), `.nm-cat-n`, `.nm-cat-caret` (turns 180°), and `.nm-cat-list` (origin at the top; the navmenu grid stays). The JS and WAAPI are the CEO's, in common.js.
+## Round 20: the Telegram audit after v161
+- The tree's people lean with the tree on their parts (the leaf and the tag, pointer-events none), so the button itself stays still. /family/ passes T3.
+- Left for the CEO: the moon (in index.html), two images without a size in index.html, and a style flush for T11 in the audit (f2-tw).
+## Round 19: batch 31, "רמת הניג׳וס" (the look)
+- Four levels by `data-nag`, with a bell icon each (`assets/nag-icons/`).
+- The picker `.nag`, the bell `.nag-bell` (`.own` gets a dot), the item's mark `.nag-mark` and `.nag-inherit`, all in base.css.
+- The "התראות" screen (`.st-nags`, `.st-nag`) and the quiet hours `.st-quiet-hours` are in settings.css.
+- It replaces batch 28's `.st-ntf` switch. The spec is `docs/design/nag-level.md`, and the audit is clean.
+- Motion: the allowlist of endless animations (four kinds) is in `motion.md` (e697353).
 ## Round 18: ai-features' four requests on batch 27 (the build)
 - The group picker moved to messages.css as `.dm-grp-pick`, `.dm-grp-name` and `.dm-kid-note`. The page doesn't load family.css, and `.fr-pick` clashed with the fridge.
 - A new museum kind, "אירוע מהחיים" (`data-kind="event"`): a calendar-and-star icon (`assets/story/event.svg`) and a blue-olive `--k`.

@@ -15,7 +15,8 @@
   const apps = (H.APPS || []).filter((a) => a.href !== '/tools/' && H.mayOpen(a, me))
     .map((a) => ({ href: a.href, ic: a.ic, name: a.name, tag: a.tag, c1: a.c1 || a.c2, c2: a.c2, tint: tint(a), cat: a.cat }));
   // still to come: drawn only, a tap says what it will be
-  const future = (H.FUTURE || []).map((f) => ({ href: '#soon-' + f.id, ic: f.ic, name: f.name, soon: true, c1: '#b9b2a2', c2: '#8a8272', tint: '#ece8de', line: f.line, note: f.note }));
+  // only: 'child' (homework) is shown only to a child (/api/me: child)
+  const future = (H.FUTURE || []).filter((f) => !f.only || (f.only === 'child' && me.child)).map((f) => ({ href: '#soon-' + f.id, ic: f.ic, name: f.name, soon: true, c1: '#b9b2a2', c2: '#8a8272', tint: '#ece8de', line: f.line, note: f.note }));
 
   const choice = el('div', { class: 'tools-sort', role: 'radiogroup', 'aria-label': 'סדר הכלים', style: 'display:flex;flex-wrap:wrap;gap:8px;margin-block:4px 14px' },
     SORTS.map(([k, label]) => el('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': String(view.sort === k), 'data-sort': k,

@@ -35,11 +35,11 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
 - **A known trap:** a pseudo-element inside `:is()` is dropped silently. Write `X::before` as its own selector.
 - **When SendMessage is blocked:** hand-overs go to the shared notes folder (`side-session-notes/local_3881a822-…/design-*.md`).
 
-**Unmerged on `design`** (oldest first; main is fully merged in, the last merge c90caf7 (b78dd3c)):
+**Unmerged on `design`** (oldest first; main is fully merged in, the last merge cbc6abb (299b135)):
 - 868cfb9, 90bd6a4, 9ced735: batch 18, the tree after test run 1. CSS plus the contract `docs/design/tree-18.md`.
 - 17bdc33, 0089d21, 5274c04: the side pages beside the tent (`sides.css`, `soon/garage-scene.svg`).
 - 892a1d6, 3fc1a5c: the toolbox's new look (`launcher.css` `tb-`, contract `docs/design/toolbox.md`).
-- The batch 19 pictures for the future items (a49ae07).
+- The future items' pictures: batch 19 (a49ae07) and batch 20 (bc3ce8c).
 - All of it is inert until its markup arrives, so it is safe to merge now.
 
 **Open:**
@@ -84,18 +84,16 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
    - The tools themselves are not ours to build.
    - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and on `/tools/`.
 
-8. **Vision batch 20 (2026-11-14), waiting for the master to schedule it:** five more future tools ("Five more future tools"
-   in `docs/decisions.md` on `vision`).
-   - **Design's part, only:** a picture and the uniform "בקרוב" note, like batch 19's (`/assets/soon/<id>.svg`, 320×240,
-     shown with `.tb-pic`).
-   - **The five tools and where each one's note goes:**
-     - הגינה והעציצים: the tools menu;
-     - תחזוקת הבית: the tools menu;
-     - הסיפורים של סבא וסבתא: in a person's profile in the tree (`ul.tr-full-soon`, `tree-18.md` §8), not a tool of its own;
-     - עוזר שיעורי בית: kids' mode only;
-     - מתורגמן: the tools menu, with a language game to join it later.
-   - **Proposed ids,** for the master to fix in `H.FUTURE`: `garden`, `home`, `stories`, `homework`, `translate`.
-   - **Not started:** the master said nothing new before the handover, and the master schedules.
+8. **Vision batch 20 (2026-11-14): the four future tools have pictures (bc3ce8c).**
+   - `public/assets/soon/garden.svg`, `home.svg`, `translate.svg` and `homework.svg`, the ids fixed in `H.FUTURE` on main
+     (299b135). The same style and the same `.tb-pic` tile as batch 19.
+     - garden: a pot with a plant, a watering can pouring, a seedling and a trowel, a sun;
+     - home: a house with a check badge, a wrench, a bulb and a drop (the things that need a look);
+     - translate: a globe, two bubbles (א and A), arrows between them, a die for the language game to come;
+     - homework: an open squared notebook with shapes, a pencil and an eraser, a lightbulb (it explains, it doesn't solve).
+   - **הסיפורים של סבא וסבתא** stays a note in a person's profile in the tree (`ul.tr-full-soon`, `tree-18.md` §8). No
+     picture was asked for, and it has no `H.FUTURE` id.
+   - **Checked:** 375 and 1280, light and dark, as tiles in the prototype. The audit is clean on the prototype and `/tools/`.
 
 ---
 

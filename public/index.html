@@ -197,6 +197,10 @@
     /* the empty parts of the page let a click reach the sun behind them */
     .home { pointer-events: none; }
     .home > * { pointer-events: auto; }
+    /* beside the side pages the sky lives in the tent's own page (it slides away with it), under the home; the pager takes the
+       swipes, the sun and the moon their taps and drags (2026-11-14: in body, behind the pager, they got none) */
+    .pager-page:has(> .home) { position: relative; }
+    .pager-page > .home { position: relative; z-index: 1; }
     /* the greeting lets the sun through, except its letters (they swell under the pointer) */
     .home > .greet { pointer-events: none; }
     .greet .swell { pointer-events: auto; }
@@ -694,7 +698,8 @@
         stars.append(el('i', { class: big ? 'big' : '', style: `left:${(rnd() * 100).toFixed(2)}%;top:${(rnd() * 88).toFixed(2)}%;--tw:${(3 + rnd() * 5).toFixed(1)}s;--d:${(-rnd() * 6).toFixed(1)}s;--o:${(0.35 + rnd() * 0.55).toFixed(2)}` }));
       }
       const box = el('div', { class: 'sky' }, stars, path, moon, sun);
-      document.body.prepend(box);
+      const homePage = document.querySelector('.home')?.closest('.pager-page');
+      (homePage || document.body).prepend(box);
       const camp = document.querySelector('.camp');
       // the light of the sky on the tent: a halo behind its outline for each source, and the light on the canvas over it
       const tentImg = camp.querySelector(':scope > img');
@@ -736,7 +741,16 @@
       /** The orbit: centred on the tent, its ends a little beyond the tent's sides; its top under the greeting (in the sky's own
           room above the tent), and the horizon across the tent – where the sky ends, and the sun and the moon set. */
       function orbitGeometry() {
-        const r = camp.getBoundingClientRect(), campTop = r.top + scrollY;
+        const cr = camp.getBoundingClientRect(), campTop = cr.top + scrollY;
+        // in the pager: the sky's box is moved so that its corner is the page's (0, 0) while the tent's page is in view, and the
+        // tent is measured as if it were (the person may be on a side page when the window changes)
+        let sx = 0;
+        if (homePage) {
+          const pr = homePage.parentElement.getBoundingClientRect(), hp = homePage.getBoundingClientRect();
+          sx = hp.left - pr.left;
+          box.style.translate = `${(-pr.left).toFixed(1)}px ${(-(hp.top + scrollY)).toFixed(1)}px`;
+        }
+        const r = { top: cr.top, height: cr.height, width: cr.width, left: cr.left - sx, right: cr.right - sx };
         const size = innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124;
         const appbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--appbar-h')) || 56;
         const cy = campTop + r.height * 0.465;   // the horizon: across the tent, at the height of its eaves

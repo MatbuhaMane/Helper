@@ -1,7 +1,7 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (handover to a fresh chat; see the next section).
+Last update: 2026-11-14 (the owner's answers applied: kitchen, breath, home).
 
 ## Handover to the next ai-features chat (2026-11-14)
 
@@ -71,7 +71,15 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 - 3b8e700 kitchen after vision's spec: °F/°C in measure.js, diners and the screen switch in H.prefs, a "לבשל" button in the book (the master may hold it until the kitchen is live).
 - 66a29ff **נשימה** `/tools/breath/`: 2/5/10 minutes, three ways, a circle by transform only. test-breath 17; patch for package.json in the CEO's notes folder.
 - **Not checked:** the circle's motion by eye (the pane was hidden: the transition was set and running, the frames were not drawn).
-- **Next, by vision's order:** garden, then translate. Tree skins first when the art arrives.
+- **After the owner's answers (vision's batch 26):**
+  - 10a1b78 kitchen: the chef by voice (`/api/cook/ask`, 5 free a day), "הבא" by voice, timers that ring with the app closed (`cook_timers`, a minute cron), no screen kept on; `public/tools/voice/voice.js`;
+  - 2ddebde breath: a guiding voice with a switch, a session ticks the habit in the goals (with undo); test-breath 26;
+  - 190fa08 + 0ff6a17 home: the morning push to whoever added it or was handed it; test-home 40;
+  - 718d071 worker and wrangler (master files, patch in the CEO's notes folder).
+  - **Checked:** typecheck, npm test, the audit at 375 and 1280, light and dark (clean); in the browser: the chef answered in Hebrew, timers stored (past ones dropped), the reminder handed to Noa and back, the habit ticked and undone.
+  - **Not checked:** a real push from the cron (needs a deployed preview), listening by voice (the pane has no microphone), the chef window and the cook view in the audit (it checks first screens).
+  - **Waiting for the master:** the free-quota exemption in the credits gate; the push.ts regex.
+- **Next, by the owner's order:** garden (shared by the household), then translate. Tree skins first when the art arrives.
 
 ### Open
 

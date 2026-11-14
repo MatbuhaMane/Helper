@@ -2705,3 +2705,21 @@ Status: Ready for the master's review.
   - open with vision: ש4 (recorded meditations), ש5 (silence for now), ש6 (habits);
   - patch `0001-package.json-test-breath-in-npm-test-master-file-sen.patch`; on merge `soon:breath` → `/tools/breath/`;
   - for design: `breath.css` with the night scene (the circle and its sizes are inline until then).
+
+## 2026-11-14 · The kitchen, breath and home after the owner's answers (ai-features, vision's batch 26)
+The owner answered vision's questions (ש1–ש8, via the CEO and vision 8cf8e4a). Applied on `ai-features`, not yet merged.
+Status: Ready for the master's review.
+
+- **Kitchen** (10a1b78, 190fa08):
+  - the screen is no longer kept on (Wake Lock and its switch removed);
+  - "הבא", "הקודם", "שוב" and "טיימר" by voice, and "שף, …" asks a chef (`Kitchen.command`, tested);
+  - **the chef**: appended routes `GET/POST /api/cook/ask` (`server/cook.ts`, Gemini first, two or three spoken sentences), answered aloud;
+  - **timers that ring with the app closed**: appended table `cook_timers` and route `PUT /api/cook/timers`; the page sends its running timers, and a minute cron pushes each at its second (kind `reminder`, urgent). The page's and the push's notifications share a tag, so one replaces the other.
+  - `public/tools/voice/voice.js` (`Voice.say/stop/listen`): one place for the tools' voice, `/api/voice/say` with the browser's voice as the fallback.
+- **Breath** (2ddebde): a guiding voice ("שאיפה", "נשיפה"), on by default with a switch in `H.prefs('breath')`; a finished session (or one of at least a minute) ticks the habit: the matching step in the person's goals (recurring first, `Breath.habit`, tested), with "לבטל"; with no such goal, a link to add one in the goals.
+- **Home** (190fa08, 0ff6a17): appended `home_items.remind_to` and `reminded` (in `COLUMNS` too); on the morning an item is due a push goes to whoever added it, or to the member it was handed to (a select in the edit window, shown on the card).
+- **For the master** (patches in the CEO's notes folder):
+  - 718d071 `src/worker.ts` and `wrangler.toml`: the minute cron `* * * * *` → `cook.tick`, and `home.remind` with the morning note (`0001-worker-a-minute-cron-…patch`);
+  - **the free quota** (ש3, "free with a quota"): `cook.ts` counts 5 free questions a day (`FREE_A_DAY`, until business sets the number) and shows it, but `server/credits.ts`'s gate still charges a limited account for each one. Request: an exemption in the gate for a feature's first N uses a day (a list such as `{ 'cook/ask': 5 }`), so the quota is real;
+  - noticed in passing: in `server/push.ts` the regex `/^d{3,9}$/` lacks a backslash (`\d`), so the city for the Shabbat quiet window always falls back to the default.
+- **Not yet:** a receipt photo for the warranty (now allowed, ש8), the garden (shared by the household), the translator.

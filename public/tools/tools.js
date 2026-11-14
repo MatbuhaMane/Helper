@@ -13,10 +13,10 @@
   // a pastel fill for an app with no tint of its own (the flat look fills the icon's shapes)
   const tint = (a) => a.tint || `color-mix(in srgb, ${a.c2 || '#888'} 26%, #fff)`;
   const apps = (H.APPS || []).filter((a) => a.href !== '/tools/' && H.mayOpen(a, me))
-    .map((a) => ({ href: a.href, ic: a.ic, name: a.name, tag: a.tag, c1: a.c1 || a.c2, c2: a.c2, tint: tint(a), cat: a.cat }));
+    .map((a) => ({ href: a.href, ic: a.ic, name: a.name, tag: a.tag, c1: a.c1 || a.c2, c2: a.c2, tint: tint(a), cat: a.cat, label: a.label }));
   // still to come: drawn only, a tap says what it will be
   // only: 'child' (homework) is shown only to a child (/api/me: child)
-  const future = (H.FUTURE || []).filter((f) => !f.only || (f.only === 'child' && me.child)).map((f) => ({ href: '#soon-' + f.id, ic: f.ic, name: f.name, soon: true, c1: '#b9b2a2', c2: '#8a8272', tint: '#ece8de', line: f.line, note: f.note }));
+  const future = (H.FUTURE || []).filter((f) => !f.only || (f.only === 'child' && me.child)).map((f) => ({ href: '#soon-' + f.id, ic: f.ic, name: f.name, soon: true, c1: '#b9b2a2', c2: '#8a8272', tint: '#ece8de', line: f.line, note: f.note, label: f.label }));
 
   const choice = el('div', { class: 'tools-sort', role: 'radiogroup', 'aria-label': 'סדר הכלים', style: 'display:flex;flex-wrap:wrap;gap:8px;margin-block:4px 14px' },
     SORTS.map(([k, label]) => el('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': String(view.sort === k), 'data-sort': k,
@@ -31,6 +31,11 @@
     const t = tiles.get(f.href);
     t.querySelector('.soon')?.replaceChildren(f.note || 'בעתיד');
     t.addEventListener('click', (e) => { e.preventDefault(); H.toast(`${f.name}: ${f.line}`); });
+  }
+  // a name a screen reader would stumble over (mixed scripts, like ع ב-ע) carries a spoken label
+  for (const a of [...apps, ...future]) {
+    const t = a.label && tiles.get(a.href);
+    if (t) t.setAttribute('aria-label', a.soon ? `${a.label}, ${a.note || 'בעתיד'}` : a.label);
   }
   let hand = [...tiles.keys()];      // the person's own order, as H.folder drew it (and as the arrange mode leaves it)
   let groups = [];                   // the category sections, while they are shown

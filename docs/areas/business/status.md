@@ -25,6 +25,11 @@ Updated by the department at the end of every meaningful round of work. Short: t
   is never deleted for non-payment. Proposes upload compression to ai-features.
   - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
+  - **Videos in the living museum (vision batch 27, after the family launch):** the options are in section 7. To bring
+    to the owner when the museum gets near.
+    - Recommended: links (YouTube, Google Photos, Drive) by default.
+    - Uploads only for clips of up to 60 s and 50 MB, inside the 2 GB quota, compressed in the browser.
+    - R2's price per GB is not the issue; the free 10 GB for the whole account is.
 
 - **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
   with a ceiling of about ₪120,000 a year.

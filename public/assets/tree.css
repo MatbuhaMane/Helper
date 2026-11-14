@@ -35,10 +35,8 @@
 /* the second tree, the wide canopy: a shorter box, and its boughs spring from the middle of the trunk */
 .tree[data-kind="canopy"] { aspect-ratio: 1000 / 1500; }
 .tree[data-kind="canopy"] .tree-boughs { transform-origin: 50% 45%; }
-/* the pine (אורן, the default after vision batch 23): the same 2:3 box; its boughs come off the trunk in three tiers, so they
-   sway from the trunk's middle */
+/* the pine (אורן, the default after vision batch 23): the same 2:3 box; one still picture per season, with seats (below) */
 .tree[data-kind="pine"] { aspect-ratio: 1000 / 1500; }
-.tree[data-kind="pine"] .tree-boughs { transform-origin: 50% 55%; }
 @keyframes tr-sway { from { transform: rotate(-.3deg); } to { transform: rotate(.3deg); } }
 @keyframes tr-sway-low { from { transform: rotate(-.15deg); } to { transform: rotate(.15deg); } }
 /* off screen (the JS adds .off from an IntersectionObserver) the tree holds still, so it costs nothing while you read elsewhere */
@@ -182,8 +180,6 @@
 .tree[data-season]:not([data-season="summer"]) :is(.tree-dress, .tree-fall) { display: block; }
 .tree[data-kind="olive"] { --crown-mask: url("/assets/tree/olive/crown.svg"); }
 .tree[data-kind="canopy"] { --crown-mask: url("/assets/tree/canopy/crown.webp"); }
-/* the pine's needles are spread over all its tiers, so its mask is the foliage alone (foliage.webp), not the crown layer */
-.tree[data-kind="pine"] { --crown-mask: url("/assets/tree/pine/foliage.webp"); }
 .tree-dress { background: var(--dress) 0 0 / 15cqi 15cqi repeat; opacity: .92;
   -webkit-mask: var(--crown-mask) center / 100% 100% no-repeat; mask: var(--crown-mask) center / 100% 100% no-repeat;
   transform-origin: var(--crown-x) var(--crown-y); animation: tr-sway 9s var(--breath) infinite alternate; rotate: 0deg; transition: rotate 1.6s var(--settle); }
@@ -209,9 +205,6 @@
 .tree[data-season="spring"] .tree-crown { --season-f: hue-rotate(10deg) saturate(1.2) brightness(1.05); }
 .tree[data-season="spring"] .tree-ground { --season-f: hue-rotate(8deg) saturate(1.15) brightness(1.04); }
 .tree[data-season="spring"] .tree-dress { opacity: .85; background-size: 17cqi 17cqi; }
-/* a pine is evergreen: in autumn it only dulls a little (no turn to red), the falling leaves still pass in front */
-.tree[data-kind="pine"][data-season="autumn"] :is(.tree-crown, .tree-boughs) { --season-f: saturate(.85) sepia(.12) brightness(1.02); }
-.tree[data-kind="pine"][data-season="autumn"] .tree-dress { opacity: .55; }
 .tree.off .tree-dress, .tree.off .tree-fall::before, .tree.off .tree-fall::after { animation-play-state: paused; }
 
 /* ---- the empty leaf: a person in the generations with no record yet. Pale, a dashed leaf, a "?" for a face; a tap adds them.
@@ -388,13 +381,27 @@
 
 /* ---- a person's form per tree skin (vision batch 24). A skin sets, on .tree[data-kind]: --leaf-ar (the form's box), --face-w
    and --face-y (the face disc's width, and the face's lift as margin-block-end, both in % of the form's width), and the form
-   pictures per season, for the empty and for those who have passed. The frame look keeps its own (it is not a skin).
-   The pine: a pinecone with the portrait on its face disc (cut by docs/design/cut-pine-cones.py: the disc is 49% of the width,
-   centred). The cone is taller than the leaf, so it is a little larger, or the face would shrink. */
-.tree[data-kind="pine"]:not([data-look="frame"]) { --leaf-ar: 240 / 338; --face-w: 49%; --face-y: 0%; }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p { --leaf: clamp(44px, 11cqi, 88px); }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-leaf { background-image: url("/assets/tree/pine/person-summer.webp"); }
-.tree[data-kind="pine"][data-season="spring"]:not([data-look="frame"]) .tr-leaf { background-image: url("/assets/tree/pine/person-spring.webp"); }
-.tree[data-kind="pine"][data-season="winter"]:not([data-look="frame"]) .tr-leaf { background-image: url("/assets/tree/pine/person-winter.webp"); }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.passed .tr-leaf { background-image: url("/assets/tree/pine/person-quiet.webp"); }
-.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.empty .tr-leaf { background-image: url("/assets/tree/pine/person-empty.webp"); }
+   pictures. The frame look keeps its own (it is not a skin).
+
+   The pine with seats (the owner's decision, 2026-11-14). The tree is drawn with 20 round clearings, 4 on each of its 5 tiers
+   (slots.json: the tiers' lines are the seats' centres, and "seat" is a seat's diameter in % of the box width). The picture
+   has no rings in it (docs/design/cut-tree-pine-seats.py fills them back in); a ring is drawn here only round a person, so
+   an empty seat is never seen. One still picture per season: the drawing is the season (no tint, no dress). The ring is the
+   drawing's own line (its colour, ~0.3% of the width); the person sits still in it, centred on the seat. */
+.tree[data-kind="pine"]::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--pine-pic, url("/assets/tree/pine/tree-summer.webp")) center / 100% 100% no-repeat;
+  filter: var(--pine-f, saturate(1)) var(--night-f, brightness(1)); }
+.tree[data-kind="pine"][data-season="autumn"] { --pine-pic: url("/assets/tree/pine/tree-autumn.webp"); }
+.tree[data-kind="pine"][data-season="winter"] { --pine-pic: url("/assets/tree/pine/tree-winter.webp"); }
+.tree[data-kind="pine"][data-season="snow"] { --pine-pic: url("/assets/tree/pine/tree-snow.webp"); }
+.tree[data-kind="pine"][data-season="spring"] { --pine-f: hue-rotate(8deg) saturate(1.12) brightness(1.03); }
+.tree[data-kind="pine"][data-season] .tree-dress { display: none; }
+.tree[data-kind="pine"]:not([data-look="frame"]) { --leaf-ar: 1; --face-w: 100%; --face-y: 0%; }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p { --leaf: 10.04cqi; translate: -50% calc(var(--leaf) / -2); animation: none; rotate: 0deg; }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-leaf,
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.passed .tr-leaf { background: none; }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-face { box-sizing: border-box; border: max(2px, .32cqi) solid #31231f; font-size: max(11px, calc(var(--leaf) * .3)); }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.empty .tr-face { border-style: dashed; background: #f3ecdc; color: #5f5242; }
+/* the closest seats are 13.8 % of the width apart: the tag stays inside that, the dates may wrap */
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-tag { max-inline-size: 13.4cqi; padding-inline: 4px; }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-tag small { white-space: normal; }

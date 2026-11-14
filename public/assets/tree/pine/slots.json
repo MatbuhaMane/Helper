@@ -4,13 +4,16 @@
   1500
  ],
  "ext": "webp",
+ "layers": [],
+ "seat": 10.04,
+ "perRow": 4,
  "crownPivot": [
-  50.0,
-  22.0
+  50,
+  22
  ],
  "trunkPivot": [
   50.0,
-  55.0
+  54.97
  ],
  "candleY": 94.5,
  "tiers": [
@@ -19,64 +22,64 @@
    "note": "the eldest, the forebears: on the roots and the earth",
    "line": [
     [
-     17.7,
-     84.2
+     27.14,
+     78.96
     ],
     [
-     38.7,
-     83.5
+     42.73,
+     78.96
     ],
     [
-     61.2,
-     83.5
+     57.27,
+     78.96
     ],
     [
-     82.2,
-     84.2
+     72.56,
+     78.96
     ]
    ]
   },
   {
    "name": "low",
-   "note": "grandparents: the low boughs, either side of the trunk",
+   "note": "grandparents: the low boughs",
    "line": [
     [
-     16.9,
-     63.4
+     29.24,
+     62.02
     ],
     [
-     34.9,
-     62.8
+     43.03,
+     62.02
     ],
     [
-     64.9,
-     62.8
+     57.05,
+     62.02
     ],
     [
-     82.9,
-     63.4
+     70.76,
+     62.02
     ]
    ]
   },
   {
    "name": "mid",
-   "note": "parents: the wide middle boughs",
+   "note": "parents: the middle boughs",
    "line": [
     [
-     10.2,
-     46.2
+     29.24,
+     45.53
     ],
     [
-     31.9,
-     45.6
+     43.03,
+     45.53
     ],
     [
-     67.9,
-     45.6
+     56.97,
+     45.53
     ],
     [
-     89.7,
-     46.2
+     70.91,
+     45.53
     ]
    ]
   },
@@ -85,42 +88,42 @@
    "note": "you, your siblings and cousins: the upper boughs",
    "line": [
     [
-     10.9,
-     28.6
+     29.24,
+     29.39
     ],
     [
-     31.9,
-     28.0
+     43.03,
+     29.39
     ],
     [
-     67.9,
-     28.0
+     57.12,
+     29.39
     ],
     [
-     88.9,
-     28.6
+     70.91,
+     29.39
     ]
    ]
   },
   {
    "name": "top",
-   "note": "children and grandchildren: across the crown",
+   "note": "children and grandchildren: in the crown",
    "line": [
     [
-     24.4,
-     11.4
+     30.73,
+     14.29
     ],
     [
-     41.7,
-     10.7
+     43.33,
+     13.74
     ],
     [
-     58.2,
-     10.7
+     56.67,
+     13.74
     ],
     [
-     75.4,
-     11.4
+     69.27,
+     14.29
     ]
    ]
   }

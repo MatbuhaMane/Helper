@@ -186,6 +186,32 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
         thickness as 13".
       - **6 (the garage):** usable. For a cleaner set: "no text or labels anywhere in the image".
       - **15:** a duplicate of 13 and not used. 17, 18, 20 and 21 are references only and not shipped.
+    - **Superseded by item 14:** the pine's layers, its foliage mask and the cones (12–14, 11) are retired.
+
+14. **The pine with seats (the owner's decision, 2026-11-14, from the master). Merge-ready.**
+    - **The decision:** the trees with the empty circles (21 summer, 20 autumn, 17 light snow, 18 heavy snow) are the family
+      tree. Wherever no person sits, the clean tree (16) shows instead.
+    - **Lighter than both options the master offered** (a clipped layer per circle, or a patch PNG per circle × season):
+      - the circles are filled in offline, from 16, in each seasonal picture. That gives one still picture per season,
+        `tree-{summer,autumn,winter,snow}.webp`, with only the clearings the circles left;
+      - the ring is CSS, only round a seated person (`#31231f`, the drawing's line weight; dashed on cream for the empty form);
+      - there are no runtime patches, and a fifth person on a tier still gets a ring.
+    - **The colour:** 16's foliage takes the season's colour from a smooth colour field of the season's foliage round each
+      circle. The autumn crown comes out yellow and the snowy trees keep their green, with no lilac from the snow.
+    - **20 seats, not 16** (5 tiers × 4). The coordinates, the slots fields and the placement rule are in
+      `docs/design/tree-pine-seats.md`. The script is `docs/design/cut-tree-pine-seats.py`.
+    - **The prototype** places people on the seats (`seats()`: the seats nearest the middle).
+    - **For ai-features (family.js):**
+      - placement on the seats when `slots.seat` is set;
+      - `data-season` on `.tree`.
+      - Until then the pine shows summer, and people are spread along the lines, not on the seats.
+    - **tree.css:** the pine's tag is capped at 13.4cqi (the closest seats are 13.8% apart), and the dates may wrap.
+      - This also removed the 3 old overlaps in the roots row on the pine.
+    - **Checked:** 375 and 1280, light and dark; summer, autumn, winter, snow and spring. The audit is clean.
+    - **Weak spots:**
+      - the filled-in clumps at the outer seats of `low` and `mid` are a little rounded, which shows only when the seat is empty;
+      - each picture is 229–305 KB, and only the active one loads;
+      - the pine no longer sways.
 
 ---
 

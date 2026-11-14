@@ -52,6 +52,14 @@
     return Array.from({ length: n }, (_, k) => { let d = total * (n === 1 ? 0.5 : (k + 0.5) / n), i = 0; while (i < seg.length - 1 && d > seg[i]) { d -= seg[i]; i++; }
       const t = seg[i] ? d / seg[i] : 0; return [line[i][0] + (line[i + 1][0] - line[i][0]) * t, line[i][1] + (line[i + 1][1] - line[i][1]) * t]; });
   }
+  // a set with seats (slots.seat, the pine): the tier's line is its seats; people take the middle ones first, in order.
+  // More people than seats: spread along the line as on any tree (the ring is drawn by CSS, so it still shows)
+  function seats(line, n) {
+    if (n > line.length) return spread(line, n);
+    const mid = (line.length - 1) / 2;
+    const pick = line.map((_, i) => i).sort((a, b) => Math.abs(a - mid) - Math.abs(b - mid) || a - b).slice(0, n).sort((a, b) => a - b);
+    return pick.map((i) => line[i]);
+  }
   // the seasons: auto is by the month (Elul–Kislev autumn, Tevet–Adar winter, Nisan–Sivan spring, else summer)
   const autoSeason = () => { const m = new Date().getMonth(); return m >= 8 && m <= 10 ? 'autumn' : m === 11 || m <= 1 ? 'winter' : m <= 4 ? 'spring' : 'summer'; };
   const SEASONS = [['auto', 'לפי העונה'], ['summer', 'קיץ'], ['autumn', 'סתיו'], ['winter', 'חורף'], ['spring', 'אביב']];
@@ -145,10 +153,10 @@
     const s = await (await fetch(`/assets/tree/${kind}/slots.json`)).json();
     tree.dataset.kind = kind; tree.style.setProperty('--crown-x', s.crownPivot[0] + '%'); tree.style.setProperty('--crown-y', s.crownPivot[1] + '%');
     tree.dataset.season = season === 'auto' ? autoSeason() : season;
-    const layers = ['ground', 'boughs', 'trunk', 'crown'].map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${kind}/${l}.${s.ext || 'svg'}`, alt: '', decoding: 'async' }));
+    const layers = (s.layers || ['ground', 'boughs', 'trunk', 'crown']).map((l) => el('img', { class: `tree-l tree-${l}`, src: `/assets/tree/${kind}/${l}.${s.ext || 'svg'}`, alt: '', decoding: 'async' }));
     tree.replaceChildren(...layers, el('span', { class: 'tree-l tree-dress', 'aria-hidden': 'true' }), el('span', { class: 'tree-l tree-fall', 'aria-hidden': 'true' }));
     for (const tier of s.tiers) {
-      const people = FAMILY[tier.name] || [], pts = spread(tier.line, people.length);
+      const people = FAMILY[tier.name] || [], pts = (s.seat ? seats : spread)(tier.line, people.length);
       people.forEach((p, i) => {
         const [x, y] = pts[i];
         const cls = 'tr-p' + (p.me ? ' me' : '') + (p.bday ? ' bday' : '') + (p.passed ? ' passed' : '') + (p.empty ? ' empty' : '');

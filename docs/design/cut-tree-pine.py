@@ -95,8 +95,8 @@ slots = {
   'box': [1000, 1500], 'ext': 'webp',
   'crownPivot': pct(671, 440), 'trunkPivot': pct(671, 1100), 'candleY': 94.5,
   'tiers': [
-    {'name': 'roots', 'note': 'the eldest, the forebears: on the roots and the earth', 'line': [pct(240, 1660), pct(520, 1645), pct(820, 1645), pct(1100, 1660)]},
-    {'name': 'low', 'note': 'grandparents: the low boughs, either side of the trunk', 'line': [pct(230, 1290), pct(470, 1278), pct(870, 1278), pct(1110, 1290)]},
+    {'name': 'roots', 'note': 'the eldest, the forebears: on the roots and the earth', 'line': [pct(240, 1685), pct(520, 1670), pct(820, 1670), pct(1100, 1685)]},
+    {'name': 'low', 'note': 'grandparents: the low boughs, either side of the trunk', 'line': [pct(230, 1268), pct(470, 1256), pct(870, 1256), pct(1110, 1268)]},
     {'name': 'mid', 'note': 'parents: the wide middle boughs', 'line': [pct(140, 925), pct(430, 912), pct(910, 912), pct(1200, 925)]},
     {'name': 'crown', 'note': 'you, your siblings and cousins: the upper boughs', 'line': [pct(150, 572), pct(430, 560), pct(910, 560), pct(1190, 572)]},
     {'name': 'top', 'note': 'children and grandchildren: across the crown', 'line': [pct(330, 228), pct(560, 215), pct(780, 215), pct(1010, 228)]},

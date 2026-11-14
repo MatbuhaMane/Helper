@@ -58,10 +58,10 @@
   rotate: 0deg; transition: rotate 1.8s var(--settle); }
 @keyframes tr-hang { from { transform: rotate(-.8deg); } to { transform: rotate(.8deg); } }
 .tree.moving .tr-p { rotate: .7deg; transition-duration: 1s; }
-.tr-leaf { position: relative; display: grid; place-items: center; inline-size: var(--leaf); aspect-ratio: 120 / 152;
+.tr-leaf { position: relative; display: grid; place-items: center; inline-size: var(--leaf); aspect-ratio: var(--leaf-ar, 120 / 152);
   background: url("/assets/tree/leaf.svg") center / contain no-repeat;
   transition: transform 320ms var(--settle), filter 320ms var(--settle); }
-.tr-face { inline-size: 62%; aspect-ratio: 1; margin-block-end: 22%; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
+.tr-face { inline-size: var(--face-w, 62%); aspect-ratio: 1; margin-block-end: var(--face-y, 22%); border-radius: 50%; overflow: hidden; display: grid; place-items: center;
   background: #f6efe0; border: 2.5px solid #2a1c12; color: #3b2a1a; font-weight: 700; font-size: calc(var(--leaf) * .22); line-height: 1; }
 .tr-face img { inline-size: 100%; block-size: 100%; object-fit: cover; display: block; }
 .tr-tag { position: relative; display: grid; transition: translate 320ms var(--settle), filter 320ms var(--settle); justify-items: center; max-inline-size: calc(var(--leaf) * 1.9); margin-block-start: 6px; padding: 3px 10px 4px;
@@ -385,3 +385,16 @@
 :root[data-motion="reduce"] .tree-fall::before, :root[data-motion="reduce"] .tree-fall::after { animation: none !important; }
 :root[data-motion="reduce"] :is(.tr-menu, .tr-banner, .tr-full, .tr-dock, .tr-p.detached, .tr-p.settling) { transition: none !important; }
 :root[data-motion="reduce"]::view-transition-group(*.tr-morph), :root[data-motion="reduce"]::view-transition-old(*.tr-morph), :root[data-motion="reduce"]::view-transition-new(*.tr-morph) { animation-duration: 0s; }
+
+/* ---- a person's form per tree skin (vision batch 24). A skin sets, on .tree[data-kind]: --leaf-ar (the form's box), --face-w
+   and --face-y (the face disc's width, and the face's lift as margin-block-end, both in % of the form's width), and the form
+   pictures per season, for the empty and for those who have passed. The frame look keeps its own (it is not a skin).
+   The pine: a pinecone with the portrait on its face disc (cut by docs/design/cut-pine-cones.py: the disc is 49% of the width,
+   centred). The cone is taller than the leaf, so it is a little larger, or the face would shrink. */
+.tree[data-kind="pine"]:not([data-look="frame"]) { --leaf-ar: 240 / 338; --face-w: 49%; --face-y: 0%; }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p { --leaf: clamp(44px, 11cqi, 88px); }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-leaf { background-image: url("/assets/tree/pine/person-summer.webp"); }
+.tree[data-kind="pine"][data-season="spring"]:not([data-look="frame"]) .tr-leaf { background-image: url("/assets/tree/pine/person-spring.webp"); }
+.tree[data-kind="pine"][data-season="winter"]:not([data-look="frame"]) .tr-leaf { background-image: url("/assets/tree/pine/person-winter.webp"); }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.passed .tr-leaf { background-image: url("/assets/tree/pine/person-quiet.webp"); }
+.tree[data-kind="pine"]:not([data-look="frame"]) .tr-p.empty .tr-leaf { background-image: url("/assets/tree/pine/person-empty.webp"); }

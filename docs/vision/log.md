@@ -99,3 +99,4 @@
 - 2026-11-14: the owner approved friends ("the family you choose", a page in the tree, a fourth privacy level), the story hub (videos, life events) and "גבעה ביער" waiting for users; batch 27 sent. Goals part 1 feedback and the הקפדה coach spec started.
 - 2026-11-14: business prepared the video storage options for the museum (story-storage.md §7, recommended: links by default, short clips up to 60 s / 50 MB); pointer in story.md; goes to the owner when the museum nears.
 - 2026-11-14: the owner approved goals part 2 and the storage model (own storage, paid package, short clips free); coach ש1-ש4 decided in later.md; batch 28 sent.
+- 2026-11-14: ai-features batches now go to the current ai-features chat local_4953355f (CEO); batches 27-28 queued there by the CEO; the Drive scope and the 4th privacy level wait for the CEO's review and the owner's OK before going live.

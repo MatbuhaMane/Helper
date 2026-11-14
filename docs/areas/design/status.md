@@ -84,6 +84,19 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
    - The tools themselves are not ours to build.
    - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and on `/tools/`.
 
+8. **Vision batch 20 (2026-11-14), waiting for the master to schedule it:** five more future tools ("Five more future tools"
+   in `docs/decisions.md` on `vision`).
+   - **Design's part, only:** a picture and the uniform "בקרוב" note, like batch 19's (`/assets/soon/<id>.svg`, 320×240,
+     shown with `.tb-pic`).
+   - **The five tools and where each one's note goes:**
+     - הגינה והעציצים: the tools menu;
+     - תחזוקת הבית: the tools menu;
+     - הסיפורים של סבא וסבתא: in a person's profile in the tree (`ul.tr-full-soon`, `tree-18.md` §8), not a tool of its own;
+     - עוזר שיעורי בית: kids' mode only;
+     - מתורגמן: the tools menu, with a language game to join it later.
+   - **Proposed ids,** for the master to fix in `H.FUTURE`: `garden`, `home`, `stories`, `homework`, `translate`.
+   - **Not started:** the master said nothing new before the handover, and the master schedules.
+
 ---
 
 ## History (newest first)

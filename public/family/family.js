@@ -406,7 +406,7 @@
       list.replaceChildren(...r.people.map((p) => el('li', {},
         el('button', { type: 'button', role: 'option', class: 'fs-hit' + (p.relation ? ' kin' : ''), 'aria-selected': 'false',
           onclick: () => { close(); input.value = ''; onPick(p); } },
-          el('span', { class: 'fs-face', 'aria-hidden': 'true' }, initials(p.name)),
+          el('span', { class: 'fs-face', 'aria-hidden': 'true' }, faceOf(p)),
           el('span', { class: 'fs-text' }, el('b', {}, p.name),
             el('small', {}, [p.self ? 'אני' : p.relation, p.mine ? '' : p.title, p.user ? 'באוהל' : ''].filter(Boolean).join(' · ')))))));
       empty.hidden = true; list.hidden = false; input.setAttribute('aria-expanded', 'true');
@@ -481,7 +481,7 @@
     if (c.mine && !ourProfile) ourProfile = await api('/api/family/profile', { noRedirect: true }).catch(() => ({}));
     const P = c.mine ? ourProfile : {};
     const cover = P.cover ? (P.cover === 'own' && P.coverUrl ? P.coverUrl : `/assets/covers/${P.cover}.svg`) : null;
-    const face = el('span', { class: 'mc-avatar', 'aria-hidden': 'true' }, initials(c.name));
+    const face = el('span', { class: 'mc-avatar', 'aria-hidden': 'true' }, faceOf(c));
     if (c.photo) photoInto(c.photo, face);
     const rel = [c.self ? 'אני' : c.relation, c.title].filter(Boolean).join(' · ');
     const edit = c.self ? el('button', { type: 'button', class: 'mc-edit', 'aria-label': 'עריכת הפרטים שלי', title: 'עריכת הפרטים שלי', onclick: async () => {
@@ -752,7 +752,7 @@
     const candles = [];
     for (const { p, x, y } of treePlaces(slots, center)) {
       const life = p.life || {}, passed = !!life.died;
-      const face = el('span', { class: 'tr-face' }, initials(p.name));
+      const face = el('span', { class: 'tr-face' }, faceOf(p));
       if (p.photo) photoInto(p.photo, face);
       const rel = p.id === S.mine ? 'אני' : S.mine ? relationName(S.mine, p.id) : '';
       const years = passed ? [life.born, life.died].map((d) => String(d || '').slice(0, 4)).filter(Boolean).join('–') : '';
@@ -848,7 +848,7 @@
   function card(p, role = '') {
     if (!p) return null;
     const n = p.counts || {};
-    const pic = el('span', { class: 'fv-pic', 'aria-hidden': 'true' }, initials(p.name));
+    const pic = el('span', { class: 'fv-pic', 'aria-hidden': 'true' }, faceOf(p));
     if (p.photo) photoInto(p.photo, pic);
     const rel = S.mine && S.mine !== p.id ? relationName(S.mine, p.id) : S.mine === p.id ? 'אני' : null;
     const isFocus = role === 'focus';
@@ -1098,6 +1098,15 @@
     arrange(false);
   });
   const initials = (name) => (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('');
+  /** The picture of a person with no photo: a user of the tent keeps their initials; anyone else gets a silhouette by their sex
+   *  (sil-m / sil-f, neutral sil-x when it is not known: design's /assets/sil-*.svg). If the file is missing, the initials show. */
+  const faceOf = (p) => {
+    if (p.user) return initials(p.name);
+    const k = p.sex === 'm' || p.sex === 'f' ? p.sex : 'x';
+    const img = el('img', { class: 'sil', src: `/assets/sil-${k}.svg`, alt: '', width: 64, height: 64 });
+    img.addEventListener('error', () => img.replaceWith(initials(p.name)), { once: true });
+    return img;
+  };
   async function blobUrl(id) {
     const r = await fetch(`/api/vault/items/${encodeURIComponent(id)}/file`, { cache: 'no-store' });
     if (r.status === 423) { if (!S.trusted) lockView('הכספת ננעלה. פתחו אותה שוב.'); throw new Error('locked'); }
@@ -1328,7 +1337,7 @@
       tab = t;
       const items = list.items.filter((x) => x.kind === t);
       body.replaceChildren(...[
-        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, initials(p.name)), el('div', {}, el('h2', {}, p.name, pendingOf('person', p.id) ? ' ' : null, pendTag(pendingOf('person', p.id))), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
+        el('header', { class: 'fv-ph' }, el('span', { class: 'fv-pic big', 'aria-hidden': 'true' }, faceOf(p)), el('div', {}, el('h2', {}, p.name, pendingOf('person', p.id) ? ' ' : null, pendTag(pendingOf('person', p.id))), S.mine && S.mine !== p.id && relationName(S.mine, p.id) ? el('p', { class: 'fv-relname' }, relationName(S.mine, p.id)) : null, lifeLine(p.details), p.member ? el('small', { class: 'muted', dir: 'ltr' }, p.member) : null,
             el('p', { class: 'muted small fv-user' }, p.user ? 'משתמש/ת באוהל – קובע/ת בעצמו/ה מה רואים' : 'לא משתמש/ת באוהל – ראש משק הבית מנהל את הפרטים')),
           el('span', { class: 'spacer' }),
           el('div', { class: 'fv-pacts' },

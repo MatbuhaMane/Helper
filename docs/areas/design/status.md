@@ -2,10 +2,15 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 13)._
+_Updated 2026-11-14 (the new chat, round 14)._
 
 
 
+
+## Round 14: v158 checked after merging main
+- /admin: its switchboard markup, run in the real page, is clean at 375 and 1280, light and dark. The page itself is behind the biometric sign-in, so the switchboard was built there from admin.js's own markup.
+- The moods: party (confetti and balloons from switches.js), mourning (the candles above the tab bar; the palette and pictures faded) and kodesh.
+- The sky at 1920 has no box edge. The audit of / and /tools is clean at 375, 1280 and 1920.
 
 ## Round 13: the night sky is full-bleed and global (the owner's image 39)
 - One fixed sky layer for the whole window, in base.css, with tokens for day and night (`--sky-top`, `--sky-mid`, `--sky-stars`). The stars twinkle by opacity only. Spec: `docs/design/sky.md`.

@@ -1830,6 +1830,14 @@
       build(first);
     }
     updateLabels();
+    // his first meeting: a person's first time with רַאבַּ"ע (default or chosen) shows the cards, once per person (prefs raba.seen
+    // arrives with /api/me), never over another window
+    if (!flatId && !H.prefs('raba', { seen: false }).seen) {
+      setTimeout(() => {
+        if (document.querySelector('.modal:not([hidden]), .rb-intro')) return;
+        H.loadOnce('/assets/raba-intro.js').then(() => window.RabaIntro.maybe()).catch((e) => console.warn('the introduction did not load', e));
+      }, 1500);
+    }
     // quiet (the owner's rule): no introduction unasked – a small mark, and the first tap offers a question (openBalloon)
     const firstMeeting = () => { if (!state.transcript.length) canvasBox.classList.add('unread'); };
     if (docked) {

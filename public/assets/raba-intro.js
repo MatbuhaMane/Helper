@@ -152,5 +152,5 @@
     nextBtn.focus();
   }
 
-  window.RabaIntro = { open, maybe: () => { if (!seenPrefs().seen) open(); } };
+  window.RabaIntro = { open, maybe: () => { const p = seenPrefs(); if (p.seen) return; p.seen = true; H.savePrefs('raba'); open(); } };
 })();

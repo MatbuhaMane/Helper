@@ -37,6 +37,8 @@ Updated by the department at the end of every meaningful round of work. Short: t
     - 50 GB moves from ₪10 to ₪12, because ₪10 is under the 30/30/30/10 floor once VAT is counted.
 - **Goals part 2, AI consultation (vision batch 28):** proposal in `ai-quota.md` section 5: 10 AI messages a day per
   person, on Haiku. Waiting for the owner.
+- **The הקפדה coach (vision batch 29, wave 2):** proposal in `ai-quota.md` section 6. Per person per day: 15 coach
+  messages (Haiku) and 1 AI plan build (a stronger model). The live workout mode is not counted. Waiting for the owner.
 
 - **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
   with a ceiling of about ₪120,000 a year.

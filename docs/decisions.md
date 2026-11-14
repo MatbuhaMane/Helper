@@ -3235,3 +3235,22 @@ On `ai-features` (32d5a7c), not yet merged. No master file is touched: the strea
     - the calendar at 375: he goes under the app bar;
     - the calculator at 1280: the end corner;
     - the calendar at 1280: he folds.
+
+## 2026-11-14 · Arranging the family tree ("סידור") (ai-features, the owner's request via the master)
+
+On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; patch in the CEO's notes folder).
+
+- **What it does.** In the המשפחה and כל הדורות views, an editor presses "סידור". Edit mode starts, with a banner and a "סיום" button.
+  - Moving a card is done with a mouse drag, a touch long-press (450 ms), or the keyboard (Space, then the arrows, or the "העבר…" menu).
+- **A drop on another generation's row** changes relationships.
+  - `kin.movePlan` works out which parent links to remove and which to add: as a sibling of, a parent of, a child of, or a generation up or down.
+  - It refuses a circle (`circular_family`) and more than two parents (`too_many_parents`).
+  - A dry run returns one sentence, and the page asks with that sentence before anything is saved.
+  - If the move touches another user's card, it waits for their yes. That is a new change kind `move` in family_changes, applied whole.
+  - Otherwise the move is applied at once, with "בטל".
+- **A drop within a row** changes only the order. It is stored in the new column `family_people.ord` (INTEGER, null means by creation), and has "בטל" too.
+- **Master files** (append-only):
+  - a COLUMNS line `['family_people','ord','INTEGER']`;
+  - two routes: `POST /api/vault/move` and `PUT /api/vault/order`;
+  - `ACCESS.linkMove` and `ACCESS.orderSave` (both 'tree') in `server/vault/access.ts`.
+- **Design.** The classes follow docs/design/tree-edit.md on `design`. The CSS is design's and is not on this branch, so the look must be checked after both are merged.

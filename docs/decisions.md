@@ -2671,3 +2671,27 @@ from `/api/me`. ai-features: the tools page from `H.APPS` with the sort switch, 
   - פרנסה under שוטף.
 - For the master: add `node server/test-app-access.mjs` and `node server/test-parnasa.mjs` to `npm test`.
 - For design: `.tools-sort` (the sort chips; an inline style holds it for now), `.tools-cat` and `.tools-cat-h` (the category headers), and `.gate-closed` (the polite page; inline style for now).
+
+## 2026-11-14 · Two future tools built ahead: the kitchen helper and home maintenance (ai-features, the owner's task through the master)
+While the tree art is not ready, ai-features built two items of H.FUTURE as pages of their own, on its branch only.
+Neither is in the toolbox: the "בקרוב" tile stays until the master merges and moves it (apps.js is the master's).
+Status: Ready for the master's review.
+
+- **עוזר מטבח** at `/food/kitchen/` (no server of its own; it reads `/api/recipes`):
+  - cooking a recipe from the household's book one step at a time, with the quantities scaled by diners and the units as in the book (`measure.js`);
+  - the screen stays on (Wake Lock), and a timer button for every time a step names;
+  - named timers on this device (`localStorage`, since a timer belongs to the stove beside it), ringing with a sound, a buzz and a notification;
+  - cups, spoons and grams by the ingredient, and °F ↔ °C;
+  - the units choice is the person's (`H.prefs('kitchen')`).
+  - Not yet: "הבא" by voice, AI tips, a timer that rings when the app is closed (push).
+- **תחזוקת הבית** at `/tools/home/`, shared by the household:
+  - appended tables `home_items` and `home_log` in `schema.sql`;
+  - appended routes `GET/POST /api/home`, `PUT/DELETE /api/home/:id`, `POST /api/home/:id/done`;
+  - ten ready-made things with intervals (`server/home-rules.ts`); a warranty warns 60 days ahead.
+  - Not yet: a warranty from a receipt photo, a push reminder, the link to the garage.
+- **For the master:**
+  - the patch `0001-package.json-test-kitchen-and-test-home-in-npm-test-.patch` (the CEO's notes folder);
+  - on merge, move `soon:kitchen` → `/food/kitchen/` and `soon:home` → `/tools/home/` in apps.js (or as beta first).
+- **For design:** `kitchen.css` and `home.css`. The pages use the shared classes, and a few sizes are held inline until then:
+  - the step's big text, the timer clock, the recipe rows;
+  - the item cards, and the state line (late / soon in bold).

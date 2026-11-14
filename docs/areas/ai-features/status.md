@@ -55,6 +55,21 @@ The previous chat grew too long. The master asked for a fresh one with the same 
   - 1884a83 the toolbox hides a FUTURE item with `only: 'child'` (homework) from anyone not a child (checked locally both ways); e41437a merged main (299b135, the 7 FUTURE items; apps.js conflict in שוטף: kept פרנסה and main's soon:garden, soon:home).
   - Then main merged again (217b86d, the eye item), and the toolbox gives a tile with a `label` (עין בעין for ع ב-ע) that label as its aria-label.
 
+### Future interfaces, built ahead (2026-11-14, ready for the master's review)
+
+- c18a16c **עוזר מטבח** `/food/kitchen/`: cooking step by step from the book, timers, conversions. test-kitchen 32.
+- c964ae6 **תחזוקת הבית** `/tools/home/`: a server (2 tables, 5 routes, household only) and the page. test-home 33.
+- The package.json patch for both tests is in the CEO's notes folder.
+- **Checked:**
+  - npm test and typecheck;
+  - the audit at 375 and 1280, light and dark (clean);
+  - the home API as another household's member: 404 on read, done and edit; delete does nothing.
+- **Not checked:**
+  - a real phone: the screen staying on, a buzz, a notification while in the back;
+  - the edit window at 375 by eye.
+- **Not in the toolbox** until the master moves them.
+- **Next, by readiness:** breath (no server, a breathing circle and a few minutes' timer), then translate.
+
 ### Open
 
 - **פרנסה:**

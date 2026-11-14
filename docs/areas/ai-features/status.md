@@ -9,6 +9,12 @@ Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum
 - The fix (second version, after the master's review): `prune()` in `server/groups.ts` applies the creation rule on every read and write, as the pure `staleGroup` in `friends-rules.ts` (64 test-friends checks): I am reachable from the maker (or, the maker gone, from a remaining member); a member I blocked goes, a member who blocked me puts me out; a friendship ended between two ordinary members drops nobody; a child under 12 stays only among family. One query for the blocks, one `check` (the maker) per visit. A block (`dm.ts block`) also removes the blocked person from shared groups at once.
 - Not covered: the list/unread of a person who was not opened yet still counts the group until someone opens it; no UI test with two accounts.
 
+## Latest: batch 30, the JS side, first stop (2026-11-14) - 37ac8dd, c2de2d4, plus the music/songs reduced-motion fix
+- `public/assets/gestures.js` (ours): `Gestures.swipe` (reply at 64 px, cap 88; acts with 76 px buttons, snap at half, full past 60%), `Gestures.longPress` (450 ms / 8 px, lift, dim, menu from the finger), `Gestures.vidSpeed` (hold 300 ms = 2x, slide 40 px steps to 2.5x/3x, back to 1x). Pointer Events only, passive, axis lock at 8 px.
+- Used: the fun.js clips (hold-to-speed) and the grocery rows (a long press: edit, bought, delete). The groceries were already optimistic (local first, undo toast).
+- Checked with synthetic pointer events in the pane: reply arms and fires, the other direction is ignored, 2x then 3x then 1x, the menu opens and an item acts. NOT tested: a real finger (feel, the browser's own long-press menu), reduced motion on the gestures.
+- Waiting: swipe in the messages list (needs the markup of a row), `.skel` instead of "טוען" in the 15 screens, `.arrive`/`.swap-in`; `sw.js` should precache `gestures.js` (master).
+
 ## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - the owner approved the wording (b6b6006); checked at 375 and 1280, light and dark (no overflow, buttons 44px+)
 
 - `public/assets/raba-intro.js`: 5 cards on design's `raba-intro.css` (the same class names), spoken in his voice (`/api/voice/say`) with the

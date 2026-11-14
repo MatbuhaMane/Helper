@@ -9,6 +9,13 @@ _Updated 2026-11-14 (the new chat, round 16)._
 
 ## Queued
 - Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
+- Vision batch 29 (vision dfd8ce9), the הקפדה coach, wave 2 after the family launch, planning only:
+  - a live workout screen (the exercise, a rest timer, voice, logging sets, reps and weight);
+  - an exercise card (a short description and an embedded video);
+  - a coach panel that minimizes, under the הקפדה dashboard;
+  - a first-time safety questionnaire;
+  - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
+  - Exercise illustrations come later.
 ## Round 16: batch 28, the look of goals part 2 (the logic is ai-features')
 - The advice window on a goal's page (`.gl-ask`), with "שמור מסקנה" (`.gl-keep`) pinning to `.gl-pins`. From 1000 px it is a sticky column (`.gl-split`).
 - "עזור לי להגדיר" (`.gl-helpdef`) and the AI's wording as a draft (`.gl-draft`).

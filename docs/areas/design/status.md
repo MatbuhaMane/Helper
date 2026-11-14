@@ -813,3 +813,5 @@ _Updated 2026-11-14 (round 23)._
 - Round 26: `app-icons/yad.webp`, the icon of "יד ביד" (an open hand with a sprout on the palm; no coin). Script `docs/design/art/draw-yad-icon.py`. No screens yet, waiting for the vision spec.
 
 - Round 27: יד ביד stage 1 screens: `public/tools/yad/yad.css`, prototype `docs/design/prototype/yad.html`, spec `docs/design/yad.md`. Waiting for ai-features to build; the owner approval queue is not designed (separate spec).
+
+- Round 28: יד ביד batch 37 applied (no redeem/GPS/filters, distance ranges, own-only pending need, report + removed, licence declaration, rules link); see docs/design/yad.md.

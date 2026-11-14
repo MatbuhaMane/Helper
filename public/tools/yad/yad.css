@@ -110,7 +110,8 @@ a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
 .yd-need .meta span { display: inline-flex; align-items: center; gap: 4px; }
 .yd-need .meta svg { inline-size: 14px; block-size: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .yd-need.pub { border-color: color-mix(in srgb, var(--yd-pub) 45%, var(--line)); background: color-mix(in srgb, var(--yd-pub) 7%, var(--card)); }
-.yd-need .go { display: flex; justify-content: flex-end; }
+.yd-need .go { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.yd-need .go .yd-link { color: var(--muted); font-size: .88rem; min-block-size: 44px; padding-inline: 4px; }
 .yd-need .go .btn { min-block-size: 44px; }
 .yd-needs { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
 
@@ -167,3 +168,13 @@ a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
 @media (max-width: 420px) { .yd-banner { padding: 14px; } .yd-face { inline-size: 56px; block-size: 56px; } .yd-adv .grid { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { .yd * { transition: none !important; } }
 :root[data-motion="reduce"] .yd * { transition: none !important; }
+
+/* ---------- stage 1 additions (batch 37): removed, the licence declaration, the rules ---------- */
+.yd-tag.gone { --tg: var(--danger); }
+.yd-row.gone { opacity: .65; }
+.yd-row.gone .tx b { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.yd-check .yd-tag { flex: none; }
+.yd-check.yd-decl { align-items: flex-start; padding-block: 8px; border-radius: 14px; background: color-mix(in srgb, var(--exp) 7%, var(--card)); padding-inline: 10px; }
+.yd-check.yd-decl span small { display: block; margin-block-start: 2px; }
+.yd-rules { margin: 0; padding-inline-start: 22px; display: grid; gap: 12px; }
+.yd-rules li::marker { color: var(--primary); font-weight: 600; }

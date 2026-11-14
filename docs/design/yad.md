@@ -1,5 +1,7 @@
 # יד ביד, שלב 1: the look (design → ai-features)
 
+> **Batch 37 (2026-11-15) wins over batch 36 where they differ; see "Batch 37" at the end.**
+
 Design, 2026-11-15, vision batch 36. The spec is vision's (`docs/vision/yad-beyad.md`). The styles are `public/tools/yad/yad.css`;
 the prototype with every screen is `docs/design/prototype/yad.html` (copy it to `public/` for a moment). Copy its markup; its JS
 only opens sheets and toggles states. Load `/assets/base.css` and `/tools/yad/yad.css`. Everything sits in `<main class="yd">`.
@@ -29,3 +31,14 @@ Four figures and two buttons above two lists fit on a phone as designed (the fir
 
 ## Checked
 375 and 1280 px, light and dark; the audit is clean (no overflow, targets 44 px and up). Motion is transform and opacity only (press, bar fill).
+
+## Batch 37: what changed (the owner, 2026-11-15)
+1. **No redeem in stage 1:** the "בקשה לטובת הציבור" button and its sheet are gone (stage 2). The treasury page keeps "התרומה שלי לקופה" as a figure. `.yd-pub-ask` is now only that figure. An owner-posted deed is still `.yd-need.pub`, "לטובת הציבור".
+2. **No GPS:** the area is a `select` (a town or a neighbourhood), chosen by hand once. No switch.
+3. **The board:** the sort `.yd-seg` (מרחק / סוג) only. No quick chips, no advanced filter. (`.yd-adv` and `.yd-chips` stay in the CSS, unused, for later.)
+4. **Distance is a range:** "עד 5 ק"מ", "5 עד 15 ק"מ", never a number.
+5. **A need outside the list:** only its author sees it, in "הצרכים שלי", tagged `.yd-tag.pend` "ממתין לאישור הבעלים, רק את/ה רואה אותו". It is not in the board until approved (with its tier). The create sheet says so.
+6. **Report and removed:** each board card has a small "דיווח" link (`.yd-link` in `.go`) that opens the report sheet (`data-sheet-id="report"`: a reason from `.yd-kind` buttons, an optional note). A removed need is a row `.yd-row.gone` (dimmed, struck through) with `.yd-tag.gone` "הוסר", in the past tab of the lists.
+7. **Licence:** in the profile, a service that needs a licence carries `.yd-tag.pend` "דורש רישיון", and its group has `.yd-check.yd-decl`: "אני מצהיר/ה שיש לי רישיון לעסוק בזה. האוהל לא בודק זאת." (ticked before the service counts).
+8. **The rules:** a small link "כללי יד ביד" under the two buttons opens a sheet with `ol.yd-rules` (3 rules; the final wording is the master and legal).
+Checked at 375 px light (the audit clean); desktop and dark use the same classes as batch 36.

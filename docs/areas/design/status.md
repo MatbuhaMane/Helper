@@ -144,6 +144,49 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
         olive frame is about 1:1.
       - The quiet look for a person who has died is then derived in CSS (open question 3 in `design-assets-specs.md`).
 
+13. **The owner's first images (4–21, 2026-11-14): cleaned, placed, and the tree ones wired in. Merge-ready.**
+    - **Commits:** e300510 (the pine), 7127662 (the cones), 84c3812 (the border and the sprites), 5c4f3b4 (the scenes).
+    - **The originals** are in `data/art/owner-2026-11-14/` (ignored by git). The scripts that make every file from them are
+      `docs/design/cut-tree-pine.py`, `docs/design/cut-pine-cones.py` and `docs/design/art/cut-art-2026-11-14.py`.
+    - **Wired in, CSS and data only:**
+      - **The pine (16)** is `/assets/tree/pine/`: four layers, `slots.json`, and `foliage.webp` as the season-dress mask.
+        - The seams at rows 749–752 and 1453–1456 are filled.
+        - `sets.json` now lists pine first, so the pine is the default tree; then canopy and olive.
+        - A pine is evergreen, so in autumn it only dulls a little.
+      - **The person forms on the pine:** 12 for spring, 13 for summer and autumn, 14 for winter, a faded 13 for those who have
+        passed, and 11, darkened, for the empty form.
+        - In tree.css, `.tr-leaf` and `.tr-face` now read `--leaf-ar`, `--face-w` and `--face-y`. The pine sets them;
+          the defaults keep the leaf as it was, and the frame look keeps its own.
+      - **The prototype** `tree-18.html` has a pine chip, and `?kind=pine` is its default.
+    - **Placed, not wired:** the markup for these belongs to the master or ai-features.
+      - `/assets/frames/olive-border.webp` (4): a 9:16 border, transparent inside and out. It fits a profile page or a
+        share card. It is not the round olive form (see the re-roll).
+      - `/assets/kit/garage/` (6, the drawn labels left out): robot-vacuum, car, ev-charger, floor-heating, tv, set-top-box, remote.
+      - `/assets/kit/garden/` (7): monstera, pothos, snake-plant, cactus, basil, mint, tomato, olive.
+      - `/assets/kit/kitchen/` (8): measuring-jug (frosted glass), tablespoon, teaspoon, scale, timer.
+        Each sprite is 256×256 webp, 2–21 KB.
+      - `/assets/scenes/`, each at two widths:
+        - `desert-banner-1600|800` (9, cropped to the scene: rows 253–861);
+        - `scroll-1200|600` (10, transparent);
+        - `night-tent-1600|800` (5), proposed for the home page at night.
+    - **Checked:**
+      - the tree prototype at 375 and 1280, light and dark, in summer, autumn and winter;
+      - the audit shows the pine equal to the canopy. Its only findings are 3 overlaps among the four root-tier tags, the same
+        on the canopy, so they were there before;
+      - every sprite and scene on light and dark.
+    - **Weak spots:**
+      - **The face on a cone** is 49% of the form, against 62% on the leaf: about 22px at 375. A bigger cone crowded the tiers
+        (13 overlaps), so the leaf size stays.
+      - **The layers render late:** the tree layers (1334×2001) took about a second to appear in the pane, the same as the
+        canopy's.
+    - **Re-rolls for the owner:**
+      - **4 (the olive form):** it came as a tall 9:16 border. The olive form needs: "a round 1:1 wreath of twisting olive
+        branches, an open circle about 62% of the width in the centre, on white". It also needs an outline-only empty version.
+      - **11 (the empty cone):** used, darkened by the script. If the owner re-rolls it: "a darker brown line, the same
+        thickness as 13".
+      - **6 (the garage):** usable. For a cleaner set: "no text or labels anywhere in the image".
+      - **15:** a duplicate of 13 and not used. 17, 18, 20 and 21 are references only and not shipped.
+
 ---
 
 ## History (newest first)

@@ -1,7 +1,17 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum's first hub step).
+Last update: 2026-11-15 (the owner's phone bugs: dot, arranging, saved order).
+
+## 2026-11-15: the owner's phone bugs (all on ai-features, nothing pushed)
+
+- 68c68f7: no false red dot on the messages/reports menu rows (the count pill's display beat [hidden]); arrange: touch-action none inline at once, a touchstart starts the drag.
+- f37e7e9: arranging from the name or category view switches to 'הסדר שלי' first (the tiles were outside the grid).
+- deb4a78 (common.js, master's file; patch in the CEO notes): a pref the server refuses for good (400/413) no longer blocks the others.
+- 47b903b: the view pref is 'toolsview' ('toolsView' failed the server's name rule, so the tools order was never saved); the swap no longer jumps (layout box, not the animated one).
+- 31310c3: dm unread counts asks as the list shows them; `asksFor` in server/vault/index.ts is read-only, FOR THE CEO'S REVIEW.
+- Not tested: a real phone, 375 px. Waiting: yad-beyad stage 1 (estimate sent to vision; build when the master says), batch 31 next, then the rest of batch 28.
+
 
 ## FOR THE MASTER'S REVIEW (privacy): groups re-check their members (commit after 28e5dee)
 

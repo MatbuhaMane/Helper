@@ -404,6 +404,14 @@
 .tree[data-kind="olea"][data-season="winter"] { --olea-pic: url("/assets/tree/olea/tree-winter.webp"); }
 .tree[data-kind="olea"][data-season="snow"] { --olea-pic: url("/assets/tree/olea/tree-snow.webp"); }
 .tree[data-kind="olea"][data-season="spring"] { --pine-f: hue-rotate(6deg) saturate(1.1) brightness(1.03); }
+/* the olive's head frames (the owner's 33 winter, 34 summer; docs/design/art/cut-olive-head-frames.py): round every seated
+   person, in place of the ring. Both are cut to the same hole, so the face sits the same in every season; the frame is 2.287
+   times the face (it tucks the face's edge under the ring). Winter and snow wear the snowy one; summer, autumn and spring the
+   summer one, until frames for those arrive. The tag (a later sibling) is drawn over the frame's lower edge. */
+.tree[data-kind="olea"]:not([data-look="frame"]) .tr-p:not(.empty) .tr-leaf::after { content: ""; position: absolute; inset: -64.35%; pointer-events: none;
+  background: var(--olea-frame, url("/assets/tree/olea/frame-summer.webp")) center / 100% 100% no-repeat; }
+.tree[data-kind="olea"]:is([data-season="winter"], [data-season="snow"]) { --olea-frame: url("/assets/tree/olea/frame-winter.webp"); }
+.tree[data-kind="olea"]:not([data-look="frame"]) .tr-p:not(.empty) .tr-face { border: 0; }
 .tree:is([data-kind="pine"], [data-kind="olea"])[data-season] .tree-dress { display: none; }
 .tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) { --leaf-ar: 1; --face-w: 100%; --face-y: 0%; }
 .tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) .tr-p { --leaf: 10.04cqi; translate: -50% calc(var(--leaf) / -2); animation: none; rotate: 0deg; }

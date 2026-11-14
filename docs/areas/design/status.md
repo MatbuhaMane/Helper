@@ -2,7 +2,19 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 5)._
+_Updated 2026-11-14 (the new chat, round 6)._
+
+## Round 6 (2026-11-14): the olive's head frames (33 winter, 34 summer)
+
+- `public/assets/tree/olea/frame-{winter,summer}.webp`, 352 px, 19 and 25 KB (`docs/design/art/cut-olive-head-frames.py`): white
+  outside, hole and gaps transparent. Both scaled to the same hole (the winter's was 521 px, the summer's 394), centred, so
+  the face sits the same in every season; sized for the seat at 2x on desktop (a 76 px face).
+- tree.css: a frame round every seated person in olea, in place of the CSS ring (empty seats have none). Winter and snow wear
+  33; summer, autumn and spring wear 34. Seats unchanged. Checked at 375 and 1280, light and dark; audit clean; no tag is
+  covered by another seat's frame.
+- **Weak spot:** the summer ring is thick (the ring itself 1.7× the face, with leaves 2.3×), so neighbours' leaves touch
+  and the tree looks busy at 375. If the owner finds it too heavy: a thinner summer frame, or the face smaller in olea.
+
 
 ## Round 5 (2026-11-14): the olive's seasons (29-31), the olive share frame (28)
 

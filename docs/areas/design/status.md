@@ -2,8 +2,19 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 8)._
+_Updated 2026-11-14 (the new chat, round 9)._
 
+
+
+## Round 9: the look of the food calculator (gathering)
+- `docs/design/gather-calc.md` gives the class names. The CSS is at the end of `public/gather/gather.css` and covers:
+  - the steppers, with the label on top, so they fit two or three to a row at 375;
+  - the meal and kosher pills (`.ga-seg`);
+  - the proposal rows: tick, quantity, ✕, `.off`, `.new`, and a skeleton while `aria-busy`;
+  - the add-one field;
+  - the foot with the primary button, sticky at the bottom of the sheet;
+  - the RSVP diet ticks (`.ga-diets` / `.ga-tick`).
+- Checked in the real H.modal at 375 and 1280, light and dark. The audit's only finding is that the sticky foot covers rows on desktop while the list scrolls under it, which is by design.
 
 ## Round 8: the look of drag-to-arrange (המשפחה, כל הדורות)
 - `docs/design/tree-edit.md`: the class names and markup for ai-features. The CSS is at the end of `public/family/family.css`. It covers:

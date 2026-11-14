@@ -134,3 +134,93 @@ main.wide > .ga > p.muted { margin: 0; line-height: 1.55; }
 .ga-check input { inline-size: 18px; block-size: 18px; margin: 0; accent-color: var(--primary); }
 @media (max-width: 520px) { .ga-two { grid-template-columns: minmax(0, 1fr); } .ga .card { padding: 16px 14px 14px; border-radius: 20px; } }
 @media (prefers-reduced-motion: reduce) { .ga * { transition: none !important; } .ga-row:hover, .ga-row:active { transform: none; } @view-transition { navigation: none; } }
+
+/* ---------- the food calculator (docs/design/gather-calc.md): a sheet in H.modal ---------- */
+.ga-calc-open::before { content: ""; inline-size: 16px; block-size: 16px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/features.svg) center / contain no-repeat; mask: url(/assets/bd-icons/features.svg) center / contain no-repeat; }
+@media (pointer: coarse) { .ga-calc-open { min-block-size: 44px; } }
+.ga-calc { gap: 16px; }
+.ga-calc fieldset { margin: 0; padding: 0; border: 0; min-inline-size: 0; display: grid; gap: 8px; }
+.ga-calc legend, .ga-diets legend { padding: 0; margin-block-end: 6px; font-size: .88rem; color: var(--muted); }
+.ga-calc-people { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px 18px; }
+.ga-calc .ga-count .btn { inline-size: 44px; block-size: 44px; }
+.ga-calc .ga-count { display: grid; grid-template-columns: 44px minmax(2ch, 1fr) 44px; align-items: center; gap: 4px 2px; inline-size: 100%; max-inline-size: 200px; justify-self: center; }   /* the label on top, so two or three fit a row at 375 */
+.ga-calc .ga-count > span { grid-column: 1 / -1; color: var(--text); font-size: .92rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ga-count.small output { font-size: 1.1rem; }
+.ga-calc-diets { grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 8px; }
+.ga-calc-diets > legend { grid-column: 1 / -1; }
+
+/* one choice: pills (radios) */
+.ga-calc .ga-seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.ga-seg > legend { flex: 1 1 100%; }
+.ga-calc .ga-seg > label { display: block; position: relative; color: var(--text); font-size: .95rem; }
+.ga-seg input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.ga-seg span { display: inline-flex; align-items: center; min-block-size: 44px; padding-inline: 16px; border-radius: 999px; box-sizing: border-box;
+  border: 1px solid var(--line-strong); background: var(--bg); transition: transform var(--dur-press) var(--ease-river); }
+.ga-seg input:checked + span { background: var(--primary); border-color: var(--primary); color: var(--primary-ink); font-weight: 500; }
+.ga-seg input:focus-visible + span { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
+.ga-seg label:hover input:not(:checked) + span { border-color: var(--primary); }
+.ga-seg input:active + span { transform: scale(.96); }
+
+/* the proposal */
+.ga-calc-list { display: grid; gap: 10px; padding-block-start: 14px; border-block-start: 1px solid var(--line); }
+.ga-calc .ga-calc-head { margin: 0; padding: 0; font-size: 1.05rem; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.ga-calc-head small { font-size: .82rem; font-weight: 400; }
+.ga-calc-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ga-calc-item { display: flex; align-items: center; gap: 8px; min-block-size: 52px; padding-inline: 12px 4px; border-radius: 14px; box-sizing: border-box;
+  background: color-mix(in srgb, var(--text) 3.5%, var(--card)); border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); }
+.ga-calc-item > input[type="checkbox"] { flex: none; inline-size: 22px; block-size: 22px; margin: 0; accent-color: var(--primary); cursor: pointer; }
+.ga-calc .ga-calc-item > label { flex: 1 1 auto; min-inline-size: 0; display: flex; align-items: center; gap: 8px; min-block-size: 44px;
+  color: var(--text); font-size: .98rem; cursor: pointer; overflow-wrap: anywhere; }
+.ga-calc .ga-calc-item > .ga-qty { flex: 0 1 8.5em; inline-size: 8.5em; min-block-size: 40px; padding: 6px 10px; font-size: .92rem; text-align: center; }
+.ga-calc-x { flex: none; inline-size: 44px; block-size: 44px; display: grid; place-items: center; border: 0; border-radius: 12px; background: none; color: var(--muted); cursor: pointer;
+  transition: transform var(--dur-press) var(--ease-river); }
+.ga-calc-x::before { content: ""; inline-size: 16px; block-size: 16px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/x.svg) center / contain no-repeat; mask: url(/assets/bd-icons/x.svg) center / contain no-repeat; }
+.ga-calc-x:hover { color: var(--danger); }
+.ga-calc-x:active { transform: scale(.9); }
+.ga-calc-x:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+.ga-calc-item.off > label, .ga-calc-item.off > .ga-qty { opacity: .5; }
+.ga-calc .ga-calc-item.off > label { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 70%, transparent); }
+.ga-calc-item.new { animation: ga-calc-in var(--dur-draw) var(--ease-river); }
+@keyframes ga-calc-in { from { opacity: 0; transform: translateY(-6px); } }
+/* while the proposal is being made: empty rows that breathe */
+.ga-calc-items[aria-busy="true"] > .ga-calc-item:empty { animation: ga-calc-wait 1.4s ease-in-out infinite; }
+.ga-calc-items[aria-busy="true"] > .ga-calc-item:empty:nth-child(2) { animation-delay: .15s; }
+.ga-calc-items[aria-busy="true"] > .ga-calc-item:empty:nth-child(3) { animation-delay: .3s; }
+.ga-calc-items[aria-busy="true"] > .ga-calc-item:empty:nth-child(4) { animation-delay: .45s; }
+.ga-calc-items[aria-busy="true"] > .ga-calc-item:empty:nth-child(5) { animation-delay: .6s; }
+@keyframes ga-calc-wait { 50% { opacity: .45; } }
+.ga-calc-add { flex-wrap: nowrap; }
+.ga-calc .ga-calc-add input[type="text"] { flex: 1 1 auto; min-block-size: 44px; }
+.ga-calc-add .btn { min-block-size: 44px; }
+
+/* the foot: the one primary button, stuck to the sheet's bottom while the list scrolls (it eats #modalBody's bottom padding) */
+.ga-calc-foot { position: sticky; inset-block-end: -26px; z-index: 1; margin-block-end: -26px; padding-block: 12px 26px; margin-inline: -22px; padding-inline: 22px;
+  background: linear-gradient(to top, var(--card) 80%, transparent); }
+.ga-calc-foot .btn { inline-size: 100%; justify-content: center; min-block-size: 50px; font-weight: 600; font-size: 1.02rem; }
+/* #modalBody's bottom padding grows with the safe area below 900px, and narrows to 24px + 16px sides below 520px (base.css) */
+@media (max-width: 899px) { .ga-calc-foot { inset-block-end: calc(-26px - env(safe-area-inset-bottom)); margin-block-end: calc(-26px - env(safe-area-inset-bottom)); padding-block-end: calc(26px + env(safe-area-inset-bottom)); } }
+@media (max-width: 520px) { .ga-calc-foot { inset-block-end: calc(-24px - env(safe-area-inset-bottom)); margin-block-end: calc(-24px - env(safe-area-inset-bottom)); padding-block-end: calc(24px + env(safe-area-inset-bottom)); margin-inline: -16px; padding-inline: 16px; } }
+@media (max-width: 420px) {
+  .ga-calc .ga-calc-item > .ga-qty { flex-basis: 6.5em; inline-size: 6.5em; }
+}
+
+/* ---------- diet ticks in the invitation's answer (optional) ---------- */
+.ga-diets { margin: 0; padding: 0; border: 0; min-inline-size: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ga-diets > legend { flex: 1 1 100%; }
+.ga .ga-tick { display: block; position: relative; color: var(--text); font-size: .95rem; }
+.ga-tick input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+.ga-tick span { display: inline-flex; align-items: center; gap: 6px; min-block-size: 44px; padding-inline: 14px 16px; border-radius: 999px; box-sizing: border-box;
+  border: 1px solid var(--line-strong); background: var(--bg); transition: transform var(--dur-press) var(--ease-river); }
+.ga-tick span::before { content: ""; inline-size: 16px; block-size: 16px; background: currentColor; opacity: 0; transform: scale(.6);
+  -webkit-mask: url(/assets/bd-icons/check.svg) center / contain no-repeat; mask: url(/assets/bd-icons/check.svg) center / contain no-repeat;
+  transition: opacity var(--dur-quick) var(--ease-river), transform var(--dur-quick) var(--ease-river); }
+.ga-tick input:checked + span { background: color-mix(in srgb, var(--primary) 14%, var(--card)); border-color: var(--primary); font-weight: 500; }
+.ga-tick input:checked + span::before { opacity: 1; transform: none; color: var(--primary); }
+.ga-tick input:focus-visible + span { outline: 3px solid color-mix(in srgb, var(--primary) 40%, transparent); outline-offset: 2px; }
+.ga-tick input:active + span { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) {
+  .ga-calc-item.new, .ga-calc-items[aria-busy="true"] > .ga-calc-item:empty { animation: none; }
+  .ga-seg span, .ga-tick span, .ga-tick span::before, .ga-calc-x { transition: none; }
+}

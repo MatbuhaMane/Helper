@@ -2645,3 +2645,12 @@ analysis and suggestions, and fast entry and tracking of payments and receipts. 
 - The page says it gives general guidance, not investment advice.
 - For the master: the hub entry in `public/assets/apps.js` (patch in the shared notes), and `node server/test-parnasa.mjs` to be added to `npm test`.
 - For design: `public/tools/parnasa/parnasa.css` is still missing some parts (listed in ai-features' status).
+
+## 2026-11-14 · The toolbox in categories, beta and secret apps
+
+The owner: the toolbox shows every app, sorted by hand, by name or by category. `public/assets/apps.js` now holds `H.CATS`
+(six categories in the owner's order: כלי עבודה, אומנות או נמות, שומרים על בריאות, אוכל, שוטף, חברתי), a `cat` on each app,
+`H.FUTURE` (עוזר מטבח, מדיטציה ונשימה: drawn only), "אוכלים בחוץ" (`/food/restaurants/`, was "מסעדות שלנו") in the catalogue,
+and `access: 'beta' | 'secret'` (mail and pc are beta). `H.mayOpen(app, me)` reads `me.owner` and `me.apps` (['beta', '/x/'])
+from `/api/me`. ai-features: the tools page from `H.APPS` with the sort switch, the "בודק בטא" and per-app grants in the back door,
+`/api/me` fields, and server-side gating of beta and secret APIs. design: the category headers and the sort switch.

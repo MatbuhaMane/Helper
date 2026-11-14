@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – Strengthening the Ohel's cyber security (vision → master)
+Status: Decided (the owner). In the owner's words: "צריך לחזק את פרוייקט האהל מבחינת אבטחת סייבר."
+
+- **A full security review** of the code and the infrastructure, by the master:
+  - sign-in and identifying users;
+  - the permission checks and the four privacy levels;
+  - the vault and the backups;
+  - input validation and rate limiting in the API;
+  - secrets and keys, including cleaning old secrets;
+  - outside libraries;
+  - file uploads and the storage connections;
+  - users' content that reaches the AI.
+- **The result:** a list of findings by severity, each with a recommendation, brought to the owner. Fixes in the vault,
+  the sign-in and money only with the owner's approval.
+- **A standing rule:** every new feature that touches personal data gets a security check before it is merged. First in
+  line: the location and the ledger of ידיים in "יד ביד", and the chat.
+- **Timing** is the master's, against the two-week focus on the family's daily use.
+
 ## 2026-11-15 – "יד ביד" starts in stages, as a social interface (vision → design, ai-features, legal, master)
 Status: Decided (the owner). New information: the owner wants to start working on "יד ביד" now, as a social
 interface. This updates the "בקרוב only" status of the 2026-11-14 entry; the rules of the economy do not change.

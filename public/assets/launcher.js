@@ -87,6 +87,7 @@
     }
     function enter() {
       if (on || P.locked) return;
+      folderEl.dispatchEvent(new CustomEvent('arrange:before'));   // a page that shows the tiles another way (by name, by category) puts them back in the grid
       on = true; grid.classList.add('arranging'); grid.style.touchAction = 'none'; bar.hidden = false; syncLock();   // (inline: from this very frame, not when the stylesheet is recalculated)
       tiles().forEach((t) => { t.setAttribute('aria-roledescription', 'אריח שאפשר להזיז'); t.setAttribute('draggable', 'false'); });
       pins();

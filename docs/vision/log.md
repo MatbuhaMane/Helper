@@ -90,3 +90,4 @@
 
 - 2026-11-14: image-generator prompts for the owner's assets in docs/vision/asset-prompts.md (design's style block, white background that design cuts out); assets.md switched from a transparent to a white background.
 - 2026-11-14: the owner confirmed tree skins (pine default, olive; maple and African juniper later); batch 23 sent to design, ai-features and ceo-2.
+- 2026-11-14: docs/vision/asset-prompts-full.md: a complete, self-contained prompt (style included) for every image the owner makes: 4 tree skins with 3 seasons each, leaves, banner, profile header, and the future-tool assets 15-23.

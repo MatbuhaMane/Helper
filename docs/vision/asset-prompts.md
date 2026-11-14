@@ -2,9 +2,7 @@
 
 **איך משתמשים:**
 1. מצרפים לכל בקשה את `public/assets/tent.webp` כתמונת סגנון.
-2. בעץ (1–2) מצרפים גם את השכבה המקורית. הקבצים נמצאים בתיקייה הראשית `M:\Claude Code\Helper\public\assets\tree\canopy\`, ולא בענף vision. אפשר גם להוריד אותם מהאתר:
-   - ב-1: https://helper.shemrivers.workers.dev/assets/tree/canopy/crown.webp
-   - ב-2: https://helper.shemrivers.workers.dev/assets/tree/canopy/ground.webp
+2. בעץ (1–2) מצרפים גם את העץ המקורי השלם: `M:\Claude Code\Helper\docs\design\source\tree-canopy-gemini.jpg`, בתיקייה הראשית ולא בענף vision. ארבע השכבות שבאתר (crown, boughs, trunk, ground) נחתכו ממנו בסקריפט `docs/design/cut-tree-canopy.mjs`. לכן מבקשים עץ שלם לכל עונה, והעיצוב חותך אותו לשכבות.
 3. מדביקים את בלוק הסגנון, ואחריו את הפרומפט של הפריט.
 
 הרקע לבן ואחיד ולא שקוף, כי מנועי תמונה לא מייצרים שקיפות טוב. העיצוב מסיר את הרקע וחותך. בלוק הסגנון הוא הנוסח של העיצוב מ-`docs/design/family-tree-art.md`.
@@ -20,19 +18,17 @@ no letters, no people, no animals, no frame.
 
 ## א. עץ המשפחה
 
-**1. הצמרת בשלוש עונות.** יחס 1:1 כמו המקור. שלוש בקשות, ובכל אחת משנים רק את העונה.
-```
-The same tree crown as the second attached image, same shape, size, position and composition, only the season changes:
-[AUTUMN: foliage in amber, rust and ochre, a few leaves falling | WINTER: bare dark branches with a light dusting of snow
-on top of the boughs, a few small evergreen tufts | SPRING: fresh light-green leaves with small white and pink blossoms].
-Keep the empty spaces between the branches exactly where they are in the original.
-```
+**1–2. העץ השלם בשלוש עונות:** הצמרת, הענפים, הגזע והקרקע. אותו יחס ואותו גודל כמו המקור. שלוש בקשות, ובכל אחת משנים רק את העונה.
 
-**2. הקרקע בשלוש עונות.** אותו יחס כמו המקור.
+צריך את כל העץ ולא רק את הצמרת והקרקע, כי גם בענפים ובראש הגזע יש עלים ירוקים.
 ```
-The same ground strip as the second attached image, same shape and size, only the season changes:
-[AUTUMN: fallen amber and rust leaves on the earth | WINTER: soft patches of snow and dark wet earth |
-SPRING: green grass with small wildflowers].
+The same tree as the second attached image: exactly the same trunk, branches, crown outline, ground, size, position
+and composition, same canvas size. Only the season changes:
+[AUTUMN: all foliage, including the leafy tips of the side branches, in amber, rust and ochre, a few leaves falling;
+fallen leaves on the ground | WINTER: bare dark branches with a light dusting of snow on top, no leaves on the side
+branches, a few small evergreen tufts; soft patches of snow on the ground | SPRING: fresh light-green leaves with small
+white and pink blossoms, also on the side branches; green grass with small wildflowers on the ground].
+Keep every branch and every empty space between the branches exactly where it is in the original.
 ```
 
 **3. העלה בשלוש עונות.** יחס 1:1, ובקשה נפרדת לכל עונה.

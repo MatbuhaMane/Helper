@@ -276,8 +276,8 @@
 
   /* ---------- a new group: a name and two or more people one may write to ---------- */
   function newGroup(people) {
-    const name = el('input', { class: 'fr-group-name', 'aria-label': 'שם הקבוצה', placeholder: 'שם הקבוצה', maxlength: 40, dir: 'auto' });
-    const note = el('p', { class: 'fr-kid-note', hidden: true }, 'ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה.');
+    const name = el('input', { class: 'dm-grp-name', 'aria-label': 'שם הקבוצה', placeholder: 'שם הקבוצה', maxlength: 40, dir: 'auto' });
+    const note = el('p', { class: 'dm-kid-note', hidden: true }, 'ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה.');
     const boxes = people.map((p) => ({ p, input: el('input', { type: 'checkbox', value: p.id, onchange: rule }) }));
     // the children's rule, as the page can see it: a child and a friend (not family) are never in one group. The server checks it too
     function rule() {
@@ -299,7 +299,7 @@
     const ini = (n) => { const w = n.trim().split(/\s+/); return (w.length > 1 ? w[0][0] + w[1][0] : n.slice(0, 2)) || '?'; };
     H.closeModal();
     H.modal(el('h2', {}, 'קבוצה חדשה'), name,
-      el('ul', { class: 'fr-pick' }, boxes.map((b) => el('li', {}, el('label', {}, b.input, el('span', { class: 'fr-av sm', 'aria-hidden': 'true' }, ini(b.p.name)), el('span', { dir: 'auto' }, b.p.name))))),
+      el('ul', { class: 'dm-grp-pick' }, boxes.map((b) => el('li', {}, el('label', {}, b.input, el('span', { class: 'fr-av sm', 'aria-hidden': 'true' }, ini(b.p.name)), el('span', { dir: 'auto' }, b.p.name))))),
       note, make);
     name.focus();
   }

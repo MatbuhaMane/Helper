@@ -53,7 +53,7 @@
     const kids = [head];
     const inv = invitation();
     if (d.child) {
-      kids.push(el('p', { class: 'fr-kid-note' }, 'ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה, ולכן חברים מחוץ למשפחה מחכים לגיל 12.'));
+      kids.push(el('p', { class: 'dm-kid-note' }, 'ילדים מתחת לגיל 12 מקבלים הודעות רק מהמשפחה, ולכן חברים מחוץ למשפחה מחכים לגיל 12.'));
       sec.replaceChildren(...kids);
       return;
     }
@@ -85,9 +85,9 @@
     grid.replaceChildren(...list.map((f) => el('li', { class: 'fr-card' }, av(f),
       el('b', { dir: 'auto' }, f.name, f.kin ? el('span', { class: 'fr-kin' }, 'גם משפחה') : null),
       el('small', {}, f.since ? 'חברים מ' + new Date(f.since).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' }) : ''),
+      el('a', { class: 'fr-talk', href: '/messages/?to=' + encodeURIComponent(f.id), 'aria-label': 'שיחה עם ' + f.name, title: 'שיחה עם ' + f.name }),
       el('a', { class: 'btn ghost small', href: '/family/story/?f=' + encodeURIComponent(f.id) }, 'המוזיאון'),
-      el('button', { class: 'btn ghost small', type: 'button', onclick: () => act(f, 'end') }, 'הסרה'),
-      el('a', { class: 'fr-talk', href: '/messages/?to=' + encodeURIComponent(f.id), 'aria-label': 'שיחה עם ' + f.name, title: 'שיחה עם ' + f.name }))));
+      el('button', { type: 'button', onclick: () => act(f, 'end') }, 'הסרה'))));
   }
 
   /* ---------- inviting: a one-time link, or a request by email ---------- */

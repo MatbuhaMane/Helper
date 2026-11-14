@@ -39,7 +39,7 @@ _Design, 2026-11-14. Vision batch 30, which widens batch 16's premium-motion rul
 | T1 | Motion is only `transform`, `opacity` (and `translate`, `scale`, `rotate`) | Must: no layout property (width, height, inset/top/left, margin, padding, font-size, grid/flex sizes) in any `transition-property` or `@keyframes` | read `document.styleSheets`: transitions and keyframe rules |
 | T2 | Paint-only transitions (`color`, `background-color`, `border-color`, `box-shadow`, `filter`) stay short | Should: ≤ 200 ms | the same pass |
 | T3 | Durations | Must: a press ≤ 150 ms; a fade, a menu or a popover 150–250 ms; a sheet, a page or a window 200–250 ms for the main movement (a spring may settle until 340 ms); no one-time animation over 400 ms, except the allowlist in T4 | `document.getAnimations()` after each interaction: `effect.getComputedTiming().duration` |
-| T4 | Endless animations only where they belong | Must: `infinite` only for `spin`, `skel-sheen`, `sky-twinkle`, `mood-flicker`, `gl-dot`, and the recording ring; one-time decorations (moods, egg, `gk-ok`) are allowed up to 2.6 s | the keyframe names of animations with `iterations: Infinity` |
+| T4 | Endless animations only where they belong | Must: `infinite` only for a name on the allowlist below; one-time decorations (moods, egg, `gk-ok`) are allowed up to 2.6 s | the keyframe names of animations with `iterations: Infinity` |
 | T5 | A tap answers at once | Must: on `pointerdown`, the control's `transform`, `opacity` or `background-color` changes within one frame; the visible result of a click (a DOM change) comes within 100 ms, optimistically if the server is slower | dispatch `pointerdown`/`click` on each visible control, then compare computed styles on the next `requestAnimationFrame` and time the first `MutationObserver` record |
 | T6 | No tap delay | Must: every control's computed `touch-action` is `manipulation` (or `none` / `pan-y` on a gesture surface) | `getComputedStyle(el).touchAction` |
 | T7 | Nothing jumps | Must: CLS ≤ 0.02 from load to 3 s, and 0 after an interaction that did not ask for it; every `img`/`video` has a size (`width`/`height` or `aspect-ratio`) | a `PerformanceObserver` on `layout-shift`; check the media attributes and computed `aspect-ratio` |
@@ -48,6 +48,19 @@ _Design, 2026-11-14. Vision batch 30, which widens batch 16's premium-motion rul
 | T10 | Scroll panes keep the page still | Should: every element with `overflow-y: auto|scroll` and more than 300 px of content has `overscroll-behavior: contain` | computed style |
 | T11 | Reduced motion is respected | Must: with `data-motion="reduce"`, `getAnimations()` holds nothing that moves (`transform`), only short opacity changes | `data-motion="reduce"`, then the interactions of T5 |
 | T12 | Dark mode is excellent | Must: the same contrast rules as light (the current audit), no pure #000 background, and no white flash between pages (`html` has `--bg` before the CSS loads) | contrast pass in dark; the first paint colour of the page |
+
+### The allowlist: endless animations, and the scenery (T3, T4)
+
+An endless animation is allowed only in one of four kinds. A new one is added here first, in its kind, and copied into `ENDLESS` in `tools/audit.js`.
+
+| Kind | Why it may run on | The names |
+|---|---|---|
+| Waiting | it says "working", and stops when the answer comes | `spin`, `rec-spin`, `rs-spin`, `fun-spin`, `fun-pull-spin`, `mu-spin`, `ga-calc-wait`, `cx-dots`, `gl-dot`, `skel-sheen`, `shimmer`, `pb-sheen` |
+| Live | something is recording, playing or calling now | `gl-rec`, `mu-listen`, `mu-eq`, `gp-wave`, `sos-pulse`, `st-ring`, `dm-z`, `dm-flow` |
+| Edit mode | the arranging wiggle, as on a phone's home screen | `app-wiggle`, `arr-wiggle` |
+| Scenery | the tent's calm life: sky, fire, tree, figures, moods | `sky-twinkle`, `twinkle`, `sun-breathe`, `glow`, `breath`, `shb-breathe`, `strip-breathe`, `rp-breathe`, `wz-breathe`, `wz-tri`, `cf-spark`, `cf-roar`, `cf-chosen`, `plump`, `tr-fall`, `tr-drift`, `tr-sway`, `tr-sway-low`, `tr-hang`, `tr-glow`, `tr-flicker`, `tr-candle-glow`, `f2-glow`, `f2-tw`, `f2-z`, `fe-flick`, `mood-flicker`, `egg-live`, `egg-rock` |
+
+**The scenery may also be slow (T3).** A slow change of light or a breath on a decorative element is fine, for example the sky turning to night or the moon rising. The element must not be a reply to a tap: `pointer-events: none` or `aria-hidden`. A reply to a tap is never scenery, even on a scene: a pressed sun or moon gives way within 150 ms. Every scenery animation stops under reduced motion.
 
 **What only a person can judge:** the feel itself. Before a screen is marked done, compare it once side by side with Telegram on the same phone. If it feels slower or clumsier, it is not done.
 

@@ -24,6 +24,7 @@ _Updated 2026-11-14 (the new chat, round 17)._
   - hold-to-speed on videos (`.vid-speed`), plus the tokens `--ease-spring` and `--dur-settle`.
 - The rules for every department are in `docs/design/motion.md`. The gestures' JS belongs to ai-features and the master (`common.js` for the sheet).
 - Checked with the audit at 375 and 1280 px, light and dark, on a mock and on the home, messages, goals and settings pages: clean.
+- **The Telegram test:** 12 measurable checks (T1–T12) in motion.md, for the master to build into `tools/audit.js`. `--dur-settle` is now 340 ms. Motion comes first, before the rest of batch 28 (the CEO).
 
 ## Round 16: batch 28, the look of goals part 2 (the logic is ai-features')
 - The advice window on a goal's page (`.gl-ask`), with "שמור מסקנה" (`.gl-keep`) pinning to `.gl-pins`. From 1000 px it is a sticky column (`.gl-split`).

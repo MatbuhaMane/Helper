@@ -1108,7 +1108,7 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
 :root {
   --ease-spring: linear(0, .009, .035 2.1%, .141 4.4%, .723 12.9%, .938 16.7%, 1.017 19.4%, 1.067, 1.099 24.3%, 1.108 26%, 1.103, 1.085 30.5%,
     1.024 37.5%, 1.003 41.4%, .992 45.5%, .996 55.4%, 1.001 66%, 1);   /* a soft spring: a sheet or a row that settles */
-  --dur-settle: 420ms;
+  --dur-settle: 340ms;   /* the spring does most of its way in the first ~200 ms; the rest is the settle */
 }
 /* instant: no 300 ms double-tap wait on anything pressable, and no grey flash */
 :where(a, button, [role="button"], [role="tab"], [role="switch"], [role="radio"], summary, label, .chip, .btn) { touch-action: manipulation; }

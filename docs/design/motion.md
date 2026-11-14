@@ -23,11 +23,33 @@ _Design, 2026-11-14. Vision batch 30, which widens batch 16's premium-motion rul
    | `--dur-press` | 120 ms | a press |
    | `--dur-quick` | 200 ms | a fade or a menu |
    | `--dur-draw` | 340 ms | something arriving |
-   | `--dur-settle` | 420 ms | something springing back after a gesture |
+   | `--dur-settle` | 340 ms (most of the way in ~200 ms) | something springing back after a gesture |
 
    - Easing: `--ease-river` (out) for arrivals, `--ease-spring` for anything a finger let go of, and `--ease-leave` for leaving.
 6. **Reduced motion** (from the system, or `data-motion="reduce"`): everything still works, only without the movement.
 7. **Page to page:** cross-document view transitions are already on (the bars stay put, the page slides 6 px and fades).
+
+## The Telegram test: checks per screen (for `tools/audit.js`)
+
+**Who runs it:** each department runs these on every screen it changes, at 375 px and at desktop width, in light and dark mode.
+**Status:** "Must" is a defect; "Should" is a warning.
+
+| # | Check | Threshold | How the audit can measure it |
+|---|---|---|---|
+| T1 | Motion is only `transform`, `opacity` (and `translate`, `scale`, `rotate`) | Must: no layout property (width, height, inset/top/left, margin, padding, font-size, grid/flex sizes) in any `transition-property` or `@keyframes` | read `document.styleSheets`: transitions and keyframe rules |
+| T2 | Paint-only transitions (`color`, `background-color`, `border-color`, `box-shadow`, `filter`) stay short | Should: ≤ 200 ms | the same pass |
+| T3 | Durations | Must: a press ≤ 150 ms; a fade, a menu or a popover 150–250 ms; a sheet, a page or a window 200–250 ms for the main movement (a spring may settle until 340 ms); no one-time animation over 400 ms, except the allowlist in T4 | `document.getAnimations()` after each interaction: `effect.getComputedTiming().duration` |
+| T4 | Endless animations only where they belong | Must: `infinite` only for `spin`, `skel-sheen`, `sky-twinkle`, `mood-flicker`, `gl-dot`, and the recording ring; one-time decorations (moods, egg, `gk-ok`) are allowed up to 2.6 s | the keyframe names of animations with `iterations: Infinity` |
+| T5 | A tap answers at once | Must: on `pointerdown`, the control's `transform`, `opacity` or `background-color` changes within one frame; the visible result of a click (a DOM change) comes within 100 ms, optimistically if the server is slower | dispatch `pointerdown`/`click` on each visible control, then compare computed styles on the next `requestAnimationFrame` and time the first `MutationObserver` record |
+| T6 | No tap delay | Must: every control's computed `touch-action` is `manipulation` (or `none` / `pan-y` on a gesture surface) | `getComputedStyle(el).touchAction` |
+| T7 | Nothing jumps | Must: CLS ≤ 0.02 from load to 3 s, and 0 after an interaction that did not ask for it; every `img`/`video` has a size (`width`/`height` or `aspect-ratio`) | a `PerformanceObserver` on `layout-shift`; check the media attributes and computed `aspect-ratio` |
+| T8 | No spinner for a fast answer | Must: a `.spinner` is at opacity 0 for its first 400 ms; a list or card that loads over 400 ms shows `.skel` in the same size | computed opacity at insertion and at +450 ms |
+| T9 | Smooth | Should: while scrolling the page and opening and closing a sheet, ≤ 5% of frames over 32 ms and no long task over 50 ms | `requestAnimationFrame` deltas plus a `longtask` observer, during `scrollBy({top: 1200, behavior: 'smooth'})` and an `H.modal` round trip |
+| T10 | Scroll panes keep the page still | Should: every element with `overflow-y: auto|scroll` and more than 300 px of content has `overscroll-behavior: contain` | computed style |
+| T11 | Reduced motion is respected | Must: with `data-motion="reduce"`, `getAnimations()` holds nothing that moves (`transform`), only short opacity changes | `data-motion="reduce"`, then the interactions of T5 |
+| T12 | Dark mode is excellent | Must: the same contrast rules as light (the current audit), no pure #000 background, and no white flash between pages (`html` has `--bg` before the CSS loads) | contrast pass in dark; the first paint colour of the page |
+
+**What only a person can judge:** the feel itself. Before a screen is marked done, compare it once side by side with Telegram on the same phone. If it feels slower or clumsier, it is not done.
 
 ## The pieces (the JS sets the variables; the CSS gives the look)
 

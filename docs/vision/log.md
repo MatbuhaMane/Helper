@@ -138,3 +138,4 @@
 - 2026-11-15: the CEO confirmed batch 37 (legal drafts the rules page and the terms chapter; then the CEO, vision for the tone, the owner, legal again, the owner's lawyer). Vision did the tone pass on legal's draft; the file stays outside the repo, in the sessions' notes folder. The owner has not seen it yet.
 - 2026-11-15: the owner approved legal's four conditions on the licence declaration (batch 38) and the first question of the approval queue spec (inside the existing "ממתין לאישור" page). The terms draft was not counted as approved.
 - 2026-11-15: the CEO reported that the owner approved the tone version of the יד ביד wording in the CEO's session; recorded in decisions.md with that provenance.
+- 2026-11-15: legal wrote the final wording; the tool's line now ends with "בחזרה" instead of "בתמורה"; the wording is with the owner's lawyer.

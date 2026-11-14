@@ -24,6 +24,8 @@ the vision's tone version of legal's draft. The drafts stay outside the repo unt
   - the Ohel may change the rules, the list of services and their value, with notice ahead of a material change.
 - **The word "בתמורה" in the tool's line:** legal checks it against "ידיים are not consideration". If it is a problem,
   the line ends with "בחזרה" instead.
+  - **Legal's result (the same day):** it is a problem. The line is now
+    "לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה". The master changes it in `apps.js`.
 - **The rules page in stage 1,** the rule on children and youth: "בשלב הזה יד ביד פתוח בין משפחה וחברים, ומגיל 18.
   ילדים ונוער יצטרפו בהמשך, באישור הורה." The minors clause in the terms stays as written.
 - **A recommendation after a service is optional.** This settles trust rule 2 of the internal economy entry.

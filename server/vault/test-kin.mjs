@@ -163,5 +163,40 @@ ok('a card that was not deleted: nothing to restore', !K.mayRestore({ deleted_at
 eq('changed keys', K.changedKeys({ name: 'רות', details: { born: '1980-01-01', place: 'חיפה' } }, { name: 'רותי', details: { born: '1980-01-01', place: '' , notes: 'x' } }), ['name', 'place', 'notes']);
 eq('nothing changed', K.changedKeys({ name: 'a', details: { born: '1' } }, { name: 'a', details: { born: '1' } }), []);
 
+/* ---- arranging: a move to another generation rewrites the relationships ---- */
+{
+  // אבא and אמא are the parents of me and נועה; עברי (my brother) entered himself as the parent of both of us
+  const L = (a, b, type = 'parent') => ({ id: `${a}>${b}`, type, a, b, kind: type === 'parent' ? 'bio' : 'married', status: null });
+  const base = [L('dad', 'me'), L('mom', 'me'), L('dad', 'noa'), L('mom', 'noa'), L('ivri', 'me'), L('ivri', 'noa'), L('ivri', 'tali', 'partner'), L('ivri', 'son'), L('tali', 'son')];
+  const ids = (ls) => ls.map((l) => l.id ?? `${l.a}>${l.b}`).sort();
+  const apply = (links, plan) => [...links.filter((l) => !plan.remove.includes(l)), ...plan.add.map((l) => ({ ...l, id: `${l.a}>${l.b}`, status: null }))];
+
+  const down = K.movePlan(base, 'ivri', { sibling: 'me' });
+  eq('parent row → sibling row: the wrong parent links go', ids(down.remove), ['ivri>me', 'ivri>noa']);
+  eq('parent row → sibling row: the parents of the sibling are added', ids(down.add), ['dad>ivri', 'mom>ivri']);
+  eq('parent row → sibling row: his own son and partner stay', ids(apply(base, down)).filter((x) => x.startsWith('ivri') || x.endsWith('ivri')), ['dad>ivri', 'ivri>son', 'ivri>tali', 'mom>ivri']);
+  const after = apply(base, down), k = K.kin(after, () => 'm');
+  eq('now he is my brother', k.relationName('me', 'ivri'), 'אח');
+  eq('the keyboard "down" does the same', ids(K.movePlan(base, 'ivri', { down: true }).remove), ['ivri>me', 'ivri>noa']);
+  eq('the sentence', K.moveWords('ivri', down, (x) => ({ ivri: 'עברי', dad: 'דוד', mom: 'שרה', me: 'אני', noa: 'נועה' })[x], () => 'm'), 'עברי יהיה ילד של דוד ושל שרה, ולא הורה של אני ושל נועה.');
+
+  // and back: from the siblings' row to the parents' row (parent of me): no longer a child of my parents
+  const up = K.movePlan(after, 'ivri', { parentOf: 'me' });
+  eq('sibling row → parent row: no longer a child of my parents', ids(up.remove), ['dad>ivri', 'mom>ivri']);
+  eq('sibling row → parent row: my parent', ids(up.add), ['ivri>me']);
+  eq('…and the keyboard "up" makes him a sibling of his parent (an uncle)', ids(K.movePlan(after, 'ivri', { up: true }).remove), ['dad>ivri', 'mom>ivri']);
+
+  // a child row: like the siblings of the other children
+  eq('child of ivri and tali, like their son', ids(K.movePlan(after, 'noa', { childOf: 'ivri' }).add), ['ivri>noa', 'tali>noa']);
+  eq('…and no longer a child of my parents', ids(K.movePlan(after, 'noa', { childOf: 'ivri' }).remove), ['dad>noa', 'mom>noa']);
+  // the rules hold
+  const err = (f) => { try { f(); return 'ok'; } catch (e) { return e.message; } };
+  eq('nobody their own ancestor', err(() => K.movePlan(after, 'dad', { childOf: 'son' })), 'ok');   // (dad leaves his parents' place: it can be done)
+  eq('a sibling of oneself', err(() => K.movePlan(base, 'me', { sibling: 'me' })), 'no_target');
+  eq('nothing to move', err(() => K.movePlan(base, 'me', { sibling: 'noa' })), 'nothing_to_move');
+  eq('up with no parents', err(() => K.movePlan(base, 'dad', { up: true })), 'no_target');
+  eq('a parent of my own parent → my link to them goes', ids(K.movePlan([...base, L('dad', 'mom', 'partner')], 'me', { parentOf: 'dad' }).remove), ['dad>me', 'mom>me']);   // (mom is dad's partner; ivri stays)
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -25,6 +25,8 @@
     // changes that wait for a user's yes, a delete and its undo
     changed_since: 'הכרטיס השתנה בינתיים, ולכן הבקשה בוטלה. אפשר להציע שוב.', decided: 'כבר ענית על הבקשה הזו.', restore_closed: 'עבר הזמן לביטול. בעל האוהל יכול לשחזר מהדלת האחורית.',
   };
+  Object.assign(ERR, { no_target: 'לשם אי אפשר להעביר: אין שם הורה או ילד לסדר לפיו.', nothing_to_move: 'הכרטיס כבר שם, אין מה לשנות.',
+    circular_family: 'ככה מישהו היה הופך להורה של עצמו. נסו מקום אחר.', too_many_parents: 'יותר מדי הורים לאדם אחד.' });
   const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
   const call = async (path, opts = {}) => {
     try { return await api(path, { ...opts, noRedirect: true }); } catch (e) {
@@ -164,10 +166,12 @@
       el('button', { class: 'btn small ghost', onclick: linksTool }, waiting ? `עצים מקושרים (${waiting} מחכים)` : 'עצים מקושרים'),
       el('button', { class: 'btn small ghost', onclick: activity }, 'יומן פעילות'),
       el('button', { class: 'btn small ghost fv-lockbtn', onclick: () => lockNow() }, 'נעילה'));
-    const tools = el('div', { class: 'fv-tools' }, views, find);
+    const arrangeBtn = el('button', { class: 'btn small ghost fv-arrange-btn', type: 'button', 'aria-pressed': 'false', hidden: !['family', 'all'].includes(S.view), onclick: () => arrange(!S.arranging) }, 'סידור');
+    const tools = el('div', { class: 'fv-tools' }, views, arrangeBtn, find);
     const board = el('div', { class: 'fv-tree' });
     const asks = el('div', { class: 'fv-asks-slot' });
-    root.replaceChildren(el('section', { class: 'fv' }, bar, asks, S.people.length ? tools : null, board));
+    root.replaceChildren(el('section', { class: 'fv' + (S.arranging ? ' arranging' : '') }, bar, asks, S.people.length ? tools : null, board));
+    if (S.arranging) { S.arranging = false; arrange(true); }
     if (S.asks) asksBox(asks).catch(say);
     tickTimer = setInterval(() => {
       const s = Math.max(0, Math.round((S.until - Date.now()) / 1000)), mm = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -237,10 +241,12 @@
     const asking = (c) => c.kind === 'edit' ? ['מבקש/ת לשנות את הפרטים של ', el('b', {}, c.person.name)]
       : c.kind === 'delete' ? ['מבקש/ת למחוק את ', el('b', {}, c.person.name), ' מהעץ']
       : c.kind === 'unlink' ? ['מבקש/ת להסיר קשר: ', el('b', {}, linkWords(c.link))]
+      : c.kind === 'move' ? ['מבקש/ת להעביר את ', el('b', {}, c.person.name), ' לדור אחר בעץ']
       : ['מבקש/ת לשנות קשר: ', el('b', {}, linkWords(c.link))];
     const what = (c) => c.kind === 'edit' ? diffList(c.changes)
       : c.kind === 'delete' ? el('p', { class: 'fv-ask-del' }, `${c.person.name} יימחק/תימחק מהעץ`)
       : c.kind === 'unlink' ? el('p', { class: 'fv-ask-del' }, `הקשר ${linkWords(c.link)} יוסר מהעץ`)
+      : c.kind === 'move' ? el('p', {}, c.words)
       : diffList([c.link.to?.kind !== c.link.kind ? { k: 'kind', from: kindWord(c.link.kind), to: kindWord(c.link.to?.kind) } : null,
         c.link.to?.status !== c.link.status ? { k: 'status', from: PARTNER_STATUS[c.link.status] || '', to: PARTNER_STATUS[c.link.to?.status] || '' } : null].filter(Boolean));
     const answer = async (c, yes, card) => {
@@ -523,6 +529,9 @@
   const VIEWS = [['tree', 'העץ'], ['family', 'המשפחה'], ['all', 'כל הדורות']];
   function setView(v) {
     S.view = v;
+    const btn = root.querySelector('.fv-arrange-btn');
+    if (btn) btn.hidden = !['family', 'all'].includes(v);
+    if (S.arranging && v === 'tree') { S.arranging = false; root.querySelector('section.fv')?.classList.remove('arranging'); root.querySelector('.fv-arrange-bar')?.remove(); btn?.setAttribute('aria-pressed', 'false'); }
     root.querySelectorAll('.fv-views button[data-v]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.v === v)));
   }
   const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce';
@@ -573,8 +582,10 @@
   /** the nuclear family around the person in the centre: grandparents, parents, the person with siblings and partners, children */
   function drawFamily(board) {
     const f = S.focus;
-    const parents = parentsOf(f), grand = parents.flatMap((p) => parentsOf(p).map((gp) => ({ gp, via: p })));
-    const sibs = siblingsOf(f), partners = partnersOf(f), kids = childrenOf(f);
+    const parents = parentsOf(f).sort(byOrd), grand = parents.flatMap((p) => parentsOf(p).sort(byOrd).map((gp) => ({ gp, via: p })));
+    const sibs = siblingsOf(f), partners = partnersOf(f), kids = childrenOf(f).sort(byOrd);
+    // the brothers and sisters with the one in the centre, in their order (birth order, as the family set it); partners beside them
+    const full = [...sibs.filter((x) => x.half === false).slice(0, 8).map((x) => x.id), f].sort(byOrd);
     const grandkids = kids.flatMap(childrenOf);
     const row = (cls, label, items) => (items.length ? el('div', { class: 'fv-gen ' + cls }, el('span', { class: 'fv-gen-label' }, label), el('div', { class: 'fv-row' }, items)) : null);
     const lines = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -583,15 +594,14 @@
       row('g-grand', 'סבים וסבתות', grand.map(({ gp }) => card(byId(gp)))),
       row('g-parents', 'הורים', parents.map((p) => card(byId(p)))),
       el('div', { class: 'fv-gen g-focus' }, el('div', { class: 'fv-row' },
-        ...sibs.filter((x) => x.half === false).slice(0, 8).map((x) => card(byId(x.id), 'sib')),
-        card(byId(f), 'focus'),
-        ...partners.map((p) => card(byId(p), 'partner')),
-        ...sibs.filter((x) => x.half).slice(0, 6).map((x) => card(byId(x.id), 'sib')))),
+        ...full.flatMap((id) => (id === f ? [card(byId(f), 'focus'), ...partners.map((p) => card(byId(p), 'partner'))] : [card(byId(id), 'sib')])),
+        ...sibs.filter((x) => x.half).slice(0, 6).map((x) => x.id).sort(byOrd).map((id) => card(byId(id), 'sib')))),
       row('g-kids', 'ילדים', kids.map((k) => card(byId(k)))),
       grandkids.length ? el('p', { class: 'fv-more muted' }, `ועוד ${grandkids.length} ${grandkids.length === 1 ? 'נכד/ה' : 'נכדים'} – לחצו על אחד הילדים כדי לרדת בענף`) : null,
     ].filter(Boolean));
     requestAnimationFrame(() => connect(board, lines));
     watchSize(board);
+    dragWatch(board);
   }
   /** generations from the parent links (partners share a row) – the zoomed-out view until the forest comes */
   function levels() {
@@ -616,7 +626,7 @@
     return rows.filter(Boolean).map((row, i, all) => {
       const above = (all[i - 1] || []).map((p) => p.id);
       const key = (p) => { const k = parentsOf(p.id).map((id) => above.indexOf(id)).filter((x) => x >= 0); return k.length ? Math.min(...k) : 99; };
-      row.sort((a, b) => key(a) - key(b));
+      row.sort((a, b) => key(a) - key(b) || ordOf(a) - ordOf(b));
       const out = [];
       for (const p of row) { if (out.includes(p)) continue; out.push(p); for (const q of partnersOf(p.id).map(byId)) if (q && row.includes(q) && !out.includes(q)) out.push(q); }
       return out;
@@ -832,6 +842,7 @@
     board.replaceChildren(lines, ...generations().map((row) => el('div', { class: 'fv-row' }, row.map((p) => card(p, p.id === S.focus ? 'focus' : '')))));
     requestAnimationFrame(() => connect(board, lines));
     watchSize(board);
+    dragWatch(board);
   }
   function card(p, role = '') {
     if (!p) return null;
@@ -840,12 +851,251 @@
     if (p.photo) photoInto(p.photo, pic);
     const rel = S.mine && S.mine !== p.id ? relationName(S.mine, p.id) : S.mine === p.id ? 'אני' : null;
     const isFocus = role === 'focus';
-    return el('button', { class: 'fv-card' + (role ? ' r-' + role : '') + (p.id === S.going ? ' going' : '') + (pendingOf('person', p.id) ? ' pending' : ''), 'data-id': p.id, title: isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
-      onclick: () => (isFocus ? memberCard(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
+    const arranging = S.arranging && ['family', 'all'].includes(S.view);
+    return el('button', { class: 'fv-card' + (role ? ' r-' + role : '') + (p.id === S.going ? ' going' : '') + (pendingOf('person', p.id) ? ' pending' : '') + (arranging && S.picked === p.id ? ' picked' : ''), 'data-id': p.id,
+      title: arranging ? 'גררו כדי להעביר, או לחצו: העבר…' : isFocus ? 'הכרטיס של ' + p.name : 'מרכז העץ סביב ' + p.name,
+      onkeydown: (e) => arrangeKeys(e, p),
+      onclick: () => (arranging ? (Date.now() - (S.noClick || 0) > 400 && moveMenu(p)) : isFocus ? memberCard(p.id) : (S.view === 'all' ? (setView('family'), focusOn(p.id)) : focusOn(p.id))) },
+      arranging ? el('span', { class: 'fv-grip', 'aria-hidden': 'true' }) : null,
       pic, el('b', {}, p.name),
       rel ? el('small', { class: 'fv-relname' }, rel) : null,
       el('small', { class: 'muted' }, [n.doc ? `${n.doc} מסמכים` : '', n.photo ? `${n.photo} תמונות` : ''].filter(Boolean).join(' · ') || (isFocus ? 'לחצו לפתיחה' : '')));
   }
+  /* ---------- "סידור": arranging the family by dragging (docs/design/tree-edit.md; the server: /api/vault/move, /order) ----------
+     In המשפחה and כל הדורות. A card dropped on another generation's row changes who its parents are: the server works
+     out which links (kin.movePlan), the page shows that in one sentence and saves only after "להעביר"; a change that
+     touches another user waits for their yes, as every relationship does. A card dropped elsewhere in its own row changes
+     only the order (birth order). After each change, "בטל". From the keyboard: a click (Enter) on a card opens "העבר…";
+     Space picks a card up, the arrows move it, Esc puts it down. */
+  const ordOf = (p) => p?.ord ?? 1000 + S.people.indexOf(p);
+  const byOrd = (a, b) => ordOf(byId(a)) - ordOf(byId(b));
+  const rowSel = () => (S.view === 'all' ? '.fv-tree > .fv-row' : '.fv-gen');
+  const rowName = (row) => {
+    if (!row) return '';
+    if (S.view === 'all') return `דור ${[...root.querySelectorAll('.fv-tree > .fv-row')].indexOf(row) + 1}`;
+    return row.querySelector('.fv-gen-label')?.textContent || 'האחים';
+  };
+  const cardsIn = (row) => [...row.querySelectorAll('.fv-card')].filter((c) => !c.closest('.fv-ghost'));
+  function arrange(on) {
+    S.arranging = on;
+    S.picked = null;
+    const sec = root.querySelector('section.fv');
+    sec?.classList.toggle('arranging', on);
+    sec?.classList.remove('dragging');
+    root.querySelector('.fv-arrange-btn')?.setAttribute('aria-pressed', String(on));
+    root.querySelector('.fv-arrange-bar')?.remove();
+    if (on) root.querySelector('.fv-tree')?.before(el('div', { class: 'fv-arrange-bar', role: 'status' },
+      el('span', {}, 'גוררים כרטיס לדור אחר, או למקום אחר בשורה. במקלדת: רווח מרים כרטיס, והחצים מזיזים.'),
+      el('button', { class: 'btn primary fv-arrange-done', type: 'button', onclick: () => arrange(false) }, 'סיום')));
+    draw();
+  }
+  const arrangeSay = (t) => { const s = root.querySelector('.fv-arrange-bar > span'); if (s) s.textContent = t; };
+
+  /** where a drop on another generation's row puts the person: a target for kin.movePlan */
+  function targetFor(row, x, y, id) {
+    if (S.view === 'all') {
+      const near = cardsIn(row).map((c) => ({ id: c.dataset.id, d: dist(c, x, y) })).filter((c) => c.id !== id).sort((a, b) => a.d - b.d);
+      const anchor = near.find((c) => parentsOf(c.id).length) || near[0];
+      return anchor ? { sibling: anchor.id } : null;
+    }
+    const f = S.focus;
+    if (row.classList.contains('g-parents')) return { parentOf: f };
+    if (row.classList.contains('g-focus')) return { sibling: f };
+    if (row.classList.contains('g-kids')) return { childOf: f };
+    if (row.classList.contains('g-grand')) {
+      // beside the grandparent nearest the drop: a parent of that grandparent's child (the parent of the one in the centre)
+      const gp = cardsIn(row).map((c) => ({ id: c.dataset.id, d: dist(c, x, y) })).sort((a, b) => a.d - b.d)[0]?.id;
+      const via = parentsOf(f).find((p) => parentsOf(p).includes(gp));
+      return via ? { parentOf: via } : null;
+    }
+    return null;
+  }
+  const dist = (c, x, y) => { const r = c.getBoundingClientRect(); return Math.hypot(r.left + r.width / 2 - x, r.top + r.height / 2 - y); };
+
+  /** a move to another generation: the server's sentence first, saved only after "להעביר" */
+  async function moveTo(p, to, from, toName) {
+    let d;
+    try { d = await call('/api/vault/move', { body: { id: p.id, to, dry: true } }); } catch (e) { return say(e); }
+    const waits = d.waitsFor?.length ? ` השינוי יחכה לאישור של ${d.waitsFor.join(' ו')}, ועד אז שום דבר לא משתנה.` : '';
+    H.modal(el('div', { class: 'fv-arrange-confirm' },
+      el('h2', {}, `להעביר את ${p.name} לדור אחר?`),
+      el('div', { class: 'fv-move' }, el('span', { class: 'fv-move-from' }, from || 'כאן'), el('i', { class: 'fv-move-arrow', 'aria-hidden': 'true' }), el('span', { class: 'fv-move-to' }, toName || 'שם')),
+      el('p', { class: 'muted' }, d.text + waits),
+      el('div', { class: 'fv-arrange-actions' },
+        el('button', { class: 'btn primary', type: 'button', onclick: async (e) => {
+          e.currentTarget.disabled = true;
+          let r;
+          try { r = await call('/api/vault/move', { body: { id: p.id, to } }); } catch (err) { H.closeModal(); return say(err); }
+          H.closeModal();
+          await refreshAll(); draw();
+          if (r.proposed) return proposedSay(r, d.waitsFor?.[0]);
+          undoBar(`${p.name} ${g(p.id, 'עבר', 'עברה', 'עבר/ה')} ל${toName || 'דור אחר'}`, async () => {
+            await call('/api/vault/move', { body: { undo: r.undo } });
+            await refreshAll(); draw();
+          });
+        } }, 'להעביר'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
+  }
+
+  /** a new order along a row (the ids as they stand in the DOM): saved at once, with "בטל" */
+  async function reorder(ids, before) {
+    const set = (list) => list.forEach((id, i) => { const q = byId(id); if (q) q.ord = i; });
+    const again = () => { draw(); if (S.picked) root.querySelector(`.fv-tree .fv-card[data-id="${S.picked}"]`)?.focus(); };   // (the keyboard keeps its card)
+    set(ids); again();
+    try { await call('/api/vault/order', { method: 'PUT', body: { ids } }); } catch (e) { set(before); again(); return say(e); }
+    undoBar('הסדר בשורה נשמר', async () => {
+      await call('/api/vault/order', { method: 'PUT', body: { ids: before } });
+      set(before); again();
+    });
+  }
+  /** one step along the row: toward the inline start or end (right and left as the screen shows them) */
+  function stepInRow(id, physical) {
+    const c = root.querySelector(`.fv-tree .fv-card[data-id="${id}"]`), row = c?.closest('.fv-row');
+    if (!row) return;
+    const ids = cardsIn(row).map((x) => x.dataset.id), i = ids.indexOf(id);
+    const rtl = getComputedStyle(row).direction === 'rtl';
+    const j = i + ((physical === 'right') === rtl ? -1 : 1);
+    if (j < 0 || j >= ids.length) return arrangeSay('אין לאן להזיז עוד בשורה הזו.');
+    const next = [...ids]; next.splice(i, 1); next.splice(j, 0, id);
+    reorder(next, ids);
+  }
+  /** a generation up or down from the keyboard or the "העבר…" menu */
+  function stepGeneration(p, up) {
+    const c = root.querySelector(`.fv-tree .fv-card[data-id="${p.id}"]`), row = c?.closest(rowSel());
+    const rows = [...root.querySelectorAll(rowSel())], i = rows.indexOf(row), next = rows[i + (up ? -1 : 1)];
+    moveTo(p, up ? { up: true } : { down: true }, rowName(row), next ? rowName(next) : up ? 'דור למעלה' : 'דור למטה');
+  }
+  /** "העבר…": the four moves, for a keyboard or a tap without a drag */
+  function moveMenu(p) {
+    const go = (fn) => () => { H.closeModal(); fn(); };
+    const can = { up: parentsOf(p.id).length > 0, down: childrenOf(p.id).length > 0 };
+    H.modal(el('div', { class: 'fv-arrange-confirm' },
+      el('h2', {}, `להעביר את ${p.name}`),
+      el('p', { class: 'muted' }, 'לדור אחר (מי ההורים משתנה), או מקום אחד בשורה (רק הסדר).'),
+      el('div', { class: 'fv-arrange-actions' },
+        el('button', { class: 'btn', type: 'button', disabled: !can.up, onclick: go(() => stepGeneration(p, true)) }, `דור למעלה: ${g(p.id, 'אח', 'אחות', 'אח/ות')} של ההורה`),
+        el('button', { class: 'btn', type: 'button', disabled: !can.down, onclick: go(() => stepGeneration(p, false)) }, `דור למטה: ${g(p.id, 'אח', 'אחות', 'אח/ות')} של הילד`),
+        el('button', { class: 'btn', type: 'button', onclick: go(() => stepInRow(p.id, 'right')) }, 'מקום אחד ימינה'),
+        el('button', { class: 'btn', type: 'button', onclick: go(() => stepInRow(p.id, 'left')) }, 'מקום אחד שמאלה'),
+        el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
+  }
+
+  /* the drag itself: pointer events on the board (a mouse drags the whole card; a finger drags the grip, or anywhere
+     after a long press, so that an ordinary swipe still scrolls) */
+  let drag = null;
+  function dragWatch(board) {
+    if (board.dataset.arrange) return;
+    board.dataset.arrange = '1';
+    board.addEventListener('pointerdown', (e) => {
+      if (!S.arranging || drag || e.button > 0) return;
+      const c = e.target.closest('.fv-card');
+      if (!c || !board.contains(c)) return;
+      const touch = e.pointerType !== 'mouse', grip = !!e.target.closest('.fv-grip');
+      drag = { c, id: c.dataset.id, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, live: false, pid: e.pointerId, ready: !touch || grip, timer: 0 };
+      if (touch && !grip) drag.timer = setTimeout(() => { if (drag && !drag.live) { drag.ready = true; startDrag(); } }, 450);
+    });
+    // a long press must not open the phone's menu or start a scroll once the card is in the hand
+    board.addEventListener('contextmenu', (e) => { if (S.arranging && e.target.closest('.fv-card')) e.preventDefault(); });
+    document.addEventListener('touchmove', (e) => { if (drag?.live) e.preventDefault(); }, { passive: false });
+    addEventListener('pointermove', (e) => {
+      if (!drag || e.pointerId !== drag.pid) return;
+      drag.x = e.clientX; drag.y = e.clientY;
+      if (!drag.live) {
+        const far = Math.hypot(drag.x - drag.x0, drag.y - drag.y0);
+        if (!drag.ready) { if (far > 8) { clearTimeout(drag.timer); drag = null; } return; }   // a swipe: the page scrolls
+        if (far < 5) return;
+        startDrag();
+      }
+      if (!drag.frame) drag.frame = requestAnimationFrame(dragFrame);
+    });
+    addEventListener('pointerup', (e) => { if (drag && e.pointerId === drag.pid) endDrag(true); });
+    addEventListener('pointercancel', (e) => { if (drag && e.pointerId === drag.pid) endDrag(false); });
+  }
+  function startDrag() {
+    const d = drag, r = d.c.getBoundingClientRect();
+    d.live = true; d.dx = d.x0 - r.left; d.dy = d.y0 - r.top;
+    d.from = d.c.closest(rowSel()); d.row = d.c.closest('.fv-row');
+    d.c.classList.add('lifted');
+    root.querySelector('section.fv')?.classList.add('dragging');
+    const copy = d.c.cloneNode(true); copy.classList.remove('lifted', 'picked'); copy.removeAttribute('data-id');
+    d.ghost = el('div', { class: 'fv-ghost', 'aria-hidden': 'true', style: `inline-size:${r.width}px` }, copy);
+    document.body.append(d.ghost);
+    d.ghost.style.translate = `${r.left}px ${r.top}px`;
+    navigator.vibrate?.(15);
+  }
+  function dragFrame() {
+    const d = drag;
+    if (!d?.live) return;
+    d.frame = 0;
+    d.ghost.style.translate = `${d.x - d.dx}px ${d.y - d.dy}px`;
+    const under = document.elementFromPoint(d.x, d.y);
+    const row = under?.closest(rowSel());
+    root.querySelectorAll('.fv-tree .drop').forEach((n) => { if (n !== row) n.classList.remove('drop'); });
+    d.target = null; d.order = null;
+    let line = root.querySelector('.fv-drop-line');
+    if (row && row !== d.from) {
+      row.classList.add('drop');
+      line?.classList.remove('on');
+      d.target = row;
+      arrangeSay(`${byId(d.id)?.name}: אל ${rowName(row)}`);
+      return;
+    }
+    // along its own row: the card nearest the pointer, and its side
+    const others = cardsIn(d.row).filter((c) => c !== d.c);
+    const near = others.map((c) => ({ c, d: dist(c, d.x, d.y) })).sort((a, b) => a.d - b.d)[0]?.c;
+    if (!row || !near) { line?.classList.remove('on'); return; }
+    const rr = d.row.getBoundingClientRect(), nr = near.getBoundingClientRect();
+    const leftSide = d.x < nr.left + nr.width / 2, rtl = getComputedStyle(d.row).direction === 'rtl';
+    const ids = others.map((c) => c.dataset.id), at = ids.indexOf(near.dataset.id) + (leftSide === rtl ? 1 : 0);
+    const next = [...ids]; next.splice(at, 0, d.id);
+    const now = cardsIn(d.row).map((c) => c.dataset.id);
+    if (next.join() === now.join()) { line?.classList.remove('on'); return; }
+    d.order = { next, now };
+    if (!line || line.parentElement !== d.row) { line?.remove(); line = el('i', { class: 'fv-drop-line', 'aria-hidden': 'true' }); d.row.append(line); }
+    const x = (leftSide ? nr.left - 6 : nr.right + 6) - rr.left;
+    line.style.setProperty('--x', `${Math.round(x)}px`); line.style.setProperty('--y', `${Math.round(nr.top - rr.top)}px`); line.style.setProperty('--h', `${Math.round(nr.height)}px`);
+    line.classList.add('on');
+    const name = (id) => byId(id)?.name || '';
+    const i = next.indexOf(d.id);
+    arrangeSay(`${name(d.id)}, ${i === 0 ? 'ראשון/ה בשורה' : i === next.length - 1 ? 'אחרון/ה בשורה' : `בין ${name(next[i - 1])} ל${name(next[i + 1])}`}`);
+  }
+  function endDrag(drop) {
+    const d = drag;
+    drag = null;
+    if (!d) return;
+    clearTimeout(d.timer); cancelAnimationFrame(d.frame || 0);
+    if (!d.live) return;   // (a tap: the click opens "העבר…")
+    S.noClick = Date.now();
+    root.querySelector('section.fv')?.classList.remove('dragging');
+    root.querySelectorAll('.fv-tree .drop').forEach((n) => n.classList.remove('drop'));
+    root.querySelector('.fv-drop-line')?.remove();
+    d.c.classList.remove('lifted');
+    d.ghost.classList.add('landing');
+    setTimeout(() => d.ghost.remove(), 200);
+    const p = byId(d.id);
+    if (!drop || !p) return;
+    if (d.target) {
+      const to = targetFor(d.target, d.x, d.y, d.id);
+      if (!to) return arrangeSay('לשם אי אפשר להעביר מכאן. נסו את "העבר…" (לחיצה על הכרטיס).');
+      moveTo(p, to, rowName(d.from), rowName(d.target));
+    } else if (d.order) reorder(d.order.next, d.order.now);
+  }
+  /** the keyboard: Space picks the card up, the arrows move it (up and down: a generation, after the sentence), Esc puts it down */
+  function arrangeKeys(e, p) {
+    if (!S.arranging) return;
+    if (e.key === ' ') { e.preventDefault(); S.picked = S.picked === p.id ? null : p.id; root.querySelectorAll('.fv-card.picked').forEach((n) => n.classList.remove('picked')); e.currentTarget.classList.toggle('picked', S.picked === p.id); arrangeSay(S.picked ? `${p.name} בידיים: החצים מזיזים, Esc מניח.` : `${p.name} במקום.`); return; }
+    if (S.picked !== p.id) return;
+    const k = { ArrowRight: 'right', ArrowLeft: 'left' }[e.key];
+    if (k) { e.preventDefault(); stepInRow(p.id, k); return; }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); stepGeneration(p, e.key === 'ArrowUp'); }
+  }
+  // Esc: puts a picked card down, else ends the arranging (not while a window is open)
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !S.arranging || document.getElementById('modal')?.hidden === false) return;
+    if (drag?.live) return endDrag(false);
+    if (S.picked) { S.picked = null; root.querySelectorAll('.fv-card.picked').forEach((n) => n.classList.remove('picked')); arrangeSay('הכרטיס במקום.'); return; }
+    arrange(false);
+  });
   const initials = (name) => (name || '?').trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('');
   async function blobUrl(id) {
     const r = await fetch(`/api/vault/items/${encodeURIComponent(id)}/file`, { cache: 'no-store' });

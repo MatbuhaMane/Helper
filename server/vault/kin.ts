@@ -262,8 +262,8 @@ export function kin(links: KinLink[], sexOf: (id: string) => string) {
    - one's own card: at once.
    A delete is soft: the one who deleted it can undo it for a while, the owner can restore it from the back door. */
 export interface Party { member: string | null; user: boolean }
-export type ChangeKind = 'edit' | 'delete' | 'unlink' | 'relink';
-export const CHANGE_KINDS: ChangeKind[] = ['edit', 'delete', 'unlink', 'relink'];
+export type ChangeKind = 'edit' | 'delete' | 'unlink' | 'relink' | 'move';   // move: a person to another generation (several links at once)
+export const CHANGE_KINDS: ChangeKind[] = ['edit', 'delete', 'unlink', 'relink', 'move'];
 /** the users (other than me) who must approve a change that touches these cards; none = it is done at once */
 export function approversFor(me: string, parties: Party[]): string[] {
   const out = new Set<string>();
@@ -291,4 +291,79 @@ export function changedKeys(before: { name: string; details: Record<string, unkn
     if (JSON.stringify(a) !== JSON.stringify(b)) out.push(k);
   }
   return out;
+}
+
+/* ---------------- arranging the tree: moving a person to another generation (the owner, 2026-11-14) ----------------
+   "My brother put himself in our parents' row instead of the siblings' row." A drop on another row is a change of
+   relationship, worked out here from where the person was dropped:
+   - next to someone (`sibling`): the same parents as them; and no longer a parent of them or of the other children of those parents;
+   - `parentOf` someone: their parent; and no longer a child of that person's parents or partners, or of anyone below them;
+   - `childOf` someone: like the siblings of that person's other children, or their only child when they have none;
+   - `up` / `down` (the keyboard's "העבר…"): a sibling of their own (first) parent / of their own (first) child.
+   Their partners, their other children and everyone else's links stay as they are. Nothing here writes: the vault
+   applies the plan (or proposes it, when it touches another user's card). */
+export type MoveTo = { sibling: string } | { parentOf: string } | { childOf: string } | { up: true } | { down: true };
+export interface MovePlan { remove: KinLink[]; add: { type: 'parent'; a: string; b: string; kind: string }[]; parents: string[] }
+export function movePlan<L extends KinLink>(links: L[], id: string, to: MoveTo): { remove: L[]; add: MovePlan['add']; parents: string[] } {
+  const k = kin(links, () => '');
+  const P = k.parentsOf, C = k.childrenOf;
+  const reach = (from: string[], step: (x: string) => string[]) => {
+    const seen = new Set<string>(), stack = [...from];
+    while (stack.length) { const x = stack.pop()!; if (seen.has(x)) continue; seen.add(x); stack.push(...step(x)); }
+    return seen;
+  };
+  let want: string[] = [], dropKids = new Set<string>(), child: string | null = null;
+  const besides = (s: string) => { want = P(s).filter((x) => x !== id); dropKids = new Set([s, ...want.flatMap(C)]); dropKids.delete(id); };
+  if ('up' in to) { const p = P(id)[0]; if (!p) throw new Error('no_target'); besides(p); }
+  else if ('down' in to) { const c = C(id)[0]; if (!c) throw new Error('no_target'); besides(c); }
+  else if ('sibling' in to) { if (to.sibling === id) throw new Error('no_target'); besides(to.sibling); }
+  else if ('childOf' in to) {
+    if (to.childOf === id) throw new Error('no_target');
+    const kids = C(to.childOf).filter((x) => x !== id);
+    if (kids.length) besides(kids[0]); else want = [to.childOf];
+  } else {
+    const f = to.parentOf;
+    if (f === id) throw new Error('no_target');
+    const below = reach([f], C);
+    want = P(id).filter((x) => !P(f).includes(x) && !k.partnersOf(f).includes(x) && !below.has(x));
+    child = f;
+  }
+  if (want.includes(id)) throw new Error('circular_family');
+  const above = reach(want, P);    // the new parents and everyone above them: none of them may stay my child
+  const remove = links.filter((l) => l.type === 'parent' && ((l.b === id && !want.includes(l.a)) || (l.a === id && (dropKids.has(l.b) || above.has(l.b)))));
+  const add: MovePlan['add'] = want.filter((x) => !P(id).includes(x)).map((a) => ({ type: 'parent' as const, a, b: id, kind: 'bio' }));
+  if (child && !C(id).includes(child)) add.push({ type: 'parent', a: id, b: child, kind: 'bio' });
+  if (!remove.length && !add.length) throw new Error('nothing_to_move');
+  const after = [...links.filter((l) => !remove.includes(l)), ...add];
+  const bad = linksProblem(after);
+  if (bad) throw new Error(bad);
+  return { remove, add, parents: after.filter((l) => l.type === 'parent' && l.b === id).map((l) => l.a) };
+}
+
+/** what is wrong with a set of links, if anything: someone their own ancestor, or more than six parents */
+export function linksProblem(links: { type: string; a: string; b: string }[]): 'circular_family' | 'too_many_parents' | null {
+  const ups = new Map<string, string[]>();
+  for (const l of links) if (l.type === 'parent') (ups.get(l.b) || ups.set(l.b, []).get(l.b)!).push(l.a);
+  for (const [c, ps] of ups) {
+    if (ps.length > 6) return 'too_many_parents';
+    const seen = new Set<string>(), stack = [...ps];
+    while (stack.length) { const x = stack.pop()!; if (x === c) return 'circular_family'; if (seen.has(x)) continue; seen.add(x); stack.push(...(ups.get(x) || [])); }
+  }
+  return null;
+}
+
+/** the plan in one plain sentence: "עברי יהיה ילד של שרה ושל דוד, ולא הורה של נועה." (names already as this viewer may see them) */
+export function moveWords(id: string, plan: { remove: KinLink[]; add: { a: string; b: string }[] }, nameOf: (id: string) => string, sexOf: (id: string) => string): string {
+  const g = (m: string, f: string, both: string) => (sexOf(id) === 'm' ? m : sexOf(id) === 'f' ? f : both);
+  const of = (ids: string[]) => ids.map((x, i) => (i ? 'ושל ' : 'של ') + nameOf(x)).join(' ');
+  const newPar = plan.add.filter((l) => l.b === id).map((l) => l.a), newKid = plan.add.filter((l) => l.a === id).map((l) => l.b);
+  const lostPar = plan.remove.filter((l) => l.b === id).map((l) => l.a), lostKid = plan.remove.filter((l) => l.a === id).map((l) => l.b);
+  const be = g('יהיה', 'תהיה', 'יהיה/תהיה');
+  const parts = [
+    newPar.length ? `${be} ${g('ילד', 'ילדה', 'ילד/ה')} ${of(newPar)}` : '',
+    newKid.length ? `${be} הורה ${of(newKid)}` : '',
+    lostPar.length ? `${newPar.length || newKid.length ? 'ולא' : g('לא יהיה עוד', 'לא תהיה עוד', 'לא יהיה/תהיה עוד')} ${g('ילד', 'ילדה', 'ילד/ה')} ${of(lostPar)}` : '',
+    lostKid.length ? `${newPar.length || newKid.length || lostPar.length ? 'ולא' : g('לא יהיה עוד', 'לא תהיה עוד', 'לא יהיה/תהיה עוד')} הורה ${of(lostKid)}` : '',
+  ].filter(Boolean);
+  return `${nameOf(id)} ${parts.join(', ')}.`;
 }

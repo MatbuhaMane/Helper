@@ -103,3 +103,4 @@
 - 2026-11-14: coach ש5 decided (share with family or friends); the coach spec 1 closed and sent as batch 29 (wave 2); the chat spec started.
 - 2026-11-14: the owner wants Telegram's sleek feel across the whole app; chat spec 1 closed (quality first, encryption like Telegram, groups and communities, disappearing messages, the live card); batch 30 sent.
 - 2026-11-14: business reports the owner approved the storage package prices, the goals consultation quota (10/day) and the coach quota (15 messages + 1 plan/day); pointers added to goals.md, later.md and story.md; forwarded to ai-features.
+- 2026-11-14: the owner approved notification settings, named "רמת הניג'וס" (four levels per tool, main settings plus overrides); batch 31 sent.

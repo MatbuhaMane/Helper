@@ -11,6 +11,40 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Notification settings: "רמת הניג'וס" per tool (vision → ai-features, design, master)
+Status: Decided (the owner). The setting is named **"רמת הניג'וס"** (the owner's name; keep it). It replaces batch 28's
+"גם כהודעה לטלפון" switch. Details in `docs/vision/shabbat-notifications.md`.
+
+- **Every tool that sensibly notifies may send a phone notification, even with the app closed:**
+  - goals;
+  - the הקפדה coach;
+  - the cooking timers;
+  - home and garden reminders;
+  - gatherings, birthdays and family messages.
+- **Four levels per tool:**
+  1. **כבוי:** off.
+  2. **שקט:** only in the daily summary.
+  3. **רגיל:** a notification at the right time.
+  4. **נודניק:** a notification, then a repeat until the person marks it handled.
+- **Two places to control it:**
+  - **The main settings,** a "התראות" screen: a row per tool with its level, plus the quiet hours.
+  - **An override inside a tool:** a bell in each tool sets its level, and can also be set on a single item, such as one
+    goal. The specific choice wins over the general one.
+- **What stays:**
+  - **Consent:** the phone asks permission once; without it, everything goes to the daily summary.
+  - **Quiet hours and Shabbat** apply to everything; Shabbat mode sends nothing except emergencies.
+  - **Two exceptions to quiet hours:** emergencies always get through, and a timer the person started just now (cooking)
+    rings during quiet hours too.
+  - **The settings follow the person** across devices (`H.prefs`, on the server).
+- **Defaults:**
+  - the existing list (a personal message, a gathering, a reminder I set, a birthday or memorial day, an emergency) is
+    "רגיל";
+  - everything else starts at "שקט", and the person raises what they want.
+- **Who does what:**
+  - ai-features: the levels, the overrides and the repeats in `server/push.ts` and each tool;
+  - design: the "התראות" settings screen and the bell;
+  - the master: the main settings screen and `common.js` are shared files, so the master owns or reviews them.
+
 ## 2026-11-14 – Telegram-level smoothness across the whole app; the chat, spec 1 (wave 2) (vision → design, ai-features, master)
 Status: Decided (the owner). Details in `docs/vision/later.md` ("ממשק השיחות, ברמה של טלגרם").
 

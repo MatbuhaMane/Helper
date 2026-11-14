@@ -34,6 +34,7 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 31** (2026-11-14), sent to ai-features, design and the CEO: "רמת הניג'וס", phone notifications per tool with four levels (off, quiet, normal, nag), main settings plus per-tool and per-item overrides.
 - **Batch 30** (2026-11-14), sent to ai-features, design and the CEO: Telegram-level smoothness across the whole app (now), the video speed slide in every player, and the chat spec 1 (wave 2).
 - **Batch 29** (2026-11-14), sent to ai-features, design, business and the CEO: the הקפדה coach, spec 1 (wave 2, after the family launch).
 - **Batch 28** (2026-11-14), sent to ai-features, design, business and the CEO: goals part 2 after the owner's test (AI consultation per goal, help defining a goal, phone notifications per kind, shared goals on the tree profile) and storage (your own Drive or NAS, ours paid, short clips free).

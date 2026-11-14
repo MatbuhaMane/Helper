@@ -1,10 +1,15 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (פרנסה phase 1, ready for the CEO's server review).
+Last update: 2026-11-14 (the toolbox and beta apps, for the CEO's access review; פרנסה phase 1 waiting for review).
 
 ## Done
 
+- **The toolbox and beta/secret apps (2026-11-14), on `ai-features`, for the CEO's access review:** server (app_access, requireApp on every
+  mail API and the companion's mail plan, test-app-access 18), /api/me owner+apps and apps.js tints + פרנסה's category (master's, patches
+  in the shared notes), the toolbox from H.APPS with three sorts, the back door's "כלים בבדיקה" column, the polite page (H.gate).
+  Checked: 403/200 by API for three people, the pages for four cases, the audit at 375 and 1280 in light and dark. Not checked: the
+  back door's column (needs the owner's passkey).
 - **פרנסה, phase 1 (2026-11-14), on `ai-features`, ready for the CEO's review of the server:** 41e5af3 server (6 tables, 14 routes, rules + test-parnasa 68),
   ed6d47d prices from Yahoo + fixes, 249b577 the page (dashboard, one-tap entry with a guessed category, recurring, the shared קופה
   by invitation within the household, bank/card import with review, investments, Claude-only tips on sums by category), 945198f decisions,

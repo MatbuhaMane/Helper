@@ -2654,3 +2654,20 @@ The owner: the toolbox shows every app, sorted by hand, by name or by category. 
 and `access: 'beta' | 'secret'` (mail and pc are beta). `H.mayOpen(app, me)` reads `me.owner` and `me.apps` (['beta', '/x/'])
 from `/api/me`. ai-features: the tools page from `H.APPS` with the sort switch, the "בודק בטא" and per-app grants in the back door,
 `/api/me` fields, and server-side gating of beta and secret APIs. design: the category headers and the sort switch.
+
+## 2026-11-14 · Beta and secret apps, the server and the toolbox (ai-features, the CEO's request)
+
+- New table (appended to schema.sql): `app_access (email, app, by_email, created_at)`. `app` is `'beta'` (a beta tester: every beta app) or a secret app's address (one at a time). The owner needs none.
+- `server/app-access-rules.ts`: the server's own list of gated apps (`GATED`: `/mail/` and `/pc/`, both beta). `test-app-access.mjs` checks that it matches the `access` flags in apps.js, so the two cannot drift apart.
+- `server/app-access.ts`:
+  - `requireApp(ctx, href)` refuses with 403 `app_closed`. Every mail API calls it, and so does the companion's `propose_mail_plan`, through `mayUse`.
+  - `/pc/` has no API: it is a static guide, so its gate is the page only, and the guide's text is public anyway.
+- Routes (appended): `GET /api/admin/app-access` and `PUT /api/admin/app-access/:email {app, on}`. Both are owner-only, behind the owner's room, and logged.
+- `/api/me` now carries `owner` and `apps` (the person's own leaves). This is the master's line, sent as a patch.
+- `public/assets/gate.js` (`H.gate(href)`): a page without the leave shows "הכלי עדיין בבדיקה". It reads the code's catalogue, so an app the owner's layout hides is still gated.
+- The toolbox is drawn from `H.APPS`, with a sort in `H.prefs('toolsView').sort`: `hand`, `name` or `category`.
+- apps.js (patch for the master):
+  - each app's `tint`, moved from the old tools list;
+  - פרנסה under שוטף.
+- For the master: add `node server/test-app-access.mjs` and `node server/test-parnasa.mjs` to `npm test`.
+- For design: `.tools-sort` (the sort chips; an inline style holds it for now), `.tools-cat` and `.tools-cat-h` (the category headers), and `.gate-closed` (the polite page; inline style for now).

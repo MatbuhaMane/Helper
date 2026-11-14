@@ -1038,3 +1038,66 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
     mask-composite: intersect; }
 }
 @media (prefers-reduced-motion: reduce) { :root:is(:has(.sky), [data-scene]) main::before { animation: none !important; opacity: calc(var(--sky-stars) * .6); } }
+
+/* ---------- Who sees it: the four-level privacy picker (docs/design/privacy-picker.md) ----------
+   Every published item (a story, a picture, a memory, a recipe…) carries one of four levels, set by data-level:
+   all (כולם) · friends (חברים ומשפחה) · family (רק משפחה) · me (רק אני). Each level has its own colour (--lv) and icon.
+   Three forms: the full picker (fieldset of radios), a compact chip that opens it, and a small tag for lists. */
+[data-level="all"]     { --lv: #3d7ea6; --lv-ic: url(/assets/priv-icons/all.svg); }
+[data-level="friends"] { --lv: #c0577d; --lv-ic: url(/assets/priv-icons/friends.svg); }
+[data-level="family"]  { --lv: var(--primary); --lv-ic: url(/assets/priv-icons/family.svg); }
+[data-level="me"]      { --lv: #5f636c; --lv-ic: url(/assets/priv-icons/me.svg); }
+:root[data-theme="dark"] [data-level="all"] { --lv: #7db4d6; }
+:root[data-theme="dark"] [data-level="friends"] { --lv: #e595b3; }
+:root[data-theme="dark"] [data-level="me"] { --lv: #a9aeb8; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [data-level="all"] { --lv: #7db4d6; }
+  :root:not([data-theme="light"]) [data-level="friends"] { --lv: #e595b3; }
+  :root:not([data-theme="light"]) [data-level="me"] { --lv: #a9aeb8; }
+}
+.priv-ic { flex: none; display: inline-block; inline-size: 22px; block-size: 22px; background: var(--lv, currentColor);
+  -webkit-mask: var(--lv-ic) center / contain no-repeat; mask: var(--lv-ic) center / contain no-repeat; }
+
+/* the full picker: 2×2 on a phone, four across from 640 px; the chosen one gets its level's border and tint */
+.priv-pick { margin: 0; padding: 0; border: 0; min-inline-size: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.priv-pick > legend { grid-column: 1 / -1; padding: 0; margin-block-end: 6px; font-weight: 600; font-size: .95rem; }
+.priv-opt { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 8px; align-items: center; min-block-size: 64px;
+  padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 14px; background: var(--card); cursor: pointer;
+  transition: transform var(--dur-press, .12s) var(--ease-river, ease), opacity var(--dur-quick, .2s); }
+.priv-opt:active { transform: scale(.98); }
+.priv-opt > input { position: absolute; opacity: 0; inline-size: 1px; block-size: 1px; pointer-events: none; }
+.priv-opt > .priv-ic { grid-row: 1 / span 2; }
+.priv-opt > b { font-weight: 600; font-size: .98rem; line-height: 1.25; }
+.priv-opt > small { grid-column: 2; color: var(--muted); font-size: .8rem; line-height: 1.3; }
+.priv-opt:has(input:checked) { border-color: var(--lv); background: color-mix(in srgb, var(--lv) 11%, var(--card)); }
+.priv-opt:has(input:checked) > b { color: color-mix(in srgb, var(--lv) 70%, var(--text)); }
+.priv-opt:has(input:checked)::after { content: ""; position: absolute; inset-block-start: 8px; inset-inline-end: 8px; inline-size: 16px; block-size: 16px;
+  background: var(--lv); -webkit-mask: url(/assets/bd-icons/check.svg) center / contain no-repeat; mask: url(/assets/bd-icons/check.svg) center / contain no-repeat; }
+.priv-opt:has(input:focus-visible) { outline: 3px solid color-mix(in srgb, var(--lv) 45%, transparent); outline-offset: 2px; }
+.priv-opt:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+.priv-opt:has(input:disabled):active { transform: none; }
+.priv-pick > .priv-note { grid-column: 1 / -1; margin: 2px 0 0; color: var(--muted); font-size: .82rem; }
+@media (min-width: 640px) {
+  .priv-pick { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .priv-opt { grid-template-columns: minmax(0, 1fr); justify-items: start; align-content: start; min-block-size: 96px; }
+  .priv-opt > .priv-ic { grid-row: auto; margin-block-end: 4px; }
+  .priv-opt > small { grid-column: 1; }
+}
+
+/* the compact chip by a publish button: shows the current level, opens the picker (H.modal or a popover) */
+.priv-chip { display: inline-flex; align-items: center; gap: 6px; min-block-size: 44px; padding: 0 14px 0 12px; border-radius: 999px;
+  border: 1.5px solid color-mix(in srgb, var(--lv, var(--line-strong)) 55%, var(--line)); background: color-mix(in srgb, var(--lv, var(--muted)) 8%, var(--card));
+  color: var(--text); font: inherit; font-size: .9rem; font-weight: 500; cursor: pointer;
+  transition: transform var(--dur-press, .12s) var(--ease-river, ease); }
+.priv-chip:active { transform: scale(.97); }
+.priv-chip > .priv-ic { inline-size: 18px; block-size: 18px; }
+.priv-chip::after { content: ""; inline-size: 7px; block-size: 7px; margin-inline-start: 2px; border-block-end: 1.8px solid currentColor;
+  border-inline-start: 1.8px solid currentColor; transform: translateY(-2px) rotate(45deg); opacity: .6; }   /* a down chevron (RTL) */
+.priv-chip:focus-visible { outline: 3px solid color-mix(in srgb, var(--lv, var(--primary)) 45%, transparent); outline-offset: 2px; }
+
+/* the small tag in lists and on cards: icon + short name; .priv-tag.bare is the icon alone (with aria-label / title) */
+.priv-tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px 2px 6px; border-radius: 999px; vertical-align: middle;
+  background: color-mix(in srgb, var(--lv, var(--muted)) 12%, transparent); color: color-mix(in srgb, var(--lv, var(--muted)) 75%, var(--text));
+  font-size: .76rem; font-weight: 500; line-height: 1.5; white-space: nowrap; }
+.priv-tag > .priv-ic { inline-size: 14px; block-size: 14px; }
+.priv-tag.bare { padding: 3px; }

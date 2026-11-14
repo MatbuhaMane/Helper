@@ -567,3 +567,80 @@
 @media (max-width: 599px) { .fv-rels > .fv-acts-row > .btn { flex: 1 1 calc(50% - 3px); justify-content: center; } }
 @keyframes fv-pick-in { from { opacity: 0; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .fv-rels .fv-pick { animation: none; } .fv-pick-who, .fv-pick-new { transition: none; } }
+
+/* ---------- Friends: "the family you choose" (docs/design/friends.md) ----------
+   A page inside the tree. The head (title, invite link, search), pending requests, the friends grid, and the chats
+   (the chats reuse the .dm look from /messages/messages.css; the page links that file too). */
+.fr { display: grid; gap: 16px; min-inline-size: 0; }
+.fr > * { min-inline-size: 0; }
+.fr-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+.fr-head h2 { flex: 1 1 auto; margin: 0; font-size: 1.25rem; }
+.fr-head .muted { flex-basis: 100%; margin: 0; font-size: .9rem; }
+.fr-search { flex: 1 1 100%; min-block-size: 44px; }
+@media (min-width: 640px) { .fr-search { flex: 0 1 260px; } }
+
+/* the invite: a link to copy or share, valid until used (the JS fills it) */
+.fr-invite { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 12px;
+  border: 1.5px dashed color-mix(in srgb, #c0577d 45%, var(--line)); border-radius: 14px; background: color-mix(in srgb, #c0577d 6%, var(--card)); }
+.fr-invite > p { grid-column: 1 / -1; margin: 0; font-size: .9rem; color: var(--muted); }
+.fr-invite > code { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: start;
+  padding: 10px 12px; border-radius: 10px; background: var(--bg); font-size: .85rem; }
+.fr-invite > button { min-block-size: 44px; }
+
+/* "גילינו שאתם קרובים": a friend who is also in the forest */
+.fr-found { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--line)); }
+.fr-found > div { flex: 1; min-inline-size: 0; }
+.fr-found b { display: block; }
+.fr-found small { color: var(--muted); }
+.fr-found > button { flex: none; min-block-size: 44px; }
+
+/* the avatar .fr-av is in /messages/messages.css (the chats share it) */
+
+/* pending requests: both sides approve */
+.fr-section > h3 { margin: 0 0 8px; font-size: .9rem; font-weight: 600; color: var(--muted); }
+.fr-reqs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.fr-req { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px; border-radius: 14px;
+  background: var(--card); border: 1px solid var(--line); border-inline-start: 4px solid #c0577d; }
+.fr-req > div > b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-req > div > small { color: var(--muted); font-size: .85rem; }
+.fr-req-acts { grid-column: 1 / -1; display: flex; gap: 8px; }
+.fr-req-acts > button { flex: 1; min-block-size: 44px; }
+.fr-req.out { border-inline-start-color: var(--line-strong); }   /* a request I sent, waiting */
+@media (min-width: 640px) {
+  .fr-req { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .fr-req-acts { grid-column: auto; }
+  .fr-req-acts > button { flex: none; }
+}
+
+/* the friends grid */
+.fr-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 640px) { .fr-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); } }
+.fr-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 12px;
+  border-radius: 14px; background: var(--card); border: 1px solid var(--line); }
+.fr-card > .fr-av { grid-row: 1 / span 2; }
+.fr-card > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-card > small { grid-column: 2; color: var(--muted); font-size: .84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-card > .fr-talk { grid-column: 3; grid-row: 1 / span 2; }
+.fr-kin { display: inline-flex; align-items: center; gap: 4px; margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px; vertical-align: middle;
+  background: color-mix(in srgb, var(--primary) 13%, transparent); color: color-mix(in srgb, var(--primary) 75%, var(--text)); font-size: .74rem; font-weight: 500; }
+.fr-talk { display: inline-grid; place-items: center; inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--card); color: var(--primary); cursor: pointer; transition: transform var(--dur-press, .12s) var(--ease-river, ease); }
+.fr-talk::before { content: ""; inline-size: 20px; block-size: 20px; background: currentColor;
+  -webkit-mask: url(/assets/bd-icons/messages.svg) center / contain no-repeat; mask: url(/assets/bd-icons/messages.svg) center / contain no-repeat; }
+.fr-talk:active { transform: scale(.94); }
+.fr-empty { padding: 24px 16px; text-align: center; color: var(--muted); border: 1.5px dashed var(--line); border-radius: 14px; }
+
+/* a new group: pick friends (and family) with checkboxes */
+.fr-pick { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-block-size: 50vh; overflow-y: auto; overscroll-behavior: contain; }
+.fr-pick label { display: flex; align-items: center; gap: 10px; min-block-size: 52px; padding: 6px 10px; border-radius: 12px; cursor: pointer; }
+.fr-pick label:hover { background: color-mix(in srgb, var(--muted) 8%, transparent); }
+.fr-pick label > span { flex: 1; min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-pick input[type="checkbox"] { inline-size: 22px; block-size: 22px; accent-color: var(--primary); flex: none; }
+.fr-pick label:has(input:checked) { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.fr-pick label:has(input:disabled) { opacity: .65; cursor: not-allowed; }   /* a child under 12 who is not family */
+.fr-group-name { inline-size: 100%; min-block-size: 44px; margin-block-end: 8px; }
+
+/* the children's rule, said plainly where it applies */
+.fr-kid-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: 12px; font-size: .85rem;
+  background: color-mix(in srgb, var(--olive) 10%, var(--card)); color: var(--text); }

@@ -69,3 +69,23 @@
 .dm-note, .dm-empty { margin: 8px 0 0; color: var(--muted); font-size: .88rem; }
 .dm-list .dm-empty { padding: 20px 12px; text-align: center; border: 1px dashed var(--line-strong); border-radius: var(--radius-sm); }
 .dm-thread > .dm-empty { padding: 40px 12px; text-align: center; }
+
+/* group chats (friends and family, docs/design/friends.md): a stack of avatars in the list row and the head,
+   and the sender's name above each run of their messages */
+.dm-row.group { grid-template-columns: auto minmax(0, 1fr) auto; }
+.dm-row.group > .fr-av-stack { grid-row: 1 / span 2; }
+.dm-row.group > small { grid-column: 2 / -1; }
+.fr-av-stack { display: inline-flex; flex: none; }
+.fr-av-stack > .fr-av { inline-size: 32px; block-size: 32px; font-size: .78rem; }
+.fr-av-stack > .fr-av + .fr-av { margin-inline-start: -12px; }
+.fr-av-stack > .fr-more { display: inline-grid; place-items: center; inline-size: 32px; block-size: 32px; margin-inline-start: -12px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--card); color: var(--muted); font-size: .72rem; font-weight: 600; }
+.dm-thread .dm-msg .dm-who { display: block; margin-block-end: 1px; font-size: .78rem; font-weight: 600; color: color-mix(in srgb, var(--c, var(--olive)) 75%, var(--text)); }
+.dm-thread-head .dm-members { flex: none; color: var(--muted); font-size: .82rem; }
+/* an avatar: a picture, or initials on the person's colour (--c) */
+.fr-av { flex: none; display: inline-grid; place-items: center; inline-size: 48px; block-size: 48px; border-radius: 50%; overflow: hidden;
+  background: color-mix(in srgb, var(--c, var(--olive)) 22%, var(--card)); color: color-mix(in srgb, var(--c, var(--olive)) 62%, var(--text));
+  font-weight: 600; font-size: 1.05rem; border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--line); }
+.fr-av > img { inline-size: 100%; block-size: 100%; object-fit: cover; }
+.fr-av.sm { inline-size: 36px; block-size: 36px; font-size: .85rem; }
+

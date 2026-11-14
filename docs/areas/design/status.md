@@ -2,16 +2,21 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 14)._
+_Updated 2026-11-14 (the new chat, round 15)._
 
 
 
 
-## Queued (not started; timing follows the CEO's social layer order)
-- Vision batch 27 (vision de4dd19):
-  - a friends page inside the family tree, with one-to-one and group chats;
-  - a four-level privacy chooser on every published item: everyone / friends and family / family only / only me;
-  - later, the living museum as the hub for photos, videos, recordings and life events.
+## Queued
+- Vision batch 27, item 3: the living museum (later, when the CEO schedules it).
+
+## Round 15: batch 27, the privacy picker and the friends page (look only; the logic is ai-features')
+- **Four levels** (`data-level` all / friends / family / me): a full picker (2×2 on a phone, 4 across on a PC), a chip and a tag. They live in base.css and use four new icons in `assets/priv-icons/`.
+- **The friends page:** in family.css, with the invite link, "גילינו שאתם קרובים", requests, the friends grid and the new-group picker, plus the note on the children's rule.
+- **Group chats:** they reuse `.dm`, adding an avatar stack, the sender's name and a member count, all in messages.css.
+- **Spec:** `docs/design/friends.md`, with the class names sent to ai-features.
+- **Checked** on a mock at 375 and 1280 px, light and dark, with the audit clean (one low-contrast avatar was fixed).
+- **Not done:** the real pages (they wait for ai-features' JS), and the mapping of the old story levels (household / tribe / private), which is the JS's job.
 
 ## Round 14: v158 checked after merging main
 - /admin: its switchboard markup, run in the real page, is clean at 375 and 1280, light and dark. The page itself is behind the biometric sign-in, so the switchboard was built there from admin.js's own markup.

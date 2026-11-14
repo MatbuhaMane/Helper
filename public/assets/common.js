@@ -397,8 +397,9 @@
     // a link leaves through the menu's own step, so back on the next page comes to this page, not to its open menu
     const go = (e) => { if (e.button || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return; e.preventDefault(); const to = e.currentTarget.href; closeMenu().then(() => location.assign(to)); };
     const link = (a) => el('li', {}, el('a', { href: a.href, onclick: go, 'aria-current': here.startsWith(a.href.split('#')[0]) && a.href !== '/' ? 'page' : null }, icon(a.ic), el('span', {}, a.name)));
+    const cats = kind === 'tools' && window.H.CATS ? catGroups(items, link) : null;
     const box = el('div', { class: 'navmenu' + (phone ? ' navmenu-phone' : ''), id: 'navmenu-' + kind },
-      el('ul', {}, items.map(link)),
+      cats ? el('div', { class: 'nm-cats' }, cats) : el('ul', {}, items.map(link)),
       kind === 'tools' ? el('a', { class: 'navmenu-all', href: '/tools/', onclick: go }, 'כל הכלים, וסידור ›') : null);
     if (!phone) {
       const r = btn.getBoundingClientRect();
@@ -409,7 +410,62 @@
     btn.setAttribute('aria-expanded', 'true');
     openMenuEl = { btn, box };
     openMenuEl.step = back.push(() => { if (openMenuEl) openMenuEl.step = 0; closeMenu(true); });
-    box.querySelector('a')?.focus({ preventScroll: true });
+    box.querySelector('button, a')?.focus({ preventScroll: true });
+  }
+  /* The tools menu by the toolbox's categories (H.CATS), all closed: a tap opens one; another tap closes the open one first,
+     then opens the new one. Closing swells a little and shrinks away, opening the reverse; the rest glides into place (FLIP).
+     Only transform and opacity move. */
+  function catGroups(items, link) {
+    const C = window.H.CATS, by = new Map(C.map((c) => [c.id, []])), rest = [];
+    for (const a of items) (by.get(a.cat) || rest).push(a);
+    const groups = C.map((c) => [c.name, by.get(c.id).sort((a, b) => c.apps.indexOf(a.href) - c.apps.indexOf(b.href))]).filter(([, l]) => l.length);
+    if (rest.length) groups.push(['עוד', rest]);
+    return groups.map(([name, apps]) => {
+      const sec = el('section', { class: 'nm-cat' },
+        el('button', { type: 'button', class: 'nm-cat-btn', 'aria-expanded': 'false', onclick: (e) => { e.stopPropagation(); catToggle(sec); } },
+          el('span', { class: 'nm-cat-name' }, name), el('span', { class: 'nm-cat-n' }, String(apps.length)), el('span', { class: 'nm-cat-caret', 'aria-hidden': 'true' }, '▾')),
+        el('ul', { class: 'nm-cat-list', hidden: true }, apps.map(link)));
+      return sec;
+    });
+  }
+  let catBusy = false;
+  const stillMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce';
+  async function catToggle(sec) {
+    if (catBusy) return;
+    catBusy = true;
+    try {
+      const open = sec.parentElement.querySelector('.nm-cat.open');
+      if (open) await catShow(open, false);
+      if (open !== sec) await catShow(sec, true);
+    } finally { catBusy = false; }
+  }
+  /** measures every row of the menu now; the function it returns glides them from there to wherever they are after a change */
+  function flip(sec) {
+    const rows = [...sec.closest('.navmenu').querySelectorAll('.nm-cat-btn, .nm-cat.open > .nm-cat-list, .navmenu-all')].filter((r) => !sec.contains(r) || r.classList.contains('nm-cat-btn'));
+    const tops = rows.map((r) => r.getBoundingClientRect().top);
+    return () => {
+      if (stillMotion()) return;
+      rows.forEach((r, i) => { const dy = tops[i] - r.getBoundingClientRect().top; if (Math.abs(dy) > 0.5) r.animate([{ transform: `translateY(${dy}px)` }, { transform: 'none' }], { duration: 280, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }); });
+    };
+  }
+  /** an animation's end, or its planned length if the page runs no frames (a tab in the background) */
+  const ends = (a, ms) => Promise.race([a.finished.catch(() => {}), new Promise((r) => setTimeout(r, ms + 80))]);
+  function catShow(sec, on) {
+    const ul = sec.querySelector('.nm-cat-list');
+    sec.querySelector('.nm-cat-btn').setAttribute('aria-expanded', String(on));
+    sec.classList.toggle('open', on);
+    if (on) {
+      const glide = flip(sec);
+      ul.hidden = false; glide();
+      if (stillMotion() || !ul.animate) return Promise.resolve();
+      return ends(ul.animate([{ opacity: 0, transform: 'scale(.9)' }, { opacity: 1, transform: 'scale(1.035)', offset: 0.6 }, { opacity: 1, transform: 'none' }],
+        { duration: 300, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }), 300);
+    }
+    const shut = () => { const glide = flip(sec); ul.hidden = true; glide(); };
+    if (stillMotion() || !ul.animate) { shut(); return Promise.resolve(); }
+    const a = ul.animate([{ opacity: 1, transform: 'none' }, { opacity: 1, transform: 'scale(1.035)', offset: 0.35 }, { opacity: 0, transform: 'scale(.9)' }],
+      { duration: 240, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'forwards' });   // held at its end until it is hidden: no flash
+    return ends(a, 240).then(() => { shut(); a.cancel(); });
   }
   addEventListener('click', (e) => { if (openMenuEl && !openMenuEl.box.contains(e.target) && !openMenuEl.btn.contains(e.target)) closeMenu(); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape' && openMenuEl) { const b = openMenuEl.btn; closeMenu(); b.focus(); } });

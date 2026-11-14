@@ -18,21 +18,39 @@ no letters, no people, no animals, no frame.
 
 ## א. עץ המשפחה
 
-**0. עץ שורשים חדש (במקום העץ הנוכחי).** יחס 2:3 לאורך, כמו המקור, באיכות גבוהה ככל האפשר. מצרפים רק את `tent.webp`. אחרי שבוחרים עץ, מייצרים ממנו את העונות בפרומפט של 1–2, ומצרפים אותו בתור "העץ המקורי". העיצוב מודד מחדש את מקומות העלים (`slots.json`).
+**0. עצי השורשים: ערכות לבחירה.** האורן הוא ברירת המחדל, והזית הוא העץ השני. האדר והערער האפריקאי יגיעו בעתיד.
+
+- **מה מצרפים:** רק את `tent.webp`.
+- **מה מדביקים:** את בלוק הסגנון, אחריו את בלוק המבנה, ובסוף את השורה של העץ.
+- **אחר כך:** מכל עץ שנבחר מייצרים את שלוש העונות בפרומפט של 1–2.
+- **העיצוב** חותך כל עץ לשכבות ומודד את מקומות העלים (`slots.json`) לכל ערכה.
+
+בלוק המבנה זהה בכל העצים, כדי שהמשפחה תשב באותם מקומות בכל ערכה:
 ```
-A single ancient olive tree as a family tree of roots, portrait 2:3, centred, filling the image from the roots to the top
-of the crown. It is drawn as a calm, warm, dignified symbol of a family across generations.
-From bottom to top, in five clear bands of equal height:
-1. Wide visible roots spreading left and right over a low mound of warm earth, with a few stones and tufts of grass;
-   the roots form four open, gently curved pockets where small name plaques could sit.
-2. A thick, gnarled, twisting olive trunk with a broad root flare; one low bough on each side, leaving open space
-   beside the trunk.
-3. Two strong boughs reaching left and right, with a few silver-green olive twigs at their tips.
-4. The lower crown: silver-green olive foliage in soft rounded clusters, with open gaps between the clusters.
-5. The top of the crown: lighter, airy foliage with a few small olives, open gaps across the top.
-The tree is symmetrical in balance but organic, not mirrored. Leave clear empty spaces in each band, spread across the
-width, for small round portraits to be placed later: nothing important is drawn in those spaces.
-No fruit baskets, no swings, no birds, no ornaments hanging on the tree.
+A single tree drawn as a family tree of roots: portrait 2:3, centred, the whole tree from the roots to the top of the
+crown filling the image, a calm, warm, dignified symbol of a family across generations.
+The crown is broad and rounded, nearly as wide as the image; the tree is not tall and narrow.
+From bottom to top, five clear bands of equal height, each with FOUR open, empty spaces spread evenly across the width
+(at about 15%, 35%, 65% and 85% of the width), where small round portraits will be placed later; nothing important is
+drawn in those spaces:
+1. Roots: wide visible roots spreading left and right over a low mound of warm earth with a few stones and tufts of
+   grass; the roots curve around the four open pockets. A small flat open spot of earth at the very bottom centre.
+2. The trunk: a thick, characterful trunk with a broad root flare, one low bough on each side.
+3. The boughs: two strong boughs reaching left and right, with a little foliage at their tips.
+4. The lower crown: foliage in soft clusters with open gaps between them.
+5. The top of the crown: lighter, airier foliage with open gaps across the top.
+Balanced but organic, not mirrored. No birds, no swings, no ornaments, nothing hanging on the tree.
+```
+
+שורת העץ, אחת לכל בקשה:
+```
+PINE (default): an old Aleppo pine, the pine of the hills of Jerusalem: a rugged reddish-grey bark with deep plates,
+the crown in broad flat layered clouds of dark green needles, a few brown pine cones.
+OLIVE: an ancient olive tree: a gnarled, twisting, hollowed grey-brown trunk, silver-green foliage in soft rounded
+clusters, a few small olives.
+MAPLE (later): an old broad maple: smooth grey-brown bark, a dense rounded crown of five-pointed leaves, a few winged seeds.
+AFRICAN JUNIPER (later): an old African juniper (Juniperus procera): a tall fluted, fibrous reddish-brown trunk, the
+crown in dense blue-green scaly tufts, a few small blue-black berries.
 ```
 
 **1–2. העץ השלם בשלוש עונות:** הצמרת, הענפים, הגזע והקרקע. אותו יחס ואותו גודל כמו המקור. שלוש בקשות, ובכל אחת משנים רק את העונה.

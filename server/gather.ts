@@ -19,7 +19,7 @@ interface Row {
   id: string; household: string; host_email: string; title: string; date: string; time: string | null; place: string; map: string; note: string; food: string;
   invitees_enc: string | null; token_hash: string; token_enc: string; status: string; expires_at: number; created_at: number; updated_at: number;
 }
-interface Rsvp { id: string; gathering: string; guest_hash: string | null; email: string | null; name: string; coming: string; count: number; note: string; at: number }
+interface Rsvp { id: string; gathering: string; guest_hash: string | null; email: string | null; name: string; coming: string; count: number; note: string; diets: string | null; at: number }
 interface Item { id: string; gathering: string; title: string; kind: string; taker: string | null; grocery_house: string | null; grocery_src: string | null; added_by: string | null; at: number; deleted: number }
 interface Comment { id: string; gathering: string; rsvp: string | null; name: string; text: string; at: number; deleted: number }
 
@@ -114,11 +114,12 @@ export async function get(ctx: Ctx) {
   return json({
     id: g.id, ...gg, status: g.status, open: open(g), url, expires: g.expires_at, host: g.host_email,
     invitees: JSON.parse((await unseal(ctx.env, g.invitees_enc, `gather:${g.id}:invitees`)) || '[]'),
-    rsvps: rsvps.map((r) => ({ id: r.id, name: r.name, coming: r.coming, count: r.count, note: r.note, member: !!r.email, at: r.at })),
+    rsvps: rsvps.map((r) => ({ id: r.id, name: r.name, coming: r.coming, count: r.count, note: r.note, diets: r.diets || '', member: !!r.email, at: r.at })),
     items: items.map((i) => ({ id: i.id, title: i.title, kind: i.kind, taker: i.taker ? byId.get(i.taker)?.name || '' : null })),
     comments: comments.map((c) => ({ id: c.id, name: c.name, text: c.text, at: c.at })),
     stats: Object.fromEntries(stats.map((s) => [s.kind, s.n])),
     warnings: R.warnings(gg, day), food_notes: R.foodNotes(gg.food, items.map((i) => i.kind as R.FoodKind)),
+    calc: R.calcDefaults(rsvps, gg.food),
     whatsapp: 'https://wa.me/?text=' + encodeURIComponent(R.whatsappText(gg, url)), google: R.googleLink(gg, url), when: R.when(gg),
   });
 }
@@ -158,6 +159,27 @@ export async function itemAdd(ctx: Ctx) {
   const g = await mine(ctx, u, ctx.params.id);
   const b = await body<{ title?: string; kind?: string }>(ctx.req);
   return json({ id: await addItem(ctx, g, b, u.email, null) });
+}
+/** POST /api/gather/:id/calc {adults, kids, meal, veg, vegan, gf, kosher} – the food calculator's proposal (rules, no AI) */
+export async function calc(ctx: Ctx) {
+  const u = requireUser(ctx);
+  await mine(ctx, u, ctx.params.id);
+  const input = R.calcInput(await body<Record<string, unknown>>(ctx.req));
+  return json({ input, items: R.foodPlan(input) });
+}
+/** POST /api/gather/:id/items/many {items: [{title, qty, kind}]} – what the host kept from the calculator, in one go */
+export async function itemsMany(ctx: Ctx) {
+  const u = requireUser(ctx);
+  const g = await mine(ctx, u, ctx.params.id);
+  const b = await body<{ items?: Array<{ title?: unknown; qty?: unknown; kind?: unknown }> }>(ctx.req);
+  const list = (Array.isArray(b.items) ? b.items : []).slice(0, 40).map((i) => ({ title: R.calcTitle(i || {}), kind: String(i?.kind || '') })).filter((i) => i.title);
+  if (!list.length) throw new HttpError(400, 'title_required');
+  const ids: string[] = [];
+  for (const i of list) {
+    try { ids.push(await addItem(ctx, g, i, u.email, null)); }
+    catch (e) { if (e instanceof HttpError && e.message === 'too_many_items') break; throw e; }
+  }
+  return json({ ids, added: ids.length, skipped: list.length - ids.length });
 }
 export async function itemDelete(ctx: Ctx) {
   const u = requireUser(ctx);
@@ -237,7 +259,7 @@ export async function invite(ctx: Ctx) {
     coming: yes.map((r) => ({ name: R.firstName(r.name), count: r.count })), total: yes.reduce((s, r) => s + r.count, 0),
     items: items.map((i) => ({ id: i.id, title: i.title, kind: i.kind, taker: i.taker ? names.get(i.taker) || '' : null, mine: !!meRow && i.taker === meRow.id })),
     comments: comments.reverse().map((c) => ({ id: c.id, name: R.firstName(c.name), text: c.text, at: c.at, mine: !!meRow && c.rsvp === meRow.id })),
-    me: meRow ? { name: meRow.name, coming: meRow.coming, count: meRow.count, note: meRow.note } : null,
+    me: meRow ? { name: meRow.name, coming: meRow.coming, count: meRow.count, note: meRow.note, diets: meRow.diets || '' } : null,
     member: ctx.user ? { name: ctx.user.he_name || ctx.user.name || '' } : null,
     warnings: R.warnings(gg, day), food_notes: R.foodNotes(gg.food, items.map((i) => i.kind as R.FoodKind)),
     google: R.googleLink(gg, inviteUrl(ctx, token)), ics: `/api/gather/invite/${token}/ics`,
@@ -249,19 +271,20 @@ export async function rsvp(ctx: Ctx) {
   const g = await byToken(ctx);
   if (!open(g)) throw new HttpError(410, 'closed');
   await limitGuest(ctx, 'rsvp', 30);
-  const b = await body<{ name?: string; coming?: string; count?: number; note?: string; guest?: string }>(ctx.req);
+  const b = await body<{ name?: string; coming?: string; count?: number; note?: string; diets?: unknown; guest?: string }>(ctx.req);
   const name = R.clean(b.name || ctx.user?.he_name || ctx.user?.name, 60);
   if (!name) throw new HttpError(400, 'name_required');
   const coming = COMING.has(String(b.coming)) ? String(b.coming) : 'yes';
   const n = coming === 'yes' ? Math.max(1, Math.min(30, Math.round(Number(b.count) || 1))) : 0;
   const note = R.clean(b.note, 300);
+  const diets = coming === 'yes' ? R.dietsOf(b.diets) : '';
   const was = await me(ctx, g, b.guest);
   let guest: string | null = null;
-  if (was) await ctx.env.DB.prepare('UPDATE gathering_rsvps SET name = ?, coming = ?, count = ?, note = ?, at = ? WHERE id = ?').bind(name, coming, n, note, Date.now(), was.id).run();
+  if (was) await ctx.env.DB.prepare('UPDATE gathering_rsvps SET name = ?, coming = ?, count = ?, note = ?, diets = ?, at = ? WHERE id = ?').bind(name, coming, n, note, diets, Date.now(), was.id).run();
   else {
     guest = ctx.user ? null : newKey();
-    await ctx.env.DB.prepare('INSERT INTO gathering_rsvps (id, gathering, guest_hash, email, name, coming, count, note, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(uid(), g.id, guest ? await sha('guest', guest) : null, ctx.user?.email || null, name, coming, n, note, Date.now()).run();
+    await ctx.env.DB.prepare('INSERT INTO gathering_rsvps (id, gathering, guest_hash, email, name, coming, count, note, diets, at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(uid(), g.id, guest ? await sha('guest', guest) : null, ctx.user?.email || null, name, coming, n, note, diets, Date.now()).run();
     count(ctx, g.id, 'rsvp');
   }
   if (coming === 'yes') await founding(ctx, g);

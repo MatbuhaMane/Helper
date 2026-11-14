@@ -139,3 +139,105 @@ export function confirmedGuests(rsvps: Array<{ coming: string; email: string | n
   return rsvps.filter((r) => r.coming === 'yes' && (r.email || '').toLowerCase() !== hostEmail.toLowerCase()).length;
 }
 export const reachedFounding = (rsvps: Array<{ coming: string; email: string | null }>, hostEmail: string) => confirmedGuests(rsvps, hostEmail) >= FOUNDING_CONFIRMED;
+
+/* ---- the food calculator (docs/design/gather-calc.md): how much of what, for how many ----
+   A proposal, not a recipe: the host ticks, changes the quantities and adds their own. Children eat about 60% of an adult.
+   Meat goes only to those who eat it; vegetarians and vegans get dishes of their own, and gluten-free bread is added for
+   those who need it. A kosher meal leaves out the other kind: a meat meal has no dairy and a dairy meal no meat; a parve
+   meal neither. A dairy dish that has a parve version (a cake, the vegetarians' main dish) stays, as parve. */
+
+export const MEALS = ['breakfast', 'lunch', 'dinner', 'snacks'] as const;
+export type Meal = (typeof MEALS)[number];
+export type Diet = 'veg' | 'vegan' | 'gf';
+export const DIETS: Diet[] = ['veg', 'vegan', 'gf'];
+export const DIET_NAME: Record<Diet, string> = { veg: 'צמחוני', vegan: 'טבעוני', gf: 'ללא גלוטן' };
+export interface CalcInput { adults: number; kids: number; meal: Meal; veg: number; vegan: number; gf: number; kosher: FoodKind }
+export interface CalcItem { title: string; qty: string; kind: FoodKind; diet: Diet | '' }
+
+const int = (v: unknown, max: number) => Math.max(0, Math.min(max, Math.round(Number(v) || 0)));
+/** the calculator's input from outside: whole numbers in range, the diets never more than the people */
+export function calcInput(b: Record<string, unknown>): CalcInput {
+  const adults = int(b.adults, 300), kids = int(b.kids, 300), all = adults + kids;
+  const meal = (MEALS as readonly string[]).includes(String(b.meal)) ? (String(b.meal) as Meal) : 'lunch';
+  const kosher = ['meat', 'dairy', 'parve'].includes(String(b.kosher)) ? (String(b.kosher) as FoodKind) : '';
+  const vegan = Math.min(int(b.vegan, 300), all), veg = Math.min(int(b.veg, 300), all - vegan), gf = Math.min(int(b.gf, 300), all);
+  return { adults, kids, meal, veg, vegan, gf, kosher };
+}
+
+/** "3 כיכרות", "כיכר"; a weight in kilos rounded up to half a kilo, or in grams under one */
+const count = (n: number, one: string, many: string) => (n <= 1 ? one : `${n} ${many}`);
+const kilos = (g: number) => (g < 1000 ? `${Math.max(100, Math.ceil(g / 100) * 100)} גרם` : `${Math.ceil(g / 500) / 2} ק"ג`);
+const up = (n: number) => Math.max(1, Math.ceil(n - 1e-9));
+const BOTTLE: [string, string] = ['בקבוק 1.5 ליטר', 'בקבוקים של 1.5 ליטר'];
+
+/** the proposal: a list of items with quantities, by the meal, the people and the kosher kind */
+export function foodPlan(input: CalcInput): CalcItem[] {
+  const { adults, kids, meal, veg, vegan, gf, kosher } = input;
+  const all = adults + kids;
+  if (all === 0) return [];
+  const eaters = adults + kids * 0.6;                         // in adult portions
+  const meatEaters = eaters * (1 - (veg + vegan) / all);
+  const out: CalcItem[] = [];
+  /** `parve`: the item's parve version for a meal of the other kind (a title), or null when it simply goes */
+  const add = (title: string, qty: string, kind: FoodKind = 'parve', diet: Diet | '' = '', parve: string | null = null) => {
+    const clash = (kosher === 'meat' && kind === 'dairy') || (kosher === 'dairy' && kind === 'meat') || (kosher === 'parve' && kind !== 'parve' && kind !== '');
+    if (!clash) out.push({ title, qty, kind, diet });
+    else if (kind === 'dairy' && parve !== null) out.push({ title: parve || title, qty, kind: 'parve', diet });
+  };
+
+  if (meal === 'breakfast') {
+    add('לחמניות', `${up(adults * 1.5 + kids)}`);
+    if (eaters - vegan > 0) add('גבינות', kilos((eaters - vegan) * 60), 'dairy');
+    add('ביצים', `${up(adults * 1.5 + kids)}`);
+    add('ירקות לסלט', kilos(eaters * 150));
+    add('ממרחים (טחינה, חומוס, ריבה)', count(up(all / 8), 'קופסה', 'קופסאות'));
+    add('חלב לקפה', count(up(adults / 10), 'קרטון', 'קרטונים'), 'dairy', '', 'חלב צמחי לקפה');
+    add('קפה ותה', count(up(adults / 15), 'חבילה', 'חבילות'));
+    add('מיץ', count(up(all * 0.25 / 1.5), ...BOTTLE));
+    add('פירות', kilos(eaters * 150));
+    if (vegan) add('ממרח טבעוני וחלב צמחי', count(up(vegan / 6), 'סט', 'סטים'), 'parve', 'vegan');
+  } else if (meal === 'snacks') {
+    add('עוגות', count(up(all / 10), 'עוגה', 'עוגות'), 'dairy', '', 'עוגות פרווה');
+    add('בורקס ומאפים', `${up(eaters * 2)}`, 'dairy', '', 'בורקס ומאפים (פרווה)');
+    add('פירות חתוכים', kilos(eaters * 150));
+    add('ירקות חתוכים ומטבלים', kilos(eaters * 100));
+    if (kids) add('חטיפים לילדים', count(up(kids / 5), 'שקית', 'שקיות'));
+    if (vegan) add('מאפה טבעוני', `${up(vegan * 2)}`, 'parve', 'vegan');
+    add('קפה ותה', count(up(adults / 15), 'חבילה', 'חבילות'));
+  } else {
+    // lunch or dinner: the main meal
+    add(meal === 'lunch' ? 'לחם וחלות' : 'לחם', count(up(all / 5), 'כיכר', 'כיכרות'));
+    add('סלט ירקות', count(up(all / 8), 'קערה גדולה', 'קערות גדולות'));
+    add('חומוס וטחינה', count(up(all / 10), 'קופסה גדולה', 'קופסאות גדולות'));
+    if (meatEaters > 0) add('מנה עיקרית: עוף או בשר', kilos(meatEaters * (meal === 'lunch' ? 300 : 220)), 'meat');
+    if (meatEaters > 0) add('פשטידה או לזניה', count(up(meatEaters / 6), 'תבנית', 'תבניות'), 'dairy');
+    add('תוספת: אורז, פסטה או תפוחי אדמה', kilos(eaters * 100));
+    if (veg) add('מנה עיקרית צמחונית', count(up(veg / 4), 'תבנית', 'תבניות'), 'dairy', 'veg', '');
+    if (vegan) add('מנה עיקרית טבעונית', count(up(vegan / 4), 'תבנית', 'תבניות'), 'parve', 'vegan');
+    add('קינוח', count(up(all / 10), 'עוגה או מגש', 'עוגות או מגשים'));
+    add('פירות', kilos(eaters * 120));
+  }
+  if (gf) add(meal === 'snacks' ? 'מאפה ללא גלוטן' : 'לחם ללא גלוטן', count(up(gf / 4), 'חבילה', 'חבילות'), 'parve', 'gf');
+  add('שתייה קלה', count(up((adults * 0.5 + kids * 0.4) / 1.5), ...BOTTLE));
+  add('מים', count(up(all * 0.4 / 1.5), ...BOTTLE));
+  add('צלחות חד־פעמיות', `${Math.ceil(all * 1.5 / 10) * 10}`);
+  add('כוסות', `${Math.ceil(all * 3 / 10) * 10}`);
+  add('מפיות', count(up(all * 3 / 50), 'חבילה', 'חבילות'));
+  return out;
+}
+
+/** the line on the list of what to bring: "לחם (3 כיכרות)", at most 80 characters */
+export const calcTitle = (i: { title?: unknown; qty?: unknown }) => {
+  const t = clean(i.title, 60), q = clean(i.qty, 30).replace(/[()]/g, '');
+  return t ? (q ? `${t} (${q})` : t).slice(0, 80) : '';
+};
+
+/** the calculator's first guess from the answers: everyone who said yes counts as an adult (the host changes it), and
+    each answer's diet ticks count once */
+export function calcDefaults(rsvps: Array<{ coming: string; count: number; diets?: string | null }>, food: Gathering['food']) {
+  const yes = rsvps.filter((r) => r.coming === 'yes');
+  const n = (d: Diet) => yes.filter((r) => String(r.diets || '').split(',').includes(d)).length;
+  return { adults: yes.reduce((s, r) => s + (r.count || 1), 0), kids: 0, veg: n('veg'), vegan: n('vegan'), gf: n('gf'), kosher: food === 'kosher' ? 'meat' : '' };
+}
+/** the diet ticks an answer carries, as stored: "veg,gf" */
+export const dietsOf = (v: unknown) => (Array.isArray(v) ? DIETS.filter((d) => v.includes(d)).join(',') : '');

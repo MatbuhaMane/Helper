@@ -96,6 +96,7 @@
     const itemKind = el('select', { 'aria-label': 'בשרי, חלבי או פרווה' }, [['', '—'], ['meat', 'בשרי'], ['dairy', 'חלבי'], ['parve', 'פרווה']].map(([v, t]) => el('option', { value: v }, t)));
     const items = el('section', { class: 'card ga-items' },
       el('h2', {}, 'מי מביא מה'),
+      el('button', { class: 'btn small ghost ga-calc-open', type: 'button', onclick: () => calcSheet(g, again) }, 'מחשבון אוכל'),
       g.items.length ? el('ul', { class: 'ga-list-items' }, g.items.map((i) => el('li', {},
         el('b', {}, i.title), i.kind ? el('small', { class: 'ga-kind' }, KIND[i.kind]) : null,
         el('span', { class: 'muted' }, i.taker ? ` · ${i.taker} מביא/ה` : ' · עוד אין מי שמביא'),
@@ -132,6 +133,90 @@
         g.comments.length ? el('ul', {}, g.comments.map((c) => el('li', {}, el('b', {}, c.name.split(/\s+/)[0]), ': ', c.text, el('small', { class: 'muted' }, ' ' + new Date(c.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })),
           act('✕', () => api(`/api/gather/${g.id}/comments/${c.id}`, { method: 'DELETE' }), 'btn small ghost', 'להוריד את התגובה?'))))
           : el('p', { class: 'muted small' }, 'המוזמנים יכולים לכתוב כאן מתוך ההזמנה.'))));
+  }
+
+  /* ---------- the food calculator (docs/design/gather-calc.md): how many, which meal, who eats what → a list to tick.
+     The proposal comes from the server's rules (server/gather-rules.ts, foodPlan); the host's changes stay while the
+     numbers change: what they unticked or removed, and what they added themselves. ---------- */
+  function calcSheet(g, after) {
+    const d = g.calc || {};
+    const st = { adults: d.adults || 10, kids: d.kids || 0, veg: d.veg || 0, vegan: d.vegan || 0, gf: d.gf || 0, meal: 'lunch', kosher: d.kosher || '' };
+    const DIET = { veg: 'צמחוני', vegan: 'טבעוני', gf: 'ללא גלוטן' };
+    let rows = [], first = true, timer = 0, seq = 0;
+    const off = new Set(), gone = new Set(), mine = [];           // by title: unticked, removed; the host's own rows
+    const list = el('ul', { class: 'ga-calc-items' });
+    const count = el('small', { class: 'muted' });
+    const go = el('button', { class: 'btn primary', type: 'submit' });
+    const stepper = (key, label, small) => {
+      const out = el('output', { 'aria-live': 'polite' }, String(st[key]));
+      const step = (n) => { st[key] = Math.max(0, Math.min(300, st[key] + n)); out.textContent = String(st[key]); soon(); };
+      return el('div', { class: small ? 'ga-count small' : 'ga-count' }, el('span', {}, label),
+        el('button', { class: 'btn', type: 'button', 'aria-label': `פחות ${label}`, onclick: () => step(-1) }, '−'), out,
+        el('button', { class: 'btn', type: 'button', 'aria-label': `עוד ${label}`, onclick: () => step(1) }, '+'));
+    };
+    const seg = (name, legend, opts) => el('fieldset', { class: 'ga-seg' }, el('legend', {}, legend),
+      opts.map(([v, t]) => el('label', {}, el('input', { type: 'radio', name, value: v, checked: st[name] === v, onchange: () => { st[name] = v; soon(); } }), el('span', {}, t))));
+    const draw = () => {
+      const all = [...rows.filter((r) => !gone.has(r.title)), ...mine];
+      const on = all.filter((r) => !off.has(r.title));
+      list.removeAttribute('aria-busy');
+      list.replaceChildren(...all.map((r, i) => {
+        const id = `ci-${i}`;
+        const box = el('input', { type: 'checkbox', id, checked: !off.has(r.title), 'aria-label': r.title, onchange: () => { if (box.checked) off.delete(r.title); else off.add(r.title); draw(); } });
+        const qty = el('input', { class: 'ga-qty', type: 'text', maxlength: 30, value: r.qty, 'aria-label': `כמות ${r.title}`, oninput: () => { r.qty = qty.value; } });
+        return el('li', { class: 'ga-calc-item' + (off.has(r.title) ? ' off' : '') + (r.fresh ? ' new' : '') }, box,
+          el('label', { for: id }, r.title, r.diet ? el('small', { class: 'ga-kind' }, DIET[r.diet]) : null), qty,
+          el('button', { class: 'ga-calc-x', type: 'button', 'aria-label': `הסרת ${r.title}`, onclick: () => { if (r.own) mine.splice(mine.indexOf(r), 1); else gone.add(r.title); off.delete(r.title); draw(); } }));
+      }));
+      for (const r of mine) if (r.fresh) setTimeout(() => { r.fresh = false; }, 1000);
+      count.textContent = `${on.length} מתוך ${all.length} מסומנים`;
+      go.textContent = `הוספה למי מביא מה (${on.length})`;
+      go.disabled = !on.length;
+    };
+    const make = async () => {
+      const n = ++seq;
+      list.setAttribute('aria-busy', 'true');
+      if (first) list.replaceChildren(...Array.from({ length: 5 }, () => el('li', { class: 'ga-calc-item' })));
+      try {
+        const r = await api(`/api/gather/${g.id}/calc`, { body: { adults: st.adults, kids: st.kids, veg: st.veg, vegan: st.vegan, gf: st.gf, meal: st.meal, kosher: st.kosher } });
+        if (n !== seq) return;                                    // a newer tap already asked again
+        rows = r.items; first = false; draw();
+      } catch (e) { list.removeAttribute('aria-busy'); say(e); }
+    };
+    const soon = () => { clearTimeout(timer); timer = setTimeout(make, 200); };
+    const extra = el('input', { type: 'text', maxlength: 60, placeholder: 'פריט נוסף', 'aria-label': 'פריט נוסף' });
+    const addOwn = () => {
+      const t = extra.value.trim();
+      if (!t) return extra.focus();
+      if (![...rows, ...mine].some((r) => r.title === t && !gone.has(t))) mine.push({ title: t, qty: '', kind: '', diet: '', own: true, fresh: true });
+      gone.delete(t); off.delete(t); extra.value = ''; draw(); extra.focus();
+    };
+    extra.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addOwn(); } });
+    const submit = async (e) => {
+      e.preventDefault();
+      const chosen = [...rows.filter((r) => !gone.has(r.title)), ...mine].filter((r) => !off.has(r.title))
+        .map((r) => ({ title: r.title, qty: r.qty, kind: g.food === 'kosher' ? r.kind : '' }));
+      if (!chosen.length) return;
+      go.disabled = true;
+      try {
+        const r = await api(`/api/gather/${g.id}/items/many`, { body: { items: chosen } });
+        H.closeModal();
+        toast(r.skipped ? `נוספו ${r.added}; הרשימה מלאה, ${r.skipped} לא נכנסו` : `נוספו ${r.added} פריטים לרשימה`);
+        after();
+      } catch (err) { go.disabled = false; say(err); }
+    };
+    H.modal(el('form', { class: 'ga-form ga-calc', onsubmit: submit },
+      el('h2', {}, 'מחשבון אוכל'),
+      el('p', { class: 'muted' }, 'כמה מגיעים ומה אוכלים, ונציע רשימה. אפשר לשנות הכול.'),
+      el('div', { class: 'ga-calc-people' }, stepper('adults', 'מבוגרים'), stepper('kids', 'ילדים')),
+      seg('meal', 'הארוחה', [['breakfast', 'בוקר'], ['lunch', 'צהריים'], ['dinner', 'ערב'], ['snacks', 'כיבוד']]),
+      el('fieldset', { class: 'ga-calc-diets' }, el('legend', {}, 'מתוכם'), stepper('veg', 'צמחונים', true), stepper('vegan', 'טבעונים', true), stepper('gf', 'ללא גלוטן', true)),
+      seg('kosher', 'כשרות', [['', 'לא משנה'], ['meat', 'בשרי'], ['dairy', 'חלבי'], ['parve', 'פרווה']]),
+      el('section', { class: 'ga-calc-list', 'aria-live': 'polite' },
+        el('h3', { class: 'ga-calc-head' }, 'ההצעה ', count), list,
+        el('div', { class: 'ga-inline ga-calc-add' }, extra, el('button', { class: 'btn', type: 'button', onclick: addOwn }, 'הוספה'))),
+      el('div', { class: 'ga-calc-foot' }, go)));
+    make();
   }
 
   /* ---------- whom to invite, from the family tree (needs the vault open; the tree's privacy applies) ---------- */

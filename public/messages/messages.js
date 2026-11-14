@@ -3,7 +3,10 @@
    and the users of the joined trees (when the tree is open on this device). Only the two sides read a conversation.
    Polls while the page is in front: the open conversation every 5 s, the list every 20 s (no sockets).
    Phone: the list or the conversation (#t=<id>); wide: both side by side.
-   The look is design's to make (.dm-*, docs/decisions.md); the inline rules below only hold the layout until then. */
+   The look is design's to make (.dm-*, docs/decisions.md); the inline rules below only hold the layout until then.
+   Two tabs (the owner, 2026-11-14): the conversations first, then "מהאוהל": האוהל's own messages to this member, read only
+   (/api/inbox, server/inbox.ts, who sees what tested in test-inbox.mjs) and the "האוהל התעדכן" notices (/whats-new.json),
+   newest first, with an unread count. Opened at #haohel. */
 (async () => {
   const { el, api, toast } = H;
   await H.requireLogin();
@@ -29,7 +32,66 @@
     listEmpty, rows);
   const thread = el('section', { class: 'card dm-thread', 'aria-label': 'שיחה' });
   const frame = el('div', { class: 'dm' }, list, thread);
-  root.append(frame);
+  /* ---------- the tabs: the conversations, and מהאוהל ---------- */
+  const inboxBox = el('section', { class: 'card', id: 'tab-haohel', role: 'tabpanel', 'aria-labelledby': 'tb-haohel', hidden: true, style: 'padding:14px 16px;margin-top:14px' });
+  const tabBtn = (id, label, panel) => el('button', { type: 'button', role: 'tab', id: 'tb-' + id, 'aria-controls': panel, 'aria-selected': 'false', onclick: () => tab(id) }, label);
+  const tbDm = tabBtn('dm', 'שיחות', 'tab-dm'), tbIn = tabBtn('haohel', 'מהאוהל', 'tab-haohel');
+  frame.id = 'tab-dm'; frame.setAttribute('role', 'tabpanel'); frame.setAttribute('aria-labelledby', 'tb-dm');
+  const tabs = el('div', { class: 'tabs', role: 'tablist', 'aria-label': 'תיבת ההודעות' }, tbDm, tbIn);
+  root.append(tabs, frame, inboxBox);
+  let inbox = null;   // { items: [{ id, text, link, level, at, kind: 'system' | 'owner' | 'all' | 'news', read }], unread }
+
+  function tab(id, fromHash = false) {
+    const on = id === 'haohel';
+    tbDm.setAttribute('aria-selected', String(!on)); tbIn.setAttribute('aria-selected', String(on));
+    frame.hidden = on; inboxBox.hidden = !on;
+    frame.style.display = on ? 'none' : ''; // .dm sets display:grid, which beats [hidden]
+    if (!fromHash) { if (on && location.hash !== '#haohel') history.replaceState(null, '', '#haohel'); if (!on && location.hash === '#haohel') history.replaceState(null, '', location.pathname); }
+    if (on) openInbox();
+  }
+
+  /** האוהל's messages and the notices, together, newest first */
+  async function loadInbox() {
+    const [d, wn] = await Promise.all([
+      api('/api/inbox'),
+      fetch('/whats-new.json', { cache: 'no-store', credentials: 'same-origin' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    const seen = H.prefs('whatsnew', { seen: '' }).seen;
+    const notes = [];
+    if (wn && typeof wn === 'object') {
+      for (const [i, n] of [wn, ...(Array.isArray(wn.past) ? wn.past : [])].entries()) {
+        const v = typeof n?.v === 'string' ? n.v.trim().slice(0, 100) : '', text = typeof n?.text === 'string' ? n.text.trim().slice(0, 400) : '';
+        if (!v || !text || notes.some((x) => x.v === v)) continue;
+        // only the current notice can be new; the history counts as read
+        notes.push({ id: 'wn:' + v, v, text, link: null, level: 'info', at: Date.parse(n.date) || 0, kind: 'news', read: i > 0 || d.wn_read.includes(v) || seen === v });
+      }
+    }
+    const items = [...d.messages.map((m) => ({ ...m, at: m.created_at, kind: m.from === 'system' ? 'system' : m.to_me ? 'owner' : 'all' })), ...notes]
+      .sort((a, b) => b.at - a.at);
+    inbox = { items, unread: items.filter((x) => !x.read).length };
+    tbIn.replaceChildren('מהאוהל', inbox.unread ? el('b', { 'aria-label': `, ${inbox.unread} שלא נקראו` }, ` (${inbox.unread})`) : '');
+  }
+
+  const FROM = { system: 'האוהל', owner: 'הודעה אישית', all: 'לכל בני האוהל', news: 'האוהל התעדכן' };
+  const ICON = { party: '🎉 ', warn: '⚠️ ' };
+  async function openInbox() {
+    if (!inbox) { inboxBox.replaceChildren(el('p', { class: 'muted' }, 'טוען…')); try { await loadInbox(); } catch (e) { inboxBox.replaceChildren(el('p', { class: 'notice' }, e.message || 'לא הצלחנו לטעון')); return; } }
+    const items = inbox.items;
+    inboxBox.replaceChildren(
+      el('h2', { style: 'margin:0 0 4px' }, 'מהאוהל'),
+      el('p', { class: 'muted', style: 'margin:0 0 10px;font-size:.9rem' }, 'הודעות מהאוהל עצמו: עדכונים, ומה שנשלח אליכם. אין צורך לענות.'),
+      items.length ? el('ul', { style: 'list-style:none;padding:0;margin:0' }, items.map((m) => el('li', { style: 'padding:10px 0;border-block-start:1px solid var(--line)' },
+        el('div', { class: 'muted', style: 'display:flex;gap:8px;flex-wrap:wrap;font-size:.85rem' },
+          el('span', {}, FROM[m.kind]), m.at ? el('time', {}, dayName(m.at)) : null, m.read ? null : el('b', {}, 'חדש')),
+        el('p', { dir: 'auto', style: 'margin:4px 0 0' + (m.read ? '' : ';font-weight:600') }, (ICON[m.level] || '') + m.text),
+        m.link ? el('a', { href: m.link, ...(/^https:/.test(m.link) ? { target: '_blank', rel: 'noopener' } : {}), style: 'font-size:.9rem' }, 'לפרטים') : null)))
+        : el('p', { class: 'dm-empty' }, 'עוד אין כאן הודעות.'));
+    // seen here: read (the "חדש" marks stay until the next visit)
+    const ids = items.filter((x) => !x.read).map((x) => x.id);
+    if (ids.length) {
+      try { await api('/api/inbox/read', { body: { ids } }); items.forEach((x) => { x.read = true; }); inbox.unread = 0; tbIn.replaceChildren('מהאוהל'); } catch { /* next time */ }
+    }
+  }
 
   let threads = [], open = null;            // open: { id, name, blocked, canSend, messages, seenByOther }
   const idFromHash = () => (location.hash.match(/^#t=([\w-]{1,40})$/) || [])[1] || null;
@@ -54,7 +116,7 @@
 
   /* ---------- one conversation ---------- */
   function go(id) { if (location.hash !== '#t=' + id) location.hash = 't=' + id; else show(id); }
-  addEventListener('hashchange', () => show(idFromHash()));
+  addEventListener('hashchange', () => { if (location.hash === '#haohel') return tab('haohel', true); if (inboxBox && !inboxBox.hidden) tab('dm', true); show(idFromHash()); });
 
   async function show(id) {
     if (!id) { open = null; frame.removeAttribute('data-open'); drawEmptyThread(); drawList(); return; }
@@ -196,6 +258,9 @@
   }
 
   await loadList();
+  if (location.hash === '#haohel') { tab('haohel', true); drawEmptyThread(); return; }
+  loadInbox().catch(() => {});   // for the count on the tab
+  tab('dm', true);
   const first = idFromHash();
   if (first) show(first); else { drawEmptyThread(); if (new URLSearchParams(location.search).has('new')) pickPerson(); }
 })();

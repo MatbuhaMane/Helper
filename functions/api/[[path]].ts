@@ -60,6 +60,8 @@ import * as layout from '../../server/layout';
 import * as parnasa from '../../server/parnasa';
 import * as appAccess from '../../server/app-access';
 import * as home from '../../server/home';
+import * as garden from '../../server/garden';
+import * as inbox from '../../server/inbox';
 import * as cook from '../../server/cook';
 
 type Handler = (ctx: Ctx) => Promise<Response> | Response;
@@ -496,6 +498,9 @@ route('PUT', '/api/admin/features', admin.featuresSave);
 route('GET', '/api/admin/audit', admin.auditList);
 route('GET', '/api/messages', admin.messagesForMe);
 route('POST', '/api/messages/:id/read', admin.messageRead);
+/* the inbox's מהאוהל tab (ai-features, server/inbox.ts; docs/decisions.md 2026-11-14): האוהל's own messages to a member, read only */
+route('GET', '/api/inbox', inbox.list);
+route('POST', '/api/inbox/read', inbox.read);
 route('GET', '/api/me/features', admin.myFeatures);
 
 /* the AI allowance (ai-features, server/credits.ts): a person's own services, and the room's view of everyone's */
@@ -625,10 +630,22 @@ route('POST', '/api/home', home.save);
 route('PUT', '/api/home/:id', home.save);
 route('DELETE', '/api/home/:id', home.remove);
 route('POST', '/api/home/:id/done', home.done);
+/* הגינה (ai-features, server/garden.ts; docs/decisions.md 2026-11-14): the household's plants, watering by the weather, identify and the plant doctor */
+route('GET', '/api/garden', garden.list);
+route('POST', '/api/garden', garden.save);
+route('POST', '/api/garden/identify', garden.identify);
+route('POST', '/api/garden/doctor', garden.doctor);
+route('PUT', '/api/garden/:id', garden.save);
+route('DELETE', '/api/garden/:id', garden.remove);
+route('GET', '/api/garden/:id/photo', garden.photo);
+route('POST', '/api/garden/:id/water', garden.water);
 /* עוזר מטבח (ai-features, server/cook.ts): the voice chef, and the timers that ring with the app closed */
 route('GET', '/api/cook/ask', cook.quota);
 route('POST', '/api/cook/ask', cook.ask);
 route('PUT', '/api/cook/timers', cook.setTimers);
+/* the family tree's "סידור" (ai-features, server/vault/index.ts): a card moved to another generation, and the order along a row */
+route('POST', '/api/vault/move', vault.linkMove);
+route('PUT', '/api/vault/order', vault.orderSave);
 
 export const onRequest: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const url = new URL(request.url);

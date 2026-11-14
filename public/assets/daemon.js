@@ -413,7 +413,42 @@
     const rtlEnd = 24 + box.w * 0.45; // bottom, end side (left in RTL)
     return clampPos({ x: rtlEnd, y: bottomLimit() });
   }
-  function rememberSpot() { if (docked) return; try { localStorage.setItem('helper.daemon.pos', JSON.stringify({ x: pos.x / W(), y: pos.y / Hh() })); } catch (_) { /* ignore */ } }
+  /** own: the person put him there (a drag, a throw): that spot stays, even over a control */
+  function rememberSpot(own = false) { if (docked) return; try { localStorage.setItem('helper.daemon.pos', JSON.stringify({ x: pos.x / W(), y: pos.y / Hh(), ...(own ? { own: true } : {}) })); } catch (_) { /* ignore */ } }
+  const ownSpot = () => { try { return !!JSON.parse(localStorage.getItem('helper.daemon.pos') || 'null')?.own; } catch (_) { return false; } };
+
+  /* Resting off the controls (docs/design/no-overlap.md): where he comes to rest, he must not cover something to press
+     (the calculator's keys, the calendar's days, the settings' themes). A 3 × 3 grid of points in the middle 60% of his
+     frame is looked under; any control there means the spot is taken. Then: the inline-end corner above the tab bar, the
+     inline-start corner, under the app bar at the inline-end, and if all are taken he folds into the side tab (for this
+     screen only). A spot the person put him in stays. Never while he is held, walking, flying or talking. */
+  const PRESSABLE = 'button, a[href], input, select, textarea, [role=button]';
+  let autoFolded = false;   // folded by settle(); 'opened' once the person took him out again: then he stays out on this screen
+  function spotTaken(p) {
+    const left = p.x - box.w / 2, top = p.y - box.h;
+    for (const fy of [0.2, 0.5, 0.8]) for (const fx of [0.2, 0.5, 0.8]) {
+      const x = left + box.w * fx, y = top + box.h * fy;
+      if (x < 0 || y < 0 || x >= W() || y >= Hh()) continue;
+      const under = document.elementsFromPoint(x, y).find((n) => !n.closest('.dm-stage, .dm-balloon, .dm-panel, .dm-tab'));
+      if (under?.closest(PRESSABLE)) return true;
+    }
+    return false;
+  }
+  function restSpots() {
+    const rtl = (document.documentElement.dir || 'rtl') === 'rtl';
+    const side = box.w * 0.45 + 24, endX = rtl ? side : W() - side, startX = rtl ? W() - side : side;
+    const bar = document.querySelector('.appbar')?.getBoundingClientRect();
+    return [{ x: endX, y: bottomLimit() }, { x: startX, y: bottomLimit() }, { x: endX, y: (bar && bar.bottom > 0 ? bar.bottom : 56) + box.h + 4 }].map(clampPos);
+  }
+  let settleTimer = 0;
+  function settleSoon(ms = 700) { clearTimeout(settleTimer); settleTimer = setTimeout(settle, ms); }
+  function settle() {
+    if (docked || !canvasBox || canvasBox.hidden || dragging || fly || rag || target || busy || (pointing && pointing.until > performance.now()) || (balloon && !balloon.hidden) || (panel && !panel.hidden)) return;
+    if (autoFolded === 'opened' || ownSpot() || !spotTaken(pos)) return;
+    const free = restSpots().find((p) => Math.hypot(p.x - pos.x, p.y - pos.y) > 8 && !spotTaken(p));
+    if (free) { walkTo(free.x, free.y); return; }
+    autoFolded = true; prefs.minimized = true; syncMode();   // (not saved: on the next screen he is out again)
+  }
 
   function walkTo(x, y, then) {
     wake();
@@ -528,7 +563,7 @@
     const big = fly?.big;
     fly = null;
     pos = clampPos(pos);
-    if (docked) setTimeout(() => goHome(), 1400); else rememberSpot();
+    if (docked) setTimeout(() => goHome(), 1400); else rememberSpot(true);
     if (!parts?.mixer) { hop = 0.5; return; }
     if (big) { act(Math.random() < 0.6 ? 'yell' : 'shrug'); mood = 'worried'; moodUntil = performance.now() + 9000; }
     else act('shrug');
@@ -616,6 +651,7 @@
       if (dist < 4) {
         pos = { x: target.x, y: target.y };
         const then = target.then; target = null; rememberSpot();
+        settleSoon(1500);
         act('walk_stop');
         then?.();
       } else {
@@ -1010,7 +1046,7 @@
     rag = null;
     bob.x = bob.vx = bob.z = bob.vz = 0; _e.x = _e.y = 0;   // no leftover wobble when he stands up
     pos = clampPos(pos);
-    rememberSpot();
+    rememberSpot(true);
     if (gentle) return;                                    // set down nicely: no fuss
     act(fell ? (Math.random() < 0.6 ? 'yell' : 'shrug') : 'shrug');
     mood = 'worried'; moodUntil = performance.now() + 9000;   // and limps for a bit
@@ -1193,7 +1229,11 @@
     });
     canvasBox.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openBalloon(); } });
     window.addEventListener('pointermove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; lastMouseMove = performance.now(); if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - box.h / 2)) < 200) wake(); }, { passive: true });
-    window.addEventListener('resize', () => { fitStage(); pos = clampPos(pos); });
+    window.addEventListener('resize', () => { fitStage(); pos = clampPos(pos); settleSoon(); });
+    // a view that changes (a tab, a sheet that closes, a new screen inside the page): look again
+    addEventListener('hashchange', () => settleSoon());
+    addEventListener('popstate', () => settleSoon());
+    document.addEventListener('click', (e) => { if (!e.target.closest?.('.dm-stage, .dm-balloon, .dm-panel, .dm-tab')) settleSoon(900); }, true);
   }
 
   function svg(name) {
@@ -1296,6 +1336,7 @@
     document.body.classList.toggle('dm-folded', folded);
   }
   function minimize(on) {
+    if (!on && autoFolded) autoFolded = 'opened';
     prefs.minimized = !!on; savePrefs();
     if (!on) wake();
     syncMode();
@@ -1625,12 +1666,42 @@
     speak(say);
   }
 
+  /** The answer streamed (server-sent events from /api/daemon/chat): on.text(words) as they arrive, on.status(t) while
+      tools run; resolves with the same object as the JSON answer. Anything wrong before the stream opens falls back to JSON. */
+  async function chatStream(payload, on) {
+    let res;
+    try {
+      res = await fetch('/api/daemon/chat', { method: 'POST', headers: { 'content-type': 'application/json', accept: 'text/event-stream' }, body: JSON.stringify(payload) });
+    } catch (_) { res = null; }
+    if (!res?.ok || !res.body || !(res.headers.get('content-type') || '').includes('text/event-stream') || !window.TextDecoderStream) return api('/api/daemon/chat', { body: payload });
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const ev = /^event: (.*)$/m.exec(chunk)?.[1], data = /^data: (.*)$/m.exec(chunk)?.[1];
+        if (!ev || data == null) continue;
+        const d = JSON.parse(data);
+        if (ev === 'text') on.text(d.t);
+        else if (ev === 'status') on.status(d.t);
+        else if (ev === 'done') return d;
+        else if (ev === 'error') throw Object.assign(new Error(d.error === 'ai_busy' ? 'יש עומס כרגע, נסו שוב בעוד רגע.' : d.error), { code: d.error });
+      }
+    }
+    throw new Error('החיבור נקטע באמצע התשובה');
+  }
+
   async function send(text, event) {
     text = (text || '').trim();
     if ((!text && !event) || busy) return;
     answerByVoice = heardByVoice; heardByVoice = false;
     if (!state?.ai) { input.value = ''; if (text) addMsg('me', text); return plainReply(text); }
     busy = true;
+    let live = null;   // (the bubble being filled)
     wake();
     if (parts) parts.thinkStyle = Math.random() < 0.35 ? 'phone' : 'think';
     input.value = '';
@@ -1639,7 +1710,20 @@
     canvasBox.classList.add('thinking');
     setMood('curious', 30);
     try {
-      const r = await api('/api/daemon/chat', { body: { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out', figure: flat ? flatFigure : 'ibn_ezra' } });
+      const payload = { text, event, page: overlay ? 'the desktop (the program over all windows)' : location.pathname + location.hash, landmarks: overlay ? [] : landmarks(), where: docked ? 'tent' : prefs.minimized ? 'tab' : 'out', figure: flat ? flatFigure : 'ibn_ezra' };
+      // his bubble appears with the first word and fills as the rest arrives ("בודק…" while he works with his tools)
+      let words = '';
+      const show = (t) => {
+        if (!live) { live = el('div', { class: 'dm-msg daemon', dir: 'auto' }); log.append(live); }
+        live.textContent = t;
+        log.scrollTop = log.scrollHeight;
+        if (panel.hidden) speakBalloon(t);
+      };
+      const r = await chatStream(payload, {
+        text: (t) => { words += t; show(words.trimStart()); },
+        status: (t) => { if (!words) show(t); },
+      });
+      live?.remove(); live = null;
       state.daemon = r.daemon;
       mood = null;
       const actions = [];
@@ -1676,6 +1760,7 @@
         setTimeout(() => showElement(document.querySelector('[data-guide="list"]'), null), 500);
       }
     } catch (e) {
+      live?.remove(); live = null;
       mood = null;
       // no AI (none connected, or no credit left): what he can do without it
       if (e.status === 402 || e.status === 503) { busy = false; canvasBox.classList.remove('thinking'); return plainReply(text); }
@@ -1755,6 +1840,7 @@
       const home = homeSpot();
       pos = { x: reduced ? home.x : -box.w, y: home.y };
       walkTo(home.x, home.y, firstMeeting);
+      pageIn().then(() => settleSoon(2500));   // and once the page has settled
     }
     requestAnimationFrame(frame);
     return true;

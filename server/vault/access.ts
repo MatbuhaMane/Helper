@@ -20,6 +20,7 @@ export const ACCESS: Record<string, Level> = {
   // like an edit; a change to another user's card waits for their yes, answered on their own trusted device
   personDelete: 'tree', linkDelete: 'tree', personRestore: 'tree',
   changesList: 'tree', changeApprove: 'tree', changeDecline: 'tree', changeCancel: 'tree',
+  linkMove: 'tree', orderSave: 'tree',                                                // "סידור": a card to another generation (as a link change), the order along a row (ai-features)
   trashList: 'tree', trashRestore: 'tree',                                            // the owner, from the back door (its own biometric entry)
   // always a fresh unlock
   items: 'fresh', itemAdd: 'fresh', itemFile: 'fresh', itemSave: 'fresh', itemDelete: 'fresh', itemRestore: 'fresh',   // documents and files

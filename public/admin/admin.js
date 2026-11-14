@@ -1128,9 +1128,12 @@
       short: () => { to = null; showTo(); },
       none: () => { to = null; chosenLine.replaceChildren('לא נמצא חבר.'); } });
     const pickOne = el('div', { hidden: true }, one.wrap, chosenLine);
-    const forWhom = el('select', { 'aria-label': 'למי', onchange: () => { pickOne.hidden = forWhom.value !== 'one'; explain(); if (!pickOne.hidden) one.q.focus(); } },
+    const forWhom = el('select', { 'aria-label': 'למי', onchange: () => { pickOne.hidden = forWhom.value !== 'one'; keepBox.hidden = !pickOne.hidden; explain(); if (!pickOne.hidden) one.q.focus(); } },
       el('option', { value: 'all' }, 'כל המשתמשים'), el('option', { value: 'one' }, 'למשתמש אחד'));
     const about = el('p', { class: 'muted small' });
+    // keep in the inbox (the owner, 2026-11-14): a message to everyone also stays in each member's מהאוהל tab; unchecked, it is only the banner
+    const keep = el('input', { type: 'checkbox' });
+    const keepBox = el('label', { class: 'toggle', style: 'grid-column:1/-1' }, keep, 'לשמור בתיבת ההודעות (בלשונית "מהאוהל")');
     const explain = () => about.replaceChildren(forWhom.value === 'one'
       ? 'ההודעה מופיעה רק לחבר שבחרתם כשהוא פותח את האוהל, עד שהוא סוגר אותה או שהזמן עובר.'
       : `ההודעה מופיעה לכל אחד מ־${n} החברים כשהוא פותח את האוהל, עד שהוא סוגר אותה או שהזמן עובר.`);
@@ -1143,13 +1146,13 @@
         const single = forWhom.value === 'one';
         if (single && !to) { toast('בחרו חבר מההצעות'); one.q.focus(); return; }
         try {
-          await call('/api/admin/messages', { body: { text: text.value, level: level.value, link: link.value, days: days.value, ...(single ? { to: to.email } : {}) } });
+          await call('/api/admin/messages', { body: { text: text.value, level: level.value, link: link.value, days: days.value, ...(single ? { to: to.email } : { keep: keep.checked }) } });
           toast(single ? `נשלחה אל ${to.he_name || to.name || to.email}` : 'נשלחה'); messages(box);
         } catch (err) { say(err); }
       } }, el('label', { style: 'grid-column:1/-1' }, 'למי', forWhom), el('div', { style: 'grid-column:1/-1' }, pickOne),
-        el('label', { style: 'grid-column:1/-1' }, 'ההודעה', text), el('label', {}, 'סוג', level), el('label', {}, 'קישור', link), el('label', {}, 'ימים', days), el('button', { class: 'btn primary' }, 'שליחה')),
+        el('label', { style: 'grid-column:1/-1' }, 'ההודעה', text), keepBox, el('label', {}, 'סוג', level), el('label', {}, 'קישור', link), el('label', {}, 'ימים', days), el('button', { class: 'btn primary' }, 'שליחה')),
       list.length ? el('div', { class: 'ad-scroll' }, el('table', {}, el('tbody', {}, list.map((m) => el('tr', {},
-        el('td', {}, m.to_email ? el('small', { class: 'muted' }, `ל: ${m.to_name || m.to_email} · `) : null, m.text), el('td', {}, LV[m.level] || m.level),
+        el('td', {}, m.to_email ? el('small', { class: 'muted' }, `ל: ${m.to_name || m.to_email} · `) : m.keep ? el('small', { class: 'muted' }, 'נשמרת בתיבה · ') : null, m.text), el('td', {}, LV[m.level] || m.level),
         el('td', { class: 'num' }, m.to_email ? (m.seen ? 'נקראה' : 'עוד לא') : `ראו ${m.seen}`),
         el('td', {}, m.active && m.ends_at > Date.now() ? btn('הפסקה', async () => { await call(`/api/admin/messages/${m.id}/stop`, { method: 'POST' }); messages(box); }, 'btn small ghost') : el('small', { class: 'muted' }, 'הסתיימה'))))))) : null));
   }

@@ -1393,3 +1393,33 @@ CREATE TABLE IF NOT EXISTS cook_timers (
   PRIMARY KEY (email, id)
 );
 CREATE INDEX IF NOT EXISTS cook_timers_end ON cook_timers (end_at);
+
+-- הגינה (ai-features, server/garden.ts): the household's plants, and their history (waterings, the plant doctor, the photo quota)
+CREATE TABLE IF NOT EXISTS garden_plants (
+  household     TEXT NOT NULL,
+  id            TEXT NOT NULL,
+  name          TEXT NOT NULL,
+  kind          TEXT NOT NULL,      -- a preset's kind (garden-rules.ts PRESETS) or 'custom'
+  place         TEXT NOT NULL,      -- 'in' or 'out' (rain waters only the plants outside)
+  every_days    INTEGER NOT NULL,
+  last_watered  TEXT,               -- YYYY-MM-DD
+  note          TEXT,
+  photo         TEXT,               -- the plant's own small picture, a data URL
+  created_by    TEXT,
+  remind_to     TEXT,               -- who gets the morning push, null for whoever added it
+  reminded      TEXT,               -- the due date last reminded, so a reminder goes once
+  created_at    INTEGER NOT NULL,
+  updated_at    INTEGER NOT NULL,
+  PRIMARY KEY (household, id)
+);
+CREATE TABLE IF NOT EXISTS garden_log (
+  household  TEXT NOT NULL,
+  plant      TEXT NOT NULL,          -- empty for a photo not tied to a plant
+  kind       TEXT NOT NULL,          -- 'water', 'identify' or 'doctor' (the last two count toward the daily photo quota)
+  on_date    TEXT NOT NULL,
+  note       TEXT,                   -- the plant doctor's finding
+  by_email   TEXT NOT NULL,
+  at         INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS garden_log_hh ON garden_log (household, at);
+CREATE INDEX IF NOT EXISTS garden_log_by ON garden_log (by_email, at);

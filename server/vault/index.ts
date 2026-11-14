@@ -208,7 +208,7 @@ export async function unlockPasskey(ctx: Ctx) {
 
 /* ---------------- the tree ---------------- */
 
-export interface PersonRow { id: string; household: string; name_enc: string; details_enc: string; parent1: string | null; parent2: string | null; partner: string | null; member_email: string | null; photo_item: string | null; privacy: string | null; anonymous: number | null; updated_at: number; deleted_at?: number | null; deleted_by?: string | null; deleted_snap?: string | null }
+export interface PersonRow { id: string; household: string; name_enc: string; details_enc: string; parent1: string | null; parent2: string | null; partner: string | null; member_email: string | null; photo_item: string | null; privacy: string | null; anonymous: number | null; updated_at: number; deleted_at?: number | null; deleted_by?: string | null; deleted_snap?: string | null; ord?: number | null }
 
 async function person(ctx: Ctx, u: Member, id: string): Promise<PersonRow> {
   const p = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE id = ? AND household = ? AND deleted_at IS NULL').bind(id, u.household).first<PersonRow>();
@@ -232,6 +232,7 @@ export async function tree(ctx: Ctx) {
     const s = K.view(await cardOf(ctx, p), 'household', whoFor(v, p))!;
     return {
       id: p.id, name: s.name, member: s.member, photo: s.photo, sex: s.sex, user: isUser(v, p), linked: linked.get(p.id) || 0,
+      ord: p.ord ?? null,   // the place in its row the family set ("סידור"); null: by when the card was made
       life: lifeOf(s.details),   // the drawn tree: a birthday's glow, the passed, a yahrzeit's candle (only what privacy lets this viewer see)
       counts: s.hidden.includes('files') ? {} : Object.fromEntries(counts.results.filter((c) => c.person_id === p.id).map((c) => [c.kind, c.n])),
     };
@@ -401,6 +402,7 @@ const ASKS: Record<K.ChangeKind, (who: string) => string> = {
   delete: (w) => `${w} ביקש/ה להסיר את הכרטיס שלך מעץ המשפחה. שום דבר לא נמחק עד שתאשרו.`,
   unlink: (w) => `${w} ביקש/ה להסיר קשר משפחתי שלך בעץ. שום דבר לא משתנה עד שתאשרו.`,
   relink: (w) => `${w} הציע/ה לשנות קשר משפחתי שלך בעץ. שום דבר לא משתנה עד שתאשרו.`,
+  move: (w) => `${w} הציע/ה לסדר מחדש את מקומך בעץ המשפחה (מי ההורים ומי האחים). שום דבר לא משתנה עד שתאשרו.`,
 };
 async function tell(ctx: Ctx, to: string, text: string) {
   const now = Date.now();
@@ -437,6 +439,11 @@ async function endsOf(ctx: Ctx, l: Link) {
 /** is the card (or an end of the link) still the one this change waits for? an email moved since: nobody else answers */
 async function stillTheirs(ctx: Ctx, c: ChangeRow) {
   if (c.kind === 'edit' || c.kind === 'delete') return (await rowById(ctx, c.person_id))?.member_email === c.for_email;
+  if (c.kind === 'move') {
+    const pay = JSON.parse((await unseal(ctx.env, c.payload_enc, `change:${c.grp}`)) || '{}');
+    const ids: string[] = Array.isArray(pay.parties) ? pay.parties.slice(0, 40) : [];
+    return (await Promise.all(ids.map((id) => rowById(ctx, id)))).some((p) => p?.household === c.household && p.member_email === c.for_email);
+  }
   const l = await linkById(ctx, c.household, c.target_id);
   return !!l && (await endsOf(ctx, l)).some((p) => p.member_email === c.for_email);
 }
@@ -448,6 +455,8 @@ async function applyChange(ctx: Ctx, c: ChangeRow, u: Member): Promise<boolean> 
     if (!p || (c.kind === 'edit' && p.updated_at !== pay.base)) return false;
     if (c.kind === 'edit') await writeCard(ctx, p.id, { name: pay.name, details: pay.details || {}, member: pay.member === undefined ? p.member_email : pay.member });
     else await softDelete(ctx, c.by_email, p);
+  } else if (c.kind === 'move') {
+    if (!(await applyMove(ctx, c.household, c.by_email, pay.remove || [], pay.add || []))) return false;
   } else {
     const l = await linkById(ctx, c.household, c.target_id);
     if (!l) return false;
@@ -523,6 +532,10 @@ export async function changesList(ctx: Ctx) {
       const p = (await rowById(ctx, c.person_id))!, card = await cardOf(ctx, p);     // their own card: they see all of it
       const keys = c.kind === 'edit' ? K.changedKeys(card, { name: pay.name, details: pay.details || {} }) : [];
       return { ...base, person: { id: p.id, name: card.name }, changes: keys.map((k) => k === 'name' ? { k, from: card.name, to: pay.name } : { k, from: card.details[k] ?? '', to: pay.details?.[k] ?? '' }) };
+    }
+    if (c.kind === 'move') {
+      const p = (await rowById(ctx, c.person_id))!;
+      return { ...base, person: { id: p.id, name: await nameFor(ctx, v, p) }, words: await moveSay(ctx, v, c.household, p.id, pay.remove || [], pay.add || []) };
     }
     const l = (await linkById(ctx, c.household, c.target_id))!, ends = await endsOf(ctx, l);
     const nameOf = async (id: string) => { const p = ends.find((e) => e.id === id); return p ? nameFor(ctx, v, p) : 'קרוב/ת משפחה'; };
@@ -633,6 +646,112 @@ export async function linkDelete(ctx: Ctx) {
   await audit(ctx, u, 'delete:link', l.id, null);
   // what the page needs to put it back ("בטל"): the same relationship, added again
   return json({ ok: true, link: { type: l.type, a: l.a, b: l.b, kind: l.kind, status: l.status, since: l.since, until: l.until } });
+}
+
+/* ---------------- arranging the tree ("סידור": a card dragged to another row, or along its own) ----------------
+   A move to another generation changes several parent links at once (kin.movePlan works out which), and it goes
+   through the same rules as any relationship. When it touches another user's card (an end of a link it removes or
+   adds, or the one moved), it waits for their yes ("move" in family_changes) and is applied whole. Otherwise it is
+   applied at once, and the answer carries what "בטל" needs to put everything back. A dry run ({dry: true}) only says,
+   in one sentence, what would change and whom it would wait for; the page asks the person with it before saving. */
+type MoveAdd = { type: 'parent'; a: string; b: string; kind: string };
+const linkRow = (l: Link) => ({ type: l.type, a: l.a, b: l.b, kind: l.kind, status: l.status, since: l.since, until: l.until });
+
+/** what a move would do, in the words of the one who reads it (their names for the cards) */
+async function moveSay(ctx: Ctx, v: Viewer, household: string, id: string, remove: string[], add: MoveAdd[]) {
+  const { results } = await ctx.env.DB.prepare('SELECT * FROM family_people WHERE household = ? AND deleted_at IS NULL').bind(household).all<PersonRow>();
+  const links = await linksOf(ctx, household, results), gone = new Set(remove);
+  const seen = new Map(await Promise.all(results.map(async (p) => [p.id, K.view(await cardOf(ctx, p), p.household === v.u.household ? 'household' : K.distance(v.u.household, p.household, v.bridges), whoFor(v, p))] as const)));
+  return K.moveWords(id, { remove: links.filter((l) => gone.has(l.id)), add }, (x) => seen.get(x)?.name || 'קרוב/ת משפחה', (x) => seen.get(x)?.sex || '');
+}
+
+/** remove these parent links and add those, all at once: the new links' ids, or false when one to remove is gone or
+    the result is impossible (a circle, too many parents) */
+async function applyMove(ctx: Ctx, household: string, by: string, remove: string[], add: MoveAdd[]): Promise<string[] | false> {
+  const DB = ctx.env.DB;
+  const { results: people } = await DB.prepare('SELECT * FROM family_people WHERE household = ? AND deleted_at IS NULL').bind(household).all<PersonRow>();
+  const links = await linksOf(ctx, household, people), alive = new Set(people.map((p) => p.id)), gone = new Set(remove);
+  if (remove.some((id) => !links.some((l) => l.id === id && l.type === 'parent'))) return false;
+  const kept = links.filter((l) => !gone.has(l.id));
+  const fresh = add.filter((n, i) => alive.has(n.a) && alive.has(n.b) && n.a !== n.b
+    && !kept.some((l) => l.type === 'parent' && l.a === n.a && l.b === n.b) && add.findIndex((m) => m.a === n.a && m.b === n.b) === i);
+  if (fresh.length !== add.length || K.linksProblem([...kept, ...fresh])) return false;
+  const now = Date.now(), ids = fresh.map(() => uid());
+  await DB.batch([
+    ...remove.map((id) => DB.prepare('DELETE FROM family_links WHERE id = ? AND household = ?').bind(id, household)),
+    ...fresh.map((n, i) => DB.prepare('INSERT INTO family_links (id, household, type, a, b, kind, status, since, until, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(ids[i], household, 'parent', n.a, n.b, PARENT_KINDS.has(n.kind) ? n.kind : 'bio', null, null, null, by, now)),
+  ]);
+  return ids;
+}
+
+/** the target as the page sent it, naming only the household's own cards */
+function moveTarget(to: unknown, ids: Set<string>): K.MoveTo {
+  const t = (to || {}) as Record<string, unknown>;
+  for (const k of ['sibling', 'parentOf', 'childOf'] as const) if (typeof t[k] === 'string' && ids.has(t[k] as string)) return { [k]: t[k] } as K.MoveTo;
+  if (t.up === true) return { up: true };
+  if (t.down === true) return { down: true };
+  throw new HttpError(400, 'no_target');
+}
+
+/** POST /api/vault/move {id, to, dry?}: move a card to another generation; or {undo: {drop, restore}}: put back a move just made */
+export async function linkMove(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.linkMove);
+  const b = await body<{ id?: string; to?: unknown; dry?: boolean; undo?: { drop?: unknown; restore?: unknown } }>(ctx.req);
+  const DB = ctx.env.DB, v = await viewerOf(ctx, u);
+  const { results: people } = await DB.prepare('SELECT * FROM family_people WHERE household = ? AND deleted_at IS NULL').bind(u.household).all<PersonRow>();
+  const links = await linksOf(ctx, u.household, people), ids = new Set(people.map((p) => p.id));
+  const askFor = (touched: Set<string>) => K.approversFor(u.email, people.filter((p) => touched.has(p.id)).map((p) => partyOf(v, p)));
+
+  if (b.undo) {
+    // "בטל": the links the move added go, the ones it removed come back (this household's parent links only)
+    const drop = (Array.isArray(b.undo.drop) ? b.undo.drop : []).filter((x): x is string => typeof x === 'string').slice(0, 20);
+    const back = (Array.isArray(b.undo.restore) ? b.undo.restore : []).slice(0, 20) as Partial<Link>[];
+    const restore: MoveAdd[] = back.filter((l) => l?.type === 'parent' && typeof l.a === 'string' && typeof l.b === 'string' && ids.has(l.a) && ids.has(l.b))
+      .map((l) => ({ type: 'parent', a: l.a!, b: l.b!, kind: PARENT_KINDS.has(l.kind || '') ? l.kind! : 'bio' }));
+    const dropping = links.filter((l) => drop.includes(l.id) && l.type === 'parent');
+    if (dropping.length !== drop.length || restore.length !== back.length) throw new HttpError(409, 'changed_since');
+    const touched = new Set([...dropping, ...restore].flatMap((l) => [l.a, l.b]));
+    if (askFor(touched).length) throw new HttpError(409, 'changed_since');   // (a card became a user's since: it is theirs to say)
+    const todo = restore.filter((n) => !links.some((l) => !drop.includes(l.id) && l.type === 'parent' && l.a === n.a && l.b === n.b));
+    if (!(await applyMove(ctx, u.household, u.email, drop, todo))) throw new HttpError(409, 'changed_since');
+    await audit(ctx, u, 'undo:move', null, null);
+    return json({ ok: true });
+  }
+
+  if (!b.id || !ids.has(b.id)) throw new HttpError(404, 'not_found');
+  let plan: { remove: Link[]; add: MoveAdd[] };
+  // "+ אח/אחות" ({to: {join: id}}): the one without parents takes the other's
+  const join = (b.to as { join?: unknown } | undefined)?.join;
+  if (typeof join === 'string' && ids.has(join)) {
+    try { const s = K.siblingSide(links, b.id, join); b.id = s.move; b.to = { sibling: s.anchor }; } catch (e) { throw new HttpError(400, e instanceof Error ? e.message : 'bad_move'); }
+  }
+  try { plan = K.movePlan(links, b.id, moveTarget(b.to, ids)); } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, e instanceof Error ? e.message : 'bad_move'); }
+  const touched = new Set([b.id, ...plan.remove.flatMap((l) => [l.a, l.b]), ...plan.add.flatMap((l) => [l.a, l.b])]);
+  const ask = askFor(touched);
+  if (b.dry) {
+    const n = ask.length ? await names(ctx) : new Map<string, string>();
+    return json({ id: b.id, text: await moveSay(ctx, v, u.household, b.id, plan.remove.map((l) => l.id), plan.add), waitsFor: ask.map((e) => n.get(e) || e.split('@')[0]) });
+  }
+  if (ask.length) return json(await propose(ctx, u, { household: u.household, person_id: b.id, kind: 'move', payload: { remove: plan.remove.map((l) => l.id), add: plan.add, parties: [...touched] } }, ask));
+  const added = await applyMove(ctx, u.household, u.email, plan.remove.map((l) => l.id), plan.add);
+  if (!added) throw new HttpError(409, 'changed_since');
+  await audit(ctx, u, 'move:card', null, b.id);
+  return json({ ok: true, undo: { drop: added, restore: plan.remove.map(linkRow) } });
+}
+
+/** PUT /api/vault/order {ids}: the order of cards along a row (birth order, as the family sees it); the display only */
+export async function orderSave(ctx: Ctx) {
+  const u = await need(ctx, ACCESS.orderSave);
+  const b = await body<{ ids?: unknown }>(ctx.req);
+  const list = (Array.isArray(b.ids) ? b.ids : []).filter((x): x is string => typeof x === 'string').slice(0, 60);
+  if (!list.length) throw new HttpError(400, 'no_ids');
+  const { results } = await ctx.env.DB.prepare('SELECT id, ord FROM family_people WHERE household = ? AND deleted_at IS NULL').bind(u.household).all<{ id: string; ord: number | null }>();
+  const had = new Map(results.map((r) => [r.id, r.ord]));
+  if (list.some((id) => !had.has(id))) throw new HttpError(404, 'not_found');
+  await ctx.env.DB.batch(list.map((id, i) => ctx.env.DB.prepare('UPDATE family_people SET ord = ? WHERE id = ? AND household = ?').bind(i, id, u.household)));
+  await audit(ctx, u, 'order:row', null, null);
+  return json({ ok: true });
 }
 
 /** the few dates the drawn tree needs from the (already privacy-filtered) details; nothing when there are none */

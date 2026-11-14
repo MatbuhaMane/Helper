@@ -229,7 +229,7 @@
     const voice = dp.voice || (dp.speak === false ? 'silent' : 'always');
     const pick = (id) => { set('figure', id); toast('הדמות תתחלף בפעם הבאה שהעוזר מופיע (רענון של הדף)'); drawAssistant();
       // the first time he is picked, רַאבַּ"ע introduces himself (once per person)
-      if (id === 'ibn_ezra') H.loadOnce('/assets/raba-intro.js').then(() => window.RabaIntro.maybe()).catch(() => {}); };
+      if (id === 'ibn_ezra') H.loadOnce('/assets/raba-intro.js').then(() => window.RabaIntro.maybe()).catch((e) => console.warn('the introduction did not load', e)); };
     /** a paid figure: the price first, then the purchase (credits; the family's for nothing, the server decides), then it is chosen */
     // each paid figure has its own price (the special ones cost more); the server charges the same
     const priceOf = (f) => Number(shop.prices?.[f.id] ?? shop.priceIls) || 10;
@@ -311,6 +311,7 @@
       el('h3', {}, 'הדמות'),
       el('p', { class: 'muted small' }, takes ? 'כל הדמויות לבחירה, גם דמויות 💎 – במשפחה.' : shopOpen ? 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.' : 'רוב הדמויות חינם.'),
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'רַאבַּ"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,
+      mine === 'ibn_ezra' ? el('button', { class: 'btn small ghost', type: 'button', onclick: () => H.loadOnce('/assets/raba-intro.js').then(() => window.RabaIntro.open()).catch((e) => { console.warn('the introduction did not load', e); toast('ההיכרות לא נטענה כרגע'); }) }, 'להכיר אותו שוב') : null,
       ...groups.flatMap(([title, list]) => [el('h4', {}, title), el('div', { class: 'st-skins' }, list.map((f) => {
         const ok = allowed(f);
         // the family takes it (no price); an open shop sells it; a closed one: locked, no price, no button

@@ -925,3 +925,13 @@ button.sr-tool { inline-size: 100%; font: inherit; text-align: start; cursor: po
 .soon-sheet p { margin: 0; max-inline-size: 32ch; color: var(--muted); font-size: 1.02rem; line-height: 1.55; }
 @media (prefers-reduced-motion: reduce) { .soon-card img { transition: none; } }
 :root[data-motion="reduce"] .soon-card img { transition: none; }
+
+/* the polite page for a tool not open to you (gate.js, ai-features): a calm card in the middle, the name, why, and the way back.
+   Mirrors the inline stopgap in gate.js, which ai-features drops (decisions.md). */
+.gate-closed { display: grid; gap: 10px; justify-items: center; max-inline-size: 34rem; margin: 48px auto; padding: 32px 24px 26px;
+  text-align: center; border-block-start: 3px solid color-mix(in srgb, var(--soon, var(--primary)) 55%, transparent); }
+.gate-closed h1 { margin: 0; font-size: clamp(1.4rem, 1.2rem + 1vw, 1.8rem); }
+.gate-closed p { margin: 0; max-inline-size: 36ch; line-height: 1.6; }
+.gate-closed .lead { font-size: 1.08rem; color: var(--text); }
+.gate-closed .muted { color: var(--muted); }
+.gate-closed .btn { margin-block-start: 8px; min-block-size: 44px; }

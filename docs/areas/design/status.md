@@ -2,7 +2,134 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14: a full handover. This chat moves to a fresh one with the same name (the owner's decision)._
+_Updated 2026-11-14 (the new chat, round 9)._
+
+
+
+## Round 9: the look of the food calculator (gathering)
+- `docs/design/gather-calc.md` gives the class names. The CSS is at the end of `public/gather/gather.css` and covers:
+  - the steppers, with the label on top, so they fit two or three to a row at 375;
+  - the meal and kosher pills (`.ga-seg`);
+  - the proposal rows: tick, quantity, ✕, `.off`, `.new`, and a skeleton while `aria-busy`;
+  - the add-one field;
+  - the foot with the primary button, sticky at the bottom of the sheet;
+  - the RSVP diet ticks (`.ga-diets` / `.ga-tick`).
+- Checked in the real H.modal at 375 and 1280, light and dark. The audit's only finding is that the sticky foot covers rows on desktop while the list scrolls under it, which is by design.
+
+## Round 8: the look of drag-to-arrange (המשפחה, כל הדורות)
+- `docs/design/tree-edit.md`: the class names and markup for ai-features. The CSS is at the end of `public/family/family.css`. It covers:
+  - the סידור button, the sticky banner with סיום;
+  - the grip on each card (44px, `touch-action: none`), the source card and the ghost (moved with `translate`);
+  - the generation highlight (`drop`), the insertion line and the confirm sheet in H.modal;
+  - undo, which reuses `.fv-undo`.
+- Checked on a static mock at 375 and 1280, light and dark. The audit is clean; its one overlap was the mock's fixed undo bar. Motion uses transform/opacity only.
+- Weak spots:
+  - not yet tested with the real drag logic;
+  - the insertion line takes physical coordinates from the JS;
+  - the keyboard path (`.picked`) is a recommendation only.
+
+## Round 7 (2026-11-14): the olive's faces smaller (the owner's choice)
+
+- In olea the face is 7.6% of the tree's width (was 10.04%): 27 px at 375, 58 px on desktop; one size in every season and on
+  empty seats, the seats unchanged. Measured from the frames' own pixels at every seat: no two frames' leaves touch, with a
+  gap of at least 2 px at 375, 380 and 760 (8% still touched at 375). Initials 11 px, names 17 px.
+- The frames are re-exported for the new size (264 px, 12 and 17 KB, the same hole). Checked at 375 and 1280, light and dark;
+  audit clean.
+
+
+## Round 6 (2026-11-14): the olive's head frames (33 winter, 34 summer)
+
+- `public/assets/tree/olea/frame-{winter,summer}.webp`, 352 px, 19 and 25 KB (`docs/design/art/cut-olive-head-frames.py`): white
+  outside, hole and gaps transparent. Both scaled to the same hole (the winter's was 521 px, the summer's 394), centred, so
+  the face sits the same in every season; sized for the seat at 2x on desktop (a 76 px face).
+- tree.css: a frame round every seated person in olea, in place of the CSS ring (empty seats have none). Winter and snow wear
+  33; summer, autumn and spring wear 34. Seats unchanged. Checked at 375 and 1280, light and dark; audit clean; no tag is
+  covered by another seat's frame.
+- The summer ring is thick (1.7× the face, 2.3× with leaves): round 7 made the face smaller.
+
+
+## Round 5 (2026-11-14): the olive's seasons (29-31), the olive share frame (28)
+
+- **Seasons in `olea`:** autumn (31), light snow (29), heavy snow (30), all aligned with 27 to the pixel (best shift 0,0), so the
+  20 seats sit in place in each. The white key would have cut the snow (6% of the picture lost in 30): the seasons now keep
+  everything inside 27's silhouette. 32 (spring) is identical to 27, so spring stays summer with a tint. tree.css has a
+  `--olea-pic` per season; checked in the prototype (every season loads), audit clean at 375 and 1280.
+- **The share frame (28)** is `public/assets/frames/olive-share.webp` (558 × 1000, `docs/design/art/cut-share-olive-28.py`).
+  The two washed-out leaves on the right edge (33% and 62%) are replaced with a clean band of the same garland. At real size
+  it reads whole; up close in dark mode a couple of pale specks remain by the stem. **It replaces the 9:16 olive-border**
+  (lighter, the olive tree's palette, more room inside); `olive-border.webp` is kept until no branch uses it.
+
+
+## Round 4 (2026-11-14): the olive with seats (image 27), set `olea` "זית"
+
+- **Placed in code, like the pine.** `docs/design/cut-tree-olive-seats.py` cuts 27 into `public/assets/tree/olea/tree-summer.webp`
+  (1000 × 1500, 196 KB) and writes `slots.json` (20 seats, 5 tiers × 4, `perRow` 4, seat 10.04%, the same spot every season).
+  No circles in the shipped picture: as in the pine, the ring is CSS, drawn only round a person (tree.css, shared rules).
+  `--preview` writes `docs/design/art/olive-seats-preview.webp` with the 20 seats drawn white with a thin ink ring, for the owner.
+  Added to `sets.json` and to the prototype (tree-18). The old SVG olive (`olive`, "עץ א׳") is untouched.
+- **Zone 2 (the trunk) does not fit 4.** It is ~25% of the width wide: two seats fit on it (at 43.5/57.5%, y 62%). The other
+  two of that tier hang just under the crown's lower lobes (21/80%, y 53.5%), in the open air like the pine's. Alternative:
+  a tier of 2 there (18 seats), if the owner prefers.
+- **Tiers 13.5% apart** (12.5, 26, 39.5, 53.5/62, 86.5% of the height): a face with its two-line tag takes 13%, so tags never
+  cover the face below (checked in code at 375 and 1280; the pine's own spacing is 16.5%). With dates (17%) a tag may touch.
+- Checked at 375 and 1280, light and dark; audit clean. Not done: the seasons (they wait for the owner's edits of 27; each one
+  goes into `SEASONS` in the script and gets a `--olea-pic` line in tree.css). Spring meanwhile is a light filter.
+
+
+## Round 3 (2026-11-14): the olive (24, 25), not cleanable: a re-roll is needed
+
+- **24 and 25 are not the same drawing.** The crown, the trunk and the band heights differ, so 24's circles can't be filled
+  from 25 the way the pine's were from 16 (those were aligned to the pixel).
+- **The bands were drawn separately, in both.** In 25 the top two lines frame a white slice (rows 421–447 and 789–814).
+  Cutting the slices and lines out closes the crown seam acceptably, but the trunk steps sideways at the lower seams and keeps
+  a dark edge stroke there, and the second seam leaves clumps cut flat. In 24 the trunk jumps ~100 px at rows 1112 and 1448.
+  Repainting that by hand would show. Nothing shipped; the originals are in `data/art/owner-2026-11-14/`.
+- **The re-roll (for the owner):**
+  - "one continuous drawing, no horizontal lines, bands or gaps anywhere";
+  - the clean tree first, then the circles added **by editing that same image** (not a new generation), so the two line up
+    to the pixel;
+  - the candle spot at the bottom centre (25 has it, 24 does not).
+- **Seats:** I recommend 4 on the top tier too, as on the pine (20 seats, `perRow: 4`). With 2, a third child or grandchild
+  falls back to spreading along the line. If the owner wants 2, `slots.json` can carry seats per tier.
+
+## Round 2 (2026-11-14): the owner's images 22 and 23, merge-ready
+
+- **22, the family frames** (`asset-prompts-full.md` "מסגרות לבני משפחה"): `/assets/frames/round-{wood,gold,flowers,stone,rope,embroidery}.webp`,
+  512×512, transparent inside and outside, 35–56 KB.
+  - The embroidered one: the smear was in the drawing itself (the right side of both gold rims washed into white). The pale parts
+    touching the white were removed, and the right rim bands (within 75° of the right) are mirrored from the left; the
+    embroidery is symmetric. **Weak spot:** a small step where the mirrored band ends at the top right, seen only up close.
+- **23, the stickers** ("מדבקות"): `/assets/kit/stickers/<name>.webp`, 256×256, 8–16 KB, the cream die-cut border kept and
+  the white inside a drawing kept (the daisy). Names: tent, fire, olive, heart, star, candle, umbrella, daisy, sun, moon,
+  cup, pomegranate, note, book, house, balloon, gift, swirl, leaf, cloud. The tent is the only one drawn without the cream border.
+- **Placed, not wired:** the markup is ai-features' or the master's. Script: `docs/design/art/cut-art-22-23.py`.
+- **Checked:** every file on light and dark (contact sheets). Not seen in a page.
+- **Still missing from `asset-prompts-full.md` (vision):**
+  - **the olive tree:** the base and its three seasons, and the olive person form (three seasons and the empty one);
+  - **the pine's spring** (for now summer with a fresh tint);
+  - **the maple and the African juniper:** later, by the plan;
+  - **the profile head** (the person's banner background is probably 9, the desert banner; vision to confirm);
+  - **ع ב-ע:** the stone wall and the chisel;
+  - **the tools' art:** home maintenance, and meditation and breath (kitchen 8, garden 7 and garage 6 arrived);
+  - **the achievement share frames:** olive 1:1, embroidery 9:16 and 1:1, confetti 9:16 and 1:1 (4 is probably the olive 9:16);
+  - **the tree backgrounds:** sunset, mountains, sea and night.
+
+## Round 1 in the new chat (2026-11-14): merge-ready
+
+- **Styles ai-features asked for (all CSS, inert without their markup):**
+  - `launcher.css`: `.tools-sort` (tools.js's sort chips) gets the `tb-sort` look, the trail included; `.tools-cat` and
+    `.tools-cat-h` get the `tb-cat` headers. `!important` beats the inline stopgap on `.tools-sort`.
+  - `parnasa.css`: `.pr-invite`, `.pr-foot`, the review's flip `label.toggle`, and rows ending in a button in
+    `.pr-recur-list` / `.pr-tx-list` / `.pr-holds` (the button in the end column, 44px; the tx row has no icon column).
+  - `base.css`: `.gate-closed`, the polite page (gate.js).
+  - **For ai-features:** drop the inline styles on `.tools-sort` (tools.js) and `.gate-closed` (gate.js).
+- **admin.css motion:** `st-ph` fades and unfolds by `scale`, no `block-size`. The audit on `/admin/` now lists no motion defect.
+- **The circle trees:** already done in ed80703 (20 seats, not 16, in `tree-pine-seats.md`). The colour per season checked
+  again against the originals: the autumn crown is yellow; the green clumps on the low tier are green in 20 too.
+- **The owner's images:** done in the last chat (item 13 below); the faint pinecone was retired by item 14.
+- **Checked:** the audit on `/admin/`, `/tools/` and `/tools/parnasa/` at 375 and 1280, light and dark: clean. The פרנסה
+  rows and the gate card were measured with test markup at 375 (no overflow, buttons 44px).
+- **Not seen:** the sort trail sliding (the pane doesn't run transitions); the פרנסה modals with real data.
 
 ## Handover (2026-11-14) – read this first
 
@@ -58,7 +185,7 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
      - check the slide and the arrange mode together;
      - check whether the בעתיד icon is too pale at night (`.app.tb-future .ic > * { opacity: .5 }`).
    - **Proposals:** sticky category headers on a phone; a letter divider in לפי שם; folding a category by its count.
-3. **`st-ph`, the drop spot in עץ מבנה** (admin.css ~387).
+3. **Done (round 1): `st-ph`, the drop spot in עץ מבנה** (admin.css ~387).
    - **The defect:** `@keyframes st-ph { from { block-size: 0; opacity: 0 } }` animates a layout property, which breaks the
      motion rule.
    - **The proposed fix:** fade it in with `opacity` and `scale: 1 .6`, with `transform-origin: top`, and no `block-size`.

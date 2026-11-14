@@ -24,18 +24,28 @@ async function familyCheck(ctx: Ctx) {
   return (hx: string, hy: string) => hx === hy || t(hx).has(hy);
 }
 
-/** Every member is checked again (privacy: who may be in a group was only checked at its creation). A member I can no longer
-    write to is removed if I blocked them; otherwise I am the one out (friends-rules staleGroup). Throws 404 if I am out. */
+/** The creation rule again on every read and write (friends-rules staleGroup): I am reachable from the maker (or, the maker
+    gone, from a remaining member), blocks between me and a member, a child only among family. Light: one query for the
+    members and one for the blocks; a `check` only for the maker (several only when the maker has left); `childOf` and
+    the family bridges only when the group has more than me. Throws 404 if I am out. */
 async function prune(ctx: Ctx, u: Member, g: Group) {
   const me = u.email.toLowerCase();
-  const others = (await membersOf(ctx, g.id)).filter((m) => m.email !== me);
-  const rows = [];
-  for (const m of others) {
-    let why: string | null = null;
-    try { await check(ctx, u, await member(ctx, m.email)); } catch { why = 'no'; }
-    rows.push({ email: m.email, why, iBlocked: why ? (await blocks(ctx, me, m.email)).iBlocked : false });
-  }
-  const r = F.staleGroup(rows);
+  const ms = (await membersOf(ctx, g.id)).map((m) => m.email);
+  const others = ms.filter((e) => e !== me);
+  if (!others.length) return;
+  const marks = others.map((_, k) => '?' + (k + 2)).join(',');
+  const { results: bl } = await ctx.env.DB.prepare(`SELECT blocker, blocked FROM dm_blocks WHERE (blocker = ?1 AND blocked IN (${marks})) OR (blocked = ?1 AND blocker IN (${marks}))`)
+    .bind(me, ...others).all<{ blocker: string; blocked: string }>();
+  const reach = async (e: string) => { try { await check(ctx, u, await member(ctx, e)); return true; } catch { return false; } };
+  const maker = g.maker.toLowerCase();
+  let reachMaker = true, reachAny = true;
+  if (maker !== me && ms.includes(maker)) reachMaker = await reach(maker);
+  else if (maker !== me) { reachAny = false; for (const e of others) if (await reach(e)) { reachAny = true; break; } }
+  const fam = await familyCheck(ctx);
+  const house = new Map<string, string>();
+  const kids = new Set<string>();
+  for (const e of ms) { const m = await member(ctx, e); house.set(e, m?.household || '?' + e); if (m && (await childOf(ctx.env, e))) kids.add(e); }
+  const r = F.staleGroup({ me, maker, members: ms, blocks: bl, reachMaker, reachAny, child: (e) => kids.has(e), familyOf: (x, y) => fam(house.get(x) || '?x', house.get(y) || '?y') });
   for (const e of r.drop) await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE grp = ? AND email = ?').bind(g.id, e).run();
   if (r.leave) { await ctx.env.DB.prepare('DELETE FROM dm_group_members WHERE grp = ? AND email = ?').bind(g.id, me).run(); throw new HttpError(404, 'not_found'); }
 }

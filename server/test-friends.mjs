@@ -76,13 +76,22 @@ eq('initials of nothing', F.initials(''), '?');
 ok('neighbouring ids get colours far apart', Math.abs(parseInt(F.hue('g0').slice(4)) - parseInt(F.hue('g1').slice(4))) > 10);
 ok('a steady colour', F.hue('f123') === F.hue('f123') && /^hsl\(\d+ 45% 42%\)$/.test(F.hue('f123')));
 
-/* ---- a group is checked again (the master's review of batch 27) ---- */
-eq('everyone still reachable: nothing changes', F.staleGroup([{ email: 'a@x', why: null, iBlocked: false }, { email: 'b@x', why: null, iBlocked: false }]), { drop: [], leave: false });
-eq('I blocked one: they go', F.staleGroup([{ email: 'a@x', why: 'cannot_send', iBlocked: true }, { email: 'b@x', why: null, iBlocked: false }]), { drop: ['a@x'], leave: false });
-eq('they blocked me: I am out, they stay', F.staleGroup([{ email: 'a@x', why: 'cannot_send', iBlocked: false }]), { drop: [], leave: true });
-eq('the friendship ended: I am out', F.staleGroup([{ email: 'a@x', why: 'cannot_send', iBlocked: false }, { email: 'b@x', why: null, iBlocked: false }]), { drop: [], leave: true });
-eq('a mix: the one I blocked goes, and I leave for the other', F.staleGroup([{ email: 'a@x', why: 'x', iBlocked: true }, { email: 'b@x', why: 'x', iBlocked: false }]), { drop: ['a@x'], leave: true });
-eq('nobody else in it', F.staleGroup([]), { drop: [], leave: false });
+/* ---- a group is checked again: the creation rule (the master's review of batch 27) ---- */
+const famT = (x, y) => x[0] === y[0];
+const S = (o) => F.staleGroup({ me: 'c@x', maker: 'a@x', members: ['a@x', 'b@x', 'c@x'], blocks: [], reachMaker: true, reachAny: true, child: () => false, familyOf: famT, ...o });
+eq('everyone fine: nothing changes', S({}), { drop: [], leave: false });
+eq('two members who are not friends of each other both stay (reachable only from the maker)', S({ me: 'b@x', reachMaker: true }), { drop: [], leave: false });
+eq('the maker unfriended me: I am out', S({ reachMaker: false }), { drop: [], leave: true });
+eq('I am the maker: nothing to reach', S({ me: 'a@x', maker: 'a@x', reachMaker: false }), { drop: [], leave: false });
+eq('I blocked a member: they go', S({ blocks: [{ blocker: 'c@x', blocked: 'b@x' }] }), { drop: ['b@x'], leave: false });
+eq('a member blocked me: I am out', S({ blocks: [{ blocker: 'b@x', blocked: 'c@x' }] }), { drop: [], leave: true });
+eq('two others blocked each other: not my business', S({ blocks: [{ blocker: 'a@x', blocked: 'b@x' }] }), { drop: [], leave: false });
+eq('the maker left and I am reachable from a remaining member', S({ members: ['b@x', 'c@x'], reachMaker: false, reachAny: true }), { drop: [], leave: false });
+eq('the maker left and nobody remaining is reachable: I am out', S({ members: ['b@x', 'c@x'], reachAny: false }), { drop: [], leave: true });
+eq('alone in the group: nothing to check', S({ members: ['c@x'], reachMaker: false, reachAny: false }), { drop: [], leave: false });
+eq('a child with only family stays', S({ members: ['k1@x', 'k2@x', 'k3@x'], me: 'k1@x', maker: 'k2@x', child: (e) => e === 'k1@x' }), { drop: [], leave: false });
+eq('a child among someone not family: the child goes (seen by an adult)', S({ members: ['a@x', 'b@x', 'c@x', 'k@x'], me: 'a@x', maker: 'a@x', child: (e) => e === 'k@x', familyOf: (x, y) => x === y || [x, y].every((e) => e !== 'b@x') }), { drop: ['k@x'], leave: false });
+eq('a child among someone not family: I am the child, I go', S({ members: ['k@x', 'b@x', 'c@x'], me: 'k@x', maker: 'c@x', child: (e) => e === 'k@x', familyOf: (x, y) => x === y || [x, y].every((e) => e !== 'b@x') }), { drop: [], leave: true });
 
 console.log(`friends: ${pass} passed, ${fail} failed`);
 if (fail) process.exit(1);

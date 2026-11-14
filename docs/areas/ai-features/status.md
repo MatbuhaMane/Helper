@@ -6,12 +6,8 @@ Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum
 ## FOR THE MASTER'S REVIEW (privacy): groups re-check their members (commit after 28e5dee)
 
 - The bug from the batch 27 review: a member whose friendship ended or who was blocked kept reading and writing in the group.
-- The fix: `thread` and `send` in `server/groups.ts` run `prune()`, which calls `check()` for every other member.
-  The pure rule is `staleGroup` in `friends-rules.ts` (tests in test-friends, 57 pass): a member I blocked is removed; in any other case
-  (they blocked me, the friendship ended) I am the one out (404), so a blocker is never removed by a visit of the blocked.
-  A block (`dm.ts block`) also removes the blocked person from every group we share at once.
+- The fix (second version, after the master's review): `prune()` in `server/groups.ts` applies the creation rule on every read and write, as the pure `staleGroup` in `friends-rules.ts` (64 test-friends checks): I am reachable from the maker (or, the maker gone, from a remaining member); a member I blocked goes, a member who blocked me puts me out; a friendship ended between two ordinary members drops nobody; a child under 12 stays only among family. One query for the blocks, one `check` (the maker) per visit. A block (`dm.ts block`) also removes the blocked person from shared groups at once.
 - Not covered: the list/unread of a person who was not opened yet still counts the group until someone opens it; no UI test with two accounts.
-- Known choice: when a friendship ends, whoever opens the group first is the one who leaves it.
 
 ## Latest: רַאבַּ"ע's onboarding cards (2026-11-14) - WORDING FOR THE OWNER'S OK
 

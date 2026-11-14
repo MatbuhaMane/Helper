@@ -116,3 +116,4 @@
 - 2026-11-14: internal economy ש6: youth earn tokens only inside family and friends and on community deeds, a parent approves each service; trade with strangers from 18.
 - 2026-11-14: internal economy ש7: the token is named "יד" ("לתת יד ולקבל יד"); the spec is complete, read back to the owner for approval.
 - 2026-11-14: the owner approved the whole internal economy spec (the "יד" token); decisions.md entry written; batch 32 sent to design, the CEO, business and legal as a "בקרוב" item.
+- 2026-11-14: batch 32 replies: the CEO placed the "בקרוב" item as "יד ביד" (main c74f826); business recommends no link between ידיים and credits, only discretionary gift credits. Both wait for the owner.

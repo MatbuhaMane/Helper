@@ -2,7 +2,24 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14: a full handover. This chat moves to a fresh one with the same name (the owner's decision)._
+_Updated 2026-11-14 (the new chat, round 1)._
+
+## Round 1 in the new chat (2026-11-14): merge-ready
+
+- **Styles ai-features asked for (all CSS, inert without their markup):**
+  - `launcher.css`: `.tools-sort` (tools.js's sort chips) gets the `tb-sort` look, the trail included; `.tools-cat` and
+    `.tools-cat-h` get the `tb-cat` headers. `!important` beats the inline stopgap on `.tools-sort`.
+  - `parnasa.css`: `.pr-invite`, `.pr-foot`, the review's flip `label.toggle`, and rows ending in a button in
+    `.pr-recur-list` / `.pr-tx-list` / `.pr-holds` (the button in the end column, 44px; the tx row has no icon column).
+  - `base.css`: `.gate-closed`, the polite page (gate.js).
+  - **For ai-features:** drop the inline styles on `.tools-sort` (tools.js) and `.gate-closed` (gate.js).
+- **admin.css motion:** `st-ph` fades and unfolds by `scale`, no `block-size`. The audit on `/admin/` now lists no motion defect.
+- **The circle trees:** already done in ed80703 (20 seats, not 16, in `tree-pine-seats.md`). The colour per season checked
+  again against the originals: the autumn crown is yellow; the green clumps on the low tier are green in 20 too.
+- **The owner's images:** done in the last chat (item 13 below); the faint pinecone was retired by item 14.
+- **Checked:** the audit on `/admin/`, `/tools/` and `/tools/parnasa/` at 375 and 1280, light and dark: clean. The פרנסה
+  rows and the gate card were measured with test markup at 375 (no overflow, buttons 44px).
+- **Not seen:** the sort trail sliding (the pane doesn't run transitions); the פרנסה modals with real data.
 
 ## Handover (2026-11-14) – read this first
 
@@ -58,7 +75,7 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
      - check the slide and the arrange mode together;
      - check whether the בעתיד icon is too pale at night (`.app.tb-future .ic > * { opacity: .5 }`).
    - **Proposals:** sticky category headers on a phone; a letter divider in לפי שם; folding a category by its count.
-3. **`st-ph`, the drop spot in עץ מבנה** (admin.css ~387).
+3. **Done (round 1): `st-ph`, the drop spot in עץ מבנה** (admin.css ~387).
    - **The defect:** `@keyframes st-ph { from { block-size: 0; opacity: 0 } }` animates a layout property, which breaks the
      motion rule.
    - **The proposed fix:** fade it in with `opacity` and `scale: 1 .6`, with `transform-origin: top`, and no `block-size`.

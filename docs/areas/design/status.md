@@ -2,7 +2,29 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 1)._
+_Updated 2026-11-14 (the new chat, round 2)._
+
+## Round 2 (2026-11-14): the owner's images 22 and 23, merge-ready
+
+- **22, the family frames** (`asset-prompts-full.md` "מסגרות לבני משפחה"): `/assets/frames/round-{wood,gold,flowers,stone,rope,embroidery}.webp`,
+  512×512, transparent inside and outside, 35–56 KB.
+  - The embroidered one: the smear was in the drawing itself (the right side of both gold rims washed into white). The pale parts
+    touching the white were removed, and the right rim bands (within 75° of the right) are mirrored from the left; the
+    embroidery is symmetric. **Weak spot:** a small step where the mirrored band ends at the top right, seen only up close.
+- **23, the stickers** ("מדבקות"): `/assets/kit/stickers/<name>.webp`, 256×256, 8–16 KB, the cream die-cut border kept and
+  the white inside a drawing kept (the daisy). Names: tent, fire, olive, heart, star, candle, umbrella, daisy, sun, moon,
+  cup, pomegranate, note, book, house, balloon, gift, swirl, leaf, cloud. The tent is the only one drawn without the cream border.
+- **Placed, not wired:** the markup is ai-features' or the master's. Script: `docs/design/art/cut-art-22-23.py`.
+- **Checked:** every file on light and dark (contact sheets). Not seen in a page.
+- **Still missing from `asset-prompts-full.md` (vision):**
+  - **the olive tree:** the base and its three seasons, and the olive person form (three seasons and the empty one);
+  - **the pine's spring** (for now summer with a fresh tint);
+  - **the maple and the African juniper:** later, by the plan;
+  - **the profile head** (the person's banner background is probably 9, the desert banner; vision to confirm);
+  - **ع ב-ע:** the stone wall and the chisel;
+  - **the tools' art:** home maintenance, and meditation and breath (kitchen 8, garden 7 and garage 6 arrived);
+  - **the achievement share frames:** olive 1:1, embroidery 9:16 and 1:1, confetti 9:16 and 1:1 (4 is probably the olive 9:16);
+  - **the tree backgrounds:** sunset, mountains, sea and night.
 
 ## Round 1 in the new chat (2026-11-14): merge-ready
 

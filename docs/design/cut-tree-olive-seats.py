@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
 
 SRC, OUT = 'data/art/owner-2026-11-14/', 'public/assets/tree/olea'
-SEASONS = {'summer': '27.webp'}
+SEASONS = {'summer': '27.webp', 'autumn': '31.webp', 'winter': '29.webp', 'snow': '30.webp'}   # 32 (spring) came back as 27: spring stays a tint
 X = lambda p: round(p * 13.34 + 4)            # % of the 1334 box -> source px
 SEATS = [                                     # centres in source px, bottom tier first
     ('roots', [(X(26), 1730), (X(41), 1730), (X(59), 1730), (X(74), 1730)]),
@@ -25,14 +25,19 @@ R_DISC = 67                                   # the same seat as the pine's (10.
 os.makedirs(OUT, exist_ok=True)
 load = lambda f: np.asarray(Image.open(SRC + f).convert('RGB')).astype(np.float32)
 
-def cutout(a):
-    """the white out, edges un-multiplied from white, the thin cream rim (as the pine), into the 1334 x 2001 box"""
-    H = a.shape[0]
+def mask(a):
     mn, mx = a.min(-1), a.max(-1)
     bg = (mn >= 236) & (mx - mn < 16)
     lab, n = ndi.label(bg); sizes = ndi.sum(bg, lab, range(1, n + 1))
     bg &= np.isin(lab, 1 + np.flatnonzero(sizes >= 40))
-    fg = ~bg
+    return ~bg
+
+def cutout(a, keep=None):
+    """the white out, edges un-multiplied from white, the thin cream rim (as the pine), into the 1334 x 2001 box.
+    keep: the clean tree's silhouette; the seasons are aligned to it to the pixel, so the white snow inside it stays"""
+    H = a.shape[0]
+    mn = a.min(-1)
+    fg = mask(a) if keep is None else mask(a) | keep
     lab, n = ndi.label(fg); sizes = ndi.sum(fg, lab, range(1, n + 1))
     fg &= np.isin(lab, 1 + np.flatnonzero(sizes >= 150))
     near_bg = ndi.binary_dilation(~fg, iterations=2) & fg
@@ -52,8 +57,9 @@ def cutout(a):
     out = np.zeros((2001, 1334, 4), np.uint8); out[:H] = full[:, 4:4 + 1334]
     return Image.fromarray(out, 'RGBA')
 
+keep = mask(load(SEASONS['summer']))
 for season, f in SEASONS.items():
-    img = cutout(load(f)).resize((1000, 1500), Image.LANCZOS)
+    img = cutout(load(f), keep).resize((1000, 1500), Image.LANCZOS)
     p = f'{OUT}/tree-{season}.webp'
     img.save(p, quality=80, alpha_quality=85, method=6)
     print(season, os.path.getsize(p) // 1024, 'KB')

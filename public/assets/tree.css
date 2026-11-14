@@ -395,11 +395,14 @@
 .tree[data-kind="pine"][data-season="winter"] { --pine-pic: url("/assets/tree/pine/tree-winter.webp"); }
 .tree[data-kind="pine"][data-season="snow"] { --pine-pic: url("/assets/tree/pine/tree-snow.webp"); }
 .tree[data-kind="pine"][data-season="spring"] { --pine-f: hue-rotate(8deg) saturate(1.12) brightness(1.03); }
-/* the olive with seats (זית, image 27, docs/design/cut-tree-olive-seats.py): the same seats and rings as the pine; one picture
-   until the owner's seasons arrive (then a --olea-pic per season, as the pine's) */
+/* the olive with seats (זית, image 27, docs/design/cut-tree-olive-seats.py): the same seats and rings as the pine; one picture per season (27 summer, 31 autumn,
+   29 light snow, 30 heavy snow); spring came back as summer, so it is summer with a tint */
 .tree[data-kind="olea"]::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background: var(--olea-pic, url("/assets/tree/olea/tree-summer.webp")) center / 100% 100% no-repeat;
   filter: var(--pine-f, saturate(1)) var(--night-f, brightness(1)); }
+.tree[data-kind="olea"][data-season="autumn"] { --olea-pic: url("/assets/tree/olea/tree-autumn.webp"); }
+.tree[data-kind="olea"][data-season="winter"] { --olea-pic: url("/assets/tree/olea/tree-winter.webp"); }
+.tree[data-kind="olea"][data-season="snow"] { --olea-pic: url("/assets/tree/olea/tree-snow.webp"); }
 .tree[data-kind="olea"][data-season="spring"] { --pine-f: hue-rotate(6deg) saturate(1.1) brightness(1.03); }
 .tree:is([data-kind="pine"], [data-kind="olea"])[data-season] .tree-dress { display: none; }
 .tree:is([data-kind="pine"], [data-kind="olea"]):not([data-look="frame"]) { --leaf-ar: 1; --face-w: 100%; --face-y: 0%; }

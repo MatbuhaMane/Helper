@@ -2,7 +2,19 @@
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 
-_Updated 2026-11-14 (the new chat, round 4)._
+_Updated 2026-11-14 (the new chat, round 5)._
+
+## Round 5 (2026-11-14): the olive's seasons (29-31), the olive share frame (28)
+
+- **Seasons in `olea`:** autumn (31), light snow (29), heavy snow (30), all aligned with 27 to the pixel (best shift 0,0), so the
+  20 seats sit in place in each. The white key would have cut the snow (6% of the picture lost in 30): the seasons now keep
+  everything inside 27's silhouette. 32 (spring) is identical to 27, so spring stays summer with a tint. tree.css has a
+  `--olea-pic` per season; checked in the prototype (every season loads), audit clean at 375 and 1280.
+- **The share frame (28)** is `public/assets/frames/olive-share.webp` (558 × 1000, `docs/design/art/cut-share-olive-28.py`).
+  The two washed-out leaves on the right edge (33% and 62%) are replaced with a clean band of the same garland. At real size
+  it reads whole; up close in dark mode a couple of pale specks remain by the stem. **It replaces the 9:16 olive-border**
+  (lighter, the olive tree's palette, more room inside); `olive-border.webp` is kept until no branch uses it.
+
 
 ## Round 4 (2026-11-14): the olive with seats (image 27), set `olea` "זית"
 

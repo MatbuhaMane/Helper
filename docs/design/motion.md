@@ -56,7 +56,7 @@ An endless animation is allowed only in one of four kinds. A new one is added he
 | Kind | Why it may run on | The names |
 |---|---|---|
 | Waiting | it says "working", and stops when the answer comes | `spin`, `rec-spin`, `rs-spin`, `fun-spin`, `fun-pull-spin`, `mu-spin`, `ga-calc-wait`, `cx-dots`, `gl-dot`, `skel-sheen`, `shimmer`, `pb-sheen` |
-| Live | something is recording, playing or calling now | `gl-rec`, `mu-listen`, `mu-eq`, `gp-wave`, `sos-pulse`, `st-ring`, `dm-z`, `dm-flow` |
+| Live | something is recording, playing, speaking or calling now | `gl-rec`, `rb-speak`, `mu-listen`, `mu-eq`, `gp-wave`, `sos-pulse`, `st-ring`, `dm-z`, `dm-flow` |
 | Edit mode | the arranging wiggle, as on a phone's home screen | `app-wiggle`, `arr-wiggle` |
 | Scenery | the tent's calm life: sky, fire, tree, figures, moods | `sky-twinkle`, `twinkle`, `sun-breathe`, `glow`, `breath`, `shb-breathe`, `strip-breathe`, `rp-breathe`, `wz-breathe`, `wz-tri`, `cf-spark`, `cf-roar`, `cf-chosen`, `plump`, `tr-fall`, `tr-drift`, `tr-sway`, `tr-sway-low`, `tr-hang`, `tr-glow`, `tr-flicker`, `tr-candle-glow`, `f2-glow`, `f2-tw`, `f2-z`, `fe-flick`, `mood-flicker`, `egg-live`, `egg-rock` |
 

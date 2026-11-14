@@ -36,12 +36,13 @@
     const s = stateLine(it), w = warrantyLine(it.warranty);
     const tip = data.presets.find((p) => p.kind === it.kind)?.tip;
     const last = data.log.find((l) => l.item === it.id);
+    const who = it.every_days && it.remind_to && it.remind_to !== data.me ? (data.people || []).find((p) => p.email === it.remind_to)?.name : null;
     return el('li', { class: 'card', style: 'padding:12px 14px;margin:10px 0' },
       el('div', { style: 'display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline' },
         el('h3', { style: 'margin:0;font-size:1.05rem;flex:1 1 10em' }, it.name),
         el(s.strong ? 'b' : 'span', { class: s.strong ? '' : 'muted' }, s.text)),
       el('p', { class: 'muted', style: 'margin:6px 0 0;font-size:.9rem' },
-        [it.every_days ? everyText(it.every_days) : null, it.last_done ? `נעשה ב-${fmt(it.last_done)}${last?.who && last.done_on === it.last_done ? ` (${last.who})` : ''}` : null].filter(Boolean).join(' · ')),
+        [it.every_days ? everyText(it.every_days) : null, it.last_done ? `נעשה ב-${fmt(it.last_done)}${last?.who && last.done_on === it.last_done ? ` (${last.who})` : ''}` : null, who ? `התזכורת אל ${who}` : null].filter(Boolean).join(' · ')),
       tip || it.note ? el('p', { style: 'margin:6px 0 0;font-size:.92rem' }, it.note || tip) : null,
       w ? el('p', { style: 'margin:6px 0 0;font-size:.92rem' }, el('b', {}, w), ` (${fmt(it.warranty_until)})`) : null,
       el('div', { style: 'display:flex;gap:8px;margin-top:10px;flex-wrap:wrap' },
@@ -63,10 +64,15 @@
     const last = el('input', { type: 'date', value: it.last_done || '', max: data.today });
     const warr = el('input', { type: 'date', value: it.warranty_until || '' });
     const note = el('textarea', { rows: 2, maxlength: 300, dir: 'auto' }, it.note || '');
+    // who gets the reminder by push on the morning it is due: whoever added it, or a member it is handed to (ש7)
+    const people = data.people || [];
+    const to = people.length > 1 ? el('select', {}, people.map((p) => el('option', { value: p.email }, p.email === data.me ? `${p.name || 'אני'} (אני)` : p.name || p.email))) : null;
+    if (to) to.value = it.remind_to || data.me;
     const err = el('p', { class: 'hint', role: 'alert' });
     const save = async () => {
       const e = every.value === '-1' ? custom.value : every.value === '0' ? null : every.value;
       const b = { name: name.value, kind: it.kind, every_days: e, last_done: last.value || null, warranty_until: warr.value || null, note: note.value };
+      if (to) b.remind_to = to.value;
       try { await api(isNew ? '/api/home' : `/api/home/${it.id}`, { method: isNew ? 'POST' : 'PUT', body: b }); H.closeModal(); await load(); toast(isNew ? 'נוסף' : 'נשמר'); }
       catch (x) { err.textContent = why(x); }
     };
@@ -78,6 +84,7 @@
       el('label', { class: 'field' }, el('span', {}, 'מה'), name),
       el('label', { class: 'field' }, el('span', {}, 'כל כמה זמן'), every), custom,
       el('label', { class: 'field' }, el('span', {}, 'מתי נעשה לאחרונה'), last),
+      to ? el('label', { class: 'field' }, el('span', {}, 'מי מקבל את התזכורת'), to) : null,
       el('label', { class: 'field' }, el('span', {}, 'האחריות בתוקף עד (לא חובה)'), warr),
       el('label', { class: 'field' }, el('span', {}, 'הערה (לא חובה)'), note),
       err,

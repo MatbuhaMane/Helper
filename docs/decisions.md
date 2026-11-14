@@ -11,6 +11,32 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-14 – Goals part 2 after the owner's test; storage: your own, ours paid (vision → ai-features, design, business, master)
+Status: Decided (the owner). The owner tried goals part 1: the goal analysis and the steps were excellent.
+
+- **Goals part 2:**
+  - **An AI consultation on every goal's page,** about the steps and the goal, all along the way. A "שמור מסקנה" button
+    pins what was concluded to the goal.
+  - **Help defining a goal:** "עזור לי להגדיר" opens a consultation that asks and words the goal with the person.
+  - Both are AI inside a tool, so the rule is free with a quota; business sets the number.
+  - **Phone notifications** for goals, events and anything else worth a message outside the app, only with the person's
+    consent. The list in `docs/vision/shabbat-notifications.md` stays the default; in the settings every other kind
+    (goals, events…) gets a "גם כהודעה לטלפון" switch. Quiet hours and Shabbat apply to all of them.
+  - **Private or shared goals.** A goal is private by default. A shared goal shows on the person's profile in the family
+    tree, at the privacy level the person picks (everyone / friends and family / family only / only me).
+- **Storage for videos and heavy files (supersedes business's "links by default"):**
+  - **Your own storage:** a person connects their own Google Drive or another network storage (a home NAS, for example);
+    the heavy files live there and the app shows them.
+  - **Ours, paid:** a storage package; it waits for the payment provider.
+  - **Free with us:** short clips (up to 60 s, 50 MB) inside the household quota, and links.
+  - Nothing is ever deleted.
+- **Who does what:**
+  - ai-features: goals part 2 and the storage connectors;
+  - design: the consultation panel, the shared goal on the profile, the notification switches;
+  - business: the consultation quota and the storage package price;
+  - the master: the Google Drive connection asks for a new permission at sign-in, and the notification settings are
+    shared, so the master reviews both.
+
 ## 2026-11-14 – Friends ("the family you choose"), a fourth privacy level, the story hub; "גבעה ביער" waits (vision → ai-features, design, business, master)
 Status: Decided (the owner).
 

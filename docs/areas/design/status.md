@@ -17,6 +17,10 @@ _Updated 2026-11-14 (round 23)._
   - sharing a workout at a privacy level (`.priv-chip`/`.priv-pick`).
   - Exercise illustrations come later.
 - Vision batch 30, wave 2 (after the launch): the chat design (grouped bubbles, the voice gesture, the media viewer, stickers and wallpapers, floating bubbles, the live card, communities).
+## Round 24: the CEO's audit list after batch 30
+- Done in CSS (bddb7af): the pillow pictures keep their shape (aspect-ratio per picture), the 2D twinkles stand still under reduce, the grocery row's wash is 200 ms.
+- For the master (patch 6 in `design-smooth-patch.md`): the sun's slow filter and opacity move off `button.sun` onto its ball, as the moon's did.
+- Still open: T11 reports f2-tw on /settings/ even though a direct test shows no animation under `data-motion=reduce` (the page may reset the flag from prefs before the check).
 ## Round 23: Telegram-smooth, part 2 (the owner's priority)
 - The spec: "Smooth: the patterns" in `docs/design/motion.md` (durations, curves, which pattern goes where).
 - CSS, the last section of base.css: sheets in 240 ms and out 170 ms (`.modal.closing`), windows pop in and out, menus grow from `--ox/--oy`, a shared-axis page turn (20 px, with `data-vt="back"` to reverse), the active tab's pebble slides between pages (view transition `tab-pebble`), more press feedback (`.btn` scale .97, chips, tabs, menu rows).

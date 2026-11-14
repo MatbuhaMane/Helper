@@ -319,7 +319,7 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
   .tabbar > :is(a, .tab-pick)::before { content: ""; position: absolute; z-index: -1; inset-block-start: calc(50% - 25px); inset-inline-start: 50%;
     inline-size: 54px; block-size: 32px; margin-inline-start: -27px; border-radius: 999px;
     background: color-mix(in srgb, var(--primary) 16%, transparent); opacity: 0; transform: scale(.4, .7); }
-  .tabbar > :is([aria-current="page"], [aria-expanded="true"])::before { opacity: 1; transform: none; animation: tab-pebble .45s cubic-bezier(.3, 1.5, .5, 1); }
+  .tabbar > :is([aria-current="page"], [aria-expanded="true"])::before { opacity: 1; transform: none; animation: tab-pebble 240ms cubic-bezier(.3, 1.5, .5, 1); }
   @keyframes tab-pebble { from { opacity: 0; transform: scale(.4, .7); } }
   .tabbar > :is(a, .tab-pick):active::after { transform: scale(.86); }
   .tabbar > :is(a, .tab-pick):focus-visible { outline: none; }
@@ -364,7 +364,7 @@ html.theme-fade, html.theme-fade * { transition: background-color .45s ease, col
 .navmenu-phone li > a > span { overflow-wrap: anywhere; }
 .navmenu-phone .navmenu-all { flex-direction: row; }
 /* the settings: the person's chip, its gear turning a little under the pointer */
-.userchip .icon { inline-size: 17px; block-size: 17px; transition: transform .45s var(--ease-river); }
+.userchip .icon { inline-size: 17px; block-size: 17px; transition: transform var(--dur-quick) var(--ease-river); }
 .userchip:hover .icon { transform: rotate(60deg); }
 .userchip[aria-current="page"] { border-color: var(--primary); color: var(--primary); }
 @media (prefers-reduced-motion: reduce) { .navmenu, .navmenu-phone { animation: none; } .nav-caret, .userchip .icon { transition: none; } }

@@ -22,6 +22,7 @@ _Updated 2026-11-14 (the new chat, round 18)._
 - A new museum kind, "אירוע מהחיים" (`data-kind="event"`): a calendar-and-star icon (`assets/story/event.svg`) and a blue-olive `--k`.
 - The friends page: an email invite in `.fr-invite`, the card's museum link and "הסרה" on a second row, `a.fr-talk`, and an invite that came by link with no avatar.
 - The audit is clean at 375 and 1280 px, light and dark. `friends.md` is updated.
+- After the v159 merge, the new Telegram audit was run on 5 pages. Fixed: the user chip icon, the tab pebble (240 ms), the settings card shadow, and the tree's filters. Messages, tasks and settings are clean. Waiting for the CEO: an allowlist for the ambient scenes (the home sky and sun, the tree's leaves and swaying), and the T11 false positive.
 ## Round 17: batch 30, the motion for the whole tent (the Telegram test)
 - The "Motion" section of base.css:
   - instant taps (`touch-action`), smooth scrolling, and a spinner only after 400 ms;

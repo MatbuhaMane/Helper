@@ -134,7 +134,7 @@
    <details class="st-sec" id="…"><summary class="st-sum"><span class="st-ico" data-ico="…"></span>
    <span class="st-sum-t"><h2>…</h2><small class="st-now">…</small></span></summary><div class="st-body">…</div></details> ---------- */
 details.st-sec { display: block; gap: 0; padding: 0; border-radius: 22px; background: var(--card); border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
-  transition: border-color .2s, box-shadow .25s; }
+  transition: border-color .2s, box-shadow var(--dur-quick); }
 details.st-sec + details.st-sec { border-block-start: 1px solid color-mix(in srgb, var(--line) 80%, transparent); padding-block-start: 0; margin-block-start: -6px; }
 details.st-sec[open] { border-color: color-mix(in srgb, var(--ico, var(--primary)) 35%, var(--line)); box-shadow: 0 14px 30px -22px rgba(30, 24, 12, .45); }
 .st-sum { list-style: none; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 12px 14px; min-block-size: 68px;

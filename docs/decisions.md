@@ -2723,3 +2723,9 @@ Status: Ready for the master's review.
   - **the free quota** (ש3, "free with a quota"): `cook.ts` counts 5 free questions a day (`FREE_A_DAY`, until business sets the number) and shows it, but `server/credits.ts`'s gate still charges a limited account for each one. Request: an exemption in the gate for a feature's first N uses a day (a list such as `{ 'cook/ask': 5 }`), so the quota is real;
   - noticed in passing: in `server/push.ts` the regex `/^d{3,9}$/` lacks a backslash (`\d`), so the city for the Shabbat quiet window always falls back to the default.
 - **Not yet:** a receipt photo for the warranty (now allowed, ש8), the garden (shared by the household), the translator.
+
+## 2026-11-14 · The chef's quota, by the owner's numbers (ai-features, business cd600e2)
+- `server/cook.ts`: 20 free answers a person a day (`FREE_A_DAY`), renewed at midnight Israel time (`dayStart`, checked in winter and summer). Calls on the person's own AI key (`ai_usage.own_key`) are not counted.
+- Beyond the quota, `POST /api/cook/ask` answers `402 quota_done`. The chef window offers "להמשיך בקרדיטים" each time, which resends with `paid: true`. With no credits left (`ai_credit_needed`) it says "חזרו מחר", with no buy button.
+- The chef's answers are read aloud with the browser's voice (`Voice.say(…, { browser: true })`), as business proposed, since the app's voice is most of the cost. The chef also speaks in the plural now ("אתם").
+- Still the master's: the credits gate charges a limited account even inside the free 20. The request from the previous entry stands (an exemption for a feature's first N uses a day, e.g. `{ 'cook/ask': 20 }`).

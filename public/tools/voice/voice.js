@@ -1,6 +1,7 @@
 /* Voice for the tools (the kitchen's chef and "הבא", breath's guiding voice): speaking and listening, in one place.
- *   Voice.say(text)         → speaks with the app's voice (/api/voice/say, the person's chosen voice), or the browser's
- *                             Hebrew voice when that fails. Short phrases said again and again are kept in memory.
+ *   Voice.say(text, {keep, browser}) → speaks with the app's voice (/api/voice/say, the person's chosen voice), or the
+ *                             browser's Hebrew voice when that fails or when browser: true (free: the chef's answers).
+ *                             keep: short phrases said again and again are kept in memory.
  *   Voice.stop()            → stops speaking
  *   Voice.canListen         → whether this browser can listen (Chrome, Edge, Safari)
  *   Voice.listen(onText, {once}) → listens in Hebrew; onText(text) for every phrase heard. Returns stop().
@@ -18,10 +19,11 @@
     speechSynthesis.speak(u);
   }
 
-  async function say(text, { keep = false } = {}) {
+  async function say(text, { keep = false, browser = false } = {}) {
     stop();
     text = String(text || '').trim();
     if (!text) return;
+    if (browser && 'speechSynthesis' in window) return browserSay(text);
     try {
       let url = kept.get(text);
       if (!url) {

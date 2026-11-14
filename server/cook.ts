@@ -1,8 +1,10 @@
 // עוזר מטבח, the server's part (public/food/kitchen/; the owner's answers ש1–ש3, 2026-11-14):
 //   * the voice chef: a question asked aloud while cooking, answered in two or three spoken sentences about this recipe
-//     and this step. AI inside a tool is "free with a quota" (ש3): FREE_A_DAY questions a day are shown as free; the
-//     meter and the credits gate (server/meter.ts, credits.ts) apply as for every AI call. Exempting the free questions
-//     from a limited account's credits needs the master's gate (requested in docs/decisions.md).
+//     and this step. AI inside a tool is "free with a quota" (ש3; the owner's numbers via business, cd600e2): FREE_A_DAY
+//     questions a person a day, renewed at midnight Israel time. Beyond them the server answers 402 quota_done, and the
+//     person chooses each time to go on in credits ({ paid: true }). The meter and the credits gate (meter.ts, credits.ts)
+//     apply as for every AI call; exempting the free questions from a limited account's credits needs the master's gate
+//     (requested in docs/decisions.md).
 //   * timers that ring with the app closed: the page tells the server when each timer ends; the minute cron
 //     (src/worker.ts) calls tick(), which waits for the exact second and sends a push to the person's devices.
 // Each person's own: a timer belongs to whoever set it.
@@ -12,7 +14,7 @@ import { aiJson } from './ai';
 import { Ctx, Env, HttpError, body, json, requireUser } from './core';
 import { pushTo } from './push';
 
-export const FREE_A_DAY = 5;   // until business sets the quota (ש3)
+export const FREE_A_DAY = 20;   // the owner (docs/business/ai-quota.md): 20 chef answers a person a day
 
 const Ask = z.object({
   title: z.string().trim().max(200).default(''),
@@ -20,11 +22,17 @@ const Ask = z.object({
   steps: z.array(z.string().max(1200)).max(80).default([]),
   step: z.number().int().min(0).max(80).default(0),
   q: z.string().trim().min(1).max(400),
+  paid: z.boolean().default(false),   // beyond the free quota: the person chose to go on in credits
 });
 
-const dayStart = () => { const d = new Date(); d.setUTCHours(0, 0, 0, 0); return d.getTime(); };
+/** the last midnight in Israel, in ms (the quota renews then) */
+export function dayStart(now = Date.now()) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' })
+    .formatToParts(new Date(now)).map((x) => [x.type, x.value]));
+  return now - ((+p.hour * 60 + +p.minute) * 60 + +p.second) * 1000 - (now % 1000);
+}
 async function usedToday(env: Env, email: string) {
-  const r = await env.DB.prepare("SELECT COUNT(DISTINCT at) AS n FROM ai_usage WHERE email = ? AND feature = 'cook/ask' AND at >= ?")
+  const r = await env.DB.prepare("SELECT COUNT(DISTINCT at) AS n FROM ai_usage WHERE email = ? AND feature = 'cook/ask' AND own_key IS NULL AND at >= ?")   // (calls on the person's own AI key are not counted)
     .bind(email, dayStart()).first<{ n: number }>().catch(() => null);
   return r?.n || 0;
 }
@@ -35,19 +43,21 @@ export async function ask(ctx: Ctx) {
   const p = Ask.safeParse(await body(ctx.req));
   if (!p.success) throw new HttpError(400, 'bad_question');
   const b = p.data;
+  const used = await usedToday(ctx.env, u.email);
+  if (used >= FREE_A_DAY && !b.paid) throw new HttpError(402, 'quota_done');
   const steps = b.steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
   const out = await aiJson(ctx.env, {
     prefer: 'gemini',
     effort: 'low',
     schema: z.object({ answer: z.string() }),
-    system: 'אתה שף ביתי חם ומעשי שעוזר למישהו שמבשל עכשיו, והתשובה שלך תוקרא בקול. ענה בעברית פשוטה, בשניים או שלושה משפטים קצרים, '
+    system: 'אתה שף ביתי חם ומעשי שעוזר למישהו שמבשל עכשיו, והתשובה שלך תוקרא בקול. ענה בעברית פשוטה, בפנייה ברבים (אתם), בשניים או שלושה משפטים קצרים, '
       + 'בלי רשימות, בלי כוכביות ובלי אימוג׳י. ענה על המתכון הזה ועל השלב שבו הוא נמצא. אם שואלים על תחליף, תן אחד או שניים. '
       + 'אם השאלה נוגעת לבטיחות מזון (בשר לא מבושל, אלרגיה), אמור זאת בפשטות. אם השאלה לא קשורה לבישול, אמור בנימוס שאתה עוזר רק במטבח.',
     prompt: `המתכון: ${b.title || 'בלי שם'}\nמצרכים:\n${b.ingredients.join('\n') || '(לא צוינו)'}\nשלבים:\n${steps || '(לא צוינו)'}\n`
       + `השלב שבו הוא נמצא עכשיו: ${b.step + 1}\nהשאלה: ${b.q}`,
   });
   const answer = String(out.answer || '').replace(/[*#_`]/g, '').trim().slice(0, 800) || 'לא הצלחתי לענות. נסו לשאול שוב.';
-  return json({ answer, used: (await usedToday(ctx.env, u.email)) + 1, free: FREE_A_DAY });
+  return json({ answer, used: used + 1, free: FREE_A_DAY });
 }
 
 /** GET /api/cook/ask → how many of today's free questions were used */

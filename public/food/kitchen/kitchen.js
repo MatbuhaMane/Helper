@@ -315,16 +315,22 @@
       const input = el('input', { type: 'text', dir: 'auto', placeholder: 'למשל: במה אפשר להחליף שמנת?', 'aria-label': 'השאלה לשף', value: first || '' });
       const answer = el('p', { 'aria-live': 'polite', style: 'min-block-size:1.5em;font-size:1.1rem;line-height:1.6' });
       const quota = el('p', { class: 'muted', style: 'margin:0' });
-      const showQuota = (x) => { quota.textContent = x.used >= x.free ? 'השאלות החינמיות להיום נגמרו (' + x.free + '). מעבר להן, מהקרדיטים.' : (x.free - x.used) + ' שאלות חינם נשארו היום.'; };
+      const showQuota = (x) => { quota.textContent = x.used >= x.free ? 'השאלות החינמיות להיום נגמרו (' + x.free + '). אפשר להמשיך בקרדיטים, או לחזור מחר.' : (x.free - x.used) + ' שאלות חינם נשארו היום.'; };
       api('/api/cook/ask').then(showQuota).catch(() => {});
-      const send = async () => {
+      // beyond the free quota the person chooses, each time, to go on in credits (the owner, docs/business/ai-quota.md)
+      const send = async (paid) => {
         const qtext = input.value.trim();
         if (!qtext) return input.focus();
         answer.textContent = 'השף חושב…';
         try {
-          const x = await api('/api/cook/ask', { method: 'POST', body: { title: r.title, ingredients: (r.ingredients || []).map((i) => [i.measure, i.name].filter(Boolean).join(' ')), steps, step: cooking.step, q: qtext } });
-          answer.textContent = x.answer; showQuota(x); V.say(x.answer);
-        } catch (e) { answer.textContent = e.message === 'ai_credit_needed' ? 'נגמרו הקרדיטים. אפשר להוסיף בהגדרות.' : (e.message || 'השף לא ענה. נסו שוב.'); }
+          const x = await api('/api/cook/ask', { method: 'POST', body: { title: r.title, ingredients: (r.ingredients || []).map((i) => [i.measure, i.name].filter(Boolean).join(' ')), steps, step: cooking.step, q: qtext, paid: paid === true } });
+          answer.textContent = x.answer; showQuota(x); V.say(x.answer, { browser: true });   // the browser's voice: free (the app's voice is most of the cost)
+        } catch (e) {
+          if (e.code === 'quota_done') {
+            answer.replaceChildren('השאלות החינמיות להיום נגמרו. ',
+              el('button', { class: 'btn small', type: 'button', onclick: () => send(true) }, 'להמשיך בקרדיטים'));
+          } else answer.textContent = e.code === 'ai_credit_needed' ? 'נגמרו השאלות להיום. חזרו מחר, והשף יענה שוב.' : 'השף לא ענה. נסו שוב.';
+        }
       };
       input.addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
       const mic = V.canListen ? el('button', { class: 'btn', type: 'button', 'aria-label': 'לשאול בקול', onclick: () => {
@@ -333,7 +339,7 @@
         V.listen((t) => { input.value = t; send(); if (was) setListen(true); }, { once: true });
       } }, '🎤') : null;
       H.modal(el('div', {}, el('h2', { style: 'margin-top:0' }, '👨‍🍳 שאלה לשף'),
-        el('div', { style: 'display:flex;gap:8px' }, input, mic, el('button', { class: 'btn primary', type: 'button', onclick: send }, 'לשאול')),
+        el('div', { style: 'display:flex;gap:8px' }, input, mic, el('button', { class: 'btn primary', type: 'button', onclick: () => send() }, 'לשאול')),
         answer, quota));
       if (first) send(); else input.focus();
     }

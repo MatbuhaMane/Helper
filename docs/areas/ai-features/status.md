@@ -72,7 +72,7 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 - 66a29ff **נשימה** `/tools/breath/`: 2/5/10 minutes, three ways, a circle by transform only. test-breath 17; patch for package.json in the CEO's notes folder.
 - **Not checked:** the circle's motion by eye (the pane was hidden: the transition was set and running, the frames were not drawn).
 - **After the owner's answers (vision's batch 26):**
-  - 10a1b78 kitchen: the chef by voice (`/api/cook/ask`, 5 free a day), "הבא" by voice, timers that ring with the app closed (`cook_timers`, a minute cron), no screen kept on; `public/tools/voice/voice.js`;
+  - 10a1b78 kitchen: the chef by voice (`/api/cook/ask`, 20 free a day from Israel midnight, then 'להמשיך בקרדיטים', the browser's voice), "הבא" by voice, timers that ring with the app closed (`cook_timers`, a minute cron), no screen kept on; `public/tools/voice/voice.js`;
   - 2ddebde breath: a guiding voice with a switch, a session ticks the habit in the goals (with undo); test-breath 26;
   - 190fa08 + 0ff6a17 home: the morning push to whoever added it or was handed it; test-home 40;
   - 718d071 worker and wrangler (master files, patch in the CEO's notes folder).

@@ -340,6 +340,16 @@ export function movePlan<L extends KinLink>(links: L[], id: string, to: MoveTo):
   return { remove, add, parents: after.filter((l) => l.type === 'parent' && l.b === id).map((l) => l.a) };
 }
 
+/** "+ אח/אחות": a and b become brothers and sisters, sharing parents. The one who has parents is the anchor and the
+    other takes them (a's parents first); when neither has any there is nothing to share yet (no_parents). */
+export function siblingSide(links: KinLink[], a: string, b: string): { move: string; anchor: string } {
+  if (a === b) throw new Error('no_target');
+  const P = kin(links, () => '').parentsOf;
+  if (P(a).length) return { move: b, anchor: a };
+  if (P(b).length) return { move: a, anchor: b };
+  throw new Error('no_parents');
+}
+
 /** what is wrong with a set of links, if anything: someone their own ancestor, or more than six parents */
 export function linksProblem(links: { type: string; a: string; b: string }[]): 'circular_family' | 'too_many_parents' | null {
   const ups = new Map<string, string[]>();

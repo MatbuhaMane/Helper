@@ -3,7 +3,9 @@
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 Last update: 2026-11-14 (arranging the family tree).
 
-## Latest: the family tree's "סידור" (2fde072, 953a273)
+## Latest: relationships in the profile edit, pick before create, "+ אח/אחות" (the עברי fix)
+
+## Before: the family tree's "סידור" (2fde072, 953a273)
 
 Editors can drag a card to another generation (with a confirm, approval when it touches a user, and undo) or along its row (`ord`).
 - Untested: approving a move as the other user, and a real touch long-press.

@@ -721,12 +721,17 @@ export async function linkMove(ctx: Ctx) {
 
   if (!b.id || !ids.has(b.id)) throw new HttpError(404, 'not_found');
   let plan: { remove: Link[]; add: MoveAdd[] };
+  // "+ אח/אחות" ({to: {join: id}}): the one without parents takes the other's
+  const join = (b.to as { join?: unknown } | undefined)?.join;
+  if (typeof join === 'string' && ids.has(join)) {
+    try { const s = K.siblingSide(links, b.id, join); b.id = s.move; b.to = { sibling: s.anchor }; } catch (e) { throw new HttpError(400, e instanceof Error ? e.message : 'bad_move'); }
+  }
   try { plan = K.movePlan(links, b.id, moveTarget(b.to, ids)); } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, e instanceof Error ? e.message : 'bad_move'); }
   const touched = new Set([b.id, ...plan.remove.flatMap((l) => [l.a, l.b]), ...plan.add.flatMap((l) => [l.a, l.b])]);
   const ask = askFor(touched);
   if (b.dry) {
     const n = ask.length ? await names(ctx) : new Map<string, string>();
-    return json({ text: await moveSay(ctx, v, u.household, b.id, plan.remove.map((l) => l.id), plan.add), waitsFor: ask.map((e) => n.get(e) || e.split('@')[0]) });
+    return json({ id: b.id, text: await moveSay(ctx, v, u.household, b.id, plan.remove.map((l) => l.id), plan.add), waitsFor: ask.map((e) => n.get(e) || e.split('@')[0]) });
   }
   if (ask.length) return json(await propose(ctx, u, { household: u.household, person_id: b.id, kind: 'move', payload: { remove: plan.remove.map((l) => l.id), add: plan.add, parties: [...touched] } }, ask));
   const added = await applyMove(ctx, u.household, u.email, plan.remove.map((l) => l.id), plan.add);

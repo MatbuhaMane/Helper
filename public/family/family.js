@@ -25,7 +25,7 @@
     // changes that wait for a user's yes, a delete and its undo
     changed_since: 'הכרטיס השתנה בינתיים, ולכן הבקשה בוטלה. אפשר להציע שוב.', decided: 'כבר ענית על הבקשה הזו.', restore_closed: 'עבר הזמן לביטול. בעל האוהל יכול לשחזר מהדלת האחורית.',
   };
-  Object.assign(ERR, { no_target: 'לשם אי אפשר להעביר: אין שם הורה או ילד לסדר לפיו.', nothing_to_move: 'הכרטיס כבר שם, אין מה לשנות.',
+  Object.assign(ERR, { no_target: 'לשם אי אפשר להעביר: אין שם הורה או ילד לסדר לפיו.', nothing_to_move: 'הכרטיס כבר שם, אין מה לשנות.', no_parents: 'לשניהם עוד אין הורים בעץ. הוסיפו קודם הורה.',
     circular_family: 'ככה מישהו היה הופך להורה של עצמו. נסו מקום אחר.', too_many_parents: 'יותר מדי הורים לאדם אחד.' });
   const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
   const call = async (path, opts = {}) => {
@@ -1164,12 +1164,18 @@
         H.closeModal(); touched();
         if (r.proposed) proposedSay(r, p.name);
         if (!p && !rel) S.focus = r.id;
+        // a new brother or sister: they take this person's parents (the same rule as "+ אח/אחות" for one already in the tree)
+        if (!p && rel?.as === 'sibling') try { await call('/api/vault/move', { body: { id: r.id, to: { sibling: rel.of } } }); } catch (err) { say(err); }
         await open();
         if (p || rel) panel(p ? r.id : rel.of);
       } catch (err) { say(err); }
     };
     const of = rel && byId(rel.of)?.name;
-    const title = p ? 'עריכת ' + p.name : rel ? { child: `ילד/ה של ${of}`, parent: `הורה של ${of}`, partner: `בן/בת זוג של ${of}` }[rel.as] : 'בן משפחה חדש';
+    const title = p ? 'עריכת ' + p.name : rel ? { child: `ילד/ה של ${of}`, parent: `הורה של ${of}`, partner: `בן/בת זוג של ${of}`, sibling: `אח/אחות של ${of}` }[rel.as] : 'בן משפחה חדש';
+    // editing someone already in the tree: their relationships are right here (each change is saved at once, with "בטל")
+    const rels = p && byId(p.id) ? el('div', { class: 'fv-form-rels' }) : null;
+    const drawRels = () => rels?.replaceChildren(relationsBox(byId(p.id) || p, drawRels));
+    drawRels();
     H.modal(el('form', { class: 'fv-form', onsubmit: save },
       el('h2', {}, title),
       hid.has('identity') ? el('p', { class: 'muted small' }, 'השם של בן המשפחה הזה פרטי, ולכן לא מוצג כאן.') : el('div', { class: 'fv-two' }, el('label', {}, 'שם', name), el('label', {}, 'מין (לניסוח העברי)', sex)),
@@ -1180,6 +1186,7 @@
       hid.has('notes') ? el('p', { class: 'muted small' }, 'ההערות פרטיות.') : el('label', {}, 'הערות', notes),
       hid.has('identity') ? null : el('label', {}, S.roles?.head ? 'משתמש באוהל' : 'משתמש באוהל (רק ראש משק הבית מחבר כתובת של מישהו אחר)', member),
       hid.has('dates') ? null : el('label', { class: 'fv-check' }, inCal, ' בלוח השנה המשפחתי (יום הולדת, ואחרי פטירה – יום השנה)'),
+      rels,
       el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'שמירה'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
     setTimeout(() => name.focus(), 50);
   }
@@ -1190,11 +1197,11 @@
   const PARTNER_STATUS = { together: 'יחד', divorced: 'גרושים', widowed: 'אלמנות', separated: 'נפרדו' };
   function relationsBox(p, refresh) {
     const line = (label, id, linkObj, extra) => el('li', { class: 'fv-relrow' },
-      el('button', { class: 'fv-rel-who', onclick: () => { H.sheet.close(); setView('family'); setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
+      el('button', { class: 'fv-rel-who', type: 'button', onclick: () => { H.sheet.close(); H.closeModal(); setView('family'); setTimeout(() => focusOn(id), 300); } }, byId(id)?.name || '?'),
       el('small', { class: 'muted' }, label), extra || null,
       linkObj ? pendTag(pendingOf('link', linkObj.id)) : null,
       linkObj && pendingOf('link', linkObj.id) ? el('button', { type: 'button', class: 'btn small ghost', onclick: () => cancelAsk(pendingOf('link', linkObj.id), reload) }, 'ביטול הבקשה') : null,
-      linkObj ? el('button', { class: 'btn small ghost danger', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר', onclick: () => unlink(linkObj) }, '✕') : null);
+      linkObj ? el('button', { class: 'btn small ghost danger', type: 'button', title: 'הסרת הקשר', 'aria-label': 'הסרת הקשר עם ' + (byId(id)?.name || ''), onclick: () => unlink(linkObj) }, '✕') : null);
     // a relationship goes at once, with "בטל" (the same relationship added again); one of another user's waits for them
     const unlink = async (l) => {
       let r;
@@ -1214,24 +1221,64 @@
     }
     for (const c of childrenOf(p.id)) { const l = S.links.find((x) => x.type === 'parent' && x.a === p.id && x.b === c); items.push(line(g(c, 'בן', 'בת', 'ילד/ה'), c, l, sel(PARENT_KIND, l.kind, (v) => save(l, { kind: v })))); }
     for (const s of siblingsOf(p.id)) items.push(line(g(s.id, 'אח', 'אחות', 'אח/אחות') + (s.half ? ' למחצה' : ''), s.id, null));
-    const connectExisting = () => {
-      const who = el('select', { 'aria-label': 'מי' }, S.people.filter((x) => x.id !== p.id).map((x) => el('option', { value: x.id }, x.name)));
-      const as = el('select', { 'aria-label': 'קשר' }, [['parent', `הורה של ${p.name}`], ['child', `ילד/ה של ${p.name}`], ['partner', `בן/בת זוג של ${p.name}`]].map(([v, t]) => el('option', { value: v }, t)));
-      H.modal(el('form', { class: 'fv-form', onsubmit: async (e) => {
-        e.preventDefault();
-        const body = as.value === 'parent' ? { type: 'parent', a: who.value, b: p.id } : as.value === 'child' ? { type: 'parent', a: p.id, b: who.value } : { type: 'partner', a: p.id, b: who.value };
-        try { await call('/api/vault/links', { body }); H.closeModal(); await reload(); } catch (err) { say(err); }
-      } }, el('h2', {}, 'חיבור לאדם שכבר בעץ'), el('label', {}, 'מי', who), el('label', {}, 'הוא/היא', as),
-        el('div', { class: 'fv-acts' }, el('button', { class: 'btn primary' }, 'חיבור'), el('button', { class: 'btn ghost', type: 'button', onclick: () => H.closeModal() }, 'ביטול'))));
+    const picker = el('div', { class: 'fv-pick', hidden: true });
+    const AS = { parent: 'הורה', partner: 'בן/בת זוג', child: 'ילד/ה', sibling: 'אח/אחות' };
+    const newOne = (as) => { if (as === 'sibling' && !parentsOf(p.id).length) return H.toast(`קודם הוסיפו הורה ל${p.name}, ואז אח או אחות חדשים יקבלו את אותם הורים.`); H.sheet.close(); H.closeModal(); personForm(null, { as, of: p.id }); };
+    // relatives first (two steps away: grandparents, uncles and aunts, the children's partners…), then everyone else by name
+    const near = () => {
+      const one = [...parentsOf(p.id), ...childrenOf(p.id), ...partnersOf(p.id), ...siblingsOf(p.id).map((x) => x.id)];
+      return new Set([...one, ...one.flatMap((x) => [...parentsOf(x), ...childrenOf(x), ...partnersOf(x)])]);
+    };
+    const already = (as, x) => (as === 'parent' ? parentsOf(p.id) : as === 'child' ? childrenOf(p.id) : as === 'partner' ? partnersOf(p.id) : siblingsOf(p.id).map((y) => y.id)).includes(x);
+    const choose = async (as, x) => {
+      if (as !== 'sibling') {
+        const body = as === 'parent' ? { type: 'parent', a: x.id, b: p.id } : as === 'child' ? { type: 'parent', a: p.id, b: x.id } : { type: 'partner', a: p.id, b: x.id };
+        let r;
+        try { r = await call('/api/vault/links', { body }); } catch (e) { return say(e); }
+        if (r.proposed) proposedSay(r);
+        else H.toast(`${x.name} חובר/ה כ${AS[as]} של ${p.name}`);
+        return reload();
+      }
+      // a brother or sister: the one without parents takes the other's; one sentence says what changes, and nothing is saved before "לחבר"
+      let d;
+      try { d = await call('/api/vault/move', { body: { id: p.id, to: { join: x.id }, dry: true } }); }
+      catch (e) {
+        if (e.code !== 'no_parents') return say(e);
+        return picker.replaceChildren(el('p', { class: 'muted small' }, `ל${p.name} ול${x.name} עוד אין הורים בעץ, ולכן אין במה לשתף. הוסיפו קודם הורה לאחד מהם.`),
+          el('div', { class: 'fv-acts-row' }, el('button', { class: 'btn small', type: 'button', onclick: () => openPick('parent') }, '+ הורה ל' + p.name), el('button', { class: 'btn small ghost', type: 'button', onclick: () => { picker.hidden = true; } }, 'ביטול')));
+      }
+      const waits = d.waitsFor?.length ? ` השינוי יחכה לאישור של ${d.waitsFor.join(' ו')}, ועד אז שום דבר לא משתנה.` : '';
+      picker.replaceChildren(el('p', {}, d.text + waits), el('div', { class: 'fv-acts-row' },
+        el('button', { class: 'btn small primary', type: 'button', onclick: async (e) => {
+          e.currentTarget.disabled = true;
+          let r;
+          try { r = await call('/api/vault/move', { body: { id: d.id, to: { sibling: d.id === p.id ? x.id : p.id } } }); } catch (err) { return say(err); }
+          if (r.proposed) proposedSay(r, d.waitsFor?.[0]);
+          await reload();
+          if (r.undo) undoBar(`${p.name} ו${x.name} אחים בעץ`, async () => { await call('/api/vault/move', { body: { undo: r.undo } }); await reload(); });
+        } }, 'לחבר'),
+        el('button', { class: 'btn small ghost', type: 'button', onclick: () => { picker.hidden = true; } }, 'ביטול')));
+    };
+    const openPick = (as) => {
+      const q = el('input', { type: 'search', placeholder: 'חיפוש לפי שם', 'aria-label': `חיפוש ${AS[as]} בעץ`, autocomplete: 'off' });
+      const list = el('ul', { class: 'fv-pick-list' });
+      const fill = () => {
+        const t = q.value.trim(), close = near();
+        const who = S.people.filter((x) => x.id !== p.id && !already(as, x.id) && (!t || x.name.includes(t)))
+          .sort((a, b) => (close.has(b.id) - close.has(a.id)) || a.name.localeCompare(b.name, 'he')).slice(0, 8);
+        list.replaceChildren(...who.map((x) => el('li', {}, el('button', { type: 'button', class: 'fv-pick-who', onclick: () => choose(as, x) },
+            x.name, close.has(x.id) && relationName(p.id, x.id) ? el('small', { class: 'muted' }, ' · ' + relationName(p.id, x.id)) : null))),
+          el('li', {}, el('button', { type: 'button', class: 'fv-pick-new', onclick: () => newOne(as) }, 'אדם חדש שעוד לא בעץ')));
+      };
+      q.addEventListener('input', fill); q.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
+      picker.replaceChildren(el('p', { class: 'small' }, `${AS[as]} של ${p.name}: מי מהעץ?`), q, list);
+      picker.hidden = false; fill(); q.focus();
     };
     return el('section', { class: 'fv-rels' },
       el('h3', {}, 'קשרים'),
-      items.length ? el('ul', { class: 'fv-rel-list' }, items) : el('p', { class: 'muted small' }, 'עוד אין קשרים. הוסיפו הורים, בני זוג או ילדים.'),
-      el('div', { class: 'fv-acts-row' },
-        el('button', { class: 'btn small', onclick: () => { H.sheet.close(); personForm(null, { as: 'parent', of: p.id }); } }, '+ הורה'),
-        el('button', { class: 'btn small', onclick: () => { H.sheet.close(); personForm(null, { as: 'partner', of: p.id }); } }, '+ בן/בת זוג'),
-        el('button', { class: 'btn small', onclick: () => { H.sheet.close(); personForm(null, { as: 'child', of: p.id }); } }, '+ ילד/ה'),
-        el('button', { class: 'btn small ghost', onclick: connectExisting }, 'חיבור לאדם קיים')));
+      items.length ? el('ul', { class: 'fv-rel-list' }, items) : el('p', { class: 'muted small' }, 'עוד אין קשרים. הוסיפו הורים, אחים, בני זוג או ילדים.'),
+      el('div', { class: 'fv-acts-row' }, Object.entries(AS).map(([as, label]) => el('button', { class: 'btn small', type: 'button', onclick: () => openPick(as) }, '+ ' + label))),
+      picker);
   }
 
   /** a number in Hebrew letters, with its geresh or gershayim: 27 → כ״ז, 745 → תשמ״ה */

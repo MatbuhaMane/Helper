@@ -193,6 +193,13 @@ eq('nothing changed', K.changedKeys({ name: 'a', details: { born: '1' } }, { nam
   const err = (f) => { try { f(); return 'ok'; } catch (e) { return e.message; } };
   eq('nobody their own ancestor', err(() => K.movePlan(after, 'dad', { childOf: 'son' })), 'ok');   // (dad leaves his parents' place: it can be done)
   eq('a sibling of oneself', err(() => K.movePlan(base, 'me', { sibling: 'me' })), 'no_target');
+  // "+ אח/אחות" from the profile: whoever has parents is the anchor
+  eq('+ sibling: I have parents, the one I pick takes them', K.siblingSide(base, 'me', 'ivri'), { move: 'ivri', anchor: 'me' });
+  eq('+ sibling: from עברי\'s own profile (no parents), he takes mine', K.siblingSide(base, 'ivri', 'me'), { move: 'ivri', anchor: 'me' });
+  const fixed = apply(base, K.movePlan(base, 'ivri', { sibling: K.siblingSide(base, 'ivri', 'me').anchor }));
+  eq('+ sibling: עברי ends with my parents and is no longer mine', ids(fixed.filter((l) => l.type === 'parent' && (l.a === 'ivri' || l.b === 'ivri'))), ['dad>ivri', 'ivri>son', 'mom>ivri']);
+  eq('+ sibling: neither has parents yet', err(() => K.siblingSide(base, 'tali', 'son2')), 'no_parents');
+  eq('+ sibling: oneself', err(() => K.siblingSide(base, 'me', 'me')), 'no_target');
   eq('nothing to move', err(() => K.movePlan(base, 'me', { sibling: 'noa' })), 'nothing_to_move');
   eq('up with no parents', err(() => K.movePlan(base, 'dad', { up: true })), 'no_target');
   eq('a parent of my own parent → my link to them goes', ids(K.movePlan([...base, L('dad', 'mom', 'partner')], 'me', { parentOf: 'dad' }).remove), ['dad>me', 'mom>me']);   // (mom is dad's partner; ivri stays)

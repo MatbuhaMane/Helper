@@ -3254,3 +3254,16 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
   - two routes: `POST /api/vault/move` and `PUT /api/vault/order`;
   - `ACCESS.linkMove` and `ACCESS.orderSave` (both 'tree') in `server/vault/access.ts`.
 - **Design.** The classes follow docs/design/tree-edit.md on `design`. The CSS is design's and is not on this branch, so the look must be checked after both are merged.
+
+## 2026-11-14 · Relationships in the profile edit, pick before create (ai-features, the owner's urgent fix)
+
+- "עריכה" of a person (from their card, the panel, or my own profile) now shows their relationships, so the documents don't need opening. The vault panel keeps the same box.
+- Each add button ("+ הורה", "+ בן/בת זוג", "+ ילד/ה", and the new "+ אח/אחות") opens one picker:
+  - a search over people already in the tree, relatives first;
+  - "אדם חדש שעוד לא בעץ" last.
+  - The separate "חיבור לאדם קיים" button is gone.
+- "+ אח/אחות" goes through `kin.siblingSide`: the one without parents takes the other's.
+  - It runs through `POST /api/vault/move` with `to: {join: id}`, the same move as "סידור". So it brings the confirm sentence, approval when it touches another user, and "בטל".
+  - It also drops a wrong parent link between the two, which is the עברי case.
+  - When neither has parents, it returns `no_parents`.
+- No master file is touched.

@@ -1325,3 +1325,13 @@ img[src$="/pillows/p13.webp"] { aspect-ratio: 348 / 250; }
 img[src$="/pillows/p14.webp"] { aspect-ratio: 348 / 250; }
 img[src$="/pillows/p15.webp"] { aspect-ratio: 420 / 190; }
 img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }
+
+/* ---------- silhouettes for a person who has not signed in yet (the owner, 2026-11-14) ----------
+   <span class="sil" data-sil="m|f|x" aria-hidden="true"></span> inside a round frame (.fv-pic, .mc-avatar, .fs-face, and the tree's faces):
+   the shape (assets/sil-m.svg, sil-f.svg, sil-x.svg) is a mask, so it takes the frame's own colour and is right in light and dark.
+   The same files also work as a plain <img src="/assets/sil-x.svg"> (a warm brown). Initials stay for someone who has them to show. */
+.sil { display: block; inline-size: 100%; block-size: 100%; background-color: currentColor; opacity: .72;
+  -webkit-mask: url(/assets/sil-x.svg) center bottom / 86% no-repeat; mask: url(/assets/sil-x.svg) center bottom / 86% no-repeat; }
+.sil[data-sil="m"] { -webkit-mask-image: url(/assets/sil-m.svg); mask-image: url(/assets/sil-m.svg); }
+.sil[data-sil="f"] { -webkit-mask-image: url(/assets/sil-f.svg); mask-image: url(/assets/sil-f.svg); }
+:is(.fv-pic, .mc-avatar, .fs-face, .tr-face) > .sil { align-self: end; }

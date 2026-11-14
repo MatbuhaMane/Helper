@@ -534,6 +534,19 @@
       if (!r.offline && !vault && !embedded && swOn('reports')) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
       if (!r.offline && !vault && !embedded && swOn('dm')) loadOnce('/assets/dm.js').catch(() => {});         // messages between members: the dot and the menu entry (server/dm.ts)
       if (!r.offline && !vault && !embedded && swOn('eggs')) loadOnce('/assets/eggs.js').catch(() => {});
+      // on a vault page only the inbox button (a link to /messages/ and its count, from /api/dm/unread, same origin): no dm.js, no menu entries
+      if (!r.offline && vault && !embedded && swOn('dm')) {
+        const chip = document.getElementById('userchip');
+        if (chip && !document.querySelector('.dm-inbox')) {
+          const a = el('a', { class: 'dm-inbox', href: '/messages/', title: 'הודעות', 'aria-label': 'הודעות' });
+          (document.querySelector('.navlock') || chip).before(a);
+          api('/api/dm/unread', { noRedirect: true }).then((d) => {
+            const n = Math.max(0, Number(d.unread) || 0); if (!n) return;
+            a.append(el('span', { class: 'dm-dot', 'aria-hidden': 'true' }));
+            a.setAttribute('aria-label', `הודעות, ${n} מחכות`); a.title = `הודעות, ${n} מחכות`;
+          }).catch(() => {});
+        }
+      }
       // the switchboard's moods: confetti and balloons (חגיגה) or candles (אבל), ai-features' /assets/switches.js
       if (!vault && !embedded && (switches.mood === 'party' || switches.mood === 'mourning')) loadOnce('/assets/switches.js').catch(() => {});       // the owner's surprise eggs on this page, if any (server/layout.ts)
       // the back door, opened on this device (ai-features' /assets/admin-tab.js): a tab back to it while the room is still open

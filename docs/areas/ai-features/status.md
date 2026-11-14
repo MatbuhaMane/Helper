@@ -600,3 +600,9 @@ LCP has not moved yet. The causes:
 - **Waiting:** design's `story.css`; the master's patches (top menu, npm test); the owner's approval for the backup.
 - **Not in v1:** exhibitions; the place map; transcription; the fingerprint for a restricted document; the AI's follow-up
   question. Not yet tested: recording on a real phone (iOS writes audio/mp4).
+
+## Urgent three (2026-11-14, for the parents' link)
+- Silhouettes (sil-m/f/x.svg, `.sil`) instead of initials in the tree for people with no account or photo; falls back to initials until design's SVGs exist.
+- /messages/ has a third tab "ממתין לאישור" (`#asks`): the requests waiting for my yes or no with אשר/דחה, through the tree's own routes (`/api/vault/changes`); needs the tree open on the device, otherwise a link to /family/. `/api/dm/unread` now adds `asks` to `unread`, so the inbox dot shows it.
+- Vault pages: only the inbox button (common.js, master's patch in the notes folder).
+- Not tested: a real pending request end to end, the silhouettes with design's files, the vault-page button on a real device.

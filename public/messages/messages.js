@@ -35,19 +35,25 @@
   /* ---------- the tabs: the conversations, and מהאוהל ---------- */
   const inboxBox = el('section', { class: 'card', id: 'tab-haohel', role: 'tabpanel', 'aria-labelledby': 'tb-haohel', hidden: true, style: 'padding:14px 16px;margin-top:14px' });
   const tabBtn = (id, label, panel) => el('button', { type: 'button', role: 'tab', id: 'tb-' + id, 'aria-controls': panel, 'aria-selected': 'false', onclick: () => tab(id) }, label);
-  const tbDm = tabBtn('dm', 'שיחות', 'tab-dm'), tbIn = tabBtn('haohel', 'מהאוהל', 'tab-haohel');
+  const asksBox = el('section', { class: 'card', id: 'tab-asks', role: 'tabpanel', 'aria-labelledby': 'tb-asks', hidden: true, style: 'padding:14px 16px;margin-top:14px' });
+  const tbDm = tabBtn('dm', 'שיחות', 'tab-dm'), tbIn = tabBtn('haohel', 'מהאוהל', 'tab-haohel'), tbAsk = tabBtn('asks', 'ממתין לאישור', 'tab-asks');
   frame.id = 'tab-dm'; frame.setAttribute('role', 'tabpanel'); frame.setAttribute('aria-labelledby', 'tb-dm');
-  const tabs = el('div', { class: 'tabs', role: 'tablist', 'aria-label': 'תיבת ההודעות' }, tbDm, tbIn);
-  root.append(tabs, frame, inboxBox);
+  const tabs = el('div', { class: 'tabs', role: 'tablist', 'aria-label': 'תיבת ההודעות' }, tbDm, tbIn, tbAsk);
+  root.append(tabs, frame, inboxBox, asksBox);
   let inbox = null;   // { items: [{ id, text, link, level, at, kind: 'system' | 'owner' | 'all' | 'news', read }], unread }
 
   function tab(id, fromHash = false) {
-    const on = id === 'haohel';
-    tbDm.setAttribute('aria-selected', String(!on)); tbIn.setAttribute('aria-selected', String(on));
-    frame.hidden = on; inboxBox.hidden = !on;
-    frame.style.display = on ? 'none' : ''; // .dm sets display:grid, which beats [hidden]
-    if (!fromHash) { if (on && location.hash !== '#haohel') history.replaceState(null, '', '#haohel'); if (!on && location.hash === '#haohel') history.replaceState(null, '', location.pathname); }
+    const on = id === 'haohel', asks = id === 'asks', away = on || asks;
+    tbDm.setAttribute('aria-selected', String(!away)); tbIn.setAttribute('aria-selected', String(on)); tbAsk.setAttribute('aria-selected', String(asks));
+    frame.hidden = away; inboxBox.hidden = !on; asksBox.hidden = !asks;
+    frame.style.display = away ? 'none' : ''; // .dm sets display:grid, which beats [hidden]
+    if (!fromHash) {
+      const h = on ? '#haohel' : asks ? '#asks' : '';
+      if (h && location.hash !== h) history.replaceState(null, '', h);
+      if (!h && (location.hash === '#haohel' || location.hash === '#asks')) history.replaceState(null, '', location.pathname);
+    }
     if (on) openInbox();
+    if (asks) openAsks();
   }
 
   /** האוהל's messages and the notices, together, newest first */
@@ -70,6 +76,61 @@
       .sort((a, b) => b.at - a.at);
     inbox = { items, unread: items.filter((x) => !x.read).length };
     tbIn.replaceChildren('מהאוהל', inbox.unread ? el('b', { 'aria-label': `, ${inbox.unread} שלא נקראו` }, ` (${inbox.unread})`) : '');
+  }
+
+  /* ---------- ממתין לאישור: what waits for my yes or no (a change to my card or to a relationship of mine). The server and the
+     rules are the tree's (/api/vault/changes, the same routes as the tree's own cards); it needs the tree open on this device ---------- */
+  const FIELD = { name: 'שם', sex: 'מין', born: 'תאריך לידה', bornAfterSunset: 'נולד/ה אחרי השקיעה', died: 'תאריך פטירה', diedAfterSunset: 'נפטר/ה אחרי השקיעה',
+    place: 'מקום לידה', notes: 'הערות', birthdayBy: 'יום ההולדת לפי', calendar: 'בלוח השנה המשפחתי', kind: 'הקשר', status: 'מצב' };
+  const VALUE = { m: 'זכר', f: 'נקבה', gregorian: 'התאריך הלועזי', hebrew: 'התאריך העברי' };
+  const KINDW = { bio: 'ביולוגי', adopt: 'מאמץ', step: 'חורג', foster: 'אומנה', married: 'נשואים', partner: 'בני זוג', engaged: 'מאורסים' };
+  const STATW = { together: 'יחד', divorced: 'גרושים', widowed: 'אלמנות', separated: 'נפרדו' };
+  const shown = (v) => (v === true ? 'כן' : v === false ? 'לא' : v === '' || v == null ? '—' : VALUE[v] || String(v));
+  const diffs = (list) => el('dl', { style: 'margin:8px 0;display:grid;gap:4px' }, list.map((x) => el('div', {}, el('dt', { class: 'muted', style: 'display:inline' }, (FIELD[x.k] || x.k) + ': '),
+    el('dd', { style: 'display:inline;margin:0' }, el('s', {}, x.from == null || x.from === '' ? '' : shown(x.from)), ' ', el('b', {}, shown(x.to))))));
+  const linkWords = (l) => (l.type === 'parent' ? `${l.a} הורה של ${l.b}` : `${l.a} ו${l.b}`);
+  const asking = (c) => (c.kind === 'edit' ? ['מבקש/ת לשנות את הפרטים של ', el('b', {}, c.person.name)]
+    : c.kind === 'delete' ? ['מבקש/ת למחוק את ', el('b', {}, c.person.name), ' מהעץ']
+    : c.kind === 'unlink' ? ['מבקש/ת להסיר קשר: ', el('b', {}, linkWords(c.link))]
+    : c.kind === 'move' ? ['מבקש/ת להעביר את ', el('b', {}, c.person.name), ' לדור אחר בעץ']
+    : ['מבקש/ת לשנות קשר: ', el('b', {}, linkWords(c.link))]);
+  const what = (c) => (c.kind === 'edit' ? diffs(c.changes)
+    : c.kind === 'delete' ? el('p', {}, `${c.person.name} יימחק/תימחק מהעץ`)
+    : c.kind === 'unlink' ? el('p', {}, `הקשר ${linkWords(c.link)} יוסר מהעץ`)
+    : c.kind === 'move' ? el('p', {}, c.words)
+    : diffs([c.link.to?.kind !== c.link.kind ? { k: 'kind', from: KINDW[c.link.kind] || '', to: KINDW[c.link.to?.kind] || '' } : null,
+      c.link.to?.status !== c.link.status ? { k: 'status', from: STATW[c.link.status] || '', to: STATW[c.link.to?.status] || '' } : null].filter(Boolean)));
+  const setAsks = (n) => tbAsk.replaceChildren('ממתין לאישור', n ? el('b', { 'aria-label': `, ${n} מחכים` }, ` (${n})`) : '');
+  async function openAsks() {
+    asksBox.replaceChildren(H.skel(2));
+    let d;
+    try { d = await api('/api/vault/changes', { noRedirect: true }); } catch (e) {
+      asksBox.replaceChildren(el('p', { class: 'muted' }, 'כדי לראות ולאשר בקשות צריך לפתוח את עץ המשפחה במכשיר הזה.'), el('a', { class: 'btn primary', href: '/family/' }, 'לעץ המשפחה'));
+      return;
+    }
+    setAsks(d.forMe.length);
+    if (!d.forMe.length) { asksBox.replaceChildren(el('p', { class: 'muted' }, 'אין כרגע בקשות שמחכות לתשובה שלך.')); return; }
+    const answer = async (c, yes, card) => {
+      const btns = [...card.querySelectorAll('button')];
+      btns.forEach((b) => { b.disabled = true; });
+      let said = yes ? 'אושר.' : 'נדחה. שום דבר לא השתנה.';
+      try {
+        const r = await api(`/api/vault/changes/${c.id}/${yes ? 'approve' : 'decline'}`, { body: {}, noRedirect: true });
+        if (yes && r.status === 'waiting') said = 'אושר. מחכה עוד לאישור של בן משפחה נוסף.';
+      } catch (e) { toast(e.message || 'לא הצלחנו לשמור את התשובה'); btns.forEach((b) => { b.disabled = false; }); return; }
+      card.querySelector('.ask-acts').replaceWith(el('p', { role: 'status' }, said));
+      setAsks(asksBox.querySelectorAll('.ask-acts').length);
+      if (!asksBox.querySelector('.ask-acts')) setTimeout(openAsks, 1200);
+    };
+    asksBox.replaceChildren(...d.forMe.map((c) => {
+      const card = el('div', { class: 'ask', style: 'padding:10px 0;border-block-end:1px solid var(--line, #0002)' },
+        el('div', {}, el('b', {}, c.by), ' ', ...asking(c), ' ', el('small', { class: 'muted' }, H.timeAgo(c.at))),
+        what(c),
+        el('div', { class: 'ask-acts', style: 'display:flex;gap:8px' },
+          el('button', { type: 'button', class: 'btn primary', onclick: () => answer(c, true, card) }, 'אשר'),
+          el('button', { type: 'button', class: 'btn', onclick: () => answer(c, false, card) }, 'דחה')));
+      return card;
+    }));
   }
 
   const FROM = { system: 'האוהל', owner: 'הודעה אישית', all: 'לכל בני האוהל', news: 'האוהל התעדכן' };
@@ -128,7 +189,7 @@
 
   /* ---------- one conversation ---------- */
   function go(id, group = false) { const h = (group ? 'g=' : 't=') + id; if (location.hash !== '#' + h) location.hash = h; else show(id, group); }
-  addEventListener('hashchange', () => { if (location.hash === '#haohel') return tab('haohel', true); if (inboxBox && !inboxBox.hidden) tab('dm', true); const k = keyFromHash(); show(k?.id || null, !!k?.group); });
+  addEventListener('hashchange', () => { if (location.hash === '#haohel') return tab('haohel', true); if (location.hash === '#asks') return tab('asks', true); if ((inboxBox && !inboxBox.hidden) || !asksBox.hidden) tab('dm', true); const k = keyFromHash(); show(k?.id || null, !!k?.group); });
 
   async function show(id, group = false) {
     if (!id) { open = null; frame.removeAttribute('data-open'); drawEmptyThread(); drawList(); return; }
@@ -320,6 +381,8 @@
 
   await loadList();
   if (location.hash === '#haohel') { tab('haohel', true); drawEmptyThread(); return; }
+  if (location.hash === '#asks') { tab('asks', true); drawEmptyThread(); return; }
+  api('/api/dm/unread').then((u) => setAsks(u.asks || 0)).catch(() => {});   // the count on the tab
   loadInbox().catch(() => {});   // for the count on the tab
   tab('dm', true);
   const first = keyFromHash(), to = new URLSearchParams(location.search).get('to');

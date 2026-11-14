@@ -86,7 +86,10 @@ export async function unread(ctx: Ctx) {
   const u = requireUser(ctx), me = u.email.toLowerCase();
   const r = await ctx.env.DB.prepare(`SELECT COUNT(*) AS n FROM dm_threads WHERE last_by IS NOT NULL AND last_by <> ?1
     AND ((a = ?1 AND (a_seen IS NULL OR a_seen < last_at)) OR (b = ?1 AND (b_seen IS NULL OR b_seen < last_at)))`).bind(me).first<{ n: number }>();
-  return json({ unread: (r?.n || 0) + (await groupsUnread(ctx, u)) });
+  // requests waiting for my yes or no (a change to my card, a relationship of mine): they count in the dot too, so they are not missed
+  let asks = 0;
+  try { asks = (await ctx.env.DB.prepare("SELECT COUNT(*) AS n FROM family_changes WHERE for_email = ? AND status = 'pending'").bind(u.email).first<{ n: number }>())?.n || 0; } catch { /* the table is made on first use */ }
+  return json({ unread: (r?.n || 0) + (await groupsUnread(ctx, u)) + asks, asks });
 }
 
 /** GET /api/dm/people: who I may write to – the household, then (on a device the tree is open on) the joined trees' users */

@@ -102,6 +102,20 @@ _Updated 2026-11-14: a full handover. This chat moves to a fresh one with the sa
      the contract is `toolbox.md` §3, and the prototype now uses `a.label || a.name`.
    - **Checked:** 375 and 1280, light and dark. The audit is clean on the prototype and `/tools/`. The game itself is not built.
 
+10. **The owner draws some pictures himself (vision, 2026-11-14; the list is `docs/vision/assets.md` on `vision`).**
+    - **Section א (the tree, items 1–6: seasonal crowns and grounds, the leaf in three seasons, the empty leaf, the banner and
+      profile-head backgrounds):** the owner's. Design does not draw these; the CSS, motion and states go on, with placeholders
+      until the files arrive.
+    - **Section ב (the soon pictures):** stays design's. 8 exist.
+    - **Section ג (items 15–23, the art inside the future tools):** the owner's. None of it is ours.
+    - **When the folder arrives** (numbered by the list): convert, crop and place.
+    - **The missing specs went to vision** (`side-session-notes/…/design-assets-specs.md`, SendMessage was blocked):
+      - the crown and ground frame is 1400×2100 and must line up with crown.webp;
+      - the leaf is 120×152 portrait with a face circle of 62%;
+      - is a quiet leaf needed for the dead?
+      - the banner background must be light and calm;
+      - the profile head keeps a safe middle of 1000×500 for the phone.
+
 ---
 
 ## History (newest first)

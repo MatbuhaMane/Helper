@@ -666,3 +666,4 @@ LCP has not moved yet. The causes:
 - Fix (daemon.js `speak`/`speechParts`/`playAudio`): the reply goes out in pieces asked for at once; the first sentence plays alone (first audio ~7 s instead of ~13.5 s for a four-sentence reply), the rest arrive while it speaks. server/ai.ts and voice.ts untouched.
 - Remaining floor ~6 s per fresh sentence (niqqud call + TTS call, serial on the server). Ideas not done: cache common lines, skip niqqud for the first piece (pronunciation risk), streaming TTS.
 - 2026-11-15: round tabs, sky tracks separated, companion close/restore (5 s tent press). Not built: a settings-page restore.
+- 2026-11-15 voice: first short clause skips niqqud (owner OK). Local Gemini timings (niqqud+TTS vs TTS only), 3 clauses x3: before ~5.0 s (4.0-6.4), after ~2.5 s (2.3-2.7) to first audio.

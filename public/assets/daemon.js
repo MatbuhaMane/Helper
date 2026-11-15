@@ -1456,9 +1456,9 @@
       // four), so the line goes out in pieces, all asked for at once: the first is short and starts playing alone, the rest
       // arrive while it speaks and follow in order.
       const parts = speechParts(text);
-      const ask = (p) => fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: p, voice: voiceName || myVoice(), figure: figureNow() }) })
+      const ask = (p, first) => fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: p, voice: voiceName || myVoice(), figure: figureNow(), first }) })
         .then((r) => { if (r.status === 503) cloudVoice = false; if (!r.ok) throw new Error('voice ' + r.status); return r.blob(); });
-      const jobs = parts.map((p) => { const j = ask(p); j.catch(() => {}); return j; });
+      const jobs = parts.map((p, i) => { const j = ask(p, i === 0 && parts.length > 1); j.catch(() => {}); return j; });
       for (let i = 0; i < parts.length; i++) {
         try {
           const blob = await jobs[i];

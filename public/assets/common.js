@@ -732,6 +732,7 @@
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !m.hidden) closeModal(); });
       document.body.append(m);
     }
+    if (m.hidden && m.nextElementSibling) document.body.append(m);   // same layer as the full-page sheet: a window opened from a sheet goes on top of it
     m.querySelector('.modal-glass').getAnimations().forEach((a) => a.cancel());   // a window still shrinking away opens again at once
     m.classList.remove('grow', 'shrinking', 'dragging', 'closing'); modalOrigin = null;
     m.style.removeProperty('--drag'); m.style.removeProperty('--drag-p');

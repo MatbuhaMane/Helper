@@ -157,3 +157,4 @@
 - 2026-11-15: vision drafted the limit lines for 21 of the 49 types (6 services, 15 deeds), from legal's notes; recorded in yad-beyad.md as a draft; brought to the owner.
 - 2026-11-15: legal added the driving declaration to the rules page (rule 5) and the terms chapter, after batch 42; the two lines wait for the owner's approval, together with the limit lines.
 - 2026-11-15: the owner approved the limit lines for 21 types and legal's two lines on the driving declaration; decisions.md entry written; batch 43 sent to design, ai-features, legal and the CEO; legal asked to check the wording of the lines.
+- 2026-11-15: legal checked the limit lines: three wording fixes, one missing line (moving furniture), two optional lines; recorded in yad-beyad.md as waiting; brought to the owner. Legal sent the master the updated final terms.

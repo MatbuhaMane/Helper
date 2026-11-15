@@ -3806,3 +3806,8 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 - Routes: 25 `/api/yad/*` lines appended to `functions/api/[[path]].ts` (append-only); no schema change in round 2.
 - The queue of the owner lives in the tool page for now (a sheet "מחכה לאישור שלי"); the existing "ממתין לאישור" page and the tile need the master: wire `YadGate.on()` (public/assets/yad-gate.js).
 - Names never appear on the fund page in stage 1 (the "name only if the person agrees" needs a column: stage 2).
+
+## 2026-11-15, design: home wheel and campfire rings only while touched
+- `public/index.html` (CSS): the sun/moon wheel's dashed line is gone; a compass tick-gauge (`.wheel .orbit::before`, floor-perspective mask, no numbers) fades in on `.touching`/`.dragging` and out after release. Opacity only; no transition under reduced motion.
+- `public/home.js` (small touch hook, master file): `root.classList.add('touching')` on pointerdown, removed on pointerup/pointercancel; the sky ellipse path is drawn as two dashed ticks ellipses. No logic change.
+- Not verified in a browser (pane refused navigation); static check only.

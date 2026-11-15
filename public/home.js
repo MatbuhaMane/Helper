@@ -383,7 +383,8 @@
     // the path itself, shown faintly only while it is being turned
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     path.setAttribute('class', 'orbit-path'); path.setAttribute('aria-hidden', 'true');
-    path.innerHTML = '<ellipse fill="none" stroke-width="2" stroke-dasharray="3 9" stroke-linecap="round"/>';
+    // a tick gauge (design, 2026-11-15): two ellipses on pathLength 360, a short tick every 5 units and a long one every 30; the dashes are the ticks
+    path.innerHTML = '<ellipse fill="none" pathLength="360" stroke-width="9" stroke-dasharray="0.6 4.4" stroke-dashoffset="0.3"/><ellipse fill="none" pathLength="360" stroke-width="17" stroke-dasharray="1 29" stroke-dashoffset="0.5"/>';
     // a quiet night sky: a few stars, each twinkling at its own pace
     const stars = el('div', { class: 'stars', 'aria-hidden': 'true' });
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -552,9 +553,8 @@
       box.style.blockSize = g.height + 'px';
       box.style.setProperty('--sun-size', g.size + 'px');
       box.style.setProperty('--moon-size', Math.round(g.size * 0.9) + 'px');
-      const e = path.firstChild;
-      path.setAttribute('width', innerWidth); path.setAttribute('height', g.height);
-      e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('rx', g.rx); e.setAttribute('ry', g.ry);
+      path.setAttribute('width', innerWidth); path.setAttribute('height', g.height);
+      path.querySelectorAll('ellipse').forEach((e) => { e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('rx', g.rx); e.setAttribute('ry', g.ry); });
       const s = H.sunNow(), now = Date.now(), night = dark();
       const real = night === !s.day;
       const tw = real && !night ? Math.max(0, 1 - Math.min(Math.abs(now - s.rise), Math.abs(now - s.set)) / (50 * 60e3)) : 0;
@@ -991,7 +991,8 @@
 
     // a finger or the mouse: the ring follows the hand, then keeps spinning by its momentum and settles on an app
     root.addEventListener('pointerdown', (e) => {
-      if (roll || e.button > 0 || e.target.closest('.spin')) return;
+      if (roll || e.button > 0 || e.target.closest('.spin')) return;
+      root.classList.add('touching');   // design 2026-11-15: the compass on the floor shows while the ring is touched (index.html .wheel .orbit::before)
       drag = { x: e.clientX, rot0: rot, moved: false, t: performance.now(), lx: e.clientX, v: 0, id: e.pointerId };
       vel = 0; run();
       if (onFire(e)) press = { id: e.pointerId, x: e.clientX, y: e.clientY, t: setTimeout(() => { press = null; drag = null; root.classList.remove('dragging'); roulette(); }, 600) };
@@ -1019,8 +1020,10 @@
       if (moved) setTimeout(() => { if (drag?.done) drag = null; run(); }, 0);
       run();
     };
-    root.addEventListener('pointerup', end);
-    root.addEventListener('pointercancel', end);
+    root.addEventListener('pointerup', end);
+    root.addEventListener('pointercancel', end);
+    root.addEventListener('pointerup', () => root.classList.remove('touching'));
+    root.addEventListener('pointercancel', () => root.classList.remove('touching'));
     // a tap on an app in front opens it; a tap on another one spins it to the front
     root.addEventListener('click', (e) => {
       const it = e.target.closest('.wheel-item');

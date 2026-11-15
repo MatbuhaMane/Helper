@@ -829,3 +829,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 34 (batch 43):** real description lines in the prototype; the longest checked at 375 px (wraps, no overflow). See `docs/design/yad.md`.
 
 **Round 35 (batch 44):** six description lines changed; no design change, lengths within the batch 43 check.
+
+**Round 36 (home):** wheel line and compass ring appear only on touch (opacity fade, none under reduced motion); hook in home.js. Browser check pending.

@@ -131,5 +131,92 @@ eq('23 types have a limit line', SD.SEED.filter((t) => t.note).length, 23);
 eq('ids are unique', new Set(SD.SEED.map((t) => t.id)).size, 49);
 { const d2 = d1(); await SD.ensureCatalog(d2); await SD.ensureCatalog(d2); eq('the catalog goes in once', d2.sq.prepare('SELECT COUNT(*) AS n FROM yad_types').get().n, 49); }
 
+/* ---- the core: profile, board, service flow, deeds, fund, queue, closing ---- */
+const K = await bundle('server/yad-core.ts', 'core.mjs');
+const RG = await bundle('server/yad-regions.ts', 'regions.mjs');
+const code2 = async (p) => { try { await p; return 'ok'; } catch (e) { return e.status ? e.code : String(e); } };
+{
+  const x = d1(); await SD.ensureCatalog(x);
+  const p = L.acct;
+  eq('regions: ids are unique', new Set(RG.REGIONS.map((r) => r.id)).size, RG.REGIONS.length);
+  eq('range same area', RG.rangeBetween('haifa', 'haifa').label, 'באותו אזור');
+  eq('range with no area', RG.rangeBetween(null, 'haifa'), null);
+  eq('a bad area is refused', await code2(K.setRegion(x, 'a@x.test', 'mars')), 'region');
+  await K.setRegion(x, 'a@x.test', 'tel-aviv'); await K.setRegion(x, 'b@x.test', 'jerusalem'); await K.setRegion(x, 'c@x.test', 'tel-aviv');
+  eq('a licence type needs a declaration', await code2(K.setOffers(x, 'b@x.test', [{ type_id: 's-lawyer' }])), 'declaration_needed');
+  await K.setOffers(x, 'b@x.test', [{ type_id: 's-lawyer', declared: true }, { type_id: 's-garden' }]);
+  eq('offers saved', (await K.offersOf(x, 'b@x.test')).length, 2);
+  // the first hands come from a deed for B, approved by the owner (hours corrected)
+  const dd = await K.reportDeed(x, 'b@x.test', { type_id: 'd-stream', half_hours: 4 });
+  eq('a deed waits', (await K.queue(x)).deeds.length, 1);
+  eq('a deed needs a reason to reject', await code2(K.decideDeed(x, dd.id, { approve: false })), 'reason');
+  const dr = await K.decideDeed(x, dd.id, { approve: true, half_hours: 2 });
+  eq('corrected hours: long level 4 hands x 2 half hours = 40 tenths', dr.gross, 40);
+  eq('B got 36 and the fund 4', [await L.balance(x, p('b@x.test')), await L.balance(x, L.FUND)], [36, 4]);
+  eq('a deed cannot be decided twice', await code2(K.decideDeed(x, dd.id, { approve: true })), 'decided');
+  // a need from A, who has no hands
+  const n1 = await K.createNeed(x, 'a@x.test', { type_id: 's-garden', half_hours: 2 }, false);
+  eq('a listed need does not wait', n1.waits_owner, false);
+  eq('the board does not show my own', (await K.board(x, 'a@x.test')).length, 0);
+  const bd = await K.board(x, 'b@x.test');
+  eq('B sees it with a range and a price', [bd.length, !!bd[0].range.label, bd[0].gross], [1, true, 20]);
+  eq('the board never carries a reason, an address, a consent mark or an email', Object.keys(bd[0]).filter((k) => /reason|address|consent|email/.test(k)), []);
+  await K.offerHelp(x, n1.id, 'b@x.test');
+  eq('the asker has no hands: refused', await code2(K.answerOffer(x, n1.id, 'a@x.test', true)), 'no_funds');
+  // an unlisted need waits for the owner and is hidden
+  const n2 = await K.createNeed(x, 'c@x.test', { title: 'ללמד נגינה', half_hours: 2, difficulty: 1, expertise: 1 }, false);
+  eq('unlisted waits', n2.waits_owner, true);
+  eq('hidden from the board', (await K.board(x, 'b@x.test')).filter((r) => r.title === 'ללמד נגינה').length, 0);
+  await K.decideNeed(x, n2.id, { approve: true, add_to_list: true });
+  eq('after approval it shows, and the type joined the list', [(await K.board(x, 'b@x.test')).filter((r) => r.title === 'ללמד נגינה').length, x.sq.prepare("SELECT COUNT(*) AS n FROM yad_types WHERE id LIKE 'x-%'").get().n], [1, 1]);
+  // the flow: B (36) asks, C helps
+  const n3 = await K.createNeed(x, 'b@x.test', { type_id: 's-clean', half_hours: 2 }, false);
+  eq('a helper cannot take their own need', await code2(K.offerHelp(x, n3.id, 'b@x.test')), 'own_need');
+  await K.offerHelp(x, n3.id, 'c@x.test');
+  eq('a second helper is refused', await code2(K.offerHelp(x, n3.id, 'a@x.test')), 'not_open');
+  eq('only the asker answers', await code2(K.answerOffer(x, n3.id, 'c@x.test', true)), 'forbidden');
+  await K.answerOffer(x, n3.id, 'b@x.test', true);
+  await K.setAddress(x, n3.id, 'b@x.test', 'SEALED');
+  eq('a stranger cannot read the address', await code2(K.addressOf(x, n3.id, 'a@x.test')), 'forbidden');
+  eq('the two sides read it', [await K.addressOf(x, n3.id, 'c@x.test'), await K.addressOf(x, n3.id, 'b@x.test')], ['SEALED', 'SEALED']);
+  eq('one confirmation is not enough', (await K.confirmDone(x, n3.id, 'b@x.test')).done, false);
+  eq('both confirm: the hands move', (await K.confirmDone(x, n3.id, 'c@x.test')).done, true);
+  eq('B paid 20, C got 18, the fund 2 more', [await L.balance(x, p('b@x.test')), await L.balance(x, p('c@x.test')), await L.balance(x, L.FUND)], [16, 18, 6]);
+  eq('confirming again changes nothing', await code2(K.confirmDone(x, n3.id, 'c@x.test')), 'not_agreed');
+  await K.recommend(x, n3.id, 'b@x.test', 'עבודה מצוינת');
+  eq('the recommendation is on the giver', (await K.recsOf(x, 'c@x.test')).length, 1);
+  // the fund pays for someone who cannot: needs a reason and the owner
+  eq('a fund need needs a reason', await code2(K.createNeed(x, 'a@x.test', { type_id: 's-shop', half_hours: 2, pay: 'fund' }, false)), 'fund_reason');
+  eq('for someone else needs the consent mark', await code2(K.createNeed(x, 'a@x.test', { type_id: 's-shop', half_hours: 2, pay: 'fund', fund_reason: 'x', for_name: 'דוד' }, false)), 'consent');
+  eq('only the owner publishes from the tent', await code2(K.createNeed(x, 'a@x.test', { type_id: 's-shop', half_hours: 2, pay: 'ohel' }, false)), 'owner_only');
+  const f1 = await K.createNeed(x, 'a@x.test', { type_id: 's-shop', half_hours: 1, pay: 'fund', fund_reason: 'מחלה' }, false);
+  eq('a fund need is hidden until approved', (await K.board(x, 'b@x.test')).filter((r) => r.id === f1.id).length, 0);
+  eq('the queue shows its reason to the owner', (await K.queue(x)).needs.find((q) => q.id === f1.id).fund_reason, 'מחלה');
+  await K.decideNeed(x, f1.id, { approve: true });
+  eq('approved, it shows without the reason', [(await K.board(x, 'b@x.test')).filter((r) => r.id === f1.id).length, JSON.stringify(await K.board(x, 'b@x.test')).includes('מחלה')], [1, false]);
+  await K.offerHelp(x, f1.id, 'b@x.test'); await K.answerOffer(x, f1.id, 'a@x.test', true);
+  await K.confirmDone(x, f1.id, 'a@x.test'); await K.confirmDone(x, f1.id, 'b@x.test');
+  eq('the fund paid the giver (gross 5, the tithe rounds down to 0)', await L.balance(x, p('b@x.test')), 16 + 5);
+  eq('the fund page shows amount and kind only', Object.keys((await K.fundPage(x)).recent[0]).sort(), ['at', 'tenths', 'what']);
+  // the dashboard
+  const ds = await K.dashboard(x, 'c@x.test');
+  eq('C: balance 18, gave 18, tithe 0', [ds.balance, ds.gave_total, ds.tithe], [18, 18, 0]);
+  eq("B's tithe is kept from day one", (await K.dashboard(x, 'b@x.test')).tithe, 4 + 2);
+  // reports, removal, closing
+  const rp = await K.report(x, 'a@x.test', 'person', 'c@x.test', 'התנהגות');
+  eq('a report waits in the queue', (await K.queue(x)).reports.length, 1);
+  await K.resolveReport(x, rp.id, 'owner@x.test', 'remove_person');
+  eq('a removed person is frozen', await K.isFrozen(x, 'c@x.test'), true);
+  eq('a removed person cannot open a need', await code2(K.createNeed(x, 'c@x.test', { type_id: 's-clean', half_hours: 2 }, false)), 'removed');
+  await K.restorePerson(x, 'c@x.test');
+  const before = await L.balance(x, L.FUND), cb = await L.balance(x, p('c@x.test'));
+  const cl = await K.closeAccount(x, 'c@x.test');
+  eq('closing cancels the hands: they go to the fund as new rows', [cl.balance, await L.balance(x, L.FUND)], [0, before + cb]);
+  eq('the closed account is frozen', await K.isFrozen(x, 'c@x.test'), true);
+  const all2 = x.sq.prepare("SELECT DISTINCT a FROM (SELECT src AS a FROM yad_ledger UNION SELECT dst FROM yad_ledger) WHERE a != 'mint'").all().map((r) => r.a);
+  let tot = 0, ng = 0; for (const a of all2) { const b = await L.balance(x, a); tot += b; if (b < 0) ng++; }
+  eq('nothing negative and nothing lost', [ng, tot], [0, x.sq.prepare("SELECT COALESCE(SUM(tenths),0) AS m FROM yad_ledger WHERE src = 'mint'").get().m]);
+}
+
 console.log(`yad: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

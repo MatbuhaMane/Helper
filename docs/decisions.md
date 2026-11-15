@@ -383,6 +383,427 @@ For the master: add `node server/test-weather.mjs` to `npm test` in `package.jso
 can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
 For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
 with `.wx-*` classes is welcome. Status: done (ai-features).
+## 2026-11-15 – "יד ביד", stage 1: three simplifications of the approval queue (vision → design, ai-features, master)
+Status: Decided (the owner). New information: ai-features' estimate of the queue (the upper end of "2–3 times goals",
+7–8 rounds; the lower end with simplifications). This updates three points of the queue entry below; the rest stands.
+
+1. **A fund request for someone else stays, without a consent flow in the app.**
+   - The person asking marks "האדם יודע ומסכים".
+   - The owner makes sure of it before approving. Stage 1 is family and friends, whom the owner knows.
+   - A consent step inside the app can come when the tool opens to more people.
+2. **A need "מאת האוהל" is one-time only in stage 1.** The owner can duplicate it by hand. A recurring need comes later.
+3. **One notification mechanism in stage 1: an immediate notification to the owner on every item.** The daily summary
+   joins when the tool opens to more people.
+   - Open point: ai-features confirms that this is the cheaper mechanism to build. If the daily summary is cheaper,
+     vision brings it back to the owner.
+- **Unchanged:** removal from "יד ביד" with frozen ידיים. Every ledger action checks it, so it is built with the ledger.
+
+## 2026-11-15 – "יד ביד", stage 1: the owner's approval queue (vision → design, ai-features, master)
+Status: Decided (the owner). The full spec, in Hebrew, is in `docs/vision/yad-beyad.md`. Nothing is built yet.
+
+- **What reaches the queue in stage 1:**
+  1. a deed for the community that someone reported;
+  2. a need outside the owner's list, with its tier;
+  3. a request from the fund, for a person or for the public;
+  4. a report on a service, a need or a person, including a false licence declaration.
+  - Redemption requests join in stage 2.
+- **Where it lives:** inside the existing "ממתין לאישור" page, with a filter for "יד ביד" and one count of what waits.
+- **The value of a deed for the community:**
+  - the owner prepares a list of deed types, each with a tier, like the list of services;
+  - the person picks a type and reports hours; the amount is computed, and the tithe is deducted as usual;
+  - the owner approves, rejects or corrects the hours;
+  - a deed outside the list arrives with a proposed tier (the two questions: difficulty, expertise).
+- **Actions on an item:**
+  - approve, or reject with a short reason that is sent to the person, who may fix it and send it again;
+  - a deed or a need outside the list also has "להוסיף לרשימה", so that the type does not reach the queue again;
+  - no "ask the person" action in stage 1.
+- **Actions on a report:**
+  1. dismiss the report;
+  2. remove the need or the service;
+  3. remove the person from "יד ביד": they stay in the Ohel, their ידיים are frozen, and the removal can be undone.
+  - Closing an account in the whole Ohel stays outside this queue.
+- **Requests from the fund:**
+  - **for a person:** anyone may ask, for themselves or for someone else. They mark "מהקופה" while creating the need
+    and write one line of why; only the owner sees the reason. After the owner approves, the need is published, and
+    whoever helps is paid from the fund.
+  - **consent:** when the request is for someone else, that person agrees before the need is published.
+  - **for the public** (cleaning a public garden or area, helping in a public activity): anyone may open one. It is
+    paid from the fund, the owner approves it, and it appears in the board marked "לטובת הציבור". In stage 1 nobody
+    has a right or a ceiling; the owner decides on each request. Stage 2 adds the redemption right.
+  - **"מאת האוהל":** a public need the owner posts in the Ohel's name, possibly recurring. There is nothing to
+    approve; whoever does the deed is paid from the fund. A system that proposes public needs by itself is not in
+    stage 1 (`docs/vision/later.md`).
+- **Notifications to the owner:**
+  - immediate: a report, a need outside the list, and a fund request for a person;
+  - in one daily summary: deeds for the community and fund requests for the public;
+  - the count on the page updates at once, and no item is ever approved by itself.
+- **Who does what:**
+  - design: the queue inside the "ממתין לאישור" page, phone first;
+  - ai-features: says whether this changes its estimate, without building;
+  - the master: the reason of a fund request and the consent of the helped person are sensitive data, so they are in
+    the security check before merging (batch 35).
+- **Before building,** the owner prepares two lists: the services with their tiers, and the deeds for the community.
+
+## 2026-11-15 – The phone comes first; the "יד ביד" terms no longer block (master → all areas)
+Status: Decided (the owner, in the master's session; recorded by vision as the master reported it).
+
+1. **Priority: an app that is useful on the phone comes first.** The desktop program and the adjustments for PC come
+   later. They run in parallel only if PC development does not take too many resources.
+2. **The wording of "יד ביד":** the owner is checking it with the lawyer. Meanwhile development goes on as if
+   everything is approved, and the terms are no longer a blocker.
+
+## 2026-11-15 – "יד ביד": the wording of the rules page and the terms chapter (master → vision, legal, ai-features)
+Status: Decided (the owner, in the master's session; recorded by vision as the master reported it). The owner approved
+the vision's tone version of legal's draft. The drafts stay outside the repo until the final wording.
+
+- **Legal's five additions all stay:**
+  - ידיים are cancelled when an account closes or the tool stops, with no compensation. This is also a product rule
+    for ai-features;
+  - the Ohel may correct mistakes in the ledger and cancel ידיים received against the rules;
+  - what enters and leaves the fund is visible to users; the name of a person the fund helped is shown only if they agreed;
+  - information is handed to the authorities when the law requires;
+  - the Ohel may change the rules, the list of services and their value, with notice ahead of a material change.
+- **The word "בתמורה" in the tool's line:** legal checks it against "ידיים are not consideration". If it is a problem,
+  the line ends with "בחזרה" instead.
+  - **Legal's result (the same day):** it is a problem. The line is now
+    "לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה". The master changes it in `apps.js`.
+- **The rules page in stage 1,** the rule on children and youth: "בשלב הזה יד ביד פתוח בין משפחה וחברים, ומגיל 18.
+  ילדים ונוער יצטרפו בהמשך, באישור הורה." The minors clause in the terms stays as written.
+- **A recommendation after a service is optional.** This settles trust rule 2 of the internal economy entry.
+- **Next:** legal writes the final version, then the owner's lawyer gives the last word. Only then does it enter the app.
+
+## 2026-11-15 – "יד ביד": four conditions on the licence declaration (vision → design, ai-features, legal, master)
+Status: Decided (the owner). Legal's conditions; they complete the declaration in the entry below.
+
+1. **It never looks verified.** No "מוסמך" or "מאומת" badge and no tick, only the words "לפי הצהרת המשתמש".
+2. **No licence number and no documents are collected.**
+3. **A false declaration is grounds for removal.** A report on one reaches the owner like any other report.
+4. **The terms of use say** that the Ohel does not check the declarations and is not responsible for their truth.
+
+## 2026-11-15 – "יד ביד", stage 1: the simplifications and the legal rules (vision → design, ai-features, legal, master)
+Status: Decided (the owner). New information: the refined estimate from ai-features (3-4 times goals with everything)
+and legal's answer. It updates the screen spec entry below; where the two differ, this entry wins for stage 1.
+
+- **Legal closed its check: there is no legal blocker,** also for trade with everyone and for youth. The written answer
+  comes later and stays with the owner. The stages do not change because of it: trade with everyone still waits for
+  enough users, and youth for kids mode.
+- **Six simplifications for stage 1** (with them the scope returns to 2-3 times goals):
+  1. **Redeeming the tithe moves to stage 2.** The ledger records from the first day how much tithe each person paid,
+     so redemption is added later without converting data.
+  2. **No GPS.** Each person picks an area by hand.
+  3. **"לוח הדרושים":** sorting by distance and by type only. Advanced filtering comes later.
+  4. **A matching need** sends one simple notification, until the notification settings ("רמת הניג'וס") are built.
+  5. **Distance is shown as a range** ("עד 5 ק"מ", "5 עד 15"), not as a number.
+  6. **A need outside the owner's list** is shown only to the person who posted it until the owner approves it and its
+     tier, and to everyone after that. This replaces "published at once" in the screen spec.
+- **The product rules** (legal's conditions, in the rules of "יד ביד" and in the terms of use):
+  - no illegal services;
+  - a service is published only with the owner's approval: the service types on the owner's list are approved already,
+    and a need outside the list waits for approval;
+  - a service can be reported and removed;
+  - **regulated professionals** (a doctor, a lawyer) may give services for ידיים. The Ohel only connects people: it
+    checks no licences and is not responsible for the service, and the professional keeps the rules of the profession
+    (confidentiality, liability, insurance);
+  - **a declaration:** whoever marks in the profile a service type that requires a licence declares that they hold
+    one. The Ohel does not check it;
+  - ידיים have no monetary value;
+  - the three trust rules and the youth rules stay as approved (a parent approves each service; trade with strangers
+    only from age 18).
+- **Who does what:**
+  - design: the screens, with these changes;
+  - ai-features: stage 1 is this scope; nothing is built yet;
+  - the master: who writes the wording for the terms of use and the rules, with legal; the security check as before;
+  - legal: keeps the rules, and checks the wording.
+
+## 2026-11-15 – "יד ביד", stage 1: the screen spec (vision → design, ai-features, master)
+Status: Decided (the owner). The full spec, in Hebrew, is in `docs/vision/yad-beyad.md`. Nothing is built yet; design
+designs the screens, and ai-features refines its estimate.
+
+- **The home screen:**
+  - the user's banner on top;
+  - a dashboard with four figures: my balance; given and received (last month and in total); my contribution to the
+    fund (it opens the fund page); waiting for me (what needs my action). No ranking between people.
+  - two buttons side by side: "לוח הדרושים" and "יצירת צורך";
+  - two lists below: "הצרכים שמילאתי" and "הצרכים שלי", each with active and past needs.
+- **"לוח הדרושים"** (a floating panel): other people's needs, sorted by distance or by type, with advanced filtering.
+  Deeds for the community appear here too, marked "לטובת הציבור".
+- **"יצירת צורך"** (a floating panel):
+  - a description of the need;
+  - **a need from the list:** the person picks a type from the owner's list, the tier comes with it, and they estimate
+    only the time;
+  - **a need outside the list:** the person answers the two questions (difficulty, expertise). The need is published
+    at once, marked "הרמה ממתינה לאישור", and the ידיים move only after the owner approves the tier;
+  - a small link, "עשיתי מעשה": reporting a deed for the community already done, for the owner's approval.
+- **What I can give:** each person marks in their profile the service types they are willing to give, from the owner's
+  list. There is no offers board. A matching need sends a notification, by the person's "רמת הניג'וס".
+- **Location:**
+  - each person sets an area (a town or a neighbourhood) once; GPS only for whoever allows it;
+  - others see only an approximate distance, such as "כ-3 ק"מ";
+  - no exact address is stored, and the GPS point is not kept on the server;
+  - the exact address passes between the two sides only after they agreed on the service.
+- **The fund and redeeming the tithe:**
+  - **the fund page:** its balance and the latest payouts. When the fund pays for someone who cannot give, the page
+    shows the amount and the kind of help without the name, unless the person agrees;
+  - **"בקשה לטובת הציבור"** (the owner's addition): a person who paid a lot of tithe may post a need for the public's
+    benefit, paid from the fund and not from their own balance.
+    - It opens from 5 ידיים of tithe paid.
+    - The ceiling is the tithe the person paid and has not yet redeemed.
+    - The owner approves each request, and decides how much may be redeemed, so that the fund keeps enough for those
+      who cannot give. A fixed share is set only if the fund runs dry.
+    - The redeemer gets no ידיים, and the right does not pass to anyone else.
+- **Not in this spec:** the owner's approval queue (a separate spec, on top of the existing "ממתין לאישור" page), youth,
+  and trade with strangers.
+- **Who does what:**
+  - design: the screens;
+  - ai-features: a refined scope estimate, without building;
+  - the master: the location is sensitive data, so it is in the security check before merging (batch 35).
+
+## 2026-11-15 – Strengthening the Ohel's cyber security (vision → master)
+Status: Decided (the owner). In the owner's words: "צריך לחזק את פרוייקט האהל מבחינת אבטחת סייבר."
+
+- **A full security review** of the code and the infrastructure, by the master:
+  - sign-in and identifying users;
+  - the permission checks and the four privacy levels;
+  - the vault and the backups;
+  - input validation and rate limiting in the API;
+  - secrets and keys, including cleaning old secrets;
+  - outside libraries;
+  - file uploads and the storage connections;
+  - users' content that reaches the AI.
+- **The result:** a list of findings by severity, each with a recommendation, brought to the owner. Fixes in the vault,
+  the sign-in and money only with the owner's approval.
+- **A standing rule:** every new feature that touches personal data gets a security check before it is merged. First in
+  line: the location and the ledger of ידיים in "יד ביד", and the chat.
+- **Timing** is the master's, against the two-week focus on the family's daily use.
+
+## 2026-11-15 – "יד ביד" starts in stages, as a social interface (vision → design, ai-features, legal, master)
+Status: Decided (the owner). New information: the owner wants to start working on "יד ביד" now, as a social
+interface. This updates the "בקרוב only" status of the 2026-11-14 entry; the rules of the economy do not change.
+
+- **Stage 1, now: the spec and the design of the social interface, for family and friends only.**
+  - Vision writes the screen spec with the owner (`docs/vision/yad-beyad.md`), and design follows it.
+  - Nothing is built yet, so the two-week focus on the family's daily use (from 2026-11-13) is not touched.
+- **In parallel:**
+  - legal starts the tax check now (the questions of batch 32), beginning with trade inside family and friends;
+  - ai-features gives a scope estimate for stage 1, without building.
+- **Building stage 1** starts after the family's two weeks, or earlier if the owner decides.
+- **Later stages:**
+  - youth with a parent's approval, after kids mode;
+  - trade with everyone, when there are enough users and legal has answered.
+- **What stage 1 holds** (the vision's estimate; ai-features confirms):
+  - a board of requests and offers;
+  - the list of services and tiers, with the owner's approval;
+  - the ledger of ידיים: balances, transfers, the tithe, the fund. It must be exact, so the master reviews it like money;
+  - both sides confirm, then a recommendation;
+  - deeds for the community and payouts from the fund, in an approval queue for the owner.
+- **Flags:**
+  - the owner approves a lot (deeds, new services, payouts, reports), so the approval queue must be comfortable;
+  - a cold start: with no join grant, the first ידיים come only from community deeds the owner approves;
+  - trade with friends depends on the friends page and the fourth privacy level (batch 27).
+- **In the app** the item stays "בקרוב" until stage 1 is built.
+
+## 2026-11-14 – The tool is named "יד ביד"; ידיים and credits stay unlinked (vision → master, business)
+Status: Decided (the owner). It completes the internal economy entry below.
+
+- **The tool's name: "יד ביד"** (the master's proposal, approved). The token stays "יד".
+- **The line under the name, in the owner's wording:** "לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בתמורה".
+  It replaces the line the master placed in `apps.js` (main c74f826).
+- **No link between ידיים and credits, in either direction** (business's recommendation, approved):
+  - ידיים never buy credits or AI;
+  - credits never buy ידיים.
+  - **The one tie allowed:** the owner may, at their own discretion, give gift credits for a notable deed for the
+    community. There is no rate and no right to it, and the יד itself never moves.
+  - A permanent link, if ever, is decided only after legal answers the tax and licensing question.
+- **Who does what:** the master changes the line in `apps.js`; business keeps the rule in the business plan.
+
+## 2026-11-14 – The internal economy: the "יד" token, "תועלת אישית על ידי עשייה ציבורית" (vision → design, master, business, legal)
+Status: Decided (the owner). A big idea: it waits, and the interface shows it only as "בקרוב". Nothing is built now.
+The full spec is in `docs/vision/later.md` ("כלכלה פנימית").
+
+- **The principle, in the owner's words:** "תועלת אישית על ידי עשייה ציבורית". People give each other real-life services
+  and do deeds for the community, and earn tokens that buy other people's services.
+- **The token is named "יד"** ("לתת יד ולקבל יד"; plural ידיים).
+  - It is an internal token of the Ohel. There is no crypto.
+  - One יד is one easy hour, and it divides into tenths.
+  - **A closed loop:** ידיים cannot be bought with money, sold or cashed out. They are separate from credits.
+- **How people earn:**
+  - **A deed for the community:** the owner approves each deed, and it earns ידיים.
+  - **A service between people:** the ידיים move from the receiver to the giver.
+  - **Only by doing:** no join grant and no negative balance. Whoever wants to buy a service gives to the community first.
+- **What an hour is worth:**
+  - The owner keeps a list of service types, each with a tier. A new service asks for a tier, and the owner approves.
+  - The tier belongs to the service, not to the person. Two scores, 0 to 2 each:
+    - difficulty: easy 0, regular 1, hard or complex 2;
+    - expertise: none 0, skill or experience 1, a certified expert 2.
+  - The sum sets the tier:
+    - 0: שעה קלה, 1 יד an hour (babysitting);
+    - 1: שעת עבודה, 2 (a ride);
+    - 2 or 3: שעה ארוכה, 4 (moving furniture; a recommendation a doctor writes);
+    - 4: איש השעה, 8 (a complex operation).
+- **The tithe and the public fund:**
+  - A tenth of every יד earned goes to the public fund, from services and from community deeds alike. Example: a
+    one-hour ride is worth 2; the receiver pays 2, the giver gets 1.8, and 0.2 goes to the fund.
+  - The fund pays for community deeds first; new ידיים are created only when the fund is empty.
+  - The fund pays for services for those who cannot give (the elderly, the sick, a new mother).
+  - Every payout from the fund needs the owner's approval.
+- **Who trades:** every user of the Ohel, with three trust rules:
+  1. the ידיים move only after both sides confirm the service was given;
+  2. the receiver leaves a short recommendation, shown on the giver's profile;
+  3. either side can report a problem, and the report reaches the owner.
+- **Children and youth:**
+  - they earn only on community deeds and on services to family and friends;
+  - a parent approves each service;
+  - trade with strangers only from age 18.
+- **When:** trade with everyone is a public layer, like "גבעה ביער", so it waits for enough users.
+- **Who does what:**
+  - design: the "בקרוב" representation;
+  - the master: the item in `apps.js` (`H.FUTURE`);
+  - business: how ידיים relate to credits and to the existing 30/30/30/10 split (they stay separate);
+  - legal: before anything is built, whether trading services for ידיים is taxable income.
+
+## 2026-11-14 – Notification settings: "רמת הניג'וס" per tool (vision → ai-features, design, master)
+Status: Decided (the owner). The setting is named **"רמת הניג'וס"** (the owner's name; keep it). It replaces batch 28's
+"גם כהודעה לטלפון" switch. Details in `docs/vision/shabbat-notifications.md`.
+
+- **Every tool that sensibly notifies may send a phone notification, even with the app closed:**
+  - goals;
+  - the הקפדה coach;
+  - the cooking timers;
+  - home and garden reminders;
+  - gatherings, birthdays and family messages.
+- **Four levels per tool:**
+  1. **כבוי:** off.
+  2. **שקט:** only in the daily summary.
+  3. **רגיל:** a notification at the right time.
+  4. **נודניק:** a notification, then a repeat until the person marks it handled.
+- **Two places to control it:**
+  - **The main settings,** a "התראות" screen: a row per tool with its level, plus the quiet hours.
+  - **An override inside a tool:** a bell in each tool sets its level, and can also be set on a single item, such as one
+    goal. The specific choice wins over the general one.
+- **What stays:**
+  - **Consent:** the phone asks permission once; without it, everything goes to the daily summary.
+  - **Quiet hours and Shabbat** apply to everything; Shabbat mode sends nothing except emergencies.
+  - **Two exceptions to quiet hours:** emergencies always get through, and a timer the person started just now (cooking)
+    rings during quiet hours too.
+  - **The settings follow the person** across devices (`H.prefs`, on the server).
+- **Defaults:**
+  - the existing list (a personal message, a gathering, a reminder I set, a birthday or memorial day, an emergency) is
+    "רגיל";
+  - everything else starts at "שקט", and the person raises what they want.
+- **Who does what:**
+  - ai-features: the levels, the overrides and the repeats in `server/push.ts` and each tool;
+  - design: the "התראות" settings screen and the bell;
+  - the master: the main settings screen and `common.js` are shared files, so the master owns or reviews them.
+
+## 2026-11-14 – Telegram-level smoothness across the whole app; the chat, spec 1 (wave 2) (vision → design, ai-features, master)
+Status: Decided (the owner). Details in `docs/vision/later.md` ("ממשק השיחות, ברמה של טלגרם").
+
+- **The whole app, now: Telegram's smooth feel, in the Ohel's own look** (our tokens, font and backgrounds, not
+  Telegram's). This widens the premium-motion rule of batch 16 to every screen:
+  - an action shows at once, without waiting for the server;
+  - no spinners;
+  - smooth scrolling;
+  - swipe gestures;
+  - gentle animated transitions; nothing jumps.
+  - **The Telegram test:** a screen that feels slower or clumsier than Telegram on the phone is not done.
+  - **Who does what:** design defines the motion, ai-features the speed, and the master measures.
+- **Every video player:** hold a finger on the video and slide to raise the speed gradually, up to high speeds; release
+  to return to normal.
+- **The chat, spec 1 (wave 2, after the family launch):**
+  - **Quality before quantity:** fewer features, each polished to Telegram's level.
+  - **Encryption like Telegram:**
+    - ordinary chats are encrypted on the server, and the assistant and search work on them;
+    - a one-to-one "secret chat" is end-to-end encrypted, with no assistant;
+    - the master reviews the secret chat's security before it is built.
+  - **v1:**
+    - reply, reactions, edit and delete, read and typing marks;
+    - voice messages (hold to record, slide to cancel, slide up to lock);
+    - photos, videos and files, with a viewer (pinch zoom, swipe down to close);
+    - Ohel stickers;
+    - pin, forward, search, mute;
+    - swipe actions in the chat list;
+    - floating bubbles (pin, drag, drag to close);
+    - a wallpaper per chat;
+    - **the Ohel live card:** share a recipe, a shopping list, a goal or a museum item into a chat.
+  - **Groups and communities.** A community is an umbrella of groups, such as the extended family with "the cousins"
+    and "the parents" inside it. In v1 they are for family and friends only; public communities wait for "גבעה ביער".
+  - **Disappearing messages:** a timer per chat. This is an explicit choice of the participants, so it is allowed; the
+    "never delete" rule still holds for memories and documents.
+  - **Later:** polls, scheduled messages, video circles, chat folders, channels, voice and video calls.
+
+## 2026-11-14 – The הקפדה coach, spec 1 (wave 2) (vision → ai-features, design, business, master)
+Status: Decided (the owner). Details in `docs/vision/later.md` ("הקפדה, תכנית אימונים ומאמן אישי"). Wave 2: after the family
+launch, when the master schedules it.
+
+- **A plan of your own:** from a form, a ready plan, or a description in words.
+- **A live workout mode** leads exercise after exercise, with a rest timer and voice ("הבא", as in the kitchen), and logs
+  sets, reps and weight.
+- **Each exercise:** a short description and an embedded YouTube video from channels that allow embedding. Illustrations later.
+- **A minimizable AI coach panel** below the dashboard. It is connected, each link only with the person's consent and
+  each one switchable off, to:
+  - the other tools (the kitchen, the recipes, the calendar);
+  - goals: fitness and weight goals update themselves from workouts and weigh-ins.
+  - A watch and the phone's health apps come later.
+- **Safety:** a short first-time questionnaire (injuries, limits, fitness level), kept at "only me"; the coach says it is
+  not a doctor.
+- **Sharing:** a workout or plan can be shared with family or friends at a chosen privacy level, like a shared goal.
+  Live joint workouts come later.
+- **Cost:** free with a quota, like all AI inside a tool, and it works without AI (the plan, the workout mode, the log).
+- **Later:** the companion figure becomes the coach.
+
+## 2026-11-14 – Goals part 2 after the owner's test; storage: your own, ours paid (vision → ai-features, design, business, master)
+Status: Decided (the owner). The owner tried goals part 1: the goal analysis and the steps were excellent.
+
+- **Goals part 2:**
+  - **An AI consultation on every goal's page,** about the steps and the goal, all along the way. A "שמור מסקנה" button
+    pins what was concluded to the goal.
+  - **Help defining a goal:** "עזור לי להגדיר" opens a consultation that asks and words the goal with the person.
+  - Both are AI inside a tool, so the rule is free with a quota; business sets the number.
+  - **Phone notifications** for goals, events and anything else worth a message outside the app, only with the person's
+    consent. The list in `docs/vision/shabbat-notifications.md` stays the default; in the settings every other kind
+    (goals, events…) gets a "גם כהודעה לטלפון" switch. Quiet hours and Shabbat apply to all of them.
+  - **Private or shared goals.** A goal is private by default. A shared goal shows on the person's profile in the family
+    tree, at the privacy level the person picks (everyone / friends and family / family only / only me).
+- **Storage for videos and heavy files (supersedes business's "links by default"):**
+  - **Your own storage:** a person connects their own Google Drive or another network storage (a home NAS, for example);
+    the heavy files live there and the app shows them.
+  - **Ours, paid:** a storage package; it waits for the payment provider.
+  - **Free with us:** short clips (up to 60 s, 50 MB) inside the household quota, and links.
+  - Nothing is ever deleted.
+- **Who does what:**
+  - ai-features: goals part 2 and the storage connectors;
+  - design: the consultation panel, the shared goal on the profile, the notification switches;
+  - business: the consultation quota and the storage package price;
+  - the master: the Google Drive connection asks for a new permission at sign-in, and the notification settings are
+    shared, so the master reviews both.
+
+## 2026-11-14 – Friends ("the family you choose"), a fourth privacy level, the story hub; "גבעה ביער" waits (vision → ai-features, design, business, master)
+Status: Decided (the owner).
+
+- **Friends: "the family you choose".**
+  - A new page in the family tree: friends, from inside the family and from outside it.
+  - People talk with them one to one, or in groups.
+  - Friends see only what a person published.
+  - **A fourth privacy level, "חברים ומשפחה" (friends and family).** The four levels:
+    - everyone;
+    - friends and family (new);
+    - family only;
+    - only me.
+  - Everything the social layer already decided (`docs/vision/social.md`) stays: invitation by link, mutual approval,
+    and the "a cousin of your grandmother" notice when a friend is also in the family forest.
+- **The family story ("the living museum") is the hub for all the family's memories.**
+  - It holds all the family's photos, videos and recordings, each with the story behind it.
+  - People add events from their own lives.
+  - Others read what was left and look back together.
+  - Spec 1 (`docs/vision/story.md`) stands; videos and life events are added. It still comes after the family launch.
+  - Business checks the storage cost of videos against the owner's rule "what we have, no extra investment".
+- **"גבעה ביער" waits** until enough people have joined to justify a social network. It gets no spec until then and stays
+  "בקרוב".
+- **Who does what:**
+  - ai-features: the friends page, the privacy level on every published item, and later the story hub;
+  - design: the friends page in the tree, and how the privacy choice looks;
+  - the master: the new privacy level touches the permission checks, so the master reviews it before merging.
+
 ## 2026-11-14 – The owner answers the 21 future-tool questions; AI inside a tool is free with a quota (vision → ai-features, business, design, master)
 The owner answered all 21 questions in `docs/vision/future-specs.md` (relayed by the CEO). The answers are written into
 each spec and into the table at the end of that file. Status: Decided (the owner).

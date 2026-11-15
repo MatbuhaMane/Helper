@@ -1,0 +1,44 @@
+/* The back door's celebration (door-party.js): thick outlined shapes, a bit Adventure Time.
+   Motion is transform and opacity only; nothing here takes the pointer (the egg alone). */
+.dp-layer { position: fixed; inset: 0; z-index: 9000; overflow: hidden; pointer-events: none; }
+.dp-layer > * { position: absolute; }
+
+/* a rocket: a fat short line climbing from the screen's side to where it bursts */
+.dp-rocket { left: var(--x1); top: var(--y1); inline-size: 7px; block-size: 26px; margin: -13px 0 0 -3px; border-radius: 4px;
+  background: #f2c14e; border: 3px solid var(--text, #2a2a2a); box-sizing: content-box; opacity: 0;
+  animation: dp-rise .65s cubic-bezier(.3, .6, .4, 1) both; }
+@keyframes dp-rise {
+  0% { opacity: 1; transform: translate(calc(var(--x0) - var(--x1)), calc(100vh - var(--y1))) rotate(0); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translate(0, 0); }
+}
+
+/* the burst: thick rounded sparks flying out */
+.dp-spark { inline-size: 18px; block-size: 7px; margin: -3.5px 0 0 -9px; border-radius: 4px; background: var(--c); border: 3px solid var(--text, #2a2a2a);
+  box-sizing: content-box; opacity: 0; animation: dp-fly 1s cubic-bezier(.15, .7, .3, 1) both; }
+@keyframes dp-fly {
+  0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(.4); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(var(--d)) scale(1); }
+}
+.dp-ring { inline-size: 120px; block-size: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 4px solid var(--c); opacity: 0; animation: dp-ring .8s ease-out both; }
+@keyframes dp-ring { 0% { opacity: .9; transform: scale(.2); } 100% { opacity: 0; transform: scale(1); } }
+
+/* confetti: outlined squares and dots falling from the top, swaying and turning */
+.dp-conf { top: -24px; inline-size: 14px; block-size: 14px; background: var(--c); border: 3px solid var(--text, #2a2a2a); border-radius: 3px; box-sizing: content-box;
+  opacity: 0; animation: dp-fall 2.4s ease-in both; }
+.dp-conf.dot { border-radius: 50%; }
+@keyframes dp-fall {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--sway), 108vh) rotate(var(--rot)); }
+}
+
+.egg.float.dp-egg { inset-block-start: 45%; inset-inline-start: calc(50% - 22px); }
+
+/* reduced motion: a short calm sign, fading in and out (no flying pieces) */
+.dp-calm { left: 50%; top: 42%; inline-size: 84px; block-size: 84px; margin: -42px 0 0 -42px; border-radius: 50%; border: 5px solid #f2c14e;
+  box-shadow: inset 0 0 0 5px var(--card, #fff); opacity: 0; animation: dp-calm 1.8s ease-in-out both; }
+@keyframes dp-calm { 0%, 100% { opacity: 0; } 30%, 70% { opacity: .9; } }
+@media (prefers-reduced-motion: reduce) { .dp-rocket, .dp-spark, .dp-ring, .dp-conf { display: none; } }
+:root[data-motion="reduce"] .dp-rocket, :root[data-motion="reduce"] .dp-spark, :root[data-motion="reduce"] .dp-ring, :root[data-motion="reduce"] .dp-conf { display: none; }

@@ -650,3 +650,5 @@ LCP has not moved yet. The causes:
 - 2026-11-15: passkey create() errors in Hebrew (family.js, vault-keys.js): InvalidStateError "המכשיר כבר רשום", other DOMException fallback; NotAllowedError stays silent. Not tested on a real device.
 
 - 2026-11-15: news list/article and mail detail loading are skeletons (H.skel), the news list fades in with .swap-in where the skeleton was. Syntax-checked only; not seen in a browser or audited (the pane was down).
+
+- 2026-11-15: מצב רציניים has its switch (settings look section: "מצב רציניים", sub-switch "להשאיר את אייקוני הכריות" shown only when on; "הצג כלים בפיתוח" already existed). apply.js LOOK has style/pillows/devTools and sets data-style/data-pillows, so every page follows. Checked in the browser: the switch sets and clears data-style, the sub-switch hides and shows, no overflow. NOT done: 375 px visual, dark mode, tools/audit.js (the pane was hidden, width 0), the serious home itself after the toggle.

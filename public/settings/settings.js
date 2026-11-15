@@ -348,7 +348,14 @@
         el('p', { class: 'muted small' }, 'הצבעים מותאמים לבד, כדי שהטקסט יישאר קריא ביום ובלילה.'));
     };
     drawOwn();
+    // מצב רציניים (the owner, 2026-11-13; docs/vision/serious-mode.md): a plain, professional menu; per user, kept on the server
+    const keepRow = toggle('להשאיר את אייקוני הכריות', look.pillows === 'keep', (v) => { look.pillows = v ? 'keep' : ''; keep('look'); apply(); },
+      'במצב רציניים הכלים מוצגים כרשימה. כאן אפשר להשאיר את אייקוני הכריות שלהם.');
+    keepRow.hidden = look.style !== 'serious';
+    const serious = toggle('מצב רציניים', look.style === 'serious', (v) => { look.style = v ? 'serious' : ''; keepRow.hidden = !v; keep('look'); apply(); },
+      'ממשק תפריט פשוט ומקצועי, בלי האוהל והדמות. הכלים והנתונים נשארים אותו דבר.');
     return section('palette', 'ערכות צבעים',
+      serious, keepRow,
       choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); apply(); drawOwn(); }),
       own,
       choices('הגופן', FONTS.map(([id, name]) => [id, name, { font: id || null }]), look.font || '', (v) => { look.font = v; keep('look'); apply(); }),

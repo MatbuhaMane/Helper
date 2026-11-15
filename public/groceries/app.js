@@ -944,7 +944,7 @@
     }
   }
   async function showMealDb(id, backQuery) {
-    modal(loading('טוען מתכון…'));
+    modal(H.skel(5, 'טוען מתכון'));
     let r = null;
     try { r = (await mealdb('lookup.php?i=' + encodeURIComponent(id))).meals?.[0]; } catch (_) { /* ignore */ }
     if (!r) { modal(el('h3', {}, 'שגיאה בטעינת המתכון'), el('button', { class: 'btn', onclick: () => runMealDbSearch(backQuery) }, '→ חזרה לתוצאות')); return; }
@@ -985,7 +985,7 @@
 
   async function loadBook() {
     $('#bookGrid').textContent = '';
-    $('#bookGrid').append(loading('טוען את ספר המתכונים…'));
+    $('#bookGrid').append(H.skel(4, 'טוען את ספר המתכונים'));
     try { book = (await api('/api/recipes')).recipes; } catch (e) { book = []; toast(e.message); }
     if (!book.length && !listPrefs.starters && await (seeding ||= seedBook())) {
       try { book = (await api('/api/recipes')).recipes; } catch { /* the empty book stays */ }

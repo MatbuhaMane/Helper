@@ -195,7 +195,7 @@
   const cookFromHash = () => { const m = location.hash.match(/^#cook=([^&]+)(?:&s=(\d+))?/); return m ? { id: decodeURIComponent(m[1]), step: +(m[2] || 0) } : null; };
 
   function cookTab() {
-    const box = el('div', {}, el('p', { class: 'muted' }, 'טוען את ספר המתכונים…'));
+    const box = el('div', {}, H.skel(4, 'טוען את ספר המתכונים'));
     (async () => {
       if (!recipes) {
         try { recipes = (await api('/api/recipes')).recipes || []; } catch (e) { box.textContent = ''; box.append(el('p', { class: 'notice' }, e.message || 'לא הצלחתי לטעון את המתכונים.')); return; }

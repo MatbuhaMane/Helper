@@ -51,7 +51,8 @@ const sessionOf = (env: Env, sid: string) => env.DB.prepare('SELECT app_locked, 
 async function ensureRow(env: Env, email: string) {
   await env.DB.prepare("INSERT OR IGNORE INTO user_locks (email, app, tree, autolock, fails, pause_until, closed, tip_hidden, updated_at) VALUES (?, 'off', 'off', ?, 0, 0, 0, 0, ?)").bind(email, L.DEFAULT_AUTOLOCK, Date.now()).run();
 }
-const hasPasskey = async (env: Env, email: string) => !!(await env.DB.prepare('SELECT 1 FROM passkeys WHERE email = ? LIMIT 1').bind(email).first());
+// only a passkey made on this address can open it (rp id = hostname), so the lock never asks for one this address has not got (owner, 2026-11-15)
+const hasPasskey = async (env: Env, email: string, host: string) => !!(await env.DB.prepare('SELECT 1 FROM passkeys WHERE email = ? AND (rp_id = ? OR rp_id IS NULL) LIMIT 1').bind(email, host).first());
 
 /** the router calls this for every request of a signed-in person: a locked session reaches only the lock and signing in/out */
 export async function gate(env: Env, req: Request, email: string, path: string, waitUntil: (p: Promise<unknown>) => void) {
@@ -92,7 +93,7 @@ async function opened(env: Env, sid: string, email: string) {
 
 export async function status(ctx: Ctx) {
   const u = requireUser(ctx);
-  const [l, s, pk] = await Promise.all([lockOf(ctx.env, u.email), sessionOf(ctx.env, sidOf(ctx.req)), hasPasskey(ctx.env, u.email)]);
+  const [l, s, pk] = await Promise.all([lockOf(ctx.env, u.email), sessionOf(ctx.env, sidOf(ctx.req)), hasPasskey(ctx.env, u.email, ctx.url.hostname)]);
   const now = Date.now();
   return json({
     app: l?.app || 'off', tree: l?.tree || 'off', autolock: l?.autolock || L.DEFAULT_AUTOLOCK, hasPin: !!l?.pin_hash, hasPasskey: pk,
@@ -107,7 +108,7 @@ export async function save(ctx: Ctx) {
   const u = requireUser(ctx);
   const b = await body<{ app?: unknown; tree?: unknown; autolock?: unknown; tip?: unknown }>(ctx.req);
   await ensureRow(ctx.env, u.email);
-  const [l, s, pk] = await Promise.all([lockOf(ctx.env, u.email), sessionOf(ctx.env, sidOf(ctx.req)), hasPasskey(ctx.env, u.email)]);
+  const [l, s, pk] = await Promise.all([lockOf(ctx.env, u.email), sessionOf(ctx.env, sidOf(ctx.req)), hasPasskey(ctx.env, u.email, ctx.url.hostname)]);
   const proof = L.hasProof(s?.lock_proof_at, Date.now());
   const sets: string[] = [], vals: unknown[] = [];
   for (const k of ['app', 'tree'] as const) {

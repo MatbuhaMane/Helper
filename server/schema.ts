@@ -67,7 +67,8 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['home_items', 'remind_to', 'TEXT'],         // home maintenance: who gets the reminder; null: whoever added it (ai-features)
   ['home_items', 'reminded', 'TEXT'],          // the due date last reminded (ai-features)
   ['family_people', 'ord', 'INTEGER'],         // the card's place along its row ("סידור" in the family tree); null: by creation (ai-features)
-  ['gathering_rsvps', 'diets', 'TEXT'],        // the RSVP's diet ticks "veg,vegan,gf", for the food calculator (ai-features)
+  ['gathering_rsvps', 'diets', 'TEXT'],
+  ['passkeys', 'rp_id', 'TEXT'],              // the address the passkey was made on (a passkey works only there); NULL: made before 2026-11-15        // the RSVP's diet ticks "veg,vegan,gf", for the food calculator (ai-features)
 ];
 
 let ready: Promise<void> | null = null;

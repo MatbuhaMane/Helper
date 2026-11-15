@@ -414,7 +414,8 @@ CREATE TABLE IF NOT EXISTS passkeys (
   sign_count INTEGER NOT NULL DEFAULT 0,
   label      TEXT,
   created_at INTEGER NOT NULL,
-  last_used  INTEGER
+  last_used  INTEGER,
+  rp_id      TEXT
 );
 CREATE INDEX IF NOT EXISTS passkeys_email ON passkeys(email);
 

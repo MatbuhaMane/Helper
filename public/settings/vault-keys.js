@@ -47,10 +47,17 @@
     await api('/api/vault/unlock', { noRedirect: true, body: { challengeId: o.challengeId, id: toB64(a.rawId), response: {
       clientDataJSON: toB64(a.response.clientDataJSON), authenticatorData: toB64(a.response.authenticatorData), signature: toB64(a.response.signature) } } });
   }
+  /* the browser's own error text is English: say it in Hebrew (the owner, 2026-11-15) */
+  async function createKey(opts) {
+    try { return await navigator.credentials.create(opts); } catch (e) {
+      if (!(e instanceof DOMException) || e.name === 'NotAllowedError') throw e;
+      throw Object.assign(new Error(e.name === 'InvalidStateError' ? 'המכשיר הזה כבר רשום: אפשר לפתוח בו את הכספת עם המפתח הקיים.' : 'לא הצלחנו לשמור את המפתח במכשיר. נסו שוב, או הפעילו מחדש את המכשיר.'), { name: 'PasskeyError', code: 'passkey_device' });
+    }
+  }
   async function addPasskey() {
     const o = await call('/api/vault/passkeys/options', { method: 'POST' });
     const pk = o.publicKey;
-    const cred = await navigator.credentials.create({ publicKey: {
+    const cred = await createKey({ publicKey: {
       ...pk, challenge: toBuf(pk.challenge), user: { ...pk.user, id: toBuf(pk.user.id) },
       excludeCredentials: pk.excludeCredentials.map((c) => ({ ...c, id: toBuf(c.id) })),
     } });

@@ -654,3 +654,9 @@ LCP has not moved yet. The causes:
 - 2026-11-15: מצב רציניים has its switch (settings look section: "מצב רציניים", sub-switch "להשאיר את אייקוני הכריות" shown only when on; "הצג כלים בפיתוח" already existed). apply.js LOOK has style/pillows/devTools and sets data-style/data-pillows, so every page follows. Checked in the browser: the switch sets and clears data-style, the sub-switch hides and shows, no overflow. NOT done: 375 px visual, dark mode, tools/audit.js (the pane was hidden, width 0), the serious home itself after the toggle.
 
 - 2026-11-15: catalogue: added /family/friends/ (חברים) and /family/story/ (הסיפור המשפחתי, tag ניסיוני) to APPS and the social category. exp "only" = regular + experimental (see decisions.md). Left out: /capture/ /overlay/ /welcome/ /join/ /gather/invite/ /admin/ (not tools), /tools/yad/ (locked by the yad switch). Sweep by page folders only; features inside pages not swept. Not done: tools/audit.js on /tools/ and / (pane hidden), 375 px and dark.
+
+## 2026-11-15 — owner round: companion, tabs, sky
+- Companion enters only after 7 s from opening the app (per tab, sessionStorage), walks in; walks no lower than just under the home horizon; balloon more transparent, vertical fold button; closed tab is a draggable capsule; new pref `daemon.tabFace` (icon / animated head, 2D figures only).
+- All edge tabs (companion, music, admin) are soft capsules and move side to side; admin tab drag is new (`helper.adminEdge`).
+- Sky: ray-less sun disc (`sun-disc.webp`), sun and moon ~1.3x, tick ring is a circle that lags behind like a compass, white floor compass rotating with the cushions.
+- Not tested: sun in daylight, desktop width, light/dark, tools/audit.js, reduced motion. `sw.js` precache lists sun-core.webp, not sun-disc.webp (CEO). Edits touched design/master-owned CSS and index.html.

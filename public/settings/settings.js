@@ -309,6 +309,7 @@
       choices('מהירות הדיבור', [[0.9, 'איטי'], [1.05, 'רגיל'], [1.2, 'מהיר'], [1.4, 'מהיר מאוד']], [0.9, 1.05, 1.2, 1.4].reduce((a, b) => (Math.abs(b - dp.rate) < Math.abs(a - dp.rate) ? b : a), 1.2), (v) => set('rate', v)),
       toggle('העוזר מלווה אותי בכל עמוד', !!dp.follow, (v) => set('follow', v), 'כשכבוי, הוא מחכה בדף הבית.'),
       choices('בראש השיחה', [['icon', 'הדמות כאייקון'], ['animated', 'הדמות חיה']], dp.header || 'icon', (v) => set('header', v)),
+      choices('בלשונית הסגורה', [['icon', 'הראש כאייקון'], ['animated', 'דיוקן הראש חי']], dp.tabFace || 'icon', (v) => set('tabFace', v)),
       el('h3', {}, 'הדמות'),
       el('p', { class: 'muted small' }, takes ? 'כל הדמויות לבחירה, גם דמויות 💎 – במשפחה.' : shopOpen ? 'רוב הדמויות חינם. דמויות 💎 קונים פעם אחת.' : 'רוב הדמויות חינם.'),
       family ? el('div', { class: 'st-skins' }, card('ibn_ezra', 'רַאבַּ"ע', 'של המשפחה שלנו', el('img', { class: 'st-skin-pic', src: '/assets/ibn-ezra-face.webp', alt: '', width: 64, height: 64 }))) : null,

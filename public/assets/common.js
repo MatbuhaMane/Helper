@@ -546,7 +546,7 @@
       // the family vault (data-vault): no player, no capture – nothing from outside runs next to the documents
       const vault = document.body.dataset.vault === '1';
       if (!r.offline && !embedded && !vault && swOn('music')) loadMusic();
-      if (!r.offline && !vault && swOn('capture')) loadCapture();
+      if (!r.offline && !vault && swOn('capture') && document.body.dataset.capture === 'on') loadCapture();   // only pages that ask for it (owner 2026-11-15: not everywhere; the reading in /parasha/ has its own bar)
       if (!r.offline && !vault && !embedded && swOn('messages')) loadOnce('/assets/messages.js').catch(() => {});   // the owner's messages to everyone
       if (!r.offline && !vault && !embedded && swOn('reports')) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
       if (!r.offline && !vault && !embedded && swOn('dm')) loadOnce('/assets/dm.js').catch(() => {});         // messages between members: the dot and the menu entry (server/dm.ts)
@@ -835,7 +835,7 @@
   }
   /** Ibn Ezra lives in his tent on the home page; he shows up on other screens only after he was asked to come along (follow). */
   const DAEMON_DEFAULTS = { speak: true, follow: false, minimized: false, rate: 1.2 };
-  /** Marked text anywhere can be saved as a note (also inside the songbook's window). */
+  /** Marked text can be saved as a note, only on a page with <body data-capture="on"> (none today; the parasha reading has its own bar). */
   function loadCapture() { if (!document.querySelector('script[src="/assets/capture.js"]')) document.head.append(el('script', { src: '/assets/capture.js' })); }
   /** The music player lives in the menu of every screen (its script and styles load after the menu is drawn). */
   function loadMusic() {

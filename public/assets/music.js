@@ -393,7 +393,8 @@
   function centreOf(n) { const r = n.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width }; }
   function placeDock() {
     const c = centreOf(slot());
-    float.style.setProperty('--dock-size', Math.round(c.w * 0.72) + 'px');
+    float.style.setProperty('--dock-size', Math.round(c.w * 1.05) + 'px');   // the owner, 2026-11-15: bigger on the tree
+    float.style.setProperty('--drag-size', Math.round(c.w * 0.72) + 'px');   // ...and the small record it used to be, while it is carried
     const r = float.getBoundingClientRect();
     float.style.left = (c.x - r.width / 2) + 'px'; float.style.top = (c.y - r.height / 2) + 'px';   // (not kept on screen: it goes with the stump)
   }
@@ -423,7 +424,9 @@
   function startDrag(e, grab) {
     if (P.mode === 'stump') { P.folded = true; float.classList.remove('on-stump'); document.body.classList.remove('mu-docked'); }
     if (P.mode !== 'float') { P.chose = true; autoStump = null; P.mode = 'float'; save(); paintModes(false); }
-    float.classList.add('dragging');
+    const was = float.getBoundingClientRect(), wasFolded = float.classList.contains('folded');
+    float.classList.add('folded', 'dragging');   // carried, it is always the small record
+    { const now = float.getBoundingClientRect(); if (was.width && now.width) grab = { x: grab.x * now.width / was.width, y: grab.y * now.height / was.height }; }
     document.body.classList.add('mu-dragging');
     try { float.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
     let zone = null;
@@ -437,6 +440,7 @@
     const up = (ev) => {
       window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
       float.classList.remove('dragging');
+      if (!wasFolded && !P.folded && P.mode === 'float') float.classList.remove('folded');
       document.body.classList.remove('mu-dragging', 'mu-drop-menu', 'mu-drop-left', 'mu-drop-right');
       justDragged = true; setTimeout(() => { justDragged = false; }, 50);
       const near = slot() && (() => { const c = centreOf(slot()), f = centreOf(float); return Math.hypot(c.x - f.x, c.y - f.y) < 60; })();

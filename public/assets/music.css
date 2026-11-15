@@ -178,8 +178,10 @@ body.mu-drop-left::before, body.mu-drop-right::after { scale: 1 1; background: c
    music.js docks it (.on-stump, --dock-size = the stump's slot), a tap plays or stops, dragging takes it away again */
 .mu-float.folded.on-stump { animation: none; cursor: pointer; }
 .mu-float.folded.on-stump .mu-record { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, .32)); }
-.mu-float.folded.on-stump .mu-record .mu-art { inline-size: var(--dock-size, 56px); block-size: var(--dock-size, 56px); rotate: -14deg; transition: rotate var(--dur-settle) var(--ease-spring); }
-.mu-float.folded.on-stump:hover .mu-record .mu-art { rotate: -4deg; }
+.mu-float.folded.on-stump .mu-record .mu-art { inline-size: var(--dock-size, 56px); block-size: var(--dock-size, 56px); rotate: -28deg; transition: rotate var(--dur-settle) var(--ease-spring); }
+.mu-float.folded.on-stump:hover .mu-record .mu-art { rotate: -12deg; }
+/* carried: always the record, at the small size it had on the tree */
+.mu-float.folded.dragging .mu-record .mu-art { inline-size: var(--drag-size, 56px); block-size: var(--drag-size, 56px); rotate: 0deg; }
 @media (prefers-reduced-motion: reduce) { .mu-float.folded.on-stump .mu-record .mu-art { transition: none; } }
 /* folded: just the record – no card around it, a real hole in the middle, a bit bigger */
 .mu-float.folded { padding: 0; background: none; border: 0; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }

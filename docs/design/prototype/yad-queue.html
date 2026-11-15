@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>תור האישורים – אב טיפוס</title>
+  <!-- Design prototype of the owner's approval queue for יד ביד (docs/design/yad-queue.md). Copy to public/ to view; the data is invented. -->
+  <link rel="stylesheet" href="/assets/base.css">
+  <link rel="stylesheet" href="/tools/yad/yad.css">
+  <style>
+    body { padding: 0 16px 90px; }
+    .proto-nav { position: sticky; top: 0; z-index: 50; display: flex; gap: 6px; overflow-x: auto; padding: 10px 0; background: var(--bg); scrollbar-width: none; }
+    .proto-nav button { flex: none; }
+    [data-screen][hidden] { display: none; }
+  </style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="yd-hand" viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V13M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.8-2.4L4.5 14.5a1.6 1.6 0 0 1 2.6-1.9L8 14"/></symbol>
+  <symbol id="yd-leaf" viewBox="0 0 24 24"><path d="M12 20.5v-8M12 12.5C12 8.6 9.2 6.5 5 6.5c0 3.9 2.8 6 7 6ZM12 14.5c0-3.2 2.4-5.2 6.5-5.2 0 3.2-2.4 5.2-6.5 5.2Z"/></symbol>
+  <symbol id="yd-tent" viewBox="0 0 24 24"><path d="M3.5 19.5 12 5l8.5 14.5ZM12 19.5l-2.5-5h5Z"/></symbol>
+  <symbol id="yd-flag" viewBox="0 0 24 24"><path d="M6 20V4M6 5h11l-2 4 2 4H6"/></symbol>
+  <symbol id="yd-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+</svg>
+
+<nav class="proto-nav" aria-label="מסכי אב הטיפוס">
+  <button class="chip" data-go="queue" aria-pressed="true">התור של הבעלים</button>
+  <button class="chip" data-go="mine">אצל האדם</button>
+  <button class="chip" data-go="create">יצירת צורך מהקופה</button>
+  <button class="chip" data-go="board">בלוח</button>
+</nav>
+
+<!-- ============ 1. the queue (inside "ממתין לאישור", filtered to יד ביד) ============ -->
+<main class="yd" data-screen="queue" style="display:grid;gap:14px;padding-block-start:8px">
+  <div class="yd-qhead"><h1 style="font-size:1.4rem">ממתין לאישור</h1><span class="yd-qcount" aria-label="6 ממתינים">6</span></div>
+  <div class="yd-qfilter" role="group" aria-label="סינון">
+    <button class="chip" type="button" aria-pressed="false">הכול <b>9</b></button>
+    <button class="chip" type="button" aria-pressed="true">יד ביד <b>6</b></button>
+    <button class="chip" type="button" aria-pressed="false">משפחה <b>3</b></button>
+  </div>
+
+  <ul class="yd-qlist">
+    <!-- 4. a report: urgent -->
+    <li class="card yd-q urgent">
+      <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-flag"/></svg></span>
+        <div class="tx"><b>דיווח על שירות: "ייעוץ משפטי"</b><small>של דנה ל. · דווח על ידי נועם ש. · לפני שעה</small>
+          <span class="yd-tags"><span class="yd-tag pend">מתחזה לבעל רישיון</span><span class="yd-tag">לפי הצהרת המשתמש</span></span></div></div>
+      <p class="why"><small>מה נכתב בדיווח</small>אין לה רישיון, ביקשה ממני ייפוי כוח.</p>
+      <div class="yd-qacts three">
+        <div class="row2"><button class="btn" type="button">להסיר את השירות</button><button class="btn no" type="button">להסיר את האדם</button></div>
+        <button class="btn ghost" type="button">לדחות את הדיווח</button>
+      </div>
+    </li>
+
+    <!-- 2. a need outside the list -->
+    <li class="card yd-q urgent">
+      <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-hand"/></svg></span>
+        <div class="tx"><b>צורך שלא ברשימה: תיקון מחשב נייד</b><small>של יובל כ. · לפני 3 שעות</small>
+          <span class="yd-tags"><span class="yd-tag pend">הרמה המוצעת: 2</span></span></div>
+        <span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>כ-4</span></div>
+      <p class="sum"><span>קושי <b>בינוני</b></span><span>מומחיות <b>גבוהה</b></span></p>
+      <label class="yd-qadd"><input type="checkbox"><span>להוסיף לרשימה, כדי שלא יחזור לתור</span></label>
+      <div class="yd-qacts"><button class="btn primary" type="button">מאשר</button><button class="btn no" type="button" data-rej>דוחה</button></div>
+      <div class="yd-reject" hidden>
+        <label class="field" style="margin:0"><span>הסיבה, נשלחת לאדם</span><textarea placeholder="למשל: בבקשה לחלק לשני צרכים"></textarea></label>
+        <div class="row"><button class="btn ghost" type="button" data-cancel>ביטול</button><button class="btn no" type="button">שליחת הדחייה</button></div>
+      </div>
+    </li>
+
+    <!-- 3a. fund request for a person -->
+    <li class="card yd-q urgent">
+      <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span>
+        <div class="tx"><b>מהקופה: עזרה בהעברת דירה</b><small>נפתח על ידי רות ל., בשביל אורי ל. (אורי הסכים)</small>
+          <span class="yd-tags"><span class="yd-tag pend">בשביל אדם</span></span></div>
+        <span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>6</span></div>
+      <p class="why"><small>למה, רק הבעלים רואה</small>אחרי הניתוח הוא לא יכול להרים כלום.</p>
+      <div class="yd-qacts"><button class="btn primary" type="button">מאשר</button><button class="btn no" type="button" data-rej>דוחה</button></div>
+      <div class="yd-reject" hidden>
+        <label class="field" style="margin:0"><span>הסיבה, נשלחת לאדם</span><textarea></textarea></label>
+        <div class="row"><button class="btn ghost" type="button" data-cancel>ביטול</button><button class="btn no" type="button">שליחת הדחייה</button></div>
+      </div>
+    </li>
+
+    <!-- 1. a deed for the community -->
+    <li class="card yd-q">
+      <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span>
+        <div class="tx"><b>מעשה למען הקהילה: ניקוי גינה ציבורית</b><small>של מיכל ר. · דווח אתמול</small>
+          <span class="yd-tags"><span class="yd-tag">מהרשימה, רמה 1</span></span></div></div>
+      <div class="sum"><span>שעות <span class="yd-hours"><button type="button" aria-label="פחות">−</button><output>2</output><button type="button" aria-label="יותר">+</button></span></span>
+        <span>סכום <b>2</b>, מעשר <b>0.2</b></span></div>
+      <div class="yd-qacts"><button class="btn primary" type="button">מאשר</button><button class="btn no" type="button" data-rej>דוחה</button></div>
+      <div class="yd-reject" hidden>
+        <label class="field" style="margin:0"><span>הסיבה, נשלחת לאדם</span><textarea></textarea></label>
+        <div class="row"><button class="btn ghost" type="button" data-cancel>ביטול</button><button class="btn no" type="button">שליחת הדחייה</button></div>
+      </div>
+    </li>
+
+    <!-- 3b. fund request for the public -->
+    <li class="card yd-q">
+      <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span>
+        <div class="tx"><b>מהקופה: צביעת ספסלים בגן המשחקים</b><small>נפתח על ידי אבי מ.</small>
+          <span class="yd-tags"><span class="yd-tag pubgood">לטובת הציבור</span></span></div>
+        <span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>8</span></div>
+      <div class="yd-qacts"><button class="btn primary" type="button">מאשר</button><button class="btn no" type="button" data-rej>דוחה</button></div>
+      <div class="yd-reject" hidden>
+        <label class="field" style="margin:0"><span>הסיבה, נשלחת לאדם</span><textarea></textarea></label>
+        <div class="row"><button class="btn ghost" type="button" data-cancel>ביטול</button><button class="btn no" type="button">שליחת הדחייה</button></div>
+      </div>
+    </li>
+
+    <!-- 1b. a deed outside the list -->
+    <li class="card yd-q">
+      <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span>
+        <div class="tx"><b>מעשה למען הקהילה: סידור ספרייה בבית הכנסת</b><small>של שמעון ב. · לפני יומיים</small>
+          <span class="yd-tags"><span class="yd-tag pend">לא ברשימה, הרמה המוצעת: 1</span></span></div></div>
+      <div class="sum"><span>שעות <span class="yd-hours"><button type="button" aria-label="פחות">−</button><output>3</output><button type="button" aria-label="יותר">+</button></span></span>
+        <span>סכום <b>3</b>, מעשר <b>0.3</b></span></div>
+      <label class="yd-qadd"><input type="checkbox"><span>להוסיף לרשימה, כדי שלא יחזור לתור</span></label>
+      <div class="yd-qacts"><button class="btn primary" type="button">מאשר</button><button class="btn no" type="button" data-rej>דוחה</button></div>
+      <div class="yd-reject" hidden>
+        <label class="field" style="margin:0"><span>הסיבה, נשלחת לאדם</span><textarea></textarea></label>
+        <div class="row"><button class="btn ghost" type="button" data-cancel>ביטול</button><button class="btn no" type="button">שליחת הדחייה</button></div>
+      </div>
+    </li>
+  </ul>
+  <p class="yd-qdone" hidden>אין מה לאשר. כשיגיע משהו, תקבלו התראה.</p>
+</main>
+
+<!-- ============ 2. the person's side ============ -->
+<main class="yd" data-screen="mine" hidden style="display:grid;gap:14px;padding-block-start:8px">
+  <h1 style="font-size:1.4rem">הצרכים שלי</h1>
+  <ul class="yd-rows" style="list-style:none;margin:0;padding:0;display:grid;gap:12px">
+    <li class="card" style="padding:14px;display:grid;gap:8px"><div class="yd-row"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-hand"/></svg></span><div class="tx"><b>תיקון מחשב נייד</b><small>לפני 3 שעות</small><span class="yd-tags"><span class="yd-tag pend">ממתין לאישור הבעלים, רק את/ה רואה אותו</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>כ-4</span></div></li>
+    <li class="card" style="padding:14px;display:grid;gap:10px"><div class="yd-row"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>מעשה: סידור ספרייה, 3 שעות</b><small>אתמול</small><span class="yd-tags"><span class="yd-tag gone">נדחה</span></span></div></div>
+      <div class="yd-rej"><small>הסיבה של הבעלים</small><p>הספרייה סודרה כבר השבוע. אפשר לשלוח שעה אחת?</p>
+        <button class="btn primary" type="button" style="min-block-size:48px">לתקן ולשלוח שוב</button></div></li>
+  </ul>
+</main>
+
+<!-- ============ 3. create a need: from the fund + consent ============ -->
+<main class="yd" data-screen="create" hidden style="display:grid;gap:14px;padding-block-start:8px">
+  <h1 style="font-size:1.4rem">יצירת צורך</h1>
+  <label class="field" style="margin:0"><span>מה צריך</span><input value="עזרה בהעברת דירה"></label>
+  <div class="card" style="padding:14px;display:grid;gap:10px">
+    <label class="yd-switch"><span>מהקופה<small>מי שיעזור יקבל את הידיים מהקופה</small></span><input type="checkbox" checked role="switch" style="inline-size:22px;block-size:22px"></label>
+    <label class="field" style="margin:0"><span>למה, בשורה אחת. רק הבעלים רואה</span><input value="אחרי הניתוח הוא לא יכול להרים כלום"></label>
+    <div class="yd-kinds" role="group" aria-label="בשביל מי"><button class="yd-kind" type="button" aria-pressed="false">בשבילי</button><button class="yd-kind" type="button" aria-pressed="true">בשביל מישהו אחר</button><button class="yd-kind" type="button" aria-pressed="false">לטובת הציבור</button></div>
+    <label class="field" style="margin:0"><span>מי האדם</span><select><option>אורי ל.</option><option>עוד…</option></select></label>
+    <p class="yd-note"><span>אורי יקבל בקשה להסכים. הצורך יישלח לבעלים רק אחרי שהסכים, ויתפרסם רק אחרי שהבעלים אישר.</span></p>
+  </div>
+  <div class="yd-foot"><span></span><button class="btn primary" type="button">שליחה להסכמה</button></div>
+
+  <h2 style="margin-block-start:10px">אצל אורי: ההסכמה</h2>
+  <div class="yd-consent">
+    <p style="margin:0"><b>רות ל. מבקשת עזרה בשבילך</b></p>
+    <p style="margin:0">"עזרה בהעברת דירה", מהקופה. האם להמשיך?</p>
+    <p class="yd-anon" style="margin:0">הסיבה שכתבה רות נשארת אצל הבעלים בלבד.</p>
+    <div class="yd-qacts"><button class="btn primary" type="button">מסכים/ה</button><button class="btn no" type="button">לא מסכים/ה</button></div>
+  </div>
+</main>
+
+<!-- ============ 4. the board: marks ============ -->
+<main class="yd" data-screen="board" hidden style="display:grid;gap:14px;padding-block-start:8px">
+  <h1 style="font-size:1.4rem">לוח הדרושים</h1>
+  <ul class="yd-qlist">
+    <li class="card yd-need"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span><div class="tx"><b>צביעת ספסלים בגן המשחקים</b><small>מבשרת ציון · עד 5 ק"מ</small><span class="yd-tags"><span class="yd-tag pubgood">לטובת הציבור</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>8</span></div><div class="go"><button class="yd-link rep" type="button">דיווח</button><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+    <li class="card yd-need"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>ניקוי הגינה הציבורית</b><small>מאת האוהל · עד 5 ק"מ</small><span class="yd-tags"><span class="yd-tag ohel">מאת האוהל</span><span class="yd-tag pubgood">לטובת הציבור</span><span class="yd-tag">חוזר כל חודש</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>4</span></div><div class="go"><span></span><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+  </ul>
+</main>
+
+<script>
+  const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  $$('[data-go]').forEach(b => b.addEventListener('click', () => {
+    $$('[data-go]').forEach(x => x.setAttribute('aria-pressed', x === b));
+    $$('[data-screen]').forEach(s => s.hidden = s.dataset.screen !== b.dataset.go);
+  }));
+  $$('[data-rej]').forEach(b => b.addEventListener('click', () => { const c = b.closest('.yd-q'); $('.yd-reject', c).hidden = false; $('.yd-qacts', c).hidden = true; }));
+  $$('[data-cancel]').forEach(b => b.addEventListener('click', () => { const c = b.closest('.yd-q'); $('.yd-reject', c).hidden = true; $('.yd-qacts', c).hidden = false; }));
+  $$('.yd-hours').forEach(h => { const o = $('output', h); $$('button', h).forEach((b, i) => b.addEventListener('click', () => { o.textContent = Math.max(.5, +o.textContent + (i ? .5 : -.5)); })); });
+  $$('.yd-kind').forEach(k => k.addEventListener('click', () => { $$('.yd-kind', k.parentNode).forEach(x => x.setAttribute('aria-pressed', x === k)); }));
+</script>
+</body>
+</html>

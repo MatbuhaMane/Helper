@@ -178,3 +178,46 @@ a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
 .yd-check.yd-decl span small { display: block; margin-block-start: 2px; }
 .yd-rules { margin: 0; padding-inline-start: 22px; display: grid; gap: 12px; }
 .yd-rules li::marker { color: var(--primary); font-weight: 600; }
+
+/* ---------- the owner's approval queue (batch 39): the "יד ביד" filter inside "ממתין לאישור" ---------- */
+.yd-qhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.yd-qcount { display: inline-flex; align-items: center; justify-content: center; min-inline-size: 28px; block-size: 28px; padding-inline: 8px; border-radius: 999px; color: var(--exp); background: color-mix(in srgb, var(--exp) 14%, var(--card)); border: 1px solid color-mix(in srgb, var(--exp) 45%, transparent); font-weight: 700; font-size: .9rem; }
+.yd-qfilter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 4px; margin-inline: -16px; padding-inline: 16px; }
+.yd-qfilter .chip { flex: none; min-block-size: 44px; display: inline-flex; align-items: center; gap: 6px; }
+.yd-qfilter .chip b { font-weight: 700; opacity: .8; }
+.yd-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 880px) { .yd-qlist { grid-template-columns: 1fr 1fr; align-items: start; } }
+.yd-q { padding: 14px; display: grid; gap: 10px; }
+.yd-q.urgent { border-inline-start: 4px solid var(--exp); }
+.yd-q > .top { display: flex; align-items: flex-start; gap: 12px; }
+.yd-q .tx { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.yd-q .tx b { font-weight: 500; }
+.yd-q .tx small { color: var(--muted); font-size: .86rem; }
+.yd-q .why { margin: 0; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--exp) 8%, var(--card)); font-size: .9rem; }
+.yd-q .why small { display: block; color: var(--muted); margin-block-end: 2px; }
+.yd-q .sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: .9rem; color: var(--muted); }
+.yd-q .sum b { color: var(--text); font-weight: 600; }
+.yd-hours { display: inline-flex; align-items: center; gap: 2px; }
+.yd-hours button { inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); font: inherit; font-size: 1.2rem; cursor: pointer; }
+.yd-hours output { min-inline-size: 3.2ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.yd-qacts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yd-qacts .btn { min-block-size: 48px; justify-content: center; }
+.yd-qacts .btn.no { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.yd-qacts.three { grid-template-columns: 1fr; }
+.yd-qacts.three .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yd-qadd { display: flex; align-items: center; gap: 10px; min-block-size: 44px; font-size: .92rem; }
+.yd-qadd input { inline-size: 22px; block-size: 22px; flex: none; accent-color: var(--primary); }
+.yd-reject { display: grid; gap: 8px; padding-block-start: 10px; border-block-start: 1px dashed var(--line-strong); }
+.yd-reject textarea { min-block-size: 64px; }
+.yd-reject .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yd-qdone { text-align: center; color: var(--muted); padding: 6px 0; }
+
+/* the person's side: waiting, rejected with a reason, and the consent step */
+.yd-rej { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--danger) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
+.yd-rej small { color: var(--muted); }
+.yd-rej p { margin: 0; }
+.yd-consent { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: color-mix(in srgb, var(--primary) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent); }
+.yd-consent .yd-qacts { margin-block-start: 2px; }
+.yd-tag.pubgood { --tg: var(--yd-pub); }
+.yd-tag.ohel { --tg: var(--olive); }
+@media (prefers-reduced-motion: reduce) { .yd-hours button, .yd-qfilter .chip { transition: none; } }

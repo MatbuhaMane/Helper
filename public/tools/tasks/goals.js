@@ -32,6 +32,68 @@
     return b;
   };
 
+  /* ---------- goals part 2 (docs/design/goals-2.md, server/goals-advice.ts): the consultation window, "שמור מסקנה" and "עזור לי להגדיר".
+     One component for both. The conversation stays only in memory (nothing of it is stored; only a pinned conclusion is) and the last
+     eight messages go along for context. Free messages a day are shown; beyond them the person may go on in credits. */
+  function askBox({ url, extra = {}, empty, chips = [], note = 'חינם עד מכסה יומית.', onKeep, onDraft }) {
+    const hist = [];
+    const log = el('div', { class: 'gl-ask-log', role: 'log', 'aria-live': 'polite' }, el('p', { class: 'gl-ask-empty' }, empty));
+    const quota = el('span', { class: 'gl-quota' });
+    const paintQuota = (used, free) => { quota.textContent = used >= free ? 'המכסה היומית נגמרה' : `נשארו ${free - used} היום`; quota.classList.toggle('low', free - used <= 2); };
+    api('/api/goals/ask').then((q) => paintQuota(q.used, q.free)).catch(() => {});
+    const say = (who, text) => { log.querySelector('.gl-ask-empty')?.remove(); const m = el('p', { class: 'gl-say ' + who, dir: 'auto' }, text); log.append(m); log.scrollTop = log.scrollHeight; return m; };
+    const ta = el('textarea', { rows: 2, dir: 'auto', 'aria-label': 'שאלה', placeholder: 'כתבו כאן…' });
+    const send = el('button', { class: 'gl-ask-send', type: 'submit', 'aria-label': 'שליחה' }, '↑');
+    let busy = false;
+    async function go(q, paid = false) {
+      q = q.trim();
+      if (busy || !q) return;
+      if (await noAi()) return invite();
+      busy = true; send.disabled = true;
+      const me = say('me', q);
+      const typing = el('p', { class: 'gl-say ai typing', 'aria-label': 'חושב' }, el('i'), el('i'), el('i')); log.append(typing); log.scrollTop = log.scrollHeight;
+      let again = false;
+      try {
+        const r = await api(url, { body: { ...extra, q, history: hist.slice(-8), paid } });
+        typing.remove(); paintQuota(r.used, r.free);
+        hist.push({ r: 'me', t: q }, { r: 'ai', t: r.answer });
+        const m = say('ai', r.answer);
+        if (onKeep) {
+          const keep = el('button', { class: 'gl-keep', type: 'button', 'aria-pressed': 'false', onclick: async () => {
+            if (keep.getAttribute('aria-pressed') === 'true') return;
+            keep.disabled = true;
+            try { await onKeep(r.answer); keep.setAttribute('aria-pressed', 'true'); keep.textContent = 'נשמר במטרה'; } catch (e) { toast(e.message || 'לא נשמר'); }
+            keep.disabled = false;
+          } }, 'שמור מסקנה');
+          m.append(keep);
+        }
+        if (r.draft && onDraft) log.append(onDraft(r.draft));
+        log.scrollTop = log.scrollHeight;
+        ta.value = '';
+      } catch (e) {
+        typing.remove(); me.remove();
+        if (e.code === 'quota_done') again = confirm('המכסה היומית בחינם נגמרה. להמשיך בקרדיט?');
+        else if (e.status === 402) invite();
+        else toast(e.status === 503 || e.status === 502 ? 'העוזר החכם לא זמין כרגע. נסו שוב עוד רגע.' : e.message || 'לא הצלחתי');
+      }
+      busy = false; send.disabled = false;
+      if (again) go(q, true);
+    }
+    const form = el('form', { class: 'gl-ask-form', onsubmit: (e) => { e.preventDefault(); go(ta.value); } }, ta, send);
+    ta.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); go(ta.value); } });
+    return el('section', { class: 'gl-ask card' },
+      el('div', { class: 'gl-ask-head' }, el('h2', {}, 'התייעצות'), quota), log,
+      chips.length ? el('div', { class: 'gl-ask-chips' }, chips.map((c) => el('button', { type: 'button', onclick: () => go(c) }, c))) : null,
+      form, el('p', { class: 'gl-ask-note' }, note));
+  }
+  /** what was pinned to a goal: "מה החלטנו" */
+  function pinsCard(g) {
+    if (!g.notes?.length) return null;
+    return el('section', { class: 'card gl-pins' }, el('h2', {}, 'מה החלטנו'), el('ul', {}, g.notes.map((n) => el('li', { class: 'gl-pin' },
+      el('p', { dir: 'auto' }, n.text), el('small', {}, new Date(n.at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })),
+      el('button', { type: 'button', 'aria-label': 'הסר מסקנה', onclick: async () => { await api(`/api/goals/notes/${n.id}`, { method: 'DELETE' }).catch(() => {}); await load(); } }, '×')))));
+  }
+
   /* ---------- speaking instead of typing: the browser's own speech-to-text (on the device, no AI) ---------- */
   const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
   function mic(target) {
@@ -225,6 +287,10 @@
         el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuenow': String(pct), 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-label': 'התקדמות', style: 'block-size:10px' },
           el('span', { style: `inline-size:${pct}%` }))),
       ...g.processes.map((pr, i) => processCard(g, pr, i)),
+      pinsCard(g),
+      askBox({ url: '/api/goals/ask', extra: { goal: g.id }, empty: 'שאלו על המטרה או על הצעדים: מה הצעד הבא, איך מתחילים, מה עושים כשנתקעים.',
+        chips: ['מה הצעד הבא?', 'נתקעתי, מה עושים?', 'האם התוכנית סבירה?'],
+        onKeep: async (text) => { await api(`/api/goals/${g.id}/notes`, { body: { text } }); } }),
       el('div', { style: ROW },
         el('button', { class: 'btn small', type: 'button', onclick: async () => {
           const title = prompt('שם התהליך החדש:'); if (!title?.trim()) return;
@@ -327,6 +393,15 @@
           field('המטרה', el('div', { style: 'display:flex;gap:6px;align-items:start' }, t, mic(t))),
           field('למה זה חשוב לי', el('div', { style: 'display:flex;gap:6px;align-items:start' }, w, mic(w))),
           !Rec ? el('small', { class: 'muted' }, 'בדפדפן הזה אין הקלטה. אפשר לכתוב.') : el('small', { class: 'muted' }, '🎤 מקליטים במקום לכתוב: הדפדפן הופך את הדיבור לטקסט, במכשיר עצמו.'));
+        const help = el('button', { class: 'gl-helpdef btn', type: 'button', onclick: () => {
+          help.remove();
+          body.append(askBox({ url: '/api/goals/ai/define', empty: 'ספרו במילים שלכם מה אתם רוצים להשיג, ואעזור לנסח את זה.', note: 'חינם עד מכסה יומית. הנוסח המוצע לא נשמר עד שתבחרו בו.',
+            onDraft: (d) => el('div', { class: 'gl-draft' }, el('small', {}, 'הצעה לנוסח'), el('b', { dir: 'auto' }, d.title), d.why ? el('p', { dir: 'auto' }, d.why) : null,
+              el('div', { class: 'gl-draft-acts' },
+                el('button', { class: 'btn primary', type: 'button', onclick: () => { G.title = d.title; if (d.why) G.why = d.why; show(); } }, 'השתמש בנוסח'),
+                el('button', { class: 'btn', type: 'button', onclick: (e) => e.currentTarget.closest('.gl-draft').remove() }, 'נמשיך לדבר'))) }));
+        } }, '✨ עזור לי להגדיר');
+        body.append(help);
         nav.replaceChildren(el('button', { class: 'btn primary', type: 'button', onclick: () => { if (!G.title.trim()) return toast('כתבו את המטרה'); step = 2; show(); } }, 'הלאה ←'));
         setTimeout(() => t.focus(), 30);
       } else if (step === 2) {

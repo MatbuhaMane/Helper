@@ -16,6 +16,7 @@ const bundle = (entry, name) => {
 const R = await bundle('server/yad-rules.ts', 'rules.mjs');
 const L = await bundle('server/yad-ledger.ts', 'ledger.mjs');
 const G = await bundle('server/yad-gate.ts', 'gate.mjs');
+const SD = await bundle('server/yad-seed.ts', 'seed.mjs');
 
 let pass = 0, fail = 0;
 const eq = (name, got, want) => { if (JSON.stringify(got) === JSON.stringify(want)) pass++; else { fail++; console.error(`FAIL ${name}: got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`); } };
@@ -117,6 +118,18 @@ eq('every account is >= 0', neg, 0);
 eq('all balances together equal what was minted (nothing is lost or invented)', total, minted);
 const dupKeys = db.sq.prepare('SELECT COUNT(*) AS n FROM (SELECT ref, leg FROM yad_ledger GROUP BY ref, leg HAVING COUNT(*) > 1)').get().n;
 eq('no transfer key repeats', dupKeys, 0);
+
+/* ---- the catalog ---- */
+const svc = SD.SEED.filter((t) => t.kind === 'service'), dd = SD.SEED.filter((t) => t.kind === 'deed');
+const lv = (a) => ['light', 'work', 'long', 'hour'].map((id) => a.filter((t) => R.levelOf(t.d, t.e).id === id).length);
+eq('26 services and 23 deeds', [svc.length, dd.length], [26, 23]);
+eq('services by level: 5, 7, 9, 5', lv(svc), [5, 7, 9, 5]);
+eq('deeds by level: 7, 5, 7, 4', lv(dd), [7, 5, 7, 4]);
+eq('nine types ask for a licence', SD.SEED.filter((t) => t.decl === 'license').length, 9);
+eq('two rides carry the driving declaration', SD.SEED.filter((t) => t.decl === 'driving').map((t) => t.id).sort(), ['d-elder-ride', 's-ride']);
+eq('23 types have a limit line', SD.SEED.filter((t) => t.note).length, 23);
+eq('ids are unique', new Set(SD.SEED.map((t) => t.id)).size, 49);
+{ const d2 = d1(); await SD.ensureCatalog(d2); await SD.ensureCatalog(d2); eq('the catalog goes in once', d2.sq.prepare('SELECT COUNT(*) AS n FROM yad_types').get().n, 49); }
 
 console.log(`yad: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

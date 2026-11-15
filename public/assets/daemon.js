@@ -1423,20 +1423,40 @@
     stopSpeech();
     const mine = speechSeq;
     if (cloudVoice) {
-      try {
-        const r = await fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, voice: voiceName || myVoice(), figure: figureNow() }) });
-        if (r.status === 503) cloudVoice = false;          // no voice service set up: the browser's voice from now on
-        if (!r.ok) throw new Error('voice ' + r.status);
-        const blob = await r.blob();
-        if (mine !== speechSeq) return;
-        await playAudio(URL.createObjectURL(blob), mine);
-        return;
-      } catch (e) {
-        console.warn('cloud voice unavailable, using the browser voice', e);
-        if (mine !== speechSeq) return;
+      // The server's synthesis time grows with the length of the line (measured 2026-11-15: ~6 s for one sentence, ~13 s for
+      // four), so the line goes out in pieces, all asked for at once: the first is short and starts playing alone, the rest
+      // arrive while it speaks and follow in order.
+      const parts = speechParts(text);
+      const ask = (p) => fetch('/api/voice/say', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text: p, voice: voiceName || myVoice(), figure: figureNow() }) })
+        .then((r) => { if (r.status === 503) cloudVoice = false; if (!r.ok) throw new Error('voice ' + r.status); return r.blob(); });
+      const jobs = parts.map((p) => { const j = ask(p); j.catch(() => {}); return j; });
+      for (let i = 0; i < parts.length; i++) {
+        try {
+          const blob = await jobs[i];
+          if (mine !== speechSeq) return;
+          await playAudio(URL.createObjectURL(blob), mine);
+        } catch (e) {
+          console.warn('cloud voice unavailable, using the browser voice', e);
+          if (mine !== speechSeq) return;
+          browserSpeak(parts.slice(i).join(' '));
+          return;
+        }
       }
+      return;
     }
     browserSpeak(text);
+  }
+  /** The line in pieces for the voice: the first sentence alone (cut at a comma if it is long), the rest in pieces of about 160 characters. */
+  function speechParts(text) {
+    const sentences = (text.match(/[^.!?…\n]+[.!?…]*\s*/g) || [text]).map((s) => s.trim()).filter(Boolean);
+    const out = [];
+    let first = sentences.shift() || text;
+    if (first.length > 110) { const cut = first.lastIndexOf(',', 90); if (cut > 30) { sentences.unshift(first.slice(cut + 1).trim()); first = first.slice(0, cut + 1); } }
+    out.push(first);
+    let cur = '';
+    for (const s of sentences) { if (cur && (cur + ' ' + s).length > 160) { out.push(cur); cur = s; } else cur = cur ? cur + ' ' + s : s; }
+    if (cur) out.push(cur);
+    return out;
   }
   async function playAudio(url, mine) {
     const a = new Audio(url);
@@ -1452,9 +1472,10 @@
       src.connect(analyser); analyser.connect(audioCtx.destination);
     } catch (_) { analyser = null; }
     a.playbackRate = rate(); a.preservesPitch = true;
-    a.onended = () => { if (audioEl === a) audioEl = null; URL.revokeObjectURL(url); };
+    const done = new Promise((res) => { a.onended = () => { if (audioEl === a) audioEl = null; URL.revokeObjectURL(url); res(); }; a.onpause = () => { if (audioEl !== a) res(); }; });
     if (mine !== speechSeq) return;
     await a.play();
+    await done;   // the next piece starts when this one ends (or when speech was stopped)
   }
   /** Called every frame: while audio plays, its loudness makes the speaking beats. */
   function voiceBeat() {

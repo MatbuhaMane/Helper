@@ -660,3 +660,8 @@ LCP has not moved yet. The causes:
 - All edge tabs (companion, music, admin) are soft capsules and move side to side; admin tab drag is new (`helper.adminEdge`).
 - Sky: ray-less sun disc (`sun-disc.webp`), sun and moon ~1.3x, tick ring is a circle that lags behind like a compass, white floor compass rotating with the cushions.
 - Not tested: sun in daylight, desktop width, light/dark, tools/audit.js, reduced motion. `sw.js` precache lists sun-core.webp, not sun-disc.webp (CEO). Edits touched design/master-owned CSS and index.html.
+
+## 2026-11-15 — voice delay
+- Measured (dev, Gemini TTS): server synthesis grows with length: ~6 s for one sentence, ~13.5 s for four; download is negligible; cached line 19 ms. The old client asked for the whole reply as one piece.
+- Fix (daemon.js `speak`/`speechParts`/`playAudio`): the reply goes out in pieces asked for at once; the first sentence plays alone (first audio ~7 s instead of ~13.5 s for a four-sentence reply), the rest arrive while it speaks. server/ai.ts and voice.ts untouched.
+- Remaining floor ~6 s per fresh sentence (niqqud call + TTS call, serial on the server). Ideas not done: cache common lines, skip niqqud for the first piece (pronunciation risk), streaming TTS.

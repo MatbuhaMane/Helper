@@ -8,7 +8,7 @@
 //   * every view, upload, change and deletion is written to the audit log; a deletion can be undone for 30 days
 // What is stored: names, titles, notes and details sealed with the vault key; files only as ciphertext (crypto.ts, store.ts).
 
-import { Ctx, HttpError, Member, body, getCookie, json, requireUser, uid } from '../core';
+import { Ctx, HttpError, Member, body, getCookie, json, rateHit, requireUser, uid } from '../core';
 import { decryptFile, encryptFile, fingerprint, newDataKey, openDataKey, seal, unseal, b64url } from './crypto';
 import { defaultStore, store, StoreName } from './store';
 import { challenge, verifyAssertion, verifyRegistration } from './webauthn';
@@ -28,14 +28,7 @@ const rpId = (ctx: Ctx) => ctx.url.hostname;
 
 /** At most `max` tries per window, per key (signing in, unlocking, uploading). */
 export async function rateLimit(ctx: Ctx, key: string, max: number, windowMs: number) {
-  const now = Date.now();
-  const row = await ctx.env.DB.prepare('SELECT count, reset_at FROM rate_hits WHERE key = ?').bind(key).first<{ count: number; reset_at: number }>();
-  if (!row || row.reset_at < now) {
-    await ctx.env.DB.prepare('INSERT INTO rate_hits (key, count, reset_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = 1, reset_at = excluded.reset_at').bind(key, now + windowMs).run();
-    return;
-  }
-  if (row.count >= max) throw new HttpError(429, 'too_many_tries');
-  await ctx.env.DB.prepare('UPDATE rate_hits SET count = count + 1 WHERE key = ?').bind(key).run();
+  await rateHit(ctx.env, key, max, windowMs);   // atomic (core.ts)
 }
 
 async function audit(ctx: Ctx, u: Member, action: string, target: string | null, personId: string | null, priv = false) {

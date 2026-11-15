@@ -78,3 +78,6 @@ There is no other button. The modal's own ✕ closes it.
 **On the tools page and the ring:** the tag is `span.tag-exp` with the flask, placed as in `docs/design/arrange.md` §2:
 - the last child of the `.app` link;
 - inside `.wheel-item .pillow`, after the img.
+
+## `hand.svg`: the internal economy, the "יד" token (vision batch 32)
+Two hands (green and red cuffs) reach toward each other, a sprout grows between them, and ten small dots run to a stone well, the last one gold: a tenth goes to the shared well. No coin, no gold disc: it must not read as money. Same style as the others (320×240, ink outline, keeps its colours at night). Source: `hand_ideas()` in `docs/design/soon/soon.py`. The `id` in `H.SOON`/`H.FUTURE` is `hand`; the item is the CEO's. Title: "כלכלה פנימית: יד".

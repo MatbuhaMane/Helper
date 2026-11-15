@@ -62,13 +62,6 @@
   </main>
   <script src="/assets/common.js"></script>
   <script src="/assets/gate.js"></script>
-  <script>
-    H.header('סידור המחשב', '💻');
-    H.requireLogin().then(() => H.gate('/pc/'));   // a beta app: only for whom the back door opened it
-    document.getElementById('copy').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(document.getElementById('rules').textContent); H.toast('ההוראות הועתקו ✓'); }
-      catch (_) { H.toast('סמני את הטקסט והעתיקי ידנית'); }
-    });
-  </script>
+  <script src="/pc/pc-page.js"></script>
 </body>
 </html>

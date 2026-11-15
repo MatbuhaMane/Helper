@@ -1307,3 +1307,31 @@ html { -webkit-tap-highlight-color: transparent; }
 /* press feedback on what had none: chips, tabs, the window's close, menu rows, bar links (a short give, 120 ms, on transform) */
 :where(.tabs button, .modal-close, .topnav a, .nav-menu, .lp-menu > button, .tr-menu button):not(:disabled) { transition: transform var(--dur-press) var(--ease-river); }   /* (.chip and .navmenu a carry transform in their own transition) */
 :where(.chip, .tabs button, .modal-close, .navmenu a, .topnav a, .nav-menu, .lp-menu > button, .tr-menu button):not(:disabled):active { transform: scale(.96); }
+
+/* the pillows: each picture keeps its own shape before it loads (so nothing jumps, and the audit sees a size) */
+img[src$="/pillows/p01.webp"] { aspect-ratio: 270 / 250; }
+img[src$="/pillows/p02.webp"] { aspect-ratio: 351 / 250; }
+img[src$="/pillows/p03.webp"] { aspect-ratio: 331 / 250; }
+img[src$="/pillows/p04.webp"] { aspect-ratio: 420 / 247; }
+img[src$="/pillows/p05.webp"] { aspect-ratio: 303 / 250; }
+img[src$="/pillows/p06.webp"] { aspect-ratio: 349 / 250; }
+img[src$="/pillows/p07.webp"] { aspect-ratio: 340 / 250; }
+img[src$="/pillows/p08.webp"] { aspect-ratio: 420 / 216; }
+img[src$="/pillows/p09.webp"] { aspect-ratio: 304 / 250; }
+img[src$="/pillows/p10.webp"] { aspect-ratio: 331 / 250; }
+img[src$="/pillows/p11.webp"] { aspect-ratio: 357 / 250; }
+img[src$="/pillows/p12.webp"] { aspect-ratio: 380 / 250; }
+img[src$="/pillows/p13.webp"] { aspect-ratio: 348 / 250; }
+img[src$="/pillows/p14.webp"] { aspect-ratio: 348 / 250; }
+img[src$="/pillows/p15.webp"] { aspect-ratio: 420 / 190; }
+img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }
+
+/* ---------- silhouettes for a person who has not signed in yet (the owner, 2026-11-14) ----------
+   <span class="sil" data-sil="m|f|x" aria-hidden="true"></span> inside a round frame (.fv-pic, .mc-avatar, .fs-face, and the tree's faces):
+   the shape (assets/sil-m.svg, sil-f.svg, sil-x.svg) is a mask, so it takes the frame's own colour and is right in light and dark.
+   The same files also work as a plain <img src="/assets/sil-x.svg"> (a warm brown). Initials stay for someone who has them to show. */
+.sil { display: block; inline-size: 100%; block-size: 100%; background-color: currentColor; opacity: .72;
+  -webkit-mask: url(/assets/sil-x.svg) center bottom / 86% no-repeat; mask: url(/assets/sil-x.svg) center bottom / 86% no-repeat; }
+.sil[data-sil="m"] { -webkit-mask-image: url(/assets/sil-m.svg); mask-image: url(/assets/sil-m.svg); }
+.sil[data-sil="f"] { -webkit-mask-image: url(/assets/sil-f.svg); mask-image: url(/assets/sil-f.svg); }
+:is(.fv-pic, .mc-avatar, .fs-face, .tr-face) > .sil { align-self: end; }

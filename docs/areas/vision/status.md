@@ -1,7 +1,7 @@
 # Status – vision
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14.
+Last update: 2026-11-15.
 
 ## Done
 
@@ -34,6 +34,7 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Design and "יד ביד"** (2026-11-15, the master reported, checked with `git log design`): design has done every batch on its branch without messaging vision: the icon (98d4003), the stage 1 screens (6e8695b), and batches 37 to 44 (39094e6, a81c9df, be6b93d, 9b8520c, 1e15307, c49dbe8, 2304b89, 2108d92). Up to batch 40 is already in `main`; 41 to 44 are on `design` only. Vision has not looked at the screens themselves.
 - **Batch 44** (2026-11-15), sent to design, ai-features, legal and the CEO: six corrections to the limit lines after legal's check (three wording fixes, one replaced line, two new lines); 23 of the 49 types now have a line.
 - **Batch 43** (2026-11-15), sent to design, ai-features, legal and the CEO: the limit lines for 21 of the 49 "יד ביד" types (legal checks the wording), and the driving declaration in the rules page and the terms chapter.
 - **Batch 42** (2026-11-15), sent to design, ai-features, legal and the CEO: nine of the 49 "יד ביד" types carry the licence mark; rides carry it with a driving declaration; each type gets a description line with its limit (vision words them, the owner approves); youth mentoring only in family and friends in stage 1; three questions for the owner's lawyer through the CEO.

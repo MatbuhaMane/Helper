@@ -159,3 +159,4 @@
 - 2026-11-15: the owner approved the limit lines for 21 types and legal's two lines on the driving declaration; decisions.md entry written; batch 43 sent to design, ai-features, legal and the CEO; legal asked to check the wording of the lines.
 - 2026-11-15: legal checked the limit lines: three wording fixes, one missing line (moving furniture), two optional lines; recorded in yad-beyad.md as waiting; brought to the owner. Legal sent the master the updated final terms.
 - 2026-11-15: the owner approved all six of legal's corrections to the limit lines; tables updated in yad-beyad.md; decisions.md entry written; batch 44 sent to design, ai-features, legal and the CEO.
+- 2026-11-15: the master reported that design did the "יד ביד" batches on its branch without replying; checked with git log design (icon, stage 1 screens, batches 37 to 44; up to 40 merged into main). The open item "design has not replied" is closed.

@@ -373,7 +373,7 @@
      it; the person can turn it too – drag the sun or the moon along it – and that is the app's day/night switch: let go
      with the moon up and it is night, with the sun up and it is day (until the next real sunrise or sunset). */
   function sky() {
-    const sunImg = el('img', { class: 'ball', src: '/assets/sun-core.webp', alt: '', fetchpriority: 'low' });
+    const sunImg = el('img', { class: 'ball', src: '/assets/sun-disc.webp', alt: '', fetchpriority: 'low' });
     const sun = el('button', { class: 'sun', type: 'button', 'aria-label': 'השמש – לחיצה: זמני היום; גרירה: מעבר ללילה' },
       el('span', { class: 'halo' }), sunImg);
     const moonImg = el('img', { src: MOON_ART + moonArt(moonPhase()) + '.webp', alt: '', fetchpriority: 'low' });
@@ -384,7 +384,7 @@
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     path.setAttribute('class', 'orbit-path'); path.setAttribute('aria-hidden', 'true');
     // a tick gauge (design, 2026-11-15): two ellipses on pathLength 360, a short tick every 5 units and a long one every 30; the dashes are the ticks
-    path.innerHTML = '<ellipse fill="none" pathLength="360" stroke-width="9" stroke-dasharray="0.6 4.4" stroke-dashoffset="0.3"/><ellipse fill="none" pathLength="360" stroke-width="17" stroke-dasharray="1 29" stroke-dashoffset="0.5"/>';
+    path.innerHTML = '<circle fill="none" pathLength="360" stroke-width="9" stroke-dasharray="0.6 4.4" stroke-dashoffset="0.3"/><circle fill="none" pathLength="360" stroke-width="17" stroke-dasharray="1 29" stroke-dashoffset="0.5"/>';
     // a quiet night sky: a few stars, each twinkling at its own pace
     const stars = el('div', { class: 'stars', 'aria-hidden': 'true' });
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -446,7 +446,7 @@
         box.style.translate = `${(-pr.left).toFixed(1)}px ${(-(hp.top + scrollY)).toFixed(1)}px`;
       }
       const r = { top: cr.top, height: cr.height, width: cr.width, left: cr.left - sx, right: cr.right - sx };
-      const size = innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124;
+      const size = Math.round((innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124) * 1.3);   // the sun's ball without its rays, about twice as big (the owner, 2026-11-15)
       const appbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--appbar-h')) || 56;
       const cy = campTop + r.height * 0.465;   // the horizon: across the tent, at the height of its eaves
       const edge = size / 2 + 8;
@@ -461,6 +461,17 @@
 
     /* the angle of the sun on the orbit: 0 rising (right), π setting (left); the moon is always half an orbit away */
     let A = 0, tween = null, held = null, sink = 0;
+    /* the ring of ticks follows the turn late, like a compass needle: ringA chases A */
+    let ringA = 0, ringRaf = 0;
+    const ringStill = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function ringPaint() { const o = (ringA * 180) / Math.PI; path.querySelectorAll('circle').forEach((c, i) => c.setAttribute('stroke-dashoffset', ((i ? 0.5 : 0.3) + o).toFixed(2))); }
+    function ringStep() {
+      ringRaf = 0;
+      ringA += (A - ringA) * 0.07;
+      if (Math.abs(A - ringA) < 0.002 || ringStill) ringA = A; else ringRaf = requestAnimationFrame(ringStep);
+      ringPaint();
+    }
+    const ringKick = () => { if (!ringRaf) ringRaf = requestAnimationFrame(ringStep); };
 
     /* The back door (the owner's way to the members' admin): a 7-second press on the sun or on the moon, or 7 taps in a row
        on one of them. The sky answers with 3 beats; then both sink, the eclipse rises, a celebration plays (fireworks, confetti,
@@ -519,7 +530,7 @@
       return Math.PI * f + (dark() ? Math.PI : 0);
     }
     function paint() {
-      const g = geo, size = g.size, ms = Math.round(size * 0.9);
+      const g = geo, size = g.size, ms = Math.round(size * 1.04);
       const S = at(A), M = at(A + Math.PI);
       sun.style.transform = `translate(${S.x.toFixed(1)}px, ${(S.y + sink).toFixed(1)}px)`;
       moon.style.transform = `translate(${M.x.toFixed(1)}px, ${(M.y + sink).toFixed(1)}px)`;
@@ -535,15 +546,17 @@
       const up = sinS >= 0 ? S : M;
       box.style.setProperty('--sun-x', ((up.x / innerWidth) * 100).toFixed(1) + '%');
       box.style.setProperty('--sun-y', ((up.y / g.height) * 100).toFixed(1) + '%');
+      ringKick();
     }
     function place() {
       geo = geometry();
       const g = geo;
       box.style.blockSize = g.height + 'px';
       box.style.setProperty('--sun-size', g.size + 'px');
-      box.style.setProperty('--moon-size', Math.round(g.size * 0.9) + 'px');
+      box.style.setProperty('--moon-size', Math.round(g.size * 1.04) + 'px');
       path.setAttribute('width', innerWidth); path.setAttribute('height', g.height);
-      path.querySelectorAll('ellipse').forEach((e) => { e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('rx', g.rx); e.setAttribute('ry', g.ry); });
+      path.querySelectorAll('circle').forEach((e) => { e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('r', g.ry); });   // round: as wide as the orbit is high
+      ringA = A; ringPaint();
       const s = H.sunNow(), now = Date.now(), night = dark();
       const real = night === !s.day;
       const tw = real && !night ? Math.max(0, 1 - Math.min(Math.abs(now - s.rise), Math.abs(now - s.set)) / (50 * 60e3)) : 0;
@@ -578,7 +591,7 @@
       const src = MOON_ART + moonArt(m) + '.webp';
       if (!moonImg.src.endsWith(src)) moonImg.src = src;
       const ec = eclipseAt(now);
-      const sunSrc = ec?.kind === 'solar' ? '/assets/eclipse.webp' : '/assets/sun-core.webp';
+      const sunSrc = ec?.kind === 'solar' ? '/assets/eclipse.webp' : '/assets/sun-disc.webp';
       if (!sunImg.src.endsWith(sunSrc)) sunImg.src = sunSrc;
       sun.classList.toggle('eclipse', ec?.kind === 'solar');
       moon.classList.toggle('eclipse', ec?.kind === 'lunar');
@@ -637,7 +650,7 @@
       const row = el('div', { class: 'sky-acts' },
         el('button', { class: 'btn small', type: 'button', onclick: () => { card.remove(); H.chooseTheme(!night); } }, night ? 'מעבר ליום' : 'מעבר ללילה'),
         real ? null : el('button', { class: 'btn small primary', type: 'button', title: 'בחזרה ליום או ללילה של השעה הזאת', onclick: () => { card.remove(); H.chooseTheme(!s.day); } },
-          el('img', { src: s.day ? '/assets/sun-core.webp' : '/assets/moon.webp', alt: '', width: 18, height: 18, loading: 'lazy' }), 'חזרה למצב האמיתי'));
+          el('img', { src: s.day ? '/assets/sun-disc.webp' : '/assets/moon.webp', alt: '', width: 18, height: 18, loading: 'lazy' }), 'חזרה למצב האמיתי'));
       card.append(row);
     }
     sun.addEventListener('click', () => { if (sun.justTurned) return; sun.classList.remove('flash'); void sun.offsetWidth; sun.classList.add('flash'); if (H.weather?.open) return H.weather.open(sun); sunCard(sun); addControls(document.querySelector('.sun-card')); });
@@ -928,9 +941,21 @@
     const items = list.map((a, i) => el('a', { class: 'wheel-item', href: a.href, 'data-guide': 'app-' + a.ic, 'data-guide-label': a.name, style: `--c2:${a.c2}`, draggable: 'false' },
       el('span', { class: 'pillow' }, el('img', { src: `/assets/pillows/${a.pillow}.webp`, alt: '', draggable: 'false', decoding: 'async', loading: 'lazy' }), el('span', { class: 'badge' }, H.appIcon(a.ic)), H.expTag(a)),
       el('b', { class: 'label' }, swell(a.name))));
+    // the compass on the floor (the owner, 2026-11-15): white and faint, turns with the cushions and a beat behind them, like a needle
+    const NS = 'http://www.w3.org/2000/svg', compass = document.createElementNS(NS, 'svg');
+    compass.setAttribute('class', 'compass'); compass.setAttribute('viewBox', '0 0 200 200'); compass.setAttribute('preserveAspectRatio', 'none');
+    compass.innerHTML = (() => {
+      const mk = (a, r1, r2, w) => { const rd = (a * Math.PI) / 180, x = (r) => (100 - r * Math.sin(rd)).toFixed(1), y = (r) => (100 + r * Math.cos(rd)).toFixed(1); return `<line x1="${x(r1)}" y1="${y(r1)}" x2="${x(r2)}" y2="${y(r2)}" stroke-width="${w}" vector-effect="non-scaling-stroke"/>`; };
+      let s = '<circle cx="100" cy="100" r="98.5" fill="none" stroke-width="1.6" stroke-dasharray="4 7" vector-effect="non-scaling-stroke"/>';
+      for (let a = 0; a < 360; a += 10) s += a % 90 === 0 ? mk(a, 76, 98, 2.4) : a % 30 === 0 ? mk(a, 84, 98, 1.8) : mk(a, 90, 98, 1.2);
+      return `<g class="cmp" fill="none" stroke="currentColor" stroke-linecap="round">${s}</g>`;
+    })();
+    const cmp = compass.firstChild;
+    const turnCompass = () => cmp.setAttribute('transform', `rotate(${(-cr * step * 180 / Math.PI).toFixed(2)} 100 100)`);
+    orbit.append(compass);
     const root = el('nav', { class: 'wheel', 'aria-label': 'האפליקציות', 'aria-roledescription': 'גלגל' }, orbit, campfire(), ...items, prev, next);
     // off: how far the cushion's centre sits above the item box's centre (the ring passes through the cushions' centres)
-    let rot = reduced ? 0 : -1.6, vel = 0, goal = 0, rx = 300, ry = 60, cy = 0, off = 0, raf = 0, last = 0, drag = null, front = -1;
+    let rot = reduced ? 0 : -1.6, cr = rot, vel = 0, goal = 0, rx = 300, ry = 60, cy = 0, off = 0, raf = 0, last = 0, drag = null, front = -1;
     const mod = (n) => ((n % N) + N) % N;
 
     function measure() {
@@ -972,8 +997,9 @@
         else { vel = 0; rot += (goal - rot) * Math.min(1, dt * (reduced ? 60 : 8)); }
       }
       layout();
-      if (drag || Math.abs(vel) > 0.5 || Math.abs(goal - rot) > 0.0015) raf = requestAnimationFrame(tick);
-      else { rot = goal; layout(); raf = 0; last = 0; }
+      cr = reduced ? rot : cr + (rot - cr) * Math.min(1, dt * 3.2); turnCompass();   // a beat behind the cushions
+      if (drag || Math.abs(vel) > 0.5 || Math.abs(goal - rot) > 0.0015 || Math.abs(rot - cr) > 0.002) raf = requestAnimationFrame(tick);
+      else { rot = goal; cr = rot; layout(); turnCompass(); raf = 0; last = 0; }
     }
     const run = () => { if (!raf) raf = requestAnimationFrame(tick); };
     /** Spin to an app the shortest way round. */

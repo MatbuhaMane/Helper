@@ -126,6 +126,7 @@
     try {
       const r = await api(`/api/goals/steps/${s.id}`, { method: 'PUT', body: { done } });
       if (done) {
+        window.Nag?.done('goals', s.goal);   // a step was done: the "נודניק" repeats for this goal stop
         celebrate(r.fresh);
         const g = goalOf(s.goal);
         if (r.goalDone && g?.status === 'active') setTimeout(() => askDone(g), 300);
@@ -153,7 +154,8 @@
       el('a', { class: 'folder-back', href: '/tools/' }, '‹ כלים'),
       el('div', { style: 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap' },
         el('h1', {}, 'ניהול מטרות'),
-        el('button', { class: 'btn primary', type: 'button', onclick: () => wizard() }, '+ מטרה חדשה')),
+        el('div', { class: 'nag-row', style: 'display:flex;align-items:center;gap:8px' }, window.Nag ? Nag.bell('goals', null, 'מטרות') : null,   // "רמת הניג'וס": the tool's bell
+          el('button', { class: 'btn primary', type: 'button', onclick: () => wizard() }, '+ מטרה חדשה'))),
       D.why ? whyCard(D.why) : null,
       D.review ? el('section', { class: 'card gl-review-due' }, el('b', {}, '🗓 דקה לסיכום השבוע'), el('p', { class: 'muted', style: 'margin:0' }, 'מה הלך טוב, מה נתקע, ומה משנים. דקה אחת, לפני יום המנוחה.'),
         el('div', {}, el('button', { class: 'btn small', type: 'button', onclick: weeklyReview }, 'לסיכום'))) : null,
@@ -284,6 +286,8 @@
         el('small', { class: 'muted' }, `${KIND[g.kind]} · ${p.done} מתוך ${p.all} צעדים`, g.due ? ` · עד ${new Date(g.due).toLocaleDateString('he-IL')}` : '',
           g.days?.length ? ' · ' + g.days.map((d) => WD[d]).join(' ') : '', g.time ? ' · ' + g.time : ''),
         g.repeat ? roundLine(g) : null,
+        // this goal's own level ("רמת הניג'וס", item beats tool): a reminder goes out only for a goal that has a time
+        window.Nag ? el('div', { class: 'nag-row', style: 'display:flex;align-items:center;gap:8px;flex-wrap:wrap' }, Nag.bell('goals', g.id, g.title), g.time ? null : el('small', { class: 'muted' }, 'בלי שעה במטרה אין תזכורת.')) : null,
         el('div', { class: 'gl-bar', role: 'progressbar', 'aria-valuenow': String(pct), 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-label': 'התקדמות', style: 'block-size:10px' },
           el('span', { style: `inline-size:${pct}%` }))),
       ...g.processes.map((pr, i) => processCard(g, pr, i)),

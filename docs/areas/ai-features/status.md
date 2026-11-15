@@ -668,3 +668,9 @@ LCP has not moved yet. The causes:
 - 2026-11-15: round tabs, sky tracks separated, companion close/restore (5 s tent press). Not built: a settings-page restore.
 - 2026-11-15 voice: first short clause skips niqqud (owner OK). Local Gemini timings (niqqud+TTS vs TTS only), 3 clauses x3: before ~5.0 s (4.0-6.4), after ~2.5 s (2.3-2.7) to first audio.
 - 2026-11-15: auto spoken name (me.nameAuto) for users without nameSpoken; used in every piece incl. the first.
+
+## 2026-11-15 (late): יד ביד wired, settings restore, goal reminders
+- יד ביד stage 1 wired behind the `yad` switch: apps.js tile via YadGate (cached per tab, so it shows from the 2nd page of a session), a "יד ביד" block + count in "ממתין לאישור" (owner only), the owner push opens `/messages/#asks`. Security note in decisions.md. test-yad 109, layout 74.
+- Settings, companion section: "להחזיר את העוזר לאוהל" / "להחזיר את הנגן לאוהל", only while `daemon.closed` / `music.closed`. Checked at 375.
+- **Goal reminders (batch 31 leftover + batch 28 pushes):** a goal with a time reminds at that minute (`server/goals-remind.ts`, rules + 16 tests in `goals-remind-rules.ts`), tool `goals`, item = goal id, so the nag level decides (default quiet = the daily summary). Bells on the goals page and on each goal; a done step stops the "נודניק" repeats. Master files touched: `schema.ts` COLUMNS `goals.reminded`, `src/worker.ts` minute cron.
+- Not done: the coach (`tool: 'coach'`) sends nothing (wave 2); batch 28's shared goal in a person's tree profile with a privacy level (touches the kin privacy checks, needs the CEO's review first); Drive/NAS storage (waits for the Drive permission review). Not tested: the minute tick end to end (D1 + cron), a real push, 1280 px of the new blocks.

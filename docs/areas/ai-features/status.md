@@ -626,8 +626,8 @@ LCP has not moved yet. The causes:
 - **Not tested:** a real push with the app closed, the minute-cron repeat, quiet hours and Shabbat against live Hebcal, 1280 px, dark mode.
 
 ## 2026-11-15: batch 28, goals part 2 (consultation)
-- Built: התייעצות on a goal's page (, 10 free a day then credits, ), "שמור מסקנה" pinned to the goal (, max 30, shown as "מה החלטנו"), "✨ עזור לי להגדיר" in the new-goal wizard with a draft (). The conversation is not stored; only pinned text is. DOM follows docs/design/goals-2.md; CSS arrives with design's merge.
-- Privacy flag (CEO review): the goal's title, why, steps and pinned notes go to Claude for the answer;  holds what the person pins.
-- Master files (own commit + patch):  (goal_notes),  (5 routes).
-- Not built: privacy levels / the goals tab on the family profile, goal pushes (), Drive/NAS storage (waits for the CEO's review of the Drive permission).
-- Tested at 375 px: ask, quota (9→8), pin, define draft → "השתמש בנוסח", no overflow, targets ≥44 px. Not tested: 1280, dark, the 402 credit prompt, a real phone.
+- Built: התייעצות on a goal's page (`POST /api/goals/ask`, 10 free a day then credits, `server/goals-advice.ts`), "שמור מסקנה" pinned to the goal (`goal_notes`, max 30, shown as "מה החלטנו"), "✨ עזור לי להגדיר" in the new-goal wizard with a draft (`POST /api/goals/ai/define`). The conversation is not stored; only pinned text is. DOM follows docs/design/goals-2.md; CSS arrives with design's merge.
+- Privacy flag (CEO review): the goal's title, why, steps and pinned notes go to Claude for the answer; `goal_notes` holds what the person pins.
+- Master files (own commit + patch): `schema.sql` (goal_notes), `functions/api/[[path]].ts` (5 routes).
+- Not built: privacy levels / the goals tab on the family profile, goal pushes (`tool: 'goals'`), Drive/NAS storage (waits for the CEO's review of the Drive permission).
+- Tested at 375 px: ask, quota (9 to 8), pin, define draft then "השתמש בנוסח", no overflow, targets 44 px and up. Not tested: 1280, dark, the 402 credit prompt, a real phone.

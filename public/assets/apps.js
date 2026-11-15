@@ -218,6 +218,21 @@
     SOON.splice(0, SOON.length, ...(on ? SOON_ALL : []));
   }
   future();
+  /* יד ביד (stage 1) is locked behind the owner switch "yad": until YadGate.on() is true the tile stays the drawn "soon" one
+     (the server answers 404 to everyone but the owner). Once it is on, the tile becomes the real app, in the same place. */
+  const YAD_APP = { href: '/tools/yad/', ic: 'habits', name: 'יד ביד', sub: 'עוזרים זה לזה, ומקבלים עזרה בחזרה', pillow: 'p14', c2: '#b8402a', tint: '#ffe6bf', tag: 'ניסיוני' };
+  function yadTile() {
+    const ask = () => (window.YadGate ? window.YadGate.on() : fetch('/api/yad/status').then((r) => (r.ok ? r.json() : { on: false })).then((j) => j.on === true).catch(() => false));
+    ask().then((on) => {
+      if (!on || CODE.some((x) => x.href === YAD_APP.href)) return;
+      const cat = CATS.find((c) => c.apps.includes('soon:yad')); if (!cat) return;
+      cat.apps[cat.apps.indexOf('soon:yad')] = YAD_APP.href;
+      CODE.push({ ...YAD_APP, cat: cat.id });
+      const i = FUTURE_ALL.findIndex((x) => x.id === 'yad'); if (i >= 0) FUTURE_ALL.splice(i, 1);
+      future(); use(LAYOUT); dispatchEvent(new CustomEvent('h:layout'));
+    });
+  }
+  yadTile();
   addEventListener('h:switches', () => { use(LAYOUT); future(); dispatchEvent(new CustomEvent('h:layout')); });
   Object.assign(H, { APPS, PARTS, SOON, CATS, FUTURE, isExp, showsApp: (a) => shows(a, H.switches || {}), mayOpen, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
     layout: () => ({ code: CODE, tree: TREE, hidden: HIDDEN, pins: PINS.slice(), defaultPins: DEFAULT_PINS.slice() }) });

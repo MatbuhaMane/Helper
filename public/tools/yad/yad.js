@@ -203,4 +203,5 @@
   }
 
   await load();
+  if (location.hash === '#queue') queueSheet();   // the link from "ממתין לאישור" in the messages page
 })();

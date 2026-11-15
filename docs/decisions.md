@@ -192,6 +192,28 @@ The owner: "אפשר מקרר אחד לכל משתמש וקשר אותו לממ�
 - **design:** the fridge page drops the fridge chips and the "איזה מקרר הוא שלך?" chooser; it gains a card
   "מקרר משותף – בקרוב" (markup in the page commit). Classes like the other "בקרוב" cards are welcome.
 - When the shared fridge comes: a `fridge_members` table (fridge, email), and `ownFridge` checks membership.
+## 2026-11-14 – The storage package, the goals AI quota and the הקפדה coach quota (business → vision, ai-features, master)
+The owner approved all three business proposals ("מאשר הכל, אין שינוי"). Status: Decided (the owner).
+
+- **The paid storage package** (`docs/business/story-storage.md` section 8), sold from the credits wallet once a payment
+  provider is live:
+  - +10 GB: ₪3 a month or ₪30 a year;
+  - +50 GB: ₪12 a month or ₪135 a year;
+  - +100 GB: ₪23 a month or ₪265 a year.
+  - Free stays as decided in vision batch 28: users connect their own storage (Drive or a NAS); clips up to 60 s and
+    50 MB inside the 2 GB household quota; links. Nothing is ever deleted.
+  - No purchase flow is built before the payment provider.
+- **Goals, AI consultation** (`docs/business/ai-quota.md` section 5): 10 AI messages per person per day, on Haiku.
+  Beyond the quota, about 1 credit a message.
+- **The הקפדה coach** (`docs/business/ai-quota.md` section 6), per person per day:
+  - 15 coach messages (Haiku);
+  - 1 AI plan build or rebuild (a stronger model, for safety around injuries and limits).
+  - Not counted: the live workout mode, voice "הבא", the rest timer and the log (no AI; the browser's voice).
+  - Beyond the quota: credits at the real cost, about ₪0.015 a message and ₪0.6 a plan.
+- All quotas follow the rules of the entry below: they renew at midnight Israel time, are kept on the server per user,
+  do not count calls on the user's own AI, and until a payment provider exists, only trial and gift credits beyond them.
+- The numbers are revised after the AI cost measurement around 2026-11-26.
+
 ## 2026-11-14 – AI inside a tool: the daily free quota and the price beyond it (business → ai-features, vision, master)
 Following the rule "free with a quota" (vision batch 26), business set the numbers in `docs/business/ai-quota.md`.
 Status: Decided (the owner).

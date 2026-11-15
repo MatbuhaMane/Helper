@@ -25,6 +25,28 @@ Updated by the department at the end of every meaningful round of work. Short: t
   is never deleted for non-payment. Proposes upload compression to ai-features.
   - **Decided (the owner): for now, on what we have, with no extra spending.** R2's free 10 GB, a 2 GB quota per
     household, and no paid tier yet. Recorded in `docs/decisions.md`.
+  - **Videos in the living museum (vision batch 27, after the family launch):** the options are in section 7. To bring
+    to the owner when the museum gets near.
+    - Recommended: links (YouTube, Google Photos, Drive) by default.
+    - Uploads only for clips of up to 60 s and 50 MB, inside the 2 GB quota, compressed in the browser.
+    - R2's price per GB is not the issue; the free 10 GB for the whole account is.
+  - **The owner decided (vision batch 28):** users connect their own storage (Drive or a NAS); we sell a paid package
+    after the payment provider. Short clips (60 s / 50 MB) and links stay free.
+    - **Package pricing (section 8), decided (the owner, 2026-11-14):** +10 / 50 / 100 GB for ₪3 / 12 / 23 a month,
+      or ₪30 / 135 / 265 a year. Sold only once a payment provider is live.
+    - 50 GB moves from ₪10 to ₪12, because ₪10 is under the 30/30/30/10 floor once VAT is counted.
+- **Goals part 2, AI consultation (vision batch 28):** proposal in `ai-quota.md` section 5: 10 AI messages a day per
+  person, on Haiku. **Decided (the owner, 2026-11-14).**
+- **The הקפדה coach (vision batch 29, wave 2):** proposal in `ai-quota.md` section 6. Per person per day: 15 coach
+  messages (Haiku) and 1 AI plan build (a stronger model). The live workout mode is not counted. **Decided (the owner, 2026-11-14).**
+
+- **The internal economy and the "hand" token (vision batch 32, "coming soon", not built now):** added to
+  `business-plan.md` section 4ה and to the risks table, with no price change.
+  - Hands and credits are two separate currencies. A hand cannot be bought, sold or redeemed, so it is no revenue and
+    no liability; the cost is the owner's time for approvals.
+  - **Decided (the owner, 2026-11-14, batch 33): no link between hands and credits, in either direction.** The only
+    tie: the owner may give gift credits for a notable community deed, with no rate and no right to it. A permanent
+    link only after legal answers the tax and licensing question ⚖. The tool is named "יד ביד", the token "יד".
 
 - **The legal form (the owner, via the CEO, 2026-11-14):** the business runs under the owner's existing עוסק פטור,
   with a ceiling of about ₪120,000 a year.

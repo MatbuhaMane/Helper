@@ -1341,3 +1341,18 @@ img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }
 /* the signed-out home: the two sign-in buttons (Google, fingerprint) are two full rows with air between them */
 .login .gbtn, .login > .btn { display: flex; justify-content: center; inline-size: min(100%, 320px); min-block-size: 48px; margin-inline: auto; box-sizing: border-box; }
 .login .gbtn + .btn, .login .gbtn + * + .btn { margin-block-start: 18px; }
+
+/* ONE look for every edge tab: the companion's, the music player's and the back door's (the owner, 2026-11-15): a round glass
+   button, 56 px, a round icon in the middle, the accent for the icon. The rule sits after theirs and is a little stronger. */
+:root :is(.dm-tab, .mu-edge, .ad-edge) { inline-size: 56px; block-size: 56px; min-block-size: 0; padding: 0; border-radius: 50%;
+  display: grid; place-items: center; gap: 0; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 70%, transparent); color: var(--primary);
+  background: color-mix(in srgb, var(--card) 72%, transparent); -webkit-backdrop-filter: blur(12px) saturate(1.2); backdrop-filter: blur(12px) saturate(1.2);
+  box-shadow: var(--lift); transition: transform .2s var(--ease-river); }
+:root :is(.dm-tab, .mu-edge, .ad-edge):is(:hover, :focus-visible) { transform: scale(1.06); background: color-mix(in srgb, var(--card) 86%, transparent); color: var(--primary); }
+:root :is(.dm-tab, .mu-edge, .ad-edge).dragging { transform: scale(1.1); }
+:root .ad-edge .ad-edge-text { display: none; }
+:root .ad-edge .ad-edge-ic { inline-size: 24px; block-size: 24px; }
+:root .dm-tab img { inline-size: 44px; block-size: 44px; }
+:root .mu-edge .clef svg { inline-size: 20px; block-size: 30px; }
+@media (prefers-reduced-motion: reduce) { :root :is(.dm-tab, .mu-edge, .ad-edge) { transition: none; } :root :is(.dm-tab, .mu-edge, .ad-edge):is(:hover, :focus-visible), :root :is(.dm-tab, .mu-edge, .ad-edge).dragging { transform: none; } }

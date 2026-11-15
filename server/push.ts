@@ -108,8 +108,9 @@ async function decideNow(env: Env, email: string, kind: Kind): Promise<'send' | 
   const p = await prefsFor(env, email);
   const n = (p.notify?.data || {}) as NotifyPrefs;
   const city = String(p.calendar?.data?.city || p.parasha?.data?.city || '281184');
-  const w = n.shabbat ? await windowsFor(/^\d{3,9}$/.test(city) ? city : '281184') : [];
-  return decide(kind, Date.now(), n, w);
+  const shabbat = n.shabbat !== false;                  // the settings screen shows it on until the person turns it off (vision batch 31)
+  const w = shabbat ? await windowsFor(/^\d{3,9}$/.test(city) ? city : '281184') : [];
+  return decide(kind, Date.now(), { ...n, shabbat }, w);
 }
 
 /** to every device of these people, through the gate; what is held goes to the summary. Returns how many devices accepted it. */

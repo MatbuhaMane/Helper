@@ -1,0 +1,28 @@
+// Tests for the broadcast push's rules (server/broadcast-rules.ts):   node server/test-broadcast.mjs
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+const dir = mkdtempSync(join(tmpdir(), 'bc-test-')), out = join(dir, 'b.mjs');
+execFileSync(process.execPath, [join(process.cwd(), 'node_modules/esbuild/bin/esbuild'), join(process.cwd(), 'server/broadcast-rules.ts'), '--bundle', '--format=esm', '--outfile=' + out], { stdio: 'pipe' });
+const B = await import(pathToFileURL(out).href);
+let bad = 0, n = 0;
+const eq = (m, a, b) => { n++; if (JSON.stringify(a) !== JSON.stringify(b)) { bad++; console.log('FAIL', m, a, b); } };
+const err = (raw) => { try { B.cleanBroadcast(raw); return 'ok'; } catch (e) { return e.message; } };
+const ok = { title: 'שלום', body: 'גרסה חדשה', mode: 'test' };
+eq('good', B.cleanBroadcast({ ...ok, link: '/songs/' }), { title: 'שלום', body: 'גרסה חדשה', url: '/songs/', mode: 'test' });
+eq('no link goes home', B.cleanBroadcast(ok).url, '/');
+eq('title needed', err({ ...ok, title: '  ' }), 'title_required');
+eq('body needed', err({ ...ok, body: '' }), 'body_required');
+eq('title 60 ok', err({ ...ok, title: 'א'.repeat(60) }), 'ok');
+eq('title 61 refused', err({ ...ok, title: 'א'.repeat(61) }), 'title_long');
+eq('body 200 ok', err({ ...ok, body: 'א'.repeat(200) }), 'ok');
+eq('body 201 refused', err({ ...ok, body: 'א'.repeat(201) }), 'body_long');
+for (const l of ['https://evil.test/', '//evil.test', '/\\evil.test', 'songs/', 'javascript:alert(1)', '/a b', '/x\u0001y']) eq('link refused ' + JSON.stringify(l), err({ ...ok, link: l }), 'link_bad');
+for (const l of ['/', '/tools/yad/', '/songs/?q=1#x']) eq('link ok ' + l, err({ ...ok, link: l }), 'ok');
+eq('mode needed', err({ ...ok, mode: undefined }), 'mode_bad');
+eq('mode all', B.cleanBroadcast({ ...ok, mode: 'all' }).mode, 'all');
+eq('control chars removed', B.cleanBroadcast({ ...ok, title: 'a\u0000b' }).title, 'a b');
+eq('limits', [B.ALL_PER_DAY, B.TEST_PER_DAY], [3, 20]);
+console.log(`broadcast: ${n - bad}/${n} passed`); if (bad) process.exit(1);

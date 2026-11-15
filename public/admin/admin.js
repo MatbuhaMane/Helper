@@ -14,6 +14,7 @@
     title_required: 'צריך שם.', bad_amount: 'הסכום לא תקין.', bad_date: 'צריך תאריך.', bad_value: 'הערך לא מתאים.', not_member: 'אין חבר בכתובת הזו.',
     already_owner: 'הוא כבר בעל האוהל.', owner_only: 'רק בעל האוהל ממנה הרשאת־על.', text_required: 'כתבו הודעה.',
     bad_page: 'בחרו עמוד.', no_text: 'כתבו מה יופיע כשמוצאים.', bad_link: 'הקישור לא תקין: כתובת באוהל (/songs/) או https.', ends_first: 'תאריך הסיום לפני תאריך ההתחלה.',
+    title_long: 'הכותרת ארוכה מדי (עד 60 תווים).', body_long: 'הטקסט ארוך מדי (עד 200 תווים).', body_required: 'כתבו את טקסט ההתראה.', link_bad: 'הקישור צריך להיות עמוד באוהל, למשל /songs/', mode_bad: 'בחרו ניסיון או שליחה לכולם.',
     already_over: 'תאריך הסיום כבר עבר.', bad_layout: 'המבנה לא נקרא. רעננו ונסו שוב.', too_big: 'המבנה גדול מדי.',
   };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
@@ -110,7 +111,7 @@
     const board = el('div', { class: 'bd-dash', role: 'region', 'aria-label': 'לוח' }, ...Object.values(top));
     /* below it, every other part as an app tile (design's class contract, like the tools rack); a tap opens it */
     const APPS = st.own
-      ? [['messages', 'הודעות', messages], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites], ['treetrash', 'שחזור מהעץ', treeTrash], ['structure', 'עץ מבנה', structure]] : []), ['settings', 'הגדרות האפליקציה', settings],
+      ? [['messages', 'הודעות', messages], ['push', 'התראה לכולם', pushPart], ['reports', 'תיבת פניות', reportsPart], ['credits', 'כסף', async (box) => { const d = await dashP; if (d?.money) money(box, d.money); }], ...(st.level === 'owner' ? [['gifts', 'מתנות קרדיט', gifts], ['invites', 'הזמנות', invites], ['treetrash', 'שחזור מהעץ', treeTrash], ['structure', 'עץ מבנה', structure]] : []), ['settings', 'הגדרות האפליקציה', settings],
          ['members', 'חברים', members], ['features', 'תכונות מיוחדות', features], ['permissions', 'הרשאת־על', supers], ['ai', 'עלויות AI', aiCost], ['log', 'יומן', log]]
       : [['features', `התכונות של ${st.as.name}`, features]];
     const panels = {}, bodies = {}, loaded = new Set();
@@ -1179,6 +1180,36 @@
       people.members.length ? el('p', { class: 'small iv-people' }, 'כבר באוהל: ', people.members.slice(0, 8).flatMap((p, i) => [i ? ', ' : '', `${p.he_name || p.name || ''} `, el('bdi', { dir: 'ltr', class: 'muted' }, p.email)])) : null,
       shown.length ? el('ul', { class: 'bd-inv-list' }, shown.map(row)) : null,
       el('p', { class: 'bd-inv-empty', hidden: shown.length > 0 }, q ? 'אין הזמנות שמתאימות לחיפוש.' : ivState.f === 'all' ? 'עוד אין הזמנות.' : 'אין כאן הזמנות.')));
+  }
+
+  /* ---------- a push to everyone, or a test to the owner's own devices (2026-11-15) ---------- */
+  async function pushPart(box) {
+    const aud = await call('/api/admin/broadcast');
+    const title = el('input', { type: 'text', maxlength: 60, required: true, autocomplete: 'off', 'aria-label': 'כותרת' });
+    const text = el('textarea', { rows: 3, maxlength: 200, required: true, 'aria-label': 'טקסט' });
+    const link = el('input', { type: 'text', dir: 'ltr', placeholder: '/songs/ (לא חובה)', autocomplete: 'off', 'aria-label': 'עמוד באוהל' });
+    const left = el('span', { class: 'muted small' }, '0/200'); text.addEventListener('input', () => { left.textContent = text.value.length + '/200'; });
+    const go = async (mode, b) => {
+      if (!title.value.trim() || !text.value.trim()) { toast('כתבו כותרת וטקסט'); return; }
+      if (mode === 'all' && !confirm(`לשלוח עכשיו ל־${aud.people} אנשים (${aud.devices} מכשירים)?
+
+"${title.value.trim()}"
+
+אי אפשר לבטל אחרי השליחה.`)) return;
+      b.disabled = true;
+      try {
+        const r = await call('/api/admin/broadcast', { body: { title: title.value, body: text.value, link: link.value, mode } });
+        toast(mode === 'all' ? `נשלחה ל־${r.sent} מכשירים (${r.people} אנשים)` : `נשלח אליך: ${r.sent} מכשירים`);
+      } catch (e) { say(e); } finally { b.disabled = false; }
+    };
+    const test = el('button', { class: 'btn', type: 'button', onclick: (e) => go('test', e.currentTarget) }, 'שליחת ניסיון אליי');
+    const all = el('button', { class: 'btn primary', type: 'button', onclick: (e) => go('all', e.currentTarget) }, 'שליחה לכולם');
+    box.replaceChildren(section('push-s', 'התראה לכולם',
+      el('p', { class: 'muted small' }, `יש ${aud.people} אנשים עם ${aud.devices} מכשירים רשומים להתראות (מהם שלכם: ${aud.mine}). לכולם אפשר לשלוח עד ${aud.perDay} פעמים ביום.`),
+      el('p', { class: 'muted small' }, 'ההתראה מכבדת את ההגדרות של כל אחד: שעות שקט, שבת וקודש. מי שבשעות כאלה יקבל אותה בסיכום, לא מיד. ניסיון מגיע מיד, רק למכשירים שלכם.'),
+      el('div', { class: 'ad-form' },
+        el('label', {}, 'כותרת', title), el('label', {}, 'טקסט ', left, text), el('label', {}, 'עמוד שייפתח בלחיצה', link),
+        el('div', { class: 'row', style: 'gap:.5rem;flex-wrap:wrap' }, test, all))));
   }
 
   /* ---------- messages to everyone, or to one member ---------- */

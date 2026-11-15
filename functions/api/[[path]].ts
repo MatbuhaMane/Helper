@@ -13,6 +13,7 @@ import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
 import * as join from '../../server/join';
 import * as admin from '../../server/admin';
+import * as broadcast from '../../server/broadcast';        // a push to everyone from the back door (ai-features, 2026-11-15; touches people)
 import * as credits from '../../server/credits';
 import * as figures from '../../server/figures';
 import * as lock from '../../server/lock';
@@ -535,6 +536,8 @@ route('PUT', '/api/admin/supers', admin.supersSave);
 route('GET', '/api/admin/messages', admin.messagesList);
 route('POST', '/api/admin/messages', admin.messageSend);
 route('POST', '/api/admin/messages/:id/stop', admin.messageStop);
+route('GET', '/api/admin/broadcast', broadcast.audience);
+route('POST', '/api/admin/broadcast', broadcast.send);
 route('GET', '/api/admin/features', admin.featuresList);
 route('PUT', '/api/admin/features', admin.featuresSave);
 route('GET', '/api/admin/audit', admin.auditList);

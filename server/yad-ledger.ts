@@ -18,10 +18,10 @@ export interface Leg { kind: string; src: string; dst: string; tenths: number }
 export type PostResult = { ok: true; duplicate?: boolean } | { ok: false; why: 'no_funds' | 'frozen' | 'bad_amount' };
 
 type Db = Env['DB'];
-const BAL = (p: string) => `(SELECT COALESCE(SUM(CASE WHEN dst = ${p} THEN tenths ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN src = ${p} THEN tenths ELSE 0 END), 0) FROM yad_ledger WHERE src = ${p} OR dst = ${p})`;
+const BAL = `(SELECT COALESCE(SUM(CASE WHEN dst = ? THEN tenths ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN src = ? THEN tenths ELSE 0 END), 0) FROM yad_ledger WHERE src = ? OR dst = ?)`;   // four ? : the same account four times (every value is BOUND, never put into the text)
 
 export async function balance(db: Db, account: string): Promise<number> {
-  const r = await db.prepare(`SELECT ${BAL('?1')} AS b`).bind(account).first<{ b: number }>();
+  const r = await db.prepare(`SELECT ${BAL} AS b`).bind(account, account, account, account).first<{ b: number }>();
   return r?.b || 0;
 }
 
@@ -44,11 +44,15 @@ export async function post(db: Db, ref: string, legs: Leg[], now = Date.now()): 
   const dup = await db.prepare('SELECT 1 AS x FROM yad_ledger WHERE ref = ? LIMIT 1').bind(ref).first();
   if (dup) return { ok: true, duplicate: true };
   const people = [...new Set(legs.flatMap((l) => [l.src, l.dst]).filter((a) => a.startsWith('u:')))];
-  const frozen = people.map((p) => `NOT EXISTS (SELECT 1 FROM yad_people WHERE email = '${p.slice(2).replace(/'/g, "''")}' AND removed_at IS NOT NULL)`).join(' AND ') || '1';
-  const funds = [...needs(legs)].filter(([a, n]) => n > 0 && a !== MINT).map(([a, n]) => `${BAL(`'${a.replace(/'/g, "''")}'`)} >= ${n}`).join(' AND ') || '1';
+  // the guards of leg 0, with every account and amount bound as a parameter
+  const frozenSql = people.map(() => 'NOT EXISTS (SELECT 1 FROM yad_people WHERE email = ? AND removed_at IS NOT NULL)').join(' AND ') || '1';
+  const frozenBind = people.map((p) => p.slice(2));
+  const need = [...needs(legs)].filter(([a, n]) => n > 0 && a !== MINT);
+  const fundsSql = need.map(() => `${BAL} >= ?`).join(' AND ') || '1';
+  const fundsBind = need.flatMap(([a, n]) => [a, a, a, a, n]);
   const stmts = legs.map((l, i) => db.prepare(
-    `INSERT INTO yad_ledger (ref, leg, at, kind, src, dst, tenths) SELECT ?, ?, ?, ?, ?, ?, ? WHERE ${i === 0 ? `${frozen} AND ${funds}` : 'EXISTS (SELECT 1 FROM yad_ledger WHERE ref = ? AND leg = 0)'}`)
-    .bind(...[ref, i, now, l.kind, l.src, l.dst, l.tenths, ...(i === 0 ? [] : [ref])]));
+    `INSERT INTO yad_ledger (ref, leg, at, kind, src, dst, tenths) SELECT ?, ?, ?, ?, ?, ?, ? WHERE ${i === 0 ? `${frozenSql} AND ${fundsSql}` : 'EXISTS (SELECT 1 FROM yad_ledger WHERE ref = ? AND leg = 0)'}`)
+    .bind(...[ref, i, now, l.kind, l.src, l.dst, l.tenths, ...(i === 0 ? [...frozenBind, ...fundsBind] : [ref])]));
   try {
     const res = await db.batch(stmts);
     if (res[0].meta.changes) return { ok: true };
@@ -57,7 +61,7 @@ export async function post(db: Db, ref: string, legs: Leg[], now = Date.now()): 
     throw e;
   }
   // nothing was posted: say why (a frozen person first, else the balance)
-  const f = await db.prepare(`SELECT ${frozen} AS ok`).first<{ ok: number }>();
+  const f = await db.prepare(`SELECT ${frozenSql} AS ok`).bind(...frozenBind).first<{ ok: number }>();
   return { ok: false, why: f?.ok ? 'no_funds' : 'frozen' };
 }
 

@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": which types carry the licence mark, rides, limits and youth mentoring (vision → design, ai-features, legal, master)
+Status: Decided (the owner), on legal's proposal. Legal is not a lawyer; the open questions go to the owner's lawyer.
+
+1. **Nine of the 49 types carry the mark "דורש רישיון":**
+   - services (6): "מכתב המלצה של רופא", "עבודת חשמל מורכבת של חשמלאי מוסמך", "ייעוץ משפטי של עורך דין",
+     "דוח שנתי של רואה חשבון", "טיפול רפואי או פיזיותרפיה", "תכנון של מהנדס או אדריכל";
+   - deeds (3): "עבודה מקצועית בהתנדבות במבנה ציבורי", "רפואה בהתנדבות", "ייעוץ משפטי לעמותה";
+   - "ייעוץ אקולוגי מקצועי לתוכנית ציבורית" has no mark: no law regulates the profession.
+2. **Rides ("הסעה", "הסעת קשישים לטיפולים") carry the mark too, with a different declaration:**
+   "יש לי רישיון נהיגה בתוקף, והרכב מבוטח". The conditions of batch 38 apply to it as well.
+3. **Each type has a short description line that holds its limit or caution** (for example plumbing without gas or
+   electricity; with the elderly, no touching money, passwords or the bank account). Vision words the lines and
+   brings them to the owner before they are sent.
+4. **"חונכות לנוער":** in stage 1 only inside the family and among friends; later only through a recognized
+   organization that asks for the police clearance itself.
+- **For the owner's lawyer** (through the master): whether a private car's insurance covers a ride given for ידיים;
+  the youth mentoring limit; and insurance for physical volunteer work outside a recognized organization.
+
 ## 2026-11-15 – "יד ביד": the licence declaration follows the service type, not the tier (vision → design, ai-features, legal, master)
 Status: Decided (the owner). This settles the flag in the entry below.
 

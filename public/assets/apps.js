@@ -32,6 +32,8 @@
     { href: '/food/fridge/', ic: 'fridge', name: 'מקרר', sub: 'מה יש בבית, ומה לבשל ממנו', pillow: 'p06', c2: '#9c2a2a', tint: '#cfe0f7' },
     { href: '/messages/', ic: 'mail', name: 'הודעות', sub: 'שיחה עם בני הבית והמשפחה', pillow: 'p13', c2: '#3557a8' },
     { href: '/gather/', ic: 'family', name: 'מפגש משפחתי', sub: 'קישור אחד לווטסאפ, וכולם עונים', pillow: 'p14', c2: '#b8402a', tint: '#ffe6bf' },
+    { href: '/family/friends/', ic: 'family', name: 'חברים', sub: 'המשפחה שבוחרים: בקשות, קישור חד־פעמי ושיחה', pillow: 'p14', c2: '#b8402a', tint: '#ffe6bf' },
+    { href: '/family/story/', ic: 'book', name: 'הסיפור המשפחתי', sub: 'רגעים, אירועים וזכרונות, למי שבחרתם', pillow: 'p01', c2: '#8e2435', tint: '#ffe0b0', tag: 'ניסיוני' },
     { href: '/tools/calendar/', ic: 'calendar', name: 'לוח שנה', sub: 'החגים, הצומות והימים של המשפחה', pillow: 'p07', c2: '#c0402a', tint: '#ffd6e0' },
     { href: '/tools/weather/', ic: 'weather', name: 'מזג אוויר', sub: 'מה בחוץ היום, ומה מחר', pillow: 'p14', c2: '#2a7fa8', tint: '#ffe0cc' },
     { href: '/tools/notes/', ic: 'note', name: 'פתקים', sub: 'מה ששמרתם מכל מקום באוהל', pillow: 'p10', c2: '#9c2a2a', tint: '#fff0b3' },
@@ -59,7 +61,7 @@
     { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', '/tools/breath/'] },
     { id: 'food', name: 'אוכל', apps: ['/food/', '/food/kitchen/', '/groceries/#book', '/food/restaurants/'] },
     { id: 'routine', name: 'שוטף', apps: ['/tools/calendar/', '/tools/parnasa/', '/food/fridge/', '/groceries/', '/pc/', '/mail/', '/tools/garden/', '/tools/home/'] },
-    { id: 'social', name: 'חברתי', apps: ['/family/', '/gather/', '/messages/', 'soon:yad'] },
+    { id: 'social', name: 'חברתי', apps: ['/family/', '/family/friends/', '/family/story/', '/gather/', '/messages/', 'soon:yad'] },
   ];
   // still to come, shown inside their category (like SOON: a tap tells one sentence)
   const FUTURE = [
@@ -136,15 +138,14 @@
   /* the layout in use: the owner's preview on this tab (sessionStorage), else the last one this device got, refreshed
      from the server every few minutes; a change is applied in place (H.APPS keeps its identity) and announced */
   /* the owner's switchboard (H.switches; the same rules as server/switches-rules.ts, and test-switches checks they agree):
-     exp 'hide' drops the experimental apps (a tag or beta) and the בעתיד/בקרוב items, 'only' keeps only the experimental
-     apps (and the fixed items); קודש tucks away the weekday tools. Only what is drawn: the pages stay at their address. */
+     exp 'hide' drops the experimental apps (a tag or beta) and the בעתיד/בקרוב items, 'only' keeps the regular and the experimental apps
+     but not the בעתיד/בקרוב items; קודש tucks away the weekday tools. Only what is drawn: the pages stay at their address. */
   const WEEKDAY = ['/groceries/', '/mail/', '/tools/parnasa/', '/pc/'];
   const isExp = (a) => !!a.tag || a.access === 'beta';
   function shows(a, s) {
     if (!a || a.fixed) return true;
     if (s.kodesh === true && WEEKDAY.includes(a.href)) return false;
     if (s.exp === 'hide') return !isExp(a);
-    if (s.exp === 'only') return isExp(a);
     return true;
   }
   const PARTS = [], PINS = [];
@@ -212,7 +213,7 @@
   // what is still to come (בעתיד, בקרוב): hidden when the switchboard hides the experimental; a change redraws the menus
   const FUTURE_ALL = FUTURE.slice(), SOON_ALL = SOON.slice();
   function future() {
-    const on = (H.switches || {}).exp !== 'hide';
+    const on = (H.switches || {}).exp !== 'hide' && (H.switches || {}).exp !== 'only';
     FUTURE.splice(0, FUTURE.length, ...(on ? FUTURE_ALL : []));
     SOON.splice(0, SOON.length, ...(on ? SOON_ALL : []));
   }

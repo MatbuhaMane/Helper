@@ -14,7 +14,7 @@
 (() => {
   if (!window.H || H.applySettings) return;
   const ACCESS = { text: 1, spacing: 'normal', font: 'default', contrast: 'normal', motion: 'device', vibrate: true, sounds: true };
-  const LOOK = { palette: '', font: '', custom: null };   // custom: { primary, field, ground } (vision batch 5)
+  const LOOK = { palette: '', font: '', custom: null, style: '', pillows: '', devTools: true };   // custom: { primary, field, ground } (vision batch 5)
   const ME = { religion: 'jewish', lang: 'he', city: '' };   // (city: the restaurants nearby; Shabbat times and the weather later)
   const root = document.documentElement;
   const mark = (name, value) => { if (value) root.dataset[name] = value; else delete root.dataset[name]; };
@@ -28,6 +28,8 @@
     mark('contrast', a.contrast === 'high' ? 'high' : '');
     mark('motion', a.motion === 'reduce' ? 'reduce' : '');
     mark('palette', /^[a-z0-9-]{1,24}$/.test(l.palette || '') ? l.palette : '');
+    mark('style', l.style === 'serious' ? 'serious' : '');   // מצב רציניים: the other pages follow (common.js sets it before paint)
+    mark('pillows', l.style === 'serious' && l.pillows === 'keep' ? 'keep' : '');
     customTheme(l);
     mark('religion', /^[a-z]{1,16}$/.test(m.religion || '') ? m.religion : '');
     root.lang = m.lang === 'ar' || m.lang === 'en' ? m.lang : 'he';

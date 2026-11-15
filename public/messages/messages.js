@@ -100,16 +100,29 @@
     : c.kind === 'move' ? el('p', {}, c.words)
     : diffs([c.link.to?.kind !== c.link.kind ? { k: 'kind', from: KINDW[c.link.kind] || '', to: KINDW[c.link.to?.kind] || '' } : null,
       c.link.to?.status !== c.link.status ? { k: 'status', from: STATW[c.link.status] || '', to: STATW[c.link.to?.status] || '' } : null].filter(Boolean)));
-  const setAsks = (n) => tbAsk.replaceChildren('ממתין לאישור', n ? el('b', { 'aria-label': `, ${n} מחכים` }, ` (${n})`) : '');
+  /* יד ביד (locked behind the owner switch "yad"): what waits for the owner in the yad queue (deeds, needs, reports). Only when
+     YadGate.on() is true, and only the owner can read it (the server answers 403/404 otherwise), so for everyone else it is nothing. */
+  let yadN = 0, famN = 0;
+  const setAsks = (n, fam = true) => { if (fam) famN = n; else yadN = n; const all = famN + yadN; tbAsk.replaceChildren('ממתין לאישור', all ? el('b', { 'aria-label': `, ${all} מחכים` }, ` (${all})`) : ''); };
+  async function yadQueue() {
+    try { if (!window.YadGate || !(await YadGate.on())) return null; const q = await api('/api/yad/queue', { noRedirect: true }); setAsks(q.count || 0, false); return q; } catch (e) { return null; }
+  }
+  const yadSection = (q) => !q || !q.count ? null : el('div', { class: 'ask yad-ask', style: 'padding:10px 0;border-block-end:1px solid var(--line, #0002)' },
+    el('div', {}, el('b', {}, 'יד ביד'), ' ', el('small', { class: 'muted' }, 'מחכה להחלטה שלך')),
+    el('p', { style: 'margin:4px 0' }, [q.deeds.length ? (q.deeds.length === 1 ? 'מעשה אחד' : `${q.deeds.length} מעשים`) : '', q.needs.length ? (q.needs.length === 1 ? 'צורך אחד' : `${q.needs.length} צרכים`) : '', q.reports.length ? (q.reports.length === 1 ? 'דיווח אחד' : `${q.reports.length} דיווחים`) : ''].filter(Boolean).join(' · ')),
+    el('div', { class: 'ask-acts', style: 'display:flex;gap:8px' }, el('a', { class: 'btn primary', href: '/tools/yad/#queue' }, 'לפתוח ולהחליט')));
   async function openAsks() {
     asksBox.replaceChildren(H.skel(2));
+    const yq = yadQueue();
     let d;
     try { d = await api('/api/vault/changes', { noRedirect: true }); } catch (e) {
-      asksBox.replaceChildren(el('p', { class: 'muted' }, 'כדי לראות ולאשר בקשות צריך לפתוח את עץ המשפחה במכשיר הזה.'), el('a', { class: 'btn primary', href: '/family/' }, 'לעץ המשפחה'));
+      const y = yadSection(await yq);
+      asksBox.replaceChildren(...(y ? [y] : []), el('p', { class: 'muted' }, 'כדי לראות ולאשר בקשות צריך לפתוח את עץ המשפחה במכשיר הזה.'), el('a', { class: 'btn primary', href: '/family/' }, 'לעץ המשפחה'));
       return;
     }
     setAsks(d.forMe.length);
-    if (!d.forMe.length) { asksBox.replaceChildren(el('p', { class: 'muted' }, 'אין כרגע בקשות שמחכות לתשובה שלך.')); return; }
+    const yadBlock = yadSection(await yq);
+    if (!d.forMe.length) { asksBox.replaceChildren(...(yadBlock ? [yadBlock] : [el('p', { class: 'muted' }, 'אין כרגע בקשות שמחכות לתשובה שלך.')])); return; }
     const answer = async (c, yes, card) => {
       const btns = [...card.querySelectorAll('button')];
       btns.forEach((b) => { b.disabled = true; });
@@ -119,10 +132,10 @@
         if (yes && r.status === 'waiting') said = 'אושר. מחכה עוד לאישור של בן משפחה נוסף.';
       } catch (e) { toast(e.message || 'לא הצלחנו לשמור את התשובה'); btns.forEach((b) => { b.disabled = false; }); return; }
       card.querySelector('.ask-acts').replaceWith(el('p', { role: 'status' }, said));
-      setAsks(asksBox.querySelectorAll('.ask-acts').length);
+      setAsks(asksBox.querySelectorAll('.ask:not(.yad-ask) .ask-acts').length);
       if (!asksBox.querySelector('.ask-acts')) setTimeout(openAsks, 1200);
     };
-    asksBox.replaceChildren(...d.forMe.map((c) => {
+    asksBox.replaceChildren(...(yadBlock ? [yadBlock] : []), ...d.forMe.map((c) => {
       const card = el('div', { class: 'ask', style: 'padding:10px 0;border-block-end:1px solid var(--line, #0002)' },
         el('div', {}, el('b', {}, c.by), ' ', ...asking(c), ' ', el('small', { class: 'muted' }, H.timeAgo(c.at))),
         what(c),
@@ -383,6 +396,7 @@
   if (location.hash === '#haohel') { tab('haohel', true); drawEmptyThread(); return; }
   if (location.hash === '#asks') { tab('asks', true); drawEmptyThread(); return; }
   api('/api/dm/unread').then((u) => setAsks(u.asks || 0)).catch(() => {});   // the count on the tab
+  yadQueue();   // ...plus the yad queue, when the switch is on (the owner only)
   loadInbox().catch(() => {});   // for the count on the tab
   tab('dm', true);
   const first = keyFromHash(), to = new URLSearchParams(location.search).get('to');

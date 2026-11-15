@@ -35,7 +35,7 @@ function limited(email: string, now = Date.now()) {
 async function ownersPush(ctx: Ctx, title: string, item: string) {
   const owners = (ctx.env.OWNER_EMAIL || '').split(',').map((s) => s.trim()).filter(Boolean);
   // an immediate push to the owner for every item, with the item id so the nag levels never repeat it
-  await pushTo(ctx.env, owners, { title, body: 'יד ביד: ממתין לאישור שלך', url: '/pending/?f=yad', tool: 'yad', item, kind: 'other' }).catch(() => 0);
+  await pushTo(ctx.env, owners, { title, body: 'יד ביד: ממתין לאישור שלך', url: '/messages/#asks', tool: 'yad', item, kind: 'other' }).catch(() => 0);
 }
 /** a matching need gives one simple notification to the people who ticked its type, up to 20 */
 async function matchPush(ctx: Ctx, needId: string, typeId: string | null, asker: string, title: string) {

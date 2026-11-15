@@ -11,6 +11,28 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": the first two lists, services and deeds (master → vision, ai-features, design)
+Status: Decided (the owner, in the master's session; recorded by vision as the master reported it). The owner may add
+items later. The lists themselves, in Hebrew, are in `docs/vision/yad-beyad.md`, section "שתי הרשימות הראשונות".
+
+- **The scoring** is the approved one: difficulty 0–2 plus expertise 0–2. A sum of 0 is "שעה קלה" (1 יד an hour),
+  1 is "שעת עבודה" (2), 2 or 3 is "שעה ארוכה" (4), and 4 is "איש השעה" (8). A tenth of every יד goes to the fund.
+- **List 1, services between members:** 26 types.
+  - "שעה קלה", 5 types (babysitting, walking a dog, simple shopping…);
+  - "שעת עבודה", 7 types (a ride, cooking a meal, cleaning, help with a phone or a computer…);
+  - "שעה ארוכה", 9 types (moving furniture, a private lesson, a simple plumbing repair, a doctor's letter…);
+  - "איש השעה", 5 types (a certified electrician, a lawyer, an accountant, medical care, an engineer or architect).
+- **List 2, deeds for the community and the environment:** 23 types.
+  - "שעה קלה", 7 types (collecting litter, sorting donations, visiting a lonely elderly person…);
+  - "שעת עבודה", 5 types (cooking for families in need, planting trees, driving the elderly to treatments…);
+  - "שעה ארוכה", 7 types (cleaning a stream, setting up a community garden, mentoring youth…);
+  - "איש השעה", 4 types (professional volunteer work in a public building, volunteer medicine, legal advice to an NGO…).
+- **Items outside the lists** go to the owner's approval queue, as decided.
+- **A flag from vision (not decided):** the master's note says the licence declaration belongs to "איש השעה". By
+  batches 37 and 38 it belongs to every service type that requires a licence, whatever its tier. One such type sits
+  lower: "מכתב המלצה של רופא" is "שעה ארוכה". Vision proposes that each type on the list carries its own mark,
+  "דורש רישיון"; this waits for the owner.
+
 ## 2026-11-15 – "יד ביד", stage 1: three simplifications of the approval queue (vision → design, ai-features, master)
 Status: Decided (the owner). New information: ai-features' estimate of the queue (the upper end of "2–3 times goals",
 7–8 rounds; the lower end with simplifications). This updates three points of the queue entry below; the rest stands.

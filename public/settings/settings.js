@@ -94,6 +94,7 @@
     palette: () => [(typeof PALETTES !== 'undefined' && PALETTES.find(([id]) => id === (look.palette || ''))?.[1]) || 'הצבעים של האוהל'].join(''),
     faith: () => [FAITHS[me.religion || 'jewish'], me.address === 'female' ? 'בלשון נקבה' : me.address === 'male' ? 'בלשון זכר' : 'בלי מגדר'].join(' · '),
     place: () => me.city || 'לא נקבעה עיר',
+    nag: () => { const t = window.Nag?.TOOLS || []; const c = (l) => t.filter((x) => Nag.toolLevel(x[0]) === l).length; return [c('normal') && c('normal') + ' ברגיל', c('nag') && c('nag') + ' בנודניק', c('off') && c('off') + ' כבויים'].filter(Boolean).join(' · ') || 'הכול בסיכום היומי'; },
     menu: () => (H.prefs('tools', { locked: false }).locked ? 'הסידור נעול' : 'אפשר לסדר'),
     account: () => user.he_name || user.name || user.email,
   });
@@ -404,6 +405,40 @@
         'כשנעול, לחיצה ארוכה (או קליק ימני במחשב) בתפריט הכלים לא מזיזה את האפליקציות.'));
   }
 
+  /* ---------- "רמת הניג'וס" (vision batch 31): the level of every tool that sends phone notifications, and the quiet hours.
+     The levels are in the prefs namespace "nag" (assets/nag.js, the server decides by it: server/push.ts); the quiet hours and Shabbat are in "notify" (push-gate.ts).
+     A tool's own bell sets the same level from inside the tool; one item can differ from its tool. Emergency is fixed. ---------- */
+  function nagBox() {
+    const note = el('div', { class: 'st-field' });
+    const paintPush = async () => {
+      const st = await H.push.state().catch(() => 'unsupported');
+      const say = { on: '', off: 'ההתראות עוד לא פועלות במכשיר הזה. בלי זה הכול מחכה לסיכום היומי.', denied: 'ההתראות חסומות לאתר הזה בדפדפן, ולכן הכול מחכה לסיכום היומי.',
+        unsupported: 'הדפדפן הזה לא תומך בהתראות, ולכן הכול מחכה לסיכום היומי.', 'not-installed': 'באייפון ההתראות עובדות רק מהאוהל שמותקן במסך הבית.' }[st] || '';
+      note.replaceChildren(...(say ? [el('p', { class: 'muted small' }, say), st === 'off' ? el('button', { class: 'btn small', type: 'button', onclick: async () => { const k = await H.push.enable().catch(() => false); toast(k ? 'ההתראות פועלות במכשיר הזה' : 'לא הופעלו'); paintPush(); } }, 'הפעלת התראות במכשיר הזה') : null].filter(Boolean) : []));
+    };
+    paintPush();
+    const rows = el('ul', { class: 'st-nags' });
+    const drawRows = () => rows.replaceChildren(...Nag.TOOLS.map(([id, name, hint]) => {
+      const items = Object.keys(H.prefs('nag').it || {}).filter((k) => k.startsWith(id + ':')).length;
+      const li = el('li', { class: 'st-nag', 'data-nag': Nag.toolLevel(id) },
+        el('span', { class: 'nag-ic', 'aria-hidden': 'true' }), el('div', {}, el('b', {}, name), el('small', {}, hint)),
+        Nag.picker(id, null, (l) => { li.dataset.nag = l; paintNows(); }),
+        items ? el('p', { class: 'st-nag-own' }, items === 1 ? 'פריט אחד בהגדרה משלו' : items + ' פריטים בהגדרה משלהם') : null);
+      return li;
+    }), el('li', { class: 'st-nag fixed', 'data-nag': 'nag' },
+      el('span', { class: 'nag-ic', 'aria-hidden': 'true' }), el('div', {}, el('b', {}, 'חירום'), el('small', {}, 'עובר תמיד, גם בשעות השקט ובשבת. אי אפשר לשנות.')),
+      el('fieldset', { class: 'nag', disabled: true, 'data-nag': 'nag' }, el('legend', {}, 'רמת הניג׳וס: חירום'),
+        el('label', { class: 'nag-opt', 'data-nag': 'nag' }, el('input', { type: 'radio', checked: true, disabled: true }), el('span', { class: 'nag-ic', 'aria-hidden': 'true' }), el('span', {}, 'נודניק')))));
+    drawRows();
+    const nf = H.prefs('notify', { quietFrom: '22:00', quietTo: '07:00', shabbat: true });
+    const time = (label, key, d) => el('label', {}, label, ' ', el('input', { type: 'time', value: nf[key] || d, 'aria-label': key === 'quietFrom' ? 'תחילת שעות השקט' : 'סוף שעות השקט',
+      onchange: (e) => { if (e.target.value) { nf[key] = e.target.value; keep('notify'); } } }));
+    return section('nag', 'התראות', note, rows,
+      el('div', { class: 'st-quiet-hours' }, el('b', {}, 'שעות השקט'), el('div', {}, time('מ־', 'quietFrom', '22:00'), time('עד ', 'quietTo', '07:00')),
+        toggle('גם בשבת ובחג', nf.shabbat !== false, (v) => { nf.shabbat = v; keep('notify'); }),
+        el('small', {}, 'בשעות האלה ההתראות מחכות לסיכום היומי. חירום וטיימר שהפעלת עכשיו עוברים תמיד.')));
+  }
+
   /* ---------- recognized devices: where the family tree opens with no unlock (server/vault/index.ts devices) ---------- */
   const devicesBox = el('div', { id: 'devices', class: 'st-devices' });   // (inside "פרטיות ואבטחה", at the end of its body)
   let deviceCount = 0;
@@ -553,11 +588,11 @@
   }).catch(() => reportsBox.replaceChildren(el('p', { class: 'muted small' }, 'לא הצלחתי לטעון את הדיווחים.')));
 
   /* ---------- the page: a row of shortcuts to each part, then the parts in order ---------- */
-  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['account', 'החשבון']];
+  const PARTS = [['daynight', 'יום ולילה'], ['access', 'נגישות'], ['nag', 'התראות'], ['privacy', 'פרטיות'], ['services', 'שירותים'], ['assistant', 'העוזר'], ['palette', 'צבעים'], ['faith', 'דת ושפה'], ['place', 'המקום שלי'], ['menu', 'התפריט'], ['account', 'החשבון']];
   root.replaceChildren(el('section', { class: 'st' },
     el('h1', {}, 'הגדרות'),
     el('nav', { class: 'st-jump', 'aria-label': 'חלקי ההגדרות' }, PARTS.map(([id, name]) => el('a', { class: 'chip', href: '#' + id, onclick: (e) => { e.preventDefault(); history.replaceState(null, '', '#' + id); openPart(id); } }, name))),
-    dayNight(), accessibility(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(),
+    dayNight(), accessibility(), nagBox(), privacyBox, servicesBox, assistantBox, palettes(), faith(), myPlace(), menuBox(),
     section('account', 'החשבון',
       el('div', { class: 'card st-account' },
         el('p', {}, user.he_name || user.name || ''), el('p', { class: 'muted small', dir: 'ltr' }, user.email),

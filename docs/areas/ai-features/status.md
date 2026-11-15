@@ -1,7 +1,17 @@
 # Status – ai-features
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14 (batch 27: friends, the fourth privacy level, the museum's first hub step).
+Last update: 2026-11-15 (the owner's phone bugs: dot, arranging, saved order).
+
+## 2026-11-15: the owner's phone bugs (all on ai-features, nothing pushed)
+
+- 68c68f7: no false red dot on the messages/reports menu rows (the count pill's display beat [hidden]); arrange: touch-action none inline at once, a touchstart starts the drag.
+- f37e7e9: arranging from the name or category view switches to 'הסדר שלי' first (the tiles were outside the grid).
+- deb4a78 (common.js, master's file; patch in the CEO notes): a pref the server refuses for good (400/413) no longer blocks the others.
+- 47b903b: the view pref is 'toolsview' ('toolsView' failed the server's name rule, so the tools order was never saved); the swap no longer jumps (layout box, not the animated one).
+- 31310c3: dm unread counts asks as the list shows them; `asksFor` in server/vault/index.ts is read-only, FOR THE CEO'S REVIEW.
+- Not tested: a real phone, 375 px. Waiting: yad-beyad stage 1 (estimate sent to vision; build when the master says), batch 31 next, then the rest of batch 28.
+
 
 ## FOR THE MASTER'S REVIEW (privacy): groups re-check their members (commit after 28e5dee)
 
@@ -600,3 +610,35 @@ LCP has not moved yet. The causes:
 - **Waiting:** design's `story.css`; the master's patches (top menu, npm test); the owner's approval for the backup.
 - **Not in v1:** exhibitions; the place map; transcription; the fingerprint for a restricted document; the AI's follow-up
   question. Not yet tested: recording on a real phone (iOS writes audio/mp4).
+
+## Urgent three (2026-11-14, for the parents' link)
+- Silhouettes (sil-m/f/x.svg, `.sil`) instead of initials in the tree for people with no account or photo; falls back to initials until design's SVGs exist.
+- /messages/ has a third tab "ממתין לאישור" (`#asks`): the requests waiting for my yes or no with אשר/דחה, through the tree's own routes (`/api/vault/changes`); needs the tree open on the device, otherwise a link to /family/. `/api/dm/unread` now adds `asks` to `unread`, so the inbox dot shows it.
+- Vault pages: only the inbox button (common.js, master's patch in the notes folder).
+- Not tested: a real pending request end to end, the silhouettes with design's files, the vault-page button on a real device.
+
+## 2026-11-15: batch 31, "רמת הניג'וס" (built; not on a real phone)
+- **Rules:** `server/nag-rules.ts` (+ `server/test-nag.mjs`, in `npm test`): four levels, item beats tool beats default, `route()` (off drops, quiet goes to the daily summary, normal and nag send), the repeat (every 20 min, at most 5 times), `cleanNag`.
+- **Gate (master's `server/push.ts`, own commit + patch):** a push that names its `tool` (and `item`) is decided by the person's level in the prefs namespace `nag`; emergency is untouched; Shabbat now holds by default (as the screen shows). Nag: `push_nag` table (schema.sql, appended), `nagTick` on the minute cron (`src/worker.ts`), `POST /api/nag/done`; home "בוצע" and garden "השקיתי" stop the repeats.
+- **UI:** `assets/nag.js` (`Nag.picker/bell/mark/set/done`), the settings card "התראות" (rows, emergency fixed, quiet hours, permission note), a bell in home, garden and the kitchen.
+- **For the CEO's review (privacy):** `push_nag` keeps a notification's own text (a reminder title) until handled, lowered, or 5 repeats; the gate now reads `prefs.nag`.
+- **Not built / waits:** goals and the coach send nothing yet (levels are ready); an item-level bell (needs the goals screen); the settings card has no icon (`.st-ico[data-ico="nag"]` is design's); `sw.js` should precache `assets/nag.js`; the batch 28 phone switch was never built, so nothing to remove.
+- **Not tested:** a real push with the app closed, the minute-cron repeat, quiet hours and Shabbat against live Hebcal, 1280 px, dark mode.
+
+## 2026-11-15: batch 28, goals part 2 (consultation)
+- Built: התייעצות on a goal's page (`POST /api/goals/ask`, 10 free a day then credits, `server/goals-advice.ts`), "שמור מסקנה" pinned to the goal (`goal_notes`, max 30, shown as "מה החלטנו"), "✨ עזור לי להגדיר" in the new-goal wizard with a draft (`POST /api/goals/ai/define`). The conversation is not stored; only pinned text is. DOM follows docs/design/goals-2.md; CSS arrives with design's merge.
+- Privacy flag (CEO review): the goal's title, why, steps and pinned notes go to Claude for the answer; `goal_notes` holds what the person pins.
+- Master files (own commit + patch): `schema.sql` (goal_notes), `functions/api/[[path]].ts` (5 routes).
+- Not built: privacy levels / the goals tab on the family profile, goal pushes (`tool: 'goals'`), Drive/NAS storage (waits for the CEO's review of the Drive permission).
+- Tested at 375 px: ask, quota (9 to 8), pin, define draft then "השתמש בנוסח", no overflow, targets 44 px and up. Not tested: 1280, dark, the 402 credit prompt, a real phone.
+
+## 2026-11-15: יד ביד stage 1, round 1 (the ledger and the gate) — locked behind the `yad` switch
+- Done: `server/yad-rules.ts` (levels, tenths, tithe rounded down, range labels, `yadOpen`), `server/yad-ledger.ts` (append-only, balance computed, guarded insert: no minus and frozen checked in the same statement, unique ref+leg, reversal as new rows, tithe paid since day one), `server/yad-gate.ts` (`requireYad`: 404 to everyone but the owner while the switch is off), the `yad` switch (master commit), the yad tables in `schema.sql`, `server/test-yad.mjs` (54 checks on a real SQLite, in `npm test`).
+- **Flag for the CEO (money level):** `server/yad-ledger.ts`, `server/yad-rules.ts`. Please review before anything is built on them. Known limits: a deed's "fund first, mint the rest" reads the fund balance just before posting (the owner is the only approver, so no race in practice); the tithe rounds down per transfer.
+- Next rounds: catalog seed + areas/ranges, needs board and service flow (two-sided confirm, recommendation), deeds + fund + owner queue, reports/removal, the page (mobile first) and the dashboard, `yad-gate.js` so the tile/links/pushes hide for everyone but the owner.
+- Batch 30 leftovers still open: skeletons on news/mail lists; the audit itself was run earlier (see the notes folder).
+
+## יד ביד, סבב 2 (2026-11-15)
+- cedee3d: the catalog seed (49 types, 9 licence + 2 driving declarations, 23 limit lines); `npm test` 62 checks green, typecheck clean.
+- Not yet built: areas table, `/api/yad*` routes, board, service flow, deeds, fund, owner queue, UI, account-close cancellation. Nothing is gated yet because no route exists.
+- Round 2 done (110a62b core, handlers, 25 routes, the page): 109 tests green, typecheck clean, smoke-tested at 375 px as the owner (region, deed approved, need, board). Not tested: a second real person on the board (only tests on SQLite), dark mode and 1280 px of the page, pushes.

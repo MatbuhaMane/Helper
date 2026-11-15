@@ -37,6 +37,8 @@ export const SWITCHES: Switch[] = [
   { key: 'dm', cat: 'notify', label: 'הודעות בין בני הבית', kind: 'bool', def: true, help: 'הנקודה והכניסה בתפריט. הדף עצמו נשאר.' },
   { key: 'reports', cat: 'notify', label: 'דיווח על תקלה', kind: 'bool', def: true, help: 'ניעור הטלפון, "דווח על בעיה" בתפריט ונקודת התשובה.' },
   { key: 'music', cat: 'tools', label: 'נגן המוזיקה', kind: 'bool', def: true, help: 'הנגן שבתפריט של כל מסך.' },
+  { key: 'yad', cat: 'tools', label: 'יד ביד (ממתין לאישורים)', kind: 'bool', def: false,
+    help: 'בנוי במלואו וננעל עד שמגיעות האישורים. כבוי: כל הנתיבים של יד ביד עונים 404 לכולם חוץ מהבעלים, והאפליקציה מסתירה את הכרטיס, הקישורים, מספר האישורים וההתראות. הבעלים לבדו יכול לנסות.' },
   { key: 'capture', cat: 'tools', label: 'שמירת טקסט מסומן', kind: 'bool', def: true, help: 'מסמנים טקסט בכל מקום ושומרים אותו כפתק.' },
 ];
 const byKey = new Map(SWITCHES.map((s) => [s.key, s]));

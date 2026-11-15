@@ -185,7 +185,7 @@
       if (!unread && dot) dot.remove();
       chip.setAttribute('aria-label', unread ? 'הגדרות, תשובה חדשה בתיבה' : 'הגדרות');
     }
-    for (const c of document.querySelectorAll('.rp-entry.inbox .mi-count')) { c.textContent = unread || ''; c.hidden = !unread; }
+    for (const c of document.querySelectorAll('.rp-entry.inbox .mi-count')) { c.textContent = unread || ''; c.hidden = !unread; c.style.display = unread ? '' : 'none'; }
   }
   async function refreshUnread() {
     try { const d = await api('/api/reports/mine', { noRedirect: true }); setUnread(d.unread); } catch (_) { /* offline: the dot waits */ }
@@ -193,7 +193,7 @@
 
   /** the two menu entries; `before`: run first (the tools menu closes itself before the sheet opens) */
   function reportEntries(before) {
-    const count = el('span', { class: 'mi-count', hidden: !unread }, unread || '');
+    const count = el('span', { class: 'mi-count', hidden: !unread, style: unread ? '' : 'display:none' }, unread || '');
     const go = (fn) => async () => { if (before) await before(); fn(); };
     return [
       el('button', { class: 'rp-entry', type: 'button', onclick: go(() => report()) }, el('span', { class: 'rp-entry-ic', 'aria-hidden': 'true' }),

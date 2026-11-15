@@ -1,7 +1,7 @@
 /* Family Helper for Windows: the companion lives on the whole desktop, above every window.
  * A transparent, always-on-top window covers the screen; clicks pass through it except over the companion.
  * Sign-in happens once in the normal browser (Google does not allow sign-in inside apps like this one). */
-const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, session, nativeImage } = require('electron');
+const { app, BrowserWindow, Tray, Menu, ipcMain, screen, shell, session, nativeImage, dialog, clipboard } = require('electron');
 const path = require('path');
 
 const SITE = 'https://helper.shemrivers.workers.dev';
@@ -55,8 +55,15 @@ async function signIn() {
   signingIn = true;
   try {
     const start = await fetch(`${SITE}/api/auth/desktop/start`, { method: 'POST' }).then((r) => r.json());
-    await shell.openExternal(start.approve);
-    const until = Date.now() + 10 * 60_000;
+    if (!start.code || !start.userCode) throw new Error(start.error || 'no code');
+    // the person types this code in the browser page: a link alone never connects a computer (security review H1)
+    clipboard.writeText(start.userCode);
+    dialog.showMessageBox({
+      type: 'info', title: 'התחברות לאוהל', buttons: ['פתיחת הדפדפן'], noLink: true,
+      message: `הקוד שלכם: ${start.userCode}`,
+      detail: 'בדף שייפתח בדפדפן, הקלידו (או הדביקו) את הקוד הזה ולחצו "לחבר את המחשב שלי". הקוד תקף 5 דקות.',
+    }).then(() => shell.openExternal(start.approve));
+    const until = Date.now() + ((start.expiresIn || 300) + 30) * 1000;
     while (Date.now() < until) {
       await new Promise((r) => setTimeout(r, 2000));
       const res = await fetch(`${SITE}/api/auth/desktop/poll?code=${encodeURIComponent(start.code)}`);

@@ -1,5 +1,5 @@
 /* ארגז הכלים (the owner, 2026-11-14): every app of the catalogue (H.APPS in /assets/apps.js), in one folder.
-   The person chooses the order, saved with their preferences (H.prefs('toolsView')):
+   The person chooses the order, saved with their preferences (H.prefs('toolsview')):
      hand      – their own arrangement (the arrange mode of H.folder: drag, and pin to the fire);
      name      – by name, in Hebrew order;
      category  – under the catalogue's categories (H.CATS) in the owner's order, with what is still to come (H.FUTURE) inside its category.
@@ -8,7 +8,7 @@
 (async () => {
   const { el } = H;
   const me = await H.me();
-  const view = H.prefs('toolsView', { sort: 'hand' });
+  const view = H.prefs('toolsview', { sort: 'hand' });
   const SORTS = [['hand', 'הסדר שלי'], ['name', 'לפי שם'], ['category', 'לפי קטגוריה']];
   // a pastel fill for an app with no tint of its own (the flat look fills the icon's shapes)
   const tint = (a) => a.tint || `color-mix(in srgb, ${a.c2 || '#888'} 26%, #fff)`;
@@ -20,7 +20,7 @@
 
   const choice = el('div', { class: 'tools-sort', role: 'radiogroup', 'aria-label': 'סדר הכלים', style: 'display:flex;flex-wrap:wrap;gap:8px;margin-block:4px 14px' },
     SORTS.map(([k, label]) => el('button', { type: 'button', class: 'chip', role: 'radio', 'aria-checked': String(view.sort === k), 'data-sort': k,
-      onclick: () => { if (view.sort === k) return; view.sort = k; H.savePrefs('toolsView'); order(); } }, label)));
+      onclick: () => { if (view.sort === k) return; view.sort = k; H.savePrefs('toolsview'); order(); } }, label)));
 
   await H.folder({ title: 'כלים', sub: 'כל הכלים של האוהל במקום אחד', look: 'flat', arrange: 'tools', under: choice, apps: [...apps, ...future] });
 
@@ -37,6 +37,12 @@
     const t = a.label && tiles.get(a.href);
     if (t) t.setAttribute('aria-label', a.soon ? `${a.label}, ${a.note || 'בעתיד'}` : a.label);
   }
+  // arranging is the hand order's own: a long press in the name or category view brings the tiles back to the grid first
+  folderEl.addEventListener('arrange:before', () => {
+    if (view.sort === 'hand') return;
+    view.sort = 'hand'; H.savePrefs('toolsview'); order();
+    H.toast("הסידור הוא של 'הסדר שלי'");
+  });
   let hand = [...tiles.keys()];      // the person's own order, as H.folder drew it (and as the arrange mode leaves it)
   let groups = [];                   // the category sections, while they are shown
   let drawn = null;                  // the order on screen now

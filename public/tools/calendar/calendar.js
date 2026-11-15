@@ -280,6 +280,7 @@
         el('p', { class: 'muted' }, k === iso(today) ? 'היום אין מועד מיוחד בלוח.' : 'אין מועד מיוחד ביום הזה.'),
       el('button', { class: 'cal-add', onclick: () => editFamily(null) }, '+ יום משפחתי ביום הזה'),
       el('a', { class: 'cal-add', href: '/gather/?new=' + iso(sel) }, '🎉 מפגש משפחתי ביום הזה'));
+    for (const c of dayBox.children) c.classList.add('swap-in');   // the content fades in where the skeleton was
   }
 
   /* add or change a family day */
@@ -374,6 +375,7 @@
         [['all', 'הכל'], ...KINDS].map(([k, n]) => el('button', { role: 'radio', 'aria-checked': String(k === yearFilter), class: 'k-' + k + (k === yearFilter ? ' on' : ''), onclick: () => { yearFilter = k; drawYear(); } }, k === 'all' ? '' : el('i'), n))),
       el('ol', { class: 'cal-ylist' }, rows),
       el('p', { class: 'rs-fine muted' }, 'הלוח, הזמנים והתיאורים מ־Hebcal. הימים המשפחתיים משותפים לכל המשפחה.'));
+    for (const c of yearBox.children) c.classList.add('swap-in');   // the content fades in where the skeleton was
     const list = yearBox.querySelector('.cal-ylist'), up = list.querySelector('.cal-yi:not(.past)');
     if (up) list.scrollTop = Math.max(0, up.offsetTop - list.offsetTop - 40);   // only the list scrolls, never the page
   }

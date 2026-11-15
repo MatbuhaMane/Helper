@@ -46,9 +46,23 @@
     return data;
   }
 
+  // A link from outside (a feed, the AI's sources, a saved page) may say javascript: – the browser would run it on a click.
+  // el() drops such a value from any URL attribute; a link (href) also never opens data:. (security review 2026-11-15, M3)
+  const URL_ATTRS = new Set(['href', 'src', 'action', 'formaction', 'xlink:href', 'poster']);
+  function unsafeUrl(k, v) {
+    const u = String(v).replace(/[\u0000-\u0020]/g, '').toLowerCase();   // the browser ignores spaces and control characters there
+    return /^(javascript|vbscript):/.test(u) || ((k === 'href' || k === 'xlink:href' || k === 'action' || k === 'formaction') && u.startsWith('data:'));
+  }
+  /** a URL safe to put in a link: http(s), mailto/tel, or a path on this site; otherwise '' */
+  function safeUrl(v) {
+    const u = String(v ?? '').trim();
+    return /^(https?:|mailto:|tel:)/i.test(u) || /^[/?#](?!\/)/.test(u) ? u : '';
+  }
+
   function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs || {})) {
+      if (URL_ATTRS.has(k) && v != null && v !== false && unsafeUrl(k, v)) continue;
       if (k === 'class') node.className = v;
       else if (k === 'html') node.innerHTML = v; // only for sanitized server HTML
       else if (k.startsWith('on')) node.addEventListener(k.slice(2), v);
@@ -210,7 +224,10 @@
         if (r.stale) { setLocal(ns, r.data, r.at, false); window.dispatchEvent(new CustomEvent('helper:prefs', { detail: ns })); }
         else delete prefStore.dirty[ns];
         savePrefCache();
-      } catch (_) { return; } // offline or signed out: try again later
+      } catch (e) {
+        if (e && (e.status === 400 || e.status === 413)) { delete prefStore.dirty[ns]; savePrefCache(); continue; } // the server will never take this one (a bad name, too large): it must not hold back the others
+        return; // offline or signed out: try again later
+      }
     }
   }
   window.addEventListener('online', schedulePrefFlush);
@@ -534,6 +551,19 @@
       if (!r.offline && !vault && !embedded && swOn('reports')) loadOnce('/assets/reports.js').catch(() => {});    // reports: shake, the menu entries, the answer dot (ai-features)
       if (!r.offline && !vault && !embedded && swOn('dm')) loadOnce('/assets/dm.js').catch(() => {});         // messages between members: the dot and the menu entry (server/dm.ts)
       if (!r.offline && !vault && !embedded && swOn('eggs')) loadOnce('/assets/eggs.js').catch(() => {});
+      // on a vault page only the inbox button (a link to /messages/ and its count, from /api/dm/unread, same origin): no dm.js, no menu entries
+      if (!r.offline && vault && !embedded && swOn('dm')) {
+        const chip = document.getElementById('userchip');
+        if (chip && !document.querySelector('.dm-inbox')) {
+          const a = el('a', { class: 'dm-inbox', href: '/messages/', title: 'הודעות', 'aria-label': 'הודעות' });
+          (document.querySelector('.navlock') || chip).before(a);
+          api('/api/dm/unread', { noRedirect: true }).then((d) => {
+            const n = Math.max(0, Number(d.unread) || 0); if (!n) return;
+            a.append(el('span', { class: 'dm-dot', 'aria-hidden': 'true' }));
+            a.setAttribute('aria-label', `הודעות, ${n} מחכות`); a.title = `הודעות, ${n} מחכות`;
+          }).catch(() => {});
+        }
+      }
       // the switchboard's moods: confetti and balloons (חגיגה) or candles (אבל), ai-features' /assets/switches.js
       if (!vault && !embedded && (switches.mood === 'party' || switches.mood === 'mourning')) loadOnce('/assets/switches.js').catch(() => {});       // the owner's surprise eggs on this page, if any (server/layout.ts)
       // the back door, opened on this device (ai-features' /assets/admin-tab.js): a tab back to it while the room is still open
@@ -945,7 +975,7 @@
     const w = [72, 54, 63, 45];
     return el('div', { class: 'skel-block', role: 'status', 'aria-label': label }, ...Array.from({ length: n }, (_, i) => el('div', { class: 'skel line', style: `--w:${w[i % 4]}%`, 'aria-hidden': 'true' })));
   }
-  window.H = { skel, api, el, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  window.H = { skel, api, el, safeUrl, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

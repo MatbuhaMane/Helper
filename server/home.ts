@@ -70,6 +70,7 @@ export async function done(ctx: Ctx) {
   if (!r.meta.changes) throw new HttpError(404, 'not_found');
   await db.prepare('INSERT INTO home_log (household, item, done_on, by_email, at) VALUES (?, ?, ?, ?, ?)')
     .bind(u.household, ctx.params.id, date, u.email, Date.now()).run();
+  await import('./push').then((p) => p.clearNagHousehold(ctx.env, u.household, 'home', ctx.params.id)).catch(() => {});
   return json({ ok: true, last_done: date });
 }
 
@@ -96,7 +97,7 @@ export async function remind(env: Env): Promise<number> {
     await env.DB.prepare('UPDATE home_items SET reminded = ? WHERE household = ? AND id = ?').bind(next, it.household, it.id).run();
     const late = next < t;
     n += await pushTo(env, [it.who], { title: `🏠 ${it.name}`, body: late ? 'עבר הזמן לטפל בזה. כשזה נעשה, מסמנים "בוצע".' : 'היום הזמן לטפל בזה.',
-      url: '/tools/home/', tag: `home${it.id}`, kind: 'reminder' }).catch(() => 0);
+      url: '/tools/home/', tag: `home${it.id}`, kind: 'reminder', tool: 'home', item: it.id }).catch(() => 0);
   }
   return n;
 }

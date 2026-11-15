@@ -34,6 +34,26 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 40** (2026-11-15), sent to design, ai-features and the CEO: three simplifications of the "יד ביד" approval queue after the ai-features estimate (a fund request for someone else with a mark and the owner's check instead of an in-app consent flow; "מאת האוהל" needs one-time only; one immediate notification mechanism, the daily summary later).
+- **Batch 39** (2026-11-15), sent to design, ai-features and the CEO: the spec of the owner's approval queue for "יד ביד" stage 1 (inside the "ממתין לאישור" page; deeds valued from a list; approve or reject with a reason; three actions on a report; fund requests for a person, for the public and "מאת האוהל"; immediate notifications only for the urgent items).
+- **Batch 38** (2026-11-15), sent to design, ai-features, legal and the CEO: four conditions on the licence declaration in "יד ביד" (never looks verified, no licence numbers or documents, a false declaration is grounds for removal, the terms say the Ohel does not check).
+- **Batch 37** (2026-11-15), sent to design, ai-features, legal and the CEO: the six stage 1 simplifications of "יד ביד" (tithe redemption to stage 2, no GPS, simple sorting, one simple notification, distance as a range, a need outside the list waits for the owner) and the product rules from legal (no illegal services, publication only with the owner's approval, report and removal, regulated professionals with a self-declared licence, ידיים have no monetary value).
+- **Batch 36** (2026-11-15), sent to design, ai-features and the CEO: the screen spec of "יד ביד" stage 1 (home screen with banner and dashboard, "לוח הדרושים", "יצירת צורך", what I can give in the profile, location, the fund page and redeeming the tithe).
+- **Batch 35** (2026-11-15), sent to the CEO: strengthen the Ohel's cyber security (a full review, findings by severity for the owner, and a standing security check for every feature that touches personal data).
+- **Batch 34** (2026-11-15), sent to design, ai-features, legal and the CEO: "יד ביד" starts in stages. Stage 1 now is the spec and design of the social interface for family and friends only (`docs/vision/yad-beyad.md`); legal starts the tax check; ai-features estimates the scope; building waits for the end of the family's two weeks.
+- **Legal closed its check (through the CEO, 2026-11-15):** no legal blocker, also for trade with everyone and for youth; the written answer comes later and stays with the owner. The product rules went out in batch 37.
+- **Waiting for the owner:** the first list of services with tiers, and the list of deeds for the community, before building "יד ביד".
+- **The rules page and the terms chapter of "יד ביד":** the owner approved the vision's tone version in the CEO's session (all five of legal's additions stay; a recommendation is optional); legal writes the final version, then the owner's lawyer.
+- **Batch 33** (2026-11-14), sent to the CEO and business: the tool is named "יד ביד" with the owner's line, and ידיים stay unlinked from credits (only discretionary gift credits).
+- **Batch 32** (2026-11-14), sent to design, the CEO, business and legal: the internal economy and the "יד" token (closed loop, earned only by doing, four hour tiers, a 10% tithe to a public fund, trade with everyone under three trust rules, youth inside the family). A big idea: "בקרוב" only.
+- **Batch 31** (2026-11-14), sent to ai-features, design and the CEO: "רמת הניג'וס", phone notifications per tool with four levels (off, quiet, normal, nag), main settings plus per-tool and per-item overrides.
+- **Batch 30** (2026-11-14), sent to ai-features, design and the CEO: Telegram-level smoothness across the whole app (now), the video speed slide in every player, and the chat spec 1 (wave 2).
+- **Batch 29** (2026-11-14), sent to ai-features, design, business and the CEO: the הקפדה coach, spec 1 (wave 2, after the family launch).
+- **Batch 28** (2026-11-14), sent to ai-features, design, business and the CEO: goals part 2 after the owner's test (AI consultation per goal, help defining a goal, phone notifications per kind, shared goals on the tree profile) and storage (your own Drive or NAS, ours paid, short clips free).
+- **Batch 27** (2026-11-14), sent to ai-features, design, business and the CEO:
+  - friends as "the family you choose": a page in the tree, chats one to one or in groups, and a fourth privacy level "חברים ומשפחה";
+  - the living museum becomes the hub for all memories, with videos and life events added;
+  - "גבעה ביער" waits for enough users.
 - **Batch 26** (2026-11-14), sent to ai-features-2, business and the CEO: the owner answered all 21 future-tool questions.
   - The answers are in `docs/vision/future-specs.md` and in `docs/decisions.md`.
   - AI inside a tool is free with a quota; business sets the quota and the price.

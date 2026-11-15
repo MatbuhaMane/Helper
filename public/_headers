@@ -7,7 +7,7 @@
   X-Frame-Options: SAMEORIGIN
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Permissions-Policy: camera=(self), microphone=(self), geolocation=(self), payment=(), usb=(), serial=(), bluetooth=(), hid=()
-  Content-Security-Policy: object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com; frame-ancestors 'self'
+  Content-Security-Policy: script-src 'self' 'inline-speculation-rules' https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.2.0/math.min.js https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js; object-src 'none'; base-uri 'self'; form-action 'self' https://accounts.google.com; frame-ancestors 'self'
 
 # The family vault: only our own scripts (none inline), nothing framed, nothing from outside but the font; never cached.
 /family/*

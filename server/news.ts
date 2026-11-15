@@ -358,8 +358,14 @@ export async function olderItems(ctx: Ctx) {
   return json({ items, more: results.length === limit });
 }
 
+/** a feed's link, only when it is a web address: a feed may say javascript: or data:, which a click would open (security review M3) */
+export function webLink(v: unknown): string {
+  const u = String(v ?? '').trim();
+  return /^https?:\/\//i.test(u) ? u : '';
+}
+
 function historyItem(r: any, f: Feed): NewsItem {
-  return { id: r.id, feedId: f.id, feed: f.title, title: r.title, link: r.link, date: r.date, summary: r.summary || '', image: r.image, image_full: r.image_full || undefined, body: r.body || undefined,
+  return { id: r.id, feedId: f.id, feed: f.title, title: r.title, link: webLink(r.link), date: r.date, summary: r.summary || '', image: r.image, image_full: r.image_full || undefined, body: r.body || undefined,
     lang: r.lang || f.lang || undefined, kind: f.kind, quality: f.quality, country: f.country || undefined };
 }
 
@@ -496,7 +502,7 @@ export function parseFeed(xml: string): Parsed {
       /<img[^>]+src=["']([^"']+)/i.exec(unescapeXml(desc))?.[1] || null;
     return {
       title: text(tag(b, 'title')) || '(ללא כותרת)',
-      link: link.trim(),
+      link: webLink(link),
       date,
       summary: text(desc).slice(0, 400),
       ...pictures(image ? unescapeXml(image) : null, media.full ? unescapeXml(media.full) : null),

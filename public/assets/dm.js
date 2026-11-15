@@ -31,7 +31,7 @@
       const label = unread ? `הודעות, ${unread === 1 ? 'שיחה אחת מחכה' : `${unread} שיחות מחכות`}` : 'הודעות';
       a.setAttribute('aria-label', label); a.title = label;
     }
-    for (const c of document.querySelectorAll('.dm-entry .mi-count')) { c.textContent = unread || ''; c.hidden = !unread; }
+    for (const c of document.querySelectorAll('.dm-entry .mi-count')) { c.textContent = unread || ''; c.hidden = !unread; c.style.display = unread ? '' : 'none'; }
   }
   async function refresh() {
     if (document.visibilityState !== 'visible') return;
@@ -42,7 +42,7 @@
 
   // the tools menu: an entry at its foot (common.js draws the menu when it opens)
   const entry = () => el('a', { class: 'rp-entry dm-entry', href: '/messages/' }, el('span', { class: 'rp-entry-ic', 'aria-hidden': 'true' }),
-    el('span', {}, el('b', {}, 'הודעות'), el('small', {}, 'שיחה עם בני המשפחה')), el('span', { class: 'mi-count', hidden: !unread }, unread || ''));
+    el('span', {}, el('b', {}, 'הודעות'), el('small', {}, 'שיחה עם בני המשפחה')), el('span', { class: 'mi-count', hidden: !unread, style: unread ? '' : 'display:none' }, unread || ''));
   new MutationObserver((muts) => {
     for (const m of muts) for (const n of m.addedNodes) {
       if (n.id === 'navmenu-tools' && !n.querySelector('.dm-entry')) n.prepend(el('div', { class: 'navmenu-reports' }, entry()));

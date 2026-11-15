@@ -8,7 +8,7 @@
 //   * every view, upload, change and deletion is written to the audit log; a deletion can be undone for 30 days
 // What is stored: names, titles, notes and details sealed with the vault key; files only as ciphertext (crypto.ts, store.ts).
 
-import { Ctx, HttpError, Member, body, getCookie, json, requireUser, uid } from '../core';
+import { Ctx, HttpError, Member, body, getCookie, json, rateHit, requireUser, uid } from '../core';
 import { decryptFile, encryptFile, fingerprint, newDataKey, openDataKey, seal, unseal, b64url } from './crypto';
 import { defaultStore, store, StoreName } from './store';
 import { challenge, verifyAssertion, verifyRegistration } from './webauthn';
@@ -28,14 +28,7 @@ const rpId = (ctx: Ctx) => ctx.url.hostname;
 
 /** At most `max` tries per window, per key (signing in, unlocking, uploading). */
 export async function rateLimit(ctx: Ctx, key: string, max: number, windowMs: number) {
-  const now = Date.now();
-  const row = await ctx.env.DB.prepare('SELECT count, reset_at FROM rate_hits WHERE key = ?').bind(key).first<{ count: number; reset_at: number }>();
-  if (!row || row.reset_at < now) {
-    await ctx.env.DB.prepare('INSERT INTO rate_hits (key, count, reset_at) VALUES (?, 1, ?) ON CONFLICT(key) DO UPDATE SET count = 1, reset_at = excluded.reset_at').bind(key, now + windowMs).run();
-    return;
-  }
-  if (row.count >= max) throw new HttpError(429, 'too_many_tries');
-  await ctx.env.DB.prepare('UPDATE rate_hits SET count = count + 1 WHERE key = ?').bind(key).run();
+  await rateHit(ctx.env, key, max, windowMs);   // atomic (core.ts)
 }
 
 async function audit(ctx: Ctx, u: Member, action: string, target: string | null, personId: string | null, priv = false) {
@@ -507,6 +500,13 @@ async function nameFor(ctx: Ctx, v: Viewer, p: PersonRow) {
   const s = K.view(await cardOf(ctx, p), p.household === v.u.household ? 'household' : K.distance(v.u.household, p.household, v.bridges), whoFor(v, p));
   return s?.name || 'קרוב/ת משפחה';
 }
+/** how many requests really wait for my answer (the same ones the list shows: a card that moved to someone else no longer counts) */
+export async function asksFor(ctx: Ctx, email: string): Promise<number> {
+  const { results } = await ctx.env.DB.prepare("SELECT * FROM family_changes WHERE for_email = ? AND status = 'pending' LIMIT 50").bind(email).all<ChangeRow>();
+  let n = 0;
+  for (const c of results) { try { if (await stillTheirs(ctx, c)) n++; } catch { /* gone */ } }
+  return n;
+}
 /** for the tree: what I asked that still waits (its badge), and how many wait for my answer */
 async function waiting(ctx: Ctx, u: Member) {
   const { results } = await ctx.env.DB.prepare("SELECT id, kind, person_id, target_id, by_email, for_email FROM family_changes WHERE status = 'pending' AND (by_email = ? OR for_email = ?) ORDER BY created_at")
@@ -515,7 +515,7 @@ async function waiting(ctx: Ctx, u: Member) {
   return {
     // (who it waits for, by name: the page's "מחכה לאישור של …")
     pending: mine.map(({ id, kind, person_id, target_id, for_email }) => ({ id, kind, person: person_id, link: target_id, waitsFor: n.get(for_email) || for_email.split('@')[0] })),
-    asks: results.filter((r) => r.for_email === u.email).length,
+    asks: await asksFor(ctx, u.email),
   };
 }
 /** GET /api/vault/changes – what waits for my answer (with what it would change), and what I asked */

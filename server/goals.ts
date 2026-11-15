@@ -10,6 +10,7 @@ import { Ctx, HttpError, body, json, requireUser, uid } from './core';
 import * as L from './goals-logic';
 import * as D from './discover-logic';
 import * as Social from './goal-social';
+import { notesOf } from './goals-advice';
 
 /** the request's body by a schema, or a 400 */
 async function read<T extends z.ZodTypeAny>(ctx: Ctx, schema: T): Promise<z.infer<T>> {
@@ -88,7 +89,7 @@ async function newBadges(ctx: Ctx, email: string, data: Awaited<ReturnType<typeo
     streak, whether the "why" or the weekly review is due, the badges (with the ones just earned) */
 export async function list(ctx: Ctx) {
   const u = requireUser(ctx);
-  const [data, rest] = await Promise.all([all(ctx, u.email), restOf(ctx, u.email)]);
+  const [data, rest, notes] = await Promise.all([all(ctx, u.email), restOf(ctx, u.email), notesOf(ctx.env, u.email)]);
   const today = L.dayOf(Date.now());
   const done: L.Done = new Set(data.steps.filter((s) => s.done_at).map((s) => L.dayOf(s.done_at)));
   // a recurring goal: its steps count as done only within the running round (the first day of its period)
@@ -108,6 +109,7 @@ export async function list(ctx: Ctx) {
   const goals = data.goals.map((g) => ({
     id: g.id, title: g.title, why: g.why || '', kind: g.kind, due: g.due || null, days: parseDays(g.days), time: g.time || null, status: g.status,
     template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null, shared: !!g.shared, repeat: null, ...roundOf(g.id),
+    notes: notes.filter((n) => n.goal_id === g.id).map((n) => ({ id: n.id, text: n.text, at: n.at })),
     processes: data.processes.filter((p) => p.goal_id === g.id).map((p) => ({ id: p.id, title: p.title, sort: p.sort, steps: steps.filter((s) => s.process === p.id) })),
   }));
   const today3 = L.todays(goals.map((g) => ({ ...g })), data.processes.map((p) => ({ id: p.id, goal: p.goal_id, sort: p.sort })), steps, today, rest);

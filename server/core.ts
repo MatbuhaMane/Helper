@@ -1,6 +1,7 @@
 // Shared backend pieces: environment, HTTP helpers, sessions, Google sign-in, token encryption.
 
 import { deniedTicket } from './access';
+import { RATE_HIT_SQL } from './rate-sql';
 
 export interface Env {
   DB: D1Database;
@@ -65,6 +66,14 @@ export async function body<T = any>(req: Request): Promise<T> {
   } catch {
     throw new HttpError(400, 'Invalid JSON body');
   }
+}
+
+/** At most `max` hits per window for this key (rate_hits, rate-sql.ts). One statement, so parallel requests cannot all read the
+    same count and slip through together: each one counts itself and sees its own number. */
+export async function rateHit(env: Env, key: string, max: number, windowMs: number, error = 'too_many_tries'): Promise<void> {
+  const now = Date.now();
+  const row = await env.DB.prepare(RATE_HIT_SQL).bind(key, now + windowMs, now, now).first<{ count: number }>();
+  if ((row?.count ?? 1) > max) throw new HttpError(429, error);
 }
 
 export function uid(): string {
@@ -242,7 +251,15 @@ export async function googleCallback(ctx: Ctx): Promise<Response> {
       grant_type: 'authorization_code',
     }),
   });
-  if (!tokenRes.ok) throw new HttpError(502, 'Google sign-in failed');
+  if (!tokenRes.ok) {
+    // Google's error code only (e.g. invalid_grant), never the request: it helps find why a sign-in failed (owner, 2026-11-15)
+    const why = String(((await tokenRes.json().catch(() => ({}))) as { error?: string }).error || tokenRes.status).replace(/[^\w.-]/g, '').slice(0, 40);
+    console.log('google token exchange failed', why, url.hostname);
+    // the same return from Google came twice (an installed app on Android opens the address again): the first one already
+    // signed the person in, so the second goes on to the page instead of an error. No session is made here (owner, 2026-11-15)
+    if (why === 'invalid_grant') return redirect(safeNext(saved.next));
+    throw new HttpError(502, `Google sign-in failed (${why})`);
+  }
   const tok = (await tokenRes.json()) as { id_token: string; refresh_token?: string; scope?: string };
   // The ID token came straight from Google's token endpoint over TLS, so its claims can be trusted without a signature check.
   const claims = JSON.parse(b64urlDecode(tok.id_token.split('.')[1]));
@@ -401,34 +418,83 @@ export async function decrypt(env: Env, enc: string): Promise<string> {
 
 
 /* ---------------- desktop program sign-in (through the browser) ---------------- */
-// 1. the program asks for a code; 2. it opens the browser at /api/auth/desktop/approve?code=…, where the person
-// (signed in as usual) approves; 3. the program polls and receives a session for itself.
+// 1. the program asks for a code pair: a secret one it polls with, and a short one it shows on its own screen;
+// 2. it opens the browser at /api/auth/desktop/approve, a page where the person (signed in as usual) TYPES the short
+//    code and presses a button (a POST); 3. the program polls and receives a session for itself.
+// The short code must be typed: a link alone never approves anything, so a link sent by someone else cannot connect
+// their computer to the person's account (security review 2026-11-15, H1). Codes live 5 minutes.
 
-export async function desktopStart(ctx: Ctx): Promise<Response> {
-  const code = uid() + uid();
-  await ctx.env.DB.prepare('INSERT INTO desktop_codes (code, sid, created_at) VALUES (?, NULL, ?)').bind(code, Date.now()).run();
-  return json({ code, approve: `${ctx.url.origin}/api/auth/desktop/approve?code=${code}` });
+const DESKTOP_TTL = 5 * 60_000;
+const DESKTOP_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no 0/O, 1/I: read off a screen and typed (32 letters: no bias)
+const desktopShortCode = () => [...crypto.getRandomValues(new Uint8Array(8))].map((b) => DESKTOP_ABC[b % DESKTOP_ABC.length]).join('');
+const HTML_ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escHtml = (t: string) => t.replace(/[&<>"']/g, (c) => HTML_ESC[c]);
+
+function desktopPage(title: string, inner: string, status = 200): Response {
+  const page = `<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title} · הָאֹהֶל</title><meta name="color-scheme" content="light dark"></head>
+<body style="font-family:Rubik,system-ui,sans-serif;margin:0;padding:32px 16px;background:Canvas;color:CanvasText">
+<main style="max-inline-size:440px;margin-inline:auto;line-height:1.6"><h1 style="font-size:1.4rem;margin:0 0 12px">${title}</h1>${inner}</main></body></html>`;
+  return new Response(page, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
 }
 
+function desktopForm(u: Member, error = ''): Response {
+  return desktopPage('חיבור התוכנה למחשב', `
+<p>מחוברים כעת בתור <b>${escHtml(u.email)}</b>.</p>
+<p>הקלידו כאן את הקוד ש<b>מופיע עכשיו בתוכנה במחשב שלכם</b>.</p>
+<p style="padding:10px 12px;border:1px solid #b45309;border-radius:10px">אם מישהו שלח לכם קוד או קישור – אל תקלידו. מי שמחזיק את הקוד יקבל גישה לחשבון שלכם.</p>
+${error ? `<p role="alert" style="color:#dc2626;font-weight:600">${escHtml(error)}</p>` : ''}
+<form method="post" action="/api/auth/desktop/approve">
+<label for="c" style="display:block;margin-block-end:6px">הקוד מהתוכנה</label>
+<input id="c" name="code" required autocomplete="off" autocapitalize="characters" spellcheck="false" dir="ltr" maxlength="12" placeholder="ABCD-EFGH"
+ style="font:inherit;font-size:1.4rem;letter-spacing:.15em;inline-size:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid GrayText;text-align:center;background:Field;color:FieldText">
+<button type="submit" style="font:inherit;margin-block-start:14px;inline-size:100%;padding:12px;border-radius:10px;border:0;background:#4a5d23;color:#fff;font-weight:600">לחבר את המחשב שלי</button>
+</form>`);
+}
+
+export async function desktopStart(ctx: Ctx): Promise<Response> {
+  await rateHit(ctx.env, 'desktop-start:' + (ctx.req.headers.get('cf-connecting-ip') || 'local'), 10, 60 * 60_000);
+  const now = Date.now();
+  await ctx.env.DB.prepare('DELETE FROM desktop_codes WHERE created_at < ?').bind(now - DESKTOP_TTL - 60_000).run();
+  const code = uid() + uid(), short = desktopShortCode();
+  await ctx.env.DB.prepare('INSERT INTO desktop_codes (code, sid, created_at, user_code) VALUES (?, NULL, ?, ?)').bind(code, now, short).run();
+  return json({ code, userCode: short.slice(0, 4) + '-' + short.slice(4), approve: `${ctx.url.origin}/api/auth/desktop/approve`, expiresIn: DESKTOP_TTL / 1000 });
+}
+
+/** GET: the page where the person types the code (it approves nothing by itself) */
 export async function desktopApprove(ctx: Ctx): Promise<Response> {
-  const code = ctx.url.searchParams.get('code') || '';
-  if (!ctx.user) return redirect('/?next=' + encodeURIComponent(`/api/auth/desktop/approve?code=${code}`));
-  const row = await ctx.env.DB.prepare('SELECT created_at, sid FROM desktop_codes WHERE code = ?').bind(code).first<{ created_at: number; sid: string | null }>();
-  if (!row || Date.now() - row.created_at > 10 * 60_000) {
-    return new Response('<meta charset="utf-8"><body dir="rtl" style="font-family:system-ui;padding:40px">הקוד פג תוקף. נסו להתחבר שוב מהתוכנה.</body>', { status: 410, headers: { 'content-type': 'text/html; charset=utf-8' } });
-  }
-  const id = uid() + uid();
-  await ctx.env.DB.batch([
-    ctx.env.DB.prepare('INSERT INTO sessions (id, email, expires_at) VALUES (?, ?, ?)').bind(id, ctx.user.email, Date.now() + SESSION_DAYS * 86400_000),
-    ctx.env.DB.prepare('UPDATE desktop_codes SET sid = ? WHERE code = ?').bind(id, code),
-  ]);
-  return new Response('<meta charset="utf-8"><body dir="rtl" style="font-family:system-ui;padding:40px;background:#efeee6;color:#2e2a1e"><h2>מחובר ✓</h2><p>אפשר לסגור את החלון ולחזור לתוכנה. האוהל כבר בדרך לשולחן העבודה.</p></body>', { headers: { 'content-type': 'text/html; charset=utf-8' } });
+  if (!ctx.user) return redirect('/?next=' + encodeURIComponent('/api/auth/desktop/approve'));
+  return desktopForm(ctx.user);
+}
+
+/** POST: the typed code – it connects the program waiting with that code to this account */
+export async function desktopConfirm(ctx: Ctx): Promise<Response> {
+  const u = requireUser(ctx);
+  await rateHit(ctx.env, 'desktop-confirm:' + u.email, 10, 15 * 60_000);
+  let typed = '';
+  try { typed = String((await ctx.req.formData()).get('code') || ''); } catch { /* not a form */ }
+  const short = typed.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (short.length !== 8) return desktopForm(u, 'הקוד הוא שמונה אותיות ומספרים, כמו שהוא מופיע בתוכנה.');
+  const now = Date.now(), id = uid() + uid();
+  // claim the code in one statement, so it connects one program only
+  const row = await ctx.env.DB.prepare('UPDATE desktop_codes SET sid = ? WHERE user_code = ? AND sid IS NULL AND created_at >= ? RETURNING code')
+    .bind(id, short, now - DESKTOP_TTL).first<{ code: string }>();
+  if (!row) return desktopForm(u, 'הקוד לא נמצא או שפג תוקפו (5 דקות). בקשו קוד חדש בתוכנה ונסו שוב.');
+  // the program's session is no fresher than the one that approved it (the vault asks for a fresh sign-in for some steps)
+  const mine = await ctx.env.DB.prepare('SELECT created_at FROM sessions WHERE id = ?').bind(getCookie(ctx.req, 'sid') || '').first<{ created_at: number | null }>();
+  await ctx.env.DB.prepare('INSERT INTO sessions (id, email, expires_at, created_at, last_active, label) VALUES (?, ?, ?, ?, ?, ?)')
+    .bind(id, u.email, now + SESSION_DAYS * 86400_000, mine?.created_at || 0, now, 'התוכנה למחשב').run();
+  ctx.waitUntil(import('./push').then((p) => p.pushTo(ctx.env, [u.email], {
+    title: 'מחשב חדש התחבר לאוהל', body: 'התוכנה למחשב חוברה עכשיו לחשבון שלכם. אם לא אתם חיברתם אותה, ספרו מיד לבעלים.',
+    url: '/', tag: 'desktop-connected', kind: 'family',
+  })).catch(() => {}));
+  return desktopPage('מחובר ✓', '<p>אפשר לסגור את החלון ולחזור לתוכנה. האוהל כבר בדרך לשולחן העבודה.</p>');
 }
 
 export async function desktopPoll(ctx: Ctx): Promise<Response> {
   const code = ctx.url.searchParams.get('code') || '';
   const row = await ctx.env.DB.prepare('SELECT sid, created_at FROM desktop_codes WHERE code = ?').bind(code).first<{ sid: string | null; created_at: number }>();
-  if (!row || Date.now() - row.created_at > 10 * 60_000) return json({ error: 'expired' }, 410);
+  if (!row || Date.now() - row.created_at > DESKTOP_TTL + 60_000) return json({ error: 'expired' }, 410);   // a minute's grace to collect an approved one
   if (!row.sid) return json({ waiting: true });
   await ctx.env.DB.prepare('DELETE FROM desktop_codes WHERE code = ?').bind(code).run();   // one use only
   return json({ sid: row.sid, maxAge: SESSION_DAYS * 86400 });

@@ -5,6 +5,10 @@ compatibility_flags = ["nodejs_compat"]
 # Keep variables set in the dashboard (OWNER_EMAIL lives there, not in this public repo).
 keep_vars = true
 
+# The addresses: the old workers.dev one stays on while the family moves to ohel.mish.site (mish.site itself is the owner's own site) (owner, 2026-11-15).
+workers_dev = true
+routes = [{ pattern = "ohel.mish.site", custom_domain = true }]
+
 # The local dev server (npm run dev). An area worktree passes its own: npm run dev -- --port 8789 --inspector-port 9230
 [dev]
 port = 8788

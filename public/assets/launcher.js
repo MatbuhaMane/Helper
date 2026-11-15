@@ -87,7 +87,8 @@
     }
     function enter() {
       if (on || P.locked) return;
-      on = true; grid.classList.add('arranging'); bar.hidden = false; syncLock();
+      folderEl.dispatchEvent(new CustomEvent('arrange:before'));   // a page that shows the tiles another way (by name, by category) puts them back in the grid
+      on = true; grid.classList.add('arranging'); grid.style.touchAction = 'none'; bar.hidden = false; syncLock();   // (inline: from this very frame, not when the stylesheet is recalculated)
       tiles().forEach((t) => { t.setAttribute('aria-roledescription', 'אריח שאפשר להזיז'); t.setAttribute('draggable', 'false'); });
       pins();
       navigator.vibrate?.(12);
@@ -95,7 +96,7 @@
     }
     function leave() {
       if (!on) return;
-      on = false; grid.classList.remove('arranging'); bar.hidden = true; syncLock();
+      on = false; grid.classList.remove('arranging'); grid.style.touchAction = ''; bar.hidden = true; syncLock();
       tiles().forEach((t) => t.removeAttribute('aria-roledescription'));
       pins();
     }
@@ -105,8 +106,12 @@
       const all = tiles(), from = all.indexOf(tile);
       if (index === from || index < 0 || index >= all.length) return false;
       const before = new Map(all.map((t) => [t, t.getBoundingClientRect()]));
-      const ref = all[index > from ? index + 1 : index] || null;
-      grid.insertBefore(tile, ref);
+      if (drag && drag.t === tile) {
+        // the dragged tile stays where it is in the DOM (taking it out and putting it back drops the pointer capture, and a finger's
+        // touch events then go to a detached node: the drag froze); the tiles it passes step over it instead
+        if (index > from) for (let k = from + 1; k <= index; k++) grid.insertBefore(all[k], tile);
+        else for (let k = from - 1; k >= index; k--) tile.after(all[k]);
+      } else grid.insertBefore(tile, all[index > from ? index + 1 : index] || null);
       if (!reduce()) for (const t of tiles()) {
         if (t === tile && drag) continue;
         const a = before.get(t), b = t.getBoundingClientRect();
@@ -118,11 +123,23 @@
 
     // a long press (a finger, or a held mouse button) opens the mode; a right click on a computer too
     let finger = false;                 // the last press was a finger or a pen (its long press also fires a contextmenu)
-    grid.addEventListener('pointerdown', (e) => { finger = e.pointerType === 'touch' || e.pointerType === 'pen'; }, true);
+    let lastX = 0, lastY = 0;
+    grid.addEventListener('pointerdown', (e) => { finger = e.pointerType === 'touch' || e.pointerType === 'pen'; lastX = e.clientX; lastY = e.clientY; }, true);
+    grid.addEventListener('pointermove', (e) => { lastX = e.clientX; lastY = e.clientY; }, true);
+    // an image or a link is not dragged by the browser itself (it would cancel our drag)
+    // a finger dragging a tile does not scroll the page (the press that opened the mode began before touch-action: none applied)
+
+    grid.addEventListener('dragstart', (e) => { if (on) e.preventDefault(); });
     grid.addEventListener('pointerdown', (e) => {
       if (on || P.locked || e.button > 0) return;
       const t = e.target.closest('.app'); if (!t) return;
-      press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => { press = null; grid.dataset.justEntered = '1'; enter(); }, 520) };
+      const id = e.pointerId;
+      press = { x: e.clientX, y: e.clientY, timer: setTimeout(() => {
+        press = null; grid.dataset.justEntered = '1'; enter();
+        // the same finger, still down: it may drag this tile at once (no lifting and pressing again)
+        const r0 = t.getBoundingClientRect(); drag = { t, id, sx: lastX, sy: lastY, gx: lastX - r0.left, gy: lastY - r0.top, moved: false };
+        try { t.setPointerCapture(id); } catch (_) { /* gone */ }
+      }, 520) };
     });
     const cancelPress = (e) => { if (press && (!e || Math.hypot(e.clientX - press.x, e.clientY - press.y) > 8)) { clearTimeout(press.timer); press = null; } };
     grid.addEventListener('pointermove', cancelPress);
@@ -155,16 +172,24 @@
       try { t.setPointerCapture(e.pointerId); } catch (_) { /* fine */ }
     });
     const follow = (t, e) => { t.style.transform = 'none'; const b = t.getBoundingClientRect(); t.style.transform = `translate(${(e.clientX - drag.gx - b.left).toFixed(1)}px, ${(e.clientY - drag.gy - b.top).toFixed(1)}px) scale(1.06)`; };
-    grid.addEventListener('pointermove', (e) => {
-      if (!drag || e.pointerId !== drag.id) return;
-      const { t } = drag;
-      if (!drag.moved) { if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return; drag.moved = true; t.classList.add('dragging'); }
+    // the move itself, for the pointer and for the finger's touch events alike (a phone may cancel the pointer when it takes the
+    // touch for a scroll; the touch events go on, and the drag is kept)
+    const moveAt = (x, y) => {
+      const { t } = drag, e = { clientX: x, clientY: y };
+      if (!drag.moved) { if (Math.hypot(x - drag.sx, y - drag.sy) < 4) return; drag.moved = true; t.classList.add('dragging'); }
       follow(t, e);
       // the tile under the finger's point gives up its place
-      let best = -1, bd = Infinity;
-      tiles().forEach((o, i) => { if (o === t) return; const b = o.getBoundingClientRect(); const d = Math.hypot(b.left + b.width / 2 - e.clientX, b.top + b.height / 2 - e.clientY); if (d < bd) { bd = d; best = i; } });
-      if (best >= 0 && bd < 56 && moveTo(t, best)) follow(t, e);
-    });
+      // the tile whose own place (its layout box: a gliding neighbour's animated offset is taken off) holds the finger gives up its place
+      let best = -1;
+      tiles().forEach((o, i) => {
+        if (o === t || best >= 0) return;
+        const m = new DOMMatrix(getComputedStyle(o).transform), b = o.getBoundingClientRect();
+        const l = b.left - m.e, tp = b.top - m.f;
+        if (x >= l && x <= l + b.width && y >= tp && y <= tp + b.height) best = i;
+      });
+      if (best >= 0 && moveTo(t, best)) follow(t, e);
+    };
+    grid.addEventListener('pointermove', (e) => { if (drag && e.pointerId === drag.id) moveAt(e.clientX, e.clientY); });
     const drop = (e) => {
       if (!drag || (e && e.pointerId !== drag.id)) return;
       const { t, moved } = drag; drag = null;
@@ -175,7 +200,18 @@
       if (!reduce() && cur && cur !== 'none') t.animate([{ transform: cur }, { transform: 'none' }], { duration: 220, easing: 'cubic-bezier(.22, 1, .36, 1)' });
       save();
     };
-    grid.addEventListener('pointerup', drop); grid.addEventListener('pointercancel', drop);
+    grid.addEventListener('pointerup', drop);
+    // a finger's pointer may be cancelled by the phone (it starts a scroll); the touch events say when the finger is really up
+    grid.addEventListener('pointercancel', (e) => { if (e.pointerType !== 'touch') drop(e); });
+    // a finger on a tile in the mode starts the drag from its own touch, whatever the pointer events do (Android may cancel them at once)
+    grid.addEventListener('touchstart', (e) => {
+      if (!on || drag || e.touches.length !== 1 || e.target.closest('.app-pin')) return;
+      const t = e.target.closest('.app'); if (!t) return;
+      const f = e.touches[0], r0 = t.getBoundingClientRect();
+      drag = { t, id: -1, sx: f.clientX, sy: f.clientY, gx: f.clientX - r0.left, gy: f.clientY - r0.top, moved: false };
+    }, { passive: true });
+    grid.addEventListener('touchmove', (e) => { if (!drag) return; if (e.cancelable) e.preventDefault(); const f = e.touches[0]; if (f) moveAt(f.clientX, f.clientY); }, { passive: false });
+    grid.addEventListener('touchend', () => drop()); grid.addEventListener('touchcancel', () => drop());
 
     // the keyboard: in the mode, the arrows move the focused tile (in Hebrew, right is earlier); Escape ends the mode
     grid.addEventListener('keydown', (e) => {

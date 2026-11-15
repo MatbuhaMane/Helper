@@ -41,6 +41,10 @@
     { href: '/food/diet/hakpada/', ic: 'target', name: 'הקפדה', sub: 'מה שהחלטתם לשמור עליו, יום אחר יום', pillow: 'p12', c2: '#c4501e', tint: '#ffd9c2' },
     { href: '/food/diet/habits/', ic: 'habits', name: 'הרגלי אכילה', sub: 'קטו, אטקינס, פליאו ועוד – מתג לכל דרך אכילה', pillow: 'p13', c2: '#1f8f8a', tint: '#c8f0ea' },
     { href: '/food/restaurants/', ic: 'restaurant', name: 'אוכלים בחוץ', sub: 'המסעדות שלנו, ומה הזמנו בכל אחת', pillow: 'p05', c2: '#c4501e' },
+    { href: '/food/kitchen/', ic: 'food', name: 'עוזר מטבח', sub: 'מבשלים יחד: המרת מידות, טיימרים ועצות', pillow: 'p03', c2: '#2f7d4a', tint: '#c6efc6' },
+    { href: '/tools/breath/', ic: 'habits', name: 'מדיטציה ונשימה', sub: 'כמה דקות של שקט ונשימה, כל יום', pillow: 'p08', c2: '#2b7a70', tint: '#cfe7ff' },
+    { href: '/tools/garden/', ic: 'habits', name: 'הגינה והעציצים', sub: 'מתי להשקות, לגזום ולשתול', pillow: 'p15', c2: '#2f7d4a', tint: '#fff0b3' },
+    { href: '/tools/home/', ic: 'pc', name: 'תחזוקת הבית', sub: 'מה צריך בדיקה או תיקון בבית, ומתי', pillow: 'p16', c2: '#8a5a2b', tint: '#ffe0cc' },
     { href: '/tools/research/', ic: 'lens', name: 'עוזר מחקר', sub: 'פתקים, שאלות פתוחות, מקורות וכתיבה', pillow: 'p11', c2: '#3557a8', tint: '#d9ecff' },
     { href: '/tools/parnasa/', ic: 'parnasa', name: 'פרנסה', sub: 'הכסף של הבית: הכנסות, הוצאות וחיסכון', pillow: 'p16', c2: '#2b7a70' },
     { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c', tint: '#ffd1de', tag: 'ניסיוני', access: 'beta' },
@@ -52,23 +56,21 @@
   const CATS = [
     { id: 'work', name: 'כלי עבודה', apps: ['/tools/calc/', '/tools/research/', '/parasha/', '/tools/notes/', '/tools/weather/', 'soon:howto', 'soon:translate', 'soon:eye', 'soon:homework'] },
     { id: 'arts', name: 'אומנות או נמות', apps: ['/songs/', '/fun/', '/news/'] },
-    { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', 'soon:breath'] },
-    { id: 'food', name: 'אוכל', apps: ['/food/', 'soon:kitchen', '/groceries/#book', '/food/restaurants/'] },
-    { id: 'routine', name: 'שוטף', apps: ['/tools/calendar/', '/tools/parnasa/', '/food/fridge/', '/groceries/', '/pc/', '/mail/', 'soon:garden', 'soon:home'] },
-    { id: 'social', name: 'חברתי', apps: ['/family/', '/gather/', '/messages/'] },
+    { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', '/tools/breath/'] },
+    { id: 'food', name: 'אוכל', apps: ['/food/', '/food/kitchen/', '/groceries/#book', '/food/restaurants/'] },
+    { id: 'routine', name: 'שוטף', apps: ['/tools/calendar/', '/tools/parnasa/', '/food/fridge/', '/groceries/', '/pc/', '/mail/', '/tools/garden/', '/tools/home/'] },
+    { id: 'social', name: 'חברתי', apps: ['/family/', '/gather/', '/messages/', 'soon:yad'] },
   ];
   // still to come, shown inside their category (like SOON: a tap tells one sentence)
   const FUTURE = [
-    { id: 'kitchen', name: 'עוזר מטבח', ic: 'food', note: 'בעתיד', line: 'עוזר שמבשל איתך: המרת מידות, טיימרים, הדרכה ועצות.' },
     { id: 'howto', name: 'איך אני עושה', ic: 'lens', note: 'בעתיד', line: 'מדריך לכל דבר, צעד אחר צעד.' },
-    { id: 'garden', name: 'הגינה והעציצים', ic: 'habits', note: 'בעתיד', line: 'מתי להשקות, לגזום ולשתול, לכל צמח בבית.' },
-    { id: 'home', name: 'תחזוקת הבית', ic: 'pc', note: 'בעתיד', line: 'מה צריך בדיקה או תיקון בבית, ומתי. יתחבר למוסך.' },
     { id: 'translate', name: 'מתורגמן', ic: 'lens', note: 'בעתיד', line: 'תרגום בדיבור ובכתב. ובהמשך: עין בעין, משחק ללימוד שפה.' },
     // the language game (vision batch 22): the name is drawn with the Arabic letter; label is what a screen reader says
     { id: 'eye', name: 'ع ב-ע', label: 'עין בעין', ic: 'lens', note: 'בעתיד', line: 'משחק ללימוד שפה, מכל שפה לכל שפה.' },
     // only: 'child': shown only to a child (H.me().child: under 12 by the birth year the owner set)
     { id: 'homework', name: 'עוזר שיעורי בית', ic: 'note', note: 'בעתיד', line: 'עזרה בשיעורים: מסבירים, לא פותרים במקומך.', only: 'child' },
-    { id: 'breath', name: 'מדיטציה ונשימה', ic: 'habits', note: 'בעתיד', line: 'כמה דקות של שקט ונשימה, כל יום.' },
+    // vision batch 32 (2026-11-14): the Ohel's inner economy, the token יד; drawn only, nothing built yet
+    { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בעתיד', line: 'לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה' },
   ];
   for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }
   /** may this person open the app? r is what H.me() resolves to; beta and secret apps need the back door's leave (r.apps: ['beta', '/x/']) */

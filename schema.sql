@@ -1280,6 +1280,33 @@ CREATE TABLE IF NOT EXISTS push_digest (
 );
 CREATE INDEX IF NOT EXISTS push_digest_email ON push_digest (email, seen_at);
 
+-- "רמת הניג'וס", level נודניק: a notification that repeats until the person marks it handled (server/push.ts, nagTick).
+-- Deleted when handled, when the person lowers the level, or after MAX_REPEATS. Holds the notification's own text: a reminder title, nothing more.
+CREATE TABLE IF NOT EXISTS push_nag (
+  email   TEXT NOT NULL,
+  tool    TEXT NOT NULL,
+  item    TEXT NOT NULL DEFAULT '',
+  title   TEXT NOT NULL,
+  body    TEXT NOT NULL,
+  url     TEXT,
+  sent    INTEGER NOT NULL DEFAULT 1,
+  next_at INTEGER NOT NULL,
+  PRIMARY KEY (email, tool, item)
+);
+CREATE INDEX IF NOT EXISTS push_nag_due ON push_nag (next_at);
+
+-- Goals part 2 (ai-features, vision batch 28; server/goals-advice.ts): "שמור מסקנה", what the person pinned to a goal from the AI consultation.
+-- Only what they pin is kept; the conversation itself is not stored.
+CREATE TABLE IF NOT EXISTS goal_notes (
+  email   TEXT NOT NULL,
+  goal_id TEXT NOT NULL,
+  id      TEXT NOT NULL,
+  text    TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE INDEX IF NOT EXISTS goal_notes_goal ON goal_notes (email, goal_id);
+
 -- פרנסה, the household's money (server/parnasa.ts). A row is personal (kupa_id NULL, seen by owner_email only) or in a
 -- shared קופה (seen by that קופה's members). Amounts are shekels, an expense negative. Nothing here goes to the logs.
 CREATE TABLE IF NOT EXISTS pr_tx (
@@ -1478,3 +1505,111 @@ CREATE TABLE IF NOT EXISTS dm_group_messages (
   at     INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS dm_group_messages_grp ON dm_group_messages (grp, at);
+
+-- "יד ביד" (docs/vision/yad-beyad.md), stage 1. The ledger is append-only and exact (whole tenths); see server/yad-ledger.ts.
+-- Locked behind the owner-only switch "yad" until the approvals arrive (server/yad.ts answers 404 to everyone else).
+CREATE TABLE IF NOT EXISTS yad_ledger (
+  seq    INTEGER PRIMARY KEY AUTOINCREMENT,
+  ref    TEXT NOT NULL,
+  leg    INTEGER NOT NULL,
+  at     INTEGER NOT NULL,
+  kind   TEXT NOT NULL,
+  src    TEXT NOT NULL,
+  dst    TEXT NOT NULL,
+  tenths INTEGER NOT NULL CHECK (tenths > 0),
+  UNIQUE (ref, leg)
+);
+CREATE INDEX IF NOT EXISTS yad_ledger_src ON yad_ledger (src);
+CREATE INDEX IF NOT EXISTS yad_ledger_dst ON yad_ledger (dst);
+-- the owner's two lists: services between members and deeds for the community
+CREATE TABLE IF NOT EXISTS yad_types (
+  id          TEXT PRIMARY KEY,
+  kind        TEXT NOT NULL,                       -- 'service' | 'deed'
+  name        TEXT NOT NULL,
+  difficulty  INTEGER NOT NULL,
+  expertise   INTEGER NOT NULL,
+  declaration TEXT NOT NULL DEFAULT 'none',        -- 'none' | 'license' | 'driving': what a person declares to offer it (never shown as verified)
+  note        TEXT NOT NULL DEFAULT '',            -- one sentence: its limit or caution
+  sort        INTEGER NOT NULL DEFAULT 0,
+  active      INTEGER NOT NULL DEFAULT 1
+);
+-- a person in "יד ביד": the area (an id from a fixed table, never coordinates), the removal (frozen hands)
+CREATE TABLE IF NOT EXISTS yad_people (
+  email      TEXT PRIMARY KEY,
+  region     TEXT,
+  removed_at INTEGER,
+  removed_by TEXT,
+  created_at INTEGER NOT NULL
+);
+-- the types a person offers; declared = "לפי הצהרת המשתמש" for a type that asks for a declaration
+CREATE TABLE IF NOT EXISTS yad_offers (
+  email    TEXT NOT NULL,
+  type_id  TEXT NOT NULL,
+  declared INTEGER NOT NULL DEFAULT 0,
+  at       INTEGER NOT NULL,
+  PRIMARY KEY (email, type_id)
+);
+-- a need (a request for a hand), from a person, from the fund for a person, for the public, or from the tent itself
+CREATE TABLE IF NOT EXISTS yad_needs (
+  id          TEXT PRIMARY KEY,
+  email       TEXT NOT NULL,                       -- who published it
+  type_id     TEXT,                                -- null = a type that is not on the list (waits for the owner's level)
+  title       TEXT NOT NULL,
+  detail      TEXT NOT NULL DEFAULT '',
+  half_hours  INTEGER NOT NULL,
+  difficulty  INTEGER NOT NULL,
+  expertise   INTEGER NOT NULL,
+  level_ok    INTEGER NOT NULL DEFAULT 1,          -- 0 while the owner has not approved the level of an unlisted type
+  status      TEXT NOT NULL DEFAULT 'open',        -- open | agreed | done | cancelled | removed | rejected
+  pay         TEXT NOT NULL DEFAULT 'person',      -- 'person' pays | 'fund' pays (for a person) | 'public' (for the public, fund pays) | 'ohel' (published by the tent, fund pays)
+  fund_ok     INTEGER NOT NULL DEFAULT 0,          -- for fund/public: 0 waits for the owner, 1 approved, 2 rejected
+  fund_reason TEXT NOT NULL DEFAULT '',            -- why from the fund: only the owner reads it
+  for_name    TEXT NOT NULL DEFAULT '',            -- when asking the fund for someone else
+  consent     INTEGER NOT NULL DEFAULT 0,          -- the asker marked "the person knows and agrees", the owner checks it
+  region      TEXT,
+  helper      TEXT,
+  req_ok      INTEGER NOT NULL DEFAULT 0,
+  help_ok     INTEGER NOT NULL DEFAULT 0,
+  gross       INTEGER,                             -- tenths, fixed when the two agree
+  address     TEXT NOT NULL DEFAULT '',            -- only the two sides read it, after they agreed
+  reject_why  TEXT NOT NULL DEFAULT '',
+  created_at  INTEGER NOT NULL,
+  updated_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS yad_needs_status ON yad_needs (status, created_at);
+CREATE INDEX IF NOT EXISTS yad_needs_email ON yad_needs (email);
+-- a recommendation after a service, shown on the giver's profile
+CREATE TABLE IF NOT EXISTS yad_recs (
+  need_id TEXT PRIMARY KEY,
+  by_email TEXT NOT NULL,
+  about   TEXT NOT NULL,
+  text    TEXT NOT NULL,
+  at      INTEGER NOT NULL
+);
+-- "עשיתי מעשה": a deed for the community that a person reports and the owner approves (hours may be corrected)
+CREATE TABLE IF NOT EXISTS yad_deeds (
+  id          TEXT PRIMARY KEY,
+  email       TEXT NOT NULL,
+  type_id     TEXT,
+  title       TEXT NOT NULL,
+  half_hours  INTEGER NOT NULL,
+  difficulty  INTEGER NOT NULL,
+  expertise   INTEGER NOT NULL,
+  level_ok    INTEGER NOT NULL DEFAULT 1,
+  status      TEXT NOT NULL DEFAULT 'pending',     -- pending | approved | rejected
+  reject_why  TEXT NOT NULL DEFAULT '',
+  decided_at  INTEGER,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS yad_deeds_status ON yad_deeds (status);
+-- a report on a need, an offer or a person; the owner dismisses it, removes the need, or removes the person
+CREATE TABLE IF NOT EXISTS yad_reports (
+  id       TEXT PRIMARY KEY,
+  by_email TEXT NOT NULL,
+  kind     TEXT NOT NULL,                          -- need | person | license
+  target   TEXT NOT NULL,
+  reason   TEXT NOT NULL,
+  status   TEXT NOT NULL DEFAULT 'open',
+  action   TEXT,
+  at       INTEGER NOT NULL
+);

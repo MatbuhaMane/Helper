@@ -17,8 +17,14 @@ const VAULT_CSP = [
   "img-src 'self' blob: data:", "media-src 'self' blob:", "connect-src 'self'", "worker-src 'self'", "frame-src 'none'", "object-src 'none'",
   "base-uri 'none'", "form-action 'self' https://accounts.google.com", "frame-ancestors 'self'",
 ].join('; ');
-/** Every other page: the rules that cost nothing to keep (the hub embeds YouTube, Spotify and others, so no allow-list here yet). */
-const BASE_CSP = ["object-src 'none'", "base-uri 'self'", "form-action 'self' https://accounts.google.com", "frame-ancestors 'self'"].join('; ');
+/** Every other page: only our own scripts – none inline, no eval – and the calculator's three libraries, each by its exact
+    address (public/tools/calc/calc.js). The hub embeds YouTube, Spotify and others, so frames, images and media are not
+    limited here yet. The same line is in public/_headers for the static pages; keep the two alike. (security review M2) */
+const SCRIPT_SRC = ["script-src 'self' 'inline-speculation-rules'",
+  'https://cdnjs.cloudflare.com/ajax/libs/mathjs/13.2.0/math.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js'].join(' ');
+const BASE_CSP = [SCRIPT_SRC, "object-src 'none'", "base-uri 'self'", "form-action 'self' https://accounts.google.com", "frame-ancestors 'self'"].join('; ');
 
 function secure(res: Response, url: URL): Response {
   const out = new Response(res.body, res);
@@ -52,7 +58,7 @@ export default {
   /** the nightly job: the vault's backups (only where the vault is configured) */
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     // every minute: the kitchen timers that end within it ring at their second, with the app closed (server/cook.ts)
-    if (event.cron === MINUTE) { ctx.waitUntil(ensureSchema(env).then(() => cook.tick(env)).catch((e) => console.error('kitchen timers failed', e))); return; }
+    if (event.cron === MINUTE) { ctx.waitUntil(ensureSchema(env).then(() => cook.tick(env)).then(() => push.nagTick(env)).catch((e) => console.error('kitchen timers or nags failed', e))); return; }
     if (event.cron === MORNING) {
       ctx.waitUntil(ensureSchema(env).then(() => push.morning(env)).then((n) => console.log('morning notes', n)).catch((e) => console.error('morning failed', e)));
       ctx.waitUntil(ensureSchema(env).then(() => home.remind(env)).then((n) => console.log('home reminders', n)).catch((e) => console.error('home reminders failed', e)));

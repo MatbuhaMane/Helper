@@ -1,11 +1,13 @@
 // Single entry point for /api/*: a tiny router over the server modules.
 
 import { aiStatus } from '../../server/ai';
-import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
+import { Ctx, Env, HttpError, body, previewHandoff, desktopApprove, desktopConfirm, desktopPoll, desktopStart, devLogin, googleCallback, googleLogin, json, loadUser, logout, requireOwner, useInviteHooks } from '../../server/core';
 import * as daemon from '../../server/daemon';
 import * as access from '../../server/access';
 import * as grants from '../../server/grants';
 import * as push from '../../server/push';
+import * as goalsAdvice from '../../server/goals-advice';
+import * as yad from '../../server/yad';                  // יד ביד (ai-features, 2026-11-15): locked behind the owner switch 'yad'
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
@@ -88,6 +90,7 @@ route('POST', '/api/push/subscribe', push.subscribe);
 route('DELETE', '/api/push/subscribe', push.unsubscribe);
 route('POST', '/api/push/test', push.test);
 route('GET', '/api/digest', push.digest);
+route('POST', '/api/nag/done', push.nagDone);   // "רמת הניג'וס": the person handled it, the repeats stop
 route('PUT', '/api/admin/grants/:email', grants.put);
 route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
 route('POST', '/api/auth/passkey', lock.login);
@@ -103,6 +106,7 @@ route('GET', '/api/auth/handoff', previewHandoff);
 route('POST', '/api/auth/logout', logout);
 route('POST', '/api/auth/desktop/start', desktopStart);
 route('GET', '/api/auth/desktop/approve', desktopApprove);
+route('POST', '/api/auth/desktop/approve', desktopConfirm);
 route('GET', '/api/auth/desktop/poll', desktopPoll);
 route('GET', '/api/me', async (ctx) => {
   if (!ctx.user) return json(ctx.env.DEV_MODE === '1' ? { user: null, dev: true, devEmail: (ctx.env.OWNER_EMAIL || '').split(',')[0] } : { user: null });
@@ -296,6 +300,36 @@ route('GET', '/api/goals/template', goals.template);
 route('POST', '/api/goals/review', goals.review);
 route('POST', '/api/goals/ai/plan', goals.aiPlan);
 route('POST', '/api/goals/ai/stuck', goals.aiStuck);
+route('GET', '/api/goals/ask', goalsAdvice.quota);               // goals part 2 (server/goals-advice.ts): the free messages left today
+route('POST', '/api/goals/ask', goalsAdvice.ask);                // a consultation on one goal
+route('POST', '/api/goals/ai/define', goalsAdvice.define);       // "עזור לי להגדיר"
+route('POST', '/api/goals/:id/notes', goalsAdvice.addNote);      // "שמור מסקנה"
+route('DELETE', '/api/goals/notes/:id', goalsAdvice.removeNote);
+route('GET', '/api/yad/status', yad.status);
+route('GET', '/api/yad/catalog', yad.catalog);
+route('PUT', '/api/yad/region', yad.setRegion);
+route('PUT', '/api/yad/offers', yad.setOffers);
+route('GET', '/api/yad/board', yad.board);
+route('POST', '/api/yad/needs', yad.createNeed);
+route('GET', '/api/yad/mine', yad.mine);
+route('POST', '/api/yad/needs/:id/offer', yad.offerHelp);
+route('POST', '/api/yad/needs/:id/answer', yad.answer);
+route('PUT', '/api/yad/needs/:id/address', yad.putAddress);
+route('GET', '/api/yad/needs/:id/address', yad.getAddress);
+route('POST', '/api/yad/needs/:id/confirm', yad.confirm);
+route('POST', '/api/yad/needs/:id/cancel', yad.cancel);
+route('POST', '/api/yad/needs/:id/recommend', yad.recommend);
+route('POST', '/api/yad/deeds', yad.reportDeed);
+route('POST', '/api/yad/reports', yad.report);
+route('GET', '/api/yad/fund', yad.fund);
+route('GET', '/api/yad/dashboard', yad.dashboard);
+route('POST', '/api/yad/close', yad.closeMine);
+route('GET', '/api/yad/queue', yad.queue);
+route('POST', '/api/yad/queue/needs/:id', yad.decideNeed);
+route('POST', '/api/yad/queue/deeds/:id', yad.decideDeed);
+route('POST', '/api/yad/queue/reports/:id', yad.resolve);
+route('POST', '/api/yad/restore', yad.restore);
+route('GET', '/api/yad/balance/:email', yad.personBalance);
 route('PUT', '/api/goals/:id', goals.update);
 route('DELETE', '/api/goals/:id', goals.remove);
 route('POST', '/api/goals/:id/processes', goals.addProcess);

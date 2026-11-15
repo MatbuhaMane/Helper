@@ -157,6 +157,12 @@ Exception: an area may **append** a route line to `functions/api/[[path]].ts`, a
    in `docs/decisions.md` and is flagged to the master.
 5. Only the master merges area branches into `main`, after reviewing the diff (`git diff main...design`), checking for
    conflicts, and running `npm run typecheck`, `npm test` (vault, meter, forest, calendar) and the page audit.
+   **Security review (the owner, 2026-11-15):** a feature that touches personal data passes a security review before the merge.
+   Personal data includes location, messages, the tree, files, and the hands ledger (reviewed at the level of money).
+   - The area flags it in its commits.
+   - The master (on Opus) reviews: access checks and the privacy levels, input validation and rate limits, what is stored and for how long,
+     and what reaches the AI.
+   - Fixes in the vault, sign-in or money go live only with the owner's OK.
 6. **A push to `main` deploys the live site.** The master pushes `main` only with the owner's approval. Area branches are
    pushed only with the owner's approval; a pushed branch gets its own preview address with its own database.
 7. Never delete, force-push, rewrite history or discard someone's uncommitted work.

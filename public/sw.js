@@ -1,7 +1,7 @@
 /* Service worker: app shell works offline (the grocery list keeps its own offline copy). API calls go to the network,
    except the sources of the study room: Sefaria's texts (through /api/sefaria/), the concordance and the textual witnesses
    are kept on the device in a cache of their own that a new version of the app does not clear – once read, always there. */
-const CACHE = 'helper-v177';
+const CACHE = 'helper-v184';
 const SOURCES = 'helper-sources-v1';
 // the companion's 3D engine and figures (about 6.5 MB): served from the device at once, refreshed quietly in the background
 const MODELS = 'helper-models-v2';
@@ -53,7 +53,7 @@ self.addEventListener('push', (e) => {
   try { m = e.data ? e.data.json() : {}; } catch (_) { m = { title: 'האוהל', body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(m.title || 'האוהל', {
     body: m.body || '', tag: m.tag || undefined, renotify: !!m.tag, dir: 'rtl', lang: 'he',
-    icon: '/assets/icons/ohel-icon-192.png', badge: '/assets/icons/ohel-icon-192.png',
+    icon: '/assets/icons/ohel-icon-192.png', badge: '/assets/icons/ohel-badge-96.png',
     requireInteraction: !!m.urgent, vibrate: m.urgent ? [400, 150, 400, 150, 400, 150, 800] : [80],
     actions: Array.isArray(m.actions) ? m.actions.slice(0, 2) : [],
     data: { url: m.url || '/', ...(m.data || {}) },

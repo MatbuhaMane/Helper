@@ -47,3 +47,20 @@ Checked at 375 px light (the audit clean); desktop and dark use the same classes
 - A professional's service shows only the plain grey note `.yd-tag` "לפי הצהרת המשתמש" (board card, my lists). **Never** "מוסמך" or "מאומת", never a tick, a shield, a seal or a green colour beside it. "דורש רישיון" stays only on the type in the profile list.
 - The profile asks only for the declaration tick-box: no licence number field, no upload.
 - **The owner queue** lives in the existing "ממתין לאישור" page (a filter "יד ביד" and one count of what waits). No new screen from design yet: the page exists, and vision is still writing the rest of the queue spec with the owner.
+
+## Batch 41: the licence declaration follows the type, not the tier (2026-11-15)
+- **Profile:** "דורש רישיון" (`.yd-tag.pend`) sits on any type, at any tier, inside its normal group (the old "רפואה ומשפט" group is gone). One declaration (`.yd-decl`) closes the list; it applies to every marked type the person ticks. The text keeps batch 38: a declaration only, no number, no documents.
+- **Wherever a declared professional shows:** only the grey "לפי הצהרת המשתמש". No badge, no tick.
+- **The owner's list editor** (prototype screen "עריכת הרשימה"): per type, a row with its name and tier and one on/off switch "דורש רישיון" (`.yd-switch`, 48 px).
+- **In the queue,** "להוסיף לרשימה" is followed by the same on/off, "דורש רישיון" (`.yd-qadd` with `role="switch"`).
+
+## Batch 42: two declarations and a description line per type (2026-11-15)
+- **Two declarations.** A type asks for one of: the licence declaration, or the driving declaration "יש לי רישיון נהיגה בתוקף, והרכב מבוטח". The mark reads "דורש רישיון" or "דורש רישיון נהיגה" (`.yd-tag.pend`). The profile shows each declaration (`.yd-decl`) once, closing the list. Both appear on the board only as the grey "לפי הצהרת המשתמש", never a badge or tick.
+- **The description line** (`.yd-desc`, one sentence with the limit or caution, prefixed "שימו לב: " by CSS). It shows in three places: under the type name in the profile's "מה אני יכול לתת"; under the type picker in "יצירת צורך" (`.yd-desc.yd-typedesc`, changes with the chosen type); under the need's title in "לוח הדרושים". The wording in the prototype is invented; the real text comes after the owner approves it.
+- **The owner's list editor** (and "להוסיף לרשימה" in the queue): per type, a three-way `.yd-seg` "בלי / רישיון / נהיגה" (44 px) and, in the editor, a one-line text field for the description.
+
+## Batch 43: the real description lines (2026-11-15)
+The prototype now uses the approved wording (21 of 49 types have a line; the rest have none, and rows without one are the same height as before). Checked at 375 px with the longest line ("המידע במחשב נשאר פרטי: לא מעתיקים ממנו ולא שומרים ממנו דבר."): in the profile it wraps to two lines, on a board card (narrower, beside the figure) to three, with no overflow and no clipping, audit clean in light and dark. The "שימו לב: " prefix is added by CSS, so the text itself stays as approved. Legal's later wording changes need no design change.
+
+## Batch 44: six corrected or new lines (2026-11-15)
+Wording only; no design change. The six lines are 55 to 62 characters, so none is longer than the longest line already checked at 375 px in batch 43 (it wraps to two lines in the profile, three on a board card, without overflow). 23 of 49 types now have a line; rows without one are unchanged.

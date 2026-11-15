@@ -33,6 +33,7 @@
   <button class="chip" data-sheet="create">יצירת צורך</button>
   <button class="chip" data-go="profile">בפרופיל</button>
   <button class="chip" data-go="pot">הקופה</button>
+  <button class="chip" data-go="editor">עריכת הרשימה (בעלים)</button>
   <button class="chip" data-sheet="report">דיווח על שירות</button>
   <button class="chip" data-sheet="rules">כללי יד ביד</button>
 </nav>
@@ -48,6 +49,7 @@
       <p>לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בתמורה</p>
       <span class="yd-area"><svg aria-hidden="true"><use href="#yd-pin"/></svg>מבשרת ציון · <button class="yd-link" type="button" data-go="profile">שינוי</button></span>
     </div>
+    <div class="yd-check yd-decl" role="group" aria-label="הצהרת נהיגה"><label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" checked><span>יש לי רישיון נהיגה בתוקף, והרכב מבוטח.<small>מתבקשת על כל סוג עם "דורש רישיון נהיגה". רק הצהרה, בלי מסמכים, ובלוח כתוב "לפי הצהרת המשתמש".</small></span></label></div>
   </section>
 
   <section class="yd-dash" aria-label="הנתונים שלי">
@@ -88,11 +90,11 @@
         <div class="yd-seg" role="group" aria-label="הצרכים שלי"><button type="button" aria-pressed="true" data-pane="l2a">פעילים</button><button type="button" aria-pressed="false" data-pane="l2b">מהעבר</button></div></header>
       <ul class="yd-rows" data-panel="l2a">
         <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/translate.webp" alt="" width="26" height="26"></span><div class="tx"><b>תרגום מכתב מרוסית</b><small>פורסם אתמול · אף אחד עוד לא נרשם</small><span class="yd-tags"><span class="yd-tag pend">ממתין לאישור הבעלים, רק את/ה רואה אותו</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>כ-4</span></div></li>
-        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/pc.webp" alt="" width="26" height="26"></span><div class="tx"><b>התקנת מדפסת</b><small>יוסי בדרך אליי · היום 17:00</small><span class="yd-tags"><span class="yd-tag act">צריך לאשר אחרי</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>2</span></div></li>
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/pc.webp" alt="" width="26" height="26"></span><div class="tx"><b>התקנת מדפסת</b><small class="yd-desc">המידע במחשב נשאר פרטי: לא מעתיקים ממנו ולא שומרים ממנו דבר.</small><small>יוסי בדרך אליי · היום 17:00</small><span class="yd-tags"><span class="yd-tag act">צריך לאשר אחרי</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>2</span></div></li>
       </ul>
       <ul class="yd-rows" data-panel="l2b" hidden>
         <li><div class="yd-row gone"><span class="yd-ic"><img src="/assets/app-icons/mail.webp" alt="" width="26" height="26"></span><div class="tx"><b>שירות שלא מתאים</b><small>לפני חודשיים</small><span class="yd-tags"><span class="yd-tag gone">הוסר</span></span></div></div></li>
-        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/garden.webp" alt="" width="26" height="26"></span><div class="tx"><b>גזם בגינה</b><small>ליאור · לפני חודש</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</span></div></li>
+        <li><div class="yd-row"><span class="yd-ic"><img src="/assets/app-icons/garden.webp" alt="" width="26" height="26"></span><div class="tx"><b>גזם בגינה</b><small class="yd-desc">בלי ריסוס בחומרי הדברה.</small><small>ליאור · לפני חודש</small></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>3</span></div></li>
       </ul>
     </section>
   </div>
@@ -104,20 +106,20 @@
   <h1 style="font-size:1.6rem">מה אני מוכן לתת</h1>
   <p style="margin:-8px 0 0;color:var(--muted)">מסמנים סוגי שירות מהרשימה של הבעלים. כשמתפרסם צורך מתאים תקבלו התראה, לפי רמת הניג'וס שלכם. אין לוח הצעות.</p>
   <section class="card yd-give">
-    <details open><summary>בית וגינה <small>2 מסומנים</small></summary><div class="yd-checks">
-      <label class="yd-check"><input type="checkbox" checked><span>תיקון קטן בבית</span><small>רמה 2</small></label>
-      <label class="yd-check"><input type="checkbox"><span>גינון וגזם</span><small>רמה 3</small></label>
-      <label class="yd-check"><input type="checkbox" checked><span>הובלה קטנה</span><small>רמה 3</small></label></div></details>
+    <details open><summary>בית וגינה <small>4 מסומנים</small></summary><div class="yd-checks">
+      <label class="yd-check"><input type="checkbox" checked><span>תיקון ברז או אינסטלציה פשוטה<small class="yd-desc">בלי עבודה על גז או על חשמל.</small></span><small>רמה 2</small></label>
+      <label class="yd-check"><input type="checkbox" checked><span>עבודת חשמל</span><small class="yd-tags"><span class="yd-tag pend">דורש רישיון</span><span class="yd-tag">רמה 4</span></small></label>
+      <label class="yd-check"><input type="checkbox"><span>גינון בסיסי<small class="yd-desc">בלי ריסוס בחומרי הדברה.</small></span><small>רמה 3</small></label>
+      <label class="yd-check"><input type="checkbox" checked><span>הובלה קטנה</span><small>רמה 3</small></label>
+      <label class="yd-check"><input type="checkbox" checked><span>הסעה</span><small class="yd-tags"><span class="yd-tag pend">דורש רישיון נהיגה</span><span class="yd-tag">רמה 2</span></small></label></div></details>
     <details><summary>מחשבים וטכנולוגיה <small>עוד לא סימנתי</small></summary><div class="yd-checks">
-      <label class="yd-check"><input type="checkbox"><span>התקנה ועזרה במחשב</span><small>רמה 2</small></label>
+      <label class="yd-check"><input type="checkbox"><span>תיקון מחשב או התקנה<small class="yd-desc">המידע במחשב נשאר פרטי: לא מעתיקים ממנו ולא שומרים ממנו דבר.</small></span><small>רמה 2</small></label>
       <label class="yd-check"><input type="checkbox"><span>עזרה בטלפון</span><small>רמה 1</small></label></div></details>
-    <details><summary>רפואה ומשפט <small>דורש רישיון</small></summary><div class="yd-checks">
-      <label class="yd-check"><input type="checkbox" checked><span>ייעוץ רפואי</span><small class="yd-tag pend">דורש רישיון</small></label>
-      <label class="yd-check"><input type="checkbox"><span>ייעוץ משפטי</span><small class="yd-tag pend">דורש רישיון</small></label>
-      <label class="yd-check yd-decl"><input type="checkbox" checked><span>אני מצהיר/ה שיש לי רישיון לעסוק בזה. האוהל לא בודק זאת.<small>רק הצהרה. לא מבקשים מספר רישיון או מסמכים, ובלוח כתוב "לפי הצהרת המשתמש".</small></span></label></div></details>
     <details><summary>למידה ושפות <small>1 מסומן</small></summary><div class="yd-checks">
       <label class="yd-check"><input type="checkbox" checked><span>עזרה בשיעורי בית</span><small>רמה 2</small></label>
-      <label class="yd-check"><input type="checkbox"><span>תרגום</span><small>רמה 3</small></label></div></details>
+      <label class="yd-check"><input type="checkbox"><span>תרגום</span><small>רמה 3</small></label>
+      <label class="yd-check"><input type="checkbox"><span>מכתב המלצה של רופא</span><small class="yd-tags"><span class="yd-tag pend">דורש רישיון</span><span class="yd-tag">רמה 3</span></small></label></div></details>
+      <div class="yd-check yd-decl" role="group" aria-label="הצהרת רישיון"><label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" checked><span>אני מצהיר/ה שיש לי רישיון לעסוק בסוגים המסומנים "דורש רישיון". האוהל לא בודק זאת.<small>ההצהרה מתבקשת על כל סוג עם הסימון, בכל רמה. רק הצהרה: לא מבקשים מספר רישיון או מסמכים, ובלוח כתוב "לפי הצהרת המשתמש".</small></span></label></div>
   </section>
   <section class="card yd-give" aria-labelledby="ar">
     <h2 id="ar">האזור שלי</h2>
@@ -145,6 +147,18 @@
 </main>
 
 <!-- ============ the sheets (H.modal): the real .modal markup ============ -->
+<main class="yd" data-screen="editor" hidden style="display:grid;gap:14px;padding-block-start:8px">
+  <h1 style="font-size:1.4rem">רשימת השירותים</h1>
+  <ul class="yd-rows" style="list-style:none;margin:0;padding:0;display:grid;gap:10px">
+    <li class="card yd-edit-row" style="padding:12px"><div class="yd-row"><div class="tx"><b>תיקון מחשב או התקנה</b><small>רמה 3 · שעה ארוכה</small></div></div>
+      <div class="yd-seg" role="group" aria-label="הצהרה"><button type="button" aria-pressed="true">בלי</button><button type="button" aria-pressed="false">רישיון</button><button type="button" aria-pressed="false">נהיגה</button></div>
+      <label class="field" style="margin:0"><span>שורת תיאור, משפט אחד עם הגבלה</span><input value="המידע במחשב נשאר פרטי: לא מעתיקים ממנו ולא שומרים ממנו דבר."></label></li>
+    <li class="card yd-edit-row" style="padding:12px"><div class="yd-row"><div class="tx"><b>הסעת קשישים לטיפולים</b><small>מעשה · רמה 2</small></div></div>
+      <div class="yd-seg" role="group" aria-label="הצהרה"><button type="button" aria-pressed="false">בלי</button><button type="button" aria-pressed="false">רישיון</button><button type="button" aria-pressed="true">נהיגה</button></div>
+      <label class="field" style="margin:0"><span>שורת תיאור, משפט אחד עם הגבלה</span><input value="לא נוגעים בכסף, בסיסמאות או בחשבון הבנק."></label></li>
+  </ul>
+</main>
+
 <div class="modal" data-sheet-id="board" hidden>
   <div class="modal-backdrop" data-close></div>
   <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="sb">
@@ -188,6 +202,7 @@
           <button class="yd-kind" type="button" aria-pressed="false"><span class="yd-ic"><img src="/assets/app-icons/translate.webp" alt="" width="26" height="26"></span><span>תרגום<small>רמה 3</small></span></button>
           <button class="yd-kind" type="button" aria-pressed="false"><span class="yd-ic"><img src="/assets/app-icons/homework.webp" alt="" width="26" height="26"></span><span>שיעורי בית<small>רמה 2</small></span></button>
         </div>
+        <p class="yd-desc yd-typedesc">המידע במחשב נשאר פרטי: לא מעתיקים ממנו ולא שומרים ממנו דבר.</p>
         <div class="yd-level"><span>הרמה באה עם הסוג: <b>2</b></span></div>
         <div class="yd-scale"><span class="q">כמה זמן זה ייקח, בערך?</span>
           <div class="row" role="group" aria-label="זמן"><button type="button" aria-pressed="false">חצי שעה</button><button type="button" aria-pressed="true">שעה</button><button type="button" aria-pressed="false">שעתיים</button><button type="button" aria-pressed="false">3 שעות</button><button type="button" aria-pressed="false">יום</button></div></div>

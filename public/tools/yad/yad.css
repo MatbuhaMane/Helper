@@ -218,3 +218,13 @@ a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
 .yd-tag.pubgood { --tg: var(--yd-pub); }
 .yd-tag.ohel { --tg: var(--olive); }
 @media (prefers-reduced-motion: reduce) { .yd-hours button, .yd-qfilter .chip { transition: none; } }
+
+/* ---------- batch 42: the description line per type, and the driving declaration ---------- */
+.yd-desc { display: block; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.yd-desc::before { content: "שימו לב: "; font-weight: 600; }
+.yd-check span .yd-desc { margin-block-start: 1px; }
+.yd-kind .yd-desc { font-size: .78rem; }
+.yd-typedesc { margin: 0; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--text) 5%, var(--card)); }
+.yd-edit-row { display: grid; gap: 10px; }
+.yd-edit-row .yd-seg { justify-self: start; }
+.yd-edit-row .yd-seg button { min-block-size: 44px; }

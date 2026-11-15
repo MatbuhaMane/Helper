@@ -159,8 +159,8 @@ export async function passkeyAdd(ctx: Ctx) {
   const b = await body<{ challengeId: string; label?: string; response: { clientDataJSON: string; attestationObject: string } }>(ctx.req);
   const c = await takeChallenge(ctx, b.challengeId, u.email, 'reg');
   const cred = await verifyRegistration(b.response, c, ctx.url.origin, rpId(ctx));
-  await ctx.env.DB.prepare('INSERT INTO passkeys (id, email, alg, jwk, sign_count, label, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-    .bind(cred.id, u.email, cred.alg, JSON.stringify(cred.jwk), cred.signCount, String(b.label || '').slice(0, 60) || null, Date.now()).run();
+  await ctx.env.DB.prepare('INSERT INTO passkeys (id, email, alg, jwk, sign_count, label, created_at, rp_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .bind(cred.id, u.email, cred.alg, JSON.stringify(cred.jwk), cred.signCount, String(b.label || '').slice(0, 60) || null, Date.now(), rpId(ctx)).run();
   await audit(ctx, u, 'passkey:add', cred.id.slice(0, 8), null);
   await unlock(ctx, u, 'passkey');
   return json({ ok: true });

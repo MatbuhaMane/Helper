@@ -8,7 +8,9 @@
     only_the_owner: 'רק בעל האוהל רואה את הגיבויים.',
   };
   const say = (e) => { if (e?.code !== 'step_cancelled') toast(ERR[e?.code] || e?.message || 'משהו השתבש'); };
-  const BACK = '/settings/?fresh=1#privacy';
+  // after a Google sign-in for the vault, the page opens again where the person was (the keys or the backups) (owner, 2026-11-15)
+  let after = '';
+  const backTo = () => `/settings/?fresh=1${after ? '&then=' + after : ''}#privacy`;
   const toBuf = (s) => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), (c) => c.charCodeAt(0)).buffer;
   const toB64 = (b) => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const passkeysWork = () => !!window.PublicKeyCredential && !!navigator.credentials;
@@ -32,7 +34,7 @@
             e.target.disabled = true;
             try { await unlockWithPasskey(); done = true; H.closeModal(); resolve(); } catch (err) { if (err?.name !== 'NotAllowedError') say(err); e.target.disabled = false; }
           } }, 'אישור בטביעת אצבע, בפנים או ב־Windows Hello') : null,
-          el('button', { class: 'btn ghost', type: 'button', onclick: () => { location.href = '/api/auth/login?reauth=1&next=' + encodeURIComponent(BACK); } }, 'כניסה מחדש עם Google'))));
+          el('button', { class: 'btn ghost', type: 'button', onclick: () => { location.href = '/api/auth/login?reauth=1&next=' + encodeURIComponent(backTo()); } }, 'כניסה מחדש עם Google'))));
       const m = document.getElementById('modal');
       const watch = new MutationObserver(() => { if (m.hidden) { watch.disconnect(); if (!done) { const err = new Error('לא אושר'); err.code = 'step_cancelled'; reject(err); } } });
       watch.observe(m, { attributes: true, attributeFilter: ['hidden'] });
@@ -65,6 +67,7 @@
   }
 
   async function keys() {
+    after = 'keys';
     let passkeys;
     try { ({ passkeys } = await call('/api/vault/passkeys')); } catch (e) { return say(e); }
     const day = (t) => new Date(t).toLocaleDateString('he-IL');
@@ -83,6 +86,7 @@
 
   /** the owner: Cloudflare first, an encrypted copy on Drive, the NAS pulls its own */
   async function backups() {
+    after = 'backups';
     let b;
     try { b = await call('/api/vault/backups'); } catch (e) { return say(e); }
     const when = (t) => (t ? new Date(t).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }) : 'עוד לא');
@@ -101,7 +105,7 @@
                if (!confirm('לנתק את Google Drive מהגיבויים? העותקים שכבר שם נשארים.')) return;
                try { await call('/api/vault/backups/drive/disconnect', { method: 'POST' }); H.closeModal(); backups(); } catch (e) { say(e); }
              } }, 'ניתוק')]
-          : [el('span', { class: 'muted small' }, 'לא מחובר'), el('button', { class: 'btn small primary', type: 'button', onclick: () => { location.href = '/api/auth/login?drive=1&next=' + encodeURIComponent(BACK); } }, 'חיבור Google Drive')]),
+          : [el('span', { class: 'muted small' }, 'לא מחובר'), el('button', { class: 'btn small primary', type: 'button', onclick: () => { location.href = '/api/auth/login?drive=1&next=' + encodeURIComponent(backTo()); } }, 'חיבור Google Drive')]),
       el('div', { class: 'fv-item' }, el('b', {}, 'NAS'), el('span', { class: 'muted small' }, 'ה־NAS מושך את הגיבויים מ־Cloudflare בעצמו (Cloud Sync). כך שום דבר בבית לא פתוח לאינטרנט. ההגדרה מתוארת ב־docs/security.md.')),
       el('div', { class: 'fv-item' }, el('b', {}, 'עותק לילי של האילן'), el('span', { class: 'muted small' }, `האחרון: ${when(b.lastSnapshot)}`),
         b.lastRun ? el('span', { class: 'muted small' }, `הגיבוי האחרון: ${when(b.lastRun.at)} · ${b.lastRun.copied} עותקים חדשים${b.lastRun.failed ? ` · ${b.lastRun.failed} נכשלו` : ''}`) : null),
@@ -109,15 +113,17 @@
   }
 
   /** back from a Google sign-in (?fresh=1): that sign-in opens the vault for the next steps, and the address is cleaned */
-  async function back() {
+  async function cameBack() {
     const u = new URL(location.href);
     if (!u.searchParams.has('fresh')) return;
-    u.searchParams.delete('fresh');
+    const then = u.searchParams.get('then');
+    u.searchParams.delete('fresh'); u.searchParams.delete('then');
     history.replaceState(null, '', u.pathname + u.search + u.hash);
-    try { await api('/api/vault/unlock/fresh', { method: 'POST', noRedirect: true }); toast('אושר. אפשר להמשיך.'); } catch (e) { say(e); }
+    try { await api('/api/vault/unlock/fresh', { method: 'POST', noRedirect: true }); toast('אושר. אפשר להמשיך.'); } catch (e) { return say(e); }
+    if (then === 'keys') keys(); else if (then === 'backups') backups();
   }
 
   H.vaultKeys = keys;
   H.vaultBackups = backups;
-  H.vaultBack = back;
+  H.vaultBack = cameBack;
 })();

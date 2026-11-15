@@ -251,7 +251,15 @@ export async function googleCallback(ctx: Ctx): Promise<Response> {
       grant_type: 'authorization_code',
     }),
   });
-  if (!tokenRes.ok) throw new HttpError(502, 'Google sign-in failed');
+  if (!tokenRes.ok) {
+    // Google's error code only (e.g. invalid_grant), never the request: it helps find why a sign-in failed (owner, 2026-11-15)
+    const why = String(((await tokenRes.json().catch(() => ({}))) as { error?: string }).error || tokenRes.status).replace(/[^\w.-]/g, '').slice(0, 40);
+    console.log('google token exchange failed', why, url.hostname);
+    // the same return from Google came twice (an installed app on Android opens the address again): the first one already
+    // signed the person in, so the second goes on to the page instead of an error. No session is made here (owner, 2026-11-15)
+    if (why === 'invalid_grant') return redirect(safeNext(saved.next));
+    throw new HttpError(502, `Google sign-in failed (${why})`);
+  }
   const tok = (await tokenRes.json()) as { id_token: string; refresh_token?: string; scope?: string };
   // The ID token came straight from Google's token endpoint over TLS, so its claims can be trusted without a signature check.
   const claims = JSON.parse(b64urlDecode(tok.id_token.split('.')[1]));

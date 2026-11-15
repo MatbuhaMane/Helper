@@ -158,7 +158,7 @@
   }
 
   async function showHistory() {
-    H.modal(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'טוען…'));
+    H.modal(H.skel(4));
     const { plans } = await api('/api/mail/history');
     H.modal(el('h3', {}, '🕘 שינויים קודמים'),
       plans.length ? el('ul', { class: 'hist' }, plans.map((p) => el('li', {},

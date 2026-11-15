@@ -576,7 +576,8 @@
   /* ================= loading ================= */
   async function load() {
     renderSide();
-    if (!items.length) { $('#items').replaceChildren(el('div', { class: 'loading', style: 'padding:30px' }, el('span', { class: 'spinner' }), 'טוען כתבות…')); }
+    const fromSkeleton = !items.length;
+    if (!items.length) { $('#items').replaceChildren(el('div', { style: 'padding:20px' }, H.skel(4, 'טוען כתבות'), H.skel(4, 'טוען כתבות'))); }
     try {
       const [r, s] = await Promise.all([api('/api/news/items'), api('/api/news/starred').catch(() => ({ items: saved }))]);
       items = tidy(r.items);
@@ -589,6 +590,7 @@
     renderSide();
     renderFilters();
     resetList();
+    if (fromSkeleton) { const box = $('#items'); box.classList.add('swap-in'); setTimeout(() => box.classList.remove('swap-in'), 400); }   // the list fades in where the skeleton was
     corroborateAll();
   }
   async function loadFeeds() { feeds = (await api('/api/news/feeds')).feeds; }
@@ -778,7 +780,7 @@
           el('iframe', { src: it.link, sandbox: 'allow-scripts allow-same-origin allow-popups', referrerpolicy: 'no-referrer', title: it.title }));
         return;
       }
-      body.append(el('div', { class: 'loading' }, el('span', { class: 'spinner' }), 'טוען את הכתבה…'));
+      body.append(H.skel(5, 'טוען את הכתבה'));
       try {
         const a = await api('/api/news/article?url=' + encodeURIComponent(it.link));
         if (current !== it) return;

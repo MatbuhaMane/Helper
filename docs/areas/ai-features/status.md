@@ -648,3 +648,5 @@ LCP has not moved yet. The causes:
 - לא נבדק: שליחה אמיתית (D1, מכשיר), הכרטיס בחדר פתוח (נדרש מפתח גישה) ובמסך 375 אמיתי.
 
 - 2026-11-15: passkey create() errors in Hebrew (family.js, vault-keys.js): InvalidStateError "המכשיר כבר רשום", other DOMException fallback; NotAllowedError stays silent. Not tested on a real device.
+
+- 2026-11-15: news list/article and mail detail loading are skeletons (H.skel), the news list fades in with .swap-in where the skeleton was. Syntax-checked only; not seen in a browser or audited (the pane was down).

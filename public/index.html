@@ -68,6 +68,8 @@
     .wheel .orbit .compass { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; z-index: -1; pointer-events: none; opacity: .42; color: #fff; overflow: visible;
       filter: drop-shadow(0 0 1.5px rgba(60, 50, 30, .6)); transition: opacity .7s ease-out; }
     .wheel.touching .orbit .compass, .wheel.dragging .orbit .compass { opacity: .72; transition-duration: .15s; }
+    :root[data-theme="dark"] .wheel .orbit .compass { filter: none; }   /* at night no dark outline: the ticks read whiter */
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wheel .orbit .compass { filter: none; } }
     @media (prefers-reduced-motion: reduce) { .wheel .orbit .compass { transition: none; } }
     .wheel .orbit::before { display: none; content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity .7s ease-out;
       background: color-mix(in srgb, var(--olive) 70%, var(--text) 10%);

@@ -53,3 +53,8 @@ Checked at 375 px light (the audit clean); desktop and dark use the same classes
 - **Wherever a declared professional shows:** only the grey "לפי הצהרת המשתמש". No badge, no tick.
 - **The owner's list editor** (prototype screen "עריכת הרשימה"): per type, a row with its name and tier and one on/off switch "דורש רישיון" (`.yd-switch`, 48 px).
 - **In the queue,** "להוסיף לרשימה" is followed by the same on/off, "דורש רישיון" (`.yd-qadd` with `role="switch"`).
+
+## Batch 42: two declarations and a description line per type (2026-11-15)
+- **Two declarations.** A type asks for one of: the licence declaration, or the driving declaration "יש לי רישיון נהיגה בתוקף, והרכב מבוטח". The mark reads "דורש רישיון" or "דורש רישיון נהיגה" (`.yd-tag.pend`). The profile shows each declaration (`.yd-decl`) once, closing the list. Both appear on the board only as the grey "לפי הצהרת המשתמש", never a badge or tick.
+- **The description line** (`.yd-desc`, one sentence with the limit or caution, prefixed "שימו לב: " by CSS). It shows in three places: under the type name in the profile's "מה אני יכול לתת"; under the type picker in "יצירת צורך" (`.yd-desc.yd-typedesc`, changes with the chosen type); under the need's title in "לוח הדרושים". The wording in the prototype is invented; the real text comes after the owner approves it.
+- **The owner's list editor** (and "להוסיף לרשימה" in the queue): per type, a three-way `.yd-seg` "בלי / רישיון / נהיגה" (44 px) and, in the editor, a one-line text field for the description.

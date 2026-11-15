@@ -823,3 +823,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 31 (batch 40):** the queue is smaller: consent checkbox instead of a consent step, one-time Ohel needs with a duplicate button, no urgent strip. See the end of `docs/design/yad-queue.md`.
 
 **Round 32 (batch 41):** licence mark follows the type: in the profile, the owner's list editor and the queue's "להוסיף לרשימה". See `docs/design/yad.md`.
+
+**Round 33 (batch 42):** second (driving) declaration and the per-type description line: profile, create, board, list editor, queue. See `docs/design/yad.md`.

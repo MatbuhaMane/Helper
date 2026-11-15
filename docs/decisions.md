@@ -3877,7 +3877,7 @@ Code: `server/storage-rules.ts` (pure rules, 38 tests in `test-storage.mjs`), `s
 - **Not tested:** a real NAS or a real Drive (dev has neither), the upload and download routes end to end; the connect/refusal paths were checked on the dev server (refusals, unreachable host).
 
 ## 2026-11-15, design: floating edge tab rests mostly off the edge at phone width (CEO round 3)
-- Done (CSS, `daemon.css`): at <=520px a docked companion tab rests with ~30px of its 58px showing (`translate` only), slides out fully on press, hover or focus; a tap on the visible part opens it, as before. A tab dragged to a free spot is left where the owner put it.
+- Done (CSS, `daemon.css`): at <=520px a docked companion tab rests with ~24px of its 58px showing (`translate` only), slides out fully on press, hover or focus; a tap on the visible part opens it, as before. A tab dragged to a free spot is left where the owner put it.
 - Option B, for the owner to choose if A is not enough: the first tap reveals, the second opens (needs JS in `daemon.js` and `music.js`, ai-features'). A is cheaper and keeps one-tap access; B hides the tab more but costs a tap.
 - Not done: the music tab (class and CSS live in `music.js`, ai-features') and `.ad-edge` (back door; icon-only on phones, draggable) — they would need the same rule if the audit still lists them.
 - Not browser-verified (pane blocked).

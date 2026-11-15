@@ -840,4 +840,4 @@ _Updated 2026-11-14 (round 23)._
 
 **Round 40 (edge tab, round 2):** root cause: `.dm-tab.dock-start` used the end-edge peek keyframes, so it started 60px inside the page (the audit frame-0 overlap); now it peeks from its own edge. The 20px gutter on /settings removed. 1280 chip overlaps are the sticky .st-jump bar over scrolled content (not a defect). Not browser-verified.
 
-**Round 41 (edge tab, round 3):** at <=520px a docked companion tab rests ~30px visible (translate only), fully out on press/hover/focus; option B (two taps) recorded in decisions.md. Music tab and .ad-edge not touched. Not browser-verified.
+**Round 41 (edge tab, round 3):** at <=520px a docked companion tab rests ~24px visible (translate only), fully out on press/hover/focus; option B (two taps) recorded in decisions.md. Music tab and .ad-edge not touched. Not browser-verified.

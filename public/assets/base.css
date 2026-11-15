@@ -1335,3 +1335,7 @@ img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }
 .sil[data-sil="m"] { -webkit-mask-image: url(/assets/sil-m.svg); mask-image: url(/assets/sil-m.svg); }
 .sil[data-sil="f"] { -webkit-mask-image: url(/assets/sil-f.svg); mask-image: url(/assets/sil-f.svg); }
 :is(.fv-pic, .mc-avatar, .fs-face, .tr-face) > .sil { align-self: end; }
+
+/* the signed-out home: the two sign-in buttons (Google, fingerprint) are two full rows with air between them */
+.login .gbtn, .login > .btn { display: flex; justify-content: center; inline-size: min(100%, 320px); min-block-size: 48px; margin-inline: auto; box-sizing: border-box; }
+.login .gbtn + .btn, .login .gbtn + * + .btn { margin-block-start: 18px; }

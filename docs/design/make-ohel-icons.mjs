@@ -16,9 +16,9 @@ const tile = ({ rx, w, stroke, edge = 6 }) => {
     `<path transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${s.toFixed(4)})" fill="${INK}" stroke="${INK}" stroke-width="${stroke}" stroke-linejoin="round" d="${d}"/></svg>\n`;
 };
 const SRC = {
-  'ohel.svg': tile({ rx: 112, w: 404, stroke: 5.71 }),            // "any", 180 px and up
-  'ohel-small.svg': tile({ rx: 96, w: 488, stroke: 16, edge: 16 }),         // 48, 32, 16: the logo fills the tile, the strokes thicker
-  'ohel-maskable.svg': tile({ rx: 0, w: 356, stroke: 6.5 }),      // full bleed; the logo inside the safe circle (r 40%)
+  'ohel.svg': tile({ rx: 112, w: 340, stroke: 6.6 }),            // "any", 180 px and up
+  'ohel-small.svg': tile({ rx: 96, w: 450, stroke: 16, edge: 16 }),         // 48, 32, 16: the logo fills the tile, the strokes thicker
+  'ohel-maskable.svg': tile({ rx: 0, w: 300, stroke: 7.5 }),      // full bleed; the logo inside the safe circle (r 40%)
 };
 for (const [f, svg] of Object.entries(SRC)) fs.writeFileSync(D + f, svg);
 const png = (src, n) => sharp(Buffer.from(SRC[src]), { density: Math.max(72, 72 * n / 512 * 4) }).resize(n, n).png({ compressionLevel: 9 });

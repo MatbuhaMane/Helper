@@ -154,3 +154,4 @@
 - 2026-11-15: the owner approved that the licence declaration follows a per-type mark, not the tier; decisions.md entry written; batch 41 sent to design, ai-features, legal and the CEO; legal asked to propose which types get the mark.
 - 2026-11-15: legal proposed which types get the licence mark (9 of 49), a driving declaration for rides, limits for the type descriptions and risk notes (youth mentoring first); recorded in yad-beyad.md as a proposal; brought to the owner.
 - 2026-11-15: the owner approved all four recommendations on legal's proposal (nine licence marks, the driving declaration for rides, limits in the type descriptions, youth mentoring limit); decisions.md entry written; batch 42 sent to design, ai-features, legal and the CEO.
+- 2026-11-15: vision drafted the limit lines for 21 of the 49 types (6 services, 15 deeds), from legal's notes; recorded in yad-beyad.md as a draft; brought to the owner.

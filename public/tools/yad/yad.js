@@ -21,7 +21,8 @@
   /* the gate: a member sees nothing while the switch is off */
   let cat;
   try { cat = await api('/api/yad/catalog'); } catch (e) {
-    root.append(el('section', { class: 'card', style: 'margin:24px auto;max-width:520px;padding:18px;text-align:center' }, el('p', {}, e.status === 404 || e.code === 'not_found' ? 'הכלי הזה עוד לא נפתח.' : why(e))));
+    if (e.status === 404 || e.code === 'not_found') { await H.loadOnce('/assets/yad-gate.js'); YadGate.soon(); return; }
+    root.append(el('section', { class: 'card', style: 'margin:24px auto;max-width:520px;padding:18px;text-align:center' }, el('p', {}, why(e))));
     return;
   }
   document.body.insertAdjacentHTML('afterbegin', '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="yd-hand" viewBox="0 0 24 24"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V13M17 9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.5a6 6 0 0 1-4.8-2.4L4.5 14.5a1.6 1.6 0 0 1 2.6-1.9L8 14"/></symbol></svg>');

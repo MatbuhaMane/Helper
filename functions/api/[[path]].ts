@@ -7,6 +7,7 @@ import * as access from '../../server/access';
 import * as grants from '../../server/grants';
 import * as push from '../../server/push';
 import * as goalsAdvice from '../../server/goals-advice';
+import * as yad from '../../server/yad';                  // יד ביד (ai-features, 2026-11-15): locked behind the owner switch 'yad'
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
@@ -304,6 +305,31 @@ route('POST', '/api/goals/ask', goalsAdvice.ask);                // a consultati
 route('POST', '/api/goals/ai/define', goalsAdvice.define);       // "עזור לי להגדיר"
 route('POST', '/api/goals/:id/notes', goalsAdvice.addNote);      // "שמור מסקנה"
 route('DELETE', '/api/goals/notes/:id', goalsAdvice.removeNote);
+route('GET', '/api/yad/status', yad.status);
+route('GET', '/api/yad/catalog', yad.catalog);
+route('PUT', '/api/yad/region', yad.setRegion);
+route('PUT', '/api/yad/offers', yad.setOffers);
+route('GET', '/api/yad/board', yad.board);
+route('POST', '/api/yad/needs', yad.createNeed);
+route('GET', '/api/yad/mine', yad.mine);
+route('POST', '/api/yad/needs/:id/offer', yad.offerHelp);
+route('POST', '/api/yad/needs/:id/answer', yad.answer);
+route('PUT', '/api/yad/needs/:id/address', yad.putAddress);
+route('GET', '/api/yad/needs/:id/address', yad.getAddress);
+route('POST', '/api/yad/needs/:id/confirm', yad.confirm);
+route('POST', '/api/yad/needs/:id/cancel', yad.cancel);
+route('POST', '/api/yad/needs/:id/recommend', yad.recommend);
+route('POST', '/api/yad/deeds', yad.reportDeed);
+route('POST', '/api/yad/reports', yad.report);
+route('GET', '/api/yad/fund', yad.fund);
+route('GET', '/api/yad/dashboard', yad.dashboard);
+route('POST', '/api/yad/close', yad.closeMine);
+route('GET', '/api/yad/queue', yad.queue);
+route('POST', '/api/yad/queue/needs/:id', yad.decideNeed);
+route('POST', '/api/yad/queue/deeds/:id', yad.decideDeed);
+route('POST', '/api/yad/queue/reports/:id', yad.resolve);
+route('POST', '/api/yad/restore', yad.restore);
+route('GET', '/api/yad/balance/:email', yad.personBalance);
 route('PUT', '/api/goals/:id', goals.update);
 route('DELETE', '/api/goals/:id', goals.remove);
 route('POST', '/api/goals/:id/processes', goals.addProcess);

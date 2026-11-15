@@ -3843,3 +3843,17 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 
 ### 2026-11-15: יד ביד while the switch is off (ai-features; master-owned apps.js touched)
 The tile now shows to everyone; any tap on a link to /tools/yad (and the page itself on a 404) opens a transparent glass panel ("בקרוב!", close button), nothing sent to the server. `/api/yad/*` stays 404; only the presentation changed. The owner (switch on) goes through to the real tool. Code: `public/assets/yad-gate.js` (soon + a capture click delegate), `public/assets/apps.js` (tile unconditional, gate script loaded at idle), `public/tools/yad/yad.js`.
+
+## 2026-11-15 · master: security reviews (פרנסה phase 1; the Drive permission for own storage)
+- **פרנסה phase 1 passes.**
+  - Every route scopes to the row's owner or to a member of its קופה (404 otherwise). Invitations are limited to the same household.
+  - Imports are capped (MAX_ROWS). Symbols are validated before the Yahoo call. The AI sees only monthly sums by category.
+  - One correction to the 11-14 entry: `kupaPeople` does send household members' emails to the page, as the address to invite by. This is accepted (same household only), and the line "emails never reach the page" is wrong.
+- **Own storage, Drive: approved with these limits.**
+  - Only the `drive.file` scope, the one the notes already use. The app sees only the files it made, or files the person picks with the Google Picker; never full Drive or `drive.readonly`.
+  - The permission is asked incrementally, when the person taps "לחבר את ה-Drive שלי", never at sign-in.
+  - Disconnecting revokes the token and deletes it. Tokens are stored sealed, like the Gmail ones. Nothing from the files reaches the AI unless the person asks for it on that file.
+- **Own storage, NAS: approved with these limits.**
+  - An https WebDAV address only. Reject IP literals and private or localhost hosts.
+  - Credentials are sealed. Limit each request's size and time.
+- **Who:** ai-features builds the connectors. The master reviews the diff before it is merged.

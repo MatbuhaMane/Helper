@@ -302,7 +302,12 @@
     };
     const groups = KINDS.map(([kind, title]) => [title, figures.filter((f) => (f.kind || 'generic') === kind)]).filter(([, list]) => list.length);
     // (native replaceChildren would print a null as text)
+    /* what was closed completely (drag to the bottom, the power button): a line to bring it back, shown only while it is closed (prefs daemon.closed / music.closed) */
+    const musicP = H.prefs('music', { source: 'spotify', mode: 'menu', folded: false, recent: [] });
+    const comeBack = (text, hint, onclick) => el('div', { class: 'st-field st-return', style: 'justify-items:start' }, el('button', { class: 'btn primary', type: 'button', onclick }, text), el('small', { class: 'muted' }, hint));
     assistantBox.body.replaceChildren(...[
+      dp.closed ? comeBack('להחזיר את העוזר לאוהל', 'סגרתם אותו לגמרי. הוא יחזור לכל מכשיר שלכם.', () => { set('closed', false); toast('העוזר חזר לאוהל'); drawAssistant(); }) : null,
+      musicP.closed ? comeBack('להחזיר את הנגן לאוהל', 'סגרתם אותו לגמרי. הוא יחזור לכל מכשיר שלכם.', () => { musicP.closed = false; keep('music'); toast('הנגן חזר לאוהל'); drawAssistant(); }) : null,
       // the voice: always, the way he is addressed (aloud to a spoken question, in writing to a written one), or silent
       choices('הקול', [['always', 'מדבר בקול'], ['mirror', 'עונה כמו שפונים אליו', { title: 'בקול כשמדברים אליו, בכתב כשכותבים' }], ['silent', 'שותק']], voice,
         (v) => { dp.voice = v; dp.speak = v !== 'silent'; keep('daemon'); }),

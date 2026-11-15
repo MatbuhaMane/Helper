@@ -108,7 +108,7 @@ async function spokenFor(env: Env, u: { email: string; role: string; name?: stri
   const typed = spokenName(me?.data?.nameSpoken);
   if (typed) return typed;
   if (u.role === 'owner') return OWNER_SPOKEN;
-  const first = [u.he_name, u.name].map((x) => String(x || '').trim().split(/s+/)[0].replace(/[^א-ת]/g, '')).find((x) => x.length >= 2) || '';
+  const first = [u.he_name, u.name].map((x) => String(x || '').trim().split(/\s+/)[0].replace(/[^א-ת]/g, '')).find((x) => x.length >= 2) || '';
   if (!first) return '';
   const auto = me?.data?.nameAuto as { for?: string; v?: string } | undefined;
   if (auto && auto.for === first) return spokenName(auto.v);

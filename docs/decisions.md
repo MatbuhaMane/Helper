@@ -11,6 +11,16 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": the licence declaration follows the service type, not the tier (vision → design, ai-features, legal, master)
+Status: Decided (the owner). This settles the flag in the entry below.
+
+- **Every type on the owner's lists that requires a licence carries its own mark, "דורש רישיון", whatever its tier.**
+- The licence declaration (batch 37, and the four conditions of batch 38) is asked by that mark, not by the tier
+  "איש השעה". Example: "מכתב המלצה של רופא" is "שעה ארוכה" and requires the declaration.
+- The mark is set by the owner, per type, on both lists (services and deeds). A type added later, from the approval
+  queue too, gets its mark when the owner adds it.
+- **Open:** which of the 49 types get the mark. Legal proposes, and the owner approves.
+
 ## 2026-11-15 – "יד ביד": the first two lists, services and deeds (master → vision, ai-features, design)
 Status: Decided (the owner, in the master's session; recorded by vision as the master reported it). The owner may add
 items later. The lists themselves, in Hebrew, are in `docs/vision/yad-beyad.md`, section "שתי הרשימות הראשונות".

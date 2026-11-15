@@ -3811,3 +3811,11 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 - `public/index.html` (CSS): the sun/moon wheel's dashed line is gone; a compass tick-gauge (`.wheel .orbit::before`, floor-perspective mask, no numbers) fades in on `.touching`/`.dragging` and out after release. Opacity only; no transition under reduced motion.
 - `public/home.js` (small touch hook, master file): `root.classList.add('touching')` on pointerdown, removed on pointerup/pointercancel; the sky ellipse path is drawn as two dashed ticks ellipses. No logic change.
 - Not verified in a browser (pane refused navigation); static check only.
+
+## 2026-11-15, design (CEO's request): a new way into the back door
+- Touches the back-door entry in `public/home.js` (master file): the moon's secret (L, L, R, L: `SECRET`, `eggTick`, helpers) is replaced by a 7-second press, or 7 taps in a row (within 2s of each other), on the sun or the moon. Owner only (`isOwner`), as before; anyone else just turns the sky. The server side (passkey for /admin/) is untouched.
+- Flow: 3 beats, sinking, eclipse, then `DoorParty.play()` (new `public/assets/door-party.js` + `door-party.css`: fireworks from both sides, confetti from the top, WebAudio sound, no files), then /admin/. If the script fails to load, /admin/ follows anyway.
+- First time ever: a surprise egg (the `.egg` of eggs.js) after the show; "seen" is kept per user in `H.prefs('door', { egg: true })`, so once across devices. Marked on showing, so a bail-out doesn't repeat it.
+- Reduced motion: no fireworks or confetti, a short calm ring (opacity) and the sound if `H.soundsOn`. Motion is transform/opacity only.
+- Master: add `/assets/door-party.js` and `.css` to the precache list in `public/sw.js` if wanted (not needed for function).
+- Not verified in a browser (the pane refused navigation); static check only.

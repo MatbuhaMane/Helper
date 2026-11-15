@@ -831,3 +831,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 35 (batch 44):** six description lines changed; no design change, lengths within the batch 43 check.
 
 **Round 36 (home):** wheel line and compass ring appear only on touch (opacity fade, none under reduced motion); hook in home.js. Browser check pending.
+
+**Round 37 (back door):** 7-second press or 7 taps on the sun/moon replaces the moon secret; celebration (fireworks, confetti, sound) in door-party.js/css, first-time egg via prefs door. Browser check pending.

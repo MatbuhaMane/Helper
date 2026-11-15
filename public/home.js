@@ -462,38 +462,23 @@
     /* the angle of the sun on the orbit: 0 rising (right), π setting (left); the moon is always half an orbit away */
     let A = 0, tween = null, held = null, sink = 0;
 
-    /* The moon's secret (the owner's way to the members' admin): the moon is held on the horizon facing the sun – left,
-       left, right, left – a moment each time (between two lefts it is lifted off the horizon and brought back). The sky
-       answers with 1, 1, 2 and 3 beats; then both sink, the eclipse rises, and the room asks for the owner's biometric.
-       Forgiving on purpose: a wide band around the horizon, a short hold at the right end and a longer one before a wrong
-       end counts, twenty seconds between steps, and the finger may be lifted between them (the moon stays put).
-       Anyone else just turns the sky. The room itself (/admin/) opens only with the owner's passkey, on the server. */
-    const SECRET = [['L', 1], ['L', 1], ['R', 2], ['L', 3]];
-    const HOLD = 600, WRONG_HOLD = 1500, PAUSE = 20000, BAND = 0.45;   // BAND: |sin| under it is "on the horizon" (about ±27°)
-    const egg = { step: 0, side: null, since: 0, last: 0, done: null, timer: 0, finale: false, back: 0 };
-    const sideNow = () => (Math.abs(Math.sin(A)) < BAND ? (Math.cos(A) > 0 ? 'L' : 'R') : null);   // where the moon stands on the horizon
-    /** the secret is under way: the moon is not turned back to its place while the owner is between two steps */
-    const eggBusy = () => isOwner && !egg.finale && egg.step > 0 && performance.now() - egg.last < PAUSE;
-    function beat(n) {
-      for (let i = 0; i < n; i++) setTimeout(() => {
-        for (const b of [sun, moon]) { b.classList.remove('egg-beat'); void b.offsetWidth; b.classList.add('egg-beat'); }
-        navigator.vibrate?.(40);
-      }, i * 380);
-    }
-    function eggTick() {
-      if (!isOwner || held !== moon || egg.finale) return;
-      const now = performance.now();
-      if (egg.step && now - egg.last > PAUSE) { egg.step = 0; egg.done = null; }      // too long: start again
-      const side = sideNow();
-      if (side !== egg.side) { egg.side = side; egg.since = now; if (side !== egg.done) egg.done = null; return; }
-      if (!side || side === egg.done) return;
-      const [want, beats] = SECRET[egg.step];
-      if (now - egg.since < (side === want ? HOLD : WRONG_HOLD)) return;   // a wrong end must be held longer to count
-      egg.done = side;                                   // counted once per visit to that end
-      if (side !== want) { egg.step = side === SECRET[0][0] ? 1 : 0; egg.last = now; if (egg.step) beat(SECRET[0][1]); return; }   // a wrong end: from the start
-      egg.step++; egg.last = now; beat(beats);
-      if (egg.step === SECRET.length) { egg.finale = true; setTimeout(finale, (beats - 1) * 380 + 260 + 500); }
-    }
+    /* The back door (the owner's way to the members' admin): a 7-second press on the sun or on the moon, or 7 taps in a row
+       on one of them. The sky answers with 3 beats; then both sink, the eclipse rises, a celebration plays (fireworks, confetti,
+       a soft sound; once ever an egg too) and the room asks for the owner's biometric. Anyone else just turns the sky.
+       The room itself (/admin/) opens only with the owner's passkey, on the server. */
+    const PRESS_MS = 7000, TAP_GAP = 2000, TAPS = 7;
+    const egg = { finale: false, tapBody: null, taps: 0, tapAt: 0 };
+    function beat(n) {
+      for (let i = 0; i < n; i++) setTimeout(() => {
+        for (const b of [sun, moon]) { b.classList.remove('egg-beat'); void b.offsetWidth; b.classList.add('egg-beat'); }
+        navigator.vibrate?.(40);
+      }, i * 380);
+    }
+    function openDoor() {
+      if (!isOwner || egg.finale) return;
+      egg.finale = true; document.querySelector('.sun-card')?.remove(); beat(3);
+      setTimeout(finale, 2 * 380 + 260 + 500);
+    }
     function finale() {
       // both stand still at the two ends of the horizon, sink slowly behind the tent, and the eclipse rises in their place
       held = null; box.classList.remove('turning'); moon.classList.remove('held');
@@ -512,7 +497,11 @@
       ec.style.setProperty('--x', geo.cx + 'px'); ec.style.setProperty('--y', (geo.cy - geo.ry * 0.92) + 'px'); ec.style.setProperty('--s', Math.round(geo.size * 1.9) + 'px');   // at the top of the orbit, in open sky
       box.append(ec);
       setTimeout(() => ec.classList.add('up'), sinkMs - 300);
-      setTimeout(() => { location.href = '/admin/'; }, sinkMs + 2200);
+      // the celebration (door-party.js), then the room; if it can't load, the room follows anyway
+      setTimeout(() => {
+        const go = () => { location.href = '/admin/'; };
+        H.loadOnce('/assets/door-party.js').then(() => window.DoorParty.play()).then(go, go);
+      }, sinkMs + 900);
     }
     const dark = () => document.documentElement.dataset.theme === 'dark';
     function nightQ(s, now) {
@@ -563,7 +552,7 @@
       box.style.setProperty('--sky-glow', night ? 'rgba(150, 182, 255, .15)' : tw > 0 ? `rgba(255, 128, 72, ${(0.22 * tw).toFixed(3)})` : 'rgba(255, 214, 140, .10)');
       box.style.setProperty('--sky-top', night ? 'rgba(4, 8, 22, .45)' : `rgba(130, 178, 222, ${(0.14 * (1 - tw)).toFixed(3)})`);
       paintPhase(moonPhase(now), now);
-      if (!held && !eggBusy()) turnTo(targetA(), tween ? 900 : 0);
+      if (!held && !egg.finale) turnTo(targetA(), tween ? 900 : 0);
       else paint();
     }
     /** Turn the orbit to an angle (the nearest way round), easing out. */
@@ -607,32 +596,33 @@
         const ang = (ev) => Math.atan2((geo.cy - (ev.clientY + scrollY)) / geo.ry, (ev.clientX - geo.cx) / geo.rx);
         let moved = false, last = ang(e), unwrapped = last;
         const own = body === sun ? 0 : Math.PI;
-        const off = (A + own) - last;
+        const off = (A + own) - last;
+        let press = 0;
+        if (isOwner && !egg.finale) press = setTimeout(() => { if (!moved) { body.justTurned = true; setTimeout(() => { body.justTurned = false; }, 600); openDoor(); } }, PRESS_MS);   // a 7-second press
         const mv = (ev) => {
           if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 6) return;
           if (egg.finale) return;
           if (!moved) {
-            moved = true; held = body; cancelAnimationFrame(tween?.raf); tween = null; box.classList.add('turning'); body.classList.add('held'); try { body.setPointerCapture(ev.pointerId); } catch (_) { /* ignore */ }
-            if (body === moon && isOwner) { clearInterval(egg.timer); egg.side = null; egg.timer = setInterval(eggTick, 100); }
+            moved = true; clearTimeout(press); held = body; cancelAnimationFrame(tween?.raf); tween = null; box.classList.add('turning'); body.classList.add('held'); try { body.setPointerCapture(ev.pointerId); } catch (_) { /* ignore */ }
           }
           const a2 = ang(ev);
           let d = a2 - last; if (d > Math.PI) d -= 2 * Math.PI; if (d < -Math.PI) d += 2 * Math.PI;
           last = a2; unwrapped += d;
           A = unwrapped + off - own;
           paint();
-          if (body === moon) eggTick();
         };
         const up = () => {
           removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
-          clearInterval(egg.timer);
-          if (!moved || egg.finale) return;
+          clearTimeout(press);
+          if (!moved && !egg.finale && isOwner) {            // a tap: seven in a row on the same body open the door
+            const now = performance.now();
+            egg.taps = egg.tapBody === body && now - egg.tapAt < TAP_GAP ? egg.taps + 1 : 1;
+            egg.tapBody = body; egg.tapAt = now;
+            if (egg.taps >= TAPS) { egg.taps = 0; body.justTurned = true; setTimeout(() => { body.justTurned = false; }, 400); openDoor(); }
+          }
+          if (!moved || egg.finale) return;
           held = null; body.classList.remove('held'); box.classList.remove('turning');
           body.justTurned = true; setTimeout(() => { body.justTurned = false; }, 60);
-          if (body === moon && eggBusy()) {
-            clearTimeout(egg.back);
-            egg.back = setTimeout(() => { if (!held && !eggBusy()) turnTo(targetA(), 900); }, PAUSE + 200);
-            return;
-          }
           const wantNight = Math.sin(A) < 0;     // the moon is the one up
           if (wantNight !== dark()) H.chooseTheme(wantNight);   // the observer below turns it into place
           else turnTo(targetA(), 700);

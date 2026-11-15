@@ -138,10 +138,10 @@ export async function driveList(ctx: Ctx) {
   const token = await driveToken(ctx, u.email);
   const folder = await folderId(token, FOLDER);
   const q = encodeURIComponent(`'${folder}' in parents and trashed = false`);
-  const r = await fetch(`${DRIVE}?q=${q}&fields=files(id,name,size,mimeType,webViewLink)&pageSize=100&orderBy=modifiedTime desc`, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(TIMEOUT_MS) });
+  const r = await fetch(`${DRIVE}?q=${q}&fields=files(id,name,size,mimeType,webViewLink,modifiedTime)&pageSize=100&orderBy=modifiedTime desc`, { headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(TIMEOUT_MS) });
   if (!r.ok) throw new HttpError(502, `drive_error_${r.status}`);
-  const files = ((await r.json()) as { files: { id: string; name: string; size?: string; mimeType: string; webViewLink?: string }[] }).files;
-  return json({ files: files.map((f) => ({ id: f.id, name: f.name, size: Number(f.size || 0), type: f.mimeType, url: f.webViewLink || null })) });
+  const files = ((await r.json()) as { files: { id: string; name: string; size?: string; mimeType: string; webViewLink?: string; modifiedTime?: string }[] }).files;
+  return json({ files: files.map((f) => ({ id: f.id, name: f.name, size: Number(f.size || 0), type: f.mimeType, url: f.webViewLink || null, modified: f.modifiedTime ? Date.parse(f.modifiedTime) : null })) });
 }
 
 /** PUT /api/storage/drive/file?name= – the body is saved as that file in the helper's folder (up to DRIVE_MAX_BYTES) */

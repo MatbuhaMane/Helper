@@ -13,7 +13,7 @@
   const root = document.querySelector('main');
   const ERR = { bad_key: 'המפתח לא נראה נכון. בדקו שהעתקתם את כולו.', key_refused: 'הספק לא קיבל את המפתח. בדקו שהוא פעיל.',
     https_only: 'כתובת ה־NAS חייבת להתחיל ב־https://', no_ip_address: 'צריך שם כתובת (למשל my-nas.example.com), לא מספרי IP.', private_host: 'הכתובת צריכה להיות כתובת ציבורית עם שם, לא של הרשת הביתית בלבד.',
-    no_credentials_in_address: 'אל תכתבו שם משתמש וסיסמה בתוך הכתובת. יש להם שדות משלהם.', bad_address: 'הכתובת לא נראית נכון.', bad_port: 'הפורט לא מתאים.', credentials_needed: 'צריך שם משתמש וסיסמה.',
+    no_credentials_in_address: 'אל תכתבו שם משתמש וסיסמה בתוך הכתובת. יש להם שדות משלהם.', bad_address: 'הכתובת לא נראית נכון.', bad_port: 'הפורט לא מתאים.', credentials_needed: 'צריך שם משתמש וסיסמה.', too_big: 'הקובץ גדול מדי: עד 25MB ל־Drive ועד 50MB ל־NAS.', bad_name: 'שם הקובץ לא מתאים.', drive_not_connected: 'ה־Drive לא מחובר. חברו אותו מחדש.', nas_not_connected: 'ה־NAS לא מחובר.',
     nas_unreachable: 'ה־NAS לא ענה. בדקו שהכתובת נגישה מהאינטרנט.', nas_wrong_credentials: 'שם המשתמש או הסיסמה לא התקבלו.', nas_not_webdav: 'הכתובת לא נראית כשרת WebDAV.', drive_used_by_backups: 'ה־Drive הזה משמש לגיבוי הכספת, ולכן אי אפשר לנתק אותו כאן.' };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
   // Gemini first: free, with the three-step guide (ai-invite.js); Claude is the advanced option
@@ -171,6 +171,35 @@
           el('p', { class: 'muted small' }, p.guide ? 'הוא נשמר מוצפן, ומשמש רק לבקשות שלך.' : ['את המפתח מקבלים ב־', el('bdi', { dir: 'ltr' }, p.where), '. הוא נשמר מוצפן, ומשמש רק לבקשות שלך.']));
       }
     };
+    /** the files of a connected storage: an upload button (a hidden file input) and the newest files in its folder */
+    function filesBox(kind) {
+      const max = kind === 'drive' ? 25 : 50, base = '/api/storage/' + kind;
+      const list = el('ul', { class: 'st-files muted small', 'aria-live': 'polite' }), pick = el('input', { type: 'file', hidden: true, 'aria-label': 'בחירת קובץ להעלאה' });
+      const fmt = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+      async function draw() {
+        try {
+          const r = await api(base + '/files');
+          list.replaceChildren(...(r.files.length ? r.files.slice(0, 8).map((f) => el('li', {}, f.url ? el('a', { href: f.url, target: '_blank', rel: 'noopener' }, f.name) : el('span', {}, f.name),
+            el('span', {}, ' · ' + (f.dir ? 'תיקייה' : fmt(f.size)) + (f.modified ? ' · ' + new Date(f.modified).toLocaleDateString('he-IL') : '')))) : [el('li', {}, 'עוד אין קבצים.')]));
+        } catch (e) { list.replaceChildren(el('li', {}, ERR[e?.code] || 'לא הצלחנו לטעון את הרשימה.')); }
+      }
+      pick.onchange = async () => {
+        const f = pick.files[0]; pick.value = '';
+        if (!f) return;
+        if (f.size > max * 1048576) return toast(ERR.too_big);
+        if (!f.size) return toast(ERR.bad_name);
+        btn.disabled = true; btn.textContent = 'מעלה…';
+        try {
+          const r = await fetch(base + '/file?name=' + encodeURIComponent(f.name), { method: 'PUT', headers: { 'content-type': f.type || 'application/octet-stream' }, body: f });
+          if (!r.ok) { const j = await r.json().catch(() => ({})); throw Object.assign(new Error(j.error || 'upload'), { code: j.error }); }
+          toast('הקובץ נשמר'); await draw();
+        } catch (e) { say(e); }
+        btn.disabled = false; btn.textContent = 'העלאת קובץ';
+      };
+      const btn = el('button', { class: 'btn small', type: 'button', onclick: () => pick.click() }, 'העלאת קובץ');
+      draw();
+      return [btn, pick, el('p', { class: 'muted small' }, 'עד ' + max + 'MB לקובץ.'), list];
+    }
     /** the NAS form: an https WebDAV address, a user name and a password (kept sealed; the server checks the address) */
     function nasForm() {
       const addr = el('input', { type: 'url', dir: 'ltr', autocomplete: 'off', spellcheck: 'false', placeholder: 'https://my-nas.example.com/webdav', 'aria-label': 'כתובת ה־NAS' });
@@ -215,10 +244,10 @@
         el('div', { class: 'card st-service' }, el('h3', {}, 'Google Drive'),
           el('p', { class: store.drive.connected ? null : 'muted small' }, store.drive.connected ? 'מחובר. התיקייה: ' + store.drive.folder : 'לא מחובר. ההרשאה מתבקשת רק עכשיו, ורק לקבצים שהאוהל שומר.'),
           store.drive.connected
-            ? el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+            ? [el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
                 if (!confirm('לנתק את ה־Drive? ההרשאה תבוטל והקבצים עצמם יישארו אצלכם.')) return;
                 try { const r = await api('/api/storage/drive', { method: 'DELETE' }); toast(r.alsoGmail ? 'נותק. את החיבור ל־Gmail צריך לחבר מחדש.' : 'נותק'); drawServices(); } catch (e) { say(e); }
-              } }, 'ניתוק')
+              } }, 'ניתוק'), ...filesBox('drive')]
             : el('a', { class: 'btn small primary', href: '/api/auth/login?drive=1&next=/settings/%23services' }, 'לחבר את ה־Drive שלי')),
         el('div', { class: 'card st-service' }, el('h3', {}, 'NAS בבית'),
           store.nas.connected
@@ -226,7 +255,7 @@
               el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
                 if (!confirm('לנתק את ה־NAS? הכתובת והסיסמה יימחקו מכאן. הקבצים ב־NAS נשארים.')) return;
                 try { await api('/api/storage/nas', { method: 'DELETE' }); toast('נותק'); drawServices(); } catch (e) { say(e); }
-              } }, 'ניתוק')]
+              } }, 'ניתוק'), ...filesBox('nas')]
             : nasForm()))].filter(Boolean));
     services = on; paintNows();
     if (location.hash === '#services') openPart('services');

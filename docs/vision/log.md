@@ -142,3 +142,4 @@
 - 2026-11-15: approval queue spec, question 2: the value of a deed for the community comes from a list the owner prepares (type, tier, hours).
 - 2026-11-15: the CEO reported two owner decisions, recorded in decisions.md: the phone comes first (PC later, or in parallel only if cheap), and the יד ביד terms no longer block development.
 - 2026-11-15: approval queue spec, question 3: two actions on an item (approve, or reject with a short reason), plus "add to the list"; no "ask" in stage 1.
+- 2026-11-15: approval queue spec, question 4: three actions on a report (dismiss, remove the need or service, remove the person from יד ביד with frozen ידיים, reversible).

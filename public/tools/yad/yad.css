@@ -188,7 +188,6 @@ a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
 .yd-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 @media (min-width: 880px) { .yd-qlist { grid-template-columns: 1fr 1fr; align-items: start; } }
 .yd-q { padding: 14px; display: grid; gap: 10px; }
-.yd-q.urgent { border-inline-start: 4px solid var(--exp); }
 .yd-q > .top { display: flex; align-items: flex-start; gap: 12px; }
 .yd-q .tx { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
 .yd-q .tx b { font-weight: 500; }
@@ -216,8 +215,6 @@ a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
 .yd-rej { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--danger) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
 .yd-rej small { color: var(--muted); }
 .yd-rej p { margin: 0; }
-.yd-consent { display: grid; gap: 10px; padding: 14px; border-radius: 16px; background: color-mix(in srgb, var(--primary) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent); }
-.yd-consent .yd-qacts { margin-block-start: 2px; }
 .yd-tag.pubgood { --tg: var(--yd-pub); }
 .yd-tag.ohel { --tg: var(--olive); }
 @media (prefers-reduced-motion: reduce) { .yd-hours button, .yd-qfilter .chip { transition: none; } }

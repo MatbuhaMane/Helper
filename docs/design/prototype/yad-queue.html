@@ -41,7 +41,7 @@
 
   <ul class="yd-qlist">
     <!-- 4. a report: urgent -->
-    <li class="card yd-q urgent">
+    <li class="card yd-q">
       <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-flag"/></svg></span>
         <div class="tx"><b>דיווח על שירות: "ייעוץ משפטי"</b><small>של דנה ל. · דווח על ידי נועם ש. · לפני שעה</small>
           <span class="yd-tags"><span class="yd-tag pend">מתחזה לבעל רישיון</span><span class="yd-tag">לפי הצהרת המשתמש</span></span></div></div>
@@ -53,7 +53,7 @@
     </li>
 
     <!-- 2. a need outside the list -->
-    <li class="card yd-q urgent">
+    <li class="card yd-q">
       <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-hand"/></svg></span>
         <div class="tx"><b>צורך שלא ברשימה: תיקון מחשב נייד</b><small>של יובל כ. · לפני 3 שעות</small>
           <span class="yd-tags"><span class="yd-tag pend">הרמה המוצעת: 2</span></span></div>
@@ -68,10 +68,10 @@
     </li>
 
     <!-- 3a. fund request for a person -->
-    <li class="card yd-q urgent">
+    <li class="card yd-q">
       <div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span>
-        <div class="tx"><b>מהקופה: עזרה בהעברת דירה</b><small>נפתח על ידי רות ל., בשביל אורי ל. (אורי הסכים)</small>
-          <span class="yd-tags"><span class="yd-tag pend">בשביל אדם</span></span></div>
+        <div class="tx"><b>מהקופה: עזרה בהעברת דירה</b><small>נפתח על ידי רות ל., בשביל אורי ל.</small>
+          <span class="yd-tags"><span class="yd-tag pend">בשביל אדם</span><span class="yd-tag act">האדם יודע ומסכים: סומן</span></span></div>
         <span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>6</span></div>
       <p class="why"><small>למה, רק הבעלים רואה</small>אחרי הניתוח הוא לא יכול להרים כלום.</p>
       <div class="yd-qacts"><button class="btn primary" type="button">מאשר</button><button class="btn no" type="button" data-rej>דוחה</button></div>
@@ -146,25 +146,20 @@
     <label class="field" style="margin:0"><span>למה, בשורה אחת. רק הבעלים רואה</span><input value="אחרי הניתוח הוא לא יכול להרים כלום"></label>
     <div class="yd-kinds" role="group" aria-label="בשביל מי"><button class="yd-kind" type="button" aria-pressed="false">בשבילי</button><button class="yd-kind" type="button" aria-pressed="true">בשביל מישהו אחר</button><button class="yd-kind" type="button" aria-pressed="false">לטובת הציבור</button></div>
     <label class="field" style="margin:0"><span>מי האדם</span><select><option>אורי ל.</option><option>עוד…</option></select></label>
-    <p class="yd-note"><span>אורי יקבל בקשה להסכים. הצורך יישלח לבעלים רק אחרי שהסכים, ויתפרסם רק אחרי שהבעלים אישר.</span></p>
+    <label class="yd-qadd"><input type="checkbox" checked><span>האדם יודע ומסכים</span></label>
+    <p class="yd-note"><span>הבעלים בודק את הסימון לפני שהוא מאשר. הצורך מתפרסם רק אחרי האישור.</span></p>
   </div>
-  <div class="yd-foot"><span></span><button class="btn primary" type="button">שליחה להסכמה</button></div>
+  <div class="yd-foot"><span></span><button class="btn primary" type="button">שליחה לאישור</button></div>
 
-  <h2 style="margin-block-start:10px">אצל אורי: ההסכמה</h2>
-  <div class="yd-consent">
-    <p style="margin:0"><b>רות ל. מבקשת עזרה בשבילך</b></p>
-    <p style="margin:0">"עזרה בהעברת דירה", מהקופה. האם להמשיך?</p>
-    <p class="yd-anon" style="margin:0">הסיבה שכתבה רות נשארת אצל הבעלים בלבד.</p>
-    <div class="yd-qacts"><button class="btn primary" type="button">מסכים/ה</button><button class="btn no" type="button">לא מסכים/ה</button></div>
-  </div>
 </main>
 
 <!-- ============ 4. the board: marks ============ -->
 <main class="yd" data-screen="board" hidden style="display:grid;gap:14px;padding-block-start:8px">
   <h1 style="font-size:1.4rem">לוח הדרושים</h1>
+  <div class="card yd-q"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>ניקוי הגינה הציבורית</b><small>מאת האוהל · הסתיים לפני חודש</small></div></div><button class="btn" type="button" style="min-block-size:48px">שכפול כצורך חדש</button></div>
   <ul class="yd-qlist">
     <li class="card yd-need"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-leaf"/></svg></span><div class="tx"><b>צביעת ספסלים בגן המשחקים</b><small>מבשרת ציון · עד 5 ק"מ</small><span class="yd-tags"><span class="yd-tag pubgood">לטובת הציבור</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>8</span></div><div class="go"><button class="yd-link rep" type="button">דיווח</button><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
-    <li class="card yd-need"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>ניקוי הגינה הציבורית</b><small>מאת האוהל · עד 5 ק"מ</small><span class="yd-tags"><span class="yd-tag ohel">מאת האוהל</span><span class="yd-tag pubgood">לטובת הציבור</span><span class="yd-tag">חוזר כל חודש</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>4</span></div><div class="go"><span></span><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
+    <li class="card yd-need"><div class="top"><span class="yd-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#yd-tent"/></svg></span><div class="tx"><b>ניקוי הגינה הציבורית</b><small>מאת האוהל · עד 5 ק"מ</small><span class="yd-tags"><span class="yd-tag ohel">מאת האוהל</span><span class="yd-tag pubgood">לטובת הציבור</span></span></div><span class="yd-amt"><svg class="yd-h" aria-hidden="true"><use href="#yd-hand"/></svg>4</span></div><div class="go"><span></span><button class="btn primary" type="button">אני בא לתת יד</button></div></li>
   </ul>
 </main>
 

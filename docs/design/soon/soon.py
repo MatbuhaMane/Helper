@@ -99,8 +99,33 @@ def garage():
     b.append('<path d="M92 200h12M94 210h16" stroke-width="3" opacity=".45"/>')
     return svg('המוסך', ''.join(b))
 
+def hand_ideas():
+    """the internal economy, the "yad" token: two hands lend a hand, a sprout grows between them, a tenth falls into the shared well"""
+    b = [shadow(160, 224, 146, 11)]
+    # the shared well on the right: stone ring, a little roof, a drop falling in
+    b.append('<path d="M236 214V178H292V214Z" fill="#cdbf9f"/><path d="M236 190h56M236 202h56M254 178v12M274 190v12" stroke-width="2.5" opacity=".6"/>')
+    b.append('<ellipse cx="264" cy="178" rx="28" ry="7" fill="#6f9ccc"/>')
+    b.append('<path d="M240 178V140M288 178V140" stroke-width="4"/><path d="M232 146L264 120L296 146Z" fill="#c2332b"/>')
+    b.append('<path d="M264 150c5 7 7 10 7 14a7 7 0 0 1-14 0c0-4 2-7 7-14Z" fill="#9cc6ee" stroke-width="3"/>')
+    # the sprout, between the hands
+    b.append('<path d="M120 170v-66" stroke="#3f6a26" stroke-width="4"/>')
+    b.append('<path d="M120 112C120 90 104 80 82 80c0 22 14 32 38 32Z" fill="#7fae52"/>')
+    b.append('<path d="M120 124c0-18 14-30 36-30 0 18-14 30-36 30Z" fill="#9cc86a"/>')
+    # the two hands: a sleeve, a palm, four fingers and a thumb, palms up and cupped
+    b.append('<path d="M18 168l34-8 8 30-34 8Z" fill="#5e8a3a"/>')
+    b.append('<path d="M56 162c14-6 34-4 50 2 8 3 14 8 12 14-2 5-9 5-16 3l-14-4 8 8c4 5 0 10-6 9-8-2-18-8-26-12Z" fill="#e8b98a"/>')
+    b.append('<path d="M70 182l24 8M66 190l20 10" stroke-width="2.5" opacity=".5"/>')
+    b.append('<path d="M222 168l-34-8-8 30 34 8Z" fill="#c2332b"/>')
+    b.append('<path d="M184 162c-14-6-34-4-50 2-8 3-14 8-12 14 2 5 9 5 16 3l14-4-8 8c-4 5 0 10 6 9 8-2 18-8 26-12Z" fill="#d9a678"/>')
+    b.append('<path d="M170 182l-24 8M174 190l-20 10" stroke-width="2.5" opacity=".5"/>')
+    # a tenth: ten small dots, one gold, on the path to the well
+    for i in range(10):
+        x = 62 + i * 20
+        b.append(f'<circle cx="{x}" cy="216" r="4" fill="{"#e3a12b" if i == 9 else "#d9cdb0"}" stroke-width="2.5"/>')
+    return svg('כלכלה פנימית: יד', ''.join(b))
+
 os.makedirs(OUT, exist_ok=True)
-for name, fn in (('hill', hill), ('garage', garage)):
+for name, fn in (('hill', hill), ('garage', garage), ('hand', hand_ideas)):
     with open(os.path.join(OUT, name + '.svg'), 'w', encoding='utf-8', newline='\n') as fh:
         fh.write(fn())
     print(name, os.path.getsize(os.path.join(OUT, name + '.svg')))

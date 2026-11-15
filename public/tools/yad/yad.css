@@ -1,0 +1,220 @@
+/* יד ביד – the look (vision: docs/vision/yad-beyad.md, spec of batch 36; markup: docs/design/yad.md; prototype:
+   docs/design/prototype/yad.html). The token is "יד" (plural ידיים): a hand glyph beside a number, never a coin, a disc, a
+   currency sign or a rising arrow. Calm, warm, no ranking between people. Moves only transform and opacity. */
+.yd {
+  --yd-hand: var(--primary);
+  --yd-wash: color-mix(in srgb, var(--primary) 9%, var(--card));
+  --yd-pub: #2f6b57;                                  /* "לטובת הציבור": a deep spring green, apart from the vine of the active state */
+  max-inline-size: 1100px; margin: 0 auto; padding-block: 14px 56px; display: grid; gap: 18px;
+}
+:root[data-theme="dark"] .yd { --yd-pub: #7fcfb0; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .yd { --yd-pub: #7fcfb0; } }
+.yd .card { margin: 0; border-radius: 22px; box-shadow: 0 14px 32px -26px rgba(46, 42, 30, .5); }
+.yd h1, .yd h2, .yd h3 { margin: 0; }
+.yd h2 { font-size: 1.1rem; font-weight: 600; }
+.yd [hidden] { display: none !important; }
+.yd-back { justify-self: start; color: var(--muted); text-decoration: none; font-size: .95rem; padding-block: 6px; }
+.yd-h { inline-size: 1.15em; block-size: 1.15em; flex: none; fill: none; stroke: var(--yd-hand); stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; vertical-align: -.2em; }
+
+/* ---------- the banner of the user ---------- */
+.yd-banner { display: flex; align-items: center; gap: 14px; padding: 16px; background: linear-gradient(135deg, var(--yd-wash), var(--card)); }
+.yd-face { flex: none; inline-size: 64px; block-size: 64px; border-radius: 50%; overflow: hidden; display: grid; background: color-mix(in srgb, var(--olive) 22%, var(--card)); border: 2px solid var(--line-strong); color: var(--olive-ink); }
+.yd-banner h1 { font-size: clamp(1.35rem, 1.1rem + 1.2vw, 1.8rem); line-height: 1.15; }
+.yd-banner p { margin: 3px 0 0; color: var(--muted); font-size: .92rem; }
+.yd-banner .grow { flex: 1; min-inline-size: 0; }
+.yd-area { display: inline-flex; align-items: center; gap: 5px; margin-block-start: 6px; font-size: .85rem; color: var(--muted); }
+.yd-area svg { inline-size: 14px; block-size: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- the dashboard: four figures. Phone: the balance on a line, the exchange on a line, then two small ones. ---------- */
+.yd-dash { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+.yd-fig { padding: 14px 16px; display: grid; gap: 4px; align-content: start; text-align: start; color: inherit; text-decoration: none; font: inherit; }
+.yd-fig > small { color: var(--muted); font-size: .85rem; }
+.yd-fig > b { font-size: 2rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 8px; }
+.yd-fig > b .yd-h { inline-size: .8em; block-size: .8em; }
+.yd-fig > b small { font-size: .9rem; font-weight: 400; color: var(--muted); }
+.yd-fig.bal { grid-column: 1 / -1; background: linear-gradient(135deg, var(--yd-wash), var(--card)); }
+.yd-fig.bal > b { font-size: 2.6rem; }
+.yd-fig.ex { grid-column: 1 / -1; }
+.yd-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.yd-pair > div { display: grid; gap: 2px; }
+.yd-pair b { font-size: 1.5rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.yd-pair span { color: var(--muted); font-size: .8rem; }
+.yd-pair em { font-style: normal; color: var(--muted); font-size: .88rem; }
+.yd-pair .gr { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+a.yd-fig, button.yd-fig { cursor: pointer; transition: border-color var(--dur-quick), transform var(--dur-press) var(--ease-river); }
+a.yd-fig:hover, button.yd-fig:hover { border-color: var(--primary); }
+a.yd-fig:active, button.yd-fig:active { transform: scale(.98); }
+.yd-fig.wait.has { border-color: color-mix(in srgb, var(--exp) 55%, var(--line)); background: color-mix(in srgb, var(--exp) 8%, var(--card)); }
+.yd-fig.wait.has > b { color: var(--exp); }
+.yd-more { color: var(--primary); font-size: .85rem; }
+@media (min-width: 880px) { .yd-dash { grid-template-columns: 1.05fr 1.6fr 1fr 1fr; } .yd-fig.bal, .yd-fig.ex { grid-column: auto; } }
+
+/* ---------- the two buttons, side by side at every width ---------- */
+.yd-acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.yd-acts .btn { min-block-size: 52px; font-size: 1.02rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.yd-acts .btn svg { inline-size: 1.2em; block-size: 1.2em; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.yd-area .yd-link { padding: 12px 6px; margin-block: -12px; margin-inline: -6px; min-block-size: 0; }
+.yd-link { font: inherit; background: none; border: 0; padding: 8px 0; min-block-size: 40px; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
+
+/* ---------- the two lists ---------- */
+.yd-lists { display: grid; gap: 14px; }
+@media (min-width: 880px) { .yd-lists { grid-template-columns: 1fr 1fr; align-items: start; } }
+.yd-list { padding: 14px 16px 6px; display: grid; gap: 4px; }
+.yd-list > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.yd-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: color-mix(in srgb, var(--text) 7%, transparent); }
+.yd-seg button { font: inherit; font-size: .88rem; border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px 14px; min-block-size: 36px; border-radius: 999px; transition: background var(--dur-quick), color var(--dur-quick); }
+.yd-seg button[aria-pressed="true"] { background: var(--card); color: var(--text); font-weight: 500; box-shadow: 0 1px 4px rgba(46, 42, 30, .18); }
+.yd-rows { list-style: none; margin: 0; padding: 0; }
+.yd-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-block-start: 1px solid var(--line); }
+.yd-rows > li:first-child .yd-row { border-block-start: 0; }
+.yd-ic { flex: none; inline-size: 40px; block-size: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--yd-wash); }
+.yd-ic img { inline-size: 26px; block-size: 26px; object-fit: contain; }
+.yd-ic svg { inline-size: 22px; block-size: 22px; fill: none; stroke: var(--primary); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.yd-row .tx { flex: 1; min-inline-size: 0; display: grid; gap: 2px; }
+.yd-row .tx b { font-weight: 500; overflow-wrap: anywhere; }
+.yd-row .tx small { color: var(--muted); font-size: .84rem; }
+.yd-amt { flex: none; display: inline-flex; align-items: center; gap: 4px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.yd-amt.in { color: var(--primary); }
+.yd-empty { margin: 0; padding: 18px 4px 20px; text-align: center; color: var(--muted); }
+
+/* ---------- status notes: one shape, three meanings ---------- */
+.yd-tag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 9px; border-radius: 999px; font-size: .74rem; font-weight: 600; line-height: 1.5; white-space: nowrap;
+  color: var(--tg, var(--muted)); background: color-mix(in srgb, var(--tg, var(--muted)) 12%, var(--card)); border: 1px solid color-mix(in srgb, var(--tg, var(--muted)) 40%, transparent); }
+.yd-tag.pub { --tg: var(--yd-pub); }
+.yd-tag.pend { --tg: var(--exp); }
+.yd-tag.act { --tg: var(--primary); }
+.yd-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+
+/* ---------- the sheets (inside H.modal's glass) ---------- */
+.yd-sheet { display: grid; gap: 14px; padding: 18px 18px 20px; overflow-y: auto; overscroll-behavior: contain; }
+.yd-sheet.yd { margin: 0; inline-size: 100%; max-inline-size: none; }
+.yd-sheet > h2 { font-size: 1.25rem; padding-inline-end: 44px; }
+.yd-sheet .sub { margin: -8px 0 0; color: var(--muted); font-size: .92rem; }
+.yd-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.yd-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.yd-chips .chip { min-block-size: 36px; }
+.yd-chips .chip[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+.yd-adv { border: 1px solid var(--line); border-radius: 16px; padding: 0 14px; }
+.yd-adv > summary { cursor: pointer; padding: 12px 0; min-block-size: 44px; font-weight: 500; list-style: none; display: flex; align-items: center; justify-content: space-between; }
+.yd-adv > summary::-webkit-details-marker { display: none; }
+.yd-adv > summary::after { content: ''; inline-size: 8px; block-size: 8px; border-inline-end: 2px solid var(--muted); border-block-end: 2px solid var(--muted); transform: rotate(45deg); transition: transform var(--dur-quick); }
+.yd-adv[open] > summary::after { transform: rotate(-135deg); }
+.yd-adv .grid { display: grid; gap: 4px 12px; grid-template-columns: 1fr 1fr; padding-block-end: 12px; }
+.yd-adv .grid .field:last-child { grid-column: 1 / -1; }
+.yd-need { padding: 14px; display: grid; gap: 8px; }
+.yd-need > .top { display: flex; align-items: flex-start; gap: 12px; }
+.yd-need .tx { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.yd-need .tx b { font-weight: 500; }
+.yd-need .tx small { color: var(--muted); font-size: .86rem; }
+.yd-need .meta { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: .86rem; }
+.yd-need .meta span { display: inline-flex; align-items: center; gap: 4px; }
+.yd-need .meta svg { inline-size: 14px; block-size: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.yd-need.pub { border-color: color-mix(in srgb, var(--yd-pub) 45%, var(--line)); background: color-mix(in srgb, var(--yd-pub) 7%, var(--card)); }
+.yd-need .go { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.yd-need .go .yd-link { color: var(--muted); font-size: .88rem; min-block-size: 44px; padding-inline: 4px; }
+.yd-need .go .btn { min-block-size: 44px; }
+.yd-needs { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+
+/* ---------- creating a need ---------- */
+.yd-sheet textarea { inline-size: 100%; min-block-size: 92px; resize: vertical; }
+.yd-kinds { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.yd-kind { font: inherit; text-align: start; cursor: pointer; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); border-radius: 14px; padding: 10px 12px; min-block-size: 56px; display: flex; align-items: center; gap: 10px; transition: border-color var(--dur-quick), transform var(--dur-press) var(--ease-river); }
+.yd-kind:active { transform: scale(.98); }
+.yd-kind[aria-pressed="true"] { border-color: var(--primary); background: var(--yd-wash); box-shadow: inset 0 0 0 1px var(--primary); }
+.yd-kind small { display: block; color: var(--muted); font-size: .78rem; }
+.yd-level { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 14px; background: var(--yd-wash); font-size: .92rem; }
+.yd-scale { display: grid; gap: 6px; }
+.yd-scale > .q { font-weight: 500; }
+.yd-scale > .q small { display: block; font-weight: 400; color: var(--muted); }
+.yd-scale .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.yd-scale .row button { font: inherit; cursor: pointer; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); border-radius: 12px; min-block-size: 44px; font-variant-numeric: tabular-nums; transition: transform var(--dur-press) var(--ease-river); }
+.yd-scale .row button:active { transform: scale(.95); }
+.yd-scale .row button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+.yd-scale .ends { display: flex; justify-content: space-between; color: var(--muted); font-size: .78rem; }
+.yd-note { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: 14px; font-size: .88rem; color: var(--muted); border: 1px dashed var(--line-strong); }
+.yd-note.pend { color: var(--exp); border-color: color-mix(in srgb, var(--exp) 50%, transparent); background: color-mix(in srgb, var(--exp) 7%, var(--card)); }
+.yd-est { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); }
+.yd-est b { font-size: 1.3rem; display: inline-flex; align-items: center; gap: 6px; }
+.yd-foot { display: flex; gap: 10px; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.yd-foot .btn { min-block-size: 48px; }
+
+/* ---------- the profile: what I am willing to give ---------- */
+.yd-give { padding: 16px; display: grid; gap: 14px; }
+.yd-give details { border-block-start: 1px solid var(--line); }
+.yd-give summary { cursor: pointer; padding: 12px 0; min-block-size: 44px; font-weight: 500; display: flex; align-items: center; justify-content: space-between; list-style: none; }
+.yd-give summary::-webkit-details-marker { display: none; }
+.yd-give summary small { color: var(--muted); font-weight: 400; }
+.yd-checks { display: grid; gap: 2px; padding-block-end: 10px; }
+.yd-check { display: flex; align-items: center; gap: 12px; min-block-size: 46px; padding: 4px 2px; cursor: pointer; }
+.yd-check input { inline-size: 22px; block-size: 22px; flex: none; accent-color: var(--primary); }
+.yd-check span { flex: 1; }
+.yd-check small { color: var(--muted); }
+.yd-switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-block-size: 48px; }
+.yd-switch small { display: block; color: var(--muted); }
+
+/* ---------- the treasury ---------- */
+.yd-pot { padding: 22px 18px; display: grid; gap: 6px; justify-items: center; text-align: center; background: linear-gradient(160deg, color-mix(in srgb, var(--yd-pub) 13%, var(--card)), var(--card)); }
+.yd-pot > small { color: var(--muted); }
+.yd-pot > b { font-size: 3rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 10px; }
+.yd-pot > b .yd-h { stroke: var(--yd-pub); inline-size: .8em; block-size: .8em; }
+.yd-pot > p { margin: 4px 0 0; max-inline-size: 34ch; color: var(--muted); font-size: .92rem; }
+.yd-pub-ask { display: grid; gap: 8px; padding: 14px 16px; }
+.yd-pub-ask .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.yd-pub-ask .row .btn { min-block-size: 48px; }
+.yd-bar-fill { block-size: 8px; border-radius: 999px; background: color-mix(in srgb, var(--text) 9%, transparent); overflow: hidden; }
+.yd-bar-fill i { display: block; block-size: 100%; inline-size: 100%; border-radius: inherit; background: var(--yd-pub); transform-origin: right; transform: scaleX(var(--p, 0)); transition: transform var(--dur-draw) var(--ease-river); }
+.yd-anon { color: var(--muted); font-size: .84rem; }
+
+@media (max-width: 420px) { .yd-banner { padding: 14px; } .yd-face { inline-size: 56px; block-size: 56px; } .yd-adv .grid { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { .yd * { transition: none !important; } }
+:root[data-motion="reduce"] .yd * { transition: none !important; }
+
+/* ---------- stage 1 additions (batch 37): removed, the licence declaration, the rules ---------- */
+.yd-tag.gone { --tg: var(--danger); }
+.yd-row.gone { opacity: .65; }
+.yd-row.gone .tx b { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.yd-check .yd-tag { flex: none; }
+.yd-check.yd-decl { align-items: flex-start; padding-block: 8px; border-radius: 14px; background: color-mix(in srgb, var(--exp) 7%, var(--card)); padding-inline: 10px; }
+.yd-check.yd-decl span small { display: block; margin-block-start: 2px; }
+.yd-rules { margin: 0; padding-inline-start: 22px; display: grid; gap: 12px; }
+.yd-rules li::marker { color: var(--primary); font-weight: 600; }
+
+/* ---------- the owner's approval queue (batch 39): the "יד ביד" filter inside "ממתין לאישור" ---------- */
+.yd-qhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.yd-qcount { display: inline-flex; align-items: center; justify-content: center; min-inline-size: 28px; block-size: 28px; padding-inline: 8px; border-radius: 999px; color: var(--exp); background: color-mix(in srgb, var(--exp) 14%, var(--card)); border: 1px solid color-mix(in srgb, var(--exp) 45%, transparent); font-weight: 700; font-size: .9rem; }
+.yd-qfilter { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 4px; margin-inline: -16px; padding-inline: 16px; }
+.yd-qfilter .chip { flex: none; min-block-size: 44px; display: inline-flex; align-items: center; gap: 6px; }
+.yd-qfilter .chip b { font-weight: 700; opacity: .8; }
+.yd-qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+@media (min-width: 880px) { .yd-qlist { grid-template-columns: 1fr 1fr; align-items: start; } }
+.yd-q { padding: 14px; display: grid; gap: 10px; }
+.yd-q > .top { display: flex; align-items: flex-start; gap: 12px; }
+.yd-q .tx { flex: 1; min-inline-size: 0; display: grid; gap: 3px; }
+.yd-q .tx b { font-weight: 500; }
+.yd-q .tx small { color: var(--muted); font-size: .86rem; }
+.yd-q .why { margin: 0; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--exp) 8%, var(--card)); font-size: .9rem; }
+.yd-q .why small { display: block; color: var(--muted); margin-block-end: 2px; }
+.yd-q .sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: .9rem; color: var(--muted); }
+.yd-q .sum b { color: var(--text); font-weight: 600; }
+.yd-hours { display: inline-flex; align-items: center; gap: 2px; }
+.yd-hours button { inline-size: 44px; block-size: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--card); color: var(--text); font: inherit; font-size: 1.2rem; cursor: pointer; }
+.yd-hours output { min-inline-size: 3.2ch; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.yd-qacts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yd-qacts .btn { min-block-size: 48px; justify-content: center; }
+.yd-qacts .btn.no { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.yd-qacts.three { grid-template-columns: 1fr; }
+.yd-qacts.three .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yd-qadd { display: flex; align-items: center; gap: 10px; min-block-size: 44px; font-size: .92rem; }
+.yd-qadd input { inline-size: 22px; block-size: 22px; flex: none; accent-color: var(--primary); }
+.yd-reject { display: grid; gap: 8px; padding-block-start: 10px; border-block-start: 1px dashed var(--line-strong); }
+.yd-reject textarea { min-block-size: 64px; }
+.yd-reject .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.yd-qdone { text-align: center; color: var(--muted); padding: 6px 0; }
+
+/* the person's side: waiting, rejected with a reason, and the consent step */
+.yd-rej { display: grid; gap: 8px; padding: 12px; border-radius: 14px; background: color-mix(in srgb, var(--danger) 7%, var(--card)); border: 1px solid color-mix(in srgb, var(--danger) 30%, transparent); }
+.yd-rej small { color: var(--muted); }
+.yd-rej p { margin: 0; }
+.yd-tag.pubgood { --tg: var(--yd-pub); }
+.yd-tag.ohel { --tg: var(--olive); }
+@media (prefers-reduced-motion: reduce) { .yd-hours button, .yd-qfilter .chip { transition: none; } }

@@ -809,3 +809,15 @@ _Updated 2026-11-14 (round 23)._
 - Nothing open. (Decided 2026-11-14: line icons stay small, the big ones drawn; the emoji replaced gradually, ✓ and ★ stay.)
 
 - Round 25: silhouettes (sil-m/f/x, `.sil[data-sil]`) for people not yet signed in; see docs/design/silhouettes.md.
+
+- Round 26: `app-icons/yad.webp`, the icon of "יד ביד" (an open hand with a sprout on the palm; no coin). Script `docs/design/art/draw-yad-icon.py`. No screens yet, waiting for the vision spec.
+
+- Round 27: יד ביד stage 1 screens: `public/tools/yad/yad.css`, prototype `docs/design/prototype/yad.html`, spec `docs/design/yad.md`. Waiting for ai-features to build; the owner approval queue is not designed (separate spec).
+
+- Round 28: יד ביד batch 37 applied (no redeem/GPS/filters, distance ranges, own-only pending need, report + removed, licence declaration, rules link); see docs/design/yad.md.
+
+- Round 29: batch 38: licence is "לפי הצהרת המשתמש" only, never verified-looking; the owner queue stays in the ממתין לאישור page (no design until its spec).
+
+**Round 30 (batch 39):** the owner's approval queue for יד ביד: `docs/design/yad-queue.md`, prototype `docs/design/prototype/yad-queue.html`, CSS at the end of `public/tools/yad/yad.css`. Four kinds, approve/reject with a reason, person's side, "מהקופה" with consent, board marks. Audit clean at 375 and 1280, light and dark. Not designed: the owner's "מאת האוהל" form.
+
+**Round 31 (batch 40):** the queue is smaller: consent checkbox instead of a consent step, one-time Ohel needs with a duplicate button, no urgent strip. See the end of `docs/design/yad-queue.md`.

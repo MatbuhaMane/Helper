@@ -222,14 +222,23 @@
      (the server answers 404 to everyone but the owner). Once it is on, the tile becomes the real app, in the same place. */
   const YAD_APP = { href: '/tools/yad/', ic: 'habits', name: 'יד ביד', sub: 'עוזרים זה לזה, ומקבלים עזרה בחזרה', pillow: 'p14', c2: '#b8402a', tint: '#ffe6bf', tag: 'ניסיוני' };
   function yadTile() {
-    const ask = () => (window.YadGate ? window.YadGate.on() : fetch('/api/yad/status').then((r) => (r.ok ? r.json() : { on: false })).then((j) => j.on === true).catch(() => false));
-    ask().then((on) => {
-      if (!on || CODE.some((x) => x.href === YAD_APP.href)) return;
-      const cat = CATS.find((c) => c.apps.includes('soon:yad')); if (!cat) return;
+    const KEY = 'helper.yadOn';
+    const put = () => {
+      if (CODE.some((x) => x.href === YAD_APP.href)) return false;
+      const cat = CATS.find((c) => c.apps.includes('soon:yad')); if (!cat) return false;
       cat.apps[cat.apps.indexOf('soon:yad')] = YAD_APP.href;
       CODE.push({ ...YAD_APP, cat: cat.id });
       const i = FUTURE_ALL.findIndex((x) => x.id === 'yad'); if (i >= 0) FUTURE_ALL.splice(i, 1);
-      future(); use(LAYOUT); dispatchEvent(new CustomEvent('h:layout'));
+      future(); use(LAYOUT); return true;
+    };
+    // what the last check said (this tab): applied at once, so the first paint already has the tile; the check below keeps it true
+    let cached = false; try { cached = sessionStorage.getItem(KEY) === '1'; } catch (_) { /* no storage */ }
+    if (cached) put();
+    // the gate helper (the same small script the messages page loads); no loader here (a test, a bare page): nothing to check
+    const ask = () => (window.YadGate ? window.YadGate.on() : H.loadOnce ? H.loadOnce('/assets/yad-gate.js').then(() => window.YadGate.on()) : Promise.resolve(false));
+    ask().catch(() => false).then((on) => {
+      try { sessionStorage.setItem(KEY, on ? '1' : '0'); } catch (_) { /* no storage */ }
+      if (on && put()) dispatchEvent(new CustomEvent('h:layout'));
     });
   }
   yadTile();

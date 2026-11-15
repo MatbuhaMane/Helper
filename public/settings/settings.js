@@ -11,7 +11,10 @@
   const { user } = await H.requireLogin();
   if (!H.applySettings) await H.loadOnce('/settings/apply.js');
   const root = document.querySelector('main');
-  const ERR = { bad_key: 'המפתח לא נראה נכון. בדקו שהעתקתם את כולו.', key_refused: 'הספק לא קיבל את המפתח. בדקו שהוא פעיל.' };
+  const ERR = { bad_key: 'המפתח לא נראה נכון. בדקו שהעתקתם את כולו.', key_refused: 'הספק לא קיבל את המפתח. בדקו שהוא פעיל.',
+    https_only: 'כתובת ה־NAS חייבת להתחיל ב־https://', no_ip_address: 'צריך שם כתובת (למשל my-nas.example.com), לא מספרי IP.', private_host: 'הכתובת צריכה להיות כתובת ציבורית עם שם, לא של הרשת הביתית בלבד.',
+    no_credentials_in_address: 'אל תכתבו שם משתמש וסיסמה בתוך הכתובת. יש להם שדות משלהם.', bad_address: 'הכתובת לא נראית נכון.', bad_port: 'הפורט לא מתאים.', credentials_needed: 'צריך שם משתמש וסיסמה.',
+    nas_unreachable: 'ה־NAS לא ענה. בדקו שהכתובת נגישה מהאינטרנט.', nas_wrong_credentials: 'שם המשתמש או הסיסמה לא התקבלו.', nas_not_webdav: 'הכתובת לא נראית כשרת WebDAV.', drive_used_by_backups: 'ה־Drive הזה משמש לגיבוי הכספת, ולכן אי אפשר לנתק אותו כאן.' };
   const say = (e) => toast(ERR[e?.code] || e?.message || 'משהו השתבש');
   // Gemini first: free, with the three-step guide (ai-invite.js); Claude is the advanced option
   const PROVIDERS = [
@@ -134,7 +137,7 @@
   /* ---------- 3. connections: every service in one place ---------- */
   const servicesBox = section('services', 'חיבור לשירותים');
   async function drawServices() {
-    let ai, spotify = null, mail = null, feed = null, drive = null;
+    let ai, spotify = null, mail = null, feed = null, drive = null, store = null;
     try { ai = await api('/api/me/ai'); } catch (e) { return say(e); }
     // (credit is offered only while the shop is open – the owner's switch; closed, only one's own AI)
     let shopOpen = false; try { shopOpen = !!(await H.me()).shop; } catch (_) { /* not known: closed */ }
@@ -144,6 +147,7 @@
       api('/api/mail/status').then((r) => { mail = r; }).catch(() => {}),
       api('/api/calendar/feed').then((r) => { feed = r.feed; }).catch(() => {}),
       api('/api/notes/drive').then((r) => { drive = r; }).catch(() => {}),
+      api('/api/storage').then((r) => { store = r; }).catch(() => {}),
     ]);
     const row = (p) => {
       const has = ai.keys[p.id];
@@ -167,6 +171,18 @@
           el('p', { class: 'muted small' }, p.guide ? 'הוא נשמר מוצפן, ומשמש רק לבקשות שלך.' : ['את המפתח מקבלים ב־', el('bdi', { dir: 'ltr' }, p.where), '. הוא נשמר מוצפן, ומשמש רק לבקשות שלך.']));
       }
     };
+    /** the NAS form: an https WebDAV address, a user name and a password (kept sealed; the server checks the address) */
+    function nasForm() {
+      const addr = el('input', { type: 'url', dir: 'ltr', autocomplete: 'off', spellcheck: 'false', placeholder: 'https://my-nas.example.com/webdav', 'aria-label': 'כתובת ה־NAS' });
+      const usr = el('input', { type: 'text', dir: 'ltr', autocomplete: 'off', 'aria-label': 'שם משתמש ב־NAS' });
+      const pwd = el('input', { type: 'password', dir: 'ltr', autocomplete: 'off', 'aria-label': 'סיסמה ב־NAS' });
+      return el('form', { class: 'st-key', onsubmit: async (e) => {
+        e.preventDefault();
+        const b = e.target.querySelector('button'); b.disabled = true;
+        try { await api('/api/storage/nas', { method: 'POST', body: { url: addr.value, user: usr.value, pass: pwd.value } }); toast('ה־NAS מחובר'); drawServices(); } catch (err) { say(err); b.disabled = false; }
+      } }, el('label', {}, 'כתובת (https בלבד)', addr), el('label', {}, 'שם משתמש', usr), el('label', {}, 'סיסמה', pwd), el('button', { class: 'btn small primary' }, 'חיבור'),
+        el('p', { class: 'muted small' }, 'WebDAV דרך https, בכתובת עם שם. הסיסמה נשמרת מוצפנת ומשמשת רק לקבצים שלכם.'));
+    }
     /** a service connected elsewhere in the tent: its state here, and a link to where it is managed */
     // (connected: a plain line, which settings.css marks green with ✓; not connected: a muted one)
     const on = [];
@@ -192,7 +208,26 @@
           spotify.configured ? (spotify.connected ? '/' : '/api/music/spotify/login?next=/settings/%23services') : null, spotify.connected ? 'לנגן' : 'חיבור') : null,
         mail ? link('Gmail', mail.connected ? 'מחובר לסידור המייל' : 'לא מחובר', mail.connected, '/mail/', mail.connected ? 'לסידור המייל' : 'חיבור') : null,
         link('לוח השנה בגוגל', feed ? 'יש קישור מנוי פעיל' : 'אין קישור מנוי', !!feed, '/tools/calendar/', feed ? 'ניהול' : 'יצירת קישור'),
-        drive ? link('Google Drive', drive.connected ? 'מחובר: פתקים נשמרים ב־Drive שלך' : 'לא מחובר. מתחברים בפעם הראשונה ששומרים פתק ב־Drive.', drive.connected, '/tools/notes/', 'לפתקים') : null)].filter(Boolean));
+        drive ? link('Google Drive', drive.connected ? 'מחובר: פתקים נשמרים ב־Drive שלך' : 'לא מחובר. מתחברים בפעם הראשונה ששומרים פתק ב־Drive.', drive.connected, '/tools/notes/', 'לפתקים') : null),
+      !store ? null : el('h3', {}, 'האחסון שלך'),
+      !store ? null : el('p', { class: 'muted' }, 'קבצים כבדים נשמרים אצלך, ולא אצלנו. האוהל רואה רק קבצים שהוא שמר, או שבחרתם. שום דבר מהם לא נשלח ל־AI אלא אם ביקשתם על קובץ מסוים.'),
+      !store ? null : el('div', { class: 'st-services-grid' },
+        el('div', { class: 'card st-service' }, el('h3', {}, 'Google Drive'),
+          el('p', { class: store.drive.connected ? null : 'muted small' }, store.drive.connected ? 'מחובר. התיקייה: ' + store.drive.folder : 'לא מחובר. ההרשאה מתבקשת רק עכשיו, ורק לקבצים שהאוהל שומר.'),
+          store.drive.connected
+            ? el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+                if (!confirm('לנתק את ה־Drive? ההרשאה תבוטל והקבצים עצמם יישארו אצלכם.')) return;
+                try { const r = await api('/api/storage/drive', { method: 'DELETE' }); toast(r.alsoGmail ? 'נותק. את החיבור ל־Gmail צריך לחבר מחדש.' : 'נותק'); drawServices(); } catch (e) { say(e); }
+              } }, 'ניתוק')
+            : el('a', { class: 'btn small primary', href: '/api/auth/login?drive=1&next=/settings/%23services' }, 'לחבר את ה־Drive שלי')),
+        el('div', { class: 'card st-service' }, el('h3', {}, 'NAS בבית'),
+          store.nas.connected
+            ? [el('p', {}, 'מחובר: ' + store.nas.host),
+              el('button', { class: 'btn small ghost', type: 'button', onclick: async () => {
+                if (!confirm('לנתק את ה־NAS? הכתובת והסיסמה יימחקו מכאן. הקבצים ב־NAS נשארים.')) return;
+                try { await api('/api/storage/nas', { method: 'DELETE' }); toast('נותק'); drawServices(); } catch (e) { say(e); }
+              } }, 'ניתוק')]
+            : nasForm()))].filter(Boolean));
     services = on; paintNows();
     if (location.hash === '#services') openPart('services');
   }

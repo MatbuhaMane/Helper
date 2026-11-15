@@ -27,6 +27,7 @@ import * as groceryAuto from '../../server/grocery-auto';
 import * as groceryLists from '../../server/grocery-lists';
 import * as fun from '../../server/fun';
 import * as notes from '../../server/notes';
+import * as storage from '../../server/storage';
 import * as food from '../../server/food';
 import * as restaurants from '../../server/restaurants';
 import * as places from '../../server/places';
@@ -251,6 +252,16 @@ route('PUT', '/api/notes/:id', notes.update);
 route('DELETE', '/api/notes/:id', notes.remove);
 route('GET', '/api/notes/drive', notes.driveStatus);
 route('POST', '/api/notes/:id/drive', notes.toDrive);
+/* own storage: a person's Google Drive (drive.file) or home NAS (https WebDAV) - server/storage.ts */
+route('GET', '/api/storage', storage.status);
+route('POST', '/api/storage/nas', storage.nasConnect);
+route('DELETE', '/api/storage/nas', storage.nasDisconnect);
+route('GET', '/api/storage/nas/files', storage.nasList);
+route('PUT', '/api/storage/nas/file', storage.nasPut);
+route('GET', '/api/storage/nas/file', storage.nasGet);
+route('DELETE', '/api/storage/drive', storage.driveDisconnect);
+route('GET', '/api/storage/drive/files', storage.driveList);
+route('PUT', '/api/storage/drive/file', storage.drivePut);
 
 /* בידור: recommendations by medium, with where to watch */
 route('GET', '/api/fun/picks', fun.picks);

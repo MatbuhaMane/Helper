@@ -219,7 +219,7 @@ The previous chat grew too long. The master asked for a fresh one with the same 
 - **פרנסה:**
   - the general-guidance note, not investment advice;
   - a קופה invitation only within the household;
-  - members' emails never reach the page;
+  - members' emails reach the page only as the invite address, within the same household (accepted by the CEO);
   - tips are cached a day by the hash of the sums;
   - an unknown business is guessed as שונות.
 - **Gated apps:**
@@ -676,3 +676,4 @@ LCP has not moved yet. The causes:
 - Not done: the coach (`tool: 'coach'`) sends nothing (wave 2); Drive/NAS storage (waits for the Drive permission review). Not tested: the minute tick end to end (D1 + cron), a real push, 1280 px of the new blocks.
 - **Shared goal on the tree card (batch 28):** per-goal level (private/household/linked/forest) on the goals page, shown on the member card via `K.goalShown`; flagged for the CEO security review (decisions.md). Coach pushes wave 2 done (bbf292e).
 - **Skeletons:** news and mail already had them (9fea8d8); now also the recipe book and recipe modal (groceries, kitchen) and the music lists use `H.skel` instead of a plain "טוען" line.
+- **Own storage (CEO review 2026-11-15, approved with limits):** Drive (drive.file, incremental, revoke on disconnect) and NAS (https WebDAV only, sealed credentials, time/size caps) connectors + settings cards; flagged for the CEO diff review (decisions.md). Not built: the Google Picker; not tested against a real Drive/NAS. Fixed the parnasa line: household emails reach the page as the invite address.

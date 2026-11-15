@@ -46,9 +46,9 @@ const A = { news: { href: '/news/' }, mail: { href: '/mail/', tag: 'ניסיונ
 const vis = (sw) => Object.keys(A).filter((k) => R.shows(A[k], sw));
 eq('הכל', vis({ exp: 'all' }), ['news', 'mail', 'family', 'shop']);
 eq('הסתר ניסיוני', vis({ exp: 'hide' }), ['news', 'family', 'shop']);
-eq('רק ניסיוני (and the fixed)', vis({ exp: 'only' }), ['mail', 'family']);
+eq('רגילים וניסיוניים (all the apps)', vis({ exp: 'only' }), ['news', 'mail', 'family', 'shop']);
 eq('קודש tucks away the weekday tools', vis({ exp: 'all', kodesh: true }), ['news', 'family']);
-eq('the future items: hidden by הסתר only', ['hide', 'only', 'all'].map((e) => R.showsFuture({ exp: e })), [false, true, true]);
+eq('the future items: only under הכל', ['hide', 'only', 'all'].map((e) => R.showsFuture({ exp: e })), [false, false, true]);
 
 /* ---- apps.js agrees: load it with a small stand-in for the page and H, under each mode ---- */
 const src = readFileSync(join(process.cwd(), 'public/assets/apps.js'), 'utf8');
@@ -73,8 +73,8 @@ for (const [name, H, sw] of [['all', all, { exp: 'all' }], ['hide', hide, { exp:
 eq('apps.js hide: no experimental app is left', hrefs(hide).some((h) => expApps.includes(h)), false);
 eq('apps.js hide: no בעתיד and no בקרוב', [hide.FUTURE.length, hide.SOON.length], [0, 0]);
 eq('apps.js all: בעתיד and בקרוב are there', all.FUTURE.length > 0 && all.SOON.length > 0, true);
-eq('apps.js only: only experimental or fixed apps', only.APPS.every((a) => a.fixed || R.isExp(a)), true);
-eq('apps.js only: the future items stay', only.FUTURE.length, all.FUTURE.length);
+eq('apps.js only: the experimental apps are there with the regular ones', only.APPS.length, all.APPS.length);
+eq('apps.js only: no בעתיד and no בקרוב', [only.FUTURE.length, only.SOON.length], [0, 0]);
 eq('apps.js kodesh: no weekday tool', hrefs(kod).some((h) => R.WEEKDAY.includes(h)), false);
 eq('apps.js kodesh: the weekday tools exist in the catalogue', R.WEEKDAY.every((h) => code.some((a) => a.href === h)), true);
 eq('apps.js keeps the same weekday list', (src.match(/const WEEKDAY = (\[[^\]]*\])/) || [])[1]?.replace(/'/g, '"'), JSON.stringify(R.WEEKDAY).replace(/,/g, ', '));

@@ -3808,3 +3808,5 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 - Names never appear on the fund page in stage 1 (the "name only if the person agrees" needs a column: stage 2).
 
 - 2026-11-15 (ai-features, master files append-only): routes GET/POST /api/admin/broadcast + a test entry in package.json; patch in the CEO notes folder. Touches people.
+
+- 2026-11-15 (ai-features, minimal edit of a master file): server/switches-rules.ts: exp "only" now means regular + experimental apps without the בעתיד/בקרוב items (label "רגילים וניסיוניים", stored value unchanged); showsFuture is true only under "all". apps.js and test-switches agree.

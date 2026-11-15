@@ -34,6 +34,7 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **Batch 43** (2026-11-15), sent to design, ai-features, legal and the CEO: the limit lines for 21 of the 49 "יד ביד" types (legal checks the wording), and the driving declaration in the rules page and the terms chapter.
 - **Batch 42** (2026-11-15), sent to design, ai-features, legal and the CEO: nine of the 49 "יד ביד" types carry the licence mark; rides carry it with a driving declaration; each type gets a description line with its limit (vision words them, the owner approves); youth mentoring only in family and friends in stage 1; three questions for the owner's lawyer through the CEO.
 - **Batch 41** (2026-11-15), sent to design, ai-features, legal and the CEO: the licence declaration in "יד ביד" follows a per-type mark, "דורש רישיון", not the tier; legal proposes which of the 49 types get the mark, for the owner's approval.
 - **Batch 40** (2026-11-15), sent to design, ai-features and the CEO: three simplifications of the "יד ביד" approval queue after the ai-features estimate (a fund request for someone else with a mark and the owner's check instead of an in-app consent flow; "מאת האוהל" needs one-time only; one immediate notification mechanism, the daily summary later).

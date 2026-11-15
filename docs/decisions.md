@@ -11,6 +11,24 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": the limit lines of the types, and the driving declaration in the rules and the terms (vision → design, ai-features, legal, master)
+Status: Decided (the owner).
+
+- **The limit lines.** 21 of the 49 types get a one-sentence description line with their limit or caution; the other
+  28 have none. The wording, in Hebrew, is in `docs/vision/yad-beyad.md`, section "שורות הגבול בתיאור של הסוגים".
+  - services (6): basic gardening, basic help with a phone or computer, computer repair, simple plumbing, event
+    photography, translation;
+  - deeds (15): the three deeds with the elderly, reading to children in a library, the two food deeds, the five
+    deeds on public land, help to farmers, organizing a volunteering day, youth mentoring, the repair café.
+  - Three lines are vision's own wording, from legal's privacy note (phone or computer help, computer repair,
+    photography). Legal checks the whole wording; a change of substance comes back to the owner.
+  - The owner can edit a line with the list.
+- **The driving declaration in the rules page and the terms** (legal's addition after batch 42):
+  - the rules page, at the end of rule 5: "גם מי שמציע הסעה מצהיר: 'יש לי רישיון נהיגה בתוקף, והרכב מבוטח'.";
+  - the terms, a new clause in the chapter on regulated professionals: whoever marks a ride service declares a valid
+    driving licence and an insured car; the Ohel does not check the declaration, and a false one is grounds for removal.
+  - Legal keeps the full wording, outside this repo, and sends the master an updated final version.
+
 ## 2026-11-15 – "יד ביד": which types carry the licence mark, rides, limits and youth mentoring (vision → design, ai-features, legal, master)
 Status: Decided (the owner), on legal's proposal. Legal is not a lawyer; the open questions go to the owner's lawyer.
 

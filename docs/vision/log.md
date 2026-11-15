@@ -156,3 +156,4 @@
 - 2026-11-15: the owner approved all four recommendations on legal's proposal (nine licence marks, the driving declaration for rides, limits in the type descriptions, youth mentoring limit); decisions.md entry written; batch 42 sent to design, ai-features, legal and the CEO.
 - 2026-11-15: vision drafted the limit lines for 21 of the 49 types (6 services, 15 deeds), from legal's notes; recorded in yad-beyad.md as a draft; brought to the owner.
 - 2026-11-15: legal added the driving declaration to the rules page (rule 5) and the terms chapter, after batch 42; the two lines wait for the owner's approval, together with the limit lines.
+- 2026-11-15: the owner approved the limit lines for 21 types and legal's two lines on the driving declaration; decisions.md entry written; batch 43 sent to design, ai-features, legal and the CEO; legal asked to check the wording of the lines.

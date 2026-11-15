@@ -101,7 +101,7 @@ async function pointed(env: Env, text: string, names: string[] = []): Promise<st
 }
 
 /** Synthesize (or fetch from the cache) one line in one voice. Returns the WAV bytes, and whether it was new. */
-async function synth(ctx: Ctx, voice: string, style: string, text: string, names: string[] = []): Promise<{ bytes: Uint8Array | ReadableStream; fresh: boolean }> {
+async function synth(ctx: Ctx, voice: string, style: string, text: string, names: string[] = [], noNiqqud = false): Promise<{ bytes: Uint8Array | ReadableStream; fresh: boolean }> {
   const env = ctx.env;
   if (!env.GEMINI_API_KEY) throw new HttpError(503, 'no voice service');
   // what is read, not what is shown: רַאבַּ"ע as one word (server/speech-text.ts). The cache is keyed by that text, so
@@ -110,7 +110,7 @@ async function synth(ctx: Ctx, voice: string, style: string, text: string, names
   const k = `tts/${await sha(`gemini|${model(env)}|${voice}|${style}|${text}`)}.wav`;
   const stored = env.MEDIA ? await env.MEDIA.get(k) : null;
   if (stored) return { bytes: stored.body, fresh: false };
-  text = await pointed(env, text, names);
+  if (!noNiqqud) text = await pointed(env, text, names);   // (the first short piece of a reading skips it, the owner 2026-11-15: speech starts ~2 s sooner)
   if (env.DEV_MODE === '1') console.log('TTS text:', text);
   let r: Response | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -153,7 +153,7 @@ export async function sample(ctx: Ctx) {
 export async function say(ctx: Ctx) {
   const u = requireUser(ctx);
   const env = ctx.env;
-  const b = await body<{ text: string; voice?: string; figure?: string }>(ctx.req);
+  const b = await body<{ text: string; voice?: string; figure?: string; first?: boolean }>(ctx.req);
   const text = String(b.text || '').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '').replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().slice(0, 1200);
   if (!text) throw new HttpError(400, 'empty');
   const figure = String(b.figure || '');
@@ -165,7 +165,7 @@ export async function say(ctx: Ctx) {
   // the person's own name as they want it said (settings: me.nameSpoken); the owner's until he sets it – for the voice
   // only, with a meteg under the alef (the owner's choice; on screen it is written מִישָׁאֵל)
   const spoken = spokenName((await prefsFor(env, u.email)).me?.data?.nameSpoken) || (u.role === 'owner' ? OWNER_SPOKEN : '');
-  const { bytes, fresh } = await synth(ctx, voice, figureOf(figure).style, speakName(text, spoken), spoken ? [spoken] : []);
+  const { bytes, fresh } = await synth(ctx, voice, figureOf(figure).style, speakName(text, spoken), spoken ? [spoken] : [], b.first === true && text.length <= 60);
   if (fresh) {
     await env.DB.prepare('INSERT INTO tts_quota (email, day, chars) VALUES (?, ?, ?) ON CONFLICT(email, day) DO UPDATE SET chars = chars + excluded.chars')
       .bind(u.email, day, text.length).run();

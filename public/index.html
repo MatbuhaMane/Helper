@@ -218,7 +218,7 @@
     .home > .camp > :not(img):not(.dock):not(.tent-light) { pointer-events: auto; }
     .sun { position: absolute; inset-block-start: 0; left: 0; inline-size: var(--sun-size, 120px); block-size: var(--sun-size, 120px); margin: calc(var(--sun-size, 120px) / -2) 0 0 calc(var(--sun-size, 120px) / -2);
       padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; pointer-events: auto; opacity: .85; -webkit-tap-highlight-color: transparent;
-      filter: var(--sun-tint, none); transition: filter 2s, opacity .8s; }
+      filter: var(--sun-tint, none); transition: opacity .3s; }
     .sun:focus-visible { outline: 2px solid var(--primary); outline-offset: 6px; }
     /* the ball (the drawing's core), with a soft halo of light around it */
     .sun .ball { position: absolute; inset: 0; inline-size: 100%; block-size: 100%; -webkit-user-drag: none; pointer-events: none; transition: scale .5s var(--ease-river), filter .5s; }

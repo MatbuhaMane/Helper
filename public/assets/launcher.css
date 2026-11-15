@@ -273,7 +273,7 @@ button.app.tb-future { border: 0; background: none; padding: 0; font: inherit; c
 .apps-grid.flat .app[data-href="#soon-breath"] { --pic: url(/assets/app-icons/breath.webp); }
 .apps-grid.flat .app:is([data-href="/family/"], [data-href="/settings/"], [data-href="/news/"], [data-href="/songs/"], [data-href="/messages/"], [data-href="/mail/"], [data-href="/food/diet/habits/"], [data-href="/food/restaurants/"], [data-href="/tools/parnasa/"], [data-href="/pc/"], [data-href="#soon-kitchen"], [data-href="#soon-howto"], [data-href="#soon-garden"], [data-href="#soon-home"], [data-href="#soon-translate"], [data-href="#soon-eye"], [data-href="#soon-homework"], [data-href="#soon-breath"]) .ic .icon { display: none; }
 .apps-grid.flat .app .ic::before { content: ""; position: absolute; inset: 4px; background: var(--pic, none) center / contain no-repeat;
-  transition: transform .35s var(--ease-river); }
+  transition: transform .3s var(--ease-river); }
 .apps-grid.flat .app:hover .ic::before { transform: rotate(-6deg) scale(1.06); }
 .apps-grid.flat .app.tb-future:hover .ic::before { transform: none; }
 /* at night the pastels are dimmed a little, like the side pages' pictures */

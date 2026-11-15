@@ -833,3 +833,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 36 (home):** wheel line and compass ring appear only on touch (opacity fade, none under reduced motion); hook in home.js. Browser check pending.
 
 **Round 37 (back door):** 7-second press or 7 taps on the sun/moon replaces the moon secret; celebration (fireworks, confetti, sound) in door-party.js/css, first-time egg via prefs door. Browser check pending.
+
+**Round 38 (audit fixes):** span.ic::before transition .35s to .3s; sun transition opacity .3s only (no 2s filter fade); f2-tw stands still under data-motion=reduce with !important. Not re-audited (pane blocked).

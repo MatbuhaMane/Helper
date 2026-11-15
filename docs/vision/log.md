@@ -161,3 +161,4 @@
 - 2026-11-15: the owner approved all six of legal's corrections to the limit lines; tables updated in yad-beyad.md; decisions.md entry written; batch 44 sent to design, ai-features, legal and the CEO.
 - 2026-11-15: the master reported that design did the "יד ביד" batches on its branch without replying; checked with git log design (icon, stage 1 screens, batches 37 to 44; up to 40 merged into main). The open item "design has not replied" is closed.
 - 2026-11-15: the master reported the owner's decision that features waiting on approvals are built but locked by an owner-only switch (main 3bc7c23, read there); recorded under "השלבים" in yad-beyad.md and in status.md. Not added to decisions.md here: the master's entry arrives with the next merge of main.
+- 2026-11-15: design confirmed that batches 36 and 39 to 44 of "יד ביד" are done on its branch (specs, prototypes, CSS; audit clean by its report) and will message vision after each batch from now on.

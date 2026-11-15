@@ -1614,3 +1614,11 @@ CREATE TABLE IF NOT EXISTS yad_reports (
   action   TEXT,
   at       INTEGER NOT NULL
 );
+-- a person's own NAS (WebDAV over https), connected from the settings; the user name and password are sealed (core.ts encrypt) - server/storage.ts (ai-features, master file: one table appended)
+CREATE TABLE IF NOT EXISTS storage_nas (
+  email      TEXT PRIMARY KEY,
+  url        TEXT NOT NULL,
+  user_enc   TEXT NOT NULL,
+  pass_enc   TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);

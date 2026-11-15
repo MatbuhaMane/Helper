@@ -110,7 +110,7 @@ export async function driveStatus(ctx: Ctx) {
 }
 
 /** the folder the helper made (drive.file sees only those), or a new one */
-async function folderId(token: string, folder = FOLDER): Promise<string> {
+export async function folderId(token: string, folder = FOLDER): Promise<string> {
   const q = encodeURIComponent(`name = '${folder.replace(/'/g, '')}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`);
   const found = await fetch(`${DRIVE}?q=${q}&fields=files(id)&pageSize=1`, { headers: { authorization: `Bearer ${token}` } });
   if (found.ok) { const id = ((await found.json()) as { files: { id: string }[] }).files[0]?.id; if (id) return id; }

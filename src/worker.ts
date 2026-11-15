@@ -58,7 +58,7 @@ export default {
   /** the nightly job: the vault's backups (only where the vault is configured) */
   async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     // every minute: the kitchen timers that end within it ring at their second, with the app closed (server/cook.ts)
-    if (event.cron === MINUTE) { ctx.waitUntil(ensureSchema(env).then(() => cook.tick(env)).catch((e) => console.error('kitchen timers failed', e))); return; }
+    if (event.cron === MINUTE) { ctx.waitUntil(ensureSchema(env).then(() => cook.tick(env)).then(() => push.nagTick(env)).catch((e) => console.error('kitchen timers or nags failed', e))); return; }
     if (event.cron === MORNING) {
       ctx.waitUntil(ensureSchema(env).then(() => push.morning(env)).then((n) => console.log('morning notes', n)).catch((e) => console.error('morning failed', e)));
       ctx.waitUntil(ensureSchema(env).then(() => home.remind(env)).then((n) => console.log('home reminders', n)).catch((e) => console.error('home reminders failed', e)));

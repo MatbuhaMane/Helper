@@ -7,6 +7,8 @@
   await H.requireLogin();
   H.header('תחזוקת הבית');
   const root = document.querySelector('main');
+  // "רמת הניג'וס": this tool's bell (assets/nag.js); the row is design's to style (it is a flex row at the end for now)
+  root.before(el('div', { class: 'nag-row', style: 'display:flex;justify-content:flex-end;padding-inline:var(--gutter,16px)' }, Nag.bell('home', null, 'הבית')));
   let data = null;
   const modal = (...parts) => H.modal(...parts.filter(Boolean));   // (H.modal shows a null as text)
 

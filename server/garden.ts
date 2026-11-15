@@ -138,6 +138,7 @@ export async function water(ctx: Ctx) {
   if (!r.meta.changes) throw new HttpError(404, 'not_found');
   await db.prepare('INSERT INTO garden_log (household, plant, kind, on_date, note, by_email, at) VALUES (?, ?, ?, ?, NULL, ?, ?)')
     .bind(u.household, ctx.params.id, 'water', date, u.email, Date.now()).run();
+  await import('./push').then((p) => p.clearNagHousehold(ctx.env, u.household, 'garden')).catch(() => {});
   return json({ ok: true, date });
 }
 
@@ -257,7 +258,7 @@ export async function remind(env: Env): Promise<number> {
   let n = 0;
   for (const [who, names] of to) {
     n += await pushTo(env, [who], { title: '🌱 הגינה', body: names.length === 1 ? `${names[0]} צריך מים היום.` : `צריכים מים היום: ${names.slice(0, 5).join(', ')}${names.length > 5 ? ' ועוד' : ''}.`,
-      url: '/tools/garden/', tag: 'garden', kind: 'reminder' }).catch(() => 0);
+      url: '/tools/garden/', tag: 'garden', kind: 'reminder', tool: 'garden' }).catch(() => 0);
   }
   return n;
 }

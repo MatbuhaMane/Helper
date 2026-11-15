@@ -1280,6 +1280,21 @@ CREATE TABLE IF NOT EXISTS push_digest (
 );
 CREATE INDEX IF NOT EXISTS push_digest_email ON push_digest (email, seen_at);
 
+-- "רמת הניג'וס", level נודניק: a notification that repeats until the person marks it handled (server/push.ts, nagTick).
+-- Deleted when handled, when the person lowers the level, or after MAX_REPEATS. Holds the notification's own text: a reminder title, nothing more.
+CREATE TABLE IF NOT EXISTS push_nag (
+  email   TEXT NOT NULL,
+  tool    TEXT NOT NULL,
+  item    TEXT NOT NULL DEFAULT '',
+  title   TEXT NOT NULL,
+  body    TEXT NOT NULL,
+  url     TEXT,
+  sent    INTEGER NOT NULL DEFAULT 1,
+  next_at INTEGER NOT NULL,
+  PRIMARY KEY (email, tool, item)
+);
+CREATE INDEX IF NOT EXISTS push_nag_due ON push_nag (next_at);
+
 -- פרנסה, the household's money (server/parnasa.ts). A row is personal (kupa_id NULL, seen by owner_email only) or in a
 -- shared קופה (seen by that קופה's members). Amounts are shekels, an expense negative. Nothing here goes to the logs.
 CREATE TABLE IF NOT EXISTS pr_tx (

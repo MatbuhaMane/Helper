@@ -88,6 +88,7 @@ route('POST', '/api/push/subscribe', push.subscribe);
 route('DELETE', '/api/push/subscribe', push.unsubscribe);
 route('POST', '/api/push/test', push.test);
 route('GET', '/api/digest', push.digest);
+route('POST', '/api/nag/done', push.nagDone);   // "רמת הניג'וס": the person handled it, the repeats stop
 route('PUT', '/api/admin/grants/:email', grants.put);
 route('POST', '/api/auth/passkey/options', lock.loginOptions);   // signing in with a passkey (fingerprint, face), no Google
 route('POST', '/api/auth/passkey', lock.login);

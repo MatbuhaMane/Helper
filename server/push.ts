@@ -7,6 +7,7 @@ import type { Ctx, Env } from './core';
 import { HttpError, json, body, requireUser } from './core';
 import { prefsFor } from './prefs';
 import { decide, inShabbat, windowsFrom, type Kind, type NotifyPrefs, type Window } from './push-gate';
+import { levelFor, nextRepeat, REPEAT_EVERY_MS, route, type Level, type NagPrefs } from './nag-rules';
 import { switchesNow } from './switches';
 
 type PushEnv = Env & { VAPID_PUBLIC?: string; VAPID_PRIVATE?: string };
@@ -52,6 +53,7 @@ async function vapid(env: PushEnv, endpoint: string) {
 export interface PushMsg {
   title: string; body: string; url?: string; tag?: string;
   urgent?: boolean;                                   // high urgency, stays on screen until touched, a strong vibration
+  tool?: string; item?: string;                       // the tool and the item it is about: "רמת הניג'וס" decides by them (nag-rules.ts)
   kind?: Kind;                                        // what it is about (push-gate.ts); urgent means 'emergency'. Default 'other': waits for the summary
   actions?: { action: string; title: string }[];      // e.g. { action: 'handle', title: 'אני מטפל' }
   data?: Record<string, unknown>;
@@ -84,8 +86,20 @@ export async function windowsFor(geo: string): Promise<Window[]> {
 }
 
 /** the gate for one person: send now, or hold for the daily summary (push-gate.ts) */
-async function gate(env: Env, email: string, m: PushMsg): Promise<'send' | 'hold'> {
-  const kind: Kind = m.urgent ? 'emergency' : m.kind || 'other';
+async function gate(env: Env, email: string, m: PushMsg): Promise<{ r: 'send' | 'hold' | 'drop'; level: Level | null }> {
+  let kind: Kind = m.urgent ? 'emergency' : m.kind || 'other';
+  let level: Level | null = null;
+  if (m.tool && kind !== 'test') {                      // "רמת הניג'וס": the person's own level for this tool or item
+    level = levelFor((await prefsFor(env, email)).nag?.data as NagPrefs | undefined, m.tool, m.item);
+    const r = route(level);
+    if (r === 'drop') return { r: 'drop', level };
+    if (r === 'summary') return { r: 'hold', level };
+    if (kind !== 'emergency') kind = 'reminder';        // normal and nag arrive at the right time (quiet hours and Shabbat still hold them)
+  }
+  const r = await decideNow(env, email, kind);
+  return { r, level };
+}
+async function decideNow(env: Env, email: string, kind: Kind): Promise<'send' | 'hold'> {
   if (kind === 'emergency' || kind === 'test') return 'send';
   // the owner's switchboard: pushes off for everyone, or קודש (set, or auto inside a Shabbat/Yom Tov window)
   const sw = await switchesNow(env);
@@ -94,15 +108,18 @@ async function gate(env: Env, email: string, m: PushMsg): Promise<'send' | 'hold
   const p = await prefsFor(env, email);
   const n = (p.notify?.data || {}) as NotifyPrefs;
   const city = String(p.calendar?.data?.city || p.parasha?.data?.city || '281184');
-  const w = n.shabbat ? await windowsFor(/^\d{3,9}$/.test(city) ? city : '281184') : [];
-  return decide(kind, Date.now(), n, w);
+  const shabbat = n.shabbat !== false;                  // the settings screen shows it on until the person turns it off (vision batch 31)
+  const w = shabbat ? await windowsFor(/^\d{3,9}$/.test(city) ? city : '281184') : [];
+  return decide(kind, Date.now(), { ...n, shabbat }, w);
 }
 
 /** to every device of these people, through the gate; what is held goes to the summary. Returns how many devices accepted it. */
 export async function pushTo(env: Env, emails: string[], m: PushMsg): Promise<number> {
   let n = 0;
   for (const raw of new Set(emails.map((e) => e.toLowerCase()))) {
-    if ((await gate(env, raw, m)) === 'hold') {
+    const g = await gate(env, raw, m);
+    if (g.r === 'drop') continue;
+    if (g.r === 'hold') {
       if (m.kind === 'summary') continue;                  // a morning note held by Shabbat or quiet hours is simply skipped
       await env.DB.prepare('INSERT INTO push_digest (email, kind, title, body, url, created_at) VALUES (?, ?, ?, ?, ?, ?)')
         .bind(raw, m.kind || 'other', m.title.slice(0, 200), m.body.slice(0, 1000), m.url || null, Date.now()).run();
@@ -111,9 +128,59 @@ export async function pushTo(env: Env, emails: string[], m: PushMsg): Promise<nu
     const { results } = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE email = ?').bind(raw).all<Sub>();
     const ok = await Promise.all(results.map((s) => sendOne(env as PushEnv, s, m).catch(() => false)));
     n += ok.filter(Boolean).length;
+    if (g.level === 'nag' && m.tool) await startNag(env, raw, m);
   }
   return n;
 }
+/** a "נודניק" notification went out: it repeats (the minute cron, nagTick) until the person marks the item handled */
+async function startNag(env: Env, email: string, m: PushMsg) {
+  const item = m.item || '';
+  await env.DB.prepare(`INSERT INTO push_nag (email, tool, item, title, body, url, sent, next_at) VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+    ON CONFLICT(email, tool, item) DO UPDATE SET title = excluded.title, body = excluded.body, url = excluded.url, sent = 1, next_at = excluded.next_at`)
+    .bind(email, m.tool, item, m.title.slice(0, 200), m.body.slice(0, 500), m.url || null, Date.now() + REPEAT_EVERY_MS).run();
+}
+/** the person handled it (or the item is gone): the repeats stop. item '' = the whole tool. */
+export async function clearNag(env: Env, email: string, tool: string, item = ''): Promise<void> {
+  await env.DB.prepare(item ? 'DELETE FROM push_nag WHERE email = ? AND tool = ? AND item = ?' : 'DELETE FROM push_nag WHERE email = ? AND tool = ?')
+    .bind(...(item ? [email, tool, item] : [email, tool])).run();
+}
+/** the item was handled inside its tool (by anyone in the household): the repeats stop for everyone who had them */
+export async function clearNagHousehold(env: Env, household: string, tool: string, item = ''): Promise<void> {
+  await env.DB.prepare(`DELETE FROM push_nag WHERE tool = ? AND (? = '' OR item = ?) AND email IN (SELECT email FROM members WHERE household = ?)`)
+    .bind(tool, item, item, household).run();
+}
+/** the minute cron: every nag that is due repeats, by the same gate (quiet hours and Shabbat only postpone it), up to MAX_REPEATS */
+export async function nagTick(env: Env): Promise<number> {
+  const now = Date.now();
+  const { results } = await env.DB.prepare('SELECT email, tool, item, title, body, url, sent FROM push_nag WHERE next_at <= ? LIMIT 50')
+    .bind(now).all<{ email: string; tool: string; item: string; title: string; body: string; url: string | null; sent: number }>();
+  let n = 0;
+  for (const r of results) {
+    const lvl = levelFor((await prefsFor(env, r.email)).nag?.data as NagPrefs | undefined, r.tool, r.item || undefined);
+    if (lvl !== 'nag') { await clearNag(env, r.email, r.tool, r.item); continue; }       // the person lowered it: no more repeats
+    if ((await decideNow(env, r.email, 'reminder')) === 'hold') {
+      await env.DB.prepare('UPDATE push_nag SET next_at = ? WHERE email = ? AND tool = ? AND item = ?').bind(now + REPEAT_EVERY_MS, r.email, r.tool, r.item).run();
+      continue;
+    }
+    const { results: subs } = await env.DB.prepare('SELECT endpoint, p256dh, auth FROM push_subs WHERE email = ?').bind(r.email).all<Sub>();
+    const ok = await Promise.all(subs.map((s) => sendOne(env as PushEnv, s, { title: r.title, body: r.body, url: r.url || '/', tag: 'nag' + r.tool + r.item }).catch(() => false)));
+    n += ok.filter(Boolean).length;
+    const next = nextRepeat(r.sent, now);
+    if (next === null) await clearNag(env, r.email, r.tool, r.item);
+    else await env.DB.prepare('UPDATE push_nag SET sent = sent + 1, next_at = ? WHERE email = ? AND tool = ? AND item = ?').bind(next, r.email, r.tool, r.item).run();
+  }
+  return n;
+}
+/** POST /api/nag/done { tool, item? } — "טופל": the repeats stop */
+export async function nagDone(ctx: Ctx): Promise<Response> {
+  const u = requireUser(ctx);
+  const b = await body<{ tool?: string; item?: string }>(ctx.req);
+  const tool = String(b.tool || ''), item = String(b.item || '');
+  if (!/^[a-z]{1,20}$/.test(tool) || !/^[A-Za-z0-9_-]{0,40}$/.test(item)) throw new HttpError(400, 'bad_nag');
+  await clearNag(ctx.env, u.email, tool, item);
+  return json({ ok: true });
+}
+
 /** to every member of a household but the sender */
 export async function pushHousehold(env: Env, household: string, m: PushMsg, except?: string): Promise<number> {
   const { results } = await env.DB.prepare('SELECT email FROM members WHERE household = ?').bind(household).all<{ email: string }>();

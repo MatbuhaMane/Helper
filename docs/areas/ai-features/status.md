@@ -616,3 +616,11 @@ LCP has not moved yet. The causes:
 - /messages/ has a third tab "ממתין לאישור" (`#asks`): the requests waiting for my yes or no with אשר/דחה, through the tree's own routes (`/api/vault/changes`); needs the tree open on the device, otherwise a link to /family/. `/api/dm/unread` now adds `asks` to `unread`, so the inbox dot shows it.
 - Vault pages: only the inbox button (common.js, master's patch in the notes folder).
 - Not tested: a real pending request end to end, the silhouettes with design's files, the vault-page button on a real device.
+
+## 2026-11-15: batch 31, "רמת הניג'וס" (built; not on a real phone)
+- **Rules:** `server/nag-rules.ts` (+ `server/test-nag.mjs`, in `npm test`): four levels, item beats tool beats default, `route()` (off drops, quiet goes to the daily summary, normal and nag send), the repeat (every 20 min, at most 5 times), `cleanNag`.
+- **Gate (master's `server/push.ts`, own commit + patch):** a push that names its `tool` (and `item`) is decided by the person's level in the prefs namespace `nag`; emergency is untouched; Shabbat now holds by default (as the screen shows). Nag: `push_nag` table (schema.sql, appended), `nagTick` on the minute cron (`src/worker.ts`), `POST /api/nag/done`; home "בוצע" and garden "השקיתי" stop the repeats.
+- **UI:** `assets/nag.js` (`Nag.picker/bell/mark/set/done`), the settings card "התראות" (rows, emergency fixed, quiet hours, permission note), a bell in home, garden and the kitchen.
+- **For the CEO's review (privacy):** `push_nag` keeps a notification's own text (a reminder title) until handled, lowered, or 5 repeats; the gate now reads `prefs.nag`.
+- **Not built / waits:** goals and the coach send nothing yet (levels are ready); an item-level bell (needs the goals screen); the settings card has no icon (`.st-ico[data-ico="nag"]` is design's); `sw.js` should precache `assets/nag.js`; the batch 28 phone switch was never built, so nothing to remove.
+- **Not tested:** a real push with the app closed, the minute-cron repeat, quiet hours and Shabbat against live Hebcal, 1280 px, dark mode.

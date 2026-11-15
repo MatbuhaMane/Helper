@@ -949,10 +949,10 @@
       // a compass rose, no letters: two rings, a scale of ticks (every 5°, longer at 10° and 30°), the four main points and the four between
       const ring = (r, w, d) => `<circle cx="100" cy="100" r="${r}" fill="none" stroke-width="${w}"${d ? ` stroke-dasharray="${d}"` : ''} vector-effect="non-scaling-stroke"/>`;
       const star = (a, r1, r2, hw) => { const p = (ang, r) => { const rd = (ang * Math.PI) / 180; return (100 - r * Math.sin(rd)).toFixed(1) + ',' + (100 + r * Math.cos(rd)).toFixed(1); }; return `<polygon points="${p(a, r2)} ${p(a + hw, r1)} ${p(a, 0)} ${p(a - hw, r1)}" fill="currentColor" fill-opacity=".35" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`; };
-      let s = ring(98.5, 2) + ring(78, 1.2) + ring(40, 1, '3 5');
-      for (let a = 0; a < 360; a += 5) s += a % 90 === 0 ? mk(a, 76, 98.5, 2.6) : a % 30 === 0 ? mk(a, 81, 98.5, 2) : a % 10 === 0 ? mk(a, 86, 98.5, 1.5) : mk(a, 91, 98.5, 1);
-      for (let a = 0; a < 360; a += 90) s += star(a, 24, 76, 11);
-      for (let a = 45; a < 360; a += 90) s += star(a, 16, 52, 9);
+      let s = ring(78, 1.2) + ring(40, 1, '3 5');   // (no frame round the outside: the ticks alone mark the edge)
+      for (let a = 0; a < 360; a += 5) s += a % 90 === 0 ? mk(a, 70, 98.5, 2.6) : a % 30 === 0 ? mk(a, 75, 98.5, 2) : a % 10 === 0 ? mk(a, 81, 98.5, 1.5) : mk(a, 87, 98.5, 1);
+      for (let a = 0; a < 360; a += 90) s += star(a, 30, 128, 9);
+      for (let a = 45; a < 360; a += 90) s += star(a, 20, 108, 7);
       return `<g class="cmp" fill="none" stroke="currentColor" stroke-linecap="round">${s}</g>`;
     })();
     const cmp = compass.firstChild;

@@ -11,6 +11,19 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד": six corrections to the limit lines, after legal's check (vision → design, ai-features, legal, master)
+Status: Decided (the owner). New information: legal's check of the wording. 23 of the 49 types now have a line; the
+tables in `docs/vision/yad-beyad.md` hold the current wording.
+
+- **Three wording fixes** (the meaning does not change):
+  - "עזרה בסיסית בטלפון או במחשב": "נכנסים לחשבון רק יחד עם האדם ובאישורו, ולא שומרים סיסמאות.";
+  - "ללמד קשישים להשתמש בטלפון": "לא נוגעים בכסף ובחשבון הבנק, ולא שומרים סיסמאות.";
+  - "צילום אירוע": "התמונות שייכות למי שביקש את הצילום, ולא מפרסמים אותן בלי הסכמתו.".
+- **A replaced line:** "עזרה לחקלאים בשעת חירום": "בלי נהיגה בטרקטור או ברכב חקלאי, אלא אם יש רישיון מתאים.".
+- **Two new lines:**
+  - "הובלת רהיטים": "בלי משאית כבדה, אלא אם יש רישיון מתאים.";
+  - "סקר טבע": "בשמורת טבע, לפי הכללים של רשות הטבע והגנים.".
+
 ## 2026-11-15 – "יד ביד": the limit lines of the types, and the driving declaration in the rules and the terms (vision → design, ai-features, legal, master)
 Status: Decided (the owner).
 

@@ -143,3 +143,4 @@
 - 2026-11-15: the CEO reported two owner decisions, recorded in decisions.md: the phone comes first (PC later, or in parallel only if cheap), and the יד ביד terms no longer block development.
 - 2026-11-15: approval queue spec, question 3: two actions on an item (approve, or reject with a short reason), plus "add to the list"; no "ask" in stage 1.
 - 2026-11-15: approval queue spec, question 4: three actions on a report (dismiss, remove the need or service, remove the person from יד ביד with frozen ידיים, reversible).
+- 2026-11-15: approval queue spec, question 5: anyone may ask the fund, for themselves or for another; the owner added requests for the public (a public garden, a public activity) and requests that come from the system; what "the system" means is the next question.

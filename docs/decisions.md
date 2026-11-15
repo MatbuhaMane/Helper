@@ -11,6 +11,21 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד", stage 1: three simplifications of the approval queue (vision → design, ai-features, master)
+Status: Decided (the owner). New information: ai-features' estimate of the queue (the upper end of "2–3 times goals",
+7–8 rounds; the lower end with simplifications). This updates three points of the queue entry below; the rest stands.
+
+1. **A fund request for someone else stays, without a consent flow in the app.**
+   - The person asking marks "האדם יודע ומסכים".
+   - The owner makes sure of it before approving. Stage 1 is family and friends, whom the owner knows.
+   - A consent step inside the app can come when the tool opens to more people.
+2. **A need "מאת האוהל" is one-time only in stage 1.** The owner can duplicate it by hand. A recurring need comes later.
+3. **One notification mechanism in stage 1: an immediate notification to the owner on every item.** The daily summary
+   joins when the tool opens to more people.
+   - Open point: ai-features confirms that this is the cheaper mechanism to build. If the daily summary is cheaper,
+     vision brings it back to the owner.
+- **Unchanged:** removal from "יד ביד" with frozen ידיים. Every ledger action checks it, so it is built with the ledger.
+
 ## 2026-11-15 – "יד ביד", stage 1: the owner's approval queue (vision → design, ai-features, master)
 Status: Decided (the owner). The full spec, in Hebrew, is in `docs/vision/yad-beyad.md`. Nothing is built yet.
 

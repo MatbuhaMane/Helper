@@ -946,8 +946,13 @@
     compass.setAttribute('class', 'compass'); compass.setAttribute('viewBox', '0 0 200 200'); compass.setAttribute('preserveAspectRatio', 'none');
     compass.innerHTML = (() => {
       const mk = (a, r1, r2, w) => { const rd = (a * Math.PI) / 180, x = (r) => (100 - r * Math.sin(rd)).toFixed(1), y = (r) => (100 + r * Math.cos(rd)).toFixed(1); return `<line x1="${x(r1)}" y1="${y(r1)}" x2="${x(r2)}" y2="${y(r2)}" stroke-width="${w}" vector-effect="non-scaling-stroke"/>`; };
-      let s = '<circle cx="100" cy="100" r="98.5" fill="none" stroke-width="1.6" stroke-dasharray="4 7" vector-effect="non-scaling-stroke"/>';
-      for (let a = 0; a < 360; a += 10) s += a % 90 === 0 ? mk(a, 76, 98, 2.4) : a % 30 === 0 ? mk(a, 84, 98, 1.8) : mk(a, 90, 98, 1.2);
+      // a compass rose, no letters: two rings, a scale of ticks (every 5°, longer at 10° and 30°), the four main points and the four between
+      const ring = (r, w, d) => `<circle cx="100" cy="100" r="${r}" fill="none" stroke-width="${w}"${d ? ` stroke-dasharray="${d}"` : ''} vector-effect="non-scaling-stroke"/>`;
+      const star = (a, r1, r2, hw) => { const p = (ang, r) => { const rd = (ang * Math.PI) / 180; return (100 - r * Math.sin(rd)).toFixed(1) + ',' + (100 + r * Math.cos(rd)).toFixed(1); }; return `<polygon points="${p(a, r2)} ${p(a + hw, r1)} ${p(a, 0)} ${p(a - hw, r1)}" fill="currentColor" fill-opacity=".35" stroke-width="1.2" vector-effect="non-scaling-stroke"/>`; };
+      let s = ring(98.5, 2) + ring(78, 1.2) + ring(40, 1, '3 5');
+      for (let a = 0; a < 360; a += 5) s += a % 90 === 0 ? mk(a, 82, 98.5, 2.6) : a % 30 === 0 ? mk(a, 86, 98.5, 2) : a % 10 === 0 ? mk(a, 90, 98.5, 1.5) : mk(a, 94, 98.5, 1);
+      for (let a = 0; a < 360; a += 90) s += star(a, 24, 76, 11);
+      for (let a = 45; a < 360; a += 90) s += star(a, 16, 52, 9);
       return `<g class="cmp" fill="none" stroke="currentColor" stroke-linecap="round">${s}</g>`;
     })();
     const cmp = compass.firstChild;

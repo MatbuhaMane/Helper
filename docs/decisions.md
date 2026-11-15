@@ -3822,3 +3822,7 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 - Reduced motion: no fireworks or confetti, a short calm ring (opacity) and the sound if `H.soundsOn`. Motion is transform/opacity only.
 - Master: add `/assets/door-party.js` and `.css` to the precache list in `public/sw.js` if wanted (not needed for function).
 - Not verified in a browser (the pane refused navigation); static check only.
+
+## 2026-11-15 — ai-features: record on the tree, compass rose (owner via CEO)
+- Music record docked on the tree: 1.05x the slot (was 0.72x), tilted -28deg; carried it is always the small record (the old 0.72x size, `--drag-size`), upright. Touches design-owned `music.css`.
+- Floor compass: always visible (opacity .42, .72 while touched), drawn as a rose without letters (rings, 5-degree scale, 8 points). Touches master-owned `index.html` and `home.js` compass lines.

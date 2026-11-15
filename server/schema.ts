@@ -87,5 +87,11 @@ export function ensureSchema(env: Env): Promise<void> {
       }
     }
   })().catch((err) => { ready = null; throw err; });
-  return ready;
+  // A batch that never settles (2026-11-15: every API request on the live address hung on it) must not block the isolate
+  // forever: after 10 s this request fails and the next one starts the schema again.
+  const mine = ready;
+  return Promise.race([mine, new Promise<void>((_, no) => setTimeout(() => {
+    if (ready === mine) ready = null;
+    no(new Error('schema timeout'));
+  }, 10_000))]);
 }

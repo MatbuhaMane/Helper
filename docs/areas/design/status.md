@@ -821,3 +821,11 @@ _Updated 2026-11-14 (round 23)._
 **Round 30 (batch 39):** the owner's approval queue for יד ביד: `docs/design/yad-queue.md`, prototype `docs/design/prototype/yad-queue.html`, CSS at the end of `public/tools/yad/yad.css`. Four kinds, approve/reject with a reason, person's side, "מהקופה" with consent, board marks. Audit clean at 375 and 1280, light and dark. Not designed: the owner's "מאת האוהל" form.
 
 **Round 31 (batch 40):** the queue is smaller: consent checkbox instead of a consent step, one-time Ohel needs with a duplicate button, no urgent strip. See the end of `docs/design/yad-queue.md`.
+
+**Round 32 (batch 41):** licence mark follows the type: in the profile, the owner's list editor and the queue's "להוסיף לרשימה". See `docs/design/yad.md`.
+
+**Round 33 (batch 42):** second (driving) declaration and the per-type description line: profile, create, board, list editor, queue. See `docs/design/yad.md`.
+
+**Round 34 (batch 43):** real description lines in the prototype; the longest checked at 375 px (wraps, no overflow). See `docs/design/yad.md`.
+
+**Round 35 (batch 44):** six description lines changed; no design change, lengths within the batch 43 check.

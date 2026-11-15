@@ -145,3 +145,16 @@ body.dm-folded main { padding-block-end: 0; }
 /* the companion's ways (without AI, docs/ai/without-ai.md #8): where to go, as round pills; the ✨ one stands out as the upgrade */
 .dm-balloon .acts .btn, .dm-msg .acts .btn { border-radius: 999px; font-size: .86rem; padding: 5px 12px; }
 .dm-balloon .acts .btn[href="/settings/"], .dm-msg .acts .btn[href="/settings/"] { background: color-mix(in srgb, var(--accent) 22%, var(--card)); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); color: var(--text); }
+
+/* phone width: a docked tab rests mostly off its edge (about 30px of the 58 show), so it never sits on a row's icon;
+   it slides fully out while pressed, hovered or focused, and a tap on the visible part opens it as before.
+   `translate` (not `transform`), so the peek, the hover scale and the drag keep their own transforms. */
+@media (max-width: 520px) {
+  .dm-tab:not(.free):not(.dragging) { translate: 28px 0; transition: transform .2s var(--ease-river), translate .2s var(--ease-river); }
+  [dir="rtl"] .dm-tab:not(.free):not(.dragging) { translate: -28px 0; }
+  .dm-tab.dock-start:not(.free):not(.dragging) { translate: -28px 0; }
+  [dir="rtl"] .dm-tab.dock-start:not(.free):not(.dragging) { translate: 28px 0; }
+  .dm-tab:not(.free):not(.dragging):is(:hover, :focus-visible, :active) { translate: 0 0; }
+}
+@media (max-width: 520px) and (prefers-reduced-motion: reduce) { .dm-tab:not(.free):not(.dragging) { transition: none; } }
+:root[data-motion="reduce"] .dm-tab:not(.free):not(.dragging) { transition: none; }

@@ -1295,6 +1295,18 @@ CREATE TABLE IF NOT EXISTS push_nag (
 );
 CREATE INDEX IF NOT EXISTS push_nag_due ON push_nag (next_at);
 
+-- Goals part 2 (ai-features, vision batch 28; server/goals-advice.ts): "שמור מסקנה", what the person pinned to a goal from the AI consultation.
+-- Only what they pin is kept; the conversation itself is not stored.
+CREATE TABLE IF NOT EXISTS goal_notes (
+  email   TEXT NOT NULL,
+  goal_id TEXT NOT NULL,
+  id      TEXT NOT NULL,
+  text    TEXT NOT NULL,
+  at      INTEGER NOT NULL,
+  PRIMARY KEY (email, id)
+);
+CREATE INDEX IF NOT EXISTS goal_notes_goal ON goal_notes (email, goal_id);
+
 -- פרנסה, the household's money (server/parnasa.ts). A row is personal (kupa_id NULL, seen by owner_email only) or in a
 -- shared קופה (seen by that קופה's members). Amounts are shekels, an expense negative. Nothing here goes to the logs.
 CREATE TABLE IF NOT EXISTS pr_tx (

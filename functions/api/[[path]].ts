@@ -6,6 +6,7 @@ import * as daemon from '../../server/daemon';
 import * as access from '../../server/access';
 import * as grants from '../../server/grants';
 import * as push from '../../server/push';
+import * as goalsAdvice from '../../server/goals-advice';
 import * as calc from '../../server/calc';
 import * as calendar from '../../server/calendar';
 import * as gather from '../../server/gather';
@@ -298,6 +299,11 @@ route('GET', '/api/goals/template', goals.template);
 route('POST', '/api/goals/review', goals.review);
 route('POST', '/api/goals/ai/plan', goals.aiPlan);
 route('POST', '/api/goals/ai/stuck', goals.aiStuck);
+route('GET', '/api/goals/ask', goalsAdvice.quota);               // goals part 2 (server/goals-advice.ts): the free messages left today
+route('POST', '/api/goals/ask', goalsAdvice.ask);                // a consultation on one goal
+route('POST', '/api/goals/ai/define', goalsAdvice.define);       // "עזור לי להגדיר"
+route('POST', '/api/goals/:id/notes', goalsAdvice.addNote);      // "שמור מסקנה"
+route('DELETE', '/api/goals/notes/:id', goalsAdvice.removeNote);
 route('PUT', '/api/goals/:id', goals.update);
 route('DELETE', '/api/goals/:id', goals.remove);
 route('POST', '/api/goals/:id/processes', goals.addProcess);

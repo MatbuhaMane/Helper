@@ -399,7 +399,15 @@
 
   function bottomLimit() { return Hh() - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0) - 12; }
   function clampPos(p) {
-    return { x: Math.min(W() - box.w * 0.35, Math.max(box.w * 0.35, p.x)), y: Math.min(bottomLimit(), Math.max(box.h * 0.75, p.y)) };
+    return { x: Math.min(W() - box.w * 0.35, Math.max(box.w * 0.35, p.x)), y: Math.min(bottomLimit(), Math.max(box.h * 0.75, horizonFloor(), p.y)) };
+  }
+  /* On the home page he walks only on the ground: his feet stay a little below the horizon (the tent's eaves, where the sky ends;
+     the same line home.js sets the sun and moon to). His frame's foot point is 0.26 of its height below his feet. */
+  function horizonFloor() {
+    if (!dock) return 0;
+    const c = document.querySelector('.camp'); if (!c) return 0;
+    const r = c.getBoundingClientRect(); if (!r.height) return 0;
+    return r.top + r.height * 0.465 + 14 + box.h * 0.26;
   }
   // Docked: at home in his tent on the home page (the dock is a point on the tent's rugs). He follows it as the page scrolls.
   let dock = null, docked = false;
@@ -1596,7 +1604,7 @@
   const heads = [];
   function headFigure(cls = 'face', size = 34) {
     const span = el('span', { class: 'dm-headfig ' + cls, 'aria-hidden': 'true' });
-    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: prefs.header !== 'animated' || size > 40, ...(prefs.hair ? { hair: prefs.hair } : {}), ...(paletteOf(flatFigure) ? { palette: paletteOf(flatFigure) } : {}) }).then((f) => heads.push(f)).catch(() => {});
+    if (flat && window.Figure2D) Figure2D.mount(span, flatFigure, { size, still: cls === 'tab-fig' ? prefs.tabFace !== 'animated' : prefs.header !== 'animated' || size > 40, ...(prefs.hair ? { hair: prefs.hair } : {}), ...(paletteOf(flatFigure) ? { palette: paletteOf(flatFigure) } : {}) }).then((f) => heads.push(f)).catch(() => {});
     else span.append(el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: size, height: size }));
     return span;
   }
@@ -1781,6 +1789,14 @@
     const idle = () => (window.requestIdleCallback ? requestIdleCallback(() => res(), { timeout: 2000 }) : setTimeout(res, 300));
     if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true });
   });
+  /** the app's opening is the first page of this visit (sessionStorage, per tab); he comes in at 7 s after it, at once on later pages */
+  const ENTER_MS = 7000;
+  const appOpenWait = () => {
+    let t0 = Date.now();
+    try { const s = Number(sessionStorage.getItem('helper.appOpen')); if (s > 0) t0 = s; else sessionStorage.setItem('helper.appOpen', String(t0)); } catch (_) { /* no storage: counted from this page */ }
+    const left = ENTER_MS - (Date.now() - t0);
+    return left > 0 ? new Promise((res) => setTimeout(res, left)) : Promise.resolve();
+  };
   async function mount(container, opts = {}) {
     overlay = !!opts.overlay;
     dock = opts.dock || null;
@@ -1788,6 +1804,7 @@
     const r = await H.me();
     if (!r.user) return false;
     if (!dock && !prefs.follow) return false;  // at home in his tent: other screens and the desktop see him only when he was asked along
+    await appOpenWait();   // he walks in only 7 seconds or more after the app was opened (the owner, 2026-11-15)
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }
     // a 2D figure the person chose (and that is drawn already), else the 3D Ibn Ezra
     // (Ibn Ezra is the owner's family's: anyone else who has not chosen gets the first figure, once figures are drawn)
@@ -1841,9 +1858,10 @@
     // quiet (the owner's rule): no introduction unasked – a small mark, and the first tap offers a question (openBalloon)
     const firstMeeting = () => { if (!state.transcript.length) canvasBox.classList.add('unread'); };
     if (docked) {
-      // At home: he is already standing at the tent's entrance.
-      pos = dockSpot();
-      setTimeout(firstMeeting, 900);
+      // At home: he walks in from the edge of the screen to the tent's entrance (at once when motion is reduced).
+      const spot = dockSpot();
+      if (reduced) { pos = spot; setTimeout(firstMeeting, 900); }
+      else { pos = { x: spot.x < W() / 2 ? -box.w : W() + box.w, y: spot.y }; goHome(firstMeeting); }
     } else {
       // Following the person: he walks in from the edge of the screen.
       const home = homeSpot();

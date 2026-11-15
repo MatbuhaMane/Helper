@@ -11,6 +11,52 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – "יד ביד", stage 1: the owner's approval queue (vision → design, ai-features, master)
+Status: Decided (the owner). The full spec, in Hebrew, is in `docs/vision/yad-beyad.md`. Nothing is built yet.
+
+- **What reaches the queue in stage 1:**
+  1. a deed for the community that someone reported;
+  2. a need outside the owner's list, with its tier;
+  3. a request from the fund, for a person or for the public;
+  4. a report on a service, a need or a person, including a false licence declaration.
+  - Redemption requests join in stage 2.
+- **Where it lives:** inside the existing "ממתין לאישור" page, with a filter for "יד ביד" and one count of what waits.
+- **The value of a deed for the community:**
+  - the owner prepares a list of deed types, each with a tier, like the list of services;
+  - the person picks a type and reports hours; the amount is computed, and the tithe is deducted as usual;
+  - the owner approves, rejects or corrects the hours;
+  - a deed outside the list arrives with a proposed tier (the two questions: difficulty, expertise).
+- **Actions on an item:**
+  - approve, or reject with a short reason that is sent to the person, who may fix it and send it again;
+  - a deed or a need outside the list also has "להוסיף לרשימה", so that the type does not reach the queue again;
+  - no "ask the person" action in stage 1.
+- **Actions on a report:**
+  1. dismiss the report;
+  2. remove the need or the service;
+  3. remove the person from "יד ביד": they stay in the Ohel, their ידיים are frozen, and the removal can be undone.
+  - Closing an account in the whole Ohel stays outside this queue.
+- **Requests from the fund:**
+  - **for a person:** anyone may ask, for themselves or for someone else. They mark "מהקופה" while creating the need
+    and write one line of why; only the owner sees the reason. After the owner approves, the need is published, and
+    whoever helps is paid from the fund.
+  - **consent:** when the request is for someone else, that person agrees before the need is published.
+  - **for the public** (cleaning a public garden or area, helping in a public activity): anyone may open one. It is
+    paid from the fund, the owner approves it, and it appears in the board marked "לטובת הציבור". In stage 1 nobody
+    has a right or a ceiling; the owner decides on each request. Stage 2 adds the redemption right.
+  - **"מאת האוהל":** a public need the owner posts in the Ohel's name, possibly recurring. There is nothing to
+    approve; whoever does the deed is paid from the fund. A system that proposes public needs by itself is not in
+    stage 1 (`docs/vision/later.md`).
+- **Notifications to the owner:**
+  - immediate: a report, a need outside the list, and a fund request for a person;
+  - in one daily summary: deeds for the community and fund requests for the public;
+  - the count on the page updates at once, and no item is ever approved by itself.
+- **Who does what:**
+  - design: the queue inside the "ממתין לאישור" page, phone first;
+  - ai-features: says whether this changes its estimate, without building;
+  - the master: the reason of a fund request and the consent of the helped person are sensitive data, so they are in
+    the security check before merging (batch 35).
+- **Before building,** the owner prepares two lists: the services with their tiers, and the deeds for the community.
+
 ## 2026-11-15 – The phone comes first; the "יד ביד" terms no longer block (master → all areas)
 Status: Decided (the owner, in the master's session; recorded by vision as the master reported it).
 

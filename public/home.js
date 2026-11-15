@@ -289,6 +289,25 @@
   // (the owner's switchboard can turn him off for everyone: H.switches.daemon)
   const meetHim = () => (H.swOn?.('daemon') === false ? null : H.loadDaemon().then((d) => d.mount(null, { dock })));
   const camp = dock.parentElement;
+  /* closed completely (daemon.closed, per user): a 5-second press on the tent opens a small transparent panel that asks whether to bring him back */
+  {
+    const dp = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
+    let timer = 0, x0 = 0, y0 = 0;
+    const stop = () => { clearTimeout(timer); timer = 0; };
+    const ask = () => {
+      if (document.querySelector('.back-panel')) return;
+      const close = () => { p.classList.remove('on'); setTimeout(() => p.remove(), 250); };
+      const p = el('div', { class: 'back-panel', role: 'dialog', 'aria-label': 'להחזיר את העוזר' },
+        el('p', {}, 'להחזיר את העוזר?'),
+        el('div', { class: 'row' },
+          el('button', { class: 'btn primary small', onclick: () => { dp.closed = false; H.savePrefs('daemon'); close(); setTimeout(() => location.reload(), 120); } }, 'כן'),
+          el('button', { class: 'btn ghost small', onclick: close }, 'לא')));
+      document.body.append(p); requestAnimationFrame(() => p.classList.add('on'));
+    };
+    camp.addEventListener('pointerdown', (e) => { if (!dp.closed || e.button > 0) return; x0 = e.clientX; y0 = e.clientY; stop(); timer = setTimeout(() => { timer = 0; ask(); }, 5000); });
+    camp.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 12) stop(); });
+    for (const t of ['pointerup', 'pointercancel', 'pointerleave']) camp.addEventListener(t, stop);
+  }
   if (navigator.connection?.saveData) {
     const hint = el('button', { class: 'btn ghost small wake', onclick: () => { hint.remove(); meetHim(); } }, 'להעיר את רַאבַּ"ע');
     camp.append(hint);
@@ -384,7 +403,7 @@
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     path.setAttribute('class', 'orbit-path'); path.setAttribute('aria-hidden', 'true');
     // a tick gauge (design, 2026-11-15): two ellipses on pathLength 360, a short tick every 5 units and a long one every 30; the dashes are the ticks
-    path.innerHTML = '<circle fill="none" pathLength="360" stroke-width="13" stroke-dasharray="0.6 4.4" stroke-dashoffset="0.3"/><circle fill="none" pathLength="360" stroke-width="24" stroke-dasharray="1 29" stroke-dashoffset="0.5"/>';
+    path.innerHTML = '<circle fill="none" pathLength="360" stroke-width="13" stroke-dasharray="0.35 4.65" stroke-dashoffset="0.3"/><circle fill="none" pathLength="360" stroke-width="24" stroke-dasharray="0.6 29.4" stroke-dashoffset="0.5"/>';
     // a quiet night sky: a few stars, each twinkling at its own pace
     const stars = el('div', { class: 'stars', 'aria-hidden': 'true' });
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
@@ -455,7 +474,8 @@
       const top = (g && g.height ? g.bottom + scrollY : appbar) + size * 0.5 + 6;   // the highest point: just under the greeting
       const cx = (left + right) / 2, rx = (right - left) / 2;
       const tent = { left: r.left + scrollX, top: campTop, width: r.width, height: r.width * (794 / 1400) };   // (the camp's box: the picture itself may still be settling in)
-      return { size, cx, cy, rx, ry: Math.max(60, cy - top), campTop, height: cy + 2, tent };
+      const rr = Math.max(60, cy - top);   // the tick wheel's own round track (the old height of the orbit)
+      return { size, cx, cy, rx, ry: Math.max(46, rr * 0.7), rr, campTop, height: cy + 2, tent };
     }
     const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
 
@@ -555,7 +575,7 @@
       box.style.setProperty('--sun-size', g.size + 'px');
       box.style.setProperty('--moon-size', Math.round(g.size * 1.04) + 'px');
       path.setAttribute('width', innerWidth); path.setAttribute('height', g.height);
-      path.querySelectorAll('circle').forEach((e) => { e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('r', g.ry); });   // round: as wide as the orbit is high
+      path.querySelectorAll('circle').forEach((e) => { e.setAttribute('cx', g.cx); e.setAttribute('cy', g.cy); e.setAttribute('r', g.rr); });   // round, on its own track: not the flatter ellipse the sun and the moon walk
       ringA = A; ringPaint();
       const s = H.sunNow(), now = Date.now(), night = dark();
       const real = night === !s.day;

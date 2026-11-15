@@ -1182,6 +1182,7 @@
         // shaped like the tab he folds into: his face on a little half-pill
         minBtn = el('button', { class: 'dm-tabbtn', title: 'לקפל ללשונית בצד המסך', 'aria-label': 'לקפל ללשונית בצד המסך', onclick: () => toTab() }, el('img', { src: '/assets/ibn-ezra-face.webp', alt: '', width: 22, height: 22 })),
         homeBtn = el('button', { class: 'mini', title: 'הביתה לאוהל', 'aria-label': 'הביתה לאוהל', onclick: () => sendHome() }, svg('tent')),
+        el('button', { class: 'mini', title: 'לסגור את העוזר לגמרי', 'aria-label': 'לסגור את העוזר לגמרי', onclick: () => closeCompletely() }, svg('power')),
         el('button', { class: 'mini', title: 'סגירה', 'aria-label': 'סגירה', onclick: closeBalloon }, svg('x'))),
       balloonText, balloonActs,
       el('div', { class: 'dm-input' }, input, micBtn, spkBtn, el('button', { class: 'btn primary small', onclick: () => send(input.value) }, 'שלח')));
@@ -1255,6 +1256,7 @@
       mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m16 9.5 5 5M21 9.5l-5 5"/>',
       list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
       x: '<path d="M6 6l12 12M18 6 6 18"/>',
+      power: '<path d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/>',
       reset: '<path d="M4 4v6h6"/><path d="M5 15a8 8 0 1 0 2-8.5L4 10"/>',
       voice: '<path d="M3 12h2M7 8v8M11 5v14M15 8v8M19 10v4"/>',
       play: '<path d="M8 5.5v13l10-6.5z"/>',
@@ -1365,6 +1367,16 @@
     syncMode();
     if (wasDocked) walkTo(Math.min(W() - box.w * 0.6, pos.x + (pos.x < W() / 2 ? 140 : -140)), Math.min(bottomLimit(), pos.y + 30));
     toast(`${whoName()} יבוא איתכם לכל מסך. כדי להחזיר אותו לאוהל: הכפתור עם האוהל בבועה שלו.`);
+  }
+  /** Closed completely: he leaves every screen and stays away, on every device (prefs daemon.closed), until the person asks for him
+      with a 5-second press on the tent (home.js). */
+  function closeCompletely() {
+    prefs.closed = true; savePrefs();
+    closeBalloon(); if (panel) panel.hidden = true; stopSpeech();
+    pranks?.stop?.(); pranks = null;
+    canvasBox.classList.add('leaving');
+    toast(`${whoName()} נסגר. להחזיר אותו: לחיצה ארוכה של 5 שניות על האוהל בדף הבית`);
+    setTimeout(() => { gone = true; canvasBox.remove(); balloon.remove(); tab.remove(); panel?.remove(); document.body.classList.remove('dm-folded'); window.dispatchEvent(new Event('helper:daemon-home')); }, 450);
   }
   /** Back home to the tent: on the home page he walks there; anywhere else he leaves the screen. */
   function sendHome() {
@@ -1824,6 +1836,7 @@
     docked = !!dock && !prefs.follow;
     const r = await H.me();
     if (!r.user) return false;
+    if (prefs.closed) return false;   // closed completely (the owner, 2026-11-15): per user, brought back by a long press on the tent
     if (!dock && !prefs.follow) return false;  // at home in his tent: other screens and the desktop see him only when he was asked along
     await appOpenWait();   // he walks in only 7 seconds or more after the app was opened (the owner, 2026-11-15)
     try { state = await api('/api/daemon', { noRedirect: true }); } catch (_) { return; }

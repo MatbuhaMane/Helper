@@ -665,3 +665,4 @@ LCP has not moved yet. The causes:
 - Measured (dev, Gemini TTS): server synthesis grows with length: ~6 s for one sentence, ~13.5 s for four; download is negligible; cached line 19 ms. The old client asked for the whole reply as one piece.
 - Fix (daemon.js `speak`/`speechParts`/`playAudio`): the reply goes out in pieces asked for at once; the first sentence plays alone (first audio ~7 s instead of ~13.5 s for a four-sentence reply), the rest arrive while it speaks. server/ai.ts and voice.ts untouched.
 - Remaining floor ~6 s per fresh sentence (niqqud call + TTS call, serial on the server). Ideas not done: cache common lines, skip niqqud for the first piece (pronunciation risk), streaming TTS.
+- 2026-11-15: round tabs, sky tracks separated, companion close/restore (5 s tent press). Not built: a settings-page restore.

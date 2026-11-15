@@ -53,7 +53,7 @@ self.addEventListener('push', (e) => {
   try { m = e.data ? e.data.json() : {}; } catch (_) { m = { title: 'האוהל', body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(m.title || 'האוהל', {
     body: m.body || '', tag: m.tag || undefined, renotify: !!m.tag, dir: 'rtl', lang: 'he',
-    icon: '/assets/icons/ohel-icon-192.png', badge: '/assets/icons/ohel-icon-192.png',
+    icon: '/assets/icons/ohel-icon-192.png', badge: '/assets/icons/ohel-badge-96.png',
     requireInteraction: !!m.urgent, vibrate: m.urgent ? [400, 150, 400, 150, 400, 150, 800] : [80],
     actions: Array.isArray(m.actions) ? m.actions.slice(0, 2) : [],
     data: { url: m.url || '/', ...(m.data || {}) },

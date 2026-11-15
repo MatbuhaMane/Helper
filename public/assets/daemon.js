@@ -1416,7 +1416,7 @@
   function closeZone(on) {
     if (!zoneEl) {
       if (!on) return;
-      zoneEl = el('div', { class: 'dm-close-zone', 'aria-hidden': 'true' }, [el('span', {}, ['להרחקת העוזר – שחרר כאן'])]);
+      zoneEl = el('div', { class: 'dm-close-zone', 'aria-hidden': 'true' }, [el('span', { html: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>' })]);
       document.body.append(zoneEl);
     }
     zoneEl.classList.toggle('on', !!on);

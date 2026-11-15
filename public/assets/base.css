@@ -1357,9 +1357,12 @@ img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }
 :root .mu-edge .clef svg { inline-size: 20px; block-size: 30px; }
 @media (prefers-reduced-motion: reduce) { :root :is(.dm-tab, .mu-edge, .ad-edge) { transition: none; } :root :is(.dm-tab, .mu-edge, .ad-edge):is(:hover, :focus-visible), :root :is(.dm-tab, .mu-edge, .ad-edge).dragging { transform: none; } }
 
-/* drop zone at the bottom edge while the companion is dragged: letting go there closes him completely (ai-features, 2026-11-15) */
-.dm-close-zone { position: fixed; inset-inline: 0; inset-block-end: 0; block-size: 76px; z-index: 60; pointer-events: none; display: grid; place-items: center; opacity: 0;
-  background: linear-gradient(to top, color-mix(in srgb, var(--primary) 32%, transparent), transparent); transition: opacity .2s; }
-.dm-close-zone.on { opacity: 1; }
-.dm-close-zone span { padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink, #222); background: color-mix(in srgb, var(--card, #fff) 75%, transparent); backdrop-filter: blur(8px); }
+/* drop zone while a floating tab is dragged near the bottom: a round icon with an X at the bottom centre; letting go over the bottom edge closes the tab (ai-features, 2026-11-15) */
+.dm-close-zone { position: fixed; inset-inline-start: 50%; inset-block-end: calc(18px + env(safe-area-inset-bottom, 0px)); z-index: 60; pointer-events: none; display: grid; place-items: center;
+  inline-size: 64px; block-size: 64px; border-radius: 50%; color: var(--primary); background: color-mix(in srgb, var(--card) 78%, transparent); backdrop-filter: blur(10px); box-shadow: var(--lift, 0 8px 24px rgba(0, 0, 0, .25));
+  opacity: 0; transform: translateX(-50%) scale(.7); transition: opacity .2s, transform .2s; }
+:root[dir="rtl"] .dm-close-zone, [dir="rtl"] .dm-close-zone { transform: translateX(50%) scale(.7); }
+.dm-close-zone.on { opacity: 1; transform: translateX(-50%) scale(1); }
+[dir="rtl"] .dm-close-zone.on { transform: translateX(50%) scale(1); }
+.dm-close-zone span { display: grid; place-items: center; }
 @media (prefers-reduced-motion: reduce) { .dm-close-zone { transition: none; } }

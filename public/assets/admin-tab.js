@@ -27,10 +27,9 @@
      It is never closed by dragging: only the switchboard's 'admin_tab' switch hides it. */
   const AP = H.prefs('adminTab', {});
   const place = (s) => {
-    const free = s?.side === 'free' && Number.isFinite(s.x);
+    // it never rests in the middle: an older free spot snaps to the nearer side
+    if (s?.side === 'free' && Number.isFinite(s.x)) s = { side: (s.x + 0.07 > 0.5) === rtl() ? 'start' : 'end', y: s.y };
     tab.classList.toggle('end', s?.side === 'end');
-    if (free) { tab.style.insetInlineStart = 'auto'; tab.style.insetInlineEnd = 'auto'; tab.style.left = Math.max(4, Math.min(innerWidth - 60, s.x * innerWidth)) + 'px'; }
-    else { tab.style.left = ''; tab.style.insetInlineStart = ''; tab.style.insetInlineEnd = ''; }
     if (s && Number.isFinite(s.y)) tab.style.insetBlockStart = Math.max(60, Math.min(innerHeight - 90, s.y * innerHeight)) + 'px';
   };
   const stored = () => { if (AP.spot) return AP.spot; try { return JSON.parse(localStorage.getItem(POS) || 'null'); } catch (_) { return null; } };
@@ -48,14 +47,17 @@
       if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return;
       if (!moved) { moved = true; tab.classList.add('dragging'); try { tab.setPointerCapture(ev.pointerId); } catch (_) { /* the moves still come */ } }
       const y = (ev.clientY - oy) / innerHeight;
-      if (ev.clientX > innerWidth * 0.22 && ev.clientX < innerWidth * 0.78) spot = { side: 'free', x: (ev.clientX - 28) / innerWidth, y };   // away from both edges: where it is let go
-      else { const right = ev.clientX > innerWidth / 2; spot = { side: right === rtl() ? 'start' : 'end', y }; }   // near an edge: docked there
+      const right = ev.clientX > innerWidth / 2;
+      spot = { side: right === rtl() ? 'start' : 'end', y };   // always one of the two sides (the nearer), the height kept
+      tab.style.left = (ev.clientX - 28) + 'px'; tab.style.insetInlineStart = 'auto'; tab.style.insetInlineEnd = 'auto';   // while carried it follows the finger
       place(spot);
     };
     const up = () => {
       tab.removeEventListener('pointermove', move); tab.removeEventListener('pointerup', up); tab.removeEventListener('pointercancel', up);
       tab.classList.remove('dragging');
+      tab.style.left = ''; tab.style.insetInlineStart = ''; tab.style.insetInlineEnd = '';
       if (!moved) return;
+      place(spot);
       dragged = true; setTimeout(() => { dragged = false; }, 0);   // the click that follows a drag does not follow the link
       AP.spot = spot; H.savePrefs('adminTab');
       try { localStorage.setItem(POS, JSON.stringify(spot)); } catch (_) { /* it stays for now */ }

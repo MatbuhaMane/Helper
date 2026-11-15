@@ -3810,3 +3810,7 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 - 2026-11-15 (ai-features, master files append-only): routes GET/POST /api/admin/broadcast + a test entry in package.json; patch in the CEO notes folder. Touches people.
 
 - 2026-11-15 (ai-features, minimal edit of a master file): server/switches-rules.ts: exp "only" now means regular + experimental apps without the בעתיד/בקרוב items (label "רגילים וניסיוניים", stored value unchanged); showsFuture is true only under "all". apps.js and test-switches agree.
+## 2026-11-15, design: home wheel and campfire rings only while touched
+- `public/index.html` (CSS): the sun/moon wheel's dashed line is gone; a compass tick-gauge (`.wheel .orbit::before`, floor-perspective mask, no numbers) fades in on `.touching`/`.dragging` and out after release. Opacity only; no transition under reduced motion.
+- `public/home.js` (small touch hook, master file): `root.classList.add('touching')` on pointerdown, removed on pointerup/pointercancel; the sky ellipse path is drawn as two dashed ticks ellipses. No logic change.
+- Not verified in a browser (pane refused navigation); static check only.

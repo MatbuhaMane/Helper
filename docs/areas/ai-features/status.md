@@ -667,3 +667,4 @@ LCP has not moved yet. The causes:
 - Remaining floor ~6 s per fresh sentence (niqqud call + TTS call, serial on the server). Ideas not done: cache common lines, skip niqqud for the first piece (pronunciation risk), streaming TTS.
 - 2026-11-15: round tabs, sky tracks separated, companion close/restore (5 s tent press). Not built: a settings-page restore.
 - 2026-11-15 voice: first short clause skips niqqud (owner OK). Local Gemini timings (niqqud+TTS vs TTS only), 3 clauses x3: before ~5.0 s (4.0-6.4), after ~2.5 s (2.3-2.7) to first audio.
+- 2026-11-15: auto spoken name (me.nameAuto) for users without nameSpoken; used in every piece incl. the first.

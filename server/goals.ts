@@ -34,6 +34,7 @@ const GoalEdit = z.object({
   days: z.array(z.number().int().min(0).max(6)).max(7).nullable().optional(), time: z.string().regex(/^\d{2}:\d{2}$/).nullable().optional(),
   status: z.enum(['active', 'done', 'archived']).optional(),
   shared: z.boolean().optional(),   // share its progress with the household (goal-social.ts)
+  treeLevel: z.enum(['private', 'household', 'linked', 'forest']).optional(),   // who sees it on the person's card in the family tree (vault/kin.ts goalShown)
   repeat: RepeatZ,
 });
 
@@ -108,7 +109,7 @@ export async function list(ctx: Ctx) {
   };
   const goals = data.goals.map((g) => ({
     id: g.id, title: g.title, why: g.why || '', kind: g.kind, due: g.due || null, days: parseDays(g.days), time: g.time || null, status: g.status,
-    template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null, shared: !!g.shared, repeat: null, ...roundOf(g.id),
+    template: g.template || null, sort: g.sort, createdAt: g.created_at, doneAt: g.done_at || null, shared: !!g.shared, treeLevel: g.tree_level || 'private', repeat: null, ...roundOf(g.id),
     notes: notes.filter((n) => n.goal_id === g.id).map((n) => ({ id: n.id, text: n.text, at: n.at })),
     processes: data.processes.filter((p) => p.goal_id === g.id).map((p) => ({ id: p.id, title: p.title, sort: p.sort, steps: steps.filter((s) => s.process === p.id) })),
   }));
@@ -186,6 +187,7 @@ export async function update(ctx: Ctx) {
   if (d.time !== undefined) put('time', d.time);
   if (d.status !== undefined) { put('status', d.status); put('done_at', d.status === 'done' ? Date.now() : null); }
   if (d.shared !== undefined) put('shared', d.shared ? 1 : 0);
+  if (d.treeLevel !== undefined) put('tree_level', d.treeLevel === 'private' ? null : d.treeLevel);
   if (d.repeat !== undefined) put('repeat', d.repeat ? JSON.stringify(d.repeat) : null);
   if (!sets.length) return json({ ok: true });
   put('updated_at', Date.now());

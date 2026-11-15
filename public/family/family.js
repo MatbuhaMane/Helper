@@ -518,6 +518,9 @@
         edit),
       list.length ? el('dl', { class: 'mc-facts' }, list.map(([k, v]) => el('div', { class: 'mc-fact' }, el('dt', {}, k), el('dd', {}, v)))) : null,
       about ? el('p', { class: 'mc-about' }, about) : null,
+      // the goals this person chose to show in the tree (title and progress only; the server decides who sees them)
+      c.goals?.length ? el('section', { class: 'mc-goals', style: 'padding-inline:16px;margin:0', 'aria-label': 'מטרות משותפות' }, el('h3', { class: 'mc-goals-h', style: 'margin:8px 0 4px;font-size:.95rem' }, c.goals.length > 1 ? 'מטרות שהוא/היא משתפ/ת' : 'מטרה שהוא/היא משתפ/ת'),
+        el('ul', { class: 'mc-goals-l', style: 'margin:0;padding-inline-start:18px' }, c.goals.map((g) => el('li', {}, el('span', {}, g.title), g.total ? el('small', { class: 'muted' }, ` · ${g.done} מתוך ${g.total} צעדים`) : null)))) : null,
       acts.length ? el('div', { class: 'mc-actions' }, acts) : null,
       manage));
   }

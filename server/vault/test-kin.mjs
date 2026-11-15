@@ -205,5 +205,22 @@ eq('nothing changed', K.changedKeys({ name: 'a', details: { born: '1' } }, { nam
   eq('a parent of my own parent → my link to them goes', ids(K.movePlan([...base, L('dad', 'mom', 'partner')], 'me', { parentOf: 'dad' }).remove), ['dad>me', 'mom>me']);   // (mom is dad's partner; ivri stays)
 }
 
+// a shared goal on a person's card (goalShown): the person chooses the level; identity must already be visible to the viewer
+{
+  const me = { self: true, keeper: false }, other = { self: false, keeper: false }, keeper = { self: false, keeper: true };
+  ok('the person sees their own goal', K.goalShown('private', 'household', me, true));
+  ok('default (none): hidden from others', !K.goalShown(null, 'household', other, true) && !K.goalShown(undefined, 'household', other, true));
+  ok('private: hidden from the household', !K.goalShown('private', 'household', other, true));
+  ok('household level: the household sees', K.goalShown('household', 'household', other, true));
+  ok('household level: a linked house does not', !K.goalShown('household', 'linked', other, true));
+  ok('linked level: linked sees', K.goalShown('linked', 'linked', other, true));
+  ok('linked level: the tribe does not', !K.goalShown('linked', 'forest', other, true));
+  ok('forest level: the tribe sees', K.goalShown('forest', 'forest', other, true));
+  ok('nobody outside the tribe', !K.goalShown('forest', 'none', other, true));
+  ok('a hidden or anonymous identity never shows a goal', !K.goalShown('forest', 'household', other, false));
+  ok('a keeper has no special right', !K.goalShown('private', 'household', keeper, true));
+  ok('a junk level shows nothing', !K.goalShown('everyone', 'household', other, true) && !K.goalShown(5, 'household', other, true));
+}
+
 console.log(`${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -665,7 +665,7 @@
         ...(r.playlists.length ? [el('h3', {}, 'פלייליסטים'), ...r.playlists.map((p) => row(p, `${p.by} · ${p.count} שירים`, () => E.playSpotify(p)))] : []),
         ...(!r.tracks.length && !r.playlists.length ? [el('p', { class: 'muted' }, 'לא נמצא כלום')] : []));
     });
-    const mine = el('div', { class: 'mu-results' }, el('p', { class: 'muted mu-wait' }, 'טוען את הפלייליסטים שלכם…'));
+    const mine = el('div', { class: 'mu-results' }, H.skel(3, 'טוען את הפלייליסטים שלכם'));
     body.append(sb.node, el('h3', {}, 'הפלייליסטים שלי'), mine,
       el('p', { class: 'mu-foot' }, el('button', { class: 'btn ghost small', type: 'button', onclick: async () => { if (!confirm('לנתק את ספוטיפיי מהאוהל?')) return; await api('/api/music/spotify/disconnect', { method: 'POST' }); E.st.spotify.connected = false; E.status(); panel.showTab('spotify'); } }, 'ניתוק ספוטיפיי')));
     api('/api/music/spotify/playlists', { noRedirect: true }).then((r) => mine.replaceChildren(...(r.playlists.length ? r.playlists.map((p) => row(p, `${p.count} שירים`, () => E.playSpotify(p))) : [el('p', { class: 'muted' }, 'אין פלייליסטים')])))
@@ -701,7 +701,7 @@
       return;
     }
     if (!st.spotify.connected) { body.append(el('p', { class: 'muted' }, 'עוד אין רשימה. בחרו שיר ביוטיוב, או חברו את ספוטיפיי.')); return; }
-    const out = el('div', { class: 'mu-results' }, el('p', { class: 'muted mu-wait' }, 'טוען את רשימת השמע…'));
+    const out = el('div', { class: 'mu-results' }, H.skel(3, 'טוען את רשימת השמע'));
     body.append(out);
     try {
       const q = await api('/api/music/spotify/queue', { noRedirect: true });

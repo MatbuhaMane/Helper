@@ -43,6 +43,7 @@ export async function card(ctx: Ctx) {
   const mine = x.household === w.u.household, self = mine && x.member === w.u.email;
   await w.audit(new Set([x.household]), 'view:card');
   return json({
+    goals: await w.goalsOf(x),                            // only titles and progress, only as far as the person's own choice for the goal reaches this viewer
     id: x.pid, name: x.name, sex: x.sex, anonymous: x.anonymous, hidden: x.hidden,
     details: x.details,                                   // already only what kin.view lets this viewer see
     household: w.label(x.household), title: w.title(x.household), mine, self, user: F.showUser(x, w.user(x)),

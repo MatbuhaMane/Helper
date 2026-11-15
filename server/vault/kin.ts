@@ -60,6 +60,16 @@ export function sees(level: Level, d: Distance, who: Who, group: Group): boolean
   return DIST[d] <= rank(level);
 }
 
+/** a shared goal on a person's card (owner 2026-11-15): the person chooses, goal by goal, who may see it in the tree: `level` is one of the
+    card's four levels ('private': nobody else; 'household'; 'linked'; 'forest'). The goal shows to the viewer when the person themself looks, or when the level
+    reaches the viewer's distance AND the viewer already sees the person's identity (a hidden or anonymous card never gets a goal: the title would name them).
+    A keeper has no special right to a goal (a goal belongs to a user, who is never a keeper's card). */
+export function goalShown(level: unknown, d: Distance, who: Who, identityShown: boolean): boolean {
+  if (who.self) return true;
+  if (!isLevel(level) || level === 'private' || d === 'none' || !identityShown) return false;
+  return DIST[d] <= rank(level);
+}
+
 /** which group a detail belongs to (an unknown key counts as a note, the most guarded) */
 const DATE_KEYS = new Set(['born', 'bornAfterSunset', 'died', 'diedAfterSunset', 'place', 'birthdayBy', 'calendar']);
 export const groupOf = (key: string): Group => (key === 'sex' ? 'identity' : DATE_KEYS.has(key) ? 'dates' : 'notes');

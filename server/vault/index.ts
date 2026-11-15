@@ -236,6 +236,26 @@ export async function tree(ctx: Ctx) {
 
 const clean = (s: unknown, n: number) => String(s ?? '').replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
 
+/** the shared goals on a person's card (owner 2026-11-15): only active goals the person chose to show in the tree (goals.tree_level), only what kin.goalShown allows
+    this viewer at this distance, and only the title and the progress (steps done of all). Never the notes, the steps' words, the reason, or the time. */
+interface SeenGoal { title: string; done: number; total: number }
+async function goalsOn(ctx: Ctx, who: Map<string, { email: string; d: K.Distance; who: K.Who; identity: boolean }>): Promise<Map<string, SeenGoal[]>> {
+  const out = new Map<string, SeenGoal[]>();
+  const emails = [...new Set([...who.values()].map((x) => x.email))];
+  if (!emails.length) return out;
+  const marks = emails.map(() => '?').join(', ');
+  const { results } = await ctx.env.DB.prepare(`SELECT g.email, g.id, g.title, g.tree_level,
+      (SELECT COUNT(*) FROM goal_steps s WHERE s.email = g.email AND s.goal_id = g.id) AS total,
+      (SELECT COUNT(*) FROM goal_steps s WHERE s.email = g.email AND s.goal_id = g.id AND s.done_at IS NOT NULL) AS done
+    FROM goals g WHERE g.status = 'active' AND g.tree_level IS NOT NULL AND g.email IN (${marks}) ORDER BY g.sort, g.created_at`).bind(...emails).all<{ email: string; title: string; tree_level: string; total: number; done: number }>();
+  for (const [id, x] of who) {
+    const list = results.filter((g) => g.email === x.email && K.goalShown(g.tree_level, x.d, x.who, x.identity)).slice(0, 3)
+      .map((g) => ({ title: clean(g.title, 200), done: g.done, total: g.total }));
+    if (list.length) out.set(id, list);
+  }
+  return out;
+}
+
 export async function personGet(ctx: Ctx) {
   const u = await need(ctx, ACCESS.personGet);
   const p = await person(ctx, u, ctx.params.id);
@@ -1208,6 +1228,7 @@ interface Forest {
   root: (id: string) => string;
   pidOf: Map<string, string>; idOf: Map<string, string>;
   houses: Set<string>;
+  members: Map<string, { email: string; d: K.Distance; who: K.Who; identity: boolean }>;   // by real id: a user's card, for the goals on it (kin.goalShown)
 }
 /** every household of the viewer's tribe: its people as the viewer may see them, and its links */
 async function forestOf(ctx: Ctx, v: Viewer): Promise<Forest> {
@@ -1227,16 +1248,18 @@ async function forestOf(ctx: Ctx, v: Viewer): Promise<Forest> {
     (byRoot.get(r) || byRoot.set(r, []).get(r)!).push(entry);
   }
   const pidOf = new Map<string, string>(), idOf = new Map<string, string>();
-  const people: ForestPerson[] = [];
+  const people: ForestPerson[] = [], members = new Map<string, { email: string; d: K.Distance; who: K.Who; identity: boolean }>();
   for (const c of cards.values()) {
     // records outside the viewer's household go by an opaque id that means nothing elsewhere
     const pid = c.household === v.u.household ? c.id : 'f' + (await fingerprint(ctx.env, `forest:${v.u.household}:${c.id}`));
     pidOf.set(c.id, pid); idOf.set(pid, c.id);
     const s = K.view(c, K.distance(v.u.household, c.household, v.bridges), whoFor(v, rowOf.get(c.id)!), K.outside(byRoot.get(root(c.id))!));
     if (s) people.push({ ...s, pid, root: root(c.id) });
+    const row = rowOf.get(c.id)!;
+    if (s && row.member_email && isUser(v, row)) members.set(c.id, { email: row.member_email, d: K.distance(v.u.household, c.household, v.bridges), who: whoFor(v, row), identity: !s.hidden.includes('identity') && !s.anonymous });
   }
   const alive = new Set(cards.keys());
-  return { people, links: links.filter((l) => alive.has(l.a) && alive.has(l.b)), root, pidOf, idOf, houses: v.tribe };
+  return { people, links: links.filter((l) => alive.has(l.a) && alive.has(l.b)), root, pidOf, idOf, houses: v.tribe, members };
 }
 async function auditForest(ctx: Ctx, u: Member, houses: Set<string>, action: string) {
   for (const h of houses) await auditAt(ctx, h, u, h === u.household ? action : action + ':from-outside', null, null);
@@ -1362,6 +1385,8 @@ export async function forestFor(ctx: Ctx) {
     u, people: f.people, me, kin: k,
     label, title: (h: string) => titleIn(t, h),
     user: (p: ForestPerson) => users.has(f.idOf.get(p.pid) || ''),
+    // the shared goals on one person's card (kin.goalShown by the viewer's distance); only the member card asks, never the forest or the search
+    goalsOf: async (p: ForestPerson) => { const id = f.idOf.get(p.pid) || '', m = f.members.get(id); return m ? (await goalsOn(ctx, new Map([[id, m]]))).get(id) : undefined; },
     // messages between members (server/dm.ts): the user behind a card, for the server only; it never goes to a page
     emailOf: (p: ForestPerson) => { const id = f.idOf.get(p.pid) || ''; return users.has(id) ? owners.find((r) => r.id === id)!.member_email : null; },
     audit: (houses: Set<string>, action: string) => (houses.size > 1 || !houses.has(u.household) ? auditForest(ctx, u, houses, action) : Promise.resolve()),

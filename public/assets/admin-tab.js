@@ -22,11 +22,23 @@
      the other side to dock it there. Where it stands belongs to this device (localStorage). */
   const POS = 'helper.adminEdge';
   const rtl = () => getComputedStyle(document.documentElement).direction === 'rtl';
+  /* anywhere (the owner, 2026-11-15): {side:'start'|'end', y} docked at an edge, or {side:'free', x, y} where it was let go.
+     The place is kept per user (H.prefs 'adminTab'); this device's copy shows it before the server's arrives.
+     It is never closed by dragging: only the switchboard's 'admin_tab' switch hides it. */
+  const AP = H.prefs('adminTab', {});
   const place = (s) => {
+    const free = s?.side === 'free' && Number.isFinite(s.x);
     tab.classList.toggle('end', s?.side === 'end');
+    if (free) { tab.style.insetInlineStart = 'auto'; tab.style.insetInlineEnd = 'auto'; tab.style.left = Math.max(4, Math.min(innerWidth - 60, s.x * innerWidth)) + 'px'; }
+    else { tab.style.left = ''; tab.style.insetInlineStart = ''; tab.style.insetInlineEnd = ''; }
     if (s && Number.isFinite(s.y)) tab.style.insetBlockStart = Math.max(60, Math.min(innerHeight - 90, s.y * innerHeight)) + 'px';
   };
-  try { place(JSON.parse(localStorage.getItem(POS) || 'null')); } catch (_) { /* its own place */ }
+  const stored = () => { if (AP.spot) return AP.spot; try { return JSON.parse(localStorage.getItem(POS) || 'null'); } catch (_) { return null; } };
+  place(stored());
+  addEventListener('helper:prefs', (e) => { if (e.detail === 'adminTab') place(stored()); });
+  addEventListener('resize', () => place(stored()));
+  const shown = () => H.swOn?.('admin_tab') !== false;
+  addEventListener('h:switches', () => { if (!shown()) tab.hidden = true; else check(); });
   let dragged = false;
   tab.addEventListener('pointerdown', (e) => {
     if (e.button > 0) return;
@@ -35,8 +47,9 @@
     const move = (ev) => {
       if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return;
       if (!moved) { moved = true; tab.classList.add('dragging'); try { tab.setPointerCapture(ev.pointerId); } catch (_) { /* the moves still come */ } }
-      const right = ev.clientX > innerWidth / 2;               // the screen's right half: that edge
-      spot = { side: right === rtl() ? 'start' : 'end', y: (ev.clientY - oy) / innerHeight };
+      const y = (ev.clientY - oy) / innerHeight;
+      if (ev.clientX > innerWidth * 0.22 && ev.clientX < innerWidth * 0.78) spot = { side: 'free', x: (ev.clientX - 28) / innerWidth, y };   // away from both edges: where it is let go
+      else { const right = ev.clientX > innerWidth / 2; spot = { side: right === rtl() ? 'start' : 'end', y }; }   // near an edge: docked there
       place(spot);
     };
     const up = () => {
@@ -44,6 +57,7 @@
       tab.classList.remove('dragging');
       if (!moved) return;
       dragged = true; setTimeout(() => { dragged = false; }, 0);   // the click that follows a drag does not follow the link
+      AP.spot = spot; H.savePrefs('adminTab');
       try { localStorage.setItem(POS, JSON.stringify(spot)); } catch (_) { /* it stays for now */ }
     };
     tab.addEventListener('pointermove', move); tab.addEventListener('pointerup', up); tab.addEventListener('pointercancel', up);
@@ -57,7 +71,7 @@
     try { r = await H.api('/api/admin/room', { noRedirect: true }); }
     catch (e) { tab.hidden = true; if (!e?.offline) forget(); return; }          // signed out or refused: no tab; offline: ask again later
     if (!r.open) { tab.hidden = true; forget(); return; }
-    tab.hidden = false;
+    tab.hidden = !shown();
     timer = setTimeout(check, Math.max(5e3, Number(r.left) + 1e3));                // when it would close, ask again (an action there may have kept it)
   }
   check();

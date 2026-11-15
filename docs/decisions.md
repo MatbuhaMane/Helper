@@ -3829,3 +3829,5 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 
 - 2026-11-15 (ai-features): unified round edge tabs in `base.css`; sky wheel separated from the sun/moon ellipse in `home.js`/`index.html`; companion `closed` pref (H.prefs 'daemon') with a 5 s press on the tent to restore. Touches design-owned base.css and master-owned home.js/index.html.
 - 2026-11-15 (ai-features): drop zone .dm-close-zone in daemon.css (design-owned); music.css record transition 280ms; voice first piece = first clause (<=45 chars).
+
+- 2026-11-15 (ai-features): all floating tabs close by dragging to the bottom (drop zone .dm-close-zone moved from daemon.css to base.css, design-owned): companion = prefs daemon.closed, music = prefs music.closed (stops playback). The 5 s tent press (home.js, master-owned) lists what is closed and restores. The back-door tab is NOT closable by drag: new owner switch `admin_tab` (default on) appended to server/switches-rules.ts (master-owned); its position is per user (prefs adminTab, free or edge-docked). Not built: restore from settings.

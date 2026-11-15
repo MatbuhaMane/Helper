@@ -294,17 +294,25 @@
     const dp = H.prefs('daemon', H.DAEMON_DEFAULTS, 'helper.daemon.prefs');
     let timer = 0, x0 = 0, y0 = 0;
     const stop = () => { clearTimeout(timer); timer = 0; };
+    // the floating tabs that can be closed by dragging them to the bottom, each with its own per-user pref (the back door's tab cannot)
+    const mp = H.prefs('music', { source: 'spotify', mode: 'menu', folded: false, recent: [] });
+    const closedTabs = () => [dp.closed && { key: 'daemon', label: 'העוזר', p: dp }, mp.closed && { key: 'music', label: 'נגן המוזיקה', p: mp }].filter(Boolean);
     const ask = () => {
       if (document.querySelector('.back-panel')) return;
+      const list = closedTabs();
+      if (!list.length) return;
       const close = () => { p.classList.remove('on'); setTimeout(() => p.remove(), 250); };
-      const p = el('div', { class: 'back-panel', role: 'dialog', 'aria-label': 'להחזיר את העוזר' },
-        el('p', {}, 'להחזיר את העוזר?'),
+      const back = (items) => { for (const i of items) { i.p.closed = false; H.savePrefs(i.key); } close(); setTimeout(() => location.reload(), 150); };
+      const p = el('div', { class: 'back-panel', role: 'dialog', 'aria-label': 'להחזיר את מה שנסגר' },
+        el('p', {}, list.length === 1 ? `להחזיר את ${list[0].label}?` : 'מה להחזיר?'),
         el('div', { class: 'row' },
-          el('button', { class: 'btn primary small', onclick: () => { dp.closed = false; H.savePrefs('daemon'); close(); setTimeout(() => location.reload(), 120); } }, 'כן'),
-          el('button', { class: 'btn ghost small', onclick: close }, 'לא')));
+          ...(list.length === 1
+            ? [el('button', { class: 'btn primary small', onclick: () => back(list) }, 'כן')]
+            : [...list.map((i) => el('button', { class: 'btn primary small', onclick: () => back([i]) }, i.label)), el('button', { class: 'btn primary small', onclick: () => back(list) }, 'הכול')]),
+          el('button', { class: 'btn ghost small', onclick: close }, list.length === 1 ? 'לא' : 'סגירה')));
       document.body.append(p); requestAnimationFrame(() => p.classList.add('on'));
     };
-    camp.addEventListener('pointerdown', (e) => { if (!dp.closed || e.button > 0) return; x0 = e.clientX; y0 = e.clientY; stop(); timer = setTimeout(() => { timer = 0; ask(); }, 5000); });
+    camp.addEventListener('pointerdown', (e) => { if (!closedTabs().length || e.button > 0) return; x0 = e.clientX; y0 = e.clientY; stop(); timer = setTimeout(() => { timer = 0; ask(); }, 5000); });
     camp.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 12) stop(); });
     for (const t of ['pointerup', 'pointercancel', 'pointerleave']) camp.addEventListener(t, stop);
   }

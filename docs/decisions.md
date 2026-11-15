@@ -11,6 +11,17 @@ Format:
 What was decided, why, and what other areas must do. Status: proposed | accepted | done.
 ```
 
+## 2026-11-15 – Features waiting on approvals are built, but locked behind a switch (owner → all areas)
+
+The owner: development goes on while the lawyer reviews. A feature that needs a special approval (legal, insurance, a licence,
+the lawyer's word on the terms; first of all "יד ביד") is built in full, but locked by its own switch in the back door
+(`server/switches-rules.ts`, for example `yad`), **off by default**, changeable only at the owner level.
+- While it is off, no member can reach it: the server refuses its routes (404) for everyone except the owner, and the app
+  hides its tile, links and notifications. The owner alone can open it to try it.
+- The switch is turned on only after the approvals arrive, and only by the owner.
+- ai-features builds "יד ביד" stage 1 this way, after batch 30's open items; design ships its screens with it.
+Status: accepted (owner).
+
 ## 2026-11-14 – Priority after Ibn Ezra: a Telegram-smooth interface (owner → design, ai-features, master)
 
 The owner's most urgent goal once Ibn Ezra's onboarding ships: the interface must feel as smooth and comfortable as

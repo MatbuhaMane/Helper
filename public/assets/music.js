@@ -369,6 +369,7 @@
     // a press that moves more than a few pixels becomes a drag (a press that doesn't stays a click)
     for (const h of [float, edge]) h.addEventListener('pointerdown', (e) => {
       if (e.button > 0 || e.target.closest('.mu-btn, .mu-text, .mu-bar')) return;
+      watchBottom(e);
       const r = (h === edge ? edge : float).getBoundingClientRect();
       pendingDrag(e, h === edge ? { x: 30, y: 30 } : { x: e.clientX - r.left, y: e.clientY - r.top });
     });
@@ -465,6 +466,27 @@
     // first time: low on the screen, clear of the menu and of YouTube's video card
     if (s) place(s.x * innerWidth, s.y * innerHeight); else place(innerWidth - float.offsetWidth - 16, innerHeight - (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--tabbar-h')) || 0) - (E.st.yt.id ? 360 : 170));
   }
+  /* Dragged to the bottom edge (a drop zone shows) and let go there, the player closes completely: stopped and gone, kept per
+     user in the music prefs (P.closed). The tent's 5-second press brings it back (home.js). */
+  function watchBottom(e) {
+    const x0 = e.clientX, y0 = e.clientY; let moved = false, zone = document.querySelector('.dm-close-zone');
+    const show = (on) => {
+      if (!zone) { if (!on) return; zone = el('div', { class: 'dm-close-zone', 'aria-hidden': 'true' }, [el('span', {}, ['להרחקת הנגן – שחרר כאן'])]); document.body.append(zone); }
+      zone.classList.toggle('on', !!on);
+    };
+    const mv = (ev) => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return; moved = true; show(ev.clientY > innerHeight - 76); };
+    const up = (ev) => {
+      removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up);
+      show(false);
+      if (moved && ev.type === 'pointerup' && ev.clientY > innerHeight - 76) closeMusic();
+    };
+    addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
+  }
+  function closeMusic() {
+    if (E.st.playing) { try { E.toggle(); } catch (_) { /* it keeps playing */ } }
+    P.closed = true; save(); paintModes(false);
+    toast('הנגן נסגר. לחיצה ארוכה של 5 שניות על האוהל מחזירה אותו');
+  }
   function rememberEdge(side, y) { try { localStorage.setItem('helper.music.edge', JSON.stringify({ side, y: y / innerHeight })); } catch (_) { /* ignore */ } }
   function placeEdge() {
     let s = null; try { s = JSON.parse(localStorage.getItem('helper.music.edge') || 'null'); } catch (_) { /* ignore */ }
@@ -476,12 +498,13 @@
   }
   function paintModes(restore = true) {
     if (!float) return;
-    const parked = P.mode === 'stump' && !!slot();
-    float.hidden = P.mode !== 'float' && P.mode !== 'stump';
+    const parked = P.mode === 'stump' && !!slot() && !P.closed;
+    float.hidden = (P.mode !== 'float' && P.mode !== 'stump') || !!P.closed;
     float.classList.toggle('folded', !!P.folded || P.mode === 'stump');
     float.classList.toggle('on-stump', parked);
     document.body.classList.toggle('mu-docked', parked);
-    edge.hidden = P.mode !== 'edge';
+    edge.hidden = P.mode !== 'edge' || !!P.closed;
+    document.body.classList.toggle('mu-closed', !!P.closed);
     if (P.mode === 'edge') placeEdge();
     if (parked) { placeDock(); requestAnimationFrame(placeDock); }   // (now, and again once the folded size is drawn)
     else if (!float.hidden && restore) requestAnimationFrame(restoreSpot);

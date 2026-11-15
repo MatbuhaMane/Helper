@@ -1208,7 +1208,10 @@
           if (canRag()) grabRag(start.x, start.y);
           mood = 'worried'; moodUntil = performance.now() + 400;
         }
-        if (moved) dragging = { x: ev.clientX, y: ev.clientY };
+        if (moved) {
+          dragging = { x: ev.clientX, y: ev.clientY };
+          closeZone(ev.clientY > innerHeight - CLOSE_ZONE);   // near the bottom edge: letting go there closes him completely
+        }
       };
       let done = false;
       const onUp = (ev) => {
@@ -1218,7 +1221,9 @@
         canvasBox.removeEventListener('pointerup', onUp);
         canvasBox.removeEventListener('pointercancel', onUp);
         canvasBox.removeEventListener('lostpointercapture', onUp);
+        closeZone(false);
         if (ev?.type !== 'pointerup' && !moved) return;   // a cancelled tap is not a click
+        if (moved && ev.type === 'pointerup' && ev.clientY > innerHeight - CLOSE_ZONE) { dragging = null; rag = null; closeCompletely(); return; }
         if (moved && rag) { dragging = null; releaseRag(); }
         else if (moved) {
           dragging = null;
@@ -1404,6 +1409,18 @@
     setTimeout(() => input.focus(), 30);
   }
   function closeBalloon() { balloon.hidden = true; }
+  /* Dragging him to the bottom of the screen closes him completely (the same closed state as the power button): a drop zone
+     shows while he is near the bottom edge. */
+  const CLOSE_ZONE = 76;
+  let zoneEl = null;
+  function closeZone(on) {
+    if (!zoneEl) {
+      if (!on) return;
+      zoneEl = el('div', { class: 'dm-close-zone', 'aria-hidden': 'true' }, [el('span', {}, ['להרחקת העוזר – שחרר כאן'])]);
+      document.body.append(zoneEl);
+    }
+    zoneEl.classList.toggle('on', !!on);
+  }
 
   function speakBalloon(text, keepActs) {
     balloonText.textContent = text;
@@ -1463,7 +1480,13 @@
     const sentences = (text.match(/[^.!?…\n]+[.!?…]*\s*/g) || [text]).map((s) => s.trim()).filter(Boolean);
     const out = [];
     let first = sentences.shift() || text;
-    if (first.length > 110) { const cut = first.lastIndexOf(',', 90); if (cut > 30) { sentences.unshift(first.slice(cut + 1).trim()); first = first.slice(0, cut + 1); } }
+    // the first piece is the first short clause (to the first comma, up to ~45 characters): measured 2026-11-15, 18 characters
+    // take ~1.5 s to speak against ~4.6 s for 75, and the niqqud step is ~1.8 s either way
+    if (first.length > 24) {
+      let cut = first.search(/[,،;:–—]/);
+      if (cut < 8 || cut > 45) cut = first.length > 110 ? first.lastIndexOf(',', 90) : -1;
+      if (cut >= 8) { sentences.unshift(first.slice(cut + 1).trim()); first = first.slice(0, cut + 1); }
+    }
     out.push(first);
     let cur = '';
     for (const s of sentences) { if (cur && (cur + ' ' + s).length > 160) { out.push(cur); cur = s; } else cur = cur ? cur + ' ' + s : s; }

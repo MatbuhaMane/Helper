@@ -1356,3 +1356,10 @@ img[src$="/pillows/p16.webp"] { aspect-ratio: 270 / 250; }
 :root .dm-tab img { inline-size: 44px; block-size: 44px; }
 :root .mu-edge .clef svg { inline-size: 20px; block-size: 30px; }
 @media (prefers-reduced-motion: reduce) { :root :is(.dm-tab, .mu-edge, .ad-edge) { transition: none; } :root :is(.dm-tab, .mu-edge, .ad-edge):is(:hover, :focus-visible), :root :is(.dm-tab, .mu-edge, .ad-edge).dragging { transform: none; } }
+
+/* drop zone at the bottom edge while the companion is dragged: letting go there closes him completely (ai-features, 2026-11-15) */
+.dm-close-zone { position: fixed; inset-inline: 0; inset-block-end: 0; block-size: 76px; z-index: 60; pointer-events: none; display: grid; place-items: center; opacity: 0;
+  background: linear-gradient(to top, color-mix(in srgb, var(--primary) 32%, transparent), transparent); transition: opacity .2s; }
+.dm-close-zone.on { opacity: 1; }
+.dm-close-zone span { padding: 6px 14px; border-radius: 999px; font-size: 13px; color: var(--ink, #222); background: color-mix(in srgb, var(--card, #fff) 75%, transparent); backdrop-filter: blur(8px); }
+@media (prefers-reduced-motion: reduce) { .dm-close-zone { transition: none; } }

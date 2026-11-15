@@ -39,6 +39,7 @@ export const SWITCHES: Switch[] = [
   { key: 'music', cat: 'tools', label: 'נגן המוזיקה', kind: 'bool', def: true, help: 'הנגן שבתפריט של כל מסך.' },
   { key: 'yad', cat: 'tools', label: 'יד ביד (ממתין לאישורים)', kind: 'bool', def: false,
     help: 'בנוי במלואו וננעל עד שמגיעות האישורים. כבוי: כל הנתיבים של יד ביד עונים 404 לכולם חוץ מהבעלים, והאפליקציה מסתירה את הכרטיס, הקישורים, מספר האישורים וההתראות. הבעלים לבדו יכול לנסות.' },
+  { key: 'admin_tab', cat: 'tools', label: 'לשונית הדלת האחורית', kind: 'bool', def: true, help: 'הלשונית הצפה שמחזירה לדלת האחורית כשהיא פתוחה. אי אפשר לסגור אותה בגרירה, רק כאן. אפשר לגרור אותה לכל מקום.' },
   { key: 'capture', cat: 'tools', label: 'שמירת טקסט מסומן', kind: 'bool', def: true, help: 'מסמנים טקסט בכל מקום ושומרים אותו כפתק.' },
 ];
 const byKey = new Map(SWITCHES.map((s) => [s.key, s]));

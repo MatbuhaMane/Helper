@@ -478,14 +478,14 @@
       const size = Math.round((innerWidth < 600 ? 74 : innerWidth < 1000 ? 100 : 124) * 1.3);   // the sun's ball without its rays, about twice as big (the owner, 2026-11-15)
       const appbar = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--appbar-h')) || 56;
       const cy = campTop + r.height * 0.465;   // the horizon: across the tent, at the height of its eaves
-      const edge = size / 2 + 8;
-      const left = Math.max(edge, r.left - r.width * 0.12), right = Math.min(innerWidth - edge, r.right + r.width * 0.12);
+      const edge = size * 0.25;   // the sun may go partly past the screen's edge: a wider, flatter path (the owner, 2026-11-15)
+      const left = Math.max(edge, r.left - r.width * 0.2), right = Math.min(innerWidth - edge, r.right + r.width * 0.2);
       const g = document.querySelector('.home > .greet')?.getBoundingClientRect();
       const top = (g && g.height ? g.bottom + scrollY : appbar) + size * 0.5 + 6;   // the highest point: just under the greeting
       const cx = (left + right) / 2, rx = (right - left) / 2;
       const tent = { left: r.left + scrollX, top: campTop, width: r.width, height: r.width * (794 / 1400) };   // (the camp's box: the picture itself may still be settling in)
       const rr = Math.max(60, cy - top);   // the tick wheel's own round track (the old height of the orbit)
-      return { size, cx, cy, rx, ry: Math.max(46, rr * 0.7), rr, campTop, height: cy + 2, tent };
+      return { size, cx, cy, rx, ry: Math.max(52, rr * 0.8), rr, campTop, height: cy + 2, tent };
     }
     const at = (th) => ({ x: geo.cx + geo.rx * Math.cos(th), y: geo.cy - geo.ry * Math.sin(th) });
 

@@ -471,7 +471,7 @@
   function watchBottom(e) {
     const x0 = e.clientX, y0 = e.clientY; let moved = false, zone = document.querySelector('.dm-close-zone');
     const show = (on) => {
-      if (!zone) { if (!on) return; zone = el('div', { class: 'dm-close-zone', 'aria-hidden': 'true' }, [el('span', {}, ['להרחקת הנגן – שחרר כאן'])]); document.body.append(zone); }
+      if (!zone) { if (!on) return; zone = el('div', { class: 'dm-close-zone', 'aria-hidden': 'true' }, [el('span', { html: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>' })]); document.body.append(zone); }
       zone.classList.toggle('on', !!on);
     };
     const mv = (ev) => { if (!moved && Math.hypot(ev.clientX - x0, ev.clientY - y0) < 8) return; moved = true; show(ev.clientY > innerHeight - 76); };

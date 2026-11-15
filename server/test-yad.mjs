@@ -218,5 +218,15 @@ const code2 = async (p) => { try { await p; return 'ok'; } catch (e) { return e.
   eq('nothing negative and nothing lost', [ng, tot], [0, x.sq.prepare("SELECT COALESCE(SUM(tenths),0) AS m FROM yad_ledger WHERE src = 'mint'").get().m]);
 }
 
+/* ---- the HTTP layer: while the switch is off every route is a 404 for a member (the owner may try) ---- */
+{
+  const H = await bundle('server/yad.ts', 'http.mjs');
+  const calls = { catalog: H.catalog, board: H.board, mine: H.mine, fund: H.fund, dashboard: H.dashboard, createNeed: H.createNeed, offerHelp: H.offerHelp, answer: H.answer, putAddress: H.putAddress, getAddress: H.getAddress, confirm: H.confirm, cancel: H.cancel, recommend: H.recommend, reportDeed: H.reportDeed, report: H.report, closeMine: H.closeMine, queue: H.queue, decideNeed: H.decideNeed, decideDeed: H.decideDeed, resolve: H.resolve, restore: H.restore, personBalance: H.personBalance, setRegion: H.setRegion, setOffers: H.setOffers };
+  const out = {};
+  for (const [name, fn] of Object.entries(calls)) { const c = ctxFor('a@x.test', false); c.params = { id: 'z', email: 'q' }; out[name] = await (async () => { try { await fn(c); return 'ok'; } catch (e) { return e.status; } })(); }
+  eq('every yad route answers a member with 404', Object.values(out).every((v) => v === 404), true);
+  eq('the routes checked', Object.keys(out).length, 24);
+}
+
 console.log(`yad: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

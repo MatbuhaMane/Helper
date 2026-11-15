@@ -379,15 +379,15 @@
     nameSpoken());
   /** how the companion says this person's name aloud: the name with its niqqud (the screen shows it as it is) */
   function nameSpoken() {
-    const input = el('input', { id: 'st-name-spoken', type: 'text', dir: 'rtl', lang: 'he', maxlength: 40, value: me.nameSpoken || '', placeholder: 'למשל: מִישָׁאֵל', 'aria-describedby': 'st-name-spoken-hint' });
+    const input = el('input', { id: 'st-name-spoken', type: 'text', dir: 'rtl', lang: 'he', maxlength: 40, value: me.nameSpoken || me.nameAuto?.v || '', placeholder: 'למשל: מִישָׁאֵל', 'aria-describedby': 'st-name-spoken-hint' });
     input.addEventListener('change', () => {
       const v = input.value.trim().replace(/\s+/g, ' ');
-      if (v && !/^[א-ת֑-ׇ '״"׳-]+$/.test(v)) { toast('רק אותיות עבריות וניקוד'); input.value = me.nameSpoken || ''; return; }
+      if (v && !/^[א-ת֑-ׇ '״"׳-]+$/.test(v)) { toast('רק אותיות עבריות וניקוד'); input.value = me.nameSpoken || me.nameAuto?.v || ''; return; }
       me.nameSpoken = v; keep('me'); toast(v ? 'נשמר. כך העוזר יגיד את השם שלך.' : 'נמחק. העוזר יקרא את השם כפי שהוא כתוב.');
     });
     return el('div', { class: 'st-field' },
       el('label', { for: 'st-name-spoken' }, el('span', { class: 'st-label' }, 'איך לבטא את השם שלי'), input),
-      el('p', { class: 'muted small', id: 'st-name-spoken-hint' }, 'השם עם ניקוד, כדי שהעוזר יגיד אותו נכון בקול. על המסך השם נשאר כמו שהוא.'));
+      el('p', { class: 'muted small', id: 'st-name-spoken-hint' }, 'השם עם ניקוד, כדי שהעוזר יגיד אותו נכון בקול. על המסך השם נשאר כמו שהוא. אם לא כתבתם כאן כלום, העוזר ניחש לבד את הניקוד של השם הפרטי; אפשר לתקן.'));
   }
 
   /* ---------- my place: the city (the weather, restaurants nearby) ---------- */

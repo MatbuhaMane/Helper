@@ -100,6 +100,29 @@ async function pointed(env: Env, text: string, names: string[] = []): Promise<st
   }
 }
 
+/** The name as the voice says it, for this person: what they typed in settings (me.nameSpoken) wins; the owner's fixed form; else the
+ *  usual pointed form of their first name, worked out once by one cheap Gemini call with the NAME ONLY (nothing else about the
+ *  person goes with it), kept in their prefs as me.nameAuto {for, v} and redone only when the name changed. */
+async function spokenFor(env: Env, u: { email: string; role: string; name?: string | null; he_name?: string | null }): Promise<string> {
+  const me = (await prefsFor(env, u.email)).me;
+  const typed = spokenName(me?.data?.nameSpoken);
+  if (typed) return typed;
+  if (u.role === 'owner') return OWNER_SPOKEN;
+  const first = [u.he_name, u.name].map((x) => String(x || '').trim().split(/s+/)[0].replace(/[^א-ת]/g, '')).find((x) => x.length >= 2) || '';
+  if (!first) return '';
+  const auto = me?.data?.nameAuto as { for?: string; v?: string } | undefined;
+  if (auto && auto.for === first) return spokenName(auto.v);
+  let v = '';
+  try {
+    const p = (await pointed(env, first)).trim();
+    if (spokenName(p) && p.replace(/[֑-ׇ]/g, '') === first) v = p;
+  } catch { /* the name as it is written */ }
+  const data = { ...(me?.data || {}), nameAuto: { for: first, v } };
+  await env.DB.prepare('INSERT INTO user_prefs (email, ns, data, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(email, ns) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at')
+    .bind(u.email, 'me', JSON.stringify(data), Date.now()).run();
+  return v;
+}
+
 /** Synthesize (or fetch from the cache) one line in one voice. Returns the WAV bytes, and whether it was new. */
 async function synth(ctx: Ctx, voice: string, style: string, text: string, names: string[] = [], noNiqqud = false): Promise<{ bytes: Uint8Array | ReadableStream; fresh: boolean }> {
   const env = ctx.env;
@@ -164,7 +187,7 @@ export async function say(ctx: Ctx) {
   if ((q?.chars || 0) + text.length > DAILY_CHARS) throw new HttpError(429, 'daily voice allowance used');
   // the person's own name as they want it said (settings: me.nameSpoken); the owner's until he sets it – for the voice
   // only, with a meteg under the alef (the owner's choice; on screen it is written מִישָׁאֵל)
-  const spoken = spokenName((await prefsFor(env, u.email)).me?.data?.nameSpoken) || (u.role === 'owner' ? OWNER_SPOKEN : '');
+  const spoken = await spokenFor(env, u);
   const { bytes, fresh } = await synth(ctx, voice, figureOf(figure).style, speakName(text, spoken), spoken ? [spoken] : [], b.first === true && text.length <= 60);
   if (fresh) {
     await env.DB.prepare('INSERT INTO tts_quota (email, day, chars) VALUES (?, ?, ?) ON CONFLICT(email, day) DO UPDATE SET chars = chars + excluded.chars')

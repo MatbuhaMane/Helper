@@ -825,3 +825,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 32 (batch 41):** licence mark follows the type: in the profile, the owner's list editor and the queue's "להוסיף לרשימה". See `docs/design/yad.md`.
 
 **Round 33 (batch 42):** second (driving) declaration and the per-type description line: profile, create, board, list editor, queue. See `docs/design/yad.md`.
+
+**Round 34 (batch 43):** real description lines in the prototype; the longest checked at 375 px (wraps, no overflow). See `docs/design/yad.md`.

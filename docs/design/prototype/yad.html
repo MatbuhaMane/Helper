@@ -33,6 +33,7 @@
   <button class="chip" data-sheet="create">יצירת צורך</button>
   <button class="chip" data-go="profile">בפרופיל</button>
   <button class="chip" data-go="pot">הקופה</button>
+  <button class="chip" data-go="editor">עריכת הרשימה (בעלים)</button>
   <button class="chip" data-sheet="report">דיווח על שירות</button>
   <button class="chip" data-sheet="rules">כללי יד ביד</button>
 </nav>
@@ -104,20 +105,19 @@
   <h1 style="font-size:1.6rem">מה אני מוכן לתת</h1>
   <p style="margin:-8px 0 0;color:var(--muted)">מסמנים סוגי שירות מהרשימה של הבעלים. כשמתפרסם צורך מתאים תקבלו התראה, לפי רמת הניג'וס שלכם. אין לוח הצעות.</p>
   <section class="card yd-give">
-    <details open><summary>בית וגינה <small>2 מסומנים</small></summary><div class="yd-checks">
+    <details open><summary>בית וגינה <small>3 מסומנים</small></summary><div class="yd-checks">
       <label class="yd-check"><input type="checkbox" checked><span>תיקון קטן בבית</span><small>רמה 2</small></label>
+      <label class="yd-check"><input type="checkbox" checked><span>עבודת חשמל</span><small class="yd-tags"><span class="yd-tag pend">דורש רישיון</span><span class="yd-tag">רמה 4</span></small></label>
       <label class="yd-check"><input type="checkbox"><span>גינון וגזם</span><small>רמה 3</small></label>
       <label class="yd-check"><input type="checkbox" checked><span>הובלה קטנה</span><small>רמה 3</small></label></div></details>
     <details><summary>מחשבים וטכנולוגיה <small>עוד לא סימנתי</small></summary><div class="yd-checks">
       <label class="yd-check"><input type="checkbox"><span>התקנה ועזרה במחשב</span><small>רמה 2</small></label>
       <label class="yd-check"><input type="checkbox"><span>עזרה בטלפון</span><small>רמה 1</small></label></div></details>
-    <details><summary>רפואה ומשפט <small>דורש רישיון</small></summary><div class="yd-checks">
-      <label class="yd-check"><input type="checkbox" checked><span>ייעוץ רפואי</span><small class="yd-tag pend">דורש רישיון</small></label>
-      <label class="yd-check"><input type="checkbox"><span>ייעוץ משפטי</span><small class="yd-tag pend">דורש רישיון</small></label>
-      <label class="yd-check yd-decl"><input type="checkbox" checked><span>אני מצהיר/ה שיש לי רישיון לעסוק בזה. האוהל לא בודק זאת.<small>רק הצהרה. לא מבקשים מספר רישיון או מסמכים, ובלוח כתוב "לפי הצהרת המשתמש".</small></span></label></div></details>
     <details><summary>למידה ושפות <small>1 מסומן</small></summary><div class="yd-checks">
       <label class="yd-check"><input type="checkbox" checked><span>עזרה בשיעורי בית</span><small>רמה 2</small></label>
-      <label class="yd-check"><input type="checkbox"><span>תרגום</span><small>רמה 3</small></label></div></details>
+      <label class="yd-check"><input type="checkbox"><span>תרגום</span><small>רמה 3</small></label>
+      <label class="yd-check"><input type="checkbox"><span>מכתב המלצה של רופא</span><small class="yd-tags"><span class="yd-tag pend">דורש רישיון</span><span class="yd-tag">רמה 3</span></small></label></div></details>
+      <div class="yd-check yd-decl" role="group" aria-label="הצהרת רישיון"><label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" checked><span>אני מצהיר/ה שיש לי רישיון לעסוק בסוגים המסומנים "דורש רישיון". האוהל לא בודק זאת.<small>ההצהרה מתבקשת על כל סוג עם הסימון, בכל רמה. רק הצהרה: לא מבקשים מספר רישיון או מסמכים, ובלוח כתוב "לפי הצהרת המשתמש".</small></span></label></div>
   </section>
   <section class="card yd-give" aria-labelledby="ar">
     <h2 id="ar">האזור שלי</h2>
@@ -145,6 +145,16 @@
 </main>
 
 <!-- ============ the sheets (H.modal): the real .modal markup ============ -->
+<main class="yd" data-screen="editor" hidden style="display:grid;gap:14px;padding-block-start:8px">
+  <h1 style="font-size:1.4rem">רשימת השירותים</h1>
+  <ul class="yd-rows" style="list-style:none;margin:0;padding:0;display:grid;gap:10px">
+    <li class="card" style="padding:12px;display:grid;gap:8px"><div class="yd-row"><div class="tx"><b>עבודת חשמל</b><small>רמה 4 · איש השעה</small></div></div>
+      <label class="yd-switch"><span>דורש רישיון</span><input type="checkbox" role="switch" checked style="inline-size:22px;block-size:22px"></label></li>
+    <li class="card" style="padding:12px;display:grid;gap:8px"><div class="yd-row"><div class="tx"><b>הובלה קטנה</b><small>רמה 3 · שעה ארוכה</small></div></div>
+      <label class="yd-switch"><span>דורש רישיון</span><input type="checkbox" role="switch" style="inline-size:22px;block-size:22px"></label></li>
+  </ul>
+</main>
+
 <div class="modal" data-sheet-id="board" hidden>
   <div class="modal-backdrop" data-close></div>
   <div class="modal-glass" role="dialog" aria-modal="true" aria-labelledby="sb">

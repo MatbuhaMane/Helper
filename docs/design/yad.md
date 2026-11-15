@@ -47,3 +47,9 @@ Checked at 375 px light (the audit clean); desktop and dark use the same classes
 - A professional's service shows only the plain grey note `.yd-tag` "לפי הצהרת המשתמש" (board card, my lists). **Never** "מוסמך" or "מאומת", never a tick, a shield, a seal or a green colour beside it. "דורש רישיון" stays only on the type in the profile list.
 - The profile asks only for the declaration tick-box: no licence number field, no upload.
 - **The owner queue** lives in the existing "ממתין לאישור" page (a filter "יד ביד" and one count of what waits). No new screen from design yet: the page exists, and vision is still writing the rest of the queue spec with the owner.
+
+## Batch 41: the licence declaration follows the type, not the tier (2026-11-15)
+- **Profile:** "דורש רישיון" (`.yd-tag.pend`) sits on any type, at any tier, inside its normal group (the old "רפואה ומשפט" group is gone). One declaration (`.yd-decl`) closes the list; it applies to every marked type the person ticks. The text keeps batch 38: a declaration only, no number, no documents.
+- **Wherever a declared professional shows:** only the grey "לפי הצהרת המשתמש". No badge, no tick.
+- **The owner's list editor** (prototype screen "עריכת הרשימה"): per type, a row with its name and tier and one on/off switch "דורש רישיון" (`.yd-switch`, 48 px).
+- **In the queue,** "להוסיף לרשימה" is followed by the same on/off, "דורש רישיון" (`.yd-qadd` with `role="switch"`).

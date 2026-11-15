@@ -466,7 +466,7 @@
     let s = null; try { s = JSON.parse(localStorage.getItem('helper.music.edge') || 'null'); } catch (_) { /* ignore */ }
     s ||= { side: 'left', y: 0.6 };
     // the screen's own left or right edge (where it was dropped), whatever the page's direction
-    edge.style.left = s.side === 'left' ? '0' : 'auto'; edge.style.right = s.side === 'right' ? '0' : 'auto';
+    edge.style.left = s.side === 'left' ? '8px' : 'auto'; edge.style.right = s.side === 'right' ? '8px' : 'auto';
     edge.classList.toggle('on-left', s.side === 'left'); edge.classList.toggle('on-right', s.side === 'right');
     edge.style.top = Math.round(Math.max(70, Math.min(innerHeight - 140, s.y * innerHeight - 28))) + 'px';
   }

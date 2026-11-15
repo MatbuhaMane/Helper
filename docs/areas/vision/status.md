@@ -34,6 +34,7 @@ Last update: 2026-11-15.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **"יד ביד" is built now, behind a switch** (2026-11-15, the owner decided in the master's session; `main` 3bc7c23, read there): a feature that waits for an approval (the lawyer, insurance, a licence) is built in full but locked by its own owner-only switch, off by default. ai-features builds stage 1 this way after batch 30's open items. Recorded in `docs/vision/yad-beyad.md` under "השלבים".
 - **Design and "יד ביד"** (2026-11-15, the master reported, checked with `git log design`): design has done every batch on its branch without messaging vision: the icon (98d4003), the stage 1 screens (6e8695b), and batches 37 to 44 (39094e6, a81c9df, be6b93d, 9b8520c, 1e15307, c49dbe8, 2304b89, 2108d92). Up to batch 40 is already in `main`; 41 to 44 are on `design` only. Vision has not looked at the screens themselves.
 - **Batch 44** (2026-11-15), sent to design, ai-features, legal and the CEO: six corrections to the limit lines after legal's check (three wording fixes, one replaced line, two new lines); 23 of the 49 types now have a line.
 - **Batch 43** (2026-11-15), sent to design, ai-features, legal and the CEO: the limit lines for 21 of the 49 "יד ביד" types (legal checks the wording), and the driving declaration in the rules page and the terms chapter.

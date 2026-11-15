@@ -642,3 +642,7 @@ LCP has not moved yet. The causes:
 - cedee3d: the catalog seed (49 types, 9 licence + 2 driving declarations, 23 limit lines); `npm test` 62 checks green, typecheck clean.
 - Not yet built: areas table, `/api/yad*` routes, board, service flow, deeds, fund, owner queue, UI, account-close cancellation. Nothing is gated yet because no route exists.
 - Round 2 done (110a62b core, handlers, 25 routes, the page): 109 tests green, typecheck clean, smoke-tested at 375 px as the owner (region, deed approved, need, board). Not tested: a second real person on the board (only tests on SQLite), dark mode and 1280 px of the page, pushes.
+
+## 2026-11-15: התראה לכולם (דלת אחורית)
+- `server/broadcast.ts` + `broadcast-rules.ts`: GET/POST `/api/admin/broadcast`, requireAdmin own, כותרת 60 / טקסט 200 / קישור רק עמוד באוהל, 3 שליחות לכולם ביום (ניסיון: 20), pushTo (שעות שקט, שבת וקודש נשמרים), כל שליחה ביומן. כרטיס "התראה לכולם" ב-admin.js. מסומן: נוגע באנשים. 22 בדיקות.
+- לא נבדק: שליחה אמיתית (D1, מכשיר), הכרטיס בחדר פתוח (נדרש מפתח גישה) ובמסך 375 אמיתי.

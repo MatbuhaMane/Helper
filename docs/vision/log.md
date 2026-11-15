@@ -145,3 +145,4 @@
 - 2026-11-15: approval queue spec, question 4: three actions on a report (dismiss, remove the need or service, remove the person from יד ביד with frozen ידיים, reversible).
 - 2026-11-15: approval queue spec, question 5: anyone may ask the fund, for themselves or for another; the owner added requests for the public (a public garden, a public activity) and requests that come from the system; what "the system" means is the next question.
 - 2026-11-15: approval queue spec, question 6: requests "from the system" are needs the owner posts in the Ohel's name, possibly recurring; a system that proposes public needs by itself went to later.md, not decided.
+- 2026-11-15: queue question 7 answered (immediate notification only for reports and needs outside the list; the rest in one daily summary); recorded in yad-beyad.md; the full read-back of the queue spec is next.

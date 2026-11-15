@@ -60,6 +60,7 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['research_sources', 'created_by', 'TEXT'],   // who added it (empty: the owner)
   ['research_drafts', 'created_by', 'TEXT'],    // who started it (empty: the owner)
   ['goals', 'repeat', 'TEXT'],                  // a recurring goal: JSON {every: day|week|month|days, n?} (goals-logic.ts)
+  ['goals', 'tree_level', 'TEXT'],              // who sees the goal on the person's card in the tree: private (default) | household | linked | forest (vault/kin.ts goalShown; ai-features, master file: one column added)
   ['goals', 'reminded', 'TEXT'],                // the day its time-of-day reminder was last sent (goals-remind.ts; ai-features, master file: one column added)
   ['fridges', 'owner', 'TEXT'],                 // one fridge per person: its owner's email (fridge.ts myFridge); empty: an old shared one, hidden
   ['reports', 'kind', "TEXT NOT NULL DEFAULT 'bug'"],   // bug | idea (הצעה לשיפור), server/reports-rules.ts KINDS (ai-features)

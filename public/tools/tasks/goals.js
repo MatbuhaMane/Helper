@@ -305,6 +305,11 @@
         el('button', { class: 'btn small ghost gl-share', type: 'button', 'aria-pressed': String(!!g.shared), onclick: async () => {
           try { await api(`/api/goals/${g.id}`, { method: 'PUT', body: { shared: !g.shared } }); toast(g.shared ? 'המטרה כבר לא משותפת' : 'ההתקדמות תופיע למשפחה'); await load(); } catch (e) { toast('לא הצלחתי לשמור'); }
         } }, g.shared ? 'משותפת עם המשפחה · להפסיק' : 'לשתף עם המשפחה'),
+        // who sees this goal on the person's card in the family tree (default: nobody; the person's own choice, goal by goal)
+        el('label', { class: 'gl-tree muted', style: 'display:inline-flex;align-items:center;gap:6px;font-size:.85rem' }, 'בעץ המשפחה:',
+          el('select', { 'aria-label': 'מי רואה את המטרה בעץ המשפחה', onchange: async (e) => {
+            try { await api(`/api/goals/${g.id}`, { method: 'PUT', body: { treeLevel: e.target.value } }); toast(e.target.value === 'private' ? 'המטרה לא מוצגת בעץ' : 'המטרה תופיע בעץ המשפחה'); await load(); } catch (err) { toast(err.message || 'לא נשמר'); }
+          } }, ...[['private', 'רק אני'], ['household', 'הבית'], ['linked', 'בתים קשורים'], ['forest', 'כל השבט']].map(([v, l]) => el('option', { value: v, selected: (g.treeLevel || 'private') === v }, l)))),
         g.status === 'active' ? el('button', { class: 'btn small ghost', type: 'button', onclick: () => askDone(g) }, '🏁 השגתי') : el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { await api(`/api/goals/${g.id}`, { method: 'PUT', body: { status: 'active' } }); await load(); } }, 'להחזיר לפעילות'),
         el('button', { class: 'btn small ghost', type: 'button', onclick: async () => { if (!confirm(`למחוק את "${g.title}"?`)) return; await api(`/api/goals/${g.id}`, { method: 'DELETE' }); openGoal = null; await load(); toast('המטרה נמחקה'); } }, 'מחיקה'))));
   }

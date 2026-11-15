@@ -637,3 +637,7 @@ LCP has not moved yet. The causes:
 - **Flag for the CEO (money level):** `server/yad-ledger.ts`, `server/yad-rules.ts`. Please review before anything is built on them. Known limits: a deed's "fund first, mint the rest" reads the fund balance just before posting (the owner is the only approver, so no race in practice); the tithe rounds down per transfer.
 - Next rounds: catalog seed + areas/ranges, needs board and service flow (two-sided confirm, recommendation), deeds + fund + owner queue, reports/removal, the page (mobile first) and the dashboard, `yad-gate.js` so the tile/links/pushes hide for everyone but the owner.
 - Batch 30 leftovers still open: skeletons on news/mail lists; the audit itself was run earlier (see the notes folder).
+
+## יד ביד, סבב 2 (2026-11-15)
+- cedee3d: the catalog seed (49 types, 9 licence + 2 driving declarations, 23 limit lines); `npm test` 62 checks green, typecheck clean.
+- Not yet built: areas table, `/api/yad*` routes, board, service flow, deeds, fund, owner queue, UI, account-close cancellation. Nothing is gated yet because no route exists.

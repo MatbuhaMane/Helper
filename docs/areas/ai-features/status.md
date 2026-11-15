@@ -646,3 +646,5 @@ LCP has not moved yet. The causes:
 ## 2026-11-15: התראה לכולם (דלת אחורית)
 - `server/broadcast.ts` + `broadcast-rules.ts`: GET/POST `/api/admin/broadcast`, requireAdmin own, כותרת 60 / טקסט 200 / קישור רק עמוד באוהל, 3 שליחות לכולם ביום (ניסיון: 20), pushTo (שעות שקט, שבת וקודש נשמרים), כל שליחה ביומן. כרטיס "התראה לכולם" ב-admin.js. מסומן: נוגע באנשים. 22 בדיקות.
 - לא נבדק: שליחה אמיתית (D1, מכשיר), הכרטיס בחדר פתוח (נדרש מפתח גישה) ובמסך 375 אמיתי.
+
+- 2026-11-15: passkey create() errors in Hebrew (family.js, vault-keys.js): InvalidStateError "המכשיר כבר רשום", other DOMException fallback; NotAllowedError stays silent. Not tested on a real device.

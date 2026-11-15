@@ -61,3 +61,6 @@ Checked at 375 px light (the audit clean); desktop and dark use the same classes
 
 ## Batch 43: the real description lines (2026-11-15)
 The prototype now uses the approved wording (21 of 49 types have a line; the rest have none, and rows without one are the same height as before). Checked at 375 px with the longest line ("המידע במחשב נשאר פרטי: לא מעתיקים ממנו ולא שומרים ממנו דבר."): in the profile it wraps to two lines, on a board card (narrower, beside the figure) to three, with no overflow and no clipping, audit clean in light and dark. The "שימו לב: " prefix is added by CSS, so the text itself stays as approved. Legal's later wording changes need no design change.
+
+## Batch 44: six corrected or new lines (2026-11-15)
+Wording only; no design change. The six lines are 55 to 62 characters, so none is longer than the longest line already checked at 375 px in batch 43 (it wraps to two lines in the profile, three on a board card, without overflow). 23 of 49 types now have a line; rows without one are unchanged.

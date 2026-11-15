@@ -827,3 +827,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 33 (batch 42):** second (driving) declaration and the per-type description line: profile, create, board, list editor, queue. See `docs/design/yad.md`.
 
 **Round 34 (batch 43):** real description lines in the prototype; the longest checked at 375 px (wraps, no overflow). See `docs/design/yad.md`.
+
+**Round 35 (batch 44):** six description lines changed; no design change, lengths within the batch 43 check.

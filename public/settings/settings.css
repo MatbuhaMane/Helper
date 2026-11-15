@@ -271,7 +271,3 @@ details.st-sec[open] > .st-body { animation: st-open .3s var(--ease-river) both;
 .st-quiet-hours > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 .st-quiet-hours input[type="time"] { min-block-size: 44px; inline-size: 7.5em; direction: ltr; text-align: center; font-variant-numeric: tabular-nums; }
 .st-quiet-hours small { color: var(--muted); font-size: .82rem; line-height: 1.5; }
-
-/* at phone width the floating edge tabs (companion, music, back door) sit over the page's two edges: the cards keep a gutter
-   so a row's controls at the inline edge stay clear of them (design, 2026-11-15; the tabs are the owner's draggable capsules) */
-@media (max-width: 520px) { .st { padding-inline: 20px; } }

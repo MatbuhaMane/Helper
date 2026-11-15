@@ -3828,3 +3828,4 @@ On `ai-features`: 2fde072 (the feature) and 953a273 (master files, append-only; 
 - Floor compass: always visible (opacity .42, .72 while touched), drawn as a rose without letters (rings, 5-degree scale, 8 points). Touches master-owned `index.html` and `home.js` compass lines.
 
 - 2026-11-15 (ai-features): unified round edge tabs in `base.css`; sky wheel separated from the sun/moon ellipse in `home.js`/`index.html`; companion `closed` pref (H.prefs 'daemon') with a 5 s press on the tent to restore. Touches design-owned base.css and master-owned home.js/index.html.
+- 2026-11-15 (ai-features): drop zone .dm-close-zone in daemon.css (design-owned); music.css record transition 280ms; voice first piece = first clause (<=45 chars).

@@ -4,7 +4,7 @@
 // (master files) and draws the moods in /assets/switches.js.
 //
 // exp (three states): 'hide' hides what is experimental (an app tagged ניסיוני or beta, the "בעתיד" and "בקרוב" items);
-// 'only' shows only the experimental apps (and the fixed items: the tree, the tools, the settings); 'all' shows everything.
+// 'only' ("רגילים וניסיוניים") shows the regular apps and the experimental ones, without the "בעתיד" and "בקרוב" items; 'all' shows everything, those items too.
 // mood: 'normal' | 'party' (confetti and balloons on opening) | 'mourning' (candles and a faded palette).
 // kodesh: the Shabbat mode; kodesh_auto turns it on by itself from candle lighting to havdalah (Shabbat and Yom Tov).
 
@@ -21,8 +21,8 @@ export const CATS: [string, string][] = [
 
 export const SWITCHES: Switch[] = [
   { key: 'exp', cat: 'view', label: 'תוכן ניסיוני', kind: 'choice', def: 'all',
-    options: [['hide', 'הסתר ניסיוני'], ['only', 'רק ניסיוני'], ['all', 'הכל']],
-    help: 'הסתר: בלי כלים ניסיוניים ובלי מה שעוד "בעתיד" או "בקרוב". רק ניסיוני: רק הכלים הניסיוניים (והעץ, הכלים וההגדרות). הכל: הכול מוצג.' },
+    options: [['hide', 'הסתר ניסיוני'], ['only', 'רגילים וניסיוניים'], ['all', 'הכל']],
+    help: 'הסתר: בלי כלים ניסיוניים ובלי מה שעוד "בעתיד" או "בקרוב". רגילים וניסיוניים: כל הכלים, גם הניסיוניים, בלי מה שעוד "בעתיד" או "בקרוב". הכל: הכול מוצג, גם הפריטים האלה.' },
   { key: 'mood', cat: 'view', label: 'אווירה', kind: 'choice', def: 'normal',
     options: [['normal', 'רגיל'], ['party', 'חגיגה'], ['mourning', 'אבל']],
     help: 'חגיגה: קונפטי ובלונים כשנכנסים לאוהל. אבל: נרות ופלטת צבעים דהויה.' },
@@ -81,8 +81,7 @@ export function shows(a: AppLike, sw: { exp?: unknown; kodesh?: unknown }): bool
   if (a.fixed) return true;
   if (sw.kodesh === true && WEEKDAY.includes(a.href)) return false;
   if (sw.exp === 'hide') return !isExp(a);
-  if (sw.exp === 'only') return isExp(a);
   return true;
 }
-/** are the "בעתיד" / "בקרוב" items shown? (they are what is not yet reachable: hidden by 'hide' only) */
-export const showsFuture = (sw: { exp?: unknown }) => sw.exp !== 'hide';
+/** are the "בעתיד" / "בקרוב" items shown? (what is not yet reachable: only under 'all') */
+export const showsFuture = (sw: { exp?: unknown }) => sw.exp !== 'hide' && sw.exp !== 'only';

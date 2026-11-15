@@ -312,9 +312,11 @@
           el('button', { class: 'btn ghost small', onclick: close }, list.length === 1 ? 'לא' : 'סגירה')));
       document.body.append(p); requestAnimationFrame(() => p.classList.add('on'));
     };
-    camp.addEventListener('pointerdown', (e) => { if (!closedTabs().length || e.button > 0) return; x0 = e.clientX; y0 = e.clientY; stop(); timer = setTimeout(() => { timer = 0; ask(); }, 5000); });
-    camp.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 12) stop(); });
-    for (const t of ['pointerup', 'pointercancel', 'pointerleave']) camp.addEventListener(t, stop);
+    // .camp takes no pointer events (the pager and the wheel lie over it), so the press is caught on the document and hit-tested against the tent
+    const onTent = (e) => { const r = (camp.querySelector('img') || camp).getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; };
+    document.addEventListener('pointerdown', (e) => { if (e.button > 0 || !closedTabs().length || !onTent(e)) return; x0 = e.clientX; y0 = e.clientY; stop(); timer = setTimeout(() => { timer = 0; ask(); }, 5000); });
+    document.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - x0, e.clientY - y0) > 12) stop(); });
+    for (const t of ['pointerup', 'pointercancel']) document.addEventListener(t, stop);
   }
   if (navigator.connection?.saveData) {
     const hint = el('button', { class: 'btn ghost small wake', onclick: () => { hint.remove(); meetHim(); } }, 'להעיר את רַאבַּ"ע');

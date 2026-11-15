@@ -97,7 +97,7 @@ export async function tick(env: Env): Promise<number> {
     if (t.end_at < late) continue;   // a timer that was missed by far is not rung now
     const wait = t.end_at - Date.now();
     if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    n += await pushTo(env, [t.email], { title: `⏰ ${t.name}`, body: 'הזמן נגמר.', url: '/food/kitchen/#timers', tag: `kt${t.id}`, urgent: true, kind: 'reminder' }).catch(() => 0);
+    n += await pushTo(env, [t.email], { title: `⏰ ${t.name}`, body: 'הזמן נגמר.', url: '/food/kitchen/#timers', tag: `kt${t.id}`, urgent: true, kind: 'reminder', tool: 'kitchen', item: t.id }).catch(() => 0);
   }
   return n;
 }

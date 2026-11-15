@@ -72,7 +72,7 @@
     // only: 'child': shown only to a child (H.me().child: under 12 by the birth year the owner set)
     { id: 'homework', name: 'עוזר שיעורי בית', ic: 'note', note: 'בעתיד', line: 'עזרה בשיעורים: מסבירים, לא פותרים במקומך.', only: 'child' },
     // vision batch 32 (2026-11-14): the Ohel's inner economy, the token יד; drawn only, nothing built yet
-    { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בעתיד', line: 'לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה' },
+    { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בקרוב', line: 'לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה' },
   ];
   for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }
   /** may this person open the app? r is what H.me() resolves to; beta and secret apps need the back door's leave (r.apps: ['beta', '/x/']) */

@@ -631,3 +631,14 @@ LCP has not moved yet. The causes:
 - Master files (own commit + patch): `schema.sql` (goal_notes), `functions/api/[[path]].ts` (5 routes).
 - Not built: privacy levels / the goals tab on the family profile, goal pushes (`tool: 'goals'`), Drive/NAS storage (waits for the CEO's review of the Drive permission).
 - Tested at 375 px: ask, quota (9 to 8), pin, define draft then "השתמש בנוסח", no overflow, targets 44 px and up. Not tested: 1280, dark, the 402 credit prompt, a real phone.
+
+## 2026-11-15: יד ביד stage 1, round 1 (the ledger and the gate) — locked behind the `yad` switch
+- Done: `server/yad-rules.ts` (levels, tenths, tithe rounded down, range labels, `yadOpen`), `server/yad-ledger.ts` (append-only, balance computed, guarded insert: no minus and frozen checked in the same statement, unique ref+leg, reversal as new rows, tithe paid since day one), `server/yad-gate.ts` (`requireYad`: 404 to everyone but the owner while the switch is off), the `yad` switch (master commit), the yad tables in `schema.sql`, `server/test-yad.mjs` (54 checks on a real SQLite, in `npm test`).
+- **Flag for the CEO (money level):** `server/yad-ledger.ts`, `server/yad-rules.ts`. Please review before anything is built on them. Known limits: a deed's "fund first, mint the rest" reads the fund balance just before posting (the owner is the only approver, so no race in practice); the tithe rounds down per transfer.
+- Next rounds: catalog seed + areas/ranges, needs board and service flow (two-sided confirm, recommendation), deeds + fund + owner queue, reports/removal, the page (mobile first) and the dashboard, `yad-gate.js` so the tile/links/pushes hide for everyone but the owner.
+- Batch 30 leftovers still open: skeletons on news/mail lists; the audit itself was run earlier (see the notes folder).
+
+## יד ביד, סבב 2 (2026-11-15)
+- cedee3d: the catalog seed (49 types, 9 licence + 2 driving declarations, 23 limit lines); `npm test` 62 checks green, typecheck clean.
+- Not yet built: areas table, `/api/yad*` routes, board, service flow, deeds, fund, owner queue, UI, account-close cancellation. Nothing is gated yet because no route exists.
+- Round 2 done (110a62b core, handlers, 25 routes, the page): 109 tests green, typecheck clean, smoke-tested at 375 px as the owner (region, deed approved, need, board). Not tested: a second real person on the board (only tests on SQLite), dark mode and 1280 px of the page, pushes.

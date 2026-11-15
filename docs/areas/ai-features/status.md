@@ -641,3 +641,4 @@ LCP has not moved yet. The causes:
 ## יד ביד, סבב 2 (2026-11-15)
 - cedee3d: the catalog seed (49 types, 9 licence + 2 driving declarations, 23 limit lines); `npm test` 62 checks green, typecheck clean.
 - Not yet built: areas table, `/api/yad*` routes, board, service flow, deeds, fund, owner queue, UI, account-close cancellation. Nothing is gated yet because no route exists.
+- Round 2 done (110a62b core, handlers, 25 routes, the page): 109 tests green, typecheck clean, smoke-tested at 375 px as the owner (region, deed approved, need, board). Not tested: a second real person on the board (only tests on SQLite), dark mode and 1280 px of the page, pushes.

@@ -126,6 +126,9 @@ body.dm-folded main { padding-block-end: 0; }
 @keyframes dm-peek { from { transform: translateX(60px); } }
 @keyframes dm-peek-rtl { from { transform: translateX(-60px); } }
 [dir="rtl"] .dm-tab { animation-name: dm-peek-rtl; }
+/* the peek comes from the edge the tab is docked at: .dock-start is the other edge, so it slides the other way (it used to start 60px inside the page) */
+.dm-tab.dock-start { animation-name: dm-peek-rtl; }
+[dir="rtl"] .dm-tab.dock-start { animation-name: dm-peek; }
 @keyframes dm-flow { to { background-position: 16px 0; } }
 @keyframes dm-z { 0%, 100% { opacity: .2; transform: translateY(4px); } 50% { opacity: 1; transform: translateY(-4px); } }
 @keyframes dm-spot { 0% { outline-offset: 12px; } 100% { outline-offset: 4px; } }

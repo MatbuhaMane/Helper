@@ -837,3 +837,5 @@ _Updated 2026-11-14 (round 23)._
 **Round 38 (audit fixes):** span.ic::before transition .35s to .3s; sun transition opacity .3s only (no 2s filter fade); f2-tw stands still under data-motion=reduce with !important. Not re-audited (pane blocked).
 
 **Round 39 (edge tabs on /settings):** at <=520px `.st` keeps a 20px inline gutter so the floating tabs no longer cover row controls; main merged into design first. Not measured in a browser (pane blocked); audit by the CEO.
+
+**Round 40 (edge tab, round 2):** root cause: `.dm-tab.dock-start` used the end-edge peek keyframes, so it started 60px inside the page (the audit frame-0 overlap); now it peeks from its own edge. The 20px gutter on /settings removed. 1280 chip overlaps are the sticky .st-jump bar over scrolled content (not a defect). Not browser-verified.

@@ -184,6 +184,7 @@ async function telegram(fr, w, d, W, H) {
     void w.getComputedStyle(html).color; void html.offsetHeight;   // flush the style, or getAnimations still sees the old timing
     w.H.modal(d.createTextNode('בדיקה'));
     await frame(2);
+    for (const a of d.getAnimations()) if (a.effect?.target) void w.getComputedStyle(a.effect.target).animationName;   // restyle each animated element, so a CSS animation cut by the rule is gone (f2-tw was a false T11)
     const moving = d.getAnimations().filter((a) => a.playState === 'running' && (a.effect?.getComputedTiming?.().duration ?? 1) >= 1 && a.effect?.getKeyframes?.().some((k) => k.transform && k.transform !== 'none' || k.translate || k.scale || k.rotate));
     if (moving.length) must.add(`T11 reduced motion still moves: ${moving.slice(0, 4).map((a) => a.animationName || a.transitionProperty || 'script').join(', ')}`);
     w.H.closeModal?.();

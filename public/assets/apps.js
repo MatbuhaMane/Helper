@@ -231,15 +231,10 @@
       const i = FUTURE_ALL.findIndex((x) => x.id === 'yad'); if (i >= 0) FUTURE_ALL.splice(i, 1);
       future(); use(LAYOUT); return true;
     };
-    // what the last check said (this tab): applied at once, so the first paint already has the tile; the check below keeps it true
-    let cached = false; try { cached = sessionStorage.getItem(KEY) === '1'; } catch (_) { /* no storage */ }
-    if (cached) put();
-    // the gate helper (the same small script the messages page loads); no loader here (a test, a bare page): nothing to check
-    const ask = () => (window.YadGate ? window.YadGate.on() : H.loadOnce ? H.loadOnce('/assets/yad-gate.js').then(() => window.YadGate.on()) : Promise.resolve(false));
-    ask().catch(() => false).then((on) => {
-      try { sessionStorage.setItem(KEY, on ? '1' : '0'); } catch (_) { /* no storage */ }
-      if (on && put()) dispatchEvent(new CustomEvent('h:layout'));
-    });
+    // the tile is for everyone; while the switch is off a tap opens the "בקרוב!" panel (yad-gate.js, loaded when the page is idle)
+    put();
+    const idle = window.requestIdleCallback || ((f) => setTimeout(f, 800));
+    addEventListener('load', () => idle(() => H.loadOnce?.('/assets/yad-gate.js')), { once: true });
   }
   yadTile();
   addEventListener('h:switches', () => { use(LAYOUT); future(); dispatchEvent(new CustomEvent('h:layout')); });

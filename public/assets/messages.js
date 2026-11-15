@@ -13,7 +13,7 @@
     if (!list.length) return;
     const { el } = window.H || {};
     if (!el) return;
-    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const still = window.H?.reducedMotion ? H.reducedMotion() : (matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.dataset.motion === 'reduce');   // the device's setting and the app's own
     // (the look, the place above the tab bar or the cart button, and each level's drawn mark are design's, in base.css)
     const stack = el('div', { class: 'owner-msgs', role: 'region', 'aria-label': 'הודעות מהאוהל' });
     const gone = () => { if (!stack.childElementCount) stack.remove(); };

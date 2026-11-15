@@ -3857,3 +3857,5 @@ The tile now shows to everyone; any tap on a link to /tools/yad (and the page it
   - An https WebDAV address only. Reject IP literals and private or localhost hosts.
   - Credentials are sealed. Limit each request's size and time.
 - **Who:** ai-features builds the connectors. The master reviews the diff before it is merged.
+### 2026-11-15: the coach's pushes, wave 2 (ai-features; master files touched: src/worker.ts minute cron line, package.json test script)
+`server/coach-remind.ts` (+ rules and `test-coach-remind.mjs`): two moments a day (18:30 a nudge after 2 to 14 days without a workout; 20:30 a cheer after a workout today), Israel time, no rest-day pushes, no AI. Reads only the person's own prefs `hakpada` (a plan exists, workout timestamps) and the rest day; sends only the coach's short words. Goes through the push gate with tool `coach`, item `nudge` or `cheer`: quiet by default (daily summary), the person raises it in "רמת הניג'וס". Security: nothing new is stored, nothing reaches the AI, each person gets only their own words. The coach panel, live workout mode and AI chat are still not built.

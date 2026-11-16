@@ -6,6 +6,7 @@ import { FUND, MINT, acct, balance, deedLegs, fundServiceLegs, post, serviceLegs
 import type { PostResult } from './yad-ledger';
 import { grossTenths, levelOf, validHalfHours, validScore } from './yad-rules';
 import { rangeBetween, regionById } from './yad-regions';
+import { RATE_HIT_SQL } from './rate-sql';
 
 type Db = Env['DB'];
 export class YadError extends Error { constructor(public status: number, public code: string) { super(code); } }
@@ -24,6 +25,13 @@ export async function isFrozen(db: Db, email: string) {
   return !!(await db.prepare('SELECT 1 AS x FROM yad_people WHERE email = ? AND removed_at IS NOT NULL').bind(email).first());
 }
 async function live(db: Db, email: string) { await ensurePerson(db, email); if (await isFrozen(db, email)) throw new YadError(403, 'removed'); }
+
+/** a daily cap per person and kind of action, counted in D1 (rate_hits, one statement: parallel requests cannot slip through): the 21st in a day answers 429 slow_down */
+export const DAILY_CAP = 20;
+export async function cap(db: Db, email: string, action: 'need' | 'deed' | 'report' | 'offer', now = Date.now()) {
+  const row = await db.prepare(RATE_HIT_SQL).bind(`yad:${action}:${email}`, now + 24 * 3_600_000, now, now).first<{ count: number }>();
+  if ((row?.count ?? 1) > DAILY_CAP) throw new YadError(429, 'slow_down');
+}
 
 export async function setRegion(db: Db, email: string, region: string | null) {
   if (region && !regionById(region)) throw bad('region');
@@ -52,6 +60,7 @@ export interface NeedInput { type_id?: string | null; title?: string; detail?: s
 /** a new need. Listed type: the level comes with the type. Unlisted: the person proposes a level and it waits for the owner. A fund/public/ohel need waits for the owner too. */
 export async function createNeed(db: Db, email: string, i: NeedInput, isOwner: boolean, now = Date.now()) {
   await live(db, email);
+  await cap(db, email, 'need', now);
   const pay = i.pay || 'person';
   if (!['person', 'fund', 'public', 'ohel'].includes(pay)) throw bad('pay');
   if (pay === 'ohel' && !isOwner) throw new YadError(403, 'owner_only');
@@ -107,6 +116,7 @@ async function needOf(db: Db, nid: string) { const n = await db.prepare('SELECT 
 
 export async function offerHelp(db: Db, nid: string, helper: string, now = Date.now()) {
   await live(db, helper);
+  await cap(db, helper, 'offer', now);
   const n = await needOf(db, nid);
   if (n.email === helper) throw bad('own_need');
   if (n.status !== 'open' || n.level_ok !== 1 || (n.pay !== 'person' && n.fund_ok !== 1)) throw new YadError(409, 'not_open');
@@ -139,7 +149,7 @@ export async function setAddress(db: Db, nid: string, asker: string, sealed: str
 export async function addressOf(db: Db, nid: string, viewer: string): Promise<string> {
   const n = await needOf(db, nid);
   if (viewer !== n.email && viewer !== n.helper) throw new YadError(403, 'forbidden');
-  return n.status === 'agreed' || n.status === 'done' ? n.address : '';
+  return n.status === 'agreed' ? n.address || '' : '';   // cleared for good when the need is done, cancelled or removed
 }
 /** each side confirms that it was done; when both have, the hands move (once: the ref is the need) */
 export async function confirmDone(db: Db, nid: string, who: string, now = Date.now()): Promise<{ done: boolean; post?: PostResult }> {
@@ -153,14 +163,14 @@ export async function confirmDone(db: Db, nid: string, who: string, now = Date.n
   const legs = m.pay === 'person' ? serviceLegs(acct(m.email), acct(m.helper), m.gross) : fundServiceLegs(acct(m.helper), m.gross);
   const res = await post(db, 'svc:' + nid, legs, now);
   if (!res.ok) throw new YadError(409, res.why);
-  await db.prepare("UPDATE yad_needs SET status = 'done', updated_at = ? WHERE id = ?").bind(now, nid).run();
+  await db.prepare("UPDATE yad_needs SET status = 'done', address = '', updated_at = ? WHERE id = ?").bind(now, nid).run();
   return { done: true, post: res };
 }
 export async function cancelNeed(db: Db, nid: string, who: string, now = Date.now()) {
   const n = await needOf(db, nid);
   if (n.email !== who) throw new YadError(403, 'forbidden');
   if (n.status === 'done' || n.status === 'removed') throw new YadError(409, 'closed');
-  await db.prepare("UPDATE yad_needs SET status = 'cancelled', updated_at = ? WHERE id = ?").bind(now, nid).run();
+  await db.prepare("UPDATE yad_needs SET status = 'cancelled', address = '', updated_at = ? WHERE id = ?").bind(now, nid).run();
 }
 /** an optional recommendation by the asker after the service; it is shown on the giver's profile */
 export async function recommend(db: Db, nid: string, who: string, text: string, now = Date.now()) {
@@ -176,6 +186,7 @@ export async function recsOf(db: Db, about: string) {
 /* ---- deeds ("עשיתי מעשה") ---- */
 export async function reportDeed(db: Db, email: string, i: { type_id?: string | null; title?: string; half_hours?: number; difficulty?: number; expertise?: number }, now = Date.now()) {
   await live(db, email);
+  await cap(db, email, 'deed', now);
   if (!validHalfHours(i.half_hours)) throw bad('half_hours');
   let d: number, e: number, levelOk = 1, title = clean(i.title, 120);
   if (i.type_id) { const t = await typeOf(db, i.type_id); if (!t) throw bad('type'); d = t.difficulty; e = t.expertise; title = title || t.name; }
@@ -226,6 +237,7 @@ export async function dashboard(db: Db, email: string, now = Date.now()) {
 /* ---- reports, the owner's queue, removal ---- */
 export async function report(db: Db, by: string, kind: 'need' | 'person' | 'license', target: string, reason: string, now = Date.now()) {
   if (!['need', 'person', 'license'].includes(kind) || !clean(reason, 300) || !clean(target, 120)) throw bad();
+  await cap(db, by, 'report', now);
   const rid = id();
   await db.prepare('INSERT INTO yad_reports (id, by_email, kind, target, reason, status, at) VALUES (?, ?, ?, ?, ?, \'open\', ?)').bind(rid, by, kind, clean(target, 120), clean(reason, 300), now).run();
   return { id: rid };
@@ -240,6 +252,7 @@ export async function queue(db: Db) {
 /** the owner decides a need that waits: approve (the level and/or the fund) or reject with a reason, or add the unlisted type to the list */
 export async function decideNeed(db: Db, nid: string, o: { approve: boolean; reason?: string; difficulty?: number; expertise?: number; add_to_list?: boolean }, now = Date.now()) {
   const n = await needOf(db, nid);
+  if (n.status !== 'open') throw new YadError(409, 'not_open');   // only a need that waits: a done need is never turned into 'rejected', a cancelled one never approved
   if (!o.approve) {
     const why = clean(o.reason, 300); if (!why) throw bad('reason');
     await db.prepare("UPDATE yad_needs SET status = 'rejected', reject_why = ?, updated_at = ? WHERE id = ?").bind(why, now, nid).run();
@@ -257,7 +270,7 @@ export async function decideNeed(db: Db, nid: string, o: { approve: boolean; rea
 export async function resolveReport(db: Db, rid: string, owner: string, action: 'dismiss' | 'remove_need' | 'remove_person', now = Date.now()) {
   const r = await db.prepare('SELECT * FROM yad_reports WHERE id = ?').bind(rid).first<any>();
   if (!r) throw new YadError(404, 'not_found');
-  if (action === 'remove_need') await db.prepare("UPDATE yad_needs SET status = 'removed', updated_at = ? WHERE id = ?").bind(now, r.target).run();
+  if (action === 'remove_need') await db.prepare("UPDATE yad_needs SET status = 'removed', address = '', updated_at = ? WHERE id = ?").bind(now, r.target).run();
   if (action === 'remove_person') await removePerson(db, r.target, owner, now);
   await db.prepare("UPDATE yad_reports SET status = 'closed', action = ? WHERE id = ?").bind(action, rid).run();
 }
@@ -265,7 +278,9 @@ export async function resolveReport(db: Db, rid: string, owner: string, action: 
 export async function removePerson(db: Db, email: string, by: string, now = Date.now()) {
   await ensurePerson(db, email, now);
   await db.batch([db.prepare('UPDATE yad_people SET removed_at = ?, removed_by = ? WHERE email = ?').bind(now, by, email),
-    db.prepare("UPDATE yad_needs SET status = 'removed', updated_at = ? WHERE email = ? AND status IN ('open', 'offered')").bind(now, email),
+    db.prepare("UPDATE yad_needs SET status = 'removed', address = '', updated_at = ? WHERE email = ? AND status IN ('open', 'offered')").bind(now, email),
+    // an agreed need (the person as the asker or as the helper) is cancelled, so the other side is not left waiting; no hands have moved yet (they move on the second confirmation)
+    db.prepare("UPDATE yad_needs SET status = 'cancelled', address = '', updated_at = ? WHERE (email = ? OR helper = ?) AND status = 'agreed'").bind(now, email, email),
     db.prepare("UPDATE yad_needs SET helper = NULL, status = 'open', updated_at = ? WHERE helper = ? AND status = 'offered'").bind(now, email)]);
 }
 export async function restorePerson(db: Db, email: string) { await db.prepare('UPDATE yad_people SET removed_at = NULL, removed_by = NULL WHERE email = ?').bind(email).run(); }

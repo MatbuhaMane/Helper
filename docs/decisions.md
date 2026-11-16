@@ -3972,3 +3972,7 @@ Fixes for ai-features (before the family switch):
 3. Address retention: clear `address` when a need becomes done, cancelled or removed.
 4. removePerson/closeAccount: needs in 'agreed' (as asker or helper) are cancelled too, so the other side is not left stuck.
 5. Tests in test-yad for 1–4.
+
+### 2026-11-16 (ai-features): יד ביד stage 1 security fixes done — SECURITY (money/ledger), for the CEO's diff review
+- server/yad-core.ts: `cap()` counts 20 a day per person and kind (need, deed, report, offer) in D1 `rate_hits` via RATE_HIT_SQL, 429 slow_down; decideNeed acts only on status open (409 not_open); `address` is cleared (empty string, the column is NOT NULL) when a need is done, cancelled, removed or rejected-by-report, and addressOf reads it only while agreed; removePerson (so closeAccount too) cancels agreed needs as asker or helper. No hands move on cancel (they move on the second confirmation).
+- Tests: test-yad.mjs (124 passed); its schema slice now includes rate_hits.

@@ -3962,3 +3962,13 @@ Code: `server/storage-rules.ts` (pure rules, 38 tests in `test-storage.mjs`), `s
 - Option B, for the owner to choose if A is not enough: the first tap reveals, the second opens (needs JS in `daemon.js` and `music.js`, ai-features'). A is cheaper and keeps one-tap access; B hides the tab more but costs a tap.
 - Not done: the music tab (class and CSS live in `music.js`, ai-features') and `.ad-edge` (back door; icon-only on phones, draggable) — they would need the same rule if the audit still lists them.
 - Not browser-verified (pane blocked).
+
+## 2026-11-16 · CEO security review: "יד ביד" stage 1 (ledger, core, routes)
+Verdict: **sound for the owner's own testing behind the switch; five fixes before the switch opens to the family.**
+Sound: the ledger (atomic guarded batch, no stored balance, MINT limits, frozen check on every party, unique ref per service/deed), the gate (404 to all but the owner while off), owner-only queue and decisions, dashboard self-or-owner, the board shows no email, address, fund reason or consent, the address is sealed per need and read only by the two sides.
+Fixes for ai-features (before the family switch):
+1. Daily caps per person, in D1 (not per isolate): createNeed, reportDeed, report, offerHelp (e.g. 20 a day each), 429 slow_down.
+2. decideNeed acts only on a need with status 'open' (today it can turn a done need into 'rejected' or approve a cancelled one).
+3. Address retention: clear `address` when a need becomes done, cancelled or removed.
+4. removePerson/closeAccount: needs in 'agreed' (as asker or helper) are cancelled too, so the other side is not left stuck.
+5. Tests in test-yad for 1–4.

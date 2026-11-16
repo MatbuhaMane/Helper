@@ -1,7 +1,7 @@
 # Status – vision
 
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
-Last update: 2026-11-14.
+Last update: 2026-11-15.
 
 ## Done
 
@@ -34,6 +34,12 @@ Last update: 2026-11-14.
   - the tools menu order with the "ניסיוני" tag;
   - wave 1 of the owner's quick ideas: faster AI replies, the background feed, no Google links, notes;
   - the garage (smart home) feasibility study.
+- **"יד ביד" is built now, behind a switch** (2026-11-15, the owner decided in the master's session; `main` 3bc7c23, read there): a feature that waits for an approval (the lawyer, insurance, a licence) is built in full but locked by its own owner-only switch, off by default. ai-features builds stage 1 this way after batch 30's open items. Recorded in `docs/vision/yad-beyad.md` under "השלבים".
+- **Design and "יד ביד"** (2026-11-15, the master reported, checked with `git log design`): design has done every batch on its branch without messaging vision: the icon (98d4003), the stage 1 screens (6e8695b), and batches 37 to 44 (39094e6, a81c9df, be6b93d, 9b8520c, 1e15307, c49dbe8, 2304b89, 2108d92). Up to batch 40 is already in `main`; 41 to 44 are on `design` only. Design confirmed it itself afterwards: specs in `docs/design/yad.md` and `yad-queue.md`, prototypes in `docs/design/prototype/yad.html` and `yad-queue.html`, CSS in `public/tools/yad/yad.css`; it reports a clean audit at 375 and 1280, light and dark, and will message vision after each batch from now on. Vision has not looked at the screens themselves.
+- **Batch 44** (2026-11-15), sent to design, ai-features, legal and the CEO: six corrections to the limit lines after legal's check (three wording fixes, one replaced line, two new lines); 23 of the 49 types now have a line.
+- **Batch 43** (2026-11-15), sent to design, ai-features, legal and the CEO: the limit lines for 21 of the 49 "יד ביד" types (legal checks the wording), and the driving declaration in the rules page and the terms chapter.
+- **Batch 42** (2026-11-15), sent to design, ai-features, legal and the CEO: nine of the 49 "יד ביד" types carry the licence mark; rides carry it with a driving declaration; each type gets a description line with its limit (vision words them, the owner approves); youth mentoring only in family and friends in stage 1; three questions for the owner's lawyer through the CEO.
+- **Batch 41** (2026-11-15), sent to design, ai-features, legal and the CEO: the licence declaration in "יד ביד" follows a per-type mark, "דורש רישיון", not the tier; legal proposes which of the 49 types get the mark, for the owner's approval.
 - **Batch 40** (2026-11-15), sent to design, ai-features and the CEO: three simplifications of the "יד ביד" approval queue after the ai-features estimate (a fund request for someone else with a mark and the owner's check instead of an in-app consent flow; "מאת האוהל" needs one-time only; one immediate notification mechanism, the daily summary later).
 - **Batch 39** (2026-11-15), sent to design, ai-features and the CEO: the spec of the owner's approval queue for "יד ביד" stage 1 (inside the "ממתין לאישור" page; deeds valued from a list; approve or reject with a reason; three actions on a report; fund requests for a person, for the public and "מאת האוהל"; immediate notifications only for the urgent items).
 - **Batch 38** (2026-11-15), sent to design, ai-features, legal and the CEO: four conditions on the licence declaration in "יד ביד" (never looks verified, no licence numbers or documents, a false declaration is grounds for removal, the terms say the Ohel does not check).
@@ -42,7 +48,7 @@ Last update: 2026-11-14.
 - **Batch 35** (2026-11-15), sent to the CEO: strengthen the Ohel's cyber security (a full review, findings by severity for the owner, and a standing security check for every feature that touches personal data).
 - **Batch 34** (2026-11-15), sent to design, ai-features, legal and the CEO: "יד ביד" starts in stages. Stage 1 now is the spec and design of the social interface for family and friends only (`docs/vision/yad-beyad.md`); legal starts the tax check; ai-features estimates the scope; building waits for the end of the family's two weeks.
 - **Legal closed its check (through the CEO, 2026-11-15):** no legal blocker, also for trade with everyone and for youth; the written answer comes later and stays with the owner. The product rules went out in batch 37.
-- **Waiting for the owner:** the first list of services with tiers, and the list of deeds for the community, before building "יד ביד".
+- **The two first lists of "יד ביד"** (26 service types, 23 deed types, with scores and tiers): the owner approved them in the master's session on 2026-11-15; recorded in `docs/vision/yad-beyad.md` and `docs/decisions.md`. The flag on the licence declaration is settled (batch 41).
 - **The rules page and the terms chapter of "יד ביד":** the owner approved the vision's tone version in the CEO's session (all five of legal's additions stay; a recommendation is optional); legal writes the final version, then the owner's lawyer.
 - **Batch 33** (2026-11-14), sent to the CEO and business: the tool is named "יד ביד" with the owner's line, and ידיים stay unlinked from credits (only discretionary gift credits).
 - **Batch 32** (2026-11-14), sent to design, the CEO, business and legal: the internal economy and the "יד" token (closed loop, earned only by doing, four hour tiers, a 10% tithe to a public fund, trade with everyone under three trust rules, youth inside the family). A big idea: "בקרוב" only.

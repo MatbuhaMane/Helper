@@ -416,6 +416,87 @@ For the master: add `node server/test-weather.mjs` to `npm test` in `package.jso
 can drop "– בקרוב" (the page is live); `H.soonPage` is no longer used by any page.
 For design: the weather page's look is inline on the tokens for now (`public/tools/weather/weather.js`); a `weather.css`
 with `.wx-*` classes is welcome. Status: done (ai-features).
+## 2026-11-15 – "יד ביד": six corrections to the limit lines, after legal's check (vision → design, ai-features, legal, master)
+Status: Decided (the owner). New information: legal's check of the wording. 23 of the 49 types now have a line; the
+tables in `docs/vision/yad-beyad.md` hold the current wording.
+
+- **Three wording fixes** (the meaning does not change):
+  - "עזרה בסיסית בטלפון או במחשב": "נכנסים לחשבון רק יחד עם האדם ובאישורו, ולא שומרים סיסמאות.";
+  - "ללמד קשישים להשתמש בטלפון": "לא נוגעים בכסף ובחשבון הבנק, ולא שומרים סיסמאות.";
+  - "צילום אירוע": "התמונות שייכות למי שביקש את הצילום, ולא מפרסמים אותן בלי הסכמתו.".
+- **A replaced line:** "עזרה לחקלאים בשעת חירום": "בלי נהיגה בטרקטור או ברכב חקלאי, אלא אם יש רישיון מתאים.".
+- **Two new lines:**
+  - "הובלת רהיטים": "בלי משאית כבדה, אלא אם יש רישיון מתאים.";
+  - "סקר טבע": "בשמורת טבע, לפי הכללים של רשות הטבע והגנים.".
+
+## 2026-11-15 – "יד ביד": the limit lines of the types, and the driving declaration in the rules and the terms (vision → design, ai-features, legal, master)
+Status: Decided (the owner).
+
+- **The limit lines.** 21 of the 49 types get a one-sentence description line with their limit or caution; the other
+  28 have none. The wording, in Hebrew, is in `docs/vision/yad-beyad.md`, section "שורות הגבול בתיאור של הסוגים".
+  - services (6): basic gardening, basic help with a phone or computer, computer repair, simple plumbing, event
+    photography, translation;
+  - deeds (15): the three deeds with the elderly, reading to children in a library, the two food deeds, the five
+    deeds on public land, help to farmers, organizing a volunteering day, youth mentoring, the repair café.
+  - Three lines are vision's own wording, from legal's privacy note (phone or computer help, computer repair,
+    photography). Legal checks the whole wording; a change of substance comes back to the owner.
+  - The owner can edit a line with the list.
+- **The driving declaration in the rules page and the terms** (legal's addition after batch 42):
+  - the rules page, at the end of rule 5: "גם מי שמציע הסעה מצהיר: 'יש לי רישיון נהיגה בתוקף, והרכב מבוטח'.";
+  - the terms, a new clause in the chapter on regulated professionals: whoever marks a ride service declares a valid
+    driving licence and an insured car; the Ohel does not check the declaration, and a false one is grounds for removal.
+  - Legal keeps the full wording, outside this repo, and sends the master an updated final version.
+
+## 2026-11-15 – "יד ביד": which types carry the licence mark, rides, limits and youth mentoring (vision → design, ai-features, legal, master)
+Status: Decided (the owner), on legal's proposal. Legal is not a lawyer; the open questions go to the owner's lawyer.
+
+1. **Nine of the 49 types carry the mark "דורש רישיון":**
+   - services (6): "מכתב המלצה של רופא", "עבודת חשמל מורכבת של חשמלאי מוסמך", "ייעוץ משפטי של עורך דין",
+     "דוח שנתי של רואה חשבון", "טיפול רפואי או פיזיותרפיה", "תכנון של מהנדס או אדריכל";
+   - deeds (3): "עבודה מקצועית בהתנדבות במבנה ציבורי", "רפואה בהתנדבות", "ייעוץ משפטי לעמותה";
+   - "ייעוץ אקולוגי מקצועי לתוכנית ציבורית" has no mark: no law regulates the profession.
+2. **Rides ("הסעה", "הסעת קשישים לטיפולים") carry the mark too, with a different declaration:**
+   "יש לי רישיון נהיגה בתוקף, והרכב מבוטח". The conditions of batch 38 apply to it as well.
+3. **Each type has a short description line that holds its limit or caution** (for example plumbing without gas or
+   electricity; with the elderly, no touching money, passwords or the bank account). Vision words the lines and
+   brings them to the owner before they are sent.
+4. **"חונכות לנוער":** in stage 1 only inside the family and among friends; later only through a recognized
+   organization that asks for the police clearance itself.
+- **For the owner's lawyer** (through the master): whether a private car's insurance covers a ride given for ידיים;
+  the youth mentoring limit; and insurance for physical volunteer work outside a recognized organization.
+
+## 2026-11-15 – "יד ביד": the licence declaration follows the service type, not the tier (vision → design, ai-features, legal, master)
+Status: Decided (the owner). This settles the flag in the entry below.
+
+- **Every type on the owner's lists that requires a licence carries its own mark, "דורש רישיון", whatever its tier.**
+- The licence declaration (batch 37, and the four conditions of batch 38) is asked by that mark, not by the tier
+  "איש השעה". Example: "מכתב המלצה של רופא" is "שעה ארוכה" and requires the declaration.
+- The mark is set by the owner, per type, on both lists (services and deeds). A type added later, from the approval
+  queue too, gets its mark when the owner adds it.
+- **Open:** which of the 49 types get the mark. Legal proposes, and the owner approves.
+
+## 2026-11-15 – "יד ביד": the first two lists, services and deeds (master → vision, ai-features, design)
+Status: Decided (the owner, in the master's session; recorded by vision as the master reported it). The owner may add
+items later. The lists themselves, in Hebrew, are in `docs/vision/yad-beyad.md`, section "שתי הרשימות הראשונות".
+
+- **The scoring** is the approved one: difficulty 0–2 plus expertise 0–2. A sum of 0 is "שעה קלה" (1 יד an hour),
+  1 is "שעת עבודה" (2), 2 or 3 is "שעה ארוכה" (4), and 4 is "איש השעה" (8). A tenth of every יד goes to the fund.
+- **List 1, services between members:** 26 types.
+  - "שעה קלה", 5 types (babysitting, walking a dog, simple shopping…);
+  - "שעת עבודה", 7 types (a ride, cooking a meal, cleaning, help with a phone or a computer…);
+  - "שעה ארוכה", 9 types (moving furniture, a private lesson, a simple plumbing repair, a doctor's letter…);
+  - "איש השעה", 5 types (a certified electrician, a lawyer, an accountant, medical care, an engineer or architect).
+- **List 2, deeds for the community and the environment:** 23 types.
+  - "שעה קלה", 7 types (collecting litter, sorting donations, visiting a lonely elderly person…);
+  - "שעת עבודה", 5 types (cooking for families in need, planting trees, driving the elderly to treatments…);
+  - "שעה ארוכה", 7 types (cleaning a stream, setting up a community garden, mentoring youth…);
+  - "איש השעה", 4 types (professional volunteer work in a public building, volunteer medicine, legal advice to an NGO…).
+- **Items outside the lists** go to the owner's approval queue, as decided.
+- **A flag from vision (not decided):** the master's note says the licence declaration belongs to "איש השעה". By
+  batches 37 and 38 it belongs to every service type that requires a licence, whatever its tier. One such type sits
+  lower: "מכתב המלצה של רופא" is "שעה ארוכה". Vision proposes that each type on the list carries its own mark,
+  "דורש רישיון"; this waits for the owner.
+
 ## 2026-11-15 – "יד ביד", stage 1: three simplifications of the approval queue (vision → design, ai-features, master)
 Status: Decided (the owner). New information: ai-features' estimate of the queue (the upper end of "2–3 times goals",
 7–8 rounds; the lower end with simplifications). This updates three points of the queue entry below; the rest stands.

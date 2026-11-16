@@ -50,7 +50,8 @@ eq('GATE: the owner gets in while it is off', await code('owner@x.test', false),
 
 /* ---- the ledger on a real SQLite ---- */
 const schema = readFileSync('schema.sql', 'utf8').replace(/\r\n/g, '\n');
-const sql = schema.slice(schema.indexOf('CREATE TABLE IF NOT EXISTS yad_ledger')).split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean);
+const rateTable = schema.slice(schema.indexOf('CREATE TABLE IF NOT EXISTS rate_hits'), schema.indexOf(');', schema.indexOf('CREATE TABLE IF NOT EXISTS rate_hits')) + 2);
+const sql = [rateTable, ...schema.slice(schema.indexOf('CREATE TABLE IF NOT EXISTS yad_ledger')).split('\n').filter((l) => !l.trim().startsWith('--')).join('\n').split(';').map((s) => s.trim()).filter(Boolean)];
 function d1() {
   const sq = new DatabaseSync(':memory:');
   for (const s of sql) sq.exec(s);
@@ -216,6 +217,52 @@ const code2 = async (p) => { try { await p; return 'ok'; } catch (e) { return e.
   const all2 = x.sq.prepare("SELECT DISTINCT a FROM (SELECT src AS a FROM yad_ledger UNION SELECT dst FROM yad_ledger) WHERE a != 'mint'").all().map((r) => r.a);
   let tot = 0, ng = 0; for (const a of all2) { const b = await L.balance(x, a); tot += b; if (b < 0) ng++; }
   eq('nothing negative and nothing lost', [ng, tot], [0, x.sq.prepare("SELECT COALESCE(SUM(tenths),0) AS m FROM yad_ledger WHERE src = 'mint'").get().m]);
+}
+
+/* ---- security fixes before the family switch (CEO review 2026-11-16): daily caps in D1, only an open need is decided, the address is cleared, removal cancels agreed needs ---- */
+{
+  const x = d1(); await SD.ensureCatalog(x);
+  for (const e of ['a@x.test', 'b@x.test', 'c@x.test']) await K.setRegion(x, e, 'tel-aviv');
+  const need = (e) => K.createNeed(x, e, { type_id: 's-clean', half_hours: 1 }, false);
+  const st = (id) => x.sq.prepare('SELECT status, address, helper FROM yad_needs WHERE id = ?').get(id);
+  // 1. daily caps, counted in D1 per person and per kind
+  let last = 'ok'; for (let i = 0; i < K.DAILY_CAP; i++) await need('a@x.test');
+  eq('the 21st need in a day is refused', await code2(need('a@x.test')), 'slow_down');
+  eq('another person is not slowed', await code2(need('b@x.test')), 'ok');
+  const r20 = []; for (let i = 0; i < K.DAILY_CAP; i++) r20.push(await code2(K.report(x, 'c@x.test', 'person', 'a@x.test', 'סיבה')));
+  eq('20 reports are taken', r20.every((v) => v === 'ok'), true);
+  eq('the 21st report is refused', await code2(K.report(x, 'c@x.test', 'person', 'a@x.test', 'סיבה')), 'slow_down');
+  const dc = []; for (let i = 0; i < K.DAILY_CAP; i++) dc.push(await code2(K.reportDeed(x, 'b@x.test', { type_id: 'd-stream', half_hours: 1 })));
+  eq('20 deeds are taken, the 21st refused', [dc.every((v) => v === 'ok'), await code2(K.reportDeed(x, 'b@x.test', { type_id: 'd-stream', half_hours: 1 }))], [true, 'slow_down']);
+  const open = x.sq.prepare("SELECT id FROM yad_needs WHERE email = 'a@x.test' LIMIT 25").all().map((r) => r.id);
+  const oc = []; for (let i = 0; i < K.DAILY_CAP; i++) oc.push(await code2(K.offerHelp(x, open[i], 'c@x.test')));
+  eq('20 offers are tried; the 21st is refused by the cap', await code2(K.offerHelp(x, open[20], 'c@x.test')), 'slow_down');
+  const later = Date.now() + 25 * 3_600_000;
+  eq('the next day it opens again', await code2(K.createNeed(x, 'a@x.test', { type_id: 's-clean', half_hours: 1 }, false, later)), 'ok');
+  // 2. decideNeed acts only on an open need
+  const y = d1(); await SD.ensureCatalog(y);
+  for (const e of ['a@x.test', 'b@x.test']) await K.setRegion(y, e, 'tel-aviv');
+  const n = await K.createNeed(y, 'a@x.test', { type_id: 's-clean', half_hours: 1 }, false);
+  const ys = (id) => y.sq.prepare('SELECT status, address, helper FROM yad_needs WHERE id = ?').get(id);
+  y.sq.prepare("UPDATE yad_needs SET status = 'done', address = 'SEALED' WHERE id = ?").run(n.id);
+  eq('a done need is not rejected', await code2(K.decideNeed(y, n.id, { approve: false, reason: 'x' })), 'not_open');
+  eq('a done need is not approved', await code2(K.decideNeed(y, n.id, { approve: true })), 'not_open');
+  eq('and stays done', ys(n.id).status, 'done');
+  // 3. the address is cleared when a need is done, cancelled or removed
+  const n2 = await K.createNeed(y, 'a@x.test', { type_id: 's-clean', half_hours: 1 }, false);
+  y.sq.prepare("UPDATE yad_needs SET status = 'agreed', helper = 'b@x.test', address = 'SEALED' WHERE id = ?").run(n2.id);
+  eq('the address reads while agreed', await K.addressOf(y, n2.id, 'b@x.test'), 'SEALED');
+  await K.cancelNeed(y, n2.id, 'a@x.test');
+  eq('cancelled: the address is gone', [ys(n2.id).status, ys(n2.id).address], ['cancelled', '']);
+  eq('and no one reads it', await code2(K.addressOf(y, n2.id, 'b@x.test')), 'ok');
+  // 4. removing a person cancels agreed needs, as asker and as helper
+  const asker = await K.createNeed(y, 'a@x.test', { type_id: 's-clean', half_hours: 1 }, false);
+  const helped = await K.createNeed(y, 'b@x.test', { type_id: 's-clean', half_hours: 1 }, false);
+  y.sq.prepare("UPDATE yad_needs SET status = 'agreed', helper = 'b@x.test', address = 'SEALED' WHERE id = ?").run(asker.id);
+  y.sq.prepare("UPDATE yad_needs SET status = 'agreed', helper = 'a@x.test', address = 'SEALED' WHERE id = ?").run(helped.id);
+  await K.removePerson(y, 'a@x.test');
+  eq('the asker removed: the agreed need is cancelled, address gone', [ys(asker.id).status, ys(asker.id).address], ['cancelled', '']);
+  eq('the helper removed: the need they agreed to is cancelled', [ys(helped.id).status, ys(helped.id).address], ['cancelled', '']);
 }
 
 /* ---- the HTTP layer: while the switch is off every route is a 404 for a member (the owner may try) ---- */

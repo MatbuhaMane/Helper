@@ -140,6 +140,39 @@
   }
   markSwitches();
 
+  /* ---------- The owner's preview mode ("מצב תצוגה מקדימה", 2026-11-16; an exception the owner gave common.js for this one hook) ----------
+   * PRESENTATION ONLY, in this browser. The server never hears of it and never grants anything because of it: every API still checks
+   * the owner's real session. It can only HIDE or re-label what the page draws; it never opens a gate that is off.
+   * The state lives in sessionStorage (this tab, never in the server prefs): { as: 'me'|'free'|'member'|'head'|'paid', theme: 'system'|'light'|'dark', exp: 'on'|'off' }.
+   * It applies only when the real /api/me says owner AND the back door's switch (prefs.admin.preview) is on; the panel is /assets/preview.js.
+   * H.previewState() → the state or null; H.devToolsShown() → "show the tools in development" (the setting AND not hidden by the preview). */
+  const PV_KEY = 'helper.preview';
+  const previewState = () => { try { const s = JSON.parse(sessionStorage.getItem(PV_KEY) || 'null'); return s && typeof s === 'object' ? s : null; } catch (_) { return null; } };
+  let realMe = null;
+  function previewView(r) {
+    const live = r.owner === true && r.user?.role === 'owner' && r.prefs?.admin?.data?.preview === true;
+    if (!live) { try { sessionStorage.removeItem(PV_KEY); } catch (_) { /* no storage */ } return r; }
+    loadOnce('/assets/preview.js').catch(() => {});
+    const s = previewState();
+    if (!s) return r;
+    const out = { ...r, user: { ...r.user }, switches: r.switches ? { ...r.switches } : r.switches };
+    if (s.as && s.as !== 'me') {                                  // seen as someone else: no owner, no secret leaves, no beta apps
+      out.owner = false; out.user.role = 'member'; out.grants = []; out.apps = [];
+      if (s.as === 'head') out.user.head = true;                  // only a mark for the pages that look; the server decides by the real rows
+      if (s.as === 'paid') out.shop = true;
+    }
+    if (s.exp === 'off' && out.switches) out.switches.exp = 'hide';   // hides the experimental and the בקרוב items; never shows one
+    return out;
+  }
+  const devToolsShown = () => previewState()?.exp !== 'off' && prefs('look').devTools !== false;
+  /** re-applies the preview after the panel changed it (the theme and the switchboard at once; the page's own data needs a reload) */
+  function previewRefresh() {
+    if (!realMe) return;
+    const v = previewView(realMe);
+    if (v.switches) setSwitches(v.switches);
+    window.dispatchEvent(new CustomEvent('helper:prefs', { detail: 'ui' }));
+  }
+
   let mePromise;
   function me() {
     mePromise = mePromise || api('/api/me', { noRedirect: true }).catch((e) => (e.offline ? { user: JSON.parse(localStorage.getItem('helper.me') || 'null'), offline: true } : { user: null }));
@@ -149,6 +182,7 @@
       if (r.user && !r.offline) setSwitches(r.switches);
       grants = r.grants || [];
       ancientUi();
+      if (r.user && !r.offline) { realMe = r; const v = previewView(r); if (v !== r && v.switches) setSwitches(v.switches); return v; }
       return r;
     });
   }
@@ -284,7 +318,7 @@
   // a choice saved before choices had an end (the old light/dark switch): from now on the sun leads
   if (uiPrefs.theme !== 'auto' && !uiPrefs.until) uiPrefs.theme = 'auto';
   const chosen = () => uiPrefs.theme !== 'auto' && Date.now() < (uiPrefs.until || 0);
-  const isDark = () => (chosen() ? uiPrefs.theme === 'dark' : !sunNow().day);
+  const isDark = () => (['light', 'dark'].includes(previewState()?.theme) ? previewState().theme === 'dark' : chosen() ? uiPrefs.theme === 'dark' : !sunNow().day);
   let themeTimer;
   function applyTheme() {
     const root = document.documentElement;
@@ -976,7 +1010,7 @@
     const w = [72, 54, 63, 45];
     return el('div', { class: 'skel-block', role: 'status', 'aria-label': label }, ...Array.from({ length: n }, (_, i) => el('div', { class: 'skel line', style: `--w:${w[i % 4]}%`, 'aria-hidden': 'true' })));
   }
-  window.H = { skel, api, el, safeUrl, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
+  window.H = { previewState, previewRefresh, devToolsShown, skel, api, el, safeUrl, toast, me, switches, swOn, push, ancient, unancient, outgoing, hasGrant, ancientUi, requireLogin, header, icon, modal, modalFrom, closeModal, back, timeAgo, loadDaemon, prefs, savePrefs, DAEMON_DEFAULTS, sunNow, sunTimes, chooseTheme, isDark, logout, loadOnce };
 
   /* A person's settings on every page (vision batch 4, item 6; the rules are ai-features' /settings/apply.js). Before the
      page is drawn, the text size and the marks are put on from this device's copy of the prefs, so nothing jumps; then

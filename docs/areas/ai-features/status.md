@@ -3,6 +3,8 @@
 Updated by the department at the end of every meaningful round of work. Short: the master reads it for the board meeting.
 Last update: 2026-11-16 (יד ביד stage 1 security fixes).
 
+## 2026-11-16: owner preview mode (ai-features, nothing pushed): back door switch, panel (view as / light / experimental / reset), label; common.js hook flagged in decisions.md. Checked at 375 and desktop on the dev server; tools/audit.js not run.
+
 ## 2026-11-16: יד ביד stage 1 security fixes (ai-features, nothing pushed, SECURITY money/ledger)
 
 - Daily caps in D1 (20/day: need, deed, report, offer; 429 slow_down), decideNeed only on open, address cleared on done/cancelled/removed, removePerson cancels agreed needs (asker or helper). test-yad 124 passed; typecheck and npm test green.

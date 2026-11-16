@@ -144,7 +144,7 @@
       el('nav', { class: 'apps-grid bd-apps', 'aria-label': 'חלקי הדלת' }, tiles),
       ...Object.values(panels)));
     dashP = dash(top.dash);
-    if (st.own) { switchboard(top.switches); usage(top.usage); inbox(top.inbox); }
+    if (st.own) { switchboard(top.switches); previewCard(top.switches); usage(top.usage); inbox(top.inbox); }
     show(location.hash.slice(1), !!location.hash);
   }
 
@@ -299,6 +299,21 @@
   }
 
   /* ---------- the switchboard: every app-wide on/off, by category (server/switches.ts; the look is design's .sb) ---------- */
+  /* ---------- the owner's preview mode (2026-11-16): one switch; the panel itself is /assets/preview.js ----------
+     Saved with H.prefs('admin'), per user on the server. What the owner then picks in the panel (who to see the tent as, light or dark,
+     with or without the experimental) lives in this tab's sessionStorage only and is presentation: the server never sees it. */
+  function previewCard(after) {
+    const P = H.prefs('admin', { usageOpen: false, preview: false });
+    const sw = el('button', { type: 'button', class: 'sb-switch', role: 'switch', 'aria-checked': String(P.preview === true), 'aria-labelledby': 'pv-t',
+      onclick: () => { const on = !(P.preview === true); sw.setAttribute('aria-checked', String(on)); H.savePrefs('admin', { preview: on }); if (!on) { try { sessionStorage.removeItem('helper.preview'); } catch (_) { /* no storage */ } } H.toast(on ? 'מצב תצוגה מקדימה פועל: כפתור חדש בתפריט.' : 'מצב תצוגה מקדימה כבוי.'); } });
+    const card = el('div', { class: 'bd-part', 'data-part': 'preview', style: 'grid-column:1/-1' },
+      el('ul', { class: 'sb-list card' }, el('li', { class: 'sb-row' },
+        el('div', { class: 'sb-txt' }, el('b', { id: 'pv-t' }, 'מצב תצוגה מקדימה'),
+          el('small', {}, 'מוסיף כפתור בתפריט שפותח לוח: לראות את האוהל כמשתמש חינמי, כחבר משק בית, כעורך או כמשלם; בתאורה בהירה או כהה; עם חומרים בניסוי או בלעדיהם. רק תצוגה בדפדפן הזה, השרת ממשיך לבדוק את ההרשאות האמיתיות שלך.')),
+        sw)));
+    after.after(card);
+  }
+
   async function switchboard(box) {
     let d;
     try { d = await call('/api/admin/switches'); } catch (e) { return box.replaceChildren(el('p', { class: 'card' }, ERR[e.code] || e.message)); }

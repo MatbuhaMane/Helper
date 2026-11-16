@@ -220,7 +220,7 @@
   };
   const withSides = (home) => {
     const ids = Array.isArray(H.prefs('look').sides) && H.prefs('look').sides.length ? H.prefs('look').sides : ['garage', 'hill'];
-    const ideas = H.prefs('look').devTools === false ? [] : ids.map((id) => H.SOON?.find((x) => x.id === id)).filter(Boolean);
+    const ideas = !H.devToolsShown() ? [] : ids.map((id) => H.SOON?.find((x) => x.id === id)).filter(Boolean);
     if (!ideas.length) return [home];
     const mid = el('div', { class: 'pager-page', 'data-name': 'האוהל' }, home);
     const right = ideas.filter((_, i) => i % 2 === 0).map(sidePage).reverse(), left = ideas.filter((_, i) => i % 2).map(sidePage);
@@ -250,7 +250,7 @@
       const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
       return [el('section', { class: 'sr-group' }, el('h2', {}, t), ul), ul];
     });
-    if (H.SOON?.length && H.prefs('look').devTools !== false) {
+    if (H.SOON?.length && H.devToolsShown()) {
       const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...H.SOON.map((x) => el('li', { 'data-q': x.name + ' ' + x.line },
         el('button', { class: 'sr-tool', type: 'button', 'data-id': x.id, onclick: () => soonSheet(x) }, el('span', { class: 'sr-ic' }, soonPic(x)),
           el('span', { class: 'sr-txt' }, el('b', {}, x.name, soonTag(x)), el('small', {}, x.line))))));

@@ -117,6 +117,17 @@
       el('p', { class: 'muted small' }, 'לפי השמש: יום מהזריחה ולילה מהשקיעה. השמש והירח בדף הבית מחליפים גם הם, עד הזריחה או השקיעה הבאה.'));
   }
 
+  /* ---------- מצב רציניים: moved to accessibility by the owner's request (2026-11-16); look.style and look.pillows as before ---------- */
+  function seriousRows() {
+    // מצב רציניים (the owner, 2026-11-13; docs/vision/serious-mode.md): a plain, professional menu; per user, kept on the server
+    const keepRow = toggle('להשאיר את אייקוני הכריות', look.pillows === 'keep', (v) => { look.pillows = v ? 'keep' : ''; keep('look'); apply(); },
+      'במצב רציניים הכלים מוצגים כרשימה. כאן אפשר להשאיר את אייקוני הכריות שלהם.');
+    keepRow.hidden = look.style !== 'serious';
+    const serious = toggle('מצב רציניים', look.style === 'serious', (v) => { look.style = v ? 'serious' : ''; keepRow.hidden = !v; keep('look'); apply(); },
+      'ממשק תפריט פשוט ומקצועי, בלי האוהל והדמות. הכלים והנתונים נשארים אותו דבר.');
+    return [serious, keepRow];
+  }
+
   /* ---------- 2. accessibility ---------- */
   function accessibility() {
     const set = (k, v) => { access[k] = v; keep('access'); };
@@ -131,7 +142,9 @@
       el('h3', {}, 'תנועה, רטט וצלילים'),
       choices('תנועה', [['device', 'לפי המכשיר'], ['reduce', 'פחות תנועה']], access.motion, (v) => set('motion', v)),
       toggle('רטט בלחיצות ארוכות ובפעולות', access.vibrate !== false, (v) => set('vibrate', v), 'בטלפונים שיש בהם רטט.'),
-      toggle('צלילים של הממשק', access.sounds !== false, (v) => set('sounds', v), 'הקול של העוזר האישי נקבע בחלונית שלו, למטה.'));
+      toggle('צלילים של הממשק', access.sounds !== false, (v) => set('sounds', v), 'הקול של העוזר האישי נקבע בחלונית שלו, למטה.'),
+      el('h3', {}, 'תפריט פשוט'),
+      ...seriousRows());
   }
 
   /* ---------- 3. connections: every service in one place ---------- */
@@ -418,14 +431,7 @@
         el('p', { class: 'muted small' }, 'הצבעים מותאמים לבד, כדי שהטקסט יישאר קריא ביום ובלילה.'));
     };
     drawOwn();
-    // מצב רציניים (the owner, 2026-11-13; docs/vision/serious-mode.md): a plain, professional menu; per user, kept on the server
-    const keepRow = toggle('להשאיר את אייקוני הכריות', look.pillows === 'keep', (v) => { look.pillows = v ? 'keep' : ''; keep('look'); apply(); },
-      'במצב רציניים הכלים מוצגים כרשימה. כאן אפשר להשאיר את אייקוני הכריות שלהם.');
-    keepRow.hidden = look.style !== 'serious';
-    const serious = toggle('מצב רציניים', look.style === 'serious', (v) => { look.style = v ? 'serious' : ''; keepRow.hidden = !v; keep('look'); apply(); },
-      'ממשק תפריט פשוט ומקצועי, בלי האוהל והדמות. הכלים והנתונים נשארים אותו דבר.');
     return section('palette', 'ערכות צבעים',
-      serious, keepRow,
       choices('ערכת הצבעים', PALETTES.map(([id, name]) => [id, name, { swatch: id }]), look.palette || '', (v) => { look.palette = v; keep('look'); apply(); drawOwn(); }),
       own,
       choices('הגופן', FONTS.map(([id, name]) => [id, name, { font: id || null }]), look.font || '', (v) => { look.font = v; keep('look'); apply(); }),

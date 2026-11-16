@@ -73,27 +73,39 @@ const COLUMNS: [table: string, column: string, type: string][] = [
   ['passkeys', 'rp_id', 'TEXT'],              // the address the passkey was made on (a passkey works only there); NULL: made before 2026-11-15        // the RSVP's diet ticks "veg,vegan,gf", for the food calculator (ai-features)
 ];
 
-let ready: Promise<void> | null = null;
+let done = false;
 
-export function ensureSchema(env: Env): Promise<void> {
-  ready ||= (async () => {
-    const statements = (SCHEMA as string)
-      .split('\n').filter((l) => !l.trim().startsWith('--')).join('\n')
-      .split(';').map((s) => s.trim()).filter(Boolean);
-    await env.DB.batch(statements.map((s) => env.DB.prepare(s)));
-    for (const [table, column, type] of COLUMNS) {
-      try {
-        await env.DB.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
-      } catch (err) {
-        if (!/duplicate column/i.test(String(err instanceof Error ? err.message : err))) throw err;
-      }
+/** the tables and the added columns, idempotent. Each request runs its own copy until one has finished in this isolate:
+    a promise shared across requests dies with the request that made it (2026-11-16: every /api/me failed with
+    "This promise was created by a request that has since ended" after a slow first run), so nothing is shared but the flag. */
+async function runSchema(env: Env) {
+  const statements = (SCHEMA as string)
+    .split('\n').filter((l) => !l.trim().startsWith('--')).join('\n')
+    .split(';').map((s) => s.trim()).filter(Boolean);
+  await env.DB.batch(statements.map((s) => env.DB.prepare(s)));
+  // the columns each table already has, in one round trip, so only the missing ones are added (one ALTER each was ~75 trips)
+  const tables = [...new Set(COLUMNS.map(([t]) => t))];
+  let have: Set<string> | null = null;
+  try {
+    const res = await env.DB.batch(tables.map((t) => env.DB.prepare('SELECT ? AS t, name FROM pragma_table_info(?)').bind(t, t)));
+    have = new Set(res.flatMap((r) => (r.results as { t: string; name: string }[]).map((x) => x.t + '.' + x.name)));
+  } catch { have = null; }   // no pragma here: try every column, as before
+  for (const [table, column, type] of COLUMNS) {
+    if (have && have.has(table + '.' + column)) continue;
+    try {
+      await env.DB.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`).run();
+    } catch (err) {
+      if (!/duplicate column/i.test(String(err instanceof Error ? err.message : err))) throw err;
     }
-  })().catch((err) => { ready = null; throw err; });
-  // A batch that never settles (2026-11-15: every API request on the live address hung on it) must not block the isolate
-  // forever: after 10 s this request fails and the next one starts the schema again.
-  const mine = ready;
-  return Promise.race([mine, new Promise<void>((_, no) => setTimeout(() => {
-    if (ready === mine) ready = null;
-    no(new Error('schema timeout'));
-  }, 10_000))]);
+  }
+}
+
+export async function ensureSchema(env: Env): Promise<void> {
+  if (done) return;
+  // a batch that never settles (2026-11-15) must not hang the request: after 10 s it fails and the next request tries again
+  let timer: any;
+  try {
+    await Promise.race([runSchema(env), new Promise<void>((_, no) => { timer = setTimeout(() => no(new Error('schema timeout')), 10_000); })]);
+    done = true;
+  } finally { clearTimeout(timer); }
 }

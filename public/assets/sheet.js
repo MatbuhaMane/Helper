@@ -73,6 +73,7 @@
       body.replaceChildren(...[].concat(content).filter(Boolean));
       body.scrollTop = 0;
       if (!root.hidden && !closing) { aim(opts.size || size, true); return; } // already open: new content (and maybe a new size), animated
+      if (root.nextElementSibling) document.body.append(root);   // #modal shares this layer and DOM order decides: a sheet opened from an open window goes on top of it (2026-11-16, recipes behind the window on mobile)
       closing = false;
       if (!step && H.back) step = H.back.push(() => { step = 0; close(); });   // the back gesture closes the sheet
       aim(opts.size || 'full', false);

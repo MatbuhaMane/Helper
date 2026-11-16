@@ -245,10 +245,34 @@
     const tool = (a) => el('li', { 'data-q': a.name + ' ' + a.sub }, el('a', { class: 'sr-tool', href: a.href },
       el('span', { class: 'sr-ic' }, pillows ? el('img', { src: '/assets/pillows/' + a.pillow + '.webp', alt: '', loading: 'lazy' }) : H.appIcon(a.ic)),
       el('span', { class: 'sr-txt' }, el('b', {}, a.name, H.expTag(a)), el('small', {}, a.sub))));
-    const isTool = (a) => a.href.startsWith('/tools/') || /^\/(mail|pc|gather|messages|groceries|food\/)/.test(a.href);
-    const lists = [['המקומות', H.APPS.filter((a) => !isTool(a))], ['הכלים', H.APPS.filter(isTool)]].map(([t, apps]) => {
-      const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...apps.map(tool));
-      return [el('section', { class: 'sr-group' }, el('h2', {}, t), ul), ul];
+    /* three categories by an explicit list of hrefs (the owner, 2026-11-16); an app not on a list goes to "כלים" */
+    const MAIN = ['/family/', '/family/friends/', '/settings/'];
+    const LEISURE = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/', '/groceries/', '/groceries/#book', '/food/fridge/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', '/food/restaurants/', '/food/kitchen/'];
+    const catOf = (a) => (MAIN.includes(a.href) ? 'main' : LEISURE.includes(a.href) ? 'leisure' : 'tools');
+    /* an accordion: closed at first, a tap on the header opens it and closes the one that was open (never two at once);
+       while the search box is in use every category shows its matches, and they fold back when it is cleared */
+    const cats = [];
+    /* design owns this CSS (base.css .sr-group): a small block on the tokens until design moves it there; only transform and opacity move */
+    if (!document.getElementById('sr-acc-css')) document.head.append(el('style', { id: 'sr-acc-css' }, `
+      .sr-cat { display: flex; align-items: center; justify-content: space-between; inline-size: 100%; min-block-size: 44px; padding: 8px 14px; font: inherit; font-size: 1rem; font-weight: 600;
+        color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); cursor: pointer; }
+      .sr-cat:hover { border-color: color-mix(in srgb, var(--primary) 45%, var(--line)); }
+      .sr-cat:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+      .sr-chev { inline-size: 9px; block-size: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .2s var(--ease-river, ease); }
+      .sr-cat[aria-expanded="true"] .sr-chev { transform: rotate(-135deg); }
+      .sr-acc:not([data-open]) .sr-tools { display: none; }
+      .sr-home[data-searching] .sr-acc .sr-tools { display: grid; }
+      .sr-acc[data-open] .sr-tools, .sr-home[data-searching] .sr-acc .sr-tools { animation: sr-open .2s var(--ease-river, ease); }
+      @keyframes sr-open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+      @media (prefers-reduced-motion: reduce) { .sr-chev { transition: none; } .sr-acc .sr-tools { animation: none !important; } }`));
+    const setOpen = (c, on) => { c.sec.toggleAttribute('data-open', on); c.head.setAttribute('aria-expanded', String(on)); };
+    const lists = [['main', 'ראשי'], ['tools', 'כלים'], ['leisure', 'פנאי ובידור']].map(([k, title]) => {
+      const ul = el('ul', { class: 'sr-tools', id: 'sr-cat-' + k, 'data-view': view }, ...H.APPS.filter((a) => catOf(a) === k).map(tool));
+      const head = el('button', { type: 'button', class: 'sr-cat', 'aria-expanded': 'false', 'aria-controls': 'sr-cat-' + k }, el('span', {}, title), el('span', { class: 'sr-chev', 'aria-hidden': 'true' }));
+      const sec = el('section', { class: 'sr-group sr-acc' }, el('h2', {}, head), ul), c = { sec, head };
+      cats.push(c);
+      head.addEventListener('click', () => { const on = !sec.hasAttribute('data-open'); cats.forEach((x) => setOpen(x, false)); setOpen(c, on); });
+      return [sec, ul];
     });
     if (H.SOON?.length && H.devToolsShown()) {
       const ul = el('ul', { class: 'sr-tools', 'data-view': view }, ...H.SOON.map((x) => el('li', { 'data-q': x.name + ' ' + x.line },
@@ -260,6 +284,7 @@
     const input = el('input', { type: 'search', placeholder: 'חיפוש כלי', 'aria-label': 'חיפוש כלי' });
     input.addEventListener('input', () => {
       const w = input.value.trim(); let any = false;
+      main.toggleAttribute('data-searching', !!w); cats.forEach((c) => c.head.setAttribute('aria-expanded', String(!!w || c.sec.hasAttribute('data-open'))));
       lists.forEach(([sec, ul]) => { let n = 0; ul.querySelectorAll('li').forEach((li) => { const on = !w || li.dataset.q.includes(w); /* the Hebrew, even with the ancient letters */ li.hidden = !on; n += on; }); sec.hidden = !n; any ||= n > 0; });
       none.hidden = any;
     });
@@ -271,10 +296,11 @@
       views.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
       lists.forEach(([, ul]) => { ul.dataset.view = view; });
     });
-    root.append(el('main', { class: 'sr-home' },
+    const main = el('main', { class: 'sr-home' },
       el('header', { class: 'sr-head' }, el('h1', {}, ...(first ? [hello() + ' ', el('span', { 'data-content': '' }, first)] : [hello()])), el('p', {}, 'כל הכלים במקום אחד')),
       el('label', { class: 'sr-search' }, H.icon('lens'), input), ...lists.map(([sec]) => sec), none, views,
-      el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות'))));
+      el('p', { class: 'out' }, el('button', { class: 'btn ghost small', onclick: async () => { await H.api('/api/auth/logout', { method: 'POST' }); location.reload(); } }, 'התנתקות')));
+    root.append(main);
   }
   let wheel = appWheel(H.ringApps());
   root.append(...withSides(el('div', { class: 'home' },

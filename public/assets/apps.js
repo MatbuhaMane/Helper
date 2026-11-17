@@ -52,17 +52,23 @@
     { href: '/mail/', ic: 'mail', name: 'סידור המייל', sub: 'תיבת דואר מסודרת, באישור שלך', pillow: 'p04', c2: '#7b1d2c', tint: '#ffd1de', tag: 'ניסיוני', access: 'beta' },
     { href: '/pc/', ic: 'pc', name: 'סידור המחשב', sub: 'מחשב מסודר, צעד אחר צעד', pillow: 'p07', c2: '#c0402a', tint: '#cfe7ff', tag: 'ניסיוני', access: 'beta' },
   ];
-  /* The toolbox's categories (the owner, 2026-11-14), in this order. Every app has one (cat); the toolbox shows them all and
-     sorts by the person's choice: by hand, by name, or by category. access: 'beta' (in development, for the owner's testers)
-     or 'secret' (not for everyone): shown only to whom the back door allowed it. 'soon:x' is a FUTURE item, drawn only. */
+  /* One structure for every menu (the owner, 2026-11-17): the toolbox (/tools/), the tools menu, the simple (serious) home
+     and its search all read these categories, in this order, and every app appears once. An app with a parent (PARENT) is
+     a child: it is reached from its parent's page, so no list or folder shows it on its own; the search still finds it
+     ("אוכל › מקרר"). Pins on the ring stay as the person chose them. access: 'beta' / 'secret': shown only to whom the back
+     door allowed it. 'soon:x' is a FUTURE item, drawn only. */
   const CATS = [
-    { id: 'work', name: 'כלי עבודה', apps: ['/tools/calc/', '/tools/research/', '/parasha/', '/tools/notes/', '/tools/weather/', 'soon:howto', 'soon:translate', 'soon:eye', 'soon:homework'] },
-    { id: 'arts', name: 'אומנות או נמות', apps: ['/songs/', '/fun/', '/news/'] },
-    { id: 'health', name: 'שומרים על בריאות', apps: ['/tools/tasks/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', '/tools/breath/'] },
-    { id: 'food', name: 'אוכל', apps: ['/food/', '/food/kitchen/', '/groceries/#book', '/food/restaurants/'] },
-    { id: 'routine', name: 'שוטף', apps: ['/tools/calendar/', '/tools/parnasa/', '/food/fridge/', '/groceries/', '/pc/', '/mail/', '/tools/garden/', '/tools/home/'] },
-    { id: 'social', name: 'חברתי', apps: ['/family/', '/family/friends/', '/family/story/', '/gather/', '/messages/', 'soon:yad'] },
+    { id: 'main', name: 'ראשי', apps: ['/family/', '/tools/', '/settings/'] },
+    { id: 'social', name: 'משפחה וחברים', apps: ['/family/friends/', '/family/story/', '/gather/', '/messages/', 'soon:yad'] },
+    { id: 'food', name: 'אוכל', apps: ['/food/'] },
+    { id: 'health', name: 'בריאות', apps: ['/food/diet/', '/tools/breath/', '/tools/tasks/'] },
+    { id: 'routine', name: 'הבית והיומיום', apps: ['/tools/calendar/', '/tools/weather/', '/tools/notes/', '/tools/calc/', '/tools/home/', '/tools/garden/', '/tools/parnasa/'] },
+    { id: 'arts', name: 'פנאי ותרבות', apps: ['/news/', '/fun/', '/songs/', '/parasha/'] },
+    { id: 'work', name: 'עבודה ומחשב', apps: ['/tools/research/', '/mail/', '/pc/', 'soon:howto', 'soon:translate', 'soon:eye', 'soon:homework'] },
   ];
+  /** child → its parent: the food items live inside the food hub, הקפדה and הרגלי אכילה inside תנועה ותזונה */
+  const PARENT = { '/groceries/': '/food/', '/groceries/#book': '/food/', '/food/fridge/': '/food/', '/food/kitchen/': '/food/', '/food/restaurants/': '/food/',
+    '/food/diet/hakpada/': '/food/diet/', '/food/diet/habits/': '/food/diet/' };
   // still to come, shown inside their category (like SOON: a tap tells one sentence)
   const FUTURE = [
     { id: 'howto', name: 'איך אני עושה', ic: 'lens', note: 'בעתיד', line: 'מדריך לכל דבר, צעד אחר צעד.' },
@@ -75,6 +81,8 @@
     { id: 'yad', name: 'יד ביד', ic: 'habits', note: 'בקרוב', line: 'לתת יד: עוזרים זה לזה ולקהילה, ומקבלים עזרה מהעולם בחזרה' },
   ];
   for (const c of CATS) for (const h of c.apps) { const a = APPS.find((x) => x.href === h); if (a) a.cat = c.id; }
+  for (const a of APPS) if (PARENT[a.href]) a.parent = PARENT[a.href];
+  for (const a of APPS) { let p = a; for (let i = 0; i < 3 && p.parent; i++) p = APPS.find((x) => x.href === p.parent) || p; if (a.parent) a.cat = p.cat; }
   /** may this person open the app? r is what H.me() resolves to; beta and secret apps need the back door's leave (r.apps: ['beta', '/x/']) */
   const mayOpen = (a, r) => !a?.access || !!r?.owner || !!r?.apps?.includes(a.access === 'beta' ? 'beta' : a.href);
   const DEFAULT_PINS = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/'];   // the parts the ring always had
@@ -238,6 +246,6 @@
   }
   yadTile();
   addEventListener('h:switches', () => { use(LAYOUT); future(); dispatchEvent(new CustomEvent('h:layout')); });
-  Object.assign(H, { APPS, PARTS, SOON, CATS, FUTURE, isExp, showsApp: (a) => shows(a, H.switches || {}), mayOpen, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
+  Object.assign(H, { APPS, PARTS, SOON, CATS, PARENT, FUTURE, isExp, showsApp: (a) => shows(a, H.switches || {}), mayOpen, ringApps, isPinned, togglePin, setRing, expTag, appIcon, mergeLayout,
     layout: () => ({ code: CODE, tree: TREE, hidden: HIDDEN, pins: PINS.slice(), defaultPins: DEFAULT_PINS.slice() }) });
 })();

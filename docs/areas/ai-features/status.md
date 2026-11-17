@@ -684,3 +684,5 @@ LCP has not moved yet. The causes:
 - **Skeletons:** news and mail already had them (9fea8d8); now also the recipe book and recipe modal (groceries, kitchen) and the music lists use `H.skel` instead of a plain "טוען" line.
 - **Own storage (CEO review 2026-11-15, approved with limits):** Drive (drive.file, incremental, revoke on disconnect) and NAS (https WebDAV only, sealed credentials, time/size caps) connectors + settings cards; flagged for the CEO diff review (decisions.md). Not built: the Google Picker; not tested against a real Drive/NAS. Fixed the parnasa line: household emails reach the page as the invite address.
 - **Own storage, upload + list (CEO brief):** the Drive and NAS cards in Settings now have "העלאת קובץ" (hidden file input, 25 MB Drive / 50 MB NAS, Hebrew size toast) and the newest 8 files (name, size, date); Drive list also returns the modified date.
+
+- 2026-11-17: one clean menu structure (7 categories + parent/children) across toolbox, tools menu, simple home and search; /food/ hub now holds the five children. Checked at 375 dark and desktop; light mode and tools/audit.js not run.

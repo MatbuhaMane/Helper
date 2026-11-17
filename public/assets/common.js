@@ -472,7 +472,7 @@
      Only transform and opacity move. */
   function catGroups(items, link) {
     const C = window.H.CATS, by = new Map(C.map((c) => [c.id, []])), rest = [];
-    for (const a of items) (by.get(a.cat) || rest).push(a);
+    for (const a of items) if (!a.parent) (by.get(a.cat) || rest).push(a);
     const groups = C.map((c) => [c.name, by.get(c.id).sort((a, b) => c.apps.indexOf(a.href) - c.apps.indexOf(b.href))]).filter(([, l]) => l.length);
     if (rest.length) groups.push(['עוד', rest]);
     return groups.map(([name, apps]) => {

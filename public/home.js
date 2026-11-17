@@ -242,13 +242,14 @@
   function seriousHome() {
     const look = H.prefs('look'), pillows = document.documentElement.dataset.pillows === 'keep';
     let view = look.srView === 'list' ? 'list' : 'grid';
-    const tool = (a) => el('li', { 'data-q': a.name + ' ' + a.sub }, el('a', { class: 'sr-tool', href: a.href },
+    const tool = (a, by) => el('li', { 'data-q': a.name + ' ' + a.sub, 'data-child': a.parent ? '' : null }, el('a', { class: 'sr-tool', href: a.href },
       el('span', { class: 'sr-ic' }, pillows ? el('img', { src: '/assets/pillows/' + a.pillow + '.webp', alt: '', loading: 'lazy' }) : H.appIcon(a.ic)),
-      el('span', { class: 'sr-txt' }, el('b', {}, a.name, H.expTag(a)), el('small', {}, a.sub))));
-    /* three categories by an explicit list of hrefs (the owner, 2026-11-16); an app not on a list goes to "כלים" */
-    const MAIN = ['/family/', '/family/friends/', '/settings/'];
-    const LEISURE = ['/food/', '/news/', '/fun/', '/songs/', '/parasha/', '/groceries/', '/groceries/#book', '/food/fridge/', '/food/diet/', '/food/diet/hakpada/', '/food/diet/habits/', '/food/restaurants/', '/food/kitchen/'];
-    const catOf = (a) => (MAIN.includes(a.href) ? 'main' : LEISURE.includes(a.href) ? 'leisure' : 'tools');
+      el('span', { class: 'sr-txt' }, el('b', {}, (a.parent && by ? by.get(a.parent).name + ' › ' : '') + a.name, H.expTag(a)), el('small', {}, a.sub))));
+    /* the categories are the shared structure (H.CATS, apps.js): the same as the toolbox and the tools menu. A child app (a.parent) is
+       not listed on its own; it shows only while searching, as "parent › name". An app with no category goes to "עוד". */
+    const catOf = (a) => (H.CATS.some((c) => c.id === a.cat) ? a.cat : 'other');
+    const byName = new Map(H.APPS.map((x) => [x.href, x]));
+    const cdef = [...H.CATS.map((c) => [c.id, c.name, c.apps]), ['other', 'עוד', []]];
     /* an accordion: closed at first, a tap on the header opens it and closes the one that was open (never two at once);
        while the search box is in use every category shows its matches, and they fold back when it is cleared */
     const cats = [];
@@ -261,15 +262,17 @@
       .sr-chev { inline-size: 9px; block-size: 9px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .2s var(--ease-river, ease); }
       .sr-cat[aria-expanded="true"] .sr-chev { transform: rotate(-135deg); }
       .sr-acc:not([data-open]) .sr-tools { display: none; }
+      .sr-home:not([data-searching]) [data-child] { display: none; }
       .sr-home[data-searching] .sr-acc .sr-tools { display: grid; }
       .sr-acc[data-open] .sr-tools, .sr-home[data-searching] .sr-acc .sr-tools { animation: sr-open .2s var(--ease-river, ease); }
       @keyframes sr-open { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
       @media (prefers-reduced-motion: reduce) { .sr-chev { transition: none; } .sr-acc .sr-tools { animation: none !important; } }`));
     const setOpen = (c, on) => { c.sec.toggleAttribute('data-open', on); c.head.setAttribute('aria-expanded', String(on)); };
-    const lists = [['main', 'ראשי'], ['tools', 'כלים'], ['leisure', 'פנאי ובידור']].map(([k, title]) => {
-      const ul = el('ul', { class: 'sr-tools', id: 'sr-cat-' + k, 'data-view': view }, ...H.APPS.filter((a) => catOf(a) === k).map(tool));
+    const lists = cdef.map(([k, title, order]) => {
+      const ul = el('ul', { class: 'sr-tools', id: 'sr-cat-' + k, 'data-view': view }, ...H.APPS.filter((a) => catOf(a) === k && H.mayOpen(a, r)).sort((x, y) => (order.indexOf(x.href) < 0) - (order.indexOf(y.href) < 0) || order.indexOf(x.href) - order.indexOf(y.href)).map((a) => tool(a, byName)));
       const head = el('button', { type: 'button', class: 'sr-cat', 'aria-expanded': 'false', 'aria-controls': 'sr-cat-' + k }, el('span', {}, title), el('span', { class: 'sr-chev', 'aria-hidden': 'true' }));
-      const sec = el('section', { class: 'sr-group sr-acc' }, el('h2', {}, head), ul), c = { sec, head };
+      const sec = el('section', { class: 'sr-group sr-acc' }, el('h2', {}, head), ul), c = { sec, head };
+      sec.hidden = !ul.querySelector('li:not([data-child])');
       cats.push(c);
       head.addEventListener('click', () => { const on = !sec.hasAttribute('data-open'); cats.forEach((x) => setOpen(x, false)); setOpen(c, on); });
       return [sec, ul];

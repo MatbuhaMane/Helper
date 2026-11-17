@@ -12,7 +12,7 @@
   const SORTS = [['hand', 'הסדר שלי'], ['name', 'לפי שם'], ['category', 'לפי קטגוריה']];
   // a pastel fill for an app with no tint of its own (the flat look fills the icon's shapes)
   const tint = (a) => a.tint || `color-mix(in srgb, ${a.c2 || '#888'} 26%, #fff)`;
-  const apps = (H.APPS || []).filter((a) => a.href !== '/tools/' && H.mayOpen(a, me))
+  const apps = (H.APPS || []).filter((a) => a.href !== '/tools/' && !a.parent && H.mayOpen(a, me))
     .map((a) => ({ href: a.href, ic: a.ic, name: a.name, tag: a.tag, c1: a.c1 || a.c2, c2: a.c2, tint: tint(a), cat: a.cat, label: a.label }));
   // still to come: drawn only, a tap says what it will be
   // only: 'child' (homework) is shown only to a child (/api/me: child)

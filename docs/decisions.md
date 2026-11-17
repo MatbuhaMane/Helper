@@ -3984,3 +3984,9 @@ Fixes for ai-features (before the family switch):
 
 ### 2026-11-16 (ai-features): serious-mode menu in three categories (public/home.js seriousHome)
 - ראשי (family tree, friends, settings), כלים, פנאי ובידור (food, news, fun, songs, parasha) by explicit href lists MAIN/LEISURE; anything else is כלים; בקרוב stays after. An accordion in JS (closed at first, one open at a time, aria-expanded, header 44px); search shows matches in all and folds back when cleared. Note to design: the small CSS block (#sr-acc-css in home.js, tokens, transform/opacity only) is to move into base.css next to .sr-group.
+
+## 2026-11-17 · ai-features: one structure for all the menus (owner-approved)
+- `public/assets/apps.js` (shared file, by the CEO's task): `CATS` is now seven categories (ראשי, משפחה וחברים, אוכל, בריאות, הבית והיומיום, פנאי ותרבות, עבודה ומחשב) and a `PARENT` map gives a child its parent (the five food items under /food/; הקפדה and הרגלי אכילה under /food/diet/). A child gets `a.parent` and its parent's category.
+- The toolbox, the tools menu (`catGroups` in common.js, one-word filter) and the simple home all read `H.CATS` and skip children; the simple home's search shows children as "אוכל › מקרר". Pins on the ring and the owner's עץ מבנה (mergeLayout does not read categories) are unchanged, so an old layout cannot break.
+- /food/ hub: the "תנועה ותזונה" tile moved out (it lives under בריאות); "עוזר מטבח" added, so the hub holds the five children. A child can no longer be pinned from the toolbox's arrange mode (existing pins stay).
+- Note to design: the `#sr-acc-css` block in home.js is still to move to base.css.

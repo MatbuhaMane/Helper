@@ -36,3 +36,4 @@ for the 03:30 conductor tonight.
 - 2026-11-14 03:44: nothing queued (Tonight still holds the 11-13 items, already dispatched); 5h 6% (resets 08:00), weekly 21% (cap 47%); no orders, no late run scheduled.
 - 2026-11-15 night: nothing queued (Tonight still holds the 11-13 items, already dispatched); 5h 2% (resets 06:40 UTC), weekly 46% (cap 46%+18% = 64%); no orders, no late run scheduled.
 - 2026-11-16 03:43: nothing queued (Tonight still holds the 11-13 items, already dispatched); 5h 1% (resets 07:00), weekly 66% (cap 66%+11% = 77%); no orders, no late run scheduled.
+- 2026-11-17 03:43: nothing queued (Tonight still holds the 11-13 items, already dispatched); 5h 0%, weekly 73% (cap 73%+9% = 82%); no orders, no late run scheduled.
